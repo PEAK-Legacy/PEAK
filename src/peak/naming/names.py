@@ -182,7 +182,7 @@ class ParsedURL(object):
                 return d
 
             else:
-                raise exceptions.InvalidName(self.url)
+                raise exceptions.InvalidName(str(self))
             
         return locals()
 
@@ -191,7 +191,7 @@ class ParsedURL(object):
         pass
 
     def __str__(self):
-        return self.url or object.__str__(self)
+        return "%s:%s" % (self.scheme, self.body)
 
     def __repr__(self):
         return "%s(%r)" % (self.__class__.__name__, str(self))

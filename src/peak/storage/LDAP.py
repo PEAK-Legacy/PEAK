@@ -221,7 +221,7 @@ class ldapURL(naming.ParsedURL):
         if _hostport[:2] == '//':
             _hostport = _hostport[2:]
         else:
-            raise exceptions.InvalidName(self.url)
+            raise exceptions.InvalidName(str(self))
 
         if '/' in _hostport:
             _hostport, _rest = hostport.split('/', 1)
@@ -238,7 +238,7 @@ class ldapURL(naming.ParsedURL):
                 try:
                     port = int(port)
                 except:
-                    raise exceptions.InvalidName(self.url)
+                    raise exceptions.InvalidName(str(self))
             else:
                 host = unquote(_hostport)
 
@@ -273,7 +273,7 @@ class ldapURL(naming.ParsedURL):
         scope = scope_map.get(unquote(_rest[1]).lower())
 
         if scope is None:
-            raise exceptions.InvalidName(self.url)
+            raise exceptions.InvalidName(str(self))
 
         if _rest[2]:
             filter = unquote(_rest[2])
