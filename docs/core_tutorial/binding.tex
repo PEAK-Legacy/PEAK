@@ -145,8 +145,8 @@ architecture, interfaces can also be used to register adapters (which convert
 a component from one interface to another), declare web views of application
 components, and even define security restrictions based on interfaces.  
 
-\begin{seealso}
-\begin{itemize}
+\vfill
+\begin{seealso}\begin{itemize}
 
 \item Remember, if you haven't already done so, be sure to check out
 \citetitle{A Quick Introduction to Python Interfaces} at 
@@ -158,8 +158,8 @@ architecture, see \citetitle{Programming with the Zope 3 Component
 Architecture} at \url{http://dev.zope.org/Wikis/DevSite/Projects/ComponentArchitecture/Zope3PythonProgrammerTutorialChapter1/
 }.
 
-\end{itemize}
-\end{seealso}
+\end{itemize}\end{seealso}
+\vfill
 
 
 \subsection{Applications = Components + Bindings}
@@ -214,13 +214,15 @@ for a specific deployment environment.
 
 We're back to the "ilities" again: reusability, composability, extensibility,
 and flexibility, in this case.  (Maybe portability, too.)  We even get a bit
-of understandability and maintainability: isolating collaborations to attribute
-bindings makes it a lot easier to implement the \citetitle{Law of Demeter} and 
-write "Adaptive Programs". 
+of understandability and maintainability: when we isolate collaborations in
+attribute bindings, it becomes a lot easier to implement the \citetitle{Law
+of Demeter} and write "adaptive programs".
+
+\vfill
 
 \begin{seealso}
 
-\url{http://www.ccs.neu.edu/home/lieber/LoD.html} has more about the 
+\url{http://www.ccs.neu.edu/home/lieber/LoD.html} has lots of links about the 
 \citetitle{Law of Demeter}, and you can also see
 \url{http://www.ccs.neu.edu/research/demeter/demeter-method/LawOfDemeter/object-formulation.html
 } for its "object-oriented" version, if you'd like to know more about this
@@ -228,16 +230,14 @@ software quality technique.  PEAK takes this "Law" very seriously, insisting
 that code which references even a collaborator class must do so via an
 instance attribute or other "neighbor" as defined by the Law.
 
-But, you don't have to know or follow the Law to use PEAK.  Your programs
-just won't be as flexible.  All our example programs will obey the Law, 
-however, so you'll see just how easy it is to do.
+You don't have to know or follow the \citetitle{Law of Demeter} to use PEAK.
+(Your programs just won't be as flexible.)  But all of our example programs 
+will obey the Law, so you'll have a chance to see how -- and how easy it 
+is -- to follow it.
 
 \end{seealso}
 
-\newpage
-
-
-
+\vfill
 
 
 
@@ -252,15 +252,15 @@ components in terms of their lifecycles and roles, as follows:
 \begin{description}
 
 \item[Services] \hfill \\ 
-"Well-known" instance objects which exist for the lifetime
-of the application.  For example, a database connection object in an
-application could be a service component, and so could a top-level window
-in a GUI application.  J2EE "session beans" and "message-driven beans" are
-also good examples of service components.
+Similar in concept to "singletons", Services are "well-known" instance objects
+which exist for the lifetime of the application.  For example, a database
+connection object in an application could be a service component, and so could
+a top-level window in a GUI application.  J2EE "session beans" and
+"message-driven beans" are also good examples of service components.
 
 \item[Elements] \hfill \\ 
-Typically application domain objects or their proxies in
-the user interface, Elements are created and destroyed by other Elements or
+Elements are typically "problem-domain" objects or their proxies in
+the user interface.  They are created and destroyed by other Elements or
 by the application's Services.  Typical Elements might be "business objects"
 such as customers and sales, but of course any object that is the actual
 subject of the application's purpose would be considered an Element.  In a
@@ -268,12 +268,13 @@ spam filtering program, for example, e-mail messages, mailboxes, and
 "sender whitelist" objects would be considered Elements.
 
 \item[Features] \hfill \\
-Elements are usually composed of "feature" objects, which
-may represent their properties, methods, associations, user interface views,
-database fields, and so on.  Feature objects are often defined as an Element
-class' class attribute, and shared between instances.  PEAK makes extensive 
-use of feature objects to implement labor-saving techniques such as generative
-programming.
+Features are "solution-domain" objects used to compose Elements, and less
+often, to compose Services.  Features are typically used to represent 
+the properties, methods, associations, user interface views, database fields,
+and other "features" of a problem-domain Element.  Feature objects are often
+defined as an Element class' class attribute, and shared between instances.
+PEAK makes extensive use of feature objects to implement labor-saving
+techniques such as generative programming.
 
 \end{description}
 
@@ -283,7 +284,6 @@ certainly isn't limited to PEAK.  You'll find Services, Elements, and Features
 in almost any object-based application, regardless of language or platform.
 But, the pattern is often implemented in a rather haphazard fashion, and
 without the benefit of explicit "wiring" between components.
-
 
 When you design an application using the SEF Pattern, your top-level 
 application object is itself a Service.  You construct that service from
@@ -342,32 +342,193 @@ contains each of the other subpackages' API modules, named for the subpackage.
 In other words, the following two lines produce similar results:
 
 \begin{verbatim}
-
 from peak.api import binding
 
 from peak.binding import api as binding
-
 \end{verbatim}
 
-For convenience, you can use \samp{from peak.api import *} to import all the
-API subpackages.  Whichever approach you use to import the APIs you need,
+For convenience, you can also use \samp{from peak.api import *} to import all
+the API subpackages.  Whichever approach you use to import the APIs you need,
 you can access any \module{peak.binding} API class such as \class{Once}
 by simply referring to \class{binding.Once}.  In this tutorial and all PEAK
-documentation, including code examples, we'll refer to all APIs in this
-fashion, by specifying the major subpackage and the class or function name.
+documentation and code examples, we'll refer to APIs following this same
+convention: major subpackage followed by a dot and the class or function name.
 
 \begin{notice}
 Experienced Python programmers may wonder whether using
 \samp{from peak.api import *} will cause all of PEAK to be imported.  In
-fact, it doesn't, because the \module{peak.api} subpackage uses a 
+fact, it won't, because the \module{peak.api} subpackage uses a 
 "lazy import" mechanism.  Individual API subpackages like \module{peak.binding}
 won't be imported until they're actually used by your code, to prevent wasteful
 up-front loading of all the modules and classes.  See the source for
 \module{peak.api.__init__} and the \class{lazyImport} class in
 \module{peak.binding.imports}, if you'd like to know more about how it works.
-\end{notice}
+\end{notice} 
+
+\newpage
 
 \section{Specifying Attributes Using Bindings}
+
+\subsection{Binding Fundamentals}
+
+It's time to write some code!  Our objective: create a "car" class 
+that keeps track of its passengers.
+
+\begin{verbatim}
+>>> from peak.api import binding
+>>> class Car:
+        passengers = binding.New(dict, 'passengers')
+	
+>>> mazda=Car()
+>>> print mazda.passengers
+{}
+
+\end{verbatim}
+
+Let's go through this sample line by line.  In the first line we import the
+\module{peak.binding} API.  Then, we create a simple class, with one attribute,
+\member{passengers}.  We define the attribute using the \function{binding.New}
+function, which creates an attribute binding from a type and an optional name.
+
+Instances of class \class{Car} will each get their own \member{passengers}
+attribute, which contains a new (hence the name, \function{binding.New})
+dictionary.  If you're new to Python, you might wonder why we don't place a
+dictionary directly in the class, like this:
+
+\begin{verbatim}
+>>> class Car:
+        passengers = {}
+
+\end{verbatim}
+
+The problem is that attributes defined in a Python class body are shared, so
+every car will end up with the same passenger dictionary.  Experienced Python
+programmers solve this problem by placing code in their \method{__init__}
+method to initialize the structure, like so:
+
+
+
+\begin{verbatim}
+>>> class Car:
+        def __init__(self):
+            self.passengers = {}
+
+\end{verbatim}
+
+This works alright for simple situations, but gets more complex when you use
+inheritance to create subclasses of \class{Car}.  It becomes necessary to
+call the superclass \method{__init__} methods, and the order of initialization
+for different attributes can get tricky.
+
+If you develop in Java or C++ or some other language that has instance
+variable initializers, you'll be happy to know that PEAK lets you have them
+in Python too -- only better.  In most static languages, variable initializers
+run at object creation time.  So, either you create \emph{all} of an object's
+collaborators at creation time, or you write accessor functions to hide
+whether the fields or attributes are initialized.  This can be quite tedious
+in complex programs.
+
+But PEAK's attribute bindings are \strong{lazy}.  They do not compute their
+value until they are used.  If we take a new instance of our \class{Car}
+class, and print its dictionary before and after referencing the 
+\member{passengers} attribute:
+
+\begin{verbatim}
+>>> saturn=Car()
+>>> print saturn.__dict__
+{}
+>>> print saturn.passengers
+{}
+>>> print saturn.__dict__
+{'passengers': {}}
+
+\end{verbatim}
+
+We find that the object doesn't really \emph{have} the attribute until we
+try to access it, but once we do access it, it springs into being as though
+it had always been there, and it acts like a normal attribute thereafter.
+
+
+If you're familiar with the Eiffel programming language, you'll notice that
+PEAK attribute bindings are quite similar to Eiffel's \strong{once functions},
+except that they're for instances rather than for classes.  A "once function"
+is computed at most once, the first time its value is referenced.  In PEAK,
+virtually all attribute bindings are based on \class{binding.Once}, a class
+that handles most of the mechanics that make these "once attributes" work.
+
+\subsubsection{Deriving from \class{binding.Base}}
+
+As we've already seen, attribute bindings can be made to work with 
+"old-style" or "classic" Python classes.  There are some drawbacks to that,
+however.  Most visibly, it's necessary to specify an attribute binding's
+name in its definition, as we saw in our example, i.e. 
+\samp{passengers = binding.New(dict, 'passengers')}.
+
+However, if we derive our class from \class{binding.Base}, we no longer have
+to do this:
+
+\begin{verbatim}
+>>> class Car(binding.Base):
+        passengers = binding.New(dict)
+	
+>>> mazda=Car()
+>>> print mazda.passengers
+{}
+
+\end{verbatim}
+
+Now, it's sufficient to use \samp{binding.New(dict)} to define the attribute.
+What would happen if we did this \emph{without} \class{binding.Base}?
+
+
+
+
+
+
+
+
+
+
+
+\begin{verbatim}
+>>> class Car:
+        passengers = binding.New(dict)
+	
+>>> mazda=Car()
+>>> print mazda.passengers
+Traceback (most recent call last):
+  File "<pyshell#15>", line 1, in ?
+    print mazda.passengers
+  File "C:\PYTHON22\Lib\site-packages\peak\binding\once.py", line 137, in __get__
+    self.usageError()
+  File "C:\PYTHON22\Lib\site-packages\peak\binding\once.py", line 151, in usageError
+    raise TypeError(
+TypeError: <peak.binding.once.Once object at 0x01491EE0> was used in a type which
+    does not support ActiveDescriptors, but a valid attribute name was not
+    supplied
+
+\end{verbatim}
+
+Ouch!  It doesn't work, because PEAK can't tell what name the attribute
+has without help from either you, or the base class (actually the metaclass,
+but that's not important right now).  There are some circumstances where PEAK
+will try to guess the attribute name, such as when you use a class or a 
+function to define an attribute binding, but for the most part you must either
+have a metaclass that supports \class{binding.ActiveDescriptors} (such as 
+\class{binding.Base}), or supply the attribute name yourself.
+
+So, if you plan to use attribute bindings in your program, it's probably best
+to subclass \class{binding.Base}; it'll save you a lot of typing!
+
+There are other \module{peak.binding} base classes which you'll use that
+derive from \class{binding.Base}, though, like \class{binding.Component} and
+\class{binding.AutoCreated}.  You'll use these latter two a lot when defining
+Service components.  \class{binding.Base} is designed to be a minimalist
+component base, without a lot of the extra features found in its subclasses.
+
+
+
+
 
 
 
