@@ -2,6 +2,12 @@
 
 TODO
 
+ - Address traversal nesting for referenced data
+ 
+ - Dynamic attributes, independent of element?
+
+ - Phase out old PWT syntax
+ 
  - implement interaction wrapper for "/skin", "/request", etc. data paths
 
  - implement sub-template support (convert doc->DOMlet in another doc)
@@ -31,12 +37,12 @@ DOMLETS_PROPERTY = PropertyName('peak.web.DOMlets')
 
 unicodeJoin = u''.join
 
+
+
 def infiniter(sequence):
     while 1:
         for item in sequence:
             yield item
-
-
 
 
 class DOMletState(binding.Component):
@@ -58,12 +64,6 @@ class DOMletState(binding.Component):
             state = adapt(c,iface,None)
             if state is not None:
                 return state
-
-
-
-
-
-
 
 
 
@@ -122,44 +122,85 @@ class DOMletAsHTTP(binding.Component):
 
 
 def startElement(parser,data):
-    parent = data['previous']['pwt.element']
 
-    domlet = data.get('pwt.domlet')
-    if domlet:
-        factory = DOMLETS_PROPERTY.of(parent)[domlet]
-    else:
-        factory = parent.tagFactory
+    parent = data['previous']['pwt.content']
+    factory = data.get('this.factory', parent.tagFactory)
 
-    param = data.get('pwt.define')
-
-    data['pwt.element'] = element = factory(parent,
+    data['pwt.content'] = outer = factory(parent,
         tagName=data['name'],
         attribItems=data['attributes'],
-        domletProperty = domlet or None,
-        dataSpec  = data.get('pwt.data',''),
-        paramName = param or None,
+        domletProperty = data.get('this.domlet'),
+        dataSpec  = data.get('this.data',''),
+        paramName = data.get('this.is'),
     )
 
-    if param:
-        parent.addParameter(param,element)
+    inner = data.get('content.factory')
+    if inner:
+        data['pwt.this'] = outer
+        data['pwt.content'] = inner(outer,
+            tagName='',
+            attribItems=[],
+            domletProperty = data.get('content.domlet'),
+            dataSpec=data.get('content.data',''),
+            paramName = data.get('content.is'),
+        )
+        
+
+def finishElement(parser,data):    
+    content = data['pwt.content']
+    for f in data.get('content.register',()):
+        f(content)
+    if 'pwt.this' in data:
+        this = data['pwt.this']
+        this.addChild(content)
+    else:
+        this = content        
+    for f in data.get('this.register',()):
+        f(this)
+    return this
 
 
-def finishElement(parser,data):
-    return data['pwt.element']
 
 
 def negotiateDomlet(parser, data, name, value):
     data['attributes'].remove((name,value))
     if ':' in value:
-        data['pwt.domlet'],data['pwt.data'] = value.split(':',1)
+        data['this.domlet'],data['this.data'] = value.split(':',1)
+        domlet = data['this.domlet']
     else:
-        data['pwt.domlet'] = value
+        data['this.domlet'] = domlet = value
+
+    factory = DOMLETS_PROPERTY.of(data['previous']['pwt.content'])[domlet]
+    if data.setdefault('this.factory',factory) is not factory: 
+        parser.err('More than one "domlet" or "this:" replacement defined')
 
 
 def negotiateDefine(parser, data, name, value):
     data['attributes'].remove((name,value))
-    data['pwt.define'] = value
+    data['this.is'] = value
+    parent = data['previous']['pwt.content']
+    data.setdefault('this.register',[]).append(
+        lambda ob: parent.addParameter(value,ob)
+    )
 
+
+def negotiatorFactory(domletFactory):
+    def negotiate(mode, parser, data, name, value):
+        data['attributes'].remove((name,value))
+        factory = data.setdefault(mode+'.factory',domletFactory)
+        if factory is not domletFactory:
+            parser.err('More than one "domlet" or "this:" replacement defined')
+        data[mode+'.data'] = value
+        data[mode+'.domlet'] = parser.splitName(name)[1]
+    return negotiate
+
+def nodeIs(mode, parser, data, name, value):
+    data['attributes'].remove((name,value))
+    data[mode+'.is'] = value
+    parent = data['previous']['pwt.content']
+    data.setdefault(mode+'.register',[]).append(
+        lambda ob: parent.addParameter(value,ob)
+    )
 
 
 def setupElement(parser,data):
@@ -170,14 +211,14 @@ def setupElement(parser,data):
         negotiateDefine(parser,data,'define',d['define'])
 
     def child(result):
-        data['pwt.element'].addChild(result)
+        data['pwt.content'].addChild(result)
 
     def text(xml):
-        top = data['pwt.element']
+        top = data['pwt.content']
         top.addChild(top.textFactory(top,xml=escape(xml)))
 
     def literal(xml):
-        top = data['pwt.element']
+        top = data['pwt.content']
         top.addChild(top.literalFactory(top,xml=xml))
 
     data['start'] = startElement
@@ -189,7 +230,7 @@ def setupElement(parser,data):
 
 def setupDocument(parser,data):
     setupElement(parser,data)
-    data['pwt.element'] = TemplateDocument(data['parent'])
+    data['pwt.content'] = TemplateDocument(data['parent'])
 
 
 
@@ -377,19 +418,19 @@ class Element(binding.Component):
 
 
     _emptyTag = binding.Make(
-        lambda self: self._openTag[:-1]+u' />'
+        lambda self: self.tagName and self._openTag[:-1]+u' />' or ''
     )
 
     _closeTag = binding.Make(
-        lambda self: u'</%s>' % self.tagName
+        lambda self: self.tagName and u'</%s>' % self.tagName or ''
     )
 
     _openTag = binding.Make(
-        lambda self: u'<%s%s>' % ( self.tagName,
+        lambda self: self.tagName and u'<%s%s>' % ( self.tagName,
             unicodeJoin([
                 u' %s=%s' % (k,quoteattr(v)) for (k,v) in self.attribItems
             ])
-        )
+        ) or ''
     )
 
     tagFactory     = None # real value is set below
@@ -569,8 +610,8 @@ class URLText(ContentReplacer):
         write(unicode(data.absoluteURL))
         write(self._closeTag)
 
-
-
+class TaglessURLText(URLText):
+    _openTag = _closeTag = _emptyTag = ''
 
 def URLTag(parentComponent, componentName=None, domletProperty=None, **kw):
 
@@ -621,7 +662,6 @@ class List(ContentReplacer):
             data, state = self._traverse(data, state)
 
         state.write(self._openTag)
-
         nextPattern = infiniter(self.params['listItem']).next
         allowed     = data.allows
         ct = 0
@@ -652,5 +692,6 @@ class List(ContentReplacer):
 
         state.write(self._closeTag)
 
-
+class TaglessList(List):
+    _openTag = _closeTag = _emptyTag = ''
 

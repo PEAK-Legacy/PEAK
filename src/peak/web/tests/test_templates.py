@@ -82,35 +82,35 @@ class BasicTest(TestCase):
 
 class NSTest(BasicTest):
 
-    template = "data:,"+quote("""<body xmlns:pwt="http://peak.telecommunity.com/DOMlets/">
-<h1 pwt:domlet="text:foo">Title Goes Here</h1>
-<ul pwt:domlet="list:bar">
-    <li pwt:define="listItem" pwt:domlet="text"></li>
+    template = "data:,"+quote("""<body>
+<h1 content:replace="foo">Title Goes Here</h1>
+<ul content:list="bar">
+    <li this:is="listItem" content:replace="."></li>
 </ul>
 </body>""")
 
-    rendered = """<body xmlns:pwt="http://peak.telecommunity.com/DOMlets/">
+    rendered = """<body>
 <h1>The title (with &lt;xml/&gt; &amp; such in it)</h1>
 <ul><li>1</li><li>2</li><li>3</li></ul>
 </body>"""
 
+
+class NSTest2(NSTest):
+
+    template = "data:,"+quote("""<body>
+<h1 content:replace="foo">Title Goes Here</h1>
+<ul><div this:list="bar">
+    <li this:is="listItem"><span this:replace=".">foo</span></li>
+</div></ul>
+</body>""")
+
+
 TestClasses = (
-    BasicTest, NSTest,
+    BasicTest, NSTest, NSTest2
 )
 
 def test_suite():
     return TestSuite([makeSuite(t,'test') for t in TestClasses])
-
-
-
-
-
-
-
-
-
-
-
 
 
 

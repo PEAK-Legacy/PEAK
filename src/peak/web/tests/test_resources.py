@@ -50,7 +50,7 @@ class ResourceApp2(ResourceApp1):
 class MethodTest2(MethodTest1):
     appClass = ResourceApp2
 
-    rendered = """<body>
+    rendered = """<body xmlns:this="mid:pwt-this@peak-dev.org">
 <h1>The title (with &lt;xml/&gt; &amp; such in it)</h1>
 
 <ul><li>1</li><li>2</li><li>3</li></ul>

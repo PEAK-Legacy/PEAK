@@ -3,7 +3,6 @@ from peak.api import *
 from interfaces import *
 from places import Place
 from publish import TraversalPath
-from templates import TemplateDocument
 from peak.naming.factories.openable import FileURL
 from peak.util.imports import importString
 import os.path, posixpath, sys
@@ -38,6 +37,7 @@ def parseFileResource(parser, section, name, value, lineInfo):
     prefix = PropertyName('peak.web.file_resources.'+name).asPrefix()
     for pattern in section.split()[1:]:
         parser.add_setting(prefix,filenameAsProperty(pattern),value,lineInfo)
+
 
 class Resource(Place):
     permissionNeeded = binding.Require("Permission needed for access")
