@@ -2,7 +2,12 @@ Open Issues/To-Do Items
 
  Targeted for 0.5 Alpha 1
 
-    * Object name/path support in 'peak.binding'
+    * Object name/path support in 'peak.binding'; binding.New() support
+      linking child components.
+
+    * "Rule"-oriented configuration files (section specifies component rather
+      than property name prefix), w/support for chaining loader objects across
+      includes, and the ability to specify "Load on Demand" sections.
 
     * Review possible cross-locational or "root" things like
       'PropertyName' -- should these things move to the API?
@@ -27,7 +32,8 @@ Open Issues/To-Do Items
 
         - SQL cursor(joinTxn=flag) shortcut for .joinTxn()
 
-        - SQL cursor error logging and error rewrap w/SQL in error object
+        - SQL cursor error logging, close conn on error, and rewrap errors
+          w/SQL in error object
 
         - SQL field type conversion
 
@@ -72,12 +78,6 @@ Open Issues/To-Do Items
         - docstrings for reference
 
         - more unit tests?
-
-
-
-
-
-
 
 
  Future Releases
