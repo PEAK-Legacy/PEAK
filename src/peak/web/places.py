@@ -19,16 +19,16 @@ class SimpleLocation(binding.Component):
     def getSublocation(self, name, interaction):
 
         ob = self.getObject()
+        loc = getattr(ob, name, NOT_FOUND)
 
-        if not interaction.allows(ob, name):
-            return NOT_ALLOWED
+        if loc is not NOT_FOUND:
 
-        ob = getattr(ob, name, NOT_FOUND)
+            if not interaction.allows(ob, name):
+                return NOT_ALLOWED
 
-        if ob is not NOT_FOUND:
-            ob = adapt(ob, interaction.locationProtocol)
+            loc = adapt(loc, interaction.locationProtocol)
 
-        return ob
+        return loc
 
     def preTraverse(self, interaction):
         pass    # Should do any traversal requirements checks
