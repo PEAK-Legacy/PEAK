@@ -140,9 +140,7 @@ class Interaction(security.Interaction):
     user = binding.Make(lambda self: self.policy.getUser(self) )
     skin = binding.Make(lambda self: self.policy.getSkin(self.skinName))
 
-    getResource = getResourceURL = resources = \
-        binding.Delegate("skin")
-
+    getResource = resources = binding.Delegate("skin")
 
     def beforeTraversal(self, request):
         """Begin transaction before traversal"""
@@ -160,6 +158,8 @@ class Interaction(security.Interaction):
     def afterTraversal(self, request, ob):
         # Let the found object know it's being traversed
         ob.checkPreconditions()
+
+
 
 
     def getDefaultTraversal(self, request, ob):

@@ -138,17 +138,17 @@ class Skin(Traversable):
         return resourceCtx.subject
 
 
-    def getResourceURL(self, path, interaction):
 
-        while path.startswith('/'):
-            path = path[1:]
 
-        base = interaction.getAbsoluteURL(self.traverser)
 
-        if path:
-            return '%s/%s' % (base, path)
-        else:
-            return base
+
+
+
+
+
+
+
+
 
 
 

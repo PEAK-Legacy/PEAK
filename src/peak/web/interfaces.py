@@ -87,9 +87,6 @@ class IResourceService(Interface):
     def getResource(path):
         """Return the named resource"""
 
-    def getResourceURL(path, interaction):
-        """Return the URL for the named resource"""
-
 
 class ISkinService(Interface):
 
@@ -107,6 +104,9 @@ class IAuthService(Interface):
 
     def getUser(interaction):
         """Return a user object for the interaction"""
+
+
+
 
 
 
