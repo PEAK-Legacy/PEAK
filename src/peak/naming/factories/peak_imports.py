@@ -1,11 +1,12 @@
 from peak.naming.api import *
-from peak.naming.contexts import AbstractContext
 from peak.util.imports import importString
 
 from types import StringTypes
 
 
 class importURL(ParsedURL):
+
+    _defaultScheme = 'import'
 
     _supportedSchemes = 'import',
 

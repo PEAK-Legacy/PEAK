@@ -43,17 +43,16 @@ class AbstractContext(Component):
 
     __implements__ = IBasicContext
 
-    _supportedSchemes = ()
-
-    _acceptURLs = 1
-
-    _makeName = CompoundName
-
-    _allowCompositeNames = 0
-
     creationParent = bindToProperty(CREATION_PARENT, provides=CREATION_PARENT)
     objectFactories= bindToProperty(OBJECT_FACTORIES,provides=OBJECT_FACTORIES)
     stateFactories = bindToProperty(STATE_FACTORIES, provides=STATE_FACTORIES)
+
+    schemeParser  = None
+    nameClass     = None
+    defaultScheme = None
+    
+    _allowCompositeNames = False    # XXX
+    _acceptStringURLs    = True     # XXX
 
 
     def close(self):
@@ -80,9 +79,11 @@ class AbstractContext(Component):
 
 
 
+
     def _getTargetCtx(self, name, iface=IBasicContext):
 
-        name = toName(name, self._makeName, self._acceptURLs)
+        parser = self.schemeParser
+        name = toName(name, self.nameClass, self._acceptStringURLs)
 
         if name.isComposite:
         
@@ -96,12 +97,13 @@ class AbstractContext(Component):
 
         if name.isURL:
 
-            if self._supportsScheme(name.scheme):
-            
-                if name.__class__ is ParsedURL:
-                    name = self._makeName(name)
+            if parser:
 
-                return self, name
+                if isinstance(name,parser):
+                    return self, name
+
+                elif parser.supportsScheme(name.scheme):
+                    return self, parser(name.scheme, name.body)
 
             ctx = spi.getURLContext(name.scheme, self, iface)
 
@@ -112,12 +114,10 @@ class AbstractContext(Component):
 
             return ctx, name
 
+        if parser and not self.nameClass:
+            return self, parser(self.defaultScheme, str(name))
+
         return self, name
-
-
-
-
-
 
 
 
@@ -154,8 +154,8 @@ class AbstractContext(Component):
             return obj
 
 
-    def _supportsScheme(self, scheme):
-        return scheme.lower() in self._supportedSchemes
+
+
 
 
 
@@ -385,8 +385,8 @@ class AbstractContext(Component):
         """Return an iterator of the names present in the context
 
         Note: must return names which are directly usable by _get()!  That is,
-        ones which have already been passed through toName() and/or
-        self._makeName().
+        ones which have already been passed through 'toName()' and/or
+        'self.schemeParser()'.
         """        
         raise NotImplementedError
 
@@ -411,69 +411,6 @@ class AbstractContext(Component):
 class GenericURLContext(AbstractContext):
 
     """Handler for address-only URL namespaces"""
-
-    schemeParser = bindToProperty(SCHEME_PARSER, provides=SCHEME_PARSER)
-
-    def _getParserFor(self, scheme):
-
-        parser = self.schemeParser
-
-        if parser.supportsScheme(scheme):
-            return parser
-
-        parser = importObject(SCHEMES_PREFIX.of(context).get(scheme))
-
-        if parser is not None:
-
-            if IAddress.isImplementedByInstancesOf(parser):
-                return parser
-
-        return None
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    def _getTargetCtx(self, name, iface=IBasicContext):
-
-        name = toName(name)
-
-        if name.isComposite:        
-            # convert to URL
-            name = ParsedURL('+',str(name))
-
-        if name.isURL:
-            parser = self._getParserFor(name.scheme)
-            
-            if parser is not None:            
-                return self, parser(name.scheme, name.body)
-
-            ctx = spi.getURLContext(name.scheme, self, iface)
-
-            if ctx is None:
-                raise exceptions.InvalidName(
-                    "Unknown scheme %s in %r" % (name.scheme,name)
-                )
-
-            return ctx, name
-
-        raise exceptions.InvalidName("Not a URL:", name)
-
 
     def _get(self, name, default=None, retrieve=1):
         return (name, None)     # refInfo, attrs

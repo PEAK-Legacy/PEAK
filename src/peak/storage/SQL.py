@@ -166,21 +166,26 @@ class SybaseConnection(SQLConnection):
 
     API = binding.bindTo("Sybase")
 
-    hostname = binding.bindToProperty('peak.storage.sybase.hostname',
+    hostname = binding.bindToProperty('Sybase.client.hostname',
         default=None)
     
-    appname = binding.bindToProperty('peak.storage.sybase.appname',
+    appname = binding.bindToProperty('Sybase.client.appname',
         default=None)
 
-    textlimit = binding.bindToProperty('peak.storage.sybase.textlimit',
+    textlimit = binding.bindToProperty('Sybase.client.textlimit',
         default=None)
 
-    textsize = binding.bindToProperty('peak.storage.sybase.textsize',
+    textsize = binding.bindToProperty('Sybase.client.textsize',
         default=None)
+
 
     def _open(self):
+
         a = self.address
-        db = self.API.connect(a.server, a.user, a.passwd, a.db, delay_connect=1)
+
+        db = self.API.connect(
+            a.server, a.user, a.passwd, a.db, auto_commit=1, delay_connect=1
+        )
 
         if self.hostname is not None:
             db.set_property(self.API.CS_HOSTNAME, self.hostname)
@@ -202,6 +207,7 @@ class SybaseConnection(SQLConnection):
         # Sybase doesn't auto-chain transactions...
         self.connection.begin()
 
+
     def txnTime(self,d,a):
 
         # First, ensure that we're in a transaction
@@ -212,6 +218,13 @@ class SybaseConnection(SQLConnection):
         return r[0]
 
     txnTime = binding.Once(txnTime)
+
+
+
+
+
+
+
 
 
 
