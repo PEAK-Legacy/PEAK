@@ -108,8 +108,10 @@ class UUID(str):
                 # avoid "jumping the clock" for millisecond or better-resolution
                 # clocks.  Assuming, of course, that you're not running this on
                 # a machine where Python can run the entire constructor fifty
-                # or more times per millisecond!
-                
+                # or more times per millisecond!  NOTE: THIS IS NOT THREADSAFE!
+                # To be thread-safe, access to lasttime and offset should be
+                # wrapped in a lock acquire/release pair.
+
                 t = time()
                 if t==lasttime:
                     offset += (rand16() % 191) + 1
@@ -118,8 +120,8 @@ class UUID(str):
                     offset   = 0
 
                 ut = long(t * 10000000.0) + 0x01B21DD213814000L + offset
+                
                 ut = "%015x" % ut
-
 
                 from_string = "%s-%s-1%s-%04x-%s" % (
                     ut[7:], ut[3:7], ut[:3], clock_seq, nodeid
@@ -157,8 +159,6 @@ class UUID(str):
                     h[:8], h[8:12], h[12:16], h[16:20], h[20:])
              
         return super(UUID, klass).__new__(klass, from_string)
-
-
 
 
 
