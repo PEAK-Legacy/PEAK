@@ -2,8 +2,6 @@ Open Issues/To-Do Items
 
  Release Checklist for 0.5 Alpha 1
 
-    - Cleanup/document attribute binding mechanism as an 'IAttributeBinding' interface
-
     - Make all API signatures start with context component
 
     - Review binding tutorial and correct any errors relative to current APIs
@@ -25,6 +23,9 @@ Targeted for 0.5 Alpha 2
         the MetaDaemon package, with a ZConfig schema to run them in a daemon-like
 	application.
 
+      - Generate ZConfig schemas from 'peak.model' or MOF models?
+
+
     * Fix issue w/reading XMI 1.1 files where metamodel has nested packages
 
     * Generate UML 1.4 and 1.5 and CWM 1.0 and 1.1, and add them to the
@@ -32,18 +33,16 @@ Targeted for 0.5 Alpha 2
 
     * Get XMI writing in place, w/transaction support
 
-    * Generate ZConfig schemas from 'peak.model' or MOF models?
-
     * 'peak.running' refactorings: use standard 'logging' module's log levels,
        add 'logging' distro to 'peak.util' for 2.2 backward compatibility,
        and possibly adjust cluster stuff to work off ZConfig primary and
        generate clustertools file(s).
 
-    * 'peak.naming' refactorings: 'peak.model'-based syntax utilities for
-       creating address syntaxes.
-
 
  Targeted for 0.5 Beta 1
+
+    * 'peak.naming' refactorings: 'peak.model'-based syntax utilities for
+       creating address syntaxes.
 
     * Updated reference docstrings for 'peak.api', 'peak.binding',
       'peak.config', 'peak.exceptions', and 'peak.naming'.
@@ -52,6 +51,7 @@ Targeted for 0.5 Alpha 2
 
     * On-the-fly class combination (think "runtime module inheritance",
       without the modules) for DMs.
+
 
 
 

@@ -125,7 +125,7 @@ class PropertyMap(Component):
 
     rules     = New(dict)
     provided  = New(dict)
-    _provides = IPropertyMap
+
     __implements__ = IPropertyMap, Component.__implements__
 
     def setRule(self, propName, ruleObj):

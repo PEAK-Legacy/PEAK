@@ -155,7 +155,7 @@ class Once(OnceDescriptor):
     """
 
     attrName = OnceDescriptor_attrName
-    _provides = None
+    declareAsProviderOf = None
     activateUponAssembly = False
 
 
@@ -167,7 +167,7 @@ class Once(OnceDescriptor):
 
         self.computeValue = func
         self.attrName = self.__name__ = name or getattr(func,'__name__',None)
-        self._provides = provides
+        self.declareAsProviderOf = provides
         self.__doc__ = doc or getattr(func,'__doc__','')
         if activateUponAssembly:
             self.activateUponAssembly = True

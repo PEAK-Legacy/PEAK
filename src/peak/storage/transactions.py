@@ -138,7 +138,6 @@ class TransactionService(binding.Component):
     """Basic transaction service component"""
 
     __implements__ = ITransactionService
-    _provides      = __implements__
 
     state          = binding.New(TransactionState)
     errorHandler   = binding.New(BasicTxnErrorHandler)
@@ -158,6 +157,7 @@ class TransactionService(binding.Component):
 
         else:
             raise exceptions.TransactionInProgress
+
 
 
 

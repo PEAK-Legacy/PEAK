@@ -387,7 +387,7 @@ class bindTo(Once):
         activateUponAssembly=False):
 
         self.targetNames = (targetName,)
-        self._provides=provides
+        self.declareAsProviderOf = provides
         self.__doc__ = doc or ("binding.bindTo(%r)" % targetName)
         self.activateUponAssembly = activateUponAssembly
 
@@ -429,7 +429,7 @@ class bindSequence(bindTo):
 
     def __init__(self, *targetNames, **kw):
         self.targetNames = targetNames
-        self._provides = kw.get('provides')
+        self.declareAsProviderOf = kw.get('provides')
         self.__doc__ = kw.get('doc',("binding.bindSequence%s" % `targetNames`))
         self.activateUponAssembly = kw.get('activateUponAssembly')
 
@@ -578,7 +578,7 @@ class requireBinding(Once):
 
     def __init__(self,description="",name=None,provides=None,doc=None):
         self.description = description
-        self._provides = provides
+        self.declareAsProviderOf = provides
         self.__doc__ = doc or ("binding.requireBinding: %s" % description)
         self.attrName = self.__name__ = name
 
@@ -880,7 +880,7 @@ class Component(_Base):
         map(cp.update, getInheritedRegistries(klass, '__class_provides__'))
 
         for attrName, descr in klass.__class_descriptors__.items():
-            provides = getattr(descr,'_provides',None)
+            provides = getattr(descr,'declareAsProviderOf',None)
             if provides is not None:
                 cp.register(provides, attrName)
 
