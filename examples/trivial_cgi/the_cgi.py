@@ -33,7 +33,9 @@ class DemoCGI(binding.Component):
             [(mod.__name__,None)
                 for mod in sys.modules.values() if mod is not None
             ]
-        )
+        ).keys()
+
+        names.sort()
 
         for n in names:
             print >>output, n
