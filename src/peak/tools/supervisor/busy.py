@@ -90,41 +90,45 @@ class BusyStarter(binding.Component):
     fileno   = binding.Obtain('./stream/fileno')
     reactor  = binding.Obtain(running.IBasicReactor)
     log      = binding.Obtain('logger:supervisor.busy-stats')
-    allBusy  = binding.Make(lambda self: events.Value(self._allBusy()) )
-
+    busyCount = binding.Make(lambda self: events.Value(self._busy()) )
     supervisor = binding.Obtain('..')
 
     def monitorUsage(self):
 
         from time import time
         trace = self.log.trace
+        maxChildren = self.supervisor.maxChildren
+
+        busy = self.busyCount()
 
         while True:
-            yield self.allBusy; busy = events.resume()
 
-            if not busy:
-                continue    # loop until we actually *are* all busy
+            # wait until all children are started and busy
+            while busy<len(self.children) or len(self.children)<maxChildren:
+                yield self.busyCount; busy = events.resume()
 
-            start = time()  # then begin timing it
+            start = time()  # then begin timing
 
-            yield self.allBusy; events.resume()
+            # Time while N or N-1 children are busy
+            while busy and busy>=len(self.children)-1 and len(self.children)==maxChildren:
+                yield self.busyCount; busy = events.resume()
+
             duration = time()-start
-
-            if len(self.children)==self.supervisor.maxChildren:
-                trace("All children were busy for: %s seconds", duration)
+            trace("All children were busy for: %s seconds", duration)
 
     monitorUsage = binding.Make(
         events.threaded(monitorUsage), uponAssembly = True
     )
 
-    def _allBusy(self):
-        return False not in self.children.values()  # not one is available
+
+    def _busy(self):
+        return len(filter(None,self.children.values()))
 
 
     def processStarted(self, proxy):
         proxy.addListener(self.statusChanged)
         self.children[proxy.pid] = proxy.isBusy
-        self.allBusy.set(self._allBusy())
+        self.busyCount.set(self._busy())
 
 
     def statusChanged(self, proxy):
@@ -133,11 +137,11 @@ class BusyStarter(binding.Component):
                 del self.children[proxy.pid]
         else:
             self.children[proxy.pid] = proxy.isBusy
-        self.allBusy.set(self._allBusy())
+        self.busyCount.set(self._busy())
 
 
     def doRead(self):
-        if self.allBusy():
+        if self.busyCount()==len(self.children):
             self.supervisor.requestStart()
 
 
