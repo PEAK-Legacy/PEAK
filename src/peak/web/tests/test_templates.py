@@ -56,7 +56,7 @@ class BasicTest(TestCase):
     def setUp(self):
         r = testRoot()
         app = TestApp(r, show = self.mkTemplate())
-        self.interaction = web.TestInteraction(app)
+        self.policy = web.TestPolicy(app)
 
     def mkTemplate(self):
         d = web.TemplateDocument(testRoot())
@@ -64,7 +64,7 @@ class BasicTest(TestCase):
         return d
 
     def render(self):
-        return self.interaction.simpleTraverse('show')
+        return self.policy.simpleTraverse('show')
 
     def checkRendering(self):
         self.assertEqual(self.render(),self.rendered)

@@ -1,12 +1,14 @@
+from __future__ import generators
 from peak.api import *
 from interfaces import *
 from places import Traversable
 from publish import TraversalPath
-from templates import DOMletAsWebPage, TemplateDocument
+from templates import TemplateDocument
 from peak.naming.factories.openable import FileURL
 from peak.util.imports import importString
 import os.path, posixpath, sys
 from errors import UnsupportedMethod, NotFound, NotAllowed
+from environ import allows, getTraversedURL, clientHas, getResource, getRootURL
 
 __all__ = [
     'Resource', 'FSResource', 'ResourceDirectory', 'FileResource',
@@ -16,7 +18,6 @@ __all__ = [
 RESOURCE_BASE     = 'peak.web.file_resource.'
 RESOURCE_DEFAULTS = PropertyName('peak.web.resourceDefaultsIni')
 RESOURCE_CONFIG   = PropertyName('peak.web.resourceConfigFile')
-
 FILE_FACTORY      = PropertyName('peak.web.file_resources.file_factory')
 DIR_FACTORY       = PropertyName('peak.web.file_resources.dir_factory')
 RESOURCE_VISIBLE  = PropertyName('peak.web.file_resources.visible')
@@ -38,7 +39,6 @@ def parseFileResource(parser, section, name, value, lineInfo):
     for pattern in section.split()[1:]:
         parser.add_setting(prefix,filenameAsProperty(pattern),value,lineInfo)
 
-
 class Resource(Traversable):
 
     protocols.advise(
@@ -46,39 +46,39 @@ class Resource(Traversable):
     )
 
     permissionNeeded = binding.Require("Permission needed for access")
+    includeURL = True
 
     def preTraverse(self, ctx):
         perm = self.permissionNeeded
-        if not ctx.interaction.allows(self, permissionNeeded = perm):
+        if not allows(ctx, self, permissionNeeded = perm):
             raise NotAllowed(ctx)
 
 
     def getURL(self, ctx):
         # We want an absolute URL based on the interaction
-        return ctx.interaction.getAbsoluteURL(self)
+        return posixpath.join(getRootURL(ctx),self.resourcePath)
 
 
     def _getResourcePath(self):
+        if self.includeURL:
+            name = self.getComponentName()
+            if not name:
+                raise ValueError("Traversable was not assigned a name", self)
+        else:
+            name = None
 
-        name = self.getComponentName()
+        base = IResource(self.getParentComponent(),None)
+        if base is not None:
+            base = base.resourcePath
+        else:
+            base = config.lookup(self,RESOURCE_PREFIX)
 
         if name:
-            base = self.getParentComponent().resourcePath
             return posixpath.join(base, name)   # handles empty parts OK
-
-        raise ValueError("Traversable was not assigned a name", self)
+        else:
+            return base
 
     resourcePath = binding.Make(_getResourcePath)
-
-
-
-
-
-
-
-
-
-
 
 class FSResource(Resource):
 
@@ -124,7 +124,11 @@ class FSResource(Resource):
 class ResourceDirectory(FSResource):
 
     isRoot = False      # Are we the topmost FSResource here?
-    includeURL = False  # Include our name in URL even if we're a root
+
+    includeURL = binding.Make(
+        lambda self: not self.isRoot
+    )  # Don't include our name in URL if we're a root
+
     cache = binding.Make(dict)
 
     def __onSetup(self,d,a):
@@ -156,10 +160,6 @@ class ResourceDirectory(FSResource):
         return nms
 
     filenames = binding.Make(filenames)
-
-    def getObject(self, ctx):
-        return self
-
 
 
     def __getitem__(self,name):
@@ -203,18 +203,6 @@ class ResourceDirectory(FSResource):
         self.cache[name] = obj
         return obj
 
-    def resourcePath(self):
-
-        if self.isRoot and not self.includeURL:
-            # Our name doesn't count in the URL
-            return self.getParentComponent().resourcePath
-
-        # use original definition
-        return self._getResourcePath()
-
-    resourcePath = binding.Make(resourcePath)
-
-
     def traverseTo(self, name, ctx):
 
         if name.startswith('@@'):
@@ -225,6 +213,18 @@ class ResourceDirectory(FSResource):
         except KeyError:
             return Traversable.traverseTo(self,name,ctx)
         return ob
+
+
+    def getURL(self, ctx):
+        return Resource.getURL(self,ctx)+'/'   # avoid unnecessary redirects
+
+
+
+
+
+
+
+
 
 
 
@@ -261,27 +261,27 @@ class ResourceProxy(object):
 
     __slots__ = 'path', 'resourcePath'
 
-    protocols.advise(
-        instancesProvide = [IWebTraversable]
-    )
+    protocols.advise(instancesProvide = [IHTTPHandler, IWebTraversable])
 
     def __init__(self, path, resourcePath):
         self.path = path
         self.resourcePath = resourcePath
 
-    def getObject(self, ctx):
-        return ctx.interaction.getResource(self.path)
+    def handle_http(self, environ, input, errors):
+        return IHTTPHandler(getResource(environ,self.path)).handle_http(
+            environ, input, errors
+        )
 
     def preTraverse(self, ctx):
-        ob = adapt(self.getObject(ctx),ctx.interaction.pathProtocol)
-        ob.preTraverse(ctx)
+        IWebTraversable(getResource(ctx,self.path)).preTraverse(ctx)
 
     def traverseTo(self, name, ctx):
-        ob = adapt(self.getObject(ctx),ctx.interaction.pathProtocol)
-        return ob.traverseTo(name, ctx)
+        return IWebTraversable(getResource(ctx,self.path)).traverseTo(name,ctx)
 
     def getURL(self,ctx):
-        return self.getObject(ctx).getURL(ctx)
+        return IWebTraversable(getResource(ctx,self.path)).getURL(ctx)
+
+
 
 
 
@@ -327,13 +327,15 @@ def bindResource(path, pkg=None, **kw):
 
 
 class DefaultLayer(Traversable):
+
     cache = fileCache = binding.Make(dict)
+    includeURL = False # Our name never counts in the URL
 
     def traverseTo(self, name, ctx):
         if name in self.cache:
             result = self.cache[name]
             if result is NOT_FOUND:
-                raise NotFound(ctx)
+                raise NotFound(ctx,name)
             return result
 
         # convert name to a property name
@@ -343,13 +345,13 @@ class DefaultLayer(Traversable):
         ok = ALLOWED_PACKAGES.of(self).get(name,None)
         if not ok:
             self.cache[name]=NOT_FOUND
-            raise NotFound(ctx)
+            raise NotFound(ctx,name)
 
         try:
             pkg, mod = findPackage(name)
         except ImportError:
             self.cache[name] = NOT_FOUND
-            raise NotFound(ctx)
+            raise NotFound(ctx,name)
         else:
             filename = os.path.dirname(mod.__file__)
             if filename in self.fileCache:
@@ -364,20 +366,27 @@ class DefaultLayer(Traversable):
         self.cache[name] = self.cache[pkg] = d
         return d
 
-    # Our name doesn't count in the URL
-    resourcePath = binding.Obtain('../resourcePath')
 
 class TemplateResource(FSResource):
 
     """Template used as a method (via 'bindResource()')"""
 
+    protocols.advise(
+        instancesProvide = [IHTTPHandler]
+    )
+
+    def handle_http(self, environ, input, errors):
+        s,h,b = IHTTPHandler(self.theTemplate).handle_http(
+            environ, input, errors
+        )
+        # XXX replace content-type header w/self.mime_type
+        return s,h,b
+
     def preTraverse(self, ctx):
         # Templates may not be accessed directly via URL!
-        raise NotFound(ctx)
-
+        raise NotFound(ctx,name)
 
     def theTemplate(self):
-
         """Load and parse the template on demand"""
 
         doc = TemplateDocument(self,None)
@@ -391,26 +400,17 @@ class TemplateResource(FSResource):
 
     theTemplate = binding.Make(theTemplate)
 
-
-    def getObject(self, ctx):
-        return self.theTemplate
+    def traverseTo(self, name, environ):
+        return IWebTraversable(self.theTemplate).traverseTo(name, environ)
 
     def getURL(self, ctx):
         # We're a method, so use our context URL, not container URL
-        return ctx.traversedURL
-
-
-
-
-
-
-
-
+        return getTraversedURL(ctx)
 
 
 class FileResource(FSResource):
 
-    protocols.advise( instancesProvide = [IWebPage] )
+    protocols.advise( instancesProvide = [IHTTPHandler] )
 
     lastModified = None
     ETag         = None
@@ -419,34 +419,34 @@ class FileResource(FSResource):
     def getStreamAndSize(self):
         return open(self.filename, 'rb'), os.stat(self.filename).st_size
 
-    def render(self, ctx):
-        interaction = ctx.interaction
-        response = interaction.response
+    def handle_http(self, environ, input, errors):
 
-        if not interaction.request.method in ('GET','HEAD'):
+        method = environ['REQUEST_METHOD'].upper()
+
+        if method not in ('GET','HEAD'):
             raise UnsupportedMethod(ctx)
 
-        if interaction.clientHas(self.lastModified, self.ETag):
-            return response
+        if clientHas(self.lastModified, self.ETag):
+            return '304 Not Modified',[],[]     # XXX test this
 
-        # Set response mimetype (wait till now, or above would be corrupted)
         stream, size = self.getStreamAndSize()
-        try:
-            response.setHeader('Content-Type', self.mime_type)
-            response.setHeader('Content-Length', str(size))
-            response.setStatus('200')
-            if interaction.request.method == 'GET':
-                write = response.write
+
+        def dump_data():
+            if method=='GET':   # HEAD doesn't need the data
                 size = self.blocksize
-                # read/write data in size-N blocks
                 while 1:
                     data = stream.read(size)
                     if not data: break
-                    write(data)
-        finally:
+                    yield data
             stream.close()
 
-        return response
+        return '200', [
+            ('Content-Type: %s' % self.mime_type),
+            ('Content-Length: %d' % size)
+        ],  dump_data()
+
+
+
 
 
 class ImageResource(FileResource):

@@ -1,15 +1,16 @@
 from peak.api import *
 from interfaces import *
-from places import Traversable, MultiTraverser, Traversal
+from places import Traversable, MultiTraverser
 from publish import TraversalPath
 from resources import Resource
+from environ import traverseName, getCurrent, getSkin, getPolicy
 
 __all__ = [
     'Skin', 'LayerService', 'SkinService',
 ]
 
 
-class LayerService(Resource):
+class LayerService(binding.Component):
 
     """Service for accessing layers (w/caching and sharing between skins)"""
 
@@ -17,23 +18,22 @@ class LayerService(Resource):
         instancesProvide=[ILayerService]
     )
 
-    # Our path is /++resources++ or equivalent
-    resourcePath = binding.Obtain(RESOURCE_PREFIX)
-
     layerMap = binding.Make( config.Namespace('peak.web.layers') )
-
-    permissionNeeded = security.Anybody
 
     def getLayer(self,layerName):
         ob = getattr(self.layerMap,layerName)
         binding.suggestParentComponent(self,layerName,ob)
         return ob
 
-    def traverseTo(self, name, ctx):
-        return ctx.interaction.resources.traverseTo(name,ctx)
 
-    def getObject(self,ctx):
-        return ctx.interaction.resources.getObject(ctx)
+
+
+
+
+
+
+
+
 
 
 
@@ -98,18 +98,13 @@ class Skin(Traversable):
         lambda self: map(self.policy.getLayer, self.layerNames)
     )
 
-    def dummyInteraction(self):
-        interaction = self.policy.newInteraction(None)
-        interaction.user = None
-        interaction.skin = self
-        return interaction
-
-    dummyInteraction = binding.Make(dummyInteraction)
-
+    dummyInteraction = binding.Make(
+        lambda self: self.policy.newInteraction(user=None)
+    )
 
     def traverseTo(self, name, ctx):
 
-        if name == ctx.interaction.resourcePrefix:
+        if name == getPolicy(ctx).resourcePrefix:
             return self.resources
 
         return self.root.traverseTo(name, ctx)
@@ -117,8 +112,13 @@ class Skin(Traversable):
     resourcePath = ''  # skin is at root
 
 
-    def getObject(self,ctx):
-        return self.root.getObject(ctx)
+
+
+
+
+
+
+
 
 
     def getResource(self, path):
@@ -128,18 +128,18 @@ class Skin(Traversable):
         if path in self.cache:
             return self.cache[path]
 
-        interaction = self.dummyInteraction
-        start = Traversal(
-            self, interaction=interaction
-        ).contextFor(interaction.resourcePrefix)   # start at ++resources++
+        start = self.policy.newEnvironment(
+            {   'peak.web.skin':self,
+                'peak.web.interaction':self.dummyInteraction
+            }
+        )
+
+        # start at ++resources++
+        start = traverseName(start,self.policy.resourcePrefix)
 
         resourceCtx = path.traverse(start, getRoot = lambda ctx: start)
-        self.cache[path] = resourceCtx.subject
-        return resourceCtx.subject
-
-
-
-
+        self.cache[path] = subject = getCurrent(resourceCtx)
+        return subject
 
 
 

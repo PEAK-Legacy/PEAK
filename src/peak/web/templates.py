@@ -20,6 +20,8 @@ from peak.api import *
 from interfaces import *
 from xml.sax.saxutils import quoteattr, escape
 from publish import TraversalPath
+from environ import getAbsoluteURL, getInteraction, getCurrent
+from environ import childContext, parentContext
 
 __all__ = [
     'TEMPLATE_NS', 'DOMLETS_PROPERTY', 'DOMletParser', 'TemplateDocument'
@@ -34,8 +36,6 @@ def infiniter(sequence):
     while 1:
         for item in sequence:
             yield item
-
-
 
 
 
@@ -80,12 +80,12 @@ class DOMletState(binding.Component):
 
 
 
-class DOMletAsWebPage(binding.Component):
+class DOMletAsHTTP(binding.Component):
 
     """Render a template component"""
 
     protocols.advise(
-        instancesProvide = [IWebPage],
+        instancesProvide = [IHTTPHandler],
         asAdapterForProtocols = [IDOMletNode],
         factoryMethod = 'fromNode'
     )
@@ -97,17 +97,17 @@ class DOMletAsWebPage(binding.Component):
 
     fromNode = classmethod(fromNode)
 
-    def render(self, context):
-        myOwner = context.getParentComponent()
+    def handle_http(self, environ, input, errors):
+        myOwner = parentContext(environ)
+
         data = []
+
         self.templateNode.renderFor(
             myOwner,
-            DOMletState(
-                myOwner, write=data.append
-            )
+            DOMletState(myOwner, write=data.append)
         )
-        return unicodeJoin(data)
 
+        return '200 OK', [], [unicodeJoin(data)]    # XXX content-type
 
 
 
@@ -635,7 +635,7 @@ class Text(ContentReplacer):
 
         write = state.write
         write(self._openTag)
-        write(escape(unicode(data.subject)))
+        write(escape(unicode(getCurrent(data))))
         write(self._closeTag)
 
 
@@ -649,7 +649,7 @@ class XML(ContentReplacer):
 
         write = state.write
         write(self._openTag)
-        write(unicode(data.subject))
+        write(unicode(getCurrent(data)))
         write(self._closeTag)
 
 
@@ -706,7 +706,7 @@ class URLAttribute(Element):
         if self.dataSpec:
             data, state = self._traverse(data, state)
 
-        url = unicode(data.absoluteURL)
+        url = unicode(getAbsoluteURL(data))
 
         if not self.optimizedChildren and not self.nonEmpty:
             state.write(self._emptyTag % locals())
@@ -730,7 +730,7 @@ class URLText(ContentReplacer):
         write = state.write
 
         write(self._openTag)
-        write(unicode(data.absoluteURL))
+        write(unicode(getAbsoluteURL(data)))
         write(self._closeTag)
 
 
@@ -787,14 +787,13 @@ class List(ContentReplacer):
         state.write(self._openTag)
 
         nextPattern = infiniter(self.params['listItem']).next
-        allowed     = data.interaction.allows
-        subcontext  = data.subcontext
+        allowed     = getInteraction(data).allows
         ct = 0
 
         # XXX this should probably use an iteration location, or maybe
         # XXX put some properties in execution context for loop vars?
 
-        for item in data.subject:
+        for item in getCurrent(data):
 
             if not allowed(item):
                 continue
@@ -803,7 +802,7 @@ class List(ContentReplacer):
                 for child in self.params.get('header',()):
                     child.renderFor(data,state)
 
-            loc = subcontext(str(ct), item)
+            loc = childContext(data, str(ct), item)
             nextPattern().renderFor(loc, state)
             ct += 1
 
@@ -816,5 +815,6 @@ class List(ContentReplacer):
                 child.renderFor(data,state)
 
         state.write(self._closeTag)
+
 
 

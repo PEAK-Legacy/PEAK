@@ -1,5 +1,57 @@
 Fixes and Enhancements since Version 0.5 alpha 3
 
+ - 'peak.web' no longer uses Zope X3 for HTTP publishing support; it has been
+   refactored to use a "simpler, more uniform architecture":http://www.eby-sarna.com/pipermail/peak/2004-May/001462.html
+   See also "more on the architecture":http://www.eby-sarna.com/pipermail/peak/2004-June/001482.html
+   and subsequent posts in that thread.
+
+   As a consequence, "various features have been removed":http://www.eby-sarna.com/pipermail/peak/2004-June/001500.html
+   from 'peak.web', for possible return at a future date.  Here is a rough
+   outline of the changes made so far:
+   
+    * The 'pageProtocol', 'pathProtocol', and 'errorProtocol' machinery are
+      gone.  They will be replaced in the future with an explicit "controller"
+      wrapping mechanism to allow application-specific renderings of the same
+      underlying components.
+
+    * The Zope 'request' and 'response' objects are gone, along with all of
+      their special handling for cookies, character sets, form variables,
+      automatically marshalling parameters to functions, etc.  These items of
+      functionality will be gradually replaced by functions in 'peak.web.api'.
+
+      As a result of this, arbitrary functions and methods can no longer be
+      used as web pages; instead, functions and methods to be published must
+      use the same inputs and outputs as the 'IHTTPHandler.handle_http()'
+      method.
+
+    * The 'IWebPage', 'IWebInteraction', 'ITraversalContext', 'Traversal',
+      'TraversalContext', and 'Interaction' interfaces and classes no longer
+      exist, as they are unneeded in the new architecture.  Instead of
+      having a central 'IWebInteraction' that's referenced by numerous
+      'ITraversalContext' objects, the new approach uses an 'environ' mapping
+      for most functions.  For access control, a 'security.IInteraction' is
+      now used, whose function is limited to security checks.  Most
+      functions previously performed by 'IWebInteraction' have moved to
+      'IInteractionPolicy' or to 'peak.web.api' functions operating on
+      'environ' mappings.
+
+    * Web exceptions can define a 'levelName' attribute that determines the
+      severity level with which the exception will be logged.  This allows
+      one to e.g. avoid logging tracebacks for 'NotFound' errors.
+
+    * Various interface calling signatures have changed slightly.  For example,
+      'IAuthService.getUser()' now accepts an 'environ' mapping instead of
+      an interaction.  'IInteractionPolicy.newInteraction()' now takes keyword
+      arguments, but not a 'request'.  The 'IWebTraversable' interface no longer
+      has a 'getObject()' method, and the 'IWebException.handleException()'
+      method signature has changed as well.  Finally, all methods that
+      previously accepted 'ITraversalContext' (such as
+      'IDOMletState.renderFor()') now expect 'environ' mappings.
+
+    * 'web.TestInteraction' was replaced with 'web.TestPolicy', and
+      'web.Interaction' was removed, since 'IWebInteraction' is no longer part
+      of the architecture.
+
  - The 'log()' method of PEAK loggers ('logs.ILogger') now accepts a level name
    *or* a number, for convenient invocation.
 

@@ -21,7 +21,7 @@ class MethodTest1(BasicTest):
 
     def setUp(self):
         r = testRoot()
-        self.interaction = web.TestInteraction(self.appClass(r))
+        self.policy = web.TestPolicy(self.appClass(r))
 
 
 

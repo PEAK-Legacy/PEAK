@@ -5,38 +5,17 @@ from peak.api import PropertyName
 from peak.binding.interfaces import IComponent
 
 __all__ = [
-    'IWebInteraction', 'IWebTraversable', 'IWebPage', 'IInteractionPolicy',
+    'IWebTraversable', 'IInteractionPolicy',
     'ISkinService', 'ILayerService', 'IAuthService', 'IWebException',
-    'PATH_PROTOCOL', 'PAGE_PROTOCOL', 'RESOURCE_PREFIX',
-    'DEFAULT_METHOD', 'APPLICATION_LOG', 'ERROR_PROTOCOL',
-    'IDOMletState',
-    'IDOMletNode',    'IDOMletNodeFactory', 'ITraversalContext', 'IResource',
+    'RESOURCE_PREFIX', 'DEFAULT_METHOD', 'APPLICATION_LOG',
+    'IDOMletState', 'IHTTPHandler', 'IHTTPApplication',
+    'IDOMletNode',    'IDOMletNodeFactory', 'IResource',
     'IDOMletElement', 'IDOMletElementFactory', 'ISkin', 'IPolicyInfo'
 ]
-
-PATH_PROTOCOL  = PropertyName('peak.web.pathProtocol')
-PAGE_PROTOCOL  = PropertyName('peak.web.pageProtocol')
-ERROR_PROTOCOL = PropertyName('peak.web.errorProtocol')
 
 DEFAULT_METHOD    = PropertyName('peak.web.defaultMethod')
 RESOURCE_PREFIX   = PropertyName('peak.web.resourcePrefix')
 APPLICATION_LOG   = PropertyName('peak.web.appLog')
-
-
-try:
-    from zope.publisher.interfaces import IPublication
-    from zope.publisher.interfaces.browser import IBrowserPublication
-    from zope.publisher.interfaces.xmlrpc import IXMLRPCPublication
-except ImportError:
-    zopePublicationInterfaces = ()
-else:
-    import protocols.zope_support
-    zopePublicationInterfaces = (
-        IPublication, IBrowserPublication, IXMLRPCPublication
-    )
-
-
-
 
 
 class IPolicyInfo(Interface):
@@ -48,27 +27,7 @@ class IPolicyInfo(Interface):
     root = Attribute("""Start point for non-resource traversals""")
 
     resourcePrefix = Attribute("""Name that starts path to resources""")
-    errorProtocol  = Attribute("""Protocol for exception handling""")
-    pathProtocol   = Attribute("""Protocol for traversing""")
-    pageProtocol   = Attribute("""Protocol for rendering pages""")
     defaultMethod  = Attribute("""Default method name (e.g. 'index_html')""")
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -102,8 +61,8 @@ class ILayerService(Interface):
 
 class IAuthService(Interface):
 
-    def getUser(interaction):
-        """Return a user object for the interaction"""
+    def getUser(environ):
+        """Return a user object for the environment"""
 
 
 
@@ -118,28 +77,6 @@ class IAuthService(Interface):
 
 
 
-
-
-
-class IWebInteraction(IInteraction, IResourceService, IPolicyInfo):
-
-    """Component representing a web hit"""
-
-    protocols.advise(
-        protocolExtends = zopePublicationInterfaces
-    )
-
-    policy   = Attribute("""The IInteractionPolicy for this interaction""")
-    request  = Attribute("""The web request""")
-    response = Attribute("""The web response""")
-
-    skin = Attribute("""Root namespace for presentation resources""")
-
-    def getAbsoluteURL(resource=None):
-        """Return an absolute URL for specified resource, or interaction URL"""
-
-    def clientHas(lastModified=None, ETag=None):
-        """Return true if no response need be sent, given the response data"""
 
 
 
@@ -147,8 +84,20 @@ class IInteractionPolicy(ISkinService, ILayerService, IAuthService, IPolicyInfo)
 
     """Component holding cross-hit configuration and consolidated services"""
 
-    def newInteraction(request):
-        """Create a new IInteraction for 'request'"""
+    def newInteraction(**options):
+        """Create a new 'IInteraction' with given arguments"""
+
+    def newEnvironment(self,environ={}):
+        """Create an initialized environment, starting w/'environ'"""
+
+    def beforeTraversal(environ):
+        """Begin transaction before traversal"""
+
+    def afterCall(environ):
+        """Commit transaction after successful hit"""
+
+    def handleException(environ, error_stream, exc_info, retry_allowed=1):
+        """Convert exception to a handler, and invoke it"""
 
 
 
@@ -162,44 +111,13 @@ class IInteractionPolicy(ISkinService, ILayerService, IAuthService, IPolicyInfo)
 
 
 
-class ITraversalContext(Interface):
 
-    """Traversal context methods for traversers to use"""
 
-    interaction = Attribute(
-        """The 'IWebInteraction' for this traversal context"""
-    )
 
-    traversable = Attribute(
-        """The 'IWebTraversable' for this traversal context"""
-    )
 
-    subject = Attribute("""The underlying object being traversed""")
 
-    absoluteURL = Attribute("""Absolute URL for object at this location""")
 
-    traversedURL = Attribute(
-        """Parent context's absolute URL + current context's name"""
-    )
 
-    renderable = Attribute(
-        """Underlying object (adapted to page protocol) or 'None'"""
-    )
-
-    def checkPreconditions():
-        """Invoked before traverse by web requests (calls 'preTraverse()')"""
-
-    def contextFor(name):
-        """Return a new traversal context for 'name'"""
-
-    def render():
-        """Return rendered value of underlying object"""
-
-    def subcontext(name, ob):
-        """Create a new subcontext named 'name', for 'ob'"""
-
-    def substituteContext(ob):
-        """Clone this context, but using 'ob' as the subject"""
 
 
 
@@ -229,9 +147,6 @@ class IWebTraversable(Interface):
     def traverseTo(name, context):
         """Return named 'IWebTraversable', or raise 'NotAllowed'/'NotFound'"""
 
-    def getObject(context):
-        """Return the underlying object that would be traversed"""
-
     def getURL(context):
         """Return this object's URL in traversal context 'context'"""
 
@@ -244,28 +159,31 @@ class IResource(IWebTraversable):
 
 
 
-class IWebPage(Interface):
 
+
+
+class IHTTPHandler(Interface):
     """A component for rendering an HTTP response"""
 
-    def render(context):
-        """Render a response"""
+    def handle_http(self, environ, input, errors):
+        """Return '(status,headers,output_iterable)' tuple"""
+
+
+class IHTTPApplication(IHTTPHandler):
+    """An IHTTPHandler that handles exceptions, transactions, etc."""
 
 
 class IWebException(Interface):
 
     """An exception that knows how it should be handled for a web app"""
 
-    def handleException(interaction, thrower, exc_info, retry_allowed=1):
+    def handleException(environ,error_stream,exc_info,retry_allowed=1):
         """Perform necessary recovery actions"""
 
 
 
 class ISkin(IResource, IResourceService):
     """A resource container, and the root resource for its contents"""
-
-
-
 
 
 
@@ -330,10 +248,10 @@ class IDOMletNode(Interface):
 
     """A component of a page template"""
 
-    def renderFor(data, state):
+    def renderFor(environ, state):
         """Write template's output by calling 'state.write()' 0 or more times
 
-        'data' is an 'ITraversalContext' for the object being rendered  (e.g.
+        'environ' is an environment mapping for the object being rendered  (e.g.
         the object the template is a method of).  'state' is an 'IDOMletState'
         component used to supply arbitrary properties/utilities to child
         DOMlets during template execution, and to provide access to the
