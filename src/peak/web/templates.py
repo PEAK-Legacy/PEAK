@@ -2,15 +2,15 @@
 
 TODO
 
- - implement interaction wrapper for "/skin", "/request", etc. model paths
+ - implement interaction wrapper for "/skin", "/request", etc. data paths
 
- - implement sub-template support (convert template->view in another template)
+ - implement sub-template support (convert doc->DOMlet in another doc)
 
- - add hooks for views to validate the list of supplied patterns
+ - add hooks for DOMlets to validate the list of supplied parameters
 
- - 'list' view needs iteration variables, maybe paging
+ - 'list' DOMlet needs iteration variables, maybe paging
 
- - need translation views, among lots of other kinds of views
+ - need translation DOMlets, among lots of other kinds of DOMlets
 
  - support DTD fragments, and the rest of the XML standard
 """
@@ -22,11 +22,11 @@ from xml.sax.saxutils import quoteattr, escape
 from publish import LocationPath
 
 __all__ = [
-    'TEMPLATE_NS', 'VIEWS_PROPERTY', 'TemplateParser', 'TemplateDocument'
+    'TEMPLATE_NS', 'DOMLETS_PROPERTY', 'DOMletParser', 'TemplateDocument'
 ]
 
-TEMPLATE_NS = 'http://peak.telecommunity.com/peak.web.templates/'
-VIEWS_PROPERTY = PropertyName('peak.web.views')
+TEMPLATE_NS = 'http://peak.telecommunity.com/DOMlets/'
+DOMLETS_PROPERTY = PropertyName('peak.web.DOMlets')
 
 unicodeJoin = u''.join
 
@@ -39,13 +39,13 @@ def isNull(ob):
     return ob is NOT_FOUND or ob is NOT_ALLOWED
 
 
-class TemplateAsMethod(binding.Component):
+class DOMletAsMethod(binding.Component):
 
     """Render a template component"""
 
     protocols.advise(
         instancesProvide = [IWebMethod],
-        asAdapterForProtocols = [ITemplateNode],
+        asAdapterForProtocols = [IDOMletNode],
         factoryMethod = 'fromNode'
     )
 
@@ -80,9 +80,9 @@ class TemplateAsMethod(binding.Component):
 
 
 
-class TemplateParser(binding.Component):
+class DOMletParser(binding.Component):
 
-    """Parser that assembles a TemplateDocument"""
+    """Parser that assembles a Document"""
 
     def parser(self,d,a):
 
@@ -102,6 +102,8 @@ class TemplateParser(binding.Component):
         p.CommentHandler = self.comment
 
         # We don't use:
+        # .StartNamespaceDeclHandler
+        # .EndNamespaceDeclHandler
         # .XmlDeclHandler(version, encoding, standalone)
         # .ElementDeclHandler(name, model)
         # .AttlistDeclHandler(elname, attname, type, default, required)
@@ -119,14 +121,11 @@ class TemplateParser(binding.Component):
 
     parser = binding.Once(parser)
 
+    domlets = binding.New(list) # "nearest explicit DOMlet" stack
+    stack   = binding.New(list) # "DOMlet being assembled" stack
+    nsUri   = binding.New(dict) # URI stack for each NS prefix
 
-
-    views = binding.New(list)
-    stack = binding.New(list)
-    nsUri = binding.New(dict)
-    myNs  = binding.New(dict)
-
-    myNs = binding.Once(
+    myNs = binding.Once(        # prefixes that currently map to TEMPLATE_NS
         lambda self,d,a: dict(
             [(p,1) for (p,u) in self.nsUri.items() if u and u[-1]==TEMPLATE_NS]
         )
@@ -137,7 +136,7 @@ class TemplateParser(binding.Component):
         if document is None:
             document = TemplateDocument(self.getParentComponent())
         self.stack.append(document)
-        self.views.append(document)
+        self.domlets.append(document)
         self.parser.ParseFile(stream)
 
 
@@ -162,69 +161,114 @@ class TemplateParser(binding.Component):
 
 
 
+
+    nsStack = binding.New(list)
+
+    def pushNSinfo(self,attrs):
+
+        prefixes = []
+
+        for i in range(0,len(attrs),2):
+
+            k,v = attrs[i], attrs[i+1]
+
+            if not k.startswith('xmlns'):
+                continue
+
+            rest = k[5:]
+            if not rest:
+                ns = ''
+            elif rest.startswith(':'):
+                ns = rest[1:]
+            else:
+                continue
+
+            self.startNS(ns,v)
+            prefixes.append(ns)
+
+        self.nsStack.append(prefixes)
+
+
+    def popNSinfo(self):
+        map(self.endNS, self.nsStack.pop())
+
+
+
+
+
+
+
+
+
+
+
+
     def startElement(self, name, attrs):
+
+        self.pushNSinfo(attrs)
 
         a = []
         append = a.append
-        myNs = self.myNs
+        myNs = self.myNs or ('',)   # use unprefixed NS if no NS defined
 
         top = self.stack[-1]
         factory = top.tagFactory
-        model = ''
-        view = pattern = None
+        domletName = dataSpec = paramName = None
 
         for i in range(0,len(attrs),2):
+
             k,v = attrs[i], attrs[i+1]
+
             if ':' in k:
                 ns, n = k.split(':',1)
             else:
                 ns, n = '', k
 
-            if myNs:
-                if ns not in myNs:
-                    append((k,v))
-                    continue
-            elif ns:
+            if n=='domlet' and ns in myNs:
+                # XXX if domletName is not None or dataSpec is not None:
+                # XXX     raise ???
+                if ':' in v:
+                    domletName, dataSpec = v.split(':',1)
+                else:
+                    domletName, dataSpec = v, ''
+
+                if domletName:
+                    factory = DOMLETS_PROPERTY.of(top)[domletName]
+                    factory = adapt(factory, IDOMletElementFactory)
+
+            elif n=='define' and ns in myNs:
+                # XXX if paramName is not None:
+                # XXX     raise ???
+                paramName = v
+            else:
                 append((k,v))
-                continue
 
-            if k=='view':
-                view = v
-                factory = VIEWS_PROPERTY.of(top)[v]
-                factory = adapt(factory, ITemplateElementFactory)
-                continue
-            elif k=='model':
-                model = v
-                continue
-            elif k=='pattern':
-                pattern = v
-                continue
 
-            append((k,v))
-            continue
-
-        tag = factory(top, tagName=name, attribItems=a,
-            # XXX nonEmpty=False,
-            viewProperty=view, modelPath=model, patternName=pattern
+        element = factory(top, tagName=name, attribItems=a,
+            domletProperty = domletName or None,
+            dataSpec  = dataSpec or '',
+            paramName = paramName or None,
+            # XXX nonEmpty=False
         )
 
-        if pattern:
-            self.views[-1].addPattern(pattern,tag)
+        if paramName:
+            self.domlets[-1].addParameter(paramName,element)
 
-        if view:
-            # New view, put it on the view stack
-            self.views.append(tag)
+        if domletName:
+            # New explicit DOMlet, put it on the explicit DOMlet stack
+            self.domlets.append(element)
         else:
-            # Duplicate the old view
-            self.views.append(self.views[-1])
+            # Push the previous "nearest enclosing explicit DOMlet"
+            self.domlets.append(self.domlets[-1])
 
-        self.stack.append(tag)
+        self.stack.append(element)
 
 
     def endElement(self, name):
-        self.views.pop()
+        self.domlets.pop()
         last = self.stack.pop()
         self.stack[-1].addChild(last)
+        self.popNSinfo()
 
 
     def buildLiteral(self,xml):
@@ -237,9 +281,6 @@ class TemplateParser(binding.Component):
         top = self.stack[-1]
         text = top.textFactory(top, xml=escape(data))
         top.addChild(text)
-
-
-
 
 
 
@@ -285,13 +326,13 @@ class TemplateParser(binding.Component):
 
 
 
-class TemplateLiteral(binding.Component):
+class Literal(binding.Component):
 
     """Simple static text node"""
 
     protocols.advise(
-        classProvides = [ITemplateNodeFactory],
-        instancesProvide = [ITemplateNode],
+        classProvides = [IDOMletNodeFactory],
+        instancesProvide = [IDOMletNode],
     )
 
     xml = u''
@@ -326,24 +367,24 @@ class TemplateLiteral(binding.Component):
 
 
 
-class TemplateElement(binding.Component):
+class Element(binding.Component):
 
     protocols.advise(
-        classProvides = [ITemplateElementFactory],
-        instancesProvide = [ITemplateElement],
+        classProvides = [IDOMletElementFactory],
+        instancesProvide = [IDOMletElement],
     )
 
-    children   = binding.New(list)
-    patternMap = binding.New(dict)
+    children       = binding.New(list)
+    params         = binding.New(dict)
 
-    tagName      = binding.requireBinding("Tag name of element")
-    attribItems  = binding.requireBinding("Attribute name,value pairs")
-    nonEmpty     = False
-    viewProperty = None
-    modelPath    = binding.Constant('', adaptTo=LocationPath)
-    patternName  = None
+    tagName        = binding.requireBinding("Tag name of element")
+    attribItems    = binding.requireBinding("Attribute name,value pairs")
+    nonEmpty       = False
+    domletProperty = None
+    dataSpec       = binding.Constant('', adaptTo=LocationPath)
+    paramName      = None
 
-    # ITemplateNode
+    # IDOMletNode
 
     def staticText(self, d, a):
 
@@ -400,7 +441,7 @@ class TemplateElement(binding.Component):
         if isNull(currentModel):
             return currentModel
 
-        return self.modelPath.traverse(
+        return self.dataSpec.traverse(
             currentModel, interaction, lambda o,i: self._wrapInteraction(i)
         )
 
@@ -415,7 +456,7 @@ class TemplateElement(binding.Component):
             writeFunc(text)
             return
 
-        if self.modelPath:
+        if self.dataSpec:
             currentModel = self._getSubModel(interaction, currentModel)
 
         if not self.optimizedChildren and not self.nonEmpty:
@@ -433,7 +474,7 @@ class TemplateElement(binding.Component):
 
 
     def addChild(self, node):
-        """Add 'node' (an 'ITemplateNode') to element's direct children"""
+        """Add 'node' (an 'IDOMletNode') to element's direct children"""
 
         if self._hasBinding('optimizedChildren'):
             raise TypeError(
@@ -442,11 +483,11 @@ class TemplateElement(binding.Component):
         self.children.append(node)
 
 
-    def addPattern(self, name, element):
-        """Declare 'element' as part of pattern 'name'"""
+    def addParameter(self, name, element):
+        """Declare 'element' as part of parameter 'name'"""
 
-        # self.patterns.append( (name,element) )
-        self.patternMap.setdefault(name,[]).append(element)
+        self.params.setdefault(name,[]).append(element)
+
 
 
     # Override in subclasses
@@ -462,7 +503,7 @@ class TemplateElement(binding.Component):
 
     def _wrapInteraction(self,interaction):
         # XXX This should wrap the interaction in an IWebLocation simulator,
-        # XXX which should include access to this element's patterns as well
+        # XXX which should include access to this element's parameters as well
         # XXX as interaction variables.
         raise NotImplementedError
 
@@ -484,19 +525,19 @@ class TemplateElement(binding.Component):
     )
 
     tagFactory     = None # real value is set below
-    textFactory    = TemplateLiteral
-    literalFactory = TemplateLiteral
+    textFactory    = Literal
+    literalFactory = Literal
 
-TemplateElement.tagFactory = TemplateElement
+Element.tagFactory = Element
 
 
-class TemplateDocument(TemplateElement):
+class TemplateDocument(Element):
 
     """Document-level template element"""
 
     _openTag = _closeTag = _emptyTag = ''
 
-    parserClass = TemplateParser
+    parserClass = DOMletParser
 
     def parseFile(self, stream):
         parser = self.parserClass(self)
@@ -531,7 +572,7 @@ class TemplateDocument(TemplateElement):
 
 
 
-class TemplateReplacement(TemplateElement):
+class ContentReplacer(Element):
 
     """Abstract base for elements that replace their contents"""
 
@@ -540,16 +581,16 @@ class TemplateReplacement(TemplateElement):
     contents   = binding.requireBinding("nodes to render in element body")
 
     def addChild(self, node):
-        pass    # ignore children, only patterns count with us
+        pass    # ignore children, only parameters count with us
 
 
-class TemplateText(TemplateReplacement):
+class Text(ContentReplacer):
 
-    """Replace element contents w/model"""
+    """Replace element contents w/data"""
 
     def renderTo(self, interaction, writeFunc, currentModel, executionContext):
 
-        if self.modelPath:
+        if self.dataSpec:
             currentModel = self._getSubModel(interaction, currentModel)
 
         writeFunc(self._openTag)
@@ -572,16 +613,16 @@ class TemplateText(TemplateReplacement):
 
 
 
-class TemplateList(TemplateReplacement):
+class List(ContentReplacer):
 
     def renderTo(self, interaction, writeFunc, currentModel, executionContext):
 
-        if self.modelPath:
+        if self.dataSpec:
             currentModel = self._getSubModel(interaction, currentModel)
 
         writeFunc(self._openTag)
 
-        i = infiniter(self.patternMap['listItem'])
+        i = infiniter(self.params['listItem'])
         locationProtocol = interaction.locationProtocol
         ct = 0
 
@@ -605,10 +646,11 @@ class TemplateList(TemplateReplacement):
 
         if not ct:
             # Handle list being empty
-            for child in self.patternMap.get('emptyList',()):
+            for child in self.params.get('emptyList',()):
                 child.renderTo(
                     interaction, writeFunc, currentModel, executionContext
                 )
 
         writeFunc(self._closeTag)
+
 

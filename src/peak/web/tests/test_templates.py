@@ -4,7 +4,7 @@ TODO
 
  - Mixed namespaces
 
- - View property redefinition within a component
+ - DOMlet property redefinition within a component
 
  - Security used
 
@@ -42,9 +42,9 @@ class TestApp(web.SimpleLocation):
 class BasicTest(TestCase):
 
     template = """<body>
-<h1 model="foo" view="text">Title Goes Here</h1>
-<ul model="bar" view="list">
-    <li pattern="listItem" view="text"></li>
+<h1 domlet="text:foo">Title Goes Here</h1>
+<ul domlet="list:bar">
+    <li define="listItem" domlet="text"></li>
 </ul>
 </body>"""
 
@@ -71,7 +71,7 @@ class BasicTest(TestCase):
 
 
     def checkRendering(self):
-        assert self.render() == self.rendered
+        assert self.render() == self.rendered #, (self.render(), self.rendered)
 
 
 
@@ -79,27 +79,27 @@ class BasicTest(TestCase):
 
 
 
+
+class NSTest(BasicTest):
+
+    template = """<body xmlns:pwt="http://peak.telecommunity.com/DOMlets/">
+<h1 pwt:domlet="text:foo">Title Goes Here</h1>
+<ul pwt:domlet="list:bar">
+    <li pwt:define="listItem" pwt:domlet="text"></li>
+</ul>
+</body>"""
+
+    rendered = """<body xmlns:pwt="http://peak.telecommunity.com/DOMlets/">
+<h1>The title</h1>
+<ul><li>1</li><li>2</li><li>3</li></ul>
+</body>"""
 
 TestClasses = (
-    BasicTest,
+    BasicTest, NSTest,
 )
 
 def test_suite():
     return TestSuite([makeSuite(t,'check') for t in TestClasses])
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

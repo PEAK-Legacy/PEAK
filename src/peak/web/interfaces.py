@@ -8,8 +8,8 @@ __all__ = [
     'LOCATION_PROTOCOL', 'BEHAVIOR_PROTOCOL', 'INTERACTION_CLASS',
     'DEFAULT_METHOD', 'APPLICATION_LOG', 'AUTHENTICATION_SERVICE',
     'ERROR_PROTOCOL', 'SKIN_SERVICE', 'IWebException',
-    'ITemplateNode',    'ITemplateNodeFactory',
-    'ITemplateElement', 'ITemplateElementFactory',
+    'IDOMletNode',    'IDOMletNodeFactory',
+    'IDOMletElement', 'IDOMletElementFactory',
 ]
 
 
@@ -121,7 +121,7 @@ class IWebException(Interface):
 
 
 
-class ITemplateNode(Interface):
+class IDOMletNode(Interface):
 
     """A component of a page template"""
 
@@ -133,7 +133,7 @@ class ITemplateNode(Interface):
         is a method of).  'executionContext' is a component used to supply
         arbitrary properties/utilities during template execution.  All of these
         parameters should be supplied to executed child nodes as-is, unless
-        the current view wishes to change them.
+        the current DOMlet wishes to change them.
 
         For example, if a node wishes to add properties to the
         'executionContext' for its children, it should create a new Component
@@ -162,14 +162,14 @@ class ITemplateNode(Interface):
 
 
 
-class ITemplateNodeFactory(Interface):
+class IDOMletNodeFactory(Interface):
 
     """Factory to produce a literal or text node"""
 
     def __call__(parentComponent, componentName=None, xml=u'',
         # XXX parse info
     ):
-        """Create an ITemplateNode w/specified XML text
+        """Create an IDOMletNode w/specified XML text
 
         'xml' will contain the text as it would appear in an XML document;
         i.e., it is already XML-escaped, so no further processing is required
@@ -203,33 +203,33 @@ class ITemplateNodeFactory(Interface):
 
 
 
-class ITemplateElement(ITemplateNode):
+class IDOMletElement(IDOMletNode):
 
     """A component representing an XML/HTML element"""
 
     def addChild(node):
-        """Add 'node' (an 'ITemplateNode') to element's direct children"""
+        """Add 'node' (an 'IDOMletNode') to element's direct children"""
 
-    def addPattern(name, element):
-        """Declare 'element' (an 'ITemplateElement') as part of pattern 'name'
+    def addParameter(name, element):
+        """Declare 'element' (an 'IDOMletElement') as part of parameter 'name'
 
         Note that 'element' is not necessarily a direct child of the current
         element, and that this method may be called multiple times for the
-        same 'name', if multiple pattern nodes are declared with the same name.
-        It's up to the element to do any validation/restriction of pattern
+        same 'name', if multiple 'define' nodes use the same name.
+        It's up to the element to do any validation/restriction of parameter
         names/values."""
 
 
     tagFactory = Attribute(
-        """'ITemplateElementFactory' to be used for non-view child tags"""
+        """'IDOMletElementFactory' to be used for non-DOMlet child tags"""
     )
 
     textFactory = Attribute(
-        """'ITemplateNodeFactory' to be used for plain text child nodes"""
+        """'IDOMletNodeFactory' to be used for plain text child nodes"""
     )
 
     literalFactory = Attribute(
-        """'ITemplateNodeFactory' to be used for literals (e.g. comments,
+        """'IDOMletNodeFactory' to be used for literals (e.g. comments,
         processing instructions, etc.) within this element"""
     )
 
@@ -244,16 +244,16 @@ class ITemplateElement(ITemplateNode):
 
 
 
-class ITemplateElementFactory(Interface):
+class IDOMletElementFactory(Interface):
 
-    """Produce an 'ITemplateElement' from a source document element"""
+    """Produce an 'IDOMletElement' from a source document element"""
 
     def __call__(parentComponent, componentName,
         tagName=u'', attribItems=(), nonEmpty=False,
-        viewProperty=None, modelPath=None, patternName=None,
+        domletProperty=None, dataSpec=None, paramName=None,
         # XXX xmlns maps, parse info
     ):
-        """Create an ITemplateElement w/specified attribs, etc.
+        """Create an IDOMletElement w/specified attribs, etc.
 
         'tagName' -- the element tag name, exactly as it appeared in the source
         document
@@ -261,20 +261,20 @@ class ITemplateElementFactory(Interface):
         'attribItems' -- a list of '(name,value)' tuples representing the
         source document attributes for this element, in the order they were
         defined, and only the supplied attributes (i.e. no DTD-implied default
-        values).  Template markup attributes (view, model, pattern) are
+        values).  Template markup attributes (domlet and define) are
         excluded.
 
         'nonEmpty' -- indicates that this element should always have an open
         and close tag, even if it has no children.  This is to support HTML.
 
-        'viewProperty' -- the 'PropertyName' used to retrieve this factory
-        (minus the 'peak.web.views.' prefix), or None if the source document
-        didn't include a 'view' attribute.
+        'domletProperty' -- the 'PropertyName' used to retrieve this factory
+        (minus the 'peak.web.DOMlets.' prefix), or None if the source document
+        didn't specify a DOMlet factory.
 
-        'modelPath' -- a 'naming.CompoundName' representing the path specified
-        in the source document's 'model' attribute, or 'None' if not supplied.
+        'dataSpec' -- the data specifier from the source document's 'domlet'
+        attribute, or an empty string.
 
-        'patternName' -- the value of the 'pattern' attribute in the source
+        'paramName' -- the value of the 'define' attribute in the source
         document, or 'None' if not supplied.
 
         Note that only the first two arguments are positional; all others must
