@@ -5,7 +5,7 @@ from peak.util.hashcmp import HashAndCompare
 import interfaces
 from interfaces import *
 
-__all__ = ['And', 'Or',]
+__all__ = []
 
 class _expr:
 
@@ -39,15 +39,13 @@ class _expr:
 
 
 
-class ThetaJoin(HashAndCompare):
+class BasicJoin(HashAndCompare):
 
     protocols.advise(
         instancesProvide = [IRelationVariable],
     )
 
-    minRV = 2
-
-    def __init__(self,condition,*relvars):
+    def __init__(self,condition,relvars,outers=()):
         myrels = []
         for rv in relvars:
             if isinstance(rv,self.__class__):   # XXX
@@ -56,37 +54,31 @@ class ThetaJoin(HashAndCompare):
             else:
                 myrels.append(rv)
         myrels.sort()
-        if len(myrels)<self.minRV:
+        if len(myrels)<1:
             raise TypeError(
                 "%s requires at least %s relvar(s)" %
                 (self.__class__.__name__, self.minRV)
             )
         self.relvars = tuple(myrels)
+        outers = list(outers)
+        outers.sort()
+        self.outers = tuple(outers)
         self.condition = condition
-        self._hashAndCompare = self.__class__.__name__, condition, self.relvars
+        self._hashAndCompare = (
+            self.__class__.__name__, condition, self.relvars, self.outers
+        )
 
+    def starJoin(self,condition,*relvars):
+        return BasicJoin(condition & self.condition, self.relvars, relvars+self.outers)
 
     def thetaJoin(self,condition,*relvars):
-        return ThetaJoin(condition & self.condition, *(self.relvars+relvars))
+        return BasicJoin(condition & self.condition, (self.relvars+relvars), self.outers)
 
-    def select(self,condition):
-        return self.__class__(condition & self.condition, *self.relvars)
+    select = thetaJoin  # XXX
 
     def __repr__(self):
-        parms=(self.condition,)+self.relvars
+        parms=(self.condition,list(self.relvars),list(self.outers))
         return '%s%r' % (self._hashAndCompare[0], parms)
-
-
-
-
-
-class Select(ThetaJoin):
-
-    minRV = 1
-
-    def __init__(self,condition,relvar):
-        ThetaJoin.__init__(self,condition,relvar)
-
 
 class _compound(_expr,HashAndCompare):
 
@@ -110,6 +102,14 @@ class _compound(_expr,HashAndCompare):
 
     def __repr__(self):
         return '%s%r' % self._hashAndCompare
+
+
+
+
+
+
+
+
 
 
 
@@ -189,13 +189,13 @@ class RelvarWrapper(protocols.Adapter, HashAndCompare):
     def __repr__(self):
         return `self.subject`
 
-    def select(self,condition):
-        return Select(condition, self)
-
     def thetaJoin(self,condition,*relvars):
-        return ThetaJoin(condition,self,*relvars)
+        return BasicJoin(condition,(self,)+relvars)
 
+    def starJoin(self,condition,*relvars):
+        return BasicJoin(condition,(self,),relvars)
 
+    select = thetaJoin      # XXX
 
 
 

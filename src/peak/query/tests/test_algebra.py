@@ -4,7 +4,7 @@ from unittest import TestCase, makeSuite, TestSuite
 from peak.api import *
 from peak.tests import testRoot
 from peak.query.api import *
-from peak.query.algebra import ThetaJoin, Not, And, Or, Select
+from peak.query.algebra import BasicJoin, Not, And, Or
 
 class SimplificationAndEquality(TestCase):
 
@@ -96,8 +96,8 @@ class SimplificationAndEquality(TestCase):
         A,B,C,D = self.rvA, self.rvB, self.rvC, self.rvD
 
         self.assertEqual(
-            ThetaJoin(x,A,B).thetaJoin(y,C),
-            ThetaJoin(x&y,A,B,C)
+            A.thetaJoin(x,B).thetaJoin(y,C),
+            A.thetaJoin(x&y,B,C)
         )
 
         self.assertEqual(
@@ -113,13 +113,13 @@ class SimplificationAndEquality(TestCase):
         self.assertRaises(TypeError,Or)         # too few args
         self.assertRaises(TypeError,And)
         self.assertRaises(TypeError,Not)
-        self.assertRaises(TypeError,Select)
-        self.assertRaises(TypeError,ThetaJoin)
-        self.assertRaises(TypeError,ThetaJoin,x)
-        self.assertRaises(TypeError,ThetaJoin,x,A)
+        self.assertRaises(TypeError,BasicJoin)
+        self.assertRaises(TypeError,BasicJoin,x)
 
         self.assertRaises(TypeError,Not,x,y)    # too many args
-        self.assertRaises(TypeError,Select,x,A,B)
+
+
+
 
     def testSelectionAssociativity(self):
 
@@ -150,6 +150,47 @@ class SimplificationAndEquality(TestCase):
             A.select(y).thetaJoin(x,B),
             A.thetaJoin(x&y,B)
         )
+
+    def testJoinPreservation(self):
+
+        x,y,z = self.condX, self.condY, self.condZ
+        A,B,C,D = self.rvA, self.rvB, self.rvC, self.rvD
+
+        self.assertNotEquals(A.thetaJoin(x,A), A.thetaJoin(x,A,A))
+        self.assertNotEquals(A.starJoin(x,A), A.starJoin(x,A,A))
+
+
+
+
+    def testOuterJoinInequalities(self):
+
+        x,y,z = self.condX, self.condY, self.condZ
+        A,B,C,D = self.rvA, self.rvB, self.rvC, self.rvD
+
+        self.assertNotEqual( A.starJoin(x,B), B.starJoin(x,A)  )
+        self.assertNotEqual( A.starJoin(x,A), A.starJoin(x,B)  )
+        self.assertNotEqual( A.starJoin(x,B), A.thetaJoin(x,B)  )
+
+        self.assertEqual(
+            A.starJoin(x,B).starJoin(y,C),
+            A.starJoin(y,C).starJoin(x,B)
+        )
+
+        self.assertEqual(
+            A.thetaJoin(x,B).starJoin(y,C),
+            B.thetaJoin(x,A).starJoin(y,C)
+        )
+
+        self.assertEqual(
+            A.starJoin(y,C).thetaJoin(x,B),
+            A.thetaJoin(x,B).starJoin(y,C)
+        )
+
+
+
+
+
+
 
 
 

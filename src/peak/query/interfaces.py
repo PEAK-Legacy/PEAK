@@ -27,6 +27,9 @@ class IBooleanExpression(Interface):
     def __cmp__(other):
         """Boolean expressions must be comparable to each other"""
 
+    def __hash__(other):
+        """Boolean expressions must be hashable"""
+
     def __invert__():
         """Return the inverse ("not") of this expression"""
 
@@ -35,9 +38,6 @@ class IBooleanExpression(Interface):
 
     def __or__(expr):
         """Return the disjunction ("or") of this expression with 'expr'"""
-
-
-
 
 class IRelationCondition(IBooleanExpression):
 
@@ -81,7 +81,6 @@ class IRelationComparison(IRelationCondition):
 
 
 class IRelationVariable(Interface):
-
     """A relation variable (RV) in relational algebra"""
 
     def select(condition):
@@ -108,16 +107,21 @@ class IRelationVariable(Interface):
     def thetaJoin(condition,*relvars):
         """Return the theta-join of this RV with 'relvars' on 'condition'"""
 
-    def outerJoin(condition,relvar):
-        """Return the outer join of this RV with 'relvar' on 'condition'"""
+    def starJoin(condition,relvar):
+        """Outer join of this RV's "base" with 'relvar' on 'condition'
+
+        An RV's "base" is defined as the portion of the RV that does *not*
+        include any existing star joins.  Note: "star join" is a made-up term
+        here, intended to apply to the subset of outer joins that's needed to
+        implement conceptual queries."""
 
     def attributes():
         """Return a sequence of names of the relvar's columns (attributes)"""
 
+    def __cmp__(other):
+        """Relation variables must be comparable to each other"""
 
-
-
-
-
+    def __hash__(other):
+        """Relation variables must be hashable"""
 
 
