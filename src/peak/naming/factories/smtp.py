@@ -1,11 +1,13 @@
-from peak.naming.api import *
-from peak.naming.contexts import AbstractContext
+from peak.naming.api import ParsedURL
 
 import re, smtplib
 
 
 class smtpURL(ParsedURL):
 
+    def _defaultObjectFactory(self, refInfo, name, context, environment, attrs=None):
+        return smtplib.SMTP(refInfo.host, refInfo.port or smtplib.SMTP_PORT)
+    
     _supportedSchemes = ('smtp', )
 
     __fields__     = 'port','host','scheme','body','user','auth'
@@ -17,20 +19,3 @@ class smtpURL(ParsedURL):
         re.IGNORECASE
     )
 
-
-
-
-class smtpContext(AbstractContext):
-    _supportedSchemes = ('smtp', )
-    _makeName = smtpURL
-    
-    def _get(self, name, default=None, retrieve=1):
-        if retrieve:
-            return (RefAddr('smtp',name), None)
-        else:
-            return name
-
-
-
-def smtpFactory(refInfo, name, context, environment, attrs=None):
-    return smtplib.SMTP(refInfo.content.host, refInfo.content.port)

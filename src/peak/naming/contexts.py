@@ -3,13 +3,13 @@
 from interfaces import *
 from names import *
 from references import *
+from peak.binding.imports import importObject
 
 import spi
 
 _marker = object()
 
-__all__ = ['AbstractContext']
-
+__all__ = ['AbstractContext', 'GenericURLContext']
 
 
 
@@ -91,7 +91,7 @@ class AbstractContext(object):
                 
             else:
                 # convert to URL
-                name=toName('+:'+str(name), acceptURL=1)
+                name=OpaqueURL('+:'+str(name))
 
 
         if name.isURL:
@@ -231,7 +231,7 @@ class AbstractContext(object):
         if ctx is not self:
             return name in ctx
 
-        return self._get(name,_marker,None) is not _marker
+        return self._get(name, _marker, retrieve=False) is not _marker
 
 
     def lookup(self, name):
@@ -254,7 +254,7 @@ class AbstractContext(object):
 
     def info(self):
         """Return a sequence of (name,refInfo) pairs"""
-        return [ (name,self._get(name,retrieve=1))
+        return [ (name,self._get(name,retrieve=False))
                     for name in self
         ]
 
@@ -332,9 +332,9 @@ class AbstractContext(object):
 
         """Lookup 'name', returning 'default' if not found
 
-        If 'retrieve' is true, return a '(state,attrs)' tuple of
-        binding info.  Otherwise, return the key.  In either case,
-        return 'default' if the name is not bound.
+        If 'retrieve' is true, return a '(state,attrs)' tuple of binding info.
+        Otherwise, return any true value that is not 'default'.  In either
+        case, return 'default' if the name is not bound.
         """
 
         raise NotImplementedError
@@ -352,3 +352,58 @@ class AbstractContext(object):
 
     def _rename(self, old, new):
         raise NotImplementedError
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class GenericURLContext(AbstractContext):
+
+    """Handler for address-only URL namespaces"""
+
+    def _getParserFor(self, scheme):
+        from factories import schemeParsers
+        return importObject(schemeParsers.get(scheme.lower()))
+
+
+    def _getTargetCtx(self, name, iface=IBasicContext):
+
+        name = toName(name)
+
+        if name.isComposite:        
+            # convert to URL
+            name = OpaqueURL('+:'+str(name))
+
+        if name.isURL:
+            parser = self._getParserFor(name.scheme)
+            
+            if parser is not None:            
+                return self, parser.fromURL(name)
+
+            ctx = spi.getURLContext(
+                name.scheme, self, None, iface
+            )
+
+            if ctx is None:
+                raise InvalidNameException(
+                    "Unknown scheme %s in %r" % (name.scheme,name)
+                )
+
+            return ctx, name
+
+        raise InvalidNameException("Not a URL:", name)
+
+
+    def _get(self, name, default=None, retrieve=1):
+        return (name, None)     # refInfo, attrs
+    

@@ -7,7 +7,7 @@ from peak.util.Struct import struct
 
 __all__ = [
     'Name', 'toName', 'CompositeName', 'CompoundName', 'OpaqueURL',
-    'Syntax', 'UnspecifiedSyntax', 'NNS_NAME', 'ParsedURL'
+    'Syntax', 'UnspecifiedSyntax', 'NNS_NAME', 'ParsedURL', 'URLMatch'
 ]
 
 
@@ -121,7 +121,7 @@ class Name(tuple):
 
 
 
-_URLMatch = re.compile('([-+.a-z0-9]+):',re.I).match
+URLMatch = re.compile('([-+.a-z0-9]+):',re.I).match
 
 
 class OpaqueURL(struct):
@@ -136,7 +136,7 @@ class OpaqueURL(struct):
 
     def fromString(klass, name):
 
-        m = _URLMatch(name)
+        m = URLMatch(name)
 
         if m:
             scheme, body = m.group(1), name[m.end():]            
@@ -170,7 +170,7 @@ class ParsedURL(OpaqueURL):
 
     def fromString(klass, name):
 
-        m = _URLMatch(name)
+        m = URLMatch(name)
 
         if m:
             return klass.fromURL(OpaqueURL(name))
@@ -505,7 +505,7 @@ def toName(aName, nameClass=CompoundName, acceptURL=1):
     
     if isinstance(aName,StringTypes):
     
-        if acceptURL and _URLMatch(aName):
+        if acceptURL and URLMatch(aName):
             return OpaqueURL.fromString(aName)
 
         return nameClass(aName)
