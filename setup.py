@@ -125,7 +125,7 @@ setup(
 
     name="PEAK",
     version="0.2pre1",
-    description="The Python Enterprise Applications tool Kit",
+    description="The Python Enterprise Application Kit",
     
     author="Phillip J. Eby",
     author_email="transwarp@eby-sarna.com",
@@ -138,7 +138,9 @@ setup(
         'peak.naming', 'peak.naming.factories', 'peak.util',
 
         'peak.binding.tests',
-        'peak.metamodels.tests', 'peak.util.tests', 'peak.tests', 
+        'peak.metamodels.tests', 'peak.util.tests', 'peak.tests',
+
+        'Interface', 'Interface.Common', 'Interface.tests',
     ],
     
     package_dir = {'':'src'},
