@@ -6,7 +6,6 @@ PEAK Release 0.5 alpha 1
  Code quality varies between modules, from "beta" to "experimental
  pre-alpha".  :)
 
-
  Package Description
 
     PEAK is the "Python Enterprise Application Kit". If you develop
@@ -35,9 +34,10 @@ PEAK Release 0.5 alpha 1
     on building your application.
 
     PEAK tools can be used with other "Python Enterprise" frameworks such as
-    Zope and the Python DBAPI to construct web-based, GUI, or command-line
-    applications, interacting with any kind of storage, or with no storage
-    at all.  Whatever the application type, PEAK can help you put it together.
+    Zope, Twisted, and the Python DBAPI to construct web-based, GUI, or
+    command-line applications, interacting with any kind of storage, or with
+    no storage at all.  Whatever the application type, PEAK can help you put
+    it together.
 
  Package Features
 
@@ -47,7 +47,7 @@ PEAK Release 0.5 alpha 1
       components and thus more easily combine and "wire" them together.
 
     * A comprehensive configuration framework that allows accessing
-      "utilities" and "configuration properties" in-context.  Properties
+      "utilities" and "configuration properties" in context.  Properties
       and utilities can be loaded or computed on demand, supplied by rules,
       defined in configuration files or code, in a supplied or custom
       format.  Properties and utilities are contextual and can be safely
@@ -91,7 +91,7 @@ PEAK Release 0.5 alpha 1
       models created in the XML-based XMI format.  Many open-source and
       commercial modelling tools support XMI, inlcuding Argo/Poseidon and
       MagicDraw UML.  PEAK includes pre-built support for UML versions 1.3
-      and 1.4, CWM 1.1, and MOF 1.3.1, using XMI versions 1.0 through 1.2.
+      through 1.5, CWM 1.1, and MOF 1.3.1, using XMI versions 1.0 through 1.2.
       Also included, a MOF->Python code generator, which was used to generate
       the UML and CWM support, and which you can use to generate support for
       other modelling languages based on the MOF.
