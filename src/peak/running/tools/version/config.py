@@ -4,6 +4,7 @@ from cStringIO import StringIO
 from peak.storage.files import EditableFile
 from peak.util.FileParsing import AbstractConfigParser
 from peak.running.commands import AbstractCommand
+from peak.util.imports import importObject
 import os.path
 safe_globals = {'__builtins__':{}}
 
@@ -38,7 +39,6 @@ class IFormat(protocols.Interface):
 
 
 
-
 def tokenize(s):
     return list(iter(shlex(StringIO(s)).get_token,''))
 
@@ -47,8 +47,8 @@ def unquote(s):
         s = s[1:-1]
     return s
 
-
-
+PART_FACTORIES   = PropertyName('version-tool.partKinds')
+FORMAT_FACTORIES = PropertyName('version-tool.formatKinds')
 
 
 
@@ -123,8 +123,23 @@ class VersionStore(EditableFile, AbstractConfigParser):
 
 class Scheme(binding.Component):
 
-    parts = binding.requireBinding("IPartDefs of the versioning scheme")
-    formats = binding.requireBinding("dictionary of formats")
+    parts = binding.Once(
+        lambda s,d,a: [s.makePart(txt) for part in self.partDefs],
+        doc = "IPartDefs of the versioning scheme"
+    )
+
+    formats = binding.Once(
+        lambda s,d,a: dict(
+            [(name,self.makeFormat(name,txt))
+                for (name,txt) in self.formatDefs
+            ]
+        ),
+        doc = "dictionary of IFormat objects"
+    )
+
+    partDefs = binding.requireBinding("list of part definition directives")
+    formatDefs = binding.requireBinding("dictionary of format directives")
+
     defaultFormat = None
 
     partMap = binding.Once(
@@ -136,6 +151,16 @@ class Scheme(binding.Component):
             return self.partMap[key]
         except KeyError:
             return self.formats[key]
+
+
+
+
+
+
+
+
+
+
 
     def incr(self,data,part):
 
@@ -155,6 +180,63 @@ class Scheme(binding.Component):
                 d[p.name] = p.reset(d[p.name])
 
         return d
+
+
+    def makePart(self, directive):
+
+        args = tokenize(directive)
+        partName = args.pop(0)
+
+        if directive:
+            typeName = PropertyName.fromString(args.pop(0))
+        else:
+            typeName = 'digit'
+
+        factory = importObject(PART_FACTORIES.of(self).get(typeName,None))
+
+        if factory is None:
+            raise ValueError(
+                "Unrecognized part kind %r in %r" % (typeName,directive)
+            )
+        return factory(self, name=partName, args = args)
+
+
+
+
+    def makeFormat(self, name, directive):
+
+        args = tokenize(directive)
+        format = args[0]
+        if format.startswith('"') or format.startswith("'"):
+            format = 'string'
+        else:
+            args.pop(0)
+
+        factory = importObject(FORMAT_FACTORIES.of(self).get(format,None))
+
+        if factory is None:
+            raise ValueError(
+                "Unrecognized format kind %r in %r for format %r" %
+                (format,directive,name)
+            )
+        return factory(self, name=name, args = args)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -368,6 +450,7 @@ class Editor(binding.Component):
 
 
 class Match(binding.Component):
+
     """Thing that finds/updates version strings"""
 
     matchString = binding.requireBinding('string to match')
@@ -396,15 +479,55 @@ class Match(binding.Component):
             newPosn = foundOld + len(old)
             return newPosn
 
+
+
+
+
+
+
+
+
+
+
+
     def fromString(klass, text):
         """ZConfig constructor for 'Match' operator"""
-        return klass(matchString=text)
+
+        args = tokenize(text)
+        isOptional = (args[0].lower()=='optional')
+        if isOptional:
+            args.pop(0)
+
+        if not args:
+            raise ValueError("No match string defined in %r" % text)
+        elif len(args)>1:
+            raise ValueError("Too many match strings in %r" % args)
+
+        text, = args
+
+        if text.startswith("'") or text.startswith('"'):
+            text = text[1:-1]
+
+        return klass(matchString=text, isOptional=isOptional)
 
     fromString = classmethod(fromString)
 
-    def fromOptional(klass, text):
-        """ZConfig constructor for 'OptionalMatch' operator"""
-        return klass(matchString=text, isOptional=True)
 
-    fromOptional = classmethod(fromOptional)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 

@@ -59,25 +59,25 @@
         <description>
         A string to be matched in the file.  The string may contain '%(item)s'
         escapes that will be used to match or insert portions of a current
-        or updated version number.  You may supply more than one Match line, in
-        which case they must be listed in the same order that they will occur
-        in each edited file.  If any string listed by a Match line is not found
-        in any of the edited files, an error will occur, and no changes will be
-        made to any of the files.
-        </description>
-    </multikey>
+        or updated version number.  If the string contains any punctuation, you
+        must surround it with single or double quotes.  You may supply more
+        than one Match line, in which case they must be listed in the same
+        order that they will occur in each edited file.
 
-    <multikey
-        name="Optional-Match" attribute="edits2"
-        datatype=".config.Match.fromOptional">
-        <description>
-        Optional-Match is identical to Match, except that if the string is not
-        found in the file, it will not be updated, and no error will occur.
-        XXX this should not be using 'edits2' as an attribute
+        If any string listed by a Match line is not found in one of the edited
+        files, an error will occur, and no changes will be made to any of the
+        files.  (You can override this behavior for an individual string by
+        putting the word "optional" before the string you want to match, e.g.
+        "Match optional 'something I want to match'".
         </description>
     </multikey>
 
   </sectiontype>
+
+
+
+
+
 
 
   <sectiontype name="Module" datatype=".config.Module.fromZConfig">
@@ -166,7 +166,7 @@
         <description>
             Each line in a Formats section consists of a format name, followed
             by a definition.  See the description for the Formats section for
-            more information.   XXX this shouldn't be a string datatype
+            more information.
         </description>
     </multikey>
 
@@ -222,18 +222,18 @@
         </description>
     </key>
 
-    <multikey name="+" attribute="parts" datatype="string" required="yes">
+    <multikey name="part" attribute="partDefs" datatype="string" required="yes">
         <description>
-        XXX this shouldn't be a string datatype
         </description>
     </multikey>
 
-    <section name="*" type="Formats" attribute="formats" />
+    <section name="*" type="Formats" attribute="formatDefs" />
 
   </sectiontype>
 
 
 </component>
+
 
 
 
