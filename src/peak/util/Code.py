@@ -28,6 +28,7 @@ opcode = {}
 for code in range(256):
     name=opname[code]
     if name.startswith('<'): continue
+    if name.endswith('+0'): opcode[name[:-2]]=code
     opcode[name]=code
 
 globals().update(opcode) # opcodes are now importable at will
