@@ -787,7 +787,7 @@ class Classifier(Namespace):
 
             try:
                 f = getattr(klass,k)
-                s = f._setup    # XXX
+                s = f._setup    # XXX we should only check this for immutables
 
             except AttributeError:
                 raise TypeError(
@@ -795,9 +795,9 @@ class Classifier(Namespace):
                     (klass, k)
                 )
 
-            s(self,v)
-
-
+        for f in klass.mdl_features:
+            if f.attrName in __kw:
+                f._setup(self,__kw[f.attrName])
 
 
 

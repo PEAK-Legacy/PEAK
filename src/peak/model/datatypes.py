@@ -228,7 +228,7 @@ Integer.mdl_typeCode  = TypeCode(kind=TCKind.tk_longlong)
 
 Boolean.mdl_typeCode  = TypeCode(kind=TCKind.tk_boolean)
 
-String.mdl_typeCode   = TypeCode(kind=TCKind.tk_string)
+String.mdl_typeCode   = TypeCode(kind=TCKind.tk_string, length=0)
 
 Name.mdl_typeCode     = TypeCode(kind=TCKind.tk_alias,
                                  content_type=String.mdl_typeCode)
