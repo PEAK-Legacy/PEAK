@@ -18,7 +18,7 @@ from unittest import TestCase, makeSuite, TestSuite
 from peak.api import *
 from peak.tests import testRoot
 from peak.naming.factories import openable
-
+from urllib import quote
 
 
 
@@ -254,9 +254,9 @@ class OpenableTests(TestCase):
         factory = testRoot().lookupComponent('data:,abcdefg')
         assert factory.open('b').read() == "abcdefg"
 
-
-
-
+        factory = testRoot().lookupComponent('data:;base64,'
+            +quote('abcdefg'.encode('base64')))
+        assert factory.open('b').read() == "abcdefg"
 
 
 

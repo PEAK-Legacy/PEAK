@@ -257,7 +257,6 @@ class ConstantStream(object):
         self.address = "data:,"+quote(text)
         self.text = text
 
-
     def open(self,mode,seek=False,writable=False,autocommit=False):
 
         if writable:
@@ -280,10 +279,11 @@ class ConstantStream(object):
 
     def getObjectInstance(klass, context, refInfo, name, attrs=None):
         url, = refInfo.addresses
-        return klass(url.data)
-
+        text = url.data
+        if 'base64' in url.parameters:
+            text = text.decode('base64')
+        return klass(text)
     getObjectInstance = classmethod(getObjectInstance)
-
 
 class ImportLoaderFactory(ConstantStream):
     """Stream factory for data loaded by a PEP 302 import loader"""
