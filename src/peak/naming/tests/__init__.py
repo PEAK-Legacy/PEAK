@@ -103,13 +103,13 @@ class NameParseTest(TestCase):
             for (k,v) in values:
                 assert getattr(obj,k)==v, (k,getattr(obj,k),v)
 
-
-
-
-
-
-
-
+    def checkNotFound(self):
+        try:
+            testRoot().lookupComponent('noSuchNameShouldBeFound')
+        except exceptions.NameNotFound:
+            pass
+        else:
+            raise AssertionError("Should've raised NameNotFound")
 
 
 

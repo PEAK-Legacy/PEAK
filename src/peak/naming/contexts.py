@@ -165,9 +165,7 @@ class NameContext(Component):
     def _resolveLocal(self, name, iface):
 
         if len(name)<2:
-            ob, name = self._checkSupported(name, iface)
-            if ob is not self:
-                return ob,name
+            return self._checkSupported(name, iface)
 
         try:
             ctx = self[name[:1]]
@@ -197,6 +195,8 @@ class NameContext(Component):
         else:
             ctx = self.__class__(self, namingAuthority=auth)
             return ctx.resolveToInterface(nic, iface)
+
+
 
 
 
@@ -339,7 +339,7 @@ class NameContext(Component):
             info = self._get(name)
 
         if info is NOT_FOUND:
-            raise exceptions.NameNotFound(name)
+            raise exceptions.NameNotFound(name) # XXX exception needs more info
 
         state, attrs = info
         if isinstance(state,LinkRef):
@@ -357,7 +357,7 @@ class NameContext(Component):
 
         obj = self._getOb(name)
         if obj is NOT_FOUND:
-            raise exceptions.NameNotFound(name)
+            raise exceptions.NameNotFound(name) # XXX exception needs more info
 
         return obj
 
@@ -571,6 +571,47 @@ class NameContext(Component):
 
     def _rename(self, old, new):
         raise NotImplementedError
+
+class EmptyContext(NameContext):
+
+    """A naming context that doesn't contain anything, but can handle URLs"""
+
+    protocols.advise(
+        instancesProvide = [IReadContext]
+    )
+
+    def _get(self, name, retrieve=True):
+        return NOT_FOUND
+
+    def __iter__(self):
+        return iter(())
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 class AddressContext(NameContext):
 
