@@ -292,38 +292,54 @@ def callableAsFactory(ob,proto=None):
     if not callable(ob):
         raise NotImplementedError("Object must be callable",ob)
 
-    def factory(**kw):
+    def factory(parentComponent=NOT_GIVEN, componentName=None, **kw):
+        if parentComponent is not NOT_GIVEN:
+            kw['parentComponent']=parentComponent
+        if componentName is not None:
+            kw['componentName']=componentName
         kw.setdefault('invoke',ob)
         return CallableAsCommand(**kw)
 
     protocols.adviseObject(factory, provides=[ICmdLineAppFactory])
     return factory
 
+
 def appAsFactory(app,proto=None):
 
     """Convert an 'ICmdLineApp' to an 'ICmdLineAppFactory'"""
 
-    def factory(**kw):
+    def factory(parentComponent=NOT_GIVEN, componentName=None, **kw):
+        if parentComponent is not NOT_GIVEN:
+            kw['parentComponent']=parentComponent
+        if componentName is not None:
+            kw['componentName']=componentName
         kw.setdefault('invoke',app.run)
         return CallableAsCommand(**kw)
 
     protocols.adviseObject(factory, provides=[ICmdLineAppFactory])
     return factory
 
+
+
+
+
+
+
+
 def rerunnableAsFactory(runnable,proto=None):
 
     """Convert an 'IRerunnable' to an 'ICmdLineAppFactory'"""
 
-    def factory(**kw):
+    def factory(parentComponent=NOT_GIVEN, componentName=None, **kw):
+        if parentComponent is not NOT_GIVEN:
+            kw['parentComponent']=parentComponent
+        if componentName is not None:
+            kw['componentName']=componentName
         kw.setdefault('runnable',runnable)
         return RerunnableAsCommand(**kw)
 
     protocols.adviseObject(factory, provides=[ICmdLineAppFactory])
     return factory
-
-
-
-
 
 
 protocols.declareAdapter(
@@ -343,22 +359,6 @@ protocols.declareAdapter(
     provides=[ICmdLineAppFactory],
     forProtocols=[IRerunnable]
 )
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
