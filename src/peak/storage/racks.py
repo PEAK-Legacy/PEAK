@@ -221,12 +221,12 @@ class AbstractRack(TransactionComponent):
 
 
     def commitTransaction(self, txnService):
-        self.committed.clear()
+        self.saved.clear()
 
 
     def abortTransaction(self, txnService):
 
-        for set in self.dirty, self.committed:
+        for set in self.dirty, self.saved:
             for ob in set.values():
                 ob._p_deactivate()
 
