@@ -675,10 +675,11 @@ class XMI_DM(storage.EntityDM):
 
 
     def getClass(self,name):
-        if ':' in name:
-            return getattr(self.metamodel,name.split(':',1)[1])
-        return getattr(self.metamodel,name.split('.')[-1])
-
+        name = name.split(':',1)[-1].replace('.','/')       
+        try:
+            return getattr(self.metamodel, name.split('/')[-1])
+        except AttributeError:
+            return binding.lookupComponent('./'+name,self.metamodel)
 
     def getFeature(self,klass,name):    # XXX
 
@@ -692,7 +693,6 @@ class XMI_DM(storage.EntityDM):
         else:
             name = name.split('.')[-1]
             return getattr(klass,name,None)  
-
 
 
     def _load(self, oid, ob):
