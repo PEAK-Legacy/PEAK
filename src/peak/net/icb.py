@@ -88,8 +88,6 @@ class IICBListener(Interface):
 
 
 
-=======
->>>>>>> 1.3
 class ICBConnection(StreamProto):
     address = binding.Require(
         "Address used to create the actual connection",
@@ -284,7 +282,6 @@ class IICBListener(Interface):
 
 
 
->>>>>>> 1.3
 class ICBListenerBase(binding.Component):
     connection = binding.Require(
         "Connection we're listening to",
