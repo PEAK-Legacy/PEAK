@@ -2,18 +2,17 @@ Open Issues/To-Do Items
 
  Targeted for 0.5 Alpha 1
 
-    * CGI/FastCGI Framework - PEAK should be able to run simple "hello world"
-      apps under the Zope X3 milestone release, with a basic publication that
-      includes PEAK transaction support.  Traversing will be Bobo/ZPublisher 
-      legacy style, to be replaced with something more sophisticated in later
-      releases (note that this release will NOT include security support).
+    * "Assembly Events" - have a way for root components to notify subcomponents that
+      they are connected to a root.  This is important for things like periodic tasks,
+      GUI components, etc., that need to perform actions as soon as they are part of
+      a valid "whole".
 
     * ZConfig Integration
 
       - A 'config.ZConfigurable' mixin class that gives you a 'fromZConfig()'
-        constructor for your object classes, suitable for designating as a 
+        constructor for your object classes, suitable for designating as a
         section datatype in schemas
-  
+
       - A 'config.ZConfig' module that provides "PEAK-aware" versions of ZConfig
         services (e.g. it will use 'peak.naming' to resolve URLs)
 
@@ -23,10 +22,11 @@ Open Issues/To-Do Items
       - Support for 'urllib2' protocols will be added to 'peak.naming' so that
         it can be used as the basis for the ZConfig services.
 
-    * PEAK will use 'zope.interface' and 'persistence', installing its own
-      copies if Zope X3 isn't on 'sys.path' at install time.
+      - App startup tools based on ZConfig files.
 
-    * App startup tools based on ZConfig and PEAK-style .ini files.
+
+
+
 
 
 
@@ -41,28 +41,28 @@ Open Issues/To-Do Items
 
  Targeted for 0.5 Alpha 2
 
+    * Fix issue w/reading XMI 1.1 files where metamodel has nested packages
+
     * Generate UML 1.4 and 1.5 and CWM 1.0 and 1.1, and add them to the
       'setup.py' package lists.
 
-    * Fix issue w/reading XMI 1.1 files where metamodel has nested packages
-
     * Get XMI writing in place, w/transaction support
 
-    * On-the-fly class combination (think "runtime module inheritance",
-      without the modules) for DMs.
-
-    * ZConfig support, probably in the form of generating ZConfig schemas
-      from 'peak.model' or MOF models, but maybe in the form of 'fromZConfig'
-      constructor methods as well.
+    * Generate ZConfig schemas from 'peak.model' or MOF models?
 
     * 'peak.running' refactorings: use standard 'logging' module's log levels,
        add 'logging' distro to 'peak.util' for 2.2 backward compatibility,
        make daemons based on 'peak.model' (or at least define ZConfig schemas),
        and possibly adjust cluster stuff to work off ZConfig primary and
-       generate clustertools file(s).  
+       generate clustertools file(s).
 
     * 'peak.naming' refactorings: 'peak.model'-based syntax utilities for
        creating address syntaxes.
+
+
+
+
+
 
 
 
@@ -89,6 +89,9 @@ Open Issues/To-Do Items
       'peak.config', 'peak.exceptions', and 'peak.naming'.
 
     * Finish tutorial chapter 2 (?)
+
+    * On-the-fly class combination (think "runtime module inheritance",
+      without the modules) for DMs.
 
 
 
