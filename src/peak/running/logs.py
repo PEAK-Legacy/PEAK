@@ -1,5 +1,5 @@
 from peak.binding.components import Component, Once, New, findUtilities
-from peak.api import binding, config, NOT_GIVEN, PropertyName
+from peak.api import binding, config, naming, NOT_GIVEN, PropertyName
 from time import time, localtime, strftime
 import sys, os, traceback
 from socket import gethostname
@@ -42,7 +42,13 @@ syslog_scale = (
 from Interface import Interface
 
 class ILogSink(Interface):
-    pass
+    def sink(event):
+        """Attempt to handle the event.
+
+        Returns true if the event was consumed, else false"""
+
+        pass
+
 
 class ILogEvent(Interface):
     pass
@@ -130,7 +136,7 @@ class Event(Component):
             return
             
         for sink in findUtilities(ILogSink, publishTo):  # XXX need interface
-            if sink(self):
+            if sink.sink(self):
                 return  # if absorbed, we're done
 
         # If no logger absorbed us, go to stderr
@@ -161,13 +167,76 @@ class Event(Component):
         
 
 
+class logfileURL(naming.ParsedURL):
+
+    _supportedSchemes = ('logfile', )
+    
+    def __init__(self, scheme=None, body=None, filename=None, level=None):
+        self.setup(locals())
+
+    def parse(self, scheme, body):
+        
+        filename, _qs = body, {}
+        
+        if '?' in filename:
+            filename, _qs = filename.split('?', 1)
+
+            _qs = dict([x.split('=', 1) for x in _qs.split('&')])
+            
+        level = _qs.get('level', 'PRI_NOTICE').upper()
+        if not level.startswith('PRI_') and not level.startswith('LOG_'):
+            level = 'PRI_' + level
+
+        level = globals()[level] # XXX
+        
+        return locals()
+
+
+    def retrieve(self, refInfo, name, context, attrs=None):
+        return Logfile(self.filename, self.level)
+
+        
+
+class LogSink:
+    __implements__ = ILogSink
+    
+    def sink(self, event):
+        return True
+        
+    def __call__(self, priority, msg, ident=None):
+        if type(msg) is type(()):
+            e = Event('ERROR', exc_info = msg)
+        else:
+            e = Event(msg, priority=priority)
+
+        if ident is not None:
+            e.ident = ident
+            
+        self.sink(e)
+
+
+
+class Logfile(LogSink):
+    def __init__(self, filename, level):
+        self.filename, self.level = filename, level
+        
+    def fp(self, *x):
+        return open(self.filename, "a")
+
+    fp = binding.Once(fp)
+    
+    def sink(self, event):
+        if event.priority >= self.level:
+            self.fp.write(event.asString)
+            self.fp.flush()
+
+        return True
+        
 
 '''TODO:
 
     * Flesh out ILogSink, ILogEvent, and docs here and in peak.api
     
-    * LogFile object and ParsedURL
-
     * Dump formatted kwargs as part of the standard log format
 
     * SysLog and LogTee objects/URLs (low priority; we don't seem to use
