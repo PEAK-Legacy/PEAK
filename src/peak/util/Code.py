@@ -471,6 +471,26 @@ class codeIndex(object):
         nextSplit[b] -- offset of next "safe code split point" following 'b'
     """
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     def __init__(self, codeObject):
 
         self.code = codeObject
@@ -481,15 +501,36 @@ class codeIndex(object):
         operand = self.operand = []; addArg = operand.append
         offset = self.offset = [];   addOfs = offset.append
 
-        p=0; cursor = iter(codeObject)
+        p=0
 
-        for op in cursor:
-            addOp(op); addArg(cursor.arg); addOfs(cursor.start); addLoc[op](p)
+        ca = codeObject.co_code
+        end = 0
+        l = len(ca)
+        start = end
+
+        while end < l:
+            
+            op = ca[start]
+            
+            if op>=HAVE_ARGUMENT:
+                arg = ca[start+1] | ca[start+2]<<8
+                if op==EXTENDED_ARG:
+                    op = ca[start+3]
+                    end = start+6
+                    arg <<= 16
+                    arg += (ca[start+4] | ca[start+5]<<8)
+                else:
+                    end = start+3
+            else:
+                arg = None
+                end = start+1
+
+            addOp(op); addArg(arg); addOfs(start); addLoc[op](p)
             p += 1
+
+            start = end
             
     _bindAll(__init__)
-
-
 
     def byteLine(self):
         """Property: line number for each byte"""
