@@ -60,7 +60,7 @@ class EMPTY(binding.Singleton):
     def __or__(self,other):
         return other
 
-    def simpleSQL(self):
+    def simpleSQL(self,driver):
         return ''
 
 
@@ -74,6 +74,47 @@ class PhysicalDB(binding.Component):
 
     def __getitem__(self,name):
         return Table(name,self.tableMap[name],self)
+
+
+
+
+
+
+class SQLDriver:
+
+    def __init__(self,query):
+        d = {}; ct=1
+        rvs = [(rv.name,rv) for rv in query.getInnerRVs()]  # XXX outer, nested
+        rvs.sort()
+        for name,rv in rvs:
+            ltr = name[0].upper()
+            d[rv] = "%s%d" % (ltr,ct)
+            ct+=1
+        self.aliases = d
+
+    def getAlias(self,RV):
+        return self.aliases[RV]
+
+    def getFromDef(self,RV):
+        # XXX should handle RV being non-table
+        return "%s AS %s" % (RV.name,self.getAlias(RV))
+
+    def sqlize(self,arg):
+        v = adapt(arg,IRelationAttribute,None)
+
+        if v is not None:
+            return v.simpleSQL(self)
+
+        return `arg`
+
+
+
+
+
+
+
+
+
 
 
 
@@ -140,7 +181,7 @@ class Table:
     def keys(self):
         return self.columns.keys()
 
-    def simpleSQL(self):
+    def simpleSQL(self,driver=None):
         return "SELECT * FROM %s" % self.name
 
 
@@ -178,8 +219,8 @@ class Column:
     def getDB(self):
         return self.table.getDB()
 
-    def simpleSQL(self):
-        return self.table.name+'.'+self.name
+    def simpleSQL(self,driver):
+        return driver.getAlias(self.table)+'.'+self.name
 
     def eq(self,dv):
         return Cmp(self,'=',dv)
@@ -285,45 +326,45 @@ class BasicJoin(Table, HashAndCompare):
 
 
 
-    def simpleSQL(self):
-
+    def simpleSQL(self,driver=None):
+        if driver is None:
+            driver = SQLDriver(self)
         columnNames = []
+        remainingColumns = self.columns
 
         for tbl in self.relvars:
 
             tblCols = tbl.attributes()
-            shownCols = tblCols & self.columns
+            outputSubset = remainingColumns * kjSet(tblCols.values())
+            remainingColumns = remainingColumns - outputSubset
 
-            if shownCols==tblCols:
-                columnNames.append(tbl.name+".*")
+            if outputSubset==tblCols:
+                # All names in table are kept as-is, so just use '*'
+                columnNames.append(driver.getAlias(tbl)+".*")
                 continue
 
-            for name,col in (~(kjSet(tblCols.values())*~self.columns)).items():
-                sql = col.simpleSQL()
+            # For all output columns that are in this table...
+            for name,col in outputSubset.items():
+                sql = col.simpleSQL(driver)
                 if name<>col.name:
                     sql='%s AS %s' % (sql,name)
                 columnNames.append(sql)
 
-        tablenames = [tbl.name for tbl in self.relvars]
+        for name,col in remainingColumns.items():
+            raise NotImplementedError("Leftover (computed) columns")
+            # XXX columnNames.append('%s AS %s' % (col.simpleSQL(driver),name))
+
+        tablenames = [driver.getFromDef(tbl) for tbl in self.relvars]
         tablenames.sort()
 
         columnNames.sort()
         sql = "SELECT "+", ".join(columnNames)+" FROM "+", ".join(tablenames)
 
-        condSQL = self.condition.simpleSQL()
+        condSQL = self.condition.simpleSQL(driver)
         if condSQL:
             sql += " WHERE " + condSQL
 
         return sql
-
-
-
-
-
-
-
-
-
 
 
 class _compound(_expr,HashAndCompare):
@@ -378,8 +419,8 @@ class And(_compound):
     def __invert__(self):
         return Or(*tuple([~op for op in self.operands]))
 
-    def simpleSQL(self):
-        return ' AND '.join([op.simpleSQL() for op in self.operands])
+    def simpleSQL(self,driver):
+        return ' AND '.join([op.simpleSQL(driver) for op in self.operands])
 
 class Or(_compound):
 
@@ -392,8 +433,8 @@ class Or(_compound):
     def __invert__(self):
         return And(*tuple([~op for op in self.operands]))
 
-    def simpleSQL(self):
-        return '('+' OR '.join([op.simpleSQL() for op in self.operands])+')'
+    def simpleSQL(self,driver):
+        return '('+' OR '.join([op.simpleSQL(driver) for op in self.operands])+')'
 
 class Not(_compound):
 
@@ -404,8 +445,8 @@ class Not(_compound):
     def __invert__(self):
         return self.operands[0]
 
-    def simpleSQL(self):
-        return 'NOT (%s)' % self.operands[0].simpleSQL()
+    def simpleSQL(self,driver):
+        return 'NOT (%s)' % self.operands[0].simpleSQL(driver)
 
 
 class Cmp(_expr, HashAndCompare):
@@ -431,14 +472,14 @@ class Cmp(_expr, HashAndCompare):
     def __repr__(self):
         return 'Cmp%r' % (self.arg1,self.op,self.arg2)
 
-    def simpleSQL(self):
-        return '%s%s%s' % (self.sqlize(self.arg1),self.op,self.sqlize(self.arg2))
+    def simpleSQL(self,driver):
+        return '%s%s%s' % (
+            driver.sqlize(self.arg1),self.op,driver.sqlize(self.arg2)
+        )
 
-    def sqlize(self,arg):
-        v = adapt(arg,IRelationAttribute,None)
-        if v is not None:
-            return v.simpleSQL()
-        return `arg`
+
+
+
 
 
 

@@ -4,7 +4,7 @@ from protocols import Interface
 
 __all__ = [
     'IRelationVariable', 'IRelationCondition', 'IBooleanExpression',
-    'IRelationAttribute', 'IRelationComparison',
+    'IRelationAttribute', 'IRelationComparison', 'ISQLDriver',
 ]
 
 
@@ -137,7 +137,11 @@ class IRelationVariable(Interface):
         """Relation variables must be hashable"""
 
 
+class ISQLDriver(Interface):
+    """Helper object for SQL generation"""
 
+    def getAlias(RV):
+        """Get an alias name for the specified RV"""
 
 
 
