@@ -137,7 +137,7 @@ class Scheduler(binding.Component,events.Scheduler):
 
     def _callAt(self, what, when):
         self.isEmpty.set(False)
-        self.reactor.callLater(when-self.now(), what, self, when)
+        self.reactor.callLater(max(0,when-self.now()), what, self, when)
 
 
 
