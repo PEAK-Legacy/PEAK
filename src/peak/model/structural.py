@@ -227,49 +227,49 @@ class StructuralFeature(object):
     )
 
     def get(feature, element):
-        value = element._getBinding(feature.implAttr, feature.defaultValue)
-        if value is NOT_GIVEN:
-            raise AttributeError,feature.attrName
-        return value
+
+        l = feature._getList(element)
+        if feature.isMany:
+            return l
+        
+        if not l:
+            value = feature.defaultValue
+
+            if value is NOT_GIVEN:
+                raise AttributeError,feature.attrName
+            return value
+
+        return l[0]
+
+
+
 
     def _assertChangeable(feature):
         if not feature.isChangeable:
             raise AttributeError("Unchangeable feature", feature.attrName)
 
+
     def set(feature, element, val):
         feature._assertChangeable()
         element._setBinding(feature.implAttr,val)
+
 
     def unset(feature, element):
         feature._assertChangeable()
         element._delBinding(feature.implAttr)
 
-class Field(StructuralFeature):
-
-    upperBound = 1
 
     def _getList(feature, element):
-        return [feature.get(element)]
 
+        if feature.isMany:
+            return element._getBinding(feature.implAttr, [])
 
+        value = element._getBinding(feature.implAttr, NOT_GIVEN)
 
-class structField(Field):
+        if value is NOT_GIVEN:
+            return []
 
-    """An unchangeable field; used for immutables"""
-
-    isChangeable = binding.classAttr( binding.Constant(None, False) )
-
-
-
-
-
-
-
-
-
-
-
-
+        return [value]
 
 
 
@@ -298,31 +298,31 @@ class Collection(StructuralFeature):
         insertBefore = 'insert%(initCap)sBefore',
     )
 
-    def _getList(feature, element):
-        return element._getBinding(feature.implAttr, [])
-        
-    def get(feature, element):
-        return feature._getList(element)
 
     def set(feature, element, val):
         feature.__delete__(element)
-        map(feature.getMethod(element,'add'),val)
+        if feature.isMany:
+            map(feature.getMethod(element,'add'),val)
+        else:
+            feature.getMethod(element,'add')(val)
 
 
     def add(feature, element, item):
         """Add the item to the collection/relationship"""      
-
-        ub = feature.upperBound
-
-        if not ub or len(feature._getList(element))<ub:
-            feature._notifyLink(element,item)
-        else:
-            raise ValueError("Too many items")
+        feature._notifyLink(element,item)
 
 
     def remove(feature, element, item):
         """Remove the item from the collection/relationship, if present"""
         feature._notifyUnlink(element,item)
+
+
+
+
+
+
+
+
 
 
 
@@ -376,6 +376,7 @@ class Collection(StructuralFeature):
             otherEnd = getattr(item.__class__,referencedEnd)
             otherEnd._link(item,element)
 
+
     def _notifyUnlink(feature, element, item, posn=None):
 
         feature._unlink(element,item,posn)
@@ -389,7 +390,16 @@ class Collection(StructuralFeature):
     def _link(feature,element,item,posn=None):
 
         feature._assertChangeable()
+
+        ub = feature.upperBound
         d=feature._getList(element)
+
+        if ub and len(d)>=ub:
+            raise ValueError("Too many items")
+
+        if ub==1:
+            return element._setBinding(feature.implAttr, item)
+
         element._setBinding(feature.implAttr, d)
 
         if posn is None:
@@ -397,9 +407,14 @@ class Collection(StructuralFeature):
         else:
             d.insert(posn,item)
 
+
     def _unlink(feature,element,item,posn=None):
 
         feature._assertChangeable()
+
+        if not feature.isMany:
+            return element._delBinding(feature.implAttr)
+
         d=feature._getList(element)
         element._setBinding(feature.implAttr, d)
 
@@ -407,6 +422,7 @@ class Collection(StructuralFeature):
             d.remove(item)
         else:
             del d[posn]
+
 
     def insertBefore(feature, element, oldItem, newItem):
 
@@ -433,43 +449,23 @@ class Collection(StructuralFeature):
 
 
 
+class Field(StructuralFeature):
+
+    upperBound = 1
 
 
 
+class structField(Field):
 
+    """An unchangeable field; used for immutables"""
 
-
-
-
-
-
-
-
-
+    isChangeable = binding.classAttr( binding.Constant(None, False) )
 
 
 
 class Reference(Collection):
 
     upperBound = 1
-
-    def get(feature, element):
-
-        vals = feature._getList(element)
-
-        if vals:
-            return vals[0]
-
-        val = feature.defaultValue
-
-        if val is NOT_GIVEN:
-            raise AttributeError,feature.attrName
-
-        return val
-
-    def set(feature, element, val):
-        feature.__delete__(element)
-        feature.getMethod(element,'add')(val)
 
 
 
@@ -485,9 +481,13 @@ class DerivedAssociation(Collection):
         return feature._getList(element)
         
 
+
 class Sequence(Collection):
 
     isOrdered = True
+
+
+
 
 
 class ClassifierClass(Namespace.__class__):
@@ -666,6 +666,35 @@ class ImmutableClass(ClassifierClass):
         super(ImmutableClass,klass).__init__(name,bases,dict)
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 class Immutable(Classifier, HashAndCompare):
 
     __metaclass__  = ImmutableClass
@@ -692,8 +721,20 @@ class Immutable(Classifier, HashAndCompare):
     def _setBinding(self,attr,value):
         raise TypeError("Immutable object", self)
 
+    def _delBinding(self,attr):
+        raise TypeError("Immutable object", self)
+
     def __setattr__(self,attr,value):
         raise TypeError("Immutable object", self)
+
+
+
+
+
+
+
+
+
 
 class PrimitiveTypeClass(ClassifierClass):
 

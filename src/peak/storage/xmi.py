@@ -295,12 +295,14 @@ class XMINode(object):
             f = dm.getFeature(klass, attr)
             if f is None: continue
 
-            if not f.isReference:
-                d[f.attrName] = f.fromString(val)
+            if f.isReference:
+                obs = [dm[('xmi.id',n)] for n in val.split()]
+                if f.isMany:
+                    d.setdefault(f.implAttr,[]).extend(obs)
+                else:
+                    d[f.implAttr], = obs    # XXX
             else:
-                d.setdefault(f.attrName,[]).extend(
-                    [dm[('xmi.id',n)] for n in val.split()]
-                )
+                d[f.implAttr] = f.fromString(val)
 
         for node in self.subNodes:
 
@@ -308,40 +310,38 @@ class XMINode(object):
             f = dm.getFeature(klass, node._name)
             if f is None: continue
 
-            if not f.isReference:
-                d[f.attrName] = node.getValue(f, dm)
+            if f.isReference:
+                obs = [dm[n.getRef()] for n in node.subNodes]
+                if f.isMany:
+                    d.setdefault(f.implAttr,[]).extend(obs)
+                else:
+                    d[f.implAttr], = obs    # XXX
             else:
-                d.setdefault(f.attrName,[]).extend(
-                    [dm[n.getRef()] for n in node.subNodes]
-                )
+                d[f.implAttr] = node.getValue(f, dm)
+
 
         coll = self.parent
         if coll is None: return d
         owner = coll.parent
         if owner is None: return d
 
+
         owner = dm[owner.getRef()]
         f = dm.getFeature(owner.__class__, coll._name)
 
         other = f.referencedEnd
 
-
         if other:
-            d['__xmi_parent_attr__'] = pa = getattr(klass,other).attrName
-            d.setdefault(pa,[owner])
+
+            f = getattr(klass,other)
+            d['__xmi_parent_attr__'] = pa = f.implAttr
+
+            if f.isMany:
+                d.setdefault(pa,[owner])
+            else:
+                d.setdefault(pa,owner)
 
         return d
-
-
-
-
-
-
-
-
-
-
-
 
 
 
