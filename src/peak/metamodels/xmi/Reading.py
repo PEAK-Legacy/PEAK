@@ -171,8 +171,10 @@ class XMIMapMaker_Meta(type):
         xm = {}
 
         for attName in dir(klass):
-            for k in getattr(getattr(klass,attName),'_XMINames',()):
-                xm[k] = attName
+            # work around Python 2.2 bug #575229 by skipping __weakref__
+            if attName!='__weakref__':
+                for k in getattr(getattr(klass,attName),'_XMINames',()):
+                    xm[k] = attName
 
         klass._XMIMap = xm
 
@@ -180,7 +182,6 @@ class XMIMapMaker_Meta(type):
 class XMIMapMaker:
 
     __metaclass__ = XMIMapMaker_Meta
-
 
 
 
