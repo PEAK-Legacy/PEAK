@@ -4,6 +4,7 @@ from interfaces import *
 from names import *
 from references import *
 from peak.binding.imports import importObject
+from peak.binding.components import Component
 
 import spi
 
@@ -38,45 +39,44 @@ __all__ = ['AbstractContext', 'GenericURLContext']
 
 
 
-
-class AbstractContext(object):
+class AbstractContext(Component):
 
     __implements__ = IBasicContext
 
-    _envShared = 1
     _supportedSchemes = ()
+
     _acceptURLs = 1
+
     _makeName = CompoundName
+
     _allowCompositeNames = 0
-    
-    def __init__(self, env):
-        self._environ = env
-
-    def _beforeEnvWrite(self, key, value=_marker):
-        if not self._envShared: return
-        self._environ = self._environ.copy()
-        self._envShared = 0
 
 
-    def addToEnvironment(self, key, value):
-        self._beforeEnvWrite(key,value)
-        self._environ[key] = value
-
-    def removeFromEnvironment(self, key):
-        self._beforeEnvWrite(key)
-        del self._environ[key]
-
-    def getEnvironment(self):
-        if not self._envShared: self._envShared = 1
-        return self._environ
-
+    def __init__(self, parent=None, **kw):
+        if kw:
+            self.__dict__.update(kw)
+        if parent is not None:
+            self.setParentComponent(parent)
 
     def close(self):
-        if hasattr(self,'_environ'):
-            del self._environ
+        pass
 
-    def copy(self):
-        return self.__class__(self.getEnvironment())
+    def __del__(self):
+        self.close()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -103,9 +103,7 @@ class AbstractContext(object):
 
                 return self, name
 
-            ctx = spi.getURLContext(
-                name.scheme, self, None, iface
-            )
+            ctx = spi.getURLContext(name.scheme, self, iface)
 
             if ctx is None:
                 raise InvalidNameException(
@@ -115,6 +113,8 @@ class AbstractContext(object):
             return ctx, name
 
         return self, name
+
+
 
 
 
@@ -165,7 +165,7 @@ class AbstractContext(object):
     def _deref(self, state, name, attrs=None):
 
         return spi.getObjectInstance(
-            state, name, self, self.getEnvironment(), attrs
+            state, name, self, attrs
         )
 
 
@@ -297,7 +297,7 @@ class AbstractContext(object):
         else:
             
             state,bindattrs = spi.getStateToBind(
-                object,name,self,self.getEnvironment(),attrs
+                object,name,self,attrs
             )
 
             self._bind(name, state, bindAttrs)
@@ -341,25 +341,25 @@ class AbstractContext(object):
 
 
     def __iter__(self):
-        """Return an iterator of the names present in the context"""
+        """Return an iterator of the names present in the context
+
+        Note: must return names which are directly usable by _get()!  That is,
+        ones which have already been passed through toName() and/or
+        self._makeName().
+        """        
         raise NotImplementedError
+
 
     def _bind(self, name, state, attrs=None):
         raise NotImplementedError
 
+
     def _unbind(self, name):
         raise NotImplementedError
 
+
     def _rename(self, old, new):
         raise NotImplementedError
-
-
-
-
-
-
-
-
 
 
 
@@ -390,9 +390,7 @@ class GenericURLContext(AbstractContext):
             if parser is not None:            
                 return self, parser.fromURL(name)
 
-            ctx = spi.getURLContext(
-                name.scheme, self, None, iface
-            )
+            ctx = spi.getURLContext(name.scheme, self, iface)
 
             if ctx is None:
                 raise InvalidNameException(

@@ -29,42 +29,42 @@ __all__ = [
     'getURLContext',
 ]
 
-__implements__ = IObjectFactory, IStateFactory, IURLContextFactory
+__implements__ = (
+    IObjectFactory, IStateFactory, IURLContextFactory, IInitialContextFactory
+)
 
-defaultFactories = factories,
+
 
     
 
 
 
+def getInitialContext(parentComponent=None, **options):
 
+    """Return an initial context using supplied parent and options
 
-def getInitialContext(environ={}):
+    The initial context created is determined by asking the supplied
+    'parentComponent' for an 'IInitialContextFactory' utility.  If no
+    'parentComponent' is supplied, a default parent will be created via
+    'config.newDefaultConfig()'.  Keyword options are passed through to
+    the actual factory."""
 
-    """Return an initial context using the specified environment properties
+    if parentComponent is None:
+        from peak.api import config
+        parentComponent = config.newDefaultConfig()
+        saveConfig = True
+    else:
+        saveConfig = False
+  
+    factory = parentComponent.acquireUtility(IInitialContextFactory)
+    if factory is None: factory = factories
 
-    If the 'environ' mapping contains a 'NAMING_INITIAL_CONTEXT_FACTORY'
-    entry, it will be used as the class for the returned context.  The
-    entry can be either an import string, or an actual class or factory
-    object.
+    context = factory.getInitialContext(parentComponent,**options)
 
-    If the 'environ' does not contain a suitable entry, a default
-    implementation ('peak.naming.providers.Initial:DefaultInitialContext')
-    is used."""
-    
-    factory = importObject(
-        environ.get(
-            'NAMING_INITIAL_CONTEXT_FACTORY',
-            'peak.naming.contexts:AbstractContext'  # XXX temporary hack
-        )
-    )
-
-    return factory(environ)
-
-
-
-
-
+    if saveConfig:
+        config.setLocal(context, parentComponent)
+        
+    return context
 
 
 
@@ -80,60 +80,38 @@ def getInitialContext(environ={}):
 
 
 
-def getStateToBind(obj, name, context, environment, attrs=None):
+def getStateToBind(obj, name, context, attrs=None):
 
     if IReferenceable.isImplementedBy(obj):
         return (obj.getReference(obj), attrs)
 
-    for factory in importSequence(
-            environment.get(
-                'NAMING_STATE_FACTORIES', defaultFactories
-            ) 
-        ):
+    factory = context.acquireUtility(IStateFactory)
+    if factory is None: factory = factories
+
+    if factory is not None:
 
         result = factory.getStateToBind(
-            obj, name, context, environment, attrs
+            obj, name, context, attrs
         )
 
         if result is not None:
             return result
 
-    return obj,attrs
+    return obj, attrs
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-def getObjectInstance(refInfo, name, context, environment, attrs=None):
+def getObjectInstance(refInfo, name, context, attrs=None):
 
     if isinstance(refInfo,LinkRef):
         return context[refInfo.linkName]
 
-    for factory in importSequence(
-            environment.get(
-                'NAMING_OBJECT_FACTORIES', defaultFactories
-            ) 
-        ):
+    factory = context.acquireUtility(IObjectFactory)
+    if factory is None: factory = factories
+
+    if factory is not None:
 
         result = factory.getObjectInstance(
-            refInfo, name, context, environment, attrs
+            refInfo, name, context, attrs
         )
 
         if result is not None:
@@ -143,57 +121,16 @@ def getObjectInstance(refInfo, name, context, environment, attrs=None):
 
 
 
+def getURLContext(scheme, context, iface=IBasicContext):
 
+    """Return a 'Context' object for the given URL scheme and interface."""
 
+    factory = context.acquireUtility(IURLContextFactory)
+    if factory is None: factory = factories
 
+    if factory is not None:
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-def getURLContext(scheme, context=None, environ=None, iface=IBasicContext):
-
-    """Return a 'Context' object for the given URL scheme and interface.
-
-    This works by walking the list of context factory objects supplied in
-    the 'NAMING_URL_CONTEXT_FACTORIES' environment entry, and asking each
-    one for an initial context that supports the specified 'scheme'.  If no
-    'NAMING_URL_CONTEXT_FACTORIES' entry is supplied, the default factory
-    is the 'peak.naming.factories:getURLContext()' function.  (See the
-    'peak.naming.factories' package for more information on the default lookup
-    policy.)
-
-    Each context factory in the context factory list must be a callable with
-    the signature 'factory.getURLContext(scheme,ctx,environ,iface)', returning
-    a context which supports the specified naming 'scheme', with 'environ' as
-    its environment, 'ctx' as its relative context (if applicable), and
-    'iface' as a supported context interface.
-    """
-
-    if environ is None:
-        if context is None:
-            environ = {}
-        else:
-            environ = context.getEnvironment()
-
-    for contextFactory in importSequence(
-            environ.get(
-                'NAMING_URL_CONTEXT_FACTORIES', defaultFactories
-            ) 
-        ):
-
-        context = contextFactory.getURLContext(scheme, context, environ, iface)
+        context = factory.getURLContext(scheme, context, iface)
 
         if context is not None:
             return context

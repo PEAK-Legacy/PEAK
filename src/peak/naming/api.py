@@ -6,27 +6,11 @@ from references import *
 
 import spi
 
-def InitialContext(environ=None, **kw):
+def InitialContext(parent=None, **kw):
 
-    """Get an initial naming context, based on 'environ' and keyword args
+    """Get an initial naming context, based on 'parent' and keyword args"""
 
-    If no environment is supplied, a default configuration from
-    'peak.config.getDefaultConfig()' is used.  If keyword arguments are
-    supplied, the environment will be updated with them.
-    """
-
-    if environ is None:
-        if kw:
-            environ, kw = kw, None
-        else:
-            #from peak.config import getDefaultConfig
-            #environ = getDefaultConfig()
-            environ = {} # XXX temporary hack
-
-    if kw:
-        environ.update(kw)
-
-    return spi.getInitialContext(environ)
+    return spi.getInitialContext(parent, **kw)
 
 
 def lookup(name):

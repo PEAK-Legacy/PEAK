@@ -9,7 +9,7 @@ class importURL(OpaqueURL):
 
     __implements__ = IAddress
     
-    def retrieve(self, refInfo, name, context, environment, attrs=None):
+    def retrieve(self, refInfo, name, context, attrs=None):
         return importString(self.body)
 
     def fromURL(klass, name):

@@ -5,7 +5,9 @@ from peak.naming.references import *
 
 from peak.binding.imports import importObject, importString
 
-__implements__ = IObjectFactory, IStateFactory, IURLContextFactory
+__implements__ = (
+    IObjectFactory, IStateFactory, IURLContextFactory, IInitialContextFactory
+)
 
 schemes = {
 }
@@ -18,6 +20,9 @@ schemeParsers = {
 }
 
 
+def getInitialContext(parentComponent=None, **options):
+    from peak.naming.contexts import AbstractContext  # XXX temporary hack
+    return AbstractContext(parentComponent, **options)
 
 
 
@@ -34,12 +39,7 @@ schemeParsers = {
 
 
 
-
-
-
-
-
-def getURLContext(scheme, context, environment, iface=IBasicContext):
+def getURLContext(scheme, context, iface=IBasicContext):
 
     lscheme = scheme.lower()    
     factory = schemes.get(lscheme)
@@ -58,11 +58,11 @@ def getURLContext(scheme, context, environment, iface=IBasicContext):
     
         if IURLContextFactory.isImplementedBy(factory):
             schemes[lscheme] = factory
-            return factory.getURLContext(scheme, context, environment, iface)
+            return factory.getURLContext(scheme, context, iface)
 
         elif iface.isImplementedByInstancesOf(factory):
             schemes[lscheme] = factory
-            return factory(environment)
+            return factory(context)
 
 
     factory = schemeParsers.get(lscheme)
@@ -75,22 +75,22 @@ def getURLContext(scheme, context, environment, iface=IBasicContext):
             
         if IAddress.isImplementedByInstancesOf(factory):
             from peak.naming.contexts import GenericURLContext
-            return GenericURLContext(environment)
+            return GenericURLContext(context)
 
     return None
 
 
-def getObjectInstance(refInfo, name, context, environment, attrs=None):
+def getObjectInstance(refInfo, name, context, attrs=None):
 
     if IAddress.isImplementedBy(refInfo):
-        return refInfo.retrieve(refInfo, name, context, environment, attrs)
+        return refInfo.retrieve(refInfo, name, context, attrs)
 
     elif isinstance(refInfo, NNS_Reference):
         # default is to treat the object as its own NNS
         return refInfo.relativeTo
 
 
-def getStateToBind(obj, name, context, environment, attrs=None):
+def getStateToBind(obj, name, context, attrs=None):
     pass    # XXX
 
 

@@ -7,7 +7,7 @@ from weakref import WeakKeyDictionary
 __all__ = [
     'getLocal','getGlobal','setLocal','setGlobal',
     'registerLocalProvider','registerGlobalProvider',
-    'GlobalConfig', 'LocalConfig',
+    'GlobalConfig', 'LocalConfig', 'newDefaultConfig'
 ]
 
 _globalCfg = EigenCell()
@@ -30,7 +30,7 @@ def setGlobal(cfg):
 def getLocal(forRoot):
 
     if not _localCfgs.data.has_key(forRoot):
-        setLocal(forRoot, LocalConfig(getGlobal()))
+        setLocal(forRoot, newDefaultConfig())
 
     return _localCfgs[forRoot]
 
@@ -38,6 +38,9 @@ def getLocal(forRoot):
 def setLocal(forRoot, cfg):
     _localCfgs[forRoot] = cfg
 
+
+def newDefaultConfig():
+    return LocalConfig(getGlobal())
 
 def registerLocalProvider(forRoot, ifaces, provider):
     getLocal(forRoot).registerProvider(ifaces, provider)

@@ -44,30 +44,31 @@ class LocalConfig(Component):
         if forObj is None:
             forObj=self
 
-        if localLookup:
+        if not localLookup:
+            # We effectively have no parent, for lookup purposes.
+            return None
         
-            provider = self.__instance_provides__.get(iface)
+        provider = self.__instance_provides__.get(iface)
             
-            if provider is not None:
-                return provider(self,forObj)
+        if provider is not None:
+            return provider(self,forObj)
 
-            attr = self.__class_provides__.get(iface)
+        attr = self.__class_provides__.get(iface)
 
-            if attr is not None:
+        if attr is not None:
 
-                utility = getattr(self,attr)
+            utility = getattr(self,attr)
 
-                if utility is not NOT_FOUND:
-                    return utility
-
+            if utility is not NOT_FOUND:
+                return utility
 
         # use our global configuration's registry, but wrap anything
         # found around ourself, so that it has access to the local
         # configuration, and will be specific to this configuration
         # root.
-        
+    
         provider = self.getParentComponent().__instance_provides__.get(iface)
-            
+        
         if provider is not None:
             return provider(self,forObj)
-        
+    

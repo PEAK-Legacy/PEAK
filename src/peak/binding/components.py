@@ -107,11 +107,11 @@ def getRootComponent(component):
 
 def globalLookup(name, component=None):
 
-    """Lookup 'name' in global 'InitialContext', w/'component' in environ"""
+    """Lookup 'name' in global 'InitialContext', relative to 'component'"""
 
     from peak.naming.api import InitialContext
     
-    return InitialContext(RELATIVE_TO_COMPONENT=component).lookup(name)
+    return InitialContext(component).lookup(name)
 
 
 

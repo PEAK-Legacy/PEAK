@@ -5,7 +5,7 @@ import Interface
 
 __all__ = [
 
-    'IName', 'ISyntax', 'IAddress',
+    'IName', 'ISyntax', 'IAddress', 'IInitialContextFactory',
     'IObjectFactory', 'IStateFactory', 'IURLContextFactory',
     'I_NNS_Binding', 'IBasicContext', 'IReadContext', 'IWriteContext',
 
@@ -136,7 +136,7 @@ class IName(Interface.Base):
 class IAddress(IName):
     """Name that supports in-context self-retrieval"""
 
-    def retrieve(refInfo, name, context, environment, attrs=None):
+    def retrieve(refInfo, name, context, attrs=None):
         """Retrieve the address"""
 
 
@@ -184,23 +184,23 @@ class IBasicContext(Interface.Base):
     def has_key(name):
         """Synonym for __contains__"""
 
-    def getEnvironment():
-        """Return a mapping representing the context's configuration"""
-
-    def addToEnvironment(key, value):
-        """Add or alter a configuration entry in the context's environment"""
-
-    def removeFromEnvironment(key):
-        """Remove a configuration entry from the context's environment"""
-
     def close():
         """Close the context"""
 
-    def copy():
-        """Return a copy of the context"""
-
     def lookupLink(name):
         """Return terminal LinkRef of 'name', if it's a link"""
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 class IReadContext(IBasicContext):
@@ -253,22 +253,27 @@ class I_NNS_Binding(IBasicContext):
         """Remove any NNS pointer bound to 'name'"""
 
 
+class IInitialContextFactory(Interface.Base):
+
+    def getInitialContext(parentComponent, **options):
+        """Return a naming context for 'parentComponent' with 'options'"""
+
 
 class IObjectFactory(Interface.Base):
 
-    def getObjectInstance(refInfo, name, context, environment, attrs=None):
+    def getObjectInstance(refInfo, name, context, attrs=None):
         """Return the object that should be constructed from 'refInfo'"""
 
 
 class IStateFactory(Interface.Base):
 
-    def getStateToBind(obj, name, context, environment, attrs=None):
-        """Return the state that should be used to save 'obj'"""
+    def getStateToBind(obj, name, context, attrs=None):
+        """Return the '(obj,attrs)' state that should be used to save 'obj'"""
 
 
 class IURLContextFactory(Interface.Base):
 
-    def getURLContext(scheme, context=None, environ=None, iface=IBasicContext):
+    def getURLContext(scheme, context, iface=IBasicContext):
         """Return a context that can provide 'iface' for 'scheme' URLs"""
 
 

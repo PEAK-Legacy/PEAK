@@ -7,7 +7,7 @@ class smtpURL(ParsedURL):
 
     __implements__ = IAddress
 
-    def retrieve(self, refInfo, name, context, environment, attrs=None):
+    def retrieve(self, refInfo, name, context, attrs=None):
         return smtplib.SMTP(self.host, self.port)
     
     _supportedSchemes = ('smtp', )
