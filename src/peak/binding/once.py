@@ -1,10 +1,9 @@
 """'Once' objects and classes"""
 
 from meta import ActiveDescriptor
-from weakref import ref
 from peak.api import NOT_FOUND
 
-__all__ = ['Once', 'New', 'Copy', 'WeakRefBinding', 'OnceClass']
+__all__ = ['Once', 'New', 'Copy', 'OnceClass']
 
 
 def New(obtype, name=None, provides=None):
@@ -31,6 +30,7 @@ def New(obtype, name=None, provides=None):
     """
 
     return Once( (lambda s,d,a: obtype()), name, provides)
+
 
 
 
@@ -184,88 +184,6 @@ class Once(ActiveDescriptor):
                 klass.__class_provides__ = cp
 
             klass.__class_provides__.register(self._provides,attrName)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-class WeakRefBinding(Once):
-
-    """Like Once, but keeps a weak reference only
-    
-       This binding descriptor saves a weak reference to its target in
-       the object's instance dictionary, and dereferences it on each access.
-       It therefore supports '__set__' and '__delete__' as well as '__get__'
-       methods, and retrieval is slower than for other 'Once' attributes.  But
-       it can prevent the creation of circular reference garbage."""
-
-    def __get__(self, obj, typ=None):
-    
-        if obj is None: return self
-
-        d = obj.__dict__
-        n = self.attrName
-
-        if not n or getattr(obj.__class__,n) is not self:
-            self.usageError()
-
-        r = d.get(n)
-
-        if r is None:
-            d[n] = NOT_FOUND    # recursion guard
-            try:
-                d[n] = r = ref(self.computeValue(obj, d, n))
-            except:
-                del d[n]; raise
-
-        return r()
-
-    def __set__(self, obj, val):
-
-        n = self.attrName
-
-        if not n or getattr(obj.__class__,n) is not self:
-            self.usageError()
-
-        obj.__dict__[n] = ref(val)
-
-
-    def __delete__(self, obj):
-
-        n = self.attrName
-
-        if not n or getattr(obj.__class__,n) is not self:
-            self.usageError()
-
-        del obj.__dict__[n]
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

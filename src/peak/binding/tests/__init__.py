@@ -106,9 +106,9 @@ class DescriptorData(binding.Component):
 
             acquired = binding.bindTo('thing1')
 
-            getRoot = binding.bindTo('/', weak=True)
+            getRoot = binding.bindTo('/')
 
-            getUp = binding.bindTo('..', weak=True)
+            getUp = binding.bindTo('..')
 
     newDict = binding.New(dict)
 
@@ -264,8 +264,8 @@ class DescriptorTest(TestCase):
 
         assert nested.deep is thing
         assert nested.acquired is thing
-        assert nested.getRoot() is data
-        assert nested.getUp() is data.aService
+        assert nested.getRoot is data
+        assert nested.getUp is data.aService
 
 
     def checkImport(self):

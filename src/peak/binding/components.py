@@ -1,11 +1,11 @@
 """Basic binding tools"""
 
 from __future__ import generators
-from once import Once, New, WeakRefBinding
+from once import Once, New
 import meta
 from peak.config.modules import setupModule
 
-from weakref import ref, WeakValueDictionary
+from weakref import WeakValueDictionary
 
 from peak.naming.names import toName, Syntax, CompoundName
 from peak.naming.interfaces import NameNotFoundException
@@ -336,35 +336,17 @@ class bindTo(Once):
 
                 thingINeed = binding.bindTo("path/to/service")
 
-                getOtherThing = binding.bindTo("some/thing", weak=True)
-                
         'someClass' can then refer to 'self.thingINeed' instead of
         calling 'self.lookupComponent("path/to/service")' repeatedly.
-        It can also do 'self.getOtherThing()' to get '"some/thing"'.
-        (The 'weak' argument, if true, means to bind to a weak reference.)
     """
 
     singleValue = True
 
-    def __init__(self,targetName,weak=False,provides=None):
+
+    def __init__(self,targetName,provides=None):
 
         self.targetNames = (targetName,)
-        self.weak = weak
         self._provides=provides
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
     def computeValue(self, obj, instanceDict, attrName):
@@ -379,33 +361,10 @@ class bindTo(Once):
                 del instanceDict[attrName]
                 raise NameNotFoundError(attrName, resolvedName = name)
 
-            if self.singleValue:
-            
-                if self.weak:
-                    return ref(newOb)
-                else:
-                    return newOb
-
-        if self.weak:
-            obs = map(ref,obs)
+            if self.singleValue:            
+                return newOb
 
         return tuple(obs)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 class bindSequence(bindTo):
@@ -422,16 +381,13 @@ class bindSequence(bindTo):
 
         'someClass' can then refer to 'self.thingINeed' to get a tuple of
         services instead of calling 'self.lookupComponent()' on a series of
-        names.  As with 'bindTo()', a 'weak' keyword argument can be set to
-        indicate that the sequence should consist of weak references to the
-        named objects.
+        names.
     """
 
     singleValue = False
 
     def __init__(self, *targetNames, **kw):
         self.targetNames = targetNames
-        self.weak = kw.get('weak')
         self._provides = kw.get('provides')
 
 
@@ -449,9 +405,12 @@ class bindSequence(bindTo):
 
 
 
-class bindToParent(WeakRefBinding):
 
-    """Look up and cache a weak ref to the nth-level parent component
+
+
+def bindToParent(level=1,provides=None):
+
+    """Look up and cache a reference to the nth-level parent component
 
         Usage::
 
@@ -463,23 +422,21 @@ class bindToParent(WeakRefBinding):
        'self.getParentComponent().getParentComponent()'.
     """
 
-    def __init__(self,level=1,provides=None):
-        self.level = level
-        self._provides = provides
+    def computeValue(obj, instDict, attrName):
 
-    def computeValue(self, obj, instDict, attrName):
-
-        for step in range(self.level):
+        for step in range(level):
             newObj = obj.getParentComponent()
             if newObj is None: break
             obj = newObj
 
         return obj
 
+    return Once(computeValue, provides=provides)
+
 
 def bindToSelf(provides=None):
 
-    """Weak reference to the 'self' object
+    """Cached reference to the 'self' object
 
     This is just a shortcut for 'bindToParent(0)', and does pretty much what
     you'd expect.  It's handy for objects that provide default support for
@@ -488,6 +445,8 @@ def bindToSelf(provides=None):
     'delegateForInterfaceX' be a 'bindToSelf()' by default."""
 
     return bindToParent(0,provides)
+
+
 
 
 class requireBinding(Once):
