@@ -10,7 +10,7 @@ __all__ = [
     'IObjectFactory', 'IStateFactory', 'IURLContextFactory',
     'I_NNS_Binding', 'IBasicContext', 'IReadContext', 'IWriteContext',
     'COMPOUND_KIND', 'COMPOSITE_KIND', 'URL_KIND', 'isName', 'isAddress',
-    'isAddressClass',
+    'isAddressClass', 'isResolver',
 ]
 
 
@@ -95,7 +95,7 @@ class IResolver(Interface):
             method is called on.
         """
 
-
+isResolver = IResolver.isImplementedBy
 
 
 
