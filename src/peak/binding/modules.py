@@ -115,8 +115,8 @@
 from TW.Utils.Simulator import Simulator, prepForSimulation
 import sys
 from types import ModuleType
-
-__all__ = ['adviseModule', 'setupModule']
+__proceed__ = None
+__all__ = ['adviseModule', 'setupModule', '__proceed__']
 
 adviceMap = {}
 
