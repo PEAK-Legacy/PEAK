@@ -1,4 +1,4 @@
-PEAK Release 0.5 alpha 1
+PEAK Release 0.5 alpha 2
 
  Copyright (C) 1996-2003 by Phillip J. Eby and Tyler C. Sarna.
  All rights reserved.  This software may be used under the same terms
@@ -41,10 +41,13 @@ PEAK Release 0.5 alpha 1
 
  Package Features
 
-    As of version 0.5a1, PEAK features include:
+    As of version 0.5a2, PEAK features include:
 
     * A component binding framework that makes it easy to parameterize
       components and thus more easily combine and "wire" them together.
+      Interfaces, adaptation, and "assembly events" (notification when
+      components have been engaged as part of a "complete" application)
+      are all available.
 
     * A comprehensive configuration framework that allows accessing
       "utilities" and "configuration properties" in context.  Properties
@@ -87,12 +90,12 @@ PEAK Release 0.5 alpha 1
     * CASE/modelling tools: PEAK includes APIs to read object
       models created in the XML-based XMI format.  Many open-source and
       commercial modelling tools support XMI, inlcuding Argo/Poseidon and
-      MagicDraw UML.  PEAK includes pre-built support for UML version 1.3
-      and MOF 1.3.1, using XMI versions 1.0 and 1.1. (UML 1.4, UML 1.5,
-      CWM 1.0, CWM 1.1, and XMI 1.2 are anticipated for 0.5a2, and possibly
-      XMI 2.0 by 0.5 final.)  Also included is a MOF->Python code generator,
-      which was used to generate the UML and CWM support, and which you can
-      use to generate support for other modelling languages based on the MOF.
+      MagicDraw UML.  PEAK includes pre-built support for UML versions 1.3
+      and 1.4, and MOF 1.3.1, using XMI versions 1.0 and 1.1. (UML 1.5,
+      CWM 1.0, CWM 1.1, and XMI 1.2-2.0 are anticipated for version 0.6.)
+      Also included is a MOF->Python code generator, which was used to generate
+      the UML support, and which you can use to generate support for other
+      modelling languages based on the MOF.
 
       For the specifications of XMI, MOF, CWM, and UML, visit:
       http://www.omg.org/technology/documents/modeling_spec_catalog.htm
@@ -100,7 +103,10 @@ PEAK Release 0.5 alpha 1
     * A domain modelling framework for creating "business object models"
       with unidirectional and bidirectional associations, generated
       getters/setters and validators for fields, etc., and all necessary
-      persistence support for use with the PEAK storage framework.
+      persistence support for use with the PEAK storage framework.  Domain
+      types can also define string parsing and formatting syntax, so you can
+      create domain-specific data languages or just string formats for data
+      types (such as specialized date/time or currency types).
 
       The business object framework supplies structural metadata about
       classes built with it, so you can query a class for its fields and
@@ -112,7 +118,12 @@ PEAK Release 0.5 alpha 1
 
     * Application Runtime tools, including:
 
-      - a "command objects" framework for creating command-line applications
+      - a "command objects" framework for creating command-line applications,
+        including the ability to create "executable configuration files"
+        or "configuration interpreters" that can load a configuration file
+        and run an application instance constructed using the configuration
+        data.  Supported formats include an .ini-like PEAK format, and
+        arbitrary schemas defined using ZConfig.
 
       - a "periodic tasks" framework for executing tasks that perform "as
         needed", scheduling themselves in response to their available workloads
@@ -124,6 +135,13 @@ PEAK Release 0.5 alpha 1
         Twisted, but can also be used without Twisted for applications that are
 	mostly scheduling-oriented, or which use only third-party protocol
 	implementations such as FAM, FastCGI, ReadyExec, etc.
+
+      - a robust and flexible logging framework that can integrate with the
+        PEP 282 logging module, or stand alone.  It's simpler than the PEP 282
+        system for simple log configuration, and is configured on demand
+        rather than "up front", and is thus more manageably configurable for
+        large or complex applications consisting of components from diverse
+        providers.
 
     * AOP and SOP: PEAK allows you to separate concerns as modules, then
       combine the modules via a "module inheritance" technique.  This
@@ -142,8 +160,8 @@ PEAK Release 0.5 alpha 1
    in areas not covered by the test suites.  Also, many system interfaces
    are still subject to change.
 
-   PEAK includes early copies of Zope X3's 'zope.interface' and 'persistence'
-   packages, which have had - and will continue to have - significant
+   PEAK includes early copies of Zope X3's 'ZConfig' and 'persistence'
+   packages, which have had - and may continue to have - significant
    implementation changes.  We will be tracking Zope X3 periodically, but
    can't guarantee compatibility with arbitrary (e.g. CVS) versions of
    Zope X3.

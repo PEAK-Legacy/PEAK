@@ -15,6 +15,11 @@ Open Issues/To-Do Items
         ZConfig schema component.
 
 
+ Targeted for 0.5 Alpha 3
+
+    * Rough-out web publishing framework
+
+
  Targeted for 0.5 Beta 1
 
     * Updated reference docstrings for 'peak.api', 'peak.binding',
@@ -24,11 +29,6 @@ Open Issues/To-Do Items
 
     * Web publishing framework sufficient to deploy page-based or object-
       published apps
-
-    * Get XMI writing in place, w/transaction support
-
-    * On-the-fly class combination (think "runtime module inheritance",
-      without the modules) for DMs.
 
 
 
@@ -95,13 +95,13 @@ Open Issues/To-Do Items
 
  Targeted for version 0.6
 
+   * Get XMI writing in place, w/transaction support
+
    * Generate UML 1.5 and CWM 1.0 and 1.1, and add them to the
      'setup.py' package lists.
 
-
-
-
-
+   * On-the-fly class combination (think "runtime module inheritance",
+     without the modules) for DMs.
 
 
 

@@ -10,7 +10,7 @@ include_fcgiapp    = True   # edit this to stop installation of 'fcgiapp'
 
 # Metadata
 PACKAGE_NAME = "PEAK"
-PACKAGE_VERSION = "0.5a1"
+PACKAGE_VERSION = "0.5a2"
 
 HAPPYDOC_IGNORE = [
     '-i', 'examples',  '-i', 'old', '-i', 'tests', '-i', 'setup',
