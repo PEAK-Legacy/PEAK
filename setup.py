@@ -17,7 +17,7 @@ HAPPYDOC_IGNORE = [
 
 # Base packages for installation
 scripts = ['scripts/peak']
-
+modules = []
 packages = [
     'peak', 'peak.api', 'peak.binding', 'peak.config', 'peak.model',
     'peak.naming', 'peak.naming.factories', 'peak.net', 'peak.running',
@@ -124,11 +124,16 @@ if not zope_installed:
 import sys
 
 if sys.version_info < (2,3):
-    # Install datetime module if we're not on 2.3
+    # Install datetime and csv if we're not on 2.3
+
     packages += ['datetime']
     if include_tests:
         packages += ['datetime.tests']
 
+    modules += ['csv']
+    extensions += [
+        Extension('_csv', ['src/_csv.c'])
+    ]
 
 import os
 
@@ -141,11 +146,6 @@ if os.name=='posix':
                 "src/fcgiapp/fcgiappmodule.c", "src/fcgiapp/fcgiapp.c"
             ])
         ]
-
-
-
-
-
 
 
 
