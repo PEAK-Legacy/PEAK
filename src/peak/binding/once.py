@@ -58,7 +58,7 @@ def New(obtype, bindToOwner=None, name=None, provides=None, doc=None):
     This is basically syntactic sugar for 'Once' to create an empty
     instance of a type.  The same rules apply as for 'Once' about
     whether the 'name' parameter is required.  (That is, you need it if you're
-    using this in a class whose metaclass doesn't support ActiveDescriptors,
+    using this in a class whose metaclass doesn't support active descriptors,
     such as when you're not deriving from a standard PEAK base class.)
     """
 
@@ -100,7 +100,7 @@ def Copy(obj, name=None, provides=None, doc=None):
     the Python 'copy.copy()' function.  The same rules apply as for
     'Once' about whether the 'name' parameter is required.  (That is, you need
     it if you're using this in a class whose metaclass doesn't support
-    ActiveDescriptors, such as when you're not deriving from a standard PEAK
+    active descriptors, such as when you're not deriving from a standard PEAK
     base class.)
     """
     
@@ -144,9 +144,9 @@ class Once(OnceDescriptor):
         to the '__name__' of the supplied callable.  (So in the usage
         example above, it could have been omitted.)
 
-        'Once' is a 'binding.meta.ActiveDescriptor', so if you place an
+        'Once' is an "active descriptor", so if you place an
         instance of it in a class which supports descriptor naming (i.e.,
-        has a metaclass derived from 'binding.meta.ActiveDescriptors'), it will
+        has a metaclass derived from 'binding.Activator'), it will
         automatically know the correct attribute name to use in the instance
         dictionary, even if it is different than the supplied name or name of
         the supplied callable.  However, if you place a 'Once' instance in a
@@ -164,7 +164,7 @@ class Once(OnceDescriptor):
 
     def usageError(self):            
         raise TypeError(
-            "%s was used in a type which does not support ActiveDescriptors,"
+            "%s was used in a type which does not support active bindings,"
             " but a valid attribute name was not supplied"
             % self
         )

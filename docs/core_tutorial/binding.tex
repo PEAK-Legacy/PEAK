@@ -463,7 +463,7 @@ Traceback (most recent call last):
   File "C:\PYTHON22\Lib\site-packages\peak\binding\once.py", line 151, in usageError
     raise TypeError(
 TypeError: <peak.binding.once.Once object at 0x01491EE0> was used in a type which
-    does not support ActiveDescriptors, but a valid attribute name was not
+    does not support active bindings, but a valid attribute name was not
     supplied
 \end{verbatim}
 
@@ -473,9 +473,8 @@ metaclass, not the base class, but that's not important right now).  There
 are some circumstances where PEAK will try to guess the attribute name for you,
 such as when you use a class or a  function to define an attribute binding, but
 for the most part you must either have a base class (such as 
-\class{binding.Base}) whose metaclass derives from
-\class{binding.ActiveDescriptors}, or else you must supply the attribute name
-yourself when defining the binding.
+\class{binding.Base}) whose metaclass supports activating bindings, or else
+you must supply the attribute name yourself when defining the binding.
 
 So, if you plan to use attribute bindings in your program, it's probably best
 to subclass \class{binding.Base}; it'll save you a lot of typing!
@@ -485,6 +484,7 @@ derive from \class{binding.Base}, though, like \class{binding.Component}.
 You'll likely use \class{binding.Component} a lot when defining
 Service components.  \class{binding.Base} is designed to be a minimalist
 component base, without a lot of the extra features found in its subclasses.
+
 
 
 
@@ -631,7 +631,7 @@ supply them as keyword arguments.
 \item[\var{name}] \hfill \\
 The \var{name} parameter specifies the attribute name that the binding will
 have.  As mentioned previously, this is only needed when the binding is being
-used in a class that doesn't support \class{ActiveDescriptors}.  If you're using
+used in a class that doesn't support active descriptors.  If you're using
 a class that inherits from \class{binding.Base}, you don't need to supply this
 parameter.
 
