@@ -7,9 +7,9 @@ from peak.util.ListProxy import ListProxy
 from lazy_loader import LazyLoader
 
 __all__ = [
-    'FacadeDM', 'QueryDM', 'EntityDM', 'PersistentQuery', 'QueryLink', 
+    'FacadeDM', 'QueryDM', 'EntityDM', 'PersistentQuery', 'QueryLink',
+    'StorableDM',
 ]
-
 
 
 
@@ -522,6 +522,7 @@ class EntityDM(QueryDM):
 
 
 
+            
 
 
 
@@ -530,7 +531,48 @@ class EntityDM(QueryDM):
 
 
 
-
-
-
-
+class StorableDMClass(EntityDM.__class__, Persistent.__class__):
+    pass
+    
+class StorableDM(EntityDM,Persistent):
+    __metaclass__ = StorableDMClass
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
