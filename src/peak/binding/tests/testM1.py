@@ -9,6 +9,12 @@ StringType
 # End special test
 
 
+class Referenced:
+    M1 = 'M1'
+
+class Referencer:
+    pass
+
 class UnusedBase:
     M1 = 'M1'
 

@@ -6,6 +6,9 @@ Open Issues/To-Do Items
 
       * Add tests for 'adviseModule()' API
 
+      * Add checks and warnings for ambiguous re-assignments and operations
+        on mutables  (i.e. setting items or attrs), plus "safe" setattr
+
     Database
 
       * Create test suite to check proper transactional functioning, cache
@@ -64,9 +67,6 @@ Open Issues/To-Do Items
     * Create tutorials/examples based on actual uses
 
     * Include dependencies in packaging?  Need to ask copyright owners first.
-
-
-
 
 
 

@@ -449,15 +449,17 @@ class Simulator:
 
 
 
-    def DEFINE_CLASS(self, name, bases, dict, qname):
+    def DEFINE_CLASS(self, name, bases, cdict, qname):
 
         classes = self.classes
         get = self.classPath.get
+        oldDPaths = []
         basePaths = tuple([get(id(base)) for base in bases])
-        
+        dictPaths = [(k,get(id(v))) for (k,v) in cdict.items() if get(id(v))]
+
         if classes.has_key(qname):
             
-            oldClass, oldBases, oldPaths, oldDict = classes[qname]
+            oldClass, oldBases, oldPaths, oldItems, oldDPaths = classes[qname]
             addBases = []; addBase = addBases.append
             addPaths = []; addPath = addPaths.append
             
@@ -469,12 +471,17 @@ class Simulator:
             bases = tuple(addBases) + bases
             basePaths = tuple(addPaths) + basePaths
 
-            have = dict.has_key
-            for k,v in oldDict.items():
-                if not have(k): dict[k]=v
+            have = cdict.has_key
+            for k,v in oldItems:
+                if not have(k): cdict[k]=v
 
-        newClass = makeClass(name,bases,dict)
-        classes[qname] = newClass, bases, basePaths, dict.copy()
+            for k,v in oldDPaths:
+                cdict[k] = classes[v][0]
+
+        newClass = makeClass(name,bases,cdict)
+        
+        classes[qname] = newClass, bases, basePaths, cdict.items(), \
+            dict(dictPaths+oldDPaths).items()
 
         try:
             newClass.__module__ = self.dict['__name__']
@@ -489,6 +496,40 @@ class Simulator:
 
         return newClass
         
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 def prepForSimulation(code, path='', depth=0):
 

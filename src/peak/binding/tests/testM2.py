@@ -5,6 +5,13 @@ import testM1
 __bases__ = testM1,
 
 
+class Referenced:
+    M2 = 'M2'
+
+class Referencer:
+    containedClass = Referenced
+
+
 class UnusedBase:
     M2 = 'M2'
 
@@ -28,7 +35,10 @@ class Subclass:
 
     class NestedSub:
         spam = 'Nested'
-        
+
+
+
+
 aGlobal1 = 'M2'
 
 def aFunc2(aParam):

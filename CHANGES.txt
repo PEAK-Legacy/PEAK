@@ -1,5 +1,8 @@
 New Features and Bug Fixes since v0.2, preview 1
 
+ * Fixed the "reference to rebound class within another class" problem
+   with module inheritance, as reported by (who else?) Ulrich Eck.  :)
+
  * Rewrote SEF "features" to use 'element.verbFeature()' style methods
    instead of 'element.feature.verb()' style.  UML/XMI/Querying code
    still uses the old-style SEF framework, which is still available from

@@ -47,6 +47,9 @@ class ModuleTest(TestCase):
             testM2.UnusedBase, UserList.UserList, object  
         ), testM2.RebindSub.__bases__
 
+    def checkRefBetweenClasses(self):
+        from testM2 import Referencer as R
+        assert R.containedClass.M1=='M1'
 
 class DescriptorData(SEF.App):
 
