@@ -90,11 +90,11 @@ def getParentComponent(component):
     """Return parent of 'component', or 'None' if root or non-component"""
 
     try:
-        gpc = component.getParentComponent
+        gpc = component.__class__.getParentComponent
     except AttributeError:
         pass
     else:
-        return gpc()
+        return gpc(component)
 
 
 def getComponentName(component):
@@ -102,11 +102,11 @@ def getComponentName(component):
     """Return name of 'component', or 'None' if root or non-component"""
 
     try:
-        gcn = component.getComponentName
+        gcn = component.__class__.getComponentName
     except AttributeError:
         pass
     else:
-        return gcn()
+        return gcn(component)
 
 
 def getRootComponent(component):
@@ -190,11 +190,11 @@ def findUtilities(iface, component=None):
     for component in iterParents(component):
 
         try:
-            utility = component._getConfigData
+            utility = component.__class__._getConfigData
         except AttributeError:
             continue
 
-        utility = utility(iface, forObj)
+        utility = utility(component, iface, forObj)
 
         if utility is not NOT_FOUND:
             yield utility
