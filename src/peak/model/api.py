@@ -654,7 +654,7 @@ class Sequence(Collection):
 
 
 
-class Classifier(binding.Component):
+class Classifier(binding.Base):
     """Basis for all flavors"""
             
 class PrimitiveType(Classifier):

@@ -16,7 +16,7 @@ from peak.api import config, NOT_FOUND
 
 
 __all__ = [
-    'Component','AutoCreated','Provider','CachingProvider',
+    'Base', 'Component','AutoCreated','Provider','CachingProvider',
     'bindTo', 'requireBinding', 'bindSequence', 'bindToParent', 'bindToSelf',
     'getRootComponent', 'getParentComponent', 'lookupComponent',
     'acquireComponent', 'globalLookup', 'findUtility', 'findUtilities',
@@ -85,11 +85,10 @@ def getParentComponent(component):
     """Return parent of 'component', or 'None' if root or non-component"""
 
     try:
-        gpc = component.getParentComponent
+        return component.parentComponent
+
     except AttributeError:
-        pass
-    else:
-        return gpc()
+        return None
 
 
 def getRootComponent(component):
@@ -112,6 +111,7 @@ def globalLookup(name, component=None):
     from peak.naming.api import InitialContext
     
     return InitialContext(component).lookup(name)
+
 
 
 
@@ -531,7 +531,7 @@ def bindToUtilities(iface):
 
 
 
-class Component(object):
+class Base(object):
 
     """Thing that can be composed into a component tree, w/binding & lookups"""
 
@@ -539,16 +539,42 @@ class Component(object):
         meta.AssertInterfaces, meta.ActiveDescriptors
     )
 
-    # use the global lookupComponent function as a method
 
+    # use the global lookupComponent + getParentComponent functions as methods
+    
     lookupComponent = lookupComponent
+    getParentComponent = getParentComponent
+
+    parentComponent = None
 
     def setParentComponent(self,parent):
-        from weakref import ref
-        self.getParentComponent = ref(parent)
+    
+        if self.parentComponent is None:
+            if parent is not None:
+                self.parentComponent = parent
+            else:
+                raise ValueError("Can't unset parent")
 
-    def getParentComponent(self):
-        return None
+        else:
+            raise ValueError("Can't change parent once set")
+
+
+    def _getUtility(self, iface, forObj):
+        pass
+
+
+
+
+
+
+
+
+
+
+
+class Component(Base):
+
+    """An implementation (solution-domain) component"""
 
     def _componentName(self, dict, name):
         return self.__class__.__name__.split('.')[-1]
@@ -559,18 +585,6 @@ class Component(object):
 
     __class_provides__ = EigenRegistry()
     
-
-
-
-
-
-
-
-
-
-
-
-
 
     def _getUtility(self, iface, forObj):
     
@@ -587,24 +601,10 @@ class Component(object):
 
             if utility is not NOT_FOUND:
                 return utility
-
             
 
     def registerProvider(self, ifaces, provider):
         self.__instance_provides__.register(ifaces, provider)
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
