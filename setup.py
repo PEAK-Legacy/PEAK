@@ -44,6 +44,7 @@ extensions = [
 data_files = [
     ('peak',     ['src/peak/peak.ini']),
     ('peak/web', ['src/peak/web/resource_defaults.ini']),
+    ('peak/ddt', ['src/peak/ddt/resource_defaults.ini']),
     ('ZConfig/doc', ['src/ZConfig/doc/schema.dtd']),
 ] + findDataFiles('src/peak/running', 1, '*.xml', '*.ini')
 
@@ -65,7 +66,6 @@ if include_tests:
 
 
 if include_metamodels:
-
     packages += [
         'peak.metamodels',
         'peak.metamodels.UML13', 'peak.metamodels.UML14',

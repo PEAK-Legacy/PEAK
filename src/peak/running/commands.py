@@ -785,7 +785,7 @@ class FastCGIAcceptor(binding.Component):
     eventLoop= binding.Obtain(events.IEventLoop)
     mainLoop = binding.Obtain(IMainLoop)
     ping     = binding.Obtain('mainLoop/activityOccurred')
-
+    log      = binding.Obtain('logger:fastcgi')
     fcgi     = binding.Obtain('import:fcgiapp')
     accept   = binding.Obtain('fcgi/Accept')
     finish   = binding.Obtain('fcgi/Finish')
@@ -805,13 +805,13 @@ class FastCGIAcceptor(binding.Component):
             try:
                 self.command.runCGI(i,o,e,dict(env))
 
-            finally:
-                self.finish()
-                self.ping()
+            except:
+                self.log.exception("Unexpected error handling request:")
+
+            self.finish()
+            self.ping()
 
     __onStart = binding.Make(events.taskFactory(__onStart), uponAssembly=True)
-
-
 
 
 
