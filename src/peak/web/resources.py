@@ -52,9 +52,6 @@ class Resource(Traversable):
         if not ctx.interaction.allows(self, permissionNeeded = perm):
             raise NotAllowed(ctx)
 
-    def traverseTo(self, name, ctx):
-        raise NotFound(ctx)
-
 
     def getURL(self, ctx):
         # We want an absolute URL based on the interaction
@@ -72,6 +69,9 @@ class Resource(Traversable):
         raise ValueError("Traversable was not assigned a name", self)
 
     resourcePath = binding.Make(_getResourcePath)
+
+
+
 
 
 
@@ -410,13 +410,14 @@ class TemplateResource(FSResource):
 
 class FileResource(FSResource):
 
-    protocols.advise(
-        instancesProvide = [IWebPage]
-    )
+    protocols.advise( instancesProvide = [IWebPage] )
 
     lastModified = None
     ETag         = None
     blocksize    = 16384
+
+    def getStreamAndSize(self):
+        return open(self.filename, 'rb'), os.stat(self.filename).st_size
 
     def render(self, ctx):
         interaction = ctx.interaction
@@ -429,22 +430,21 @@ class FileResource(FSResource):
             return response
 
         # Set response mimetype (wait till now, or above would be corrupted)
-        size = os.stat(self.filename).st_size
-        response.setHeader('Content-Type', self.mime_type)
-        response.setHeader('Content-Length', str(size))
-        response.setStatus('200')
-        if interaction.request.method == 'GET':
-            write = response.write
-            size = self.blocksize
-            stream = open(self.filename, 'rb')
-            try:
+        stream, size = self.getStreamAndSize()
+        try:
+            response.setHeader('Content-Type', self.mime_type)
+            response.setHeader('Content-Length', str(size))
+            response.setStatus('200')
+            if interaction.request.method == 'GET':
+                write = response.write
+                size = self.blocksize
                 # read/write data in size-N blocks
                 while 1:
                     data = stream.read(size)
                     if not data: break
                     write(data)
-            finally:
-                stream.close()
+        finally:
+            stream.close()
 
         return response
 

@@ -39,8 +39,8 @@ from urllib import basejoin
 
 
 
-class WebRunner(binding.Component):
-    """Run tests in a web browser"""
+class ViewRunner(binding.Component):
+    """Run tests in a web browser, by proxying documents"""
 
     usage="""Usage: peak ddt.web baseURL
 

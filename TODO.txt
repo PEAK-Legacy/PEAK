@@ -92,7 +92,8 @@ Open Issues/To-Do Items
 
     * peak.web
 
-       - clean up DOMlet parse/build framework (e.g. add line number info)
+       - clean up DOMlet parse/build framework (e.g. add line number info, make
+         'define' clauses allow multiple names)
 
        - default error templates, w/useful info
 
@@ -118,7 +119,6 @@ Open Issues/To-Do Items
 
     * Drop 'persistence' package, since ZODB 4 has been derailed.  Change to
       "state-delegation" model, which will integrate better with 'peak.query'.
-
 
 
  Targeted for 0.5 Beta 1
