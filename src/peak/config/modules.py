@@ -219,7 +219,8 @@ def getCodeListForModule(module, code=None):
         bases = bases,
 
     for baseModule in bases:
-        if type(baseModule) is not ModuleType:
+        baseModule.__class__    # force load of lazy module
+        if not isinstance(baseModule,ModuleType):
             raise TypeError (
                 "%s is not a module in %s __bases__" % (baseModule,name)
             )
