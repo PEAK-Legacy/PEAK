@@ -29,9 +29,7 @@
 
     TODO:
 
-        * Interfaces
-
-        * Fixture base classes (Column, Row, Action, Summary, etc.)
+        * More base classes (Row, Action, etc.)
 """
 
 
