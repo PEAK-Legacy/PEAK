@@ -581,11 +581,11 @@ class FeatureMC(Meta.MethodExporter):
         to the method templates for the 'get', 'set' and 'delattr' verbs.
 
         In other words, if you define a feature 'foo', following standard
-        'namingConvention' settings for its 'set', 'get' and 'delattr' verbs,
-         and 'bar' is an Element whose class includes the 'foo' feature, then
-        'bar.foo = 1' is equivalent to 'bar.setFoo(1)'.  Similarly,
-        referencing 'bar.foo' by itself is equivalent to 'bar.getFoo()',
-        and 'del bar.foo' is equivalent to 'bar.delattrFoo()'.
+        naming patterns for its 'set', 'get' and 'delattr' verbs, and 'bar' is
+        an Element whose class includes the 'foo' feature, then 'bar.foo = 1'
+        is equivalent to 'bar.setFoo(1)'.  Similarly, referencing 'bar.foo' by
+        itself is equivalent to 'bar.getFoo()', and 'del bar.foo' is equivalent
+        to 'bar.delattrFoo()'.
 
         (Note: this is true even if the Element class supplies its own 'setFoo'
         or 'getFoo' implementations, since the 'getMethod()' API is used.)
@@ -628,24 +628,24 @@ class StructuralFeature(object):
     referencedType = None
     defaultValue   = None
 
+    newVerbs = Items(
+        get     = 'get%(initCap)s',
+        set     = 'set%(initCap)s',
+        delattr = 'delattr%(initCap)s',
+    )
+    
     def get(feature, self):
         return self.__dict__.get(feature.__name__, feature.defaultValue)
-
-    get.namingConvention = 'get%(initCap)s'
 
 
     def set(feature, self,val):
         self.__dict__[feature.__name__]=val
         feature._changed(self)
 
-    set.namingConvention = 'set%(initCap)s'
-
-
     def delete(feature, self):
         del self.__dict__[feature.__name__]
         feature._changed(self)
 
-    delete.namingConvention = 'delete%(initCap)s'
     delete.verb = 'delattr'    
 
     def _changed(feature, element):
@@ -664,20 +664,22 @@ class Collection(StructuralFeature):
 
     __class_implements__ = ICollection
 
+    newVerbs = Items(
+        add     = 'add%(initCap)s',
+        remove  = 'remove%(initCap)s',
+        replace = 'replace%(initCap)s',
+    )
+
     def _getList(feature, element):
         return element.__dict__.setdefault(feature.__name__, [])
         
     def get(feature, self):
         return feature._getList(self)
 
-    get.namingConvention = 'get%(initCap)s'
-
     def set(feature, self,val):
         feature.__delete__(self)
         self.__dict__[feature.__name__]=val
         feature._changed(self)
-
-    set.namingConvention = 'set%(initCap)s'
 
     def add(feature, self,item):
         """Add the item to the collection/relationship"""      
@@ -691,8 +693,6 @@ class Collection(StructuralFeature):
         else:
             raise ValueError("Too many items")
 
-    add.namingConvention = 'add%(initCap)s'
-
 
 
     def remove(feature, self,item):
@@ -701,7 +701,6 @@ class Collection(StructuralFeature):
         feature._notifyUnlink(self,item)
         feature._changed(self)
 
-    remove.namingConvention = 'remove%(initCap)s'
 
 
     def replace(feature, self,oldItem,newItem):
@@ -716,24 +715,6 @@ class Collection(StructuralFeature):
             feature._changed(self)
         else:
             raise ValueError(oldItem,"not found")
-
-    replace.namingConvention = 'replace%(initCap)s'
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
     def delete(feature, self):
@@ -752,7 +733,6 @@ class Collection(StructuralFeature):
         del self.__dict__[feature.__name__]
         feature._changed(self)
 
-    delete.namingConvention = 'delete%(initCap)s'
     delete.verb = 'delattr'    
 
 
@@ -774,18 +754,27 @@ class Collection(StructuralFeature):
             otherEnd._unlink(item,element)
 
 
-
-
-
     def _link(feature,element,item):
         d=feature._getList(element)
         d.append(item)
         feature._changed(element)
 
+
     def _unlink(feature,element,item):
         d=feature._getList(element)
         d.remove(item)
         feature._changed(element)
+
+
+
+
+
+
+
+
+
+
+
 
 
 class Reference(Collection):
@@ -794,18 +783,29 @@ class Reference(Collection):
 
     upperBound = 1
 
+
     def get(feature, self):
         vals = feature._getList(self)
         if vals: return vals[0]
-
-    get.namingConvention = 'get%(initCap)s'
 
 
     def set(feature, self,val):
         feature.__delete__(self)
         feature.getMethod(self,'add')(val)
 
-    set.namingConvention = 'set%(initCap)s'
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -824,6 +824,10 @@ class Sequence(Collection):
 
     isOrdered = 1
 
+    newVerbs = Items(
+        insertBefore = 'insert%(initCap)sBefore',
+    )
+
     def insertBefore(feature, self,oldItem,newItem):
 
         d = feature._getList(self)
@@ -841,10 +845,6 @@ class Sequence(Collection):
             feature._notifyLink(self,newItem)
         else:
             raise ValueError(oldItem,"not found")
-    
-    insertBefore.namingConvention = 'insert%(initCap)sBefore'
-
-
 
 
 

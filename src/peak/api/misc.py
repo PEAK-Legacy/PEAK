@@ -2,7 +2,7 @@
 
 from Meta import ActiveDescriptor
 
-__all__ = ['Once', 'OnceClass']
+__all__ = ['Once', 'OnceClass', 'Items']
 
 
 def Items(mapping=None, **kwargs):

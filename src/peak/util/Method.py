@@ -71,3 +71,6 @@ class makeMethod(object):
         else:
             return self.im_func(im_self, *__args, **__kwargs)
 
+    def __getattr__(self, attr):
+        return getattr(self.im_func, attr)
+

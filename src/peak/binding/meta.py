@@ -179,11 +179,11 @@ class MethodExporter(ActiveDescriptor, type):
                 __metaclass__ = MethodExporter
 
                 message = "Ow, that hurts!"
-                
+
+                newVerbs = [ ('slap', "slap%(initCap)s") ]
+
                 def slap(feature, self, extra):
                     print "%s: %s (%s)" % (self.name, feature.message, extra)
-
-                slap.namingConvention = "slap%(initCap)s"
 
             class Person(object):
 
@@ -205,9 +205,8 @@ class MethodExporter(ActiveDescriptor, type):
             joe.slapBack("Am I great or what?")
 
         While a bit silly, this demonstrates how the method template 'slap()'
-        is used to generate 'slapFace()' and 'slapBack()' methods, using
-        a 'namingConvention' function attribute, and the calling convention
-        for "verbs".
+        is used to generate 'slapFace()' and 'slapBack()' methods, how to
+        define a 'newVerbs' list, and the calling conventions for verbs.
 
         Typically, you will define MethodExporters with multiple verbs, and
         you may also use template variants, which are chosen by metadata in
@@ -220,24 +219,24 @@ class MethodExporter(ActiveDescriptor, type):
 
                 thickness = 5
                 
+                newVerbs = [ ('slap', "slap%(initCap)s") ]
+
                 def slap_thick(feature, self):
                     print "THUD!", feature.thickness
-
-                slap_thick.namingConvention = "slap%(initCap)s"
 
                 slap_thick.installIf = (
                     lambda feature,func: feature.thickness > 10
                 )
+
                 slap_thick.verb = "slap"
 
                 def slap_thick(feature, self):
                     print "SMACK!", feature.thickness
 
-                slap_thin.namingConvention = "slap%(initCap)s"
-
                 slap_thin.installIf = (
                     lambda feature,func: feature.thickness <= 10
                 )
+
                 slap_thin.verb = "slap"
 
             class Person(object):
@@ -263,23 +262,22 @@ class MethodExporter(ActiveDescriptor, type):
         MethodExporter, class-like objects created by their respective class
         statements.  MethodExporter instances are singleton-like: any functions
         defined in a MethodExporter which are not templates (i.e., do not
-        have a 'namingConvention') will become methods of the MethodExporter
-        itself, rather than methods of the containing object.  To distinguish
-        such methods, and to keep clear the distinction between the feature
-        and its container, we suggest using 'feature' as the first parameter
-        of such methods.  For example, we could rewrite the slap verb as::
+        have a 'verb' and aren't listed in the 'newVerbs' list) will become
+        methods of the MethodExporter itself, rather than methods of the
+        containing class.  To distinguish such methods, and to keep clear the
+        distinction between the feature and its container, we suggest using
+        'feature' as the first parameter of such methods.  For example, we
+        could rewrite the slap verb as::
 
             def yelp(feature):
-                # This will be a method of the feature, because it has no
-                # 'namingConvention'.
+                # This will be a method of the feature, because it is not
+                # defined in 'newVerbs' of this class or a superclass
                 print 'Y%sow!  My %s hurts!" % (
                     'e'*(20-feature.thickness), feature.__name__
                 )
 
             def slap(feature, self):
                 feature.yelp()
-                
-            slap.namingConvention = "slap%(initCap)s"
 
         This will print "Yeeeeeeeeeeeeeeeow!  My face hurts!" or
         "Yeeeeeow!  My back hurts!", as is appropriate for the specific
@@ -288,30 +286,36 @@ class MethodExporter(ActiveDescriptor, type):
 
         By now, the sharp-eyed reader will be wondering about the bits of
         magic code that keep showing up, such as the '(feature, self)'
-        parameter pattern, and 'slap.namingConvention = "slap%(initCap)s"'.
-        Not to mention our earlier usage of the 'installIf' and 'verb'
-        attributes.  So let's move on to the reference sections...
+        parameter pattern, and the 'newVerbs' list.  Not to mention our earlier
+        usage of the 'installIf' and 'verb' attributes.  So let's move on to
+        the reference sections...
 
-        namingConvention
+        Specifying Verbs with the 'newVerbs' class attribute
 
-            The 'namingConvention' function attribute designates the function
-            as a method template.  It is a format string that describes the
-            method name that it is a template for.  It is applied to a
-            dictionary supplied by MethodExporter's 'subjectNames()' method;
-            see that method for details.  'initCap' is the most commonly used
-            name in that dictionary: it supplies the MethodExporter instance's
-            name, with the first character capitalized.
+            The 'newVerbs' class attribute is a list of '(key,value)' tuples
+            listing verbs introduced in the MethodExporter being defined.
+            The keys are verb (inner method) names, and the values are format
+            strings that are used to generate the outer method names.
+            
+            The format strings are applied to a dictionary supplied by
+            MethodExporter's 'subjectNames()' method; see that method's code
+            for more details.  'initCap' is the most commonly used name in that
+            dictionary: it supplies the MethodExporter instance's name, with
+            the first character capitalized.
 
-        installIf
+        The 'installIf' function attribute
 
             The 'installIf' function attribute, if supplied, is a callable that
             takes two arguments: the feature (i.e. the MethodExporter instance
             which is being created), and the function.  If the callable returns
             a true value, the function will be used as the template for the
-            method its 'namingConvention' designates.  If not, the function will
-            not be used.
+            appropriate verb (inner and outer forms).  If the callable returns
+            false, the function will not be used.  Note that 'installIf'
+            conditions should be arranged such that only *one* can be true at
+            a time, since if more than one is true, it is undefined which
+            variant of the verb will be used.
 
-        verb
+        The 'verb' function attribute
 
             The normal use of 'installIf' is to select variant implementations
             of the same verb, based on metadata supplied in a subclass.  However,
@@ -408,6 +412,43 @@ class MethodExporter(ActiveDescriptor, type):
             *three times the size of the actual code*.  So if you've already
             read this far, you might as well read the source if you have a need
             to understand the actual implementation.  :)"""
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     def getMethod(self, ob, verb):
 
         """Look up a method dynamically
@@ -441,12 +482,12 @@ class MethodExporter(ActiveDescriptor, type):
         from TW.Utils.Method import MethodWrapper
 
         for verb,methodName in self.methodNames.items():
-            old = getattr(klass, methodName, None)
-            if old is None or hasattr(
-                getattr(old,'im_func',None),'namingConvention'
-            ):
-                setattr(klass, methodName, MethodWrapper(getattr(self,verb)))
 
+            old = getattr(klass, methodName, None)
+
+            # Safe to export if no method there, or if it is an exported verb
+            if old is None or hasattr(old,'verb'):
+                setattr(klass, methodName, MethodWrapper(getattr(self,verb)))
 
 
     def __init__(self, className, bases, classDict):
@@ -455,44 +496,44 @@ class MethodExporter(ActiveDescriptor, type):
 
         super(MethodExporter,self).__init__(className, bases, classDict)
 
-        from TW.Utils.Code import Function
-        items = []; d={}
-
+        templateItems = []; d={}
+        verbItems = list(classDict.get('newVerbs',[]))[:]
+        
         for b in bases:
-            items.extend(getattr(b,'methodTemplates',d).items())
+            templateItems.extend(getattr(b,'methodTemplates',d).items())
+            verbItems.extend(getattr(b,'verbs',d).items())
 
-        items.reverse()
-        mt = self.methodTemplates = dict(items)
+        templateItems.reverse(); verbItems.reverse()
+        mt = self.methodTemplates = dict(templateItems)
+        verbs = self.verbs  = dict(verbItems)
 
-        for methodName, method in classDict.items():
-            if not isinstance(method,FunctionType): continue
+        for methodName, func in classDict.items():
+            if not isinstance(func,FunctionType): continue
+            setattr(self,methodName,classmethod(func))
+            if hasattr(func,'verb'):
+                mt[methodName]=func
+            elif methodName in verbs:
+                func.verb = methodName
+                mt[methodName]=func
 
-            nc = getattr(method,'namingConvention',None)
-            if nc:
-                mt[methodName]=method
-                setattr(self,methodName,classmethod(method))
-            else:
-                setattr(self,methodName,classmethod(method))
 
         names = self.subjectNames()
-
         mn = self.methodNames = {}
 
         for methodName,func in mt.items():
-            verb       = getattr(func,'verb',methodName)
+
             installIf  = getattr(func,'installIf',None)
 
             if installIf is None or installIf(self,func):
-                mn[verb] = func.namingConvention % names
+                verb = func.verb
+                mn[verb] = verbs[verb] % names
                 setattr(self,verb,classmethod(func))
-
-
 
 
 
     def subjectNames(self):
 
-        """Return a dictionary usable for formatting by 'namingConvention'"""
+        """Return a dictionary for formatting outer method names"""
 
         names = self.__dict__.copy()
         className = self.__name__

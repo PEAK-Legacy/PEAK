@@ -129,10 +129,16 @@ class featureBase(object):
 
     singular = 1
 
+    newVerbs = Items(
+        get     = 'get%(initCap)s',
+        set     = 'set%(initCap)s',
+        delattr = 'delattr%(initCap)s',
+        doubled = '%(name)sDoubled',
+    )
+
     def get_single(feature, self):
         return self.__dict__[feature.__name__][0]
 
-    get_single.namingConvention = 'get%(initCap)s'
     get_single.verb = 'get'
     get_single.installIf = lambda feature,method: feature.singular
 
@@ -140,7 +146,6 @@ class featureBase(object):
     def get_multi(feature, self):
         return self.__dict__[feature.__name__]
 
-    get_multi.namingConvention = 'get%(initCap)s'
     get_multi.verb = 'get'
     get_multi.installIf = lambda feature,method: not feature.singular
 
@@ -148,17 +153,12 @@ class featureBase(object):
     def set(feature,self,val):
         self.__dict__[feature.__name__]=[val]
 
-    set.namingConvention = 'set%(initCap)s'
-
     def delattr(feature,self):
         del self.__dict__[feature.__name__]
-
-    delattr.namingConvention = 'delattr%(initCap)s'
 
     def doubled(feature,self):
         return feature.getMethod(self,'get')() * 2
 
-    doubled.namingConvention = '%(name)sDoubled'
 
 
 
