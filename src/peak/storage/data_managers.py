@@ -2,13 +2,13 @@ from peak.api import binding, model
 from interfaces import *
 from transactions import TransactionComponent
 from Persistence import Persistent
+from Persistence.cPersistence import GHOST
 from peak.util.ListProxy import ListProxy
 from lazy_loader import LazyLoader
 
 __all__ = [
     'FacadeDM', 'QueryDM', 'EntityDM', 'PersistentQuery', 'QueryLink', 
 ]
-
 
 
 
@@ -440,11 +440,11 @@ class EntityDM(QueryDM):
             key = id(ob)
 
             markSaved(key,ob)
-            del dirty[key]
+
+            if key in dirty:
+                del dirty[key]
 
             del ob._p_changed
-
-
 
 
 
