@@ -278,7 +278,7 @@ class EigenRegistry(EigenDict):
             self._setCell(iface).set(item)
             self.provided[iface]=primary_iface
 
-            for base in iface.__bases__:        
+            for base in iface.getBases():
                 if base is not Interface:
                     self._register(base,item,primary_iface)
 
