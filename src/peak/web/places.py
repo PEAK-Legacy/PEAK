@@ -54,7 +54,7 @@ class Traversable(binding.Component):
         pass    # Should do any traversal requirements checks
 
     def getURL(self,ctx):
-        return ctx.getTraversedURL()
+        return ctx.traversedURL
 
 
 
@@ -166,10 +166,6 @@ class MultiTraverser(Traversable):
 
     """Aggregate traversal across a sequence of delegate traversables"""
 
-    protocols.advise(
-        instancesProvide = [IHTTPHandler]
-    )
-
     items = binding.Require("items to be traversed")
 
     def preTraverse(self, ctx):
@@ -200,6 +196,10 @@ class MultiTraverser(Traversable):
         return loc
 
     _subTraverser = lambda self, *args, **kw: self.__class__(*args,**kw)
+
+
+
+
 
 
 

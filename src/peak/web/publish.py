@@ -3,7 +3,7 @@
 from peak.api import *
 from interfaces import *
 from errors import NotFound, NotAllowed
-from environ import getPolicy,getSkin, newEnvironment, Context
+from environ import newEnvironment, StartContext
 from cStringIO import StringIO
 import os,sys
 
@@ -17,7 +17,7 @@ class DefaultExceptionHandler(binding.Singleton):
 
     def handleException(self,ctx,exc_info,retry_allowed=1):
 
-        policy = getPolicy(ctx.environ)
+        policy = ctx.policy
 
         try:
             storage.abortTransaction(policy.app)
@@ -26,7 +26,7 @@ class DefaultExceptionHandler(binding.Singleton):
             # XXX sys.exc_info; will this always be the case?
             policy.log.exception("ERROR:")
 
-            return '500',['Content-type: text/plain'],['An error occurred']
+            return '500',[('Content-type','text/plain')],['An error occurred']
 
         finally:
             # Don't allow exc_info to leak, even if the above resulted in
@@ -75,7 +75,7 @@ class NullAuthenticationService:
         instancesProvide=[IAuthService]
     )
 
-    def getUser(self, interaction):
+    def getUser(self, environ):
         return None
 
 
@@ -108,17 +108,34 @@ class InteractionPolicy(binding.Component, protocols.StickyAdapter):
 
     root = binding.Obtain('app', adaptTo=IWebTraversable)
 
-    getUser  = binding.Delegate('_authSvc')
+    getUser = binding.Delegate('_authSvc')
 
     def newInteraction(self,**options):
         return self._mkInteraction(self,None,**options)
 
-    def newContext(self,environ={}):
-        new_env = newEnvironment(self, environ)
-        return Context(None, '', getSkin(new_env), new_env)
-        
 
 
+
+
+
+
+
+
+    def newContext(self,environ={},start=NOT_GIVEN,skin=None,interaction=None):
+        new_env = newEnvironment(environ)
+
+        if skin is None:
+            skin = self.getSkin("default")  # XXX
+
+        if interaction is None:
+            interaction = self.newInteraction(user=self.getUser(new_env))
+
+        if start is NOT_GIVEN:
+            start = skin
+
+        return StartContext('', start, new_env,
+            policy=self, skin=skin, interaction=interaction
+        )
 
 
     def beforeTraversal(self, environ):
@@ -144,6 +161,7 @@ class InteractionPolicy(binding.Component, protocols.StickyAdapter):
             exc_info = None
 
 
+
     layerMap = binding.Make( config.Namespace('peak.web.layers') )
 
     def getLayer(self,layerName):
@@ -157,8 +175,6 @@ class InteractionPolicy(binding.Component, protocols.StickyAdapter):
         ob = getattr(self.skinMap,name)
         binding.suggestParentComponent(self,name,ob)
         return ob
-
-
 
 
 
@@ -183,22 +199,6 @@ class TestPolicy(InteractionPolicy):
             return ''.join(body)
 
         return ctx
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

@@ -10,10 +10,9 @@ class TestTraversals(TestCase):
         self.ob1 = object()
         self.ob2 = object()
         self.ob3 = object()
-        self.root = object()
         self.policy = web.TestPolicy(testRoot())
-        self.env = web.newEnvironment(self.policy) 
-        self.ctx = web.Context(None,'',self.root,self.env)
+        self.ctx = self.policy.newContext()
+        self.root = self.ctx.current    # XXX
 
     def getCurrent(self):
         return self.ctx.current
@@ -31,13 +30,14 @@ class TestTraversals(TestCase):
         self.failUnless(self.getCurrent() is ob)
 
     def checkURLs(self,url):        
-        self.assertEqual(self.ctx.getAbsoluteURL(),self.url_base+url)
-        self.assertEqual(self.ctx.getTraversedURL(),self.url_base+url)
+        self.assertEqual(self.ctx.absoluteURL,self.url_base+url)
+        self.assertEqual(self.ctx.traversedURL,self.url_base+url)
 
     def setName(self,name,ob,url):
         self.ctx = self.ctx.traverseName(name)
         self.failUnless(self.getCurrent() is ob)
         self.checkURLs(url)
+
 
     def testGotoChild(self):
         self.setChild('test',self.ob1)
@@ -80,12 +80,46 @@ class TestTraversals(TestCase):
         self.setName('foo',app.foo,'/test/foo')
 
 
+    def testGetStuff(self):
+        self.failUnless(self.ctx.policy is self.policy)
+        self.failUnless(
+            security.IInteraction(self.ctx.interaction,None) is not None
+        )
+
+    def diffCtx(self,ctx1,ctx2):
+        return [a
+            for a in 'name','current','environ','policy','interaction','skin'
+                if getattr(ctx1,a) is not getattr(ctx2,a)
+        ]
+        
+    def testClone(self):
+        ctx = self.ctx.clone()
+        self.assertEqual(self.diffCtx(ctx,self.ctx),[])
+        ctx1 = ctx.childContext('test',self.ob1)
+        ctx2 = ctx1.clone(interaction = ctx.policy.newInteraction())
+        self.assertEqual(self.diffCtx(ctx1,ctx2),['interaction'])
+        ctx3 = ctx2.clone(skin = "foo")
+        self.assertEqual(self.diffCtx(ctx2,ctx3),['skin'])
+        self.assertRaises(TypeError,ctx3.clone,foo="bar")
+
 class TestContext(TestCase):
     def testNewContext(self):
         d = {}
-        ctx = web.Context(None,'',None,d)
+        ctx = web.StartContext('',None,d,policy=web.TestPolicy(testRoot()))
         self.failUnless(ctx.environ is d)
         self.failUnless(web.ITraversalContext(ctx) is ctx)
+
+
+
+
+
+
+
+
+
+
+
+
 
 TestClasses = (
     TestTraversals, TestContext,
@@ -93,6 +127,12 @@ TestClasses = (
 
 def test_suite():
     return TestSuite([makeSuite(t,'test') for t in TestClasses])
+
+
+
+
+
+
 
 
 

@@ -32,7 +32,7 @@ class IPolicyInfo(Interface):
 class IAuthService(Interface):
 
     def getUser(environ):
-        """Return a user object for the environment"""
+        """Return a user object for the given WSGI 'environ'"""
 
 
 
@@ -52,8 +52,14 @@ class IInteractionPolicy(IAuthService, IPolicyInfo):
     def newInteraction(**options):
         """Create a new 'IInteraction' with given arguments"""
 
-    def newContext(self,environ={}):
-        """Create an initial 'ITraversalContext' based on 'environ'"""
+    def newContext(environ={},start=NOT_GIVEN,skin=None,interaction=None):
+        """Create an initial 'ITraversalContext' based on 'environ', etc.
+
+        If 'start' is not supplied, the 'skin' will be used as the 'current'
+        location of the created context.  If 'skin' is not supplied, the
+        default skin is used.  If 'interaction' is not supplied, a fresh
+        interaction is created (via the 'newInteraction()' method).
+        """
 
     def beforeTraversal(environ):
         """Begin transaction before traversal"""
@@ -74,19 +80,24 @@ class IInteractionPolicy(IAuthService, IPolicyInfo):
 
 
 
+class ITraversalContext(IInteraction):
 
+    """A traversed-to location
 
-
-
-
-
-class ITraversalContext(Interface):
-
-    """A traversed-to location"""
+    Note: this inherits from 'security.IInteraction', so it also supports
+    the 'user' attribute, 'allows()' method, and so on.
+    """
     
-    current = Attribute("""Current object location""")
-    environ = Attribute("""WSGI (PEP 333) 'environ' mapping""")
-    name    = Attribute("""Name of 'current'""")
+    name     = Attribute("""Name of 'current'""")
+    current  = Attribute("""Current object location""")
+    environ  = Attribute("""WSGI (PEP 333) 'environ' mapping""")
+    policy   = Attribute("""'IInteractionPolicy' for this hit""")
+    skin     = Attribute("""Current 'ISkin' for this hit""")
+
+    rootURL      = Attribute("""Application root URL""")
+    absoluteURL  = Attribute("""Current object's absolute URL""")
+    traversedURL = Attribute("""URL traversed to get to this context""")
+
 
     def childContext(name,ob):
         """Return a new child context with name 'name' and current->'ob'"""
@@ -97,12 +108,6 @@ class ITraversalContext(Interface):
     def parentContext():
         """Return this context's parent, or self if no parent"""
 
-    def getAbsoluteURL():
-        """Return current object's absolute URL"""        
-
-    def getTraversedURL():
-        """Return URL traversed to this point"""        
-
     def traverseName(name):
         """Return a new context obtained by traversing to 'name'"""
 
@@ -112,10 +117,46 @@ class ITraversalContext(Interface):
     def getResource(path):
         """Return the named resource"""
 
-    def allows(subject,name=None,permissionNeeded=NOT_GIVEN,user=NOT_GIVEN):
-        """Return true if 'user' has 'permissionNeeded' for 'subject'
 
-        (See 'security.IInteraction.allows()' for full details)"""
+
+
+
+    def clone(**kw):
+        """Create a duplicate context, using supplied keyword arguments
+        
+        Acceptable keyword arguments include: 'name', 'current', 'environ',
+        'policy', 'skin', 'rootURL', 'interaction', 'previous', and
+        'clone_from'.  Most of these just set the corresponding attribute
+        on the new context, but the following names are special:
+
+         'clone_from' -- an existing context to clone.  If supplied, its
+           'interaction', 'skin', 'policy', and 'previous' attributes will
+           be used as defaults for the corresponding keyword arguments, if
+           they are not supplied.
+
+         'previous' -- an existing context that will be used as the new
+           context's parent context.
+
+         'interaction' -- a 'security.IInteraction' that will be used as
+           the basis for the new context's security attributes and methods.
+        """
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

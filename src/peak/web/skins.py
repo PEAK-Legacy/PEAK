@@ -3,11 +3,11 @@ from interfaces import *
 from places import Traversable, MultiTraverser
 from publish import TraversalPath
 from resources import Resource
-from environ import getSkin, getPolicy
 
 __all__ = [
     'Skin',
 ]
+
 
 
 
@@ -63,7 +63,7 @@ class Skin(Traversable):
 
     def traverseTo(self, name, ctx):
 
-        if name == getPolicy(ctx.environ).resourcePrefix:
+        if name == ctx.policy.resourcePrefix:
             return self.resources
 
         return self.root.traverseTo(name, ctx)
@@ -88,9 +88,7 @@ class Skin(Traversable):
             return self.cache[path]
 
         start = self.policy.newContext(
-            {   'peak.web.skin':self,
-                'peak.web.interaction':self.dummyInteraction
-            }
+            skin=self, interaction=self.dummyInteraction
         )
 
         # start at ++resources++
@@ -99,6 +97,8 @@ class Skin(Traversable):
         resourceCtx = path.traverse(start, getRoot = lambda ctx: start)
         self.cache[path] = subject = resourceCtx.current
         return subject
+
+
 
 
 

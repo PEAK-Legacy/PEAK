@@ -1,6 +1,5 @@
 from peak.api import *
 from interfaces import *
-from environ import getPolicy, getSkin
 from cStringIO import StringIO
 import sys
 __all__ = ['WebException', 'NotFound', 'NotAllowed', 'UnsupportedMethod']
@@ -28,7 +27,7 @@ class WebException(Exception):
         self.ctx = ctx
 
     def template(self):
-        skin = getSkin(self.ctx.environ)
+        skin = self.ctx.skin
         try:
             return skin.getResource('/peak.web/error_%s' % self.httpStatus)
         except NotFound:
@@ -38,6 +37,7 @@ class WebException(Exception):
                 return self     # XXX
 
     template = binding.Make(template)
+
 
     def handle_http(self,ctx):
         return (
@@ -49,7 +49,7 @@ class WebException(Exception):
     def handleException(self, ctx, exc_info, retry_allowed=1):
 
         try:
-            policy = getPolicy(ctx.environ)
+            policy = ctx.policy
             self.exc_info = exc_info
 
             storage.abortTransaction(policy.app)

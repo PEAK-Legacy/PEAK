@@ -11,8 +11,8 @@
 """
 
 __all__ = [
-    'getUser', 'getSkin', 'getInteraction', 'getPolicy', 'shift_path_info',
-    'getRootURL', 'traverseAttr', 'newEnvironment', 'Context',
+    'shift_path_info',
+    'traverseAttr', 'newEnvironment', 'Context', 'StartContext',
     'simpleRedirect', 'clientHas',
 ]
 
@@ -21,7 +21,7 @@ import protocols, posixpath, os
 from cStringIO import StringIO
 from peak.api import binding, adapt, NOT_GIVEN, NOT_FOUND
 import errors
-
+from peak.security.interfaces import IInteraction
 
 
 
@@ -41,41 +41,41 @@ import errors
 
 class Context:
 
+    __metaclass__ = binding.Activator
     protocols.advise(instancesProvide=[ITraversalContext])
 
-    def __init__(self,previous,name,ob,environ):
-        self.previous = previous
-        self.current = ob
+    previous = binding.Require("Parent context")
+    interaction = policy = skin = rootURL = binding.Delegate('previous')
+    allows = user = permissionNeeded = binding.Delegate('interaction')
+    getResource = binding.Delegate('skin')
+
+    def __init__(self,name,current,environ,**kw):
+        self._setup(kw)
+        self.current = current
         self.name = name
         self.environ = environ
 
     def childContext(self,name,ob):
-        return self.__class__(self,name,ob,self.environ)
+        return Context(name,ob,self.environ,previous=self,clone_from=self)
 
     def peerContext(self,name,ob):
-        return self.__class__(self.previous,name,ob,self.environ)
+        return self.clone(name=name,current=ob)
 
     def parentContext(self):
-        if self.previous is None:
-            return self
         return self.previous
 
-    def getAbsoluteURL(self):
-        if self.previous is not None:
-            return IWebTraversable(self.current).getURL(self)
-        else:
-            return getRootURL(self.environ)
+    absoluteURL = binding.Make(
+        lambda self: IWebTraversable(self.current).getURL(self)
+    )
 
-    def getTraversedURL(self):
-        if self.previous is not None:
-            base = IWebTraversable(self.current).getURL(self.previous)
-            return posixpath.join(base, self.name)   # handles empty parts OK
-        else:
-            return getRootURL(self.environ)
+    traversedURL = binding.Make(
+        lambda self: posixpath.join(    # handles empty parts OK
+            self.previous.absoluteURL, self.name
+        )
+    )
 
-    def allows(self,*args,**kw):
-        return getInteraction(self.environ).allows(*args,**kw)
-
+    def renderHTTP(self):
+        return IHTTPHandler(self.current).handle_http(self)
 
 
 
@@ -91,71 +91,71 @@ class Context:
             return self.childContext(name,ob)
 
 
-    def renderHTTP(self):
-        return IHTTPHandler(self.current).handle_http(self)
+    def clone(self,**kw):
+        for attr in 'name','current','environ':
+            if attr not in kw:
+                kw[attr] = getattr(self,attr)
+        kw.setdefault('clone_from',self)
+        return self.__class__(**kw)
 
 
-    def getResource(self,path):
-        return getSkin(self.environ).getResource(path)
+    def _setup(self,kw):
+        if 'clone_from' in kw:
+            clone_from = kw['clone_from']
+            for attr in 'interaction','policy','skin','rootURL','previous':
+                setattr(self,attr,getattr(clone_from,attr))
+            del kw['clone_from']
+        klass = self.__class__
+        for k,v in kw.iteritems():
+            if hasattr(klass,k):
+                setattr(self,k,v)
+            else:
+                raise TypeError(
+                    "%s constructor has no keyword argument %s" %
+                    (klass, k)
+                )
 
 
 
-def newEnvironment(policy,environ={},root_url=None):
+
+
+
+
+class StartContext(Context):
+
+    previous = None
+
+    skin        = binding.Require("Traversal skin",
+        adaptTo=ISkin
+    )
+    policy      = binding.Require("Interaction policy",
+        adaptTo=IInteractionPolicy
+    )
+    interaction = binding.Require("Security interaction",
+        adaptTo=IInteraction
+    )
+    rootURL    = binding.Make(
+        lambda self: self.environ['peak.web.root_url']
+    )
+
+    traversedURL = absoluteURL = binding.Obtain('rootURL')
+
+    def parentContext(self):
+        return self
+
+
+
+def newEnvironment(environ={}):
 
     new_env = dict(os.environ)     # First the OS
     new_env.update(environ)   # Then the server
 
     new_env.setdefault('HTTP_HOST','127.0.0.1')   # XXX
     new_env.setdefault('SCRIPT_NAME','/')   # XXX
-
-    new_env['peak.web.rootURL'] = root_url or \
-        "http://%(HTTP_HOST)s%(SCRIPT_NAME)s" % new_env   # XXX
-
-    new_env['peak.web.policy']  = policy
+    new_env.setdefault('peak.web.root_url', # XXX
+        "http://%(HTTP_HOST)s%(SCRIPT_NAME)s" % new_env
+    )
     return new_env
-
-
-
-
-
-
-
-
-def getPolicy(environ):
-    return environ['peak.web.policy']
-
-def getUser(environ):
-    return getPolicy(environ).getUser(environ)
-
-def getSkin(environ):
-    try:
-        return environ['peak.web.skin']
-    except KeyError:
-        skin = environ['peak.web.skin'] = getPolicy(environ).getSkin(
-            _get_skin_name(environ)
-        )
-        return skin
-
-def getInteraction(environ):
-    try:
-        return environ['peak.web.interaction']
-
-    except KeyError:
-        interaction = getPolicy(environ).newInteraction(user=getUser(environ))
-        environ['peak.web.interaction'] = interaction
-        return interaction
-
-def getRootURL(environ):
-    return environ['peak.web.rootURL']
-
-
-
-
-
-
-
-
-
 
 
 
@@ -174,12 +174,12 @@ def clientHas(environ, lastModified=None, ETag=None):
     return False    # XXX
 
 
-def shift_path_info(environ):
-
+def shift_path_info(ctx):
+    environ = ctx.environ
     path_info = environ.get('PATH_INFO','').split('/')
 
     if len(path_info)==1:
-        return None, environ
+        return None
 
     name = path_info[1]
 
@@ -189,7 +189,7 @@ def shift_path_info(environ):
         path_info = ''
 
     script_name = environ.get('SCRIPT_NAME','/')
-    name = name or getPolicy(environ).defaultMethod
+    name = name or ctx.policy.defaultMethod
 
     if name=='..':
         script_name = posixpath.dirname(script_name)
@@ -254,26 +254,26 @@ class TraversableAsHandler(protocols.Adapter):
     def handle_http(self,ctx):
 
         self.subject.preTraverse(ctx)
-        name = shift_path_info(ctx.environ)
+        name = shift_path_info(ctx)
 
         if name is None:
 
             if ctx.environ['REQUEST_METHOD'] in ('GET','HEAD'):
                 # Redirect to current location + '/'
-                url = ctx.getTraversedURL()+'/'
+                url = ctx.traversedURL+'/'
                 if ctx.environ.get('QUERY_STRING'):
                     url = '%s?%s' % (url,ctx.environ['QUERY_STRING'])
-        
+
                 return simpleRedirect(ctx.environ,url)
-        
+
             from errors import UnsupportedMethod
             raise UnsupportedMethod(ctx)
 
         return ctx.traverseName(name).renderHTTP()
 
 
-def _get_skin_name(environ):
-    return "default"    # XXX
+
+
 
 
 

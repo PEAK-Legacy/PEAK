@@ -20,7 +20,6 @@ from peak.api import *
 from interfaces import *
 from xml.sax.saxutils import quoteattr, escape
 from publish import TraversalPath
-from environ import getInteraction
 from peak.util import SOX
 
 __all__ = [
@@ -36,6 +35,7 @@ def infiniter(sequence):
     while 1:
         for item in sequence:
             yield item
+
 
 
 
@@ -542,7 +542,7 @@ class URLAttribute(Element):
         if self.dataSpec:
             data, state = self._traverse(data, state)
 
-        url = unicode(data.getAbsoluteURL())
+        url = unicode(data.absoluteURL)
 
         if not self.optimizedChildren and not self.nonEmpty:
             state.write(self._emptyTag % locals())
@@ -566,7 +566,7 @@ class URLText(ContentReplacer):
         write = state.write
 
         write(self._openTag)
-        write(unicode(data.getAbsoluteURL()))
+        write(unicode(data.absoluteURL))
         write(self._closeTag)
 
 
@@ -623,7 +623,7 @@ class List(ContentReplacer):
         state.write(self._openTag)
 
         nextPattern = infiniter(self.params['listItem']).next
-        allowed     = getInteraction(data.environ).allows
+        allowed     = data.allows
         ct = 0
 
         # XXX this should probably use an iteration location, or maybe

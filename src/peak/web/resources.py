@@ -8,7 +8,7 @@ from peak.naming.factories.openable import FileURL
 from peak.util.imports import importString
 import os.path, posixpath, sys
 from errors import UnsupportedMethod, NotFound, NotAllowed
-from environ import clientHas, getRootURL
+from environ import clientHas
 
 __all__ = [
     'Resource', 'FSResource', 'ResourceDirectory', 'FileResource',
@@ -56,7 +56,7 @@ class Resource(Traversable):
 
     def getURL(self, ctx):
         # We want an absolute URL based on the interaction
-        return posixpath.join(getRootURL(ctx.environ),self.resourcePath)
+        return posixpath.join(ctx.rootURL,self.resourcePath)
 
 
     def _getResourcePath(self):
@@ -403,7 +403,7 @@ class TemplateResource(FSResource):
 
     def getURL(self, ctx):
         # We're a method, so use our context URL, not container URL
-        return ctx.getTraversedURL()
+        return ctx.traversedURL
 
 
 
