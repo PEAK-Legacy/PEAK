@@ -226,8 +226,8 @@ class AbstractRV(object):
             return self.columns[attr]
         raise AttributeError,attr
 
-
-
+    def clone(self):
+        return deepcopy(self)
 
 
 
@@ -285,7 +285,7 @@ class Table(AbstractRV, HashAndCompare):
 
 
 
-class GroupBy(AbstractRV):
+class GroupBy(AbstractRV, HashAndCompare):
 
     def __init__(self,rv,groupBy,cond=EMPTY):
         self.condition = cond
@@ -296,6 +296,9 @@ class GroupBy(AbstractRV):
         for k in rv.keys():
             if k not in groupBy and not rv[k].isAggregate():
                 raise TypeError("Non-aggregate column in groupBy",k,rv[k])
+        self._hashAndCompare = (
+            self.__class__.__name__, rv, tuple(groupBy)
+        )
 
     def getDB(self):
         return self.rv.getDB()
@@ -322,9 +325,6 @@ class GroupBy(AbstractRV):
 
     def asFromClause(self):
         return "(%s)" % self.simpleSQL()
-
-
-
 
 class AbstractDV:
 
@@ -454,12 +454,10 @@ class BasicJoin(AbstractRV, HashAndCompare):
     def __init__(self,condition,relvars,outers=(),columns=()):
         myrels = []
         relUsage = {}
-        memo = {}
 
         def checkUsage(rv):
             r = id(rv)
             if r in relUsage:
-                return deepcopy(rv,memo)
                 raise ValueError("Relvar used more than once",rv)
             else:
                 relUsage[r]=True
@@ -468,13 +466,9 @@ class BasicJoin(AbstractRV, HashAndCompare):
         outers = map(checkUsage,outers)
 
         for rv in relvars:
-            memo = {}
             myrels.extend(map(checkUsage,rv.getInnerRVs()))
             outers.extend(map(checkUsage,rv.getOuterRVs()))
-            cond = rv.getCondition()
-            if memo and cond is not EMPTY:
-                cond = deepcopy(cond,memo)
-            condition = condition & cond
+            condition = condition & rv.getCondition()
 
         if len(myrels)<1:
             raise TypeError("BasicJoin requires at least 1 relvar")
@@ -489,6 +483,12 @@ class BasicJoin(AbstractRV, HashAndCompare):
             self.__class__.__name__, condition,
             self.relvars, self.outers, self.columns
         )
+
+
+
+
+
+
 
     def __repr__(self):
         parms=(

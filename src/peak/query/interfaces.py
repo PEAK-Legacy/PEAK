@@ -117,8 +117,8 @@ class IRelationVariable(Interface):
         aggregates, or else an error will occur.
         """
 
-
-
+    def clone():
+        """Return a deepcopy()-like clone of the RV"""
 
 
     def keys():

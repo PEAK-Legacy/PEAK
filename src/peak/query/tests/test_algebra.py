@@ -285,7 +285,7 @@ class SimplificationAndEquality(SimpleFixtures):
 
 
 
-    '''def testRVReuseNotAllowed(self):
+    def testRVReuseNotAllowed(self):
         # The same RV may not appear more than once in a single expression
 
         x,y,z = self.condX, self.condY, self.condZ
@@ -293,7 +293,7 @@ class SimplificationAndEquality(SimpleFixtures):
 
         self.assertRaises(ValueError, B, join=[A,A])
         self.assertRaises(ValueError, B, outer=[A,A])
-        self.assertRaises(ValueError, B(join=[C]), join=[C(join=[D])])'''
+        self.assertRaises(ValueError, B(join=[C]), join=[C(join=[D])])
 
 
     def testComparison(self):
@@ -410,29 +410,29 @@ class SimplificationAndEquality(SimpleFixtures):
 
 class CloningTests(SimpleFixtures):
 
-    def testRVReuse(self):
-        # The same RV may not appear more than once in a single expression
+    def testRVClone(self):
 
-        x,y,z = self.condX, self.condY, self.condZ
-        A,B,C,D = self.rvA, self.rvB, self.rvC, self.rvD
+        testRVs = [
+            self.rvA,           # table w/out DB
+            self.db.Employee,   # table w/DB
+            self.db.Employee(join=[self.rvA]),      # simple join
+            self.db.Employee(groupBy=['branchnr'])  # group-by
+        ]
 
-        B(join=[A,A])
-        B(outer=[A,A])
-        B(join=[C])(join=[C(join=[D])])
+        for rv in testRVs:
+
+            clone = rv.clone()
+
+            # RV is equal to its clone, but not the same object
+            self.assertEqual(rv,clone)
+            self.failIf(rv is clone)
+
+            # RV has identical DB to its clone (i.e. DB is not cloned)
+            self.failIf(rv.getDB() is not clone.getDB())
 
     # Needed tests:
     # * join-level cond (even subqs) referring to ambiguous table should fail
     # * EXISTS() and IN() subqueries are unique
-
-
-
-
-
-
-
-
-
-
 
 
 
