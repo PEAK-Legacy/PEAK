@@ -225,9 +225,7 @@ class CreateViaFactory(object):
 
         except AttributeError:
 
-            factory = importObject(
-                findUtility(targetObj, FactoryFor(self.iface))
-            )
+            factory = findUtility(targetObj, FactoryFor(self.iface))
 
             if factory is NOT_FOUND:
                 self.instance = factory
@@ -237,6 +235,8 @@ class CreateViaFactory(object):
                 )
 
             return self.instance
+
+
 
 
 
@@ -511,7 +511,10 @@ def register_factory(parser, section, name, value, lineInfo):
 
     def onImport(module):
         iface = importString(name)
-        pMap.registerProvider(FactoryFor(iface), ruleForExpr(name,value))
+        pMap.registerProvider(
+            FactoryFor(iface),
+            ruleForExpr(name,"importObject(%s)" % value)
+        )
         pMap.registerProvider(iface, CreateViaFactory(iface))
 
     whenImported(module, onImport)
@@ -525,9 +528,6 @@ def on_demand(parser, section, name, value, lineInfo):
             prefix = name
         )
     )
-
-
-
 
 
 
