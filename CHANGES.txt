@@ -2,6 +2,11 @@ Fixes and Enhancements since Version 0.5 alpha 2
 
  Changed, Enhanced, or Newly Deprecated Features
 
+ - There's a new 'peak.storage.files' module, with handy classes like
+   'EditableFile'.  'EditableFile' is a class that lets you edit the contents
+   of a file "in place", with atomic replacement of the original at transaction
+   commit.  If the transaction is aborted, the original file is left unchanged.
+
  - 'peak.running.scheduler.UntwistedReactor' now supports a configuration
    property ('peak.running.reactor.checkInterval') to determine how long it
    should run 'select()' calls for, when there are no scheduled tasks.

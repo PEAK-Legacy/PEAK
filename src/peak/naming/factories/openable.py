@@ -1,5 +1,5 @@
 from peak.api import *
-import sys
+import sys, os, os.path
 URL = naming.URL    # XXX can't import an un-loaded lazy module from its parent
 
 class GenericPathURL(URL.Base):
@@ -224,9 +224,12 @@ class FileFactory(binding.Component):
         return self._open(mode, 'a'+(readable and '+' or ''), autocommit)
 
     def exists(self):
-        from os.path import exists
-        return exists(self.filename)
+        return os.path.exists(self.filename)
 
+    def _acRequired(self):
+        raise NotImplementedError(
+            "Files require autocommit for write operations"
+        )
 
     def _open(self, mode, flags, ac):
 
@@ -234,32 +237,29 @@ class FileFactory(binding.Component):
             raise TypeError("Invalid open mode:", mode)
 
         if not ac and flags<>'r':
-            raise TypeError("Files require autocommit for write operations ")
+            self._acRequired()
 
         return open(self.filename, flags+mode)
 
 
-    # XXX def delete(self,autocommit=False):
-    # XXX def move(self, other, overwrite=True, autocommit=False):
 
+
+    def delete(self,autocommit=False):
+
+        if not autocommit:
+            self._acRequired()
+
+        os.unlink(self.filename)
+
+
+    # XXX def move(self, other, overwrite=True, mkdirs=False, autocommit=False):
 
 
     def getObjectInstance(klass, context, refInfo, name, attrs=None):
         url, = refInfo.addresses
-        return klass(filename = url.getFilename())
+        return klass(context, filename = url.getFilename())
 
     getObjectInstance = classmethod(getObjectInstance)
-
-
-
-
-
-
-
-
-
-
-
 
 
 
