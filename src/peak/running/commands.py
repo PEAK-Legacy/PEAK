@@ -6,20 +6,20 @@ from peak.util.imports import importObject
 
 __all__ = [
     'AbstractCommand', 'AbstractInterpreter', 'IniInterpreter',
-    'ZConfigInterpreter', 'curriedFactory',
+    'ZConfigInterpreter', 'EventDriven', 'CGICommand', 'CGIPublisher',
+    'FastCGIAcceptor',
 ]
 
 
-def curriedFactory(__factory, parentComponent=None, componentName=None, **kw):
 
-    """Preset parameters for an 'ICmdLineAppFactory' as a curried function"""
 
-    def factory(parentComponent=parentComponent, componentName=componentName,
-        **kwargs):
-            k = kw.copy(); k.update(kwargs)
-            return __factory(parent,name,**k)
 
-    return factory
+
+
+
+
+
+
 
 
 
@@ -56,24 +56,24 @@ class AbstractCommand(binding.Component):
     def run(self):
         raise NotImplementedError
 
-    def presetFactory(self, cmdFactory, **kw):
+    def getSubcommand(self, cmdFactory, **kw):
 
-        """Return a 'ICmdLineAppFactory' with our environment as its defaults"""
+        """Return a 'ICmdLineApp' with our environment as its defaults"""
 
-        return curriedFactory(
-            cmdFactory,
-            argv = self.argv,
-            stdin = self.stdin,
-            stdout = self.stdout,
-            stderr = self.stderr,
-            environ = self.environ,
-            **kw
-        )
+        for k in 'argv stdin stdout stderr environ'.split():
+            if k not in kw:
+                kw[k]=getattr(self,k)
 
+        if 'parentComponent' not in kw:
+            kw['parentComponent'] = self.getCommandParent()
+
+        return cmdFactory(**kw)
 
 
-
-
+    def getCommandParent(self):
+        """Get or create a component to be used as the subcommand's parent"""
+        # Default is to use the interpreter as the parent
+        return self
 
 
 
@@ -94,11 +94,14 @@ class AbstractInterpreter(AbstractCommand):
         raise NotImplementedError
 
 
-    def presetFactory(self, cmdFactory):
+    def getSubcommand(self, cmdFactory, **kw):
         """Same as for AbstractCommand, but with shifted 'argv'"""
-        factory = super(AbstractInterpreter,self).presetFactory(cmdFactory)
-        return curriedFactory(factory, argv = self.argv[1:])
 
+        if 'argv' not in kw:
+            kw['argv'] = self.argv[1:]
+
+        return super(AbstractInterpreter,self).getSubcommand(cmdFactory, **kw)
+        
 
     def commandName(self,d,a):
         """Basename of the file being interpreted"""
@@ -108,16 +111,13 @@ class AbstractInterpreter(AbstractCommand):
     commandName = binding.Once(commandName)
 
 
-    def getCommandParent(self):
-        """Get or create a component to be used as the subcommand's parent"""
-        # Default is to use the interpreter as the parent
-        return self
 
 
-    def getFactoryArgs(self):
-        """Get additional keyword args for calling the subcommand factory"""
-        # Default is to set 'componentName' to the basename of the launched file
-        return {'componentName': self.commandName}
+
+
+
+
+
 
 
 
@@ -130,18 +130,35 @@ class IniInterpreter(AbstractInterpreter):
         """Interpret file as an '.ini' and run the command it specifies"""
 
         parent = self.getCommandParent()
+
         config.loadConfigFile(parent, filename)
 
         # Set up a command factory based on the configuration setting
 
-        factory = self.presetFactory(
-            importObject(
-                config.getProperty('peak.running.appFactory', parent)
-            )
+        factory = importObject(
+            config.getProperty('peak.running.appFactory', parent)
         )
 
         # Now create and return the subcommand
-        return factory(parentComponent=parent, **self.getFactoryArgs())
+        return self.getSubcommand(factory,
+            parentComponent=parent, componentName = self.commandName
+        )
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -159,6 +176,212 @@ class ZConfigInterpreter(AbstractInterpreter):
             self.appSchema, 'file://localhost/%s' % filename
         )    
         return config   # XXX Assume the configured object is a suitable app...
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class EventDriven(AbstractCommand):
+
+    """Run an event-driven main loop after setup"""
+
+    stopAfter = 0
+    idleTimeout = 0
+    runAtLeast = 0
+
+    handlers = binding.requireBinding(
+        """Objects that will register themselves in reactor or task queue"""
+    )
+
+
+    def setup(self, parent=None):
+        """Install contents of event loop"""
+
+        for handler in self.handlers:
+            handler.setup(self)
+
+
+    mainLoop = binding.bindTo(IMainLoop)
+
+
+    def run(self):
+
+        """Perform setup, then run the event loop until done"""
+
+        self.setup()
+
+        self.mainLoop.run(
+            self.stopAfter,
+            self.idleTimeout,
+            self.runAtLeast
+        )
+
+        # XXX we should probably log start/stop events
+
+
+
+
+
+_browser_methods = 'GET', 'POST', 'HEAD'
+
+class CGIPublisher(binding.Component):
+
+    """Use 'zope.publisher' to run an application as CGI/FastCGI"""
+
+    publish = binding.bindTo("import:zope.publisher.publish:publish")
+
+    def run(self, input, output, errors, environ):
+
+        """Process one request"""
+
+        method = env.get('REQUEST_METHOD', 'GET').upper()
+
+        if method in _browser_methods:
+            if (method == 'POST' and
+                env.get('CONTENT_TYPE', '').lower().startswith('text/xml')
+                ):
+                request = self.xmlrpcRequest(input, output, errors, env)
+            else:
+                request = self.browserRequest(input, output, errors, env)
+        else:
+            request = self.httpRequest(input, output, errors, env)
+        
+        return self.publish(request)
+        
+    def xmlrpcRequest(self, input, output, errors, env):
+        raise NotImplementedError   # XXX
+
+    def browserRequest(self, input, output, errors, env):
+        raise NotImplementedError   # XXX
+
+    def httpRequest(self, input, output, errors, env):
+        raise NotImplementedError   # XXX
+
+
+
+
+
+
+
+class CGICommand(EventDriven):
+
+    """Run CGI/FastCGI in an event-driven loop"""
+
+    reactor = binding.bindTo(IBasicReactor)
+
+    publisher = binding.requireBinding("A CGIPublisher")
+
+
+    def isFastCGI(self):
+
+        try:
+            import fcgiapp
+        except ImportError:
+            return False    # Assume no FastCGI if module not present
+
+        return not fcgiapp.isCGI()
+
+
+    def setup(self, parent=None):
+
+        super(CGICommand, self).setup(parent)
+
+        if self.isFastCGI():
+
+            self.reactor.addReader(
+                FastCGIAcceptor(handler=self.publisher)
+            )
+
+        else:
+            self.reactor.callLater(
+                0, self.publisher.run,
+                self.stdin, self.stdout, self.stderr, self.environ
+            )
+
+
+
+
+
+
+
+class FastCGIAcceptor(binding.Base):
+
+    """Accept FastCGI connections"""
+
+    handler  = binding.requireBinding("FastCGI handler")
+
+    mainLoop = binding.bindTo(IMainLoop)
+    ping     = binding.bindTo('mainLoop/activityOccurred')
+
+    fcgi     = binding.bindTo('import:fcgiapp')
+    accept   = binding.bindTo('fcgi/Accept')
+    finish   = binding.bindTo('fcgi/Finish')
+
+
+    def fileno(self):
+        return 0    # FastCGI is always on 'stdin'
+
+
+    def doRead(self):
+
+        self.ping()
+        
+        i,o,e,env = self.accept()
+
+        try:
+            self.handler(i,o,e,env)
+
+        finally:
+            self.finish()
+            self.ping()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
