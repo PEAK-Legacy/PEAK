@@ -27,7 +27,7 @@ class NamingInteractor(binding.Component):
 
         while self.run:
             try:
-                cl = raw_input('[n2] ')
+                cl = shell.readline('[n2] ')
             except:
                 print >>shell.stdout
                 popRLHistory()

@@ -1016,7 +1016,7 @@ default for src is '!.', the current input buffer"""
             self.shell.stdout.write(prompt + l + '\n')
             return l
         else:
-            return raw_input(prompt)
+            return self.shell.readline(prompt)
 
 
     def complete(self, s, state):

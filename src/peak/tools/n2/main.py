@@ -42,11 +42,17 @@ ls()\t\tshow contents of c
     ))
 
     adapt_to = binding.Make(lambda: None,
-        options.Set('-I', type=str,
-        help='adapt looked-up object to interface specified as an' + \
+        options.Set('-I', type=str, metavar='INTERFACE',
+        help='adapt looked-up object to INTERFACE, specified as an' + \
             ' import string (implies -e)'
     ))
 
+    [options.option_handler('-i', type=str, metavar='URL',
+    help='read input from named URL / filename')]
+    def set_input(self, parser, optname, optval, remaining_args):
+        f = config.getStreamFactory(self, optval)
+        self.stdin = f.open('t', autocommit=True)
+    
     def _run(self):
         args = self.parsed_args
         if len(args) > 1:
@@ -174,6 +180,16 @@ ls()\t\tshow contents of c
 
         interactor.interact(c, self)
 
+
+    def readline(self, prompt):
+        if self.stdin is sys.stdin:
+            return raw_input(prompt)
+        else:
+            l = self.stdin.readline()
+            if not l:
+                raise EOFError
+            else:   
+                return l[:-1]
 
     # Extra builtins in the python shell
 
