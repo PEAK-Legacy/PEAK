@@ -18,7 +18,7 @@
 static char PyPersist_doc_string[] =
 "Defines Persistent mixin class for persistent objects.\n"
 "\n"
-"$Id: cPersistence.c,v 1.1 2002/10/17 19:53:12 pje Exp $\n";
+"$Id: cPersistence.c,v 1.2 2002/11/03 23:22:40 pje Exp $\n";
 
 /* A custom metaclass is only needed to support Python 2.2. */
 #if PY_MAJOR_VERSION == 2 && PY_MINOR_VERSION == 2
@@ -776,22 +776,40 @@ PyPersist_New(PyTypeObject *type, PyObject *args, PyObject *kwds)
     if (!new)
 	return NULL;
 
-    new->tp_dictoffset = 0;
+    /* initialize dictionary offset to same as __base__ type */
+    new->tp_dictoffset = new->tp_base->tp_dictoffset;
 
     /* It is possible for a class that inherits from Persistent to
        define __slots__, in which case it shouldn't have a dict.
+       We have to look in the dictionary supplied to the keyword arguments,
+       however, or we can be fooled by a base type having __slots__.
     */
-    if (PyObject_HasAttrString((PyObject *)new, "__slots__")) {
+    if (PyMapping_HasKeyString(PyTuple_GetItem(args,2), "__slots__")) {
 	return (PyObject *)new;
     }
 
     if (!new->tp_dictoffset) {
+
 	/* Update the type to know about __dict__. */
-	if (type->tp_itemsize)
+
+	if (new->tp_itemsize)
 	    new->tp_dictoffset = -(long)sizeof(PyObject *);
+
+    else if (new->tp_weaklistoffset && !new->tp_base->tp_weaklistoffset) {
+
+        /* type.__new__ gave us a new weak reference pointer, but we need 
+           it to be *after* our dictionary pointer, so take it as our
+           dictionary pointer and put the weak reference pointer where
+           we otherwise would put the dictionary. */
+
+        new->tp_dictoffset = new->tp_weaklistoffset;
+        new->tp_weaklistoffset = new->tp_basicsize;
+    }
+
 	else
 	    /* XXX Should be aligned properly */
-	    new->tp_dictoffset = type->tp_basicsize;
+	    new->tp_dictoffset = new->tp_basicsize;
+
 	new->tp_basicsize += sizeof(PyObject *);
 
 	/* Put a descriptor for __dict__ in the type's __dict__.
