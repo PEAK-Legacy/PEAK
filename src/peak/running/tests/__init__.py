@@ -419,8 +419,14 @@ def _suite():
 
     return TestSuite(s)
 
-
+def test_options():
+    from peak.util import doctest
+    return doctest.DocFileSuite(
+        'options.txt', optionflags=doctest.ELLIPSIS, package='peak.running',
+    )
+    
 allSuites = [
+    'peak.running.tests:test_options',
     'peak.running.tests:_suite',
     'test_logs:test_suite',
 ]
@@ -429,11 +435,6 @@ allSuites = [
 def test_suite():
     from peak.util.imports import importSuite
     return importSuite(allSuites, globals())
-
-
-
-
-
 
 
 

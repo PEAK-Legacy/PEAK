@@ -1,0 +1,279 @@
+==============================
+Command-line Option Processing
+==============================
+
+The ``peak.running.options`` module lets you define command-line options for
+a class (optionally inheriting options from base classes), and the ability
+to parse those options using the Python ``optparse`` library.  It offers an
+advantage over ``optparse``, however, in that it allows options to be defined
+with a lot less typing, allows options to be inherited from a base class, and
+integrates with PEAK's command-line application framework and ``peak.binding``.
+
+For our examples, we'll need to use the PEAK API and the ``options`` module::
+
+    >>> from peak.api import *
+    >>> from peak.running import options
+
+
+-------------
+Framework API
+-------------
+
+
+Attribute Options
+=================
+
+The ``options`` framework is designed for use within a command class that
+wants some of its attributes to be set via command-line options.  Thus,
+most options are specified as attribute metadata, e.g. via the ``metadata``
+argument of an attribute binding, or through attribute metadata APIs like
+``binding.metadata()`` or ``binding.declareAttributes()``.
+
+There are three kinds of options that can be associated with attributes:
+
+* ``options.Set()``
+* ``options.Add()``
+* ``options.Append()``
+
+Each kind of option performs the appropriate action on the associated
+attribute.  That is, a ``Set()`` option sets the attribute to some value, while
+an ``Add()`` or ``Append()`` option adds to or appends to the attribute's
+initial value.
+
+Let's take a look at some usage examples::
+
+    >>> opt_x = options.Set('-x', value=True, help="Set 'x' to true")
+    >>> opt_v = options.Set('-v', '--verbose', value=True, help="Be verbose")
+    >>> opt_q = options.Set('-q', '--quiet', value=False, help="Be quiet")
+    >>> opt_f = options.Set('-f', '--file', type=str, metavar="FILENAME")
+    >>> opt_p = options.Set('-p', type=int, metavar="PORT", help="Set port")
+    >>> opt_L = options.Append('-L', type=str, metavar="LIBPATH")
+    >>> opt_d = options.Add('-d', type=int, help="Add debug flag")
+
+All of these option constructors take the same arguments: one or more option
+names, followed by some combination of these keyword arguments:
+
+``type``
+    A callable that can convert from a string to the desired option type.
+    If supplied, this means that the option takes an argument, and the value
+    to be set, added, or appended to the attribute will be computed by calling
+    ``supplied_type(argument_string)`` when the option appears in a command
+    line.
+
+``value``
+    If supplied, this means that the option does not take an argument, and the
+    supplied value will be set, added, or appended to the attribute when the
+    option appears in a command line.
+
+``help``
+    A short string describing the option's purpose, for use in generating a
+    usage message.
+
+``metavar``
+    A short string used to describe the argument taken by the attribute.  For
+    example, a ``metavar`` of ``"FILENAME"`` might produce a help string like
+    ``"-f FILENAME   Set the filename"`` (assuming the option name is ``-f``
+    and the ``help`` string is ``"Set the filename"``).  Note that ``metavar``
+    is only meaningful when ``type`` is specified.  If no ``metavar``
+    is supplied, it defaults to an uppercase version of the ``type`` object's
+    ``__name__``, such that ``type=int`` defaults to a metavar of ``"INT"``::
+
+        >>> opt_p.metavar
+        'PORT'
+        >>> opt_d.metavar
+        'INT'
+
+``repeatable``
+    A true/false flag indicating whether the option may appear more than once
+    on the command line.  Defaults to ``True`` for ``Add`` and ``Append``
+    options, and ``False`` for ``Set`` options::
+
+        >>> opt_d.repeatable
+        1
+        >>> opt_L.repeatable
+        1
+        >>> opt_q.repeatable
+        0
+
+``sortKey``
+    The sort key is a value used to arrange options in a specified order for
+    help messages.  Options with lower ``sortKey`` values appear earlier in
+    generated help than options with higher ``sortKey`` values.  The default
+    ``sortKey`` is ``None``, which in current versions of Python will sort
+    before options that have a specified sort key::
+
+        >>> opt_x.sortKey is None
+        1
+
+Note that an option must have either  a ``type`` (in which case it accepts an
+argument), or a ``value`` (in which case it does not accept an argument).  It
+must have one or the other, not both.
+
+Note also that more than one option can be specified for a given attribute,
+although in that case they will usually all be ``Set(value=someval)`` options.
+For example, the For example, the ``-v`` and ``-q`` options shown above would
+most likely be used with the same attribute, e.g.::
+
+    >>> class Foo:
+    ...     binding.metadata(verbose = [opt_v, opt_q])
+    ...     verbose = False
+
+For the above class, ``-q`` will set ``verbose`` to ``False``, and ``-v`` will
+set it to ``True``.
+
+TODO: parsing examples
+
+
+Option Handlers
+===============
+
+Sometimes, however, it's necessary to do more complex option processing than
+just altering an attribute value.  So, you can also create option handler
+methods::
+
+    >>> class Foo:
+    ...     [options.option_handler('-z', type=int, help="Zapify!")]
+    ...     def zapify(self, parser, optname, optval, remaining_args):
+    ...         """Do something here"""
+
+``option_handler`` is a function decorator that accepts the same positional
+and keyword arguments as an attribute option, but instead of modifying an
+attribute, it calls the decorated function when one of the specified options
+is encountered on a command line.
+
+TODO: explain arguments, give parsing examples
+
+
+Inheriting Options
+==================
+
+By default, options defined in a base class are inherited by subclasses::
+
+    >>> class Foo:
+    ...     binding.metadata(verbose = [opt_v, opt_q])
+    >>> options.option_names(Foo())
+    ['--quiet', '--verbose', '-q', '-v']
+
+    >>> class Bar(Foo):
+    ...     [options.option_handler('-z',type=int,help="Zapify!")]
+    ...     def zapify(self, parser, optname, optval, remaining_args):
+    ...         """Do something here"""
+    >>> options.option_names(Bar())
+    ['--quiet', '--verbose', '-q', '-v', '-z']
+
+But, you can selectively reject inheritance of individual options, by passing
+their option name(s) to ``options.reject_inheritance()``::
+
+    >>> class Baz(Foo):
+    ...     options.reject_inheritance('--quiet','-v')
+    >>> options.option_names(Baz())
+    ['--verbose', '-q']
+
+Or, you can reject all inherited options and start from scratch, by calling
+``options.reject_inheritance()`` with no arguments::
+
+    >>> class Spam(Foo):
+    ...     options.reject_inheritance()
+    >>> options.option_names(Spam())
+    []
+
+
+
+Parsing
+=======
+
+
+Parser Options
+==============
+
+
+
+------------------------
+Framework Implementation
+------------------------
+
+
+``options.AbstractOption``
+==========================
+
+The ``AbstractOption`` class is a base class used to create command-line
+options.  Instances are created by specifying a series of option names, and
+optional keyword arguments to control everything else.  Here are some examples
+of correct ``AbstractOption`` usage::
+
+    >>> opt=options.AbstractOption('-x', value=42, sortKey=100)
+    >>> opt=options.AbstractOption('-y','--yodel',type=int,repeatable=False)
+    >>> opt=options.AbstractOption('--trashomatic',type=str,metavar="FILENAME")
+    >>> opt=options.AbstractOption('--foo', value=None, help="Foo the bar")
+
+A valid option spec must have one or more option names, each of which begins
+with either '-' or '--'.  It may have a ``type`` OR a ``value``, but not both.
+It can also have a ``help`` message, and if the ``type`` is specified you
+may specify a ``metavar`` used in creating usage output.  You may also specify
+whether the option is repeatable or not.  If your input fails any of these
+conditions, an error will occur::
+
+    >>> options.AbstractOption(foo=42)
+    Traceback (most recent call last):
+    ...
+    TypeError: ... constructor has no keyword argument foo
+    >>> options.AbstractOption()
+    Traceback (most recent call last):
+    ...
+    TypeError: ... must have at least one option name
+    >>> options.AbstractOption('x')
+    Traceback (most recent call last):
+    ...
+    ValueError: ... option names must begin with '-' or '--'
+    >>> options.AbstractOption('---x')
+    Traceback (most recent call last):
+    ...
+    ValueError: ... option names must begin with '-' or '--'
+
+    >>> options.AbstractOption('-x', value=42, type=int)
+    Traceback (most recent call last):
+    ...
+    TypeError: ... options must have a value or a type, not both or neither
+    >>> options.AbstractOption('-x', value=42, metavar="VALUE")
+    Traceback (most recent call last):
+    ...
+    TypeError: 'metavar' is meaningless for options without a type
+
+
+``options.OptionRegistry``
+==========================
+
+The ``options.OptionRegistry`` is a dispatcher that manages option metadata
+for any class that has command-line options.  When an option is declared
+as metadata for an attribute, it is added to the registry.  Here, we check
+that the 'method' passed to the registry's ``__setitem__`` is correct::
+
+    >>> from peak.util.unittrace import History
+    >>> class Foo: pass
+    >>> option_x = options.AbstractOption('-x',value=True)
+    >>> h = History()
+    >>> h.trace(binding.declareAttribute, Foo, 'bar', option_x)
+    >>> h.calledOnce(options.OptionRegistry.__setitem__).args.method
+    (('-x', ('bar', <...AbstractOption...>)),)
+
+The registered value for an option is a tuple of ``(optname,(attr,option))``
+tuple structures, one for each option name in the option object.  This is then
+turned into more useful information by the option registry's method combiner::
+
+    >>> options.OptionRegistry[Foo(),]
+    {'-x': ('bar', <...AbstractOption...>)}
+
+Although, it's probably easier to see the usefulness with a more elaborate
+example::
+
+    >>> class Foo:
+    ...     binding.metadata(
+    ...         bar = options.AbstractOption('-x','--exact',value=True),
+    ...         baz = options.AbstractOption('-y','--yodeling',value=False),
+    ...     )
+    >>> options.OptionRegistry[Foo(),]  # doctest: +NORMALIZE_WHITESPACE
+    {'--exact': ('bar', <...AbstractOption...>),
+    '-y': ('baz', <...AbstractOption instance...>),
+    '-x': ('bar', <...AbstractOption instance...>),
+    '--yodeling': ('baz', <...AbstractOption instance...>)}
+
