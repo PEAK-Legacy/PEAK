@@ -1,4 +1,4 @@
-"""Push/pop signal managers with SIGWHATEVER() methods (NOT thread-safe)"""
+"""DEPRECATED: Push/pop signal managers with SIGWHATEVER() methods"""
 
 __all__ = ['pushSignals', 'popSignals']
 

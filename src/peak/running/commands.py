@@ -923,9 +923,9 @@ class CGICommand(EventDriven):
             self.stdout.close()
             self.stderr.close()
 
-            # Schedule to exit after next iteration
+            # Enable task queue, and schedule to exit after one iteration
+            self.lookupComponent(ITaskQueue).enable()
             self.reactor.callLater(0, self.reactor.stop)
-
 
 
 
@@ -950,6 +950,12 @@ class CGICommand(EventDriven):
             )
 
         else:
+            # Disable the task queue immediately, so that tasks won't run
+            # before the main CGI process
+
+            tq = self.lookupComponent(ITaskQueue)
+            tq.disable()
+
             # Setup CGI
             self.reactor.callLater(
                 0, self.cgiCommand.runCGI,
@@ -965,16 +971,10 @@ class CGICommand(EventDriven):
                 self.reactor.callLater(0, self.reactor.stop)
 
 
-            # Disable the task queue immediately, so that tasks won't run
-            # before the main CGI process, but schedule it to be re-enabled
-            # afterwards.
-
-            tq = self.lookupComponent(ITaskQueue)
-            tq.disable()
-            self.reactor.callLater(0, tq.enable)
-
 
     __setupCGI = binding.Make(__setupCGI, uponAssembly=True)
+
+
 
 
 

@@ -376,15 +376,17 @@ class IBasicReactor(Interface):
     for specialized protocols.  This is a simple enough set of operations
     that we should be able to provide an "unTwisted" implementation."""
 
-    def run():
+    def run(installSignalHandlers=True):
         """Loop polling for IO or GUI events and calling scheduled funcs"""
 
+    def crash():
+        """Cause 'run()' to exit at the earliest possible moment"""
+
     def stop():
-        """Cause 'run()' to exit at the earliest practical moment"""
+        """Cause 'run()' to exit after pending scheduled calls are finished"""
 
     def callLater(delay, callable, *args, **kw):
         """Invoke 'callable' after 'delay' seconds with '*args, **kw'"""
-
 
     def addReader(reader):
         """Register 'reader' file descriptor to receive 'doRead()' calls
@@ -404,8 +406,6 @@ class IBasicReactor(Interface):
 
     def iterate(delay=0):
         """Handle scheduled events, then do I/O for up to 'delay' seconds"""
-
-
 
 
 class ITwistedReactor(IBasicReactor):

@@ -4,15 +4,14 @@ from peak.api import *
 from interfaces import *
 from peak.util.EigenData import EigenCell, AlreadyRead
 from bisect import insort_right
-from peak.util.signal_stack import pushSignals, popSignals
 from errno import EINTR
 
 __all__ = [
     'setReactor', 'getReactor', 'getTwisted',
-    'MainLoop', 'UntwistedReactor', 'DefaultSignalManager'
+    'MainLoop', 'UntwistedReactor', 'StopOnStandardSignals'
 ]
 
-class DefaultSignalManager(binding.Component):
+class StopOnStandardSignals(binding.Component):
 
     # We hook up to the reactor as soon as possible (i.e. activate upon
     # assembly), to avoid having to do the lookup during signal handling.
@@ -39,8 +38,8 @@ class DefaultSignalManager(binding.Component):
 
 
 
-class MainLoop(binding.Component):
 
+class MainLoop(binding.Component):
     """Top-level application event loop, with timeout management"""
 
     protocols.advise(
@@ -50,12 +49,13 @@ class MainLoop(binding.Component):
     reactor       = binding.Obtain(IBasicReactor)
     time          = binding.Obtain('import:time.time')
     lastActivity  = None
-    signalManager = binding.Obtain(PropertyName('peak.running.signalManager'))
-
+    signalManager = binding.Obtain(ISignalManager)
+    signalHandler = binding.Obtain(
+        PropertyName('peak.running.mainLoop.signalHandler')
+    )
 
     def activityOccurred(self):
         self.lastActivity = self.time()
-
 
     def run(self, stopAfter=0, idleTimeout=0, runAtLeast=0):
 
@@ -63,7 +63,7 @@ class MainLoop(binding.Component):
 
         self.lastActivity = self.time()
         reactor = self.reactor
-        pushSignals(self.signalManager)
+        self.signalManager.addHandler(self.signalHandler)
 
         try:
             if stopAfter:
@@ -72,11 +72,11 @@ class MainLoop(binding.Component):
             if idleTimeout:
                 reactor.callLater(runAtLeast, self._checkIdle, idleTimeout)
 
-            reactor.run()
+            reactor.run(False)
 
         finally:
             del self.lastActivity
-            popSignals()
+            self.signalManager.removeHandler(self.signalHandler)
 
         # XXX we should probably log start/stop events
 
@@ -179,6 +179,7 @@ class UntwistedReactor(binding.Component):
     select  = binding.Obtain('import:select.select')
     _error  = binding.Obtain('import:select.error')
     logger  = binding.Obtain('logging.logger:peak.reactor')
+    sigMgr  = binding.Obtain(ISignalManager)
 
     checkInterval = binding.Obtain(
         PropertyName('peak.running.reactor.checkInterval')
@@ -202,11 +203,10 @@ class UntwistedReactor(binding.Component):
 
 
 
-
     def run(self, installSignalHandlers=True):
 
         if installSignalHandlers:
-            pushSignals(self)
+            self.sigMgr.addHandler(self)
 
         try:
             self.running = True
@@ -222,7 +222,7 @@ class UntwistedReactor(binding.Component):
             self.running = False
 
             if installSignalHandlers:
-                popSignals()
+                self.sigMgr.removeHandler(self)
 
             # clear selectables (XXX why???)
             self._delBinding('readers')
@@ -230,16 +230,16 @@ class UntwistedReactor(binding.Component):
 
 
     def stop(self):
+        self.callLater(0, self.crash)
+
+    def crash(self):
         self.running = False
 
 
     def SIGINT(self, num, frame):
-        self.callLater(0, self.stop)
+        self.stop()
 
     SIGTERM = SIGBREAK = SIGINT
-
-
-
 
 
 
@@ -248,7 +248,7 @@ class UntwistedReactor(binding.Component):
 
         now = self.time()
 
-        while self.laters and self.laters[0].time <= now:
+        while self.running and self.laters and self.laters[0].time <= now:
             try:
                 self.laters.pop(0)()
             except:
@@ -281,7 +281,6 @@ class UntwistedReactor(binding.Component):
 
         elif delay:
             self.sleep(delay)
-
 
 
 

@@ -1,32 +1,32 @@
 from peak.api import *
 from interfaces import *
 import os
-from peak.util.signal_stack import signals, signal
 from weakref import WeakValueDictionary, ref
 
 try:
-    from signal import SIG_DFL
+    import signal
+
 except ImportError:
     SIG_DFL = None
+    signals = {}
+    signal_names = {}
+    signal = lambda *args: None
 
-signal_names = dict(
-    [(signum,signame) for signame,signum in signals.items()]
-)
+else:
+    SIG_DFL = signal.SIG_DFL
 
+    signals = dict(
+        [(name,number)
+            for (name,number) in signal.__dict__.items()
+                if name.startswith('SIG') and not name.startswith('SIG_')
+        ]
+    )
 
+    signal_names = dict(
+        [(signum,signame) for signame,signum in signals.items()]
+    )
 
-
-
-
-
-
-
-
-
-
-
-
-
+    signal = signal.signal
 
 
 
@@ -67,7 +67,7 @@ class SignalManager(binding.Singleton):
     def _purge(self, hid):
         if hid in self.all_handlers:
             del self.all_handlers[hid]
-        for signum, handlers in self.signal_handlers:
+        for signum, handlers in self.signal_handlers.items():
             if hid in handlers:
                 del handlers[hid]
             if not handlers:
@@ -78,7 +78,7 @@ class SignalManager(binding.Singleton):
         for hid, handler in self.signal_handlers[signum].items():
             getattr(handler,signame)(signum, frame)
 
-
+    def __call__(self,*args): return self
 
 class ProcessManager(binding.Component):
 
