@@ -48,16 +48,16 @@ class structType(type):
         'fromMapping', 'extractFromMapping',
     )
     
-    def __new__(klass, name, bases, cdict):
+    def __new__(meta, name, bases, cdict):
 
         cdict = cdict.copy()
         cdict['__slots__']=[]
 
-        for cm in klass.classmethods:
+        for cm in meta.classmethods:
             if cm in cdict:
                 cdict[cm] = classmethod(cdict[cm])
 
-        return super(structType,klass).__new__(klass, name, bases, cdict)
+        return super(structType,meta).__new__(meta, name, bases, cdict)
 
 
     def __init__(klass, name, bases, cdict):

@@ -127,16 +127,16 @@ class URLMeta(structType):
         'fromURL', 'supportsScheme'
     )
 
-    def __new__(meta, name, bases, classDict):
+    def __init__(klass, name, bases, classDict):
 
         if 'pattern' in classDict:
+
             pattern = classDict['pattern']
+
             if isinstance(pattern,str):
-                classDict['pattern']=re.compile(pattern)
+                klass.pattern = re.compile(pattern)
 
-        return super(URLMeta,meta).__new__(meta, name, bases, classDict)
-
-
+        return super(URLMeta,klass).__init__(name, bases, classDict)
 
 
 

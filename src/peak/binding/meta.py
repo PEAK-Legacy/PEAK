@@ -554,7 +554,7 @@ class Singleton(type):
 
     """Class whose methods are all class methods"""
 
-    def __new__(metaclass, name, bases, dict):
+    def __new__(meta, name, bases, dict):
 
         d = dict.copy()
 
@@ -562,7 +562,7 @@ class Singleton(type):
             if isinstance(v,FunctionType):
                 d[k]=classmethod(v)
 
-        return super(Singleton,metaclass).__new__(metaclass,name,bases,d)
+        return super(Singleton,meta).__new__(meta,name,bases,d)
 
     def __call__(klass, *args, **kw):
         raise TypeError("Singletons cannot be instantiated")
