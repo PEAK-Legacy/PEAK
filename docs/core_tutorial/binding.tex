@@ -361,11 +361,52 @@ fact, it won't, because the \module{peak.api} subpackage uses a
 ``lazy import" mechanism.  Individual API subpackages like \module{peak.binding}
 won't be imported until they're actually used by your code, to prevent wasteful
 up-front loading of all the modules and classes.  See the source for
-\module{peak.api.__init__} and the \class{lazyImport} class in
+\module{peak.api.__init__} and the \class{lazyModule} function in
 \module{peak.binding.imports}, if you'd like to know more about how it works.
 \end{notice} 
 
+
+
+XXX peak.exceptions, where ``interfaces" modules are, ...?
+
+XXX installing?
+
 \newpage
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 \section{Specifying Attributes Using Bindings}
 
@@ -531,6 +572,134 @@ component base, without a lot of the extra features found in its subclasses.
 
 
 
+\subsubsection{\class{binding.Once} - The Basis for all Bindings}
+
+All PEAK bindings are created using the class \class{binding.Once}, or a
+subclass thereof.  It provides the basic machinery needed to compute an
+attribute "on-the-fly".  Here's a simple example of its use:
+
+\begin{verbatim}
+class Car(binding.Base):
+
+    def height(self,instDict,attrName):
+        baseHeight = self.roof.top - self.chassis.bottom
+        return self.wheels.radius + baseHeight
+
+    height = binding.Once(height)
+
+\end{verbatim}
+
+In this example, we want to compute the car's height based on various other
+attributes, but we only want to compute it once, and save the value thereafter.
+To do this, we define a function that takes three arguments: the object, its
+instance dictionary, and the name of the attribute being computed.  Most of the
+time, you'll only care about the first argument, which is the object for which
+the attribute is being computed.  It's rare that you'll need the instance
+dictionary or the attribute name, but if you need them, they're there.
+Normally, you'll just return the value you want the attribute to end up with.
+
+Note, by the way, that there's no need for this function passed to
+\class{binding.Once} to be a method, or for the parameters to have specific
+names.  If we continued the class above as follows:
+
+\begin{verbatim}
+    verticalCenter = binding.Once(lambda s,d,a: s.height/2)
+
+\end{verbatim}
+
+This would be a perfectly valid way to express the idea that the car's vertical
+center is half of its height.  It's also true that we could say:
+
+
+
+
+\begin{verbatim}
+    passengers = binding.Once(lambda s,d,a: {})
+
+\end{verbatim}
+
+as another way of saying \samp{binding.New(dict)}.  However, the
+\function{binding.New} function is more compact, and clearer as to intention.
+Of course, its implementation consists of creating a function and returning a
+\class{binding.Once} instance wrapped around that function, just the same as
+we could do ``by hand".
+
+By the way, although we've been only showing uses of \class{binding.Once} with
+one argument (the function to be called), \class{binding.Once} does actually
+take other arguments, such as a default attribute name, a ``provides" 
+specification (more on this later) and a docstring.  Check out the PEAK
+API Reference or the source code for more details.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+\subsubsection{Re-binding, Pre-binding, Un-binding, and Persistence}
+
+We've mentioned over and over that attribute bindings are computed only once,
+but that's not precisely true.  It's actually possible for them to be computed
+zero times, or many times, if we set or delete the attribute the binding
+defines.
+
+You may have wondered, ``how does a binding know whether it's been computed or
+not?"  It knows because there is an entry in the object's dictionary for the
+value.  (Notice, by the way, that this means objects without dictionaries can't
+get much use out of bindings.)
+
+But what if there's something already in the dictionary?  Or what if you remove
+the value from the dictionary?  Well, it's pretty much as you'd expect.  If you
+set a value for an attribute, then the binding will not compute a value.  If
+you delete the attribute, and try to access it, the binding will recompute the
+value.  This behavior can actually be quite useful in the context of 
+transactions: many PEAK transactional components delete certain bindings at the
+conclusion of a transaction, allowing them to be recomputed in the next
+transaction.
+
+PEAK also makes use of the ability to override a binding by manually setting
+a value for an attribute.  For example, most PEAK component classes'
+\method{__init__} methods accept keyword arguments which can override attributes
+which would otherwise be determined by bindings.  This is especially useful in
+conjunction with the \class{binding.requireBinding} binding class, which simply
+raises an error when you try to access its attribute.  It's a handy way of
+specifying that a component must have the attribute, but that a subclass or
+instance must supply the value.
+
+By the way, it's important to note that bindings do \emph{not} participate in
+persistence, as they directly alter the associated object's dictionary.  You
+should carefully consider the use of attribute bindings in persistent objects,
+as to how they will interact with your persistence machinery (e.g. whether they
+should be saved or not) and whether you will want to write them in such a way
+as to consider the object ``changed" when an attribute is computed.
+
+
+
+
+
+\subsection{Available Binding Types}
+
+XXX AutoCreated, bindSequence, bindTo, requireBinding, bindToParent, 
+bindToProperty, bindToUtilities, Constant, Acquire, bindToSelf, Copy, New,
+Once, OnceClass
 
 
 \section{Composing Hierarchies with \class{binding.Component} Objects}
