@@ -207,12 +207,34 @@ class TestNamespaces(TestCase):
 
     def setUp(self):
         self.policy = web.TestPolicy(testRoot())
+        self.foo_skin = web.Skin()
+
+        foo_dapter = lambda *args: self
+        bar_dapter = lambda *args: "baz"
+
         self.policy.registerProvider(
-            'peak.web.namespaces.foo', config.Value(lambda *args: self)
+            web.NAMESPACE_NAMES+'.foo', config.Value(foo_dapter)
         )
         self.policy.registerProvider(
-            'peak.web.namespaces.bar', config.Value(lambda *args: "baz")
+            web.NAMESPACE_NAMES+'.bar', config.Value(bar_dapter)
         )
+        self.policy.registerProvider(
+            'peak.web.skins.foo', config.Value(self.foo_skin)
+        )
+        self.p1 = config.registeredProtocol(self.policy,web.VIEW_NAMES+'.foo')
+        protocols.declareAdapter(lambda ob:foo_dapter,[self.p1],forTypes=[int])
+        protocols.declareAdapter(lambda ob:bar_dapter,[self.p1],forTypes=[str])
+
+        from test_templates import TestApp
+        self.app = TestApp(testRoot())
+
+    def invokeHandler(self,ctx,handler,qname,check_context=True):
+        ns, nm = web.parseName(qname)
+        res = handler(ctx,ns,nm,qname)
+        if check_context:
+            self.failUnless(res.parentContext() is ctx)
+            self.assertEqual(res.name, qname)
+        return res
 
     def testRegisteredNS(self):
         ctx = self.policy.newContext(start=123)
@@ -220,29 +242,91 @@ class TestNamespaces(TestCase):
         self.failUnless(self.policy.ns_handler('foo')(*args) is self)
         self.assertEqual(self.policy.ns_handler('bar')(*args), "baz")
 
+
+
     def testTraverseResource(self):
         RESOURCE_NS = self.policy.resourcePrefix
         ctx = self.policy.newContext(start=123)
-        res = web.traverseResource(ctx, RESOURCE_NS[2:-2], '', RESOURCE_NS)
+
+        res = self.invokeHandler(ctx, web.traverseResource, RESOURCE_NS)
         self.failUnless(res.current is ctx.skin)
-        self.failUnless(res.parentContext() is ctx)
-        self.assertEqual(res.name, RESOURCE_NS)
+
         self.assertRaises(web.NotFound, web.traverseResource,
             ctx, RESOURCE_NS[2:-2], 'xyz', RESOURCE_NS+"xyz"
         )
 
-    def testTraverseName(self):
+    def testRegisteredView(self):
+        self.failUnless(self.policy.view_protocol('foo') is self.p1)
+        ctx = self.policy.newContext(start=123)
+        self.failUnless(ctx.getView('foo') is self)
+        self.assertRaises(web.NotFound, ctx.getView, NO_SUCH_NAME)
+        self.failUnless(ctx.getView(NO_SUCH_NAME,NOT_FOUND) is NOT_FOUND)
+        ctx = ctx.clone(current="123")
+        self.assertEqual(ctx.getView('foo'), "baz")
+        ctx = ctx.clone(current=[])
+        self.assertRaises(web.NotFound, ctx.getView, 'foo')
+        self.failUnless(ctx.getView('foo',NOT_FOUND) is NOT_FOUND)
+
+    def testTraverseView(self):
+        ctx = self.policy.newContext(start=123)
+        for name in '@@foo', '++view++foo':
+            res = self.invokeHandler(ctx, web.traverseView, name)
+            self.failUnless(res.current is self)
+        self.assertRaises(web.NotFound,
+            self.invokeHandler, ctx, web.traverseView, "@@"+NO_SUCH_NAME
+        )
+
+    def testTraverseSkin(self):
+        ctx = self.policy.newContext(start=123)
+        res = self.invokeHandler(ctx, web.traverseSkin, '++skin++foo', False)
+        self.failUnless(res.skin is self.foo_skin)
+        self.assertEqual(res.rootURL, ctx.rootURL+'/++skin++foo')
+        self.assertRaises(web.NotFound,
+            self.invokeHandler, ctx, web.traverseSkin, "++skin++"+NO_SUCH_NAME
+        )
+
+    def testTraverseAttr(self):
+        ctx = self.policy.newContext(start=self.app)
+        res = self.invokeHandler(ctx, web.traverseAttr, '++attr++foo')
+        self.failUnless(res.current is self.app.foo)
+        self.assertRaises(web.NotFound,
+            self.invokeHandler, ctx, web.traverseAttr, "++attr++"+NO_SUCH_NAME
+        )
+        self.assertRaises(web.NotAllowed,
+            self.invokeHandler, ctx, web.traverseAttr, "++attr++__class__"
+        )
+
+    def testTraverseItem(self):
+        ctx = self.policy.newContext(start={'foo':'bar'})
+        res = self.invokeHandler(ctx, web.traverseItem, '++item++foo')
+        self.failUnless(res.current=='bar')
+        self.assertRaises(web.NotFound,
+            self.invokeHandler, ctx, web.traverseItem, "++item++"+NO_SUCH_NAME
+        )
+        #self.assertRaises(web.NotAllowed,
+        #    self.invokeHandler, ctx, web.traverseItem, "++item++...?"
+        #)
+
+    def testTraverseNames(self):
         ctx = self.policy.newContext(start=123)
         self.failUnless(ctx.traverseName('++foo++bar') is self)
         self.assertEqual(ctx.traverseName('++bar++baz'), 'baz')
+        self.failUnless(ctx.traverseName('@@foo').current is self)
+        self.failUnless(ctx.traverseName('++view++foo').current is self)
+        self.failUnless(
+            ctx.traverseName('++skin++foo').skin is self.foo_skin
+        )
+        for pfx in '@@','++view++','++skin++':
+            self.assertRaises(web.NotFound, ctx.traverseName, pfx+NO_SUCH_NAME)
+        ctx = self.policy.newContext(start=self.app)
+        foo = self.app.foo
+        self.failUnless(ctx.traverseName('++attr++foo').current is foo)
+        ctx = self.policy.newContext(start={'foo':'bar'})
+        self.assertEqual(ctx.traverseName('++item++foo').current, 'bar')
 
 
 
-
-
-
-
-
+NO_SUCH_NAME = '__nonexistent__$$@'
 
 TestClasses = (
     TestTraversals, TestContext, TestNamespaces,
@@ -250,8 +334,6 @@ TestClasses = (
 
 def test_suite():
     return TestSuite([makeSuite(t,'test') for t in TestClasses])
-
-
 
 
 

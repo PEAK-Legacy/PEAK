@@ -11,8 +11,10 @@
 """
 
 __all__ = [
-    'traverseAttr', 'default_for_testing', 'Context', 'StartContext',
+    'find_attr', 'default_for_testing', 'Context', 'StartContext',
     'simpleRedirect', 'clientHas','parseName', 'traverseResource',
+    'traverseView', 'traverseSkin', 'traverseAttr', 'traverseItem',
+    'find_item',
 ]
 
 from interfaces import *
@@ -21,8 +23,6 @@ from cStringIO import StringIO
 from peak.api import binding, adapt, NOT_GIVEN, NOT_FOUND
 import errors
 from peak.security.interfaces import IInteraction
-
-
 
 
 
@@ -62,22 +62,22 @@ def traverseResource(ctx, ns, nm, qname):
     raise errors.NotFound(ctx, qname, ctx.current)
 
 
+def traverseView(ctx, ns, nm, qname):
+    return ctx.childContext(qname, ctx.getView(nm))
 
 
+def traverseSkin(ctx, ns, nm, qname):
+    skin = ctx.policy.getSkin(nm)
+    if skin is not None:
+        return ctx.clone(skin=skin, rootURL=ctx.rootURL+'/'+qname)
+    raise errors.NotFound(ctx, qname, ctx.current)
 
 
+def traverseAttr(ctx, ns, nm, qname):
+    return ctx.childContext(qname, find_attr(ctx, ctx.current, nm, qname))
 
-
-
-
-
-
-
-
-
-
-
-
+def traverseItem(ctx, ns, nm, qname):
+    return ctx.childContext(qname, find_item(ctx, ctx.current, nm, qname))
 
 
 class Context:
@@ -219,27 +219,27 @@ class Context:
             return self.childContext(name,ob)
 
 
+    def getView(self,name,default=NOT_GIVEN):
+        p = self.policy.view_protocol(name)
+
+        if p is not None:
+            handler = adapt(self.current,p,NOT_FOUND)
+
+            if handler is not NOT_FOUND:
+                return handler(self, 'view', name, '@@'+name)
+
+        if default is NOT_GIVEN:
+            raise errors.NotFound(self,'@@'+name,self.current)
+
+        return default
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    def requireAccess(self,qname,*args,**kw):
+        result = self.allows(*args,**kw)
+        if not result:
+            raise errors.NotAllowed(self,qname,
+                getattr(result,'message',"Permission denied")
+            )
 
 
 
@@ -297,31 +297,31 @@ def clientHas(environ, lastModified=None, ETag=None):
     return False    # XXX
 
 
-def traverseAttr(ctx, ob, name):
+def find_attr(ctx, ob, name, qname):
 
     loc = getattr(ob, name, NOT_FOUND)
 
-    if loc is not NOT_FOUND:
+    if loc is not NOT_FOUND:      
+        ctx.requireAccess(qname, ob, name)
+        return loc
 
-        result = ctx.allows(ob, name)
+    raise errors.NotFound(ctx,qname,ob)
 
-        if result:
+
+def find_item(ctx, ob, name, qname):
+    
+    gi = getattr(ob,'__getitem__',None)
+
+    if gi is not None:
+        try:
+            loc = ob[name]
+        except (KeyError,IndexError,TypeError):
+            pass
+        else:
+            ctx.requireAccess(qname, loc)
             return loc
 
-        raise errors.NotAllowed(
-            ctx, getattr(result,'message',"Permission Denied")
-        )
-
-    raise errors.NotFound(ctx,name,ob)
-
-
-
-
-
-
-
-
-
+    raise errors.NotFound(ctx,qname,ob)
 
 
 

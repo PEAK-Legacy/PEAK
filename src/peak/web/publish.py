@@ -113,13 +113,13 @@ class InteractionPolicy(binding.Configurable, protocols.StickyAdapter):
     def newInteraction(self,**options):
         return self._mkInteraction(self,None,**options)
 
-
     ns_handler = binding.Make(
-        lambda self: \
-            config.Namespace(NAMESPACE_NAMES, self).get
+        lambda self: config.Namespace(NAMESPACE_NAMES, self).get
     )
 
-
+    view_protocol = binding.Make(
+        lambda self: config.Namespace(VIEW_NAMES, self).get
+    )
 
     def newContext(self,environ=None,start=NOT_GIVEN,skin=None,interaction=None):
 
@@ -177,16 +177,16 @@ class InteractionPolicy(binding.Configurable, protocols.StickyAdapter):
 
     layerMap = binding.Make( config.Namespace('peak.web.layers') )
 
-    def getLayer(self,layerName):
-        ob = getattr(self.layerMap,layerName)
+    def getLayer(self,layerName,default=None):
+        ob = getattr(self.layerMap,layerName,default)
         binding.suggestParentComponent(self,layerName,ob)
         return ob
 
 
     skinMap = binding.Make( config.Namespace('peak.web.skins') )
 
-    def getSkin(self, name):
-        ob = getattr(self.skinMap,name)
+    def getSkin(self, name, default=None):
+        ob = getattr(self.skinMap,name,default)
         binding.suggestParentComponent(self,name,ob)
         return ob
 

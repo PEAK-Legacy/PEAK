@@ -51,7 +51,7 @@ class Resource(Traversable):
     def preTraverse(self, ctx):
         perm = self.permissionNeeded
         if not ctx.allows(self, permissionNeeded = perm):
-            raise NotAllowed(ctx)
+            raise NotAllowed(ctx, '')
 
 
     def getURL(self, ctx):

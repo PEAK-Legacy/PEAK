@@ -9,13 +9,15 @@ __all__ = [
     'RESOURCE_PREFIX', 'DEFAULT_METHOD', 'APPLICATION_LOG', 'NAMESPACE_NAMES',
     'IDOMletState', 'IHTTPHandler', 'IHTTPApplication', 'INamespaceHandler',
     'IDOMletNode',    'IDOMletNodeFactory', 'IResource', 'ITraversalContext',
-    'IDOMletElement', 'IDOMletElementFactory', 'ISkin', 'IPolicyInfo'
+    'IDOMletElement', 'IDOMletElementFactory', 'ISkin', 'IPolicyInfo',
+    'VIEW_NAMES',
 ]
 
 DEFAULT_METHOD    = PropertyName('peak.web.defaultMethod')
 RESOURCE_PREFIX   = PropertyName('peak.web.resourcePrefix')
 APPLICATION_LOG   = PropertyName('peak.web.appLog')
 NAMESPACE_NAMES   = PropertyName('peak.web.namespaces')
+VIEW_NAMES        = PropertyName('peak.web.views')
 
 class IPolicyInfo(Interface):
 
@@ -37,17 +39,15 @@ class IAuthService(Interface):
 
 
 
-
-
 class IInteractionPolicy(IAuthService, IPolicyInfo):
 
     """Component holding cross-hit configuration and consolidated services"""
 
-    def getSkin(name):
-        """Return the named skin"""
+    def getSkin(name, default=None):
+        """Return the named skin, or 'default'"""
 
-    def getLayer(name):
-        """Return the named layer"""
+    def getLayer(name, default=None):
+        """Return the named layer, or 'default'"""
 
     def newInteraction(**options):
         """Create a new 'IInteraction' with given arguments"""
@@ -74,8 +74,8 @@ class IInteractionPolicy(IAuthService, IPolicyInfo):
     def ns_handler(ns,default=None):
         """Return an 'INamespaceHandler' for namespace 'ns', or 'default'"""
 
-
-
+    def view_protocol(viewname,default=None):
+        """Return the protocol for views named 'viewname', or 'default'"""
 
 
 
@@ -117,8 +117,8 @@ class ITraversalContext(IInteraction):
     def getResource(path):
         """Return the named resource"""
 
-
-
+    def getView(name,default=NOT_GIVEN):
+        """Return named view for target (or 'default', or raise NotFound)"""
 
 
     def shift():
@@ -162,6 +162,17 @@ class ITraversalContext(IInteraction):
         """
 
 
+    def requireAccess(qname, subject,
+        name=None, permissionNeeded=NOT_GIVEN,user=NOT_GIVEN
+    ):
+        """'NotAllowed' unless 'user' has 'permissionNeeded' for 'subject'
+
+        'qname' is used only for generating an appropriate error if permission
+        isn't granted.  The other arguments are per the 'allows()' method of
+        'security.IInteraction'.  There is no return value.
+        """
+
+
 class IWebTraversable(Interface):
 
     """A component that supports path traversal"""
@@ -193,18 +204,12 @@ class IWebTraversable(Interface):
 
 
 class IResource(IWebTraversable):
-
     """Traversable with a fixed location"""
 
     resourcePath = Attribute("Relative URL (no leading '/') from skin")
 
 
-
-
-
-
 class IHTTPHandler(Interface):
-
     """A component for rendering an HTTP response"""
 
     def handle_http(ctx):
@@ -216,12 +221,10 @@ class IHTTPHandler(Interface):
 
 
 class IHTTPApplication(IHTTPHandler):
-
     """An IHTTPHandler that handles exceptions, transactions, etc."""
 
 
 class IWebException(Interface):
-
     """An exception that knows how it should be handled for a web app"""
 
     def handleException(environ,exc_info,retry_allowed=1):
@@ -236,9 +239,6 @@ class IResourceService(Interface):
 
 class ISkin(IResource, IResourceService):
     """A resource container, and the root resource for its contents"""
-
-
-
 
 
 

@@ -3,7 +3,7 @@ from interfaces import *
 from types import FunctionType, MethodType
 import posixpath
 from errors import NotFound, NotAllowed, WebException
-from environ import traverseAttr
+from environ import find_attr
 
 __all__ = [
     'Traversable', 'Decorator', 'ContainerAsTraversable', 'MultiTraverser',
@@ -48,7 +48,7 @@ class Traversable(binding.Component):
     )
 
     def traverseTo(self, name, ctx):
-        return traverseAttr(ctx, self, name)
+        return find_attr(ctx, self, name, name)
 
     def preTraverse(self, ctx):
         pass    # Should do any traversal requirements checks
@@ -100,7 +100,7 @@ class Decorator(Traversable):
 
     def traverseTo(self, name, ctx):
         try:
-            return traverseAttr(ctx, self, name)
+            return find_attr(ctx, self, name, name)
         except NotFound:
             # Not recognized, try the un-decorated object
             pass           
@@ -110,10 +110,10 @@ class Decorator(Traversable):
 
             if guard is not None and guard.getPermissionForName(name):
                 # We have explicit permissions defined, so reject access
-                raise NotAllowed(ctx, result.message)
+                raise NotAllowed(ctx, name, result.message)
 
         # attribute is absent or private, fall through to underlying object
-        return traverseAttr(ctx, self.ob, name)
+        return find_attr(ctx, self.ob, name, name)
 
 
 
@@ -146,7 +146,7 @@ class ContainerAsTraversable(Decorator):
                 if result:
                     return ob
 
-                raise NotAllowed(ctx, result.message)
+                raise NotAllowed(ctx, name, result.message)
                 
         return super(ContainerAsTraversable,self).traverseTo(name, ctx)
 
