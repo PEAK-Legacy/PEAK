@@ -1,8 +1,7 @@
 """Encapsulate use of Zope's 'Interface' package"""
 
-from Interface import Interface
-from Interface.Attribute import Attribute
-from Interface.Implements import implements as addDeclarationToType
+from zope.interface import Interface, Attribute
+from zope.interface.implements import implements as addDeclarationToType
 
 __all__ = [
     'Interface', 'Attribute', 

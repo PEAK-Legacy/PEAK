@@ -2,8 +2,38 @@
 
 """Distutils setup file"""
 
+from distutils.core import Extension
+from os.path import join, walk
+from os import sep
+import fnmatch
+
 include_tests = True        # edit this to stop installation of test modules
 include_metamodels = True   # edit this to stop installation of MOF, UML, etc.
+
+
+try:
+    import Pyrex.Distutils
+    EXT = '.pyx'
+
+except ImportError:
+    EXT = '.c'
+
+
+def findDataFiles(dir, skipDepth, *globs):
+
+    def visit(out, dirname, names):
+	n = []
+        for pat in globs:
+            n.extend(fnmatch.filter(names,pat))
+        if n:
+            instdir = sep.join(dirname.split(sep)[skipDepth:])
+            out.append( (instdir, [join(dirname,f) for f in n]) )
+
+    out = []
+    walk(dir,visit,out)
+    return out
+
+
 
 # Metadata
 
@@ -25,6 +55,18 @@ packages = [
 
     'Interface', 'Interface.Common', 'Interface.Registry',
     'Persistence',
+]
+
+extensions = [
+    Extension("kjbuckets", ["src/kjbuckets/kjbucketsmodule.c"]),
+    Extension(
+        "peak.binding._once", [
+            "src/peak/binding/_once" + EXT,
+            "src/peak/binding/getdict.c"
+        ]
+    ),
+    Extension("peak.util.buffer_gap", ["src/peak/util/buffer_gap" + EXT]),
+    Extension("peak.util._Code", ["src/peak/util/_Code" + EXT]),
 ]
 
 
@@ -77,6 +119,34 @@ if include_metamodels:
             ),
         ]
 
+try:
+    # Check if Zope X3 is installed; we use zope.component
+    # because we don't install it ourselves; if we used something we
+    # install, we'd get a false positive if PEAK was previously installed.
+    import zope.component
+    zope_installed = True
+
+except ImportError: 
+    zope_installed = False
+
+
+if not zope_installed:
+
+    packages += [
+        'zope', 'zope.interface', 'zope.interface.common',
+        'persistence', 'ZConfig',
+    ]
+
+    extensions += [
+        Extension("persistence._persistence", ["src/persistence/persistence.c"])
+    ]
+
+    if include_tests:
+        packages += [
+            'zope.interface.tests', 'persistence.tests', 'ZConfig.tests',
+        ]
+
+        data_files += findDataFiles('src/ZConfig/tests', 1, '*.xml', '*.txt', '*.conf')
 
 
 
@@ -103,21 +173,7 @@ setup(
 
     data_files = data_files,
 
-    ext_modules = [
-        Extension("kjbuckets", ["src/kjbuckets/kjbucketsmodule.c"]),
-        Extension("Persistence.cPersistence",
-            ["src/Persistence/cPersistence.c"]
-        ),
-        Extension(
-            "peak.binding._once", [
-                "src/peak/binding/_once" + EXT,
-                "src/peak/binding/getdict.c"
-            ]
-        ),
-        Extension("peak.util.buffer_gap", ["src/peak/util/buffer_gap" + EXT]),
-        Extension("peak.util._Code", ["src/peak/util/_Code" + EXT]),
-    ],
-
+    ext_modules = extensions,
 )
 
 
