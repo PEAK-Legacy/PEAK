@@ -172,7 +172,8 @@ class Selector(binding.Component):
     haveSignal = signals = binding.Delegate('sigsrc')
 
 
-    rwe = binding.Make( [dict,dict,dict] )
+    cache = binding.Make( [dict,dict,dict] )
+    rwe   = binding.Make( [dict,dict,dict] )
     count = binding.Make( lambda: sources.Semaphore(0) )
     scheduler = binding.Obtain(IScheduler)
 
@@ -202,7 +203,6 @@ class Selector(binding.Component):
 
 
 
-
     def monitor(self):
 
         r,w,e = self.rwe
@@ -213,8 +213,8 @@ class Selector(binding.Component):
         error = self._error
 
         while True:
-            yield sleep; resume()   # Give other threads a chance to proceed
             yield count; resume()   # wait until there are selectables
+            yield sleep; resume()   # ensure we are in top-level loop
 
             delay = time_available()
             if delay is None:
@@ -230,7 +230,7 @@ class Selector(binding.Component):
 
             for fired,events in zip(rwe,self.rwe):
                 for stream in fired:
-                    events[stream]().send(True)
+                    events[stream].send(True)
 
 
     monitor = binding.Make(threaded(monitor), uponAssembly=True)
@@ -245,28 +245,69 @@ class Selector(binding.Component):
 
 
     def _getEvent(self,rwe,stream):
-
         if hasattr(stream,'fileno'):
             key = stream.fileno()
         else:
             key = int(stream)
 
         try:
-            return self.rwe[rwe][key]()
+            return self.cache[rwe][key]()
         except KeyError:
             e = self._mkEvent(rwe,key)
-            self.rwe[rwe][key] = ref(
-                e, lambda ref: self._rmEvent(rwe,key)
-            )
-            self.count.put()
+            self.cache[rwe][key] = ref(e, lambda ref: self._rmEvent(rwe,key))
             return e
 
     def _mkEvent(self,rwe,key):
-        return sources.Broadcaster()
+        ob = _IOEvent()
+        ob._activate = lambda ob: self._activate(rwe,key,ob)
+        ob._deactivate = lambda: self._deactivate(rwe,key)
+        return ob
 
     def _rmEvent(self,rwe,key):
-        del self.rwe[rwe][key]
-        self.count.take()
+        del self.cache[rwe][key]
+
+    def _activate(self,rwe,key,src):
+        if key not in self.rwe[rwe]:
+            self.rwe[rwe][key] = src
+            self.count.put()
+
+    def _deactivate(self,rwe,key):
+        if key in self.rwe[rwe]:
+            del self.rwe[rwe][key]
+            self.count.take()
+
+
+
+
+
+
+
+
+
+
+class _IOEvent(sources.Broadcaster):
+
+    __slots__ = '_activate','_deactivate'
+
+    def addCallback(self,func):
+        super(_IOEvent,self).addCallback(func)
+        if self._callbacks:
+            self._activate(self)
+
+    def _fire(self,event):
+        self._deactivate()
+        super(_IOEvent,self)._fire(event)
+
+
+
+
+
+
+
+
+
+
+
 
 
 
