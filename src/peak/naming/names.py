@@ -153,6 +153,8 @@ class ParsedURL(object):
 
     dont_unquote = ()
 
+    scheme = None
+    body   = None
 
 
 
@@ -160,9 +162,7 @@ class ParsedURL(object):
 
 
 
-
-
-    def __init__(self, url=None):
+    def __init__(self, scheme=None, body=None):
         self.setup(locals())
     
     def parse(self, scheme, body):
@@ -212,33 +212,27 @@ class ParsedURL(object):
 
             self.__dict__.update(d)
 
-
         update(initargs)
-        url = initargs.get('url')
 
-        if url is not None:
-        
-            if isinstance(url,str):
+        scheme = initargs.get('scheme') or self._defaultScheme
+        body   = initargs.get('body')
 
-                m = URLMatch(url)
+        if not self.supportsScheme(scheme):
+            raise exceptions.InvalidName(
+                "Unsupported scheme", scheme
+            )
 
-                if m:
-                    scheme, body = m.group(1), url[m.end():]
-                else:
-                    scheme = initargs.get('scheme') or self._defaultScheme
-                    body = url
-            else:
-                scheme, body = url.scheme, url.body
-                
-            if not self.supportsScheme(scheme):
-                raise exceptions.InvalidName(
-                    url, "Unsupported scheme"
-                )
-
-            initargs.update(self.parse(scheme, body))
+        if body is not None:
+            update(self.parse(scheme, body))
 
 
-        update(initargs)
+
+
+
+
+
+
+
 
 
 
@@ -553,9 +547,11 @@ def toName(aName, nameClass=CompoundName, acceptURL=1):
     if isinstance(aName,StringTypes):
     
         if acceptURL and URLMatch(aName):
-            return ParsedURL(aName)
+            m = URLMatch(aName)
+            scheme, body = m.group(1), aName[m.end():]
+            return ParsedURL(scheme,body)
 
-        return nameClass(aName)
+        return (nameClass or CompoundName)(aName)
 
     elif IName.isImplementedBy(aName):
         return aName
@@ -565,8 +561,6 @@ def toName(aName, nameClass=CompoundName, acceptURL=1):
 
 
 NNS_NAME = CompositeName('/')
-
-
 
 
 

@@ -203,7 +203,7 @@ class ldapURL(naming.ParsedURL):
 
 
 
-    def __init__(self, url=None, scheme=None, body=None,
+    def __init__(self, scheme=None, body=None,
                  host='', port=389, basedn='', attrs=None, 
                  scope=SCOPE_BASE, filter=None, extensions=None,
     ):

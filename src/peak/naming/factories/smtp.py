@@ -16,9 +16,8 @@ class smtpURL(ParsedURL):
         (?P<host>[^:]*)(:(?P<port>[0-9]+))?         # host + port
     """
 
-    def __init__(self, url=None,
+    def __init__(self, scheme=None, body=None,
         host=None, port=smtplib.SMTP_PORT, user=None, auth=None,
-        scheme=None, body=None
     ):
         self.setup(locals())
 

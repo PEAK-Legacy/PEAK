@@ -233,7 +233,7 @@ class GadflyURL(naming.ParsedURL):
 
     pattern = "(//)?(?P<db>[^@]+)@(?P<dir>.+)"
 
-    def __init__(self, url=None, db=None, dir=None):
+    def __init__(self, scheme=None, body=None, db=None, dir=None):
         self.setup(locals())
     
     def retrieve(self, refInfo, name, context, attrs=None):
@@ -260,7 +260,7 @@ class GenericSQL_URL(naming.ParsedURL):
     (/(?P<db>.+))?
     """
 
-    def __init__(self, url=None,
+    def __init__(self, scheme=None, body=None,
                  user=None, passwd=None, server=None, db=None,
         ):
         self.setup(locals())

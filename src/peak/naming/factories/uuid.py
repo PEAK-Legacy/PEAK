@@ -19,7 +19,7 @@ class uuidURL(ParsedURL):
     _supportedSchemes = ('uuid', )
 
 
-    def __init__(self, url=None, uuid=None, quals=None):
+    def __init__(self, scheme=None, body=None, uuid=None, quals=None):
         self.setup(locals())
 
 

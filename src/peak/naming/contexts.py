@@ -91,7 +91,7 @@ class AbstractContext(Component):
                 
             else:
                 # convert to URL
-                name=ParsedURL('+:'+str(name))
+                name=ParsedURL('+',str(name))
 
 
         if name.isURL:
@@ -455,13 +455,13 @@ class GenericURLContext(AbstractContext):
 
         if name.isComposite:        
             # convert to URL
-            name = ParsedURL('+:'+str(name))
+            name = ParsedURL('+',str(name))
 
         if name.isURL:
             parser = self._getParserFor(name.scheme)
             
             if parser is not None:            
-                return self, parser(name)
+                return self, parser(name.scheme, name.body)
 
             ctx = spi.getURLContext(name.scheme, self, iface)
 
