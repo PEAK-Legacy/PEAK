@@ -547,11 +547,11 @@ class nameMapping(object):
         See the documentation for individual method names to see what
         special names are available."""
 
-    def __init__(self, exporter): self.names = exporter.__dict__.copy()
+    def __init__(self, exporter): self.exp = exporter
 
     def name(self, name=None):
         """name - returns the feature name"""
-        return self.names['attrName']
+        return self.exp.attrName
 
     def upper(self, name):
         """upper - equivalent to previousName.upper()"""
@@ -573,9 +573,14 @@ class nameMapping(object):
 
 
     def __getitem__(self,key):
-        name=self.name()
+
+        name = self.name()
+        part = None
+        getName = lambda n: getattr(self.exp,part)
+
         for part in key.split('.'):
-            name = getattr(self,part,lambda n: self.names[part])(name)
+            name = getattr(self,part,getName)(name)
+
         return name
 
 

@@ -158,7 +158,7 @@ class FeatureClass(HashAndCompare,MethodExporter):
     _doSet = binding.Once(lambda s,d,a: s._bindFuncs[1])
     _doDel = binding.Once(lambda s,d,a: s._bindFuncs[2])
 
-
+    singularName = binding.bindTo('./attrName')
 
 
 
@@ -184,10 +184,10 @@ class StructuralFeature(object):
         get     = 'get%(initCap)s',
         set     = 'set%(initCap)s',
         unset   = 'unset%(initCap)s',
-        add     = 'add%(initCap)s',
-        remove  = 'remove%(initCap)s',
-        replace = 'replace%(initCap)s',
-        insertBefore = 'insert%(initCap)sBefore',
+        add     = 'add%(singularName.initCap)s',
+        remove  = 'remove%(singularName.initCap)s',
+        replace = 'replace%(singularName.initCap)s',
+        insertBefore = 'insert%(singularName.initCap)sBefore',
     )
 
 
