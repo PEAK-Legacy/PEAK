@@ -18,7 +18,7 @@ class anotherSubclass(baseWithClassAttr):
 
 class ClassAttrTest(TestCase):
 
-    def checkActivationOrder(self):
+    def testActivationOrder(self):
         # Note: order is to confirm that the using a once binding on a
         # base class doesn't prevent the subclass' copy of the binding
         # from activating.
@@ -26,7 +26,7 @@ class ClassAttrTest(TestCase):
         assert baseWithClassAttr.myName == 'baseWithClassAttr'
         assert anotherSubclass.myName == 'anotherSubclass'
 
-    def checkMetaTypes(self):
+    def testMetaTypes(self):
         assert anotherSubclass.__class__ is baseWithClassAttr.__class__
         assert anotherSubclass.__class__.__name__ == 'baseWithClassAttrClass'
 
@@ -102,7 +102,7 @@ class AssemblyTests(TestCase):
             pprint(self.log)
             print
 
-    def checkConnectBefore(self):
+    def testConnectBefore(self):
         # Create parent, then child, then activate parent
         log = self.append
         root = Outermost(log=log, activated=self.activated, id = 1)
@@ -110,7 +110,7 @@ class AssemblyTests(TestCase):
         root.getParentComponent()   # whitebox hack for testing; don't do this
         self.assertCompleteness(2)
 
-    def checkInit(self):
+    def testInit(self):
         # Create parent, activate, then attach child
         log = self.append
         root = Outermost(None, log=log, activated=self.activated, id=1)
@@ -121,7 +121,7 @@ class AssemblyTests(TestCase):
 
 
 
-    def checkKW(self):
+    def testKW(self):
         # create child, then parent, then activate
         log = self.append
         root = Outermost(None,
@@ -131,7 +131,7 @@ class AssemblyTests(TestCase):
         self.assertCompleteness(2)
 
 
-    def checkBindingSubscribes(self):
+    def testBindingSubscribes(self):
         # create parent w/child that creates a child
         log = self.append
         root = Outermost(None,
@@ -142,7 +142,7 @@ class AssemblyTests(TestCase):
 
 
 
-    def checkDelayedSubscribe(self):
+    def testDelayedSubscribe(self):
         # create parent w/child, assembled, then create child
         log = self.append
         root = Outermost(None, log=log, activated=self.activated, id=1,
@@ -209,7 +209,7 @@ class DescriptorTest(TestCase):
         self.data = DescriptorData(testRoot(), 'data')
 
 
-    def checkNaming(self):
+    def testNaming(self):
         svc = self.data.aService
         gcn = binding.getComponentName
         assert gcn(svc)=='aService'
@@ -218,13 +218,13 @@ class DescriptorTest(TestCase):
         assert gcn(self.data)=='data'
 
 
-    def checkBinding(self):
+    def testBinding(self):
         thing2 = self.data.thing2
         assert (thing2 is self.data.thing1), thing2
         assert self.data.__dict__['thing2'] is thing2
 
 
-    def checkMulti(self):
+    def testMulti(self):
         thing4 = self.data.thing4
         assert len(thing4)==2
         assert type(thing4) is tuple
@@ -232,19 +232,61 @@ class DescriptorTest(TestCase):
         assert thing4[1] is self.data.thing2
 
 
-    def checkConstructors(self):
+    def testConstructors(self):
         self.assertRaises(TypeError, DescriptorData, nonExistentKeyword=1)
 
         td = {}
         assert DescriptorData(newDict = td).newDict is td
 
-    def checkIndirect(self):
+    def testIndirect(self):
         assert self.data.thing8 is self.data.aService.nestedService.namedThing
 
 
 
 
-    def checkParents(self):
+    def testHasParentCriterion(self):
+        import dispatch.predicates
+        from dispatch import strategy, predicates, functions
+        from peak.binding.components import HasParentCriterion as HPC
+        from peak.binding.components import dispatch_by_hierarchy
+
+        data = HPC(self.data)
+        table = {data.ptr:"pass", None:"fail"}
+        strategy.validateCriterion(data, dispatch_by_hierarchy)
+
+        for item in self.data, self.data.aService.thing5, self.data.thing8:
+            self.failUnless(strategy.Pointer(item) in data)
+            self.assertEqual(dispatch_by_hierarchy(item,table),"pass")
+
+        for item in self.data.getParentComponent(), self.data.thing1, None:
+            self.failIf(strategy.Pointer(item) in data)
+            self.assertEqual(dispatch_by_hierarchy(item,table),"fail")
+
+        gf = functions.GenericFunction(lambda x:None)
+        d = locals()
+        parse = gf.parse
+        pe = lambda e: parse(e,d,globals())
+
+        self.assertEqual(pe('binding.hasParent(x,self.data)'),
+            strategy.Signature(x=data))
+
+        [gf.when("binding.hasParent(x,self.data)")]
+        def gf(x): return "in data"
+
+        [gf.when("binding.hasParent(x,self.data.aService)")]
+        def gf(x): return "in service"
+
+        self.assertEqual(gf(self.data),"in data")
+        self.assertEqual(gf(self.data.thing8),"in service")
+        self.assertEqual(gf(self.data.aService.thing5),"in data")
+        self.assertEqual(gf(self.data.aService.nestedService),"in service")
+
+
+
+
+
+
+    def testParents(self):
 
         p1 = self.data.aService.thing5
         p2 = self.data.aService.nestedService.thing6
@@ -260,7 +302,7 @@ class DescriptorTest(TestCase):
             del self.data.underflow
 
 
-    def checkForError(self):
+    def testForError(self):
         try:
             self.data.thing3
         except NameError:
@@ -269,7 +311,7 @@ class DescriptorTest(TestCase):
             raise AssertionError("Didn't get an error retrieving 'thing3'")
 
 
-    def checkNew(self):
+    def testNew(self):
 
         data = self.data
         d = data.newDict
@@ -285,7 +327,7 @@ class DescriptorTest(TestCase):
 
 
 
-    def checkCopy(self):
+    def testCopy(self):
 
         data = self.data
         l = data.listCopy
@@ -295,7 +337,7 @@ class DescriptorTest(TestCase):
         assert l is not testList    # but separate!
 
 
-    def checkDeep(self):
+    def testDeep(self):
 
         data = self.data
         thing = data.thing1
@@ -309,11 +351,11 @@ class DescriptorTest(TestCase):
         assert nested.getUp is data.aService
 
 
-    def checkImport(self):
+    def testImport(self):
         assert self.data.testImport is TestCase
 
 
-    def checkPaths(self):
+    def testPaths(self):
         svc = self.data.aService
         gcp = binding.getComponentPath
 
@@ -326,7 +368,7 @@ class DescriptorTest(TestCase):
 
 
 
-    def checkAbsPaths(self):
+    def testAbsPaths(self):
         svc = self.data.aService
         gcp = binding.getComponentPath
 
@@ -337,7 +379,7 @@ class DescriptorTest(TestCase):
         )=='/data/aService/nestedService/namedThing'
 
 
-    def checkSuggestions(self):
+    def testSuggestions(self):
         data = DescriptorData(None, 'data',
             thing1 = binding.Component(),
             thing2 = DescriptorData(
@@ -376,18 +418,18 @@ def test_attributes():
     return doctest.DocFileSuite(
         'attributes.txt', optionflags=doctest.ELLIPSIS, package='peak.binding',
     )
-    
-def test_suite():
-    return TestSuite(
-        [makeSuite(t,'check') for t in TestClasses] + [test_attributes()]
+
+def test_components():
+    from peak.util import doctest
+    return doctest.DocFileSuite(
+        'components.txt', optionflags=doctest.ELLIPSIS, package='peak.binding',
     )
 
-
-
-
-
-
-
+def test_suite():
+    return TestSuite(
+        [makeSuite(t,'test') for t in TestClasses] +
+        [test_attributes(), test_components()]
+    )
 
 
 

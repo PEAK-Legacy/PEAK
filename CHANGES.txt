@@ -1,5 +1,10 @@
 Fixes and Enhancements since Version 0.5 alpha 3
 
+ - Added a 'binding.hasParent(component,parent)' API function, which is
+   specially optimized for use with generic functions, so that you can
+   define generic function methods that apply only within some part of a
+   component hierarchy.
+   
  - PEAK no longer supports Python 2.2; Python 2.3.4 or better is required.
 
  - The kjbuckets extension module is no longer built and installed by default;

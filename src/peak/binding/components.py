@@ -14,14 +14,15 @@ from peak.util.EigenData import AlreadyRead
 from peak.config.interfaces import IConfigKey, IConfigurationRoot, \
     NullConfigRoot, IConfigurable
 from peak.config.registries import ImmutableConfig
-from peak.util.imports import importString
+from peak.util.imports import importString, whenImported
 
 
 __all__ = [
     'Component', 'Obtain', 'Require', 'Delegate', 'Configurable',
     'getRootComponent', 'getParentComponent', 'lookupComponent',
     'acquireComponent', 'notifyUponAssembly', 'PluginsFor', 'PluginKeys',
-    'getComponentName', 'getComponentPath', 'ComponentName', 'iterParents'
+    'getComponentName', 'getComponentPath', 'ComponentName', 'iterParents',
+    'hasParent',
 ]
 
 from _once import BaseDescriptor
@@ -35,7 +36,6 @@ class _proxy(BaseDescriptor):
         raise AttributeError, self.attrName
 
     def computeValue(self,ob,d,a): raise AttributeError, a
-
 
 
 
@@ -54,6 +54,12 @@ def iterParents(component,max_depth=100):
             raise RuntimeError("maximum recursion limit exceeded", component)
 
 
+def hasParent(component,parent):
+    """Is 'component' within the hierarchy of 'parent'?"""
+    for c in iterParents(component):
+        if c is parent:
+            return True
+    return False
 
 
 
@@ -74,9 +80,44 @@ def iterParents(component,max_depth=100):
 
 
 
+def _setupCriterion(strategy):
+    global HasParentCriterion, dispatch_by_hierarchy
 
+    def dispatch_by_hierarchy(ob,table):
+        for comp in iterParents(ob):
+            oid = id(comp)
+            if oid in table:
+                return table[oid]
+        return table[None]
+    
+    class HasParentCriterion(strategy.IdentityCriterion):
+        
+        dispatch_function = staticmethod(dispatch_by_hierarchy)
 
+        def __init__(self,component):
+            super(HasParentCriterion,self).__init__(strategy.Pointer(component))
 
+        def __contains__(self,ob):
+            if ob is not None:
+                for comp in iterParents(ob.ref()):
+                    if id(comp) == self.ptr:
+                        return True
+            return False
+
+def _setupParse(predicates):
+    [predicates.expressionSignature.when(
+        # matches 'hasParent(expr,Const)'
+        "expr in predicates.Call and expr.function == hasParent"
+        " and len(expr.argexprs)==2 and expr.argexprs[1] in predicates.Const"
+    )]
+    def convertHasParentToCriterion(expr,criterion):
+        typecheck = HasParentCriterion(expr.argexprs[1].value)   
+        if not criterion.truth:
+            typecheck = ~typecheck
+        return dispatch.strategy.Signature([(expr.argexprs[0],typecheck)])
+
+whenImported('dispatch.strategy',_setupCriterion)
+whenImported('dispatch.predicates',_setupParse)
 
 
 
@@ -123,7 +164,7 @@ def getComponentPath(component, relativeTo=None):
 
 [dispatch.on('component')]
 def getParentComponent(component):
-    """Return parent of 'component', or 'None' if root or non-component
+    """Return parent of 'component', or 'None' if unknown or non-component
 
     This also works for module objects, and 'binding.ActiveClass' objects,
     for which the containing module or package is returned.
