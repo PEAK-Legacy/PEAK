@@ -14,11 +14,12 @@ from arithmetic import *
 
 from peak.binding.once import Activator, Make
 from peak.util.imports import importObject
+from peak.binding.interfaces import IComponentKey
 
 
 __all__ = [
     'AbstractName', 'toName', 'CompositeName', 'CompoundName',
-    'NNS_NAME', 'URLMatch', 'Reference',
+    'NNS_NAME', 'URLMatch', 'Reference', 'Indirect',
     'LinkRef', 'NNS_Reference', 'isBoundary', 'crossesBoundaries',
 ]
 
@@ -31,6 +32,46 @@ def crossesBoundaries(name):
     return name and name.nameKind==COMPOSITE_KIND and ( len(name)>1
         or name and not name[0] )
 
+
+
+
+
+
+
+
+class Indirect(object):
+
+    """Indirect lookup via another IComponentKey
+
+    Use this in e.g. 'binding.Obtain' to look up something indirectly, like::
+
+        class MyClass(binding.Component):
+
+            socketURL = "fd:0"
+
+            socket = binding.Obtain(
+                naming.Indirect('socketURL'), adaptTo=[IListeningSocket]
+            )
+
+    Instances of the above class will have a 'socket' attribute that is the
+    result of looking up the URL provided by the instance's 'socketURL'
+    attribute at runtime."""
+
+    protocols.advise(
+        instancesProvide = [IComponentKey]
+    )
+
+    __slots__ = 'key', 'default'
+
+    def __init__(self, key, default=NOT_GIVEN):
+        """Set up an 'Indirect' instance.  'key' must provide 'IComponentKey'
+        """
+        self.key = adapt(key,IComponentKey)
+        self.default = default
+
+    def findComponent(self, component, default=NOT_GIVEN):
+        realKey = self.key.findComponent(component, self.default)
+        return adapt(realKey,IComponentKey).findComponent(component,default)
 
 
 

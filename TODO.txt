@@ -4,9 +4,6 @@ Open Issues/To-Do Items
 
     * peak.binding
 
-       - make indirection convenient (e.g. bind to looking up something from
-         another binding)
-
        - Cleanup/document attribute binding interface
 
        - Ensure default __repr__'s for all bindings are acceptable
@@ -31,6 +28,9 @@ Open Issues/To-Do Items
          a later release)
 
        - try/catch DOMlet (and related error rendering interface/framework)
+
+
+
 
 
 

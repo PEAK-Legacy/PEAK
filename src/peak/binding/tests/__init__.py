@@ -170,7 +170,8 @@ class DescriptorData(binding.Component):
     thing2 = binding.Obtain('thing1')
     thing3 = binding.Require('This is required')
     thing4 = binding.Obtain(['thing1','thing2'])
-
+    thing7 = 'aService/nestedService/namedThing'
+    thing8 = binding.Obtain(naming.Indirect('thing7'))
     underflow = binding.Obtain('/'.join(['..']*50)) # 50 parents up
 
     class aService(binding.Component):
@@ -197,10 +198,9 @@ class DescriptorData(binding.Component):
     newDict  = binding.Make(dict)
 
     listCopy = binding.Make(lambda: testList[:])    # XXX
-
     deep = binding.Obtain('aService/nestedService/thing6/thing1')
-
     testImport = binding.Obtain('import:unittest:TestCase')
+
 
 
 class DescriptorTest(TestCase):
@@ -238,8 +238,8 @@ class DescriptorTest(TestCase):
         td = {}
         assert DescriptorData(newDict = td).newDict is td
 
-
-
+    def checkIndirect(self):
+        assert self.data.thing8 is self.data.aService.nestedService.namedThing
 
 
 

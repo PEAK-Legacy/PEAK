@@ -2,6 +2,21 @@ Fixes and Enhancements since Version 0.5 alpha 2
 
  Changed, Enhanced, or Newly Deprecated Features
 
+ - Added 'naming.Indirect(key)', a 'binding.IComponentKey' that can be used to
+   do an indirect lookup via another 'IComponentKey' (such as a name).  Using
+   'naming.Indirect()', you can replace code like this::
+
+        socket = binding.Obtain(
+            lambda self: self.lookupComponent(self.socketURL),
+            adaptTo = [IListeningSocket]
+        )
+
+   with code like this::
+
+        socket = binding.Obtain(
+            naming.Indirect('socketURL'), adaptTo = [IListeningSocket]
+        )
+
  - Added 'peak.running.supervisor', a mini-framework for pre-forking,
    multiprocess servers, such as for FastCGI.  The framework includes a ZConfig
    schema for process supervisors, and support for automatically forking new
