@@ -4,31 +4,31 @@ from unittest import TestCase, makeSuite, TestSuite
 from peak.api import *
 
 
+class baseWithClassAttr(binding.Base):
+
+    myName = binding.classAttr( binding.Once( lambda s,d,a: s.__name__ ) )
+
+class subclassWithClassAttr(baseWithClassAttr):
+    pass
 
 
+class anotherSubclass(baseWithClassAttr):
+    pass
 
 
+class ClassAttrTest(TestCase):
 
+    def checkActivationOrder(self):
+        # Note: order is to confirm that the using a once binding on a
+        # base class doesn't prevent the subclass' copy of the binding
+        # from activating.
+        assert subclassWithClassAttr.myName == 'subclassWithClassAttr'
+        assert baseWithClassAttr.myName == 'baseWithClassAttr'
+        assert anotherSubclass.myName == 'anotherSubclass'
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    def checkMetaTypes(self):
+        assert anotherSubclass.__class__ is baseWithClassAttr.__class__
+        assert anotherSubclass.__class__.__name__ == 'baseWithClassAttrClass'
 
 
 
@@ -215,7 +215,7 @@ class DescriptorTest(TestCase):
 
 
 TestClasses = (
-    DescriptorTest,
+    ClassAttrTest, DescriptorTest,
 )
 
 

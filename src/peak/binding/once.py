@@ -9,7 +9,7 @@ from _once import *
 
 __all__ = [
     'Once', 'New', 'Copy', 'Activator', 'ActiveClass', 'ActiveClasses',
-    'getInheritedRegistries',
+    'getInheritedRegistries', 'classAttr',
 ]
 
 
@@ -203,6 +203,47 @@ class Once(OnceDescriptor):
 
 
 
+class classAttr(object):
+
+    """Class attribute binding
+
+    This wrapper lets you create bindings which apply to a class, rather than
+    to its instances.  This can be useful for creating bindings in a base
+    class that will summarize metadata about subclasses.  Usage example::
+
+        class SomeClass(binding.Base):
+
+            CLASS_NAME = binding.classAttr(
+                binding.Once(
+                    lambda s,d,a: s.__name__.upper()
+                )
+            )
+
+        class aSubclass(SomeClass):
+            pass
+
+        assert SomeClass.CLASS_NAME == "SOMECLASS"
+        assert aSubclass.CLASS_NAME == "ASUBCLASS"
+
+    Class attributes will only work in subclasses of classes like
+    'binding.Base', whose metaclass derives from 'binding.Activator'.
+
+    Implementation note: class attributes actually cause a new metaclass to
+    be created on-the-fly to contain them.  The generated metaclass is named
+    for the class that contained the class attributes, and has the same
+    '__module__' attribute value.  So continuing the above example::
+
+        assert SomeClass.__class__.__name__ == 'SomeClassClass'
+        assert aSubClass.__class__.__name__ == 'SomeClassClass'
+
+    Notice that the generated metaclass is reused for subsequent
+    subclasses, as long as they don't define any new class attributes."""
+    
+    __slots__ = 'binding'
+
+    def __init__(self, binding): self.binding = binding
+        
+
 class Activator(type):
 
     """Descriptor metadata management"""
@@ -213,27 +254,68 @@ class Activator(type):
 
     __all_descriptors__ = {}
     
+    def __new__(meta, name, bases, cdict):
 
-    def __init__(klass, name, bases, dict):
+        class_attrs = []; addCA = class_attrs.append
+        class_descr = []; addCD = class_descr.append
 
+        for k, v in cdict.items():
+            if isinstance(v,classAttr):         addCA(k)
+            elif isinstance(v,ActiveClasses):   addCD(k)
+
+        if class_attrs:
+
+            cdict = cdict.copy(); d = {}
+
+            for k in class_attrs:
+                d[k]=cdict[k].binding
+                del cdict[k]
+
+            d['__module__'] = cdict.get('__module__')
+
+            meta = Activator( name+'Class', (meta,), d )
+
+            # The new metaclass' __new__ will finish up for us...
+            return meta(name,bases,cdict)   
+
+        klass = supertype(Activator,meta).__new__(meta, name, bases, cdict)
         klass.__name__ = name
+
+
+
+
 
         d = klass.__class_descriptors__ = {}
 
-        for k,v in dict.items():
-            if isinstance(v, ActiveClasses):
-                d[k] = v.__class__.activate(v,klass,k)
+        for k in class_descr:
+            v = cdict[k]
+            d[k] = v.__class__.activate(v,klass,k)
 
-        super(Activator,klass).__init__(name,bases,dict)
+        ad = {}
+        map(ad.update, getInheritedRegistries(klass, '__all_descriptors__'))
+        ad.update(klass.__class_descriptors__)
+        klass.__all_descriptors__ = ad
 
-        d = {}
-        r = getInheritedRegistries(klass,'__all_descriptors__')
+        return klass
 
-        for desc in r:
-            d.update(desc)
 
-        d.update(klass.__class_descriptors__)
-        klass.__all_descriptors__ = d
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -293,3 +375,13 @@ class ActiveClass(Activator):
 
 ActiveClasses = (Once, ActiveClass)
 
+
+def supertype(supertype,subtype):
+
+    mro = iter(subtype.__mro__)
+
+    for cls in mro:
+        if cls is supertype:
+            return mro.next()
+    else:
+        raise TypeError("Not sub/supertypes:", supertype, subtype)

@@ -39,39 +39,39 @@ __all__ = [
 
 
 
-class XMIRegistryClass(binding.ActiveClass):
+def _XMIMap(self,d,a):
 
-    def _XMIMap(self,d,a):
+    xm = {}
 
-        xm = {}
+    for m in binding.getInheritedRegistries(self,'_XMIMap'):
+        xm.update(m)
 
-        for m in binding.getInheritedRegistries(self,'_XMIMap'):
-            xm.update(m)
+    for k,v in self.__class_descriptors__.iteritems():
+        
+        for n in getattr(v,'_XMINames',()):
 
-        for k,v in self.__class_descriptors__.iteritems():
-            
-            for n in getattr(v,'_XMINames',()):
+            xm[n] = k
 
-                xm[n] = k
+            while '.' in n:
+                n = n.split('.',1)[1]
+                xm[n]=k
 
-                while '.' in n:
-                    n = n.split('.',1)[1]
-                    xm[n]=k
+    return xm
 
-        return xm
+_XMIMap = binding.Once(_XMIMap)
 
-    _XMIMap = binding.Once(_XMIMap)
-    
 
 class Package(binding.Base):
 
     """Package of Element Classes"""
 
-    __metaclass__ = XMIRegistryClass
+    _XMIMap = binding.classAttr(_XMIMap)
 
 
 class Model(Package):
+
     """Model or Metamodel containing Packages or Element classes"""
+
 
 
 
@@ -453,8 +453,8 @@ class Classifier(binding.Base):
 
     """Basis for all flavors"""
 
-    __metaclass__ = XMIRegistryClass
-
+    _XMIMap = binding.classAttr(_XMIMap)
+    
     def setParentComponent(self, parentComponent, componentName=None):
         if parentComponent is not None or componentName is not None:
             raise TypeError("Data values are not components")
@@ -490,38 +490,38 @@ class PrimitiveType(Classifier):
 
 
 
-class EnumerationMeta(XMIRegistryClass):
+class Enumeration(Classifier):
 
-    def __init__(klass, name, bases, cdict):
+    """An enumeration type"""
 
-        super(EnumerationMeta,klass).__init__(name, bases, cdict)
+    def __value_map__(klass,d,a):
 
         values = {}
-        bases = list(bases)
-        bases.reverse()
-        for b in bases:
-            values.update(getattr(b,'__values__',{}))
 
-        values.update(cdict.get('__values__',{}))
+        map(values.update,
+            binding.getInheritedRegistries(klass,'__value_map__')
+        )
 
-        for k,v in cdict.items():
+        values.update(klass.__dict__.get('__values__',{}))
+
+        for k,v in klass.__dict__.items():
             if not k.startswith('__') or not k.endswith('__'):
                 values[k]=v
 
-        klass.__values__ = values
+        return values
+
+    __value_map__ = binding.classAttr(binding.Once(__value_map__))
 
 
     def fromString(klass, value):
-        if value in klass.__values__:
-            return klass.__values__[value]
-        raise ValuError, value
+        if value in klass.__value_map__:
+            return klass.__value_map__[value]
+        raise ValueError, value
+
+    fromString = classmethod(fromString)
 
 
-class Enumeration(Classifier):
 
-    """An enumerated type"""
-
-    __metaclass__ = EnumerationMeta
 
 
 

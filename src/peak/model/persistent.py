@@ -14,7 +14,7 @@ from peak.storage.lazy_loader import LazyLoader
 __all__ = [ 'Element' ]
 
 
-class ElementMeta(DataType.__class__, Persistent.__class__):
+class ElementClass(DataType.__class__, Persistent.__class__):
     pass
 
 
@@ -44,7 +44,7 @@ class Element(DataType, Persistent):
     """A (potentially persistent) domain element"""
 
     __implements__ = IElement
-    __metaclass__  = ElementMeta
+    __metaclass__  = ElementClass
     __setattr__    = binding.Base.__setattr__
 
     def _setBinding(self,attr,value):
