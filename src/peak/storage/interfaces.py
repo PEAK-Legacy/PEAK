@@ -7,7 +7,7 @@ __all__ = [
     'ITransactionService', 'ITransactionParticipant', 'ICache',
     'ITransactionErrorHandler', 'ICursor', 'IRow',
     'IDataManager', 'IDataManager_SPI', 'IWritableDM', 'IWritableDM_SPI',
-    'IManagedConnection', 'IManagedConn_SPI',
+    'IManagedConnection', 'IManagedConn_SPI', 'IKeyableDM',
 ]
 
 class ITransactionService(Interface):
@@ -222,23 +222,23 @@ class IDataManager(ITransactionParticipant, IPersistentDataManager):
         """Pre-load 'state' for object designated by 'oid' and return it"""
 
 
-class IWritableDM(IDataManager):
+class IKeyableDM(IDataManager):
 
-    """Data manager that possibly supports adding/modifying objects"""
+    """Data manager that supports "foreign key" references"""
 
     def oidFor(ob):
         """Return an 'oid' suitable for retrieving 'ob' from this DM"""
-        
+
+
+class IWritableDM(IKeyableDM):
+
+    """Data manager that possibly supports adding/modifying objects"""
+
     def newItem(klass=None):
         """Create and return a new persistent object of class 'klass'"""
 
     def flush(ob=None):
         """Sync stored state to in-memory state of 'ob' or all objects"""
-
-
-
-
-
 
 
 

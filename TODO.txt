@@ -8,15 +8,15 @@ Open Issues/To-Do Items
       'peak.config', 'peak.exceptions', and 'peak.naming'.
 
 
+
  Targeted for 0.5 Final Release (or sooner)
+
 
     General
 
         * Tutorial complete through chapter 4
 
     peak.storage
-
-        - "facade" DM base class(es)
 
         - unit tests for more complex object scenarios: references, thunks..?
 

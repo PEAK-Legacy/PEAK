@@ -1,6 +1,7 @@
 from peak.api import binding, model
 from interfaces import *
 from transactions import TransactionComponent
+from caches import WeakCache
 
 __all__ = ['QueryDM', 'EntityDM']
 
@@ -38,6 +39,46 @@ __all__ = ['QueryDM', 'EntityDM']
 
 
 
+class FacadeDM(binding.AutoCreated):
+
+    """DM that just returns objects from other DM(s) via a different key"""
+
+    __implements__ = IKeyableDM
+
+    def __getitem__(self, oid, state=None):
+
+        ob = self.cache.get(oid,self)
+
+        if ob is not self:
+
+            # double-check identity
+            if oid==self.oidFor(ob):
+                return ob
+
+            # Oops, key no longer valid, drop it
+            del self.cache[oid]
+
+        ob = self.retrieve(oid, state)
+        
+        if ob is not None:
+            self.cache[oid] = ob
+            return ob
+
+        raise KeyError, oid
+
+
+    preloadState = __getitem__
+
+    cache = WeakCache
+
+    def retrieve(self, oid, state=None):
+        """Look up 'oid' in underlying storage and return it, or 'None'"""
+        raise NotImplementedError
+
+    def oidFor(self, ob):
+        """Return this DM's OID for 'ob'; used to validate consistency"""
+        raise NotImplementedError
+        
 
 class QueryDM(TransactionComponent):
 
@@ -82,7 +123,7 @@ class QueryDM(TransactionComponent):
 
     # Private abstract methods/attrs
 
-    from caches import WeakCache as cache
+    cache = WeakCache
 
     defaultClass = model.PersistentQuery
 
