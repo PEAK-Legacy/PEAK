@@ -12,7 +12,7 @@ from protocols import Interface
 
 
 __all__ = [
-    'PropertyMap', 'LazyRule', 'ConfigReader',
+    'PropertyMap', 'LazyRule', 'ConfigReader', 'loadConfigFiles',
     'loadConfigFile', 'loadMapping', 'PropertySet', 'fileNearModule',
     'iterParents','findUtilities','findUtility',
     'provideInstance', 'instancePerComponent',
@@ -266,18 +266,18 @@ def loadConfigFile(pMap, filename, prefix='*', includedFrom=None):
 protocols.adviseObject(loadConfigFile, provides=[ISettingLoader])
 
 
+def loadConfigFiles(pMap, filenames, prefix='*', includedFrom=None):
 
+    if not filenames:
+        return
 
+    import os.path
 
+    for filename in filenames:
+        if filename and os.path.exists(filename):
+            ConfigReader(pMap,prefix).readFile(filename)
 
-
-
-
-
-
-
-
-
+protocols.adviseObject(loadConfigFiles, provides=[ISettingLoader])
 
 
 
