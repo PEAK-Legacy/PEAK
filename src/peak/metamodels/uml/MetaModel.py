@@ -250,7 +250,7 @@ class UMLClass:
         _XMINames = ('Foundation.Data_Types.IterationExpression',)
 
     class Base(model.Element):
-        isAbstract = 1
+        _isAbstract = 1
     
         class extensions(model.Collection):
             isNavigable = 1
@@ -264,7 +264,7 @@ class UMLClass:
         _XMINames = ('Base',)
 
     class Element(Base):
-        isAbstract = 1
+        _isAbstract = 1
         _XMINames = ('Foundation.Core.Element',)
 
     class ModelElement(Element):
@@ -276,7 +276,7 @@ class UMLClass:
             name = 'isSpecification'
             referencedType = Boolean
     
-        isAbstract = 1
+        _isAbstract = 1
     
         class elementResidences(model.Collection):
             isNavigable = 1
@@ -505,7 +505,7 @@ class UMLClass:
 
     class Action(ModelElement):
 
-        isAbstract = 0
+        _isAbstract = 0
     
         class state3(model.Reference):
             isNavigable = 0
@@ -627,12 +627,12 @@ class UMLClass:
     
 
     class ReturnAction(Action):
-        isAbstract = 0
+        _isAbstract = 0
         _XMINames = ('Behavioral_Elements.Common_Behavior.ReturnAction',)
 
 
     class PresentationElement(Element):
-        isAbstract = 1
+        _isAbstract = 1
     
         class subjects(model.Collection):
             isNavigable = 1
@@ -655,7 +655,7 @@ class UMLClass:
             name = 'isNavigable'
             referencedType = Boolean
     
-        isAbstract = 0
+        _isAbstract = 0
     
         class changeability(model.Field):
             isRequired = 1
@@ -782,7 +782,7 @@ class UMLClass:
 
     class Instance(ModelElement):
     
-        isAbstract = 0
+        _isAbstract = 0
     
         class stimuli1(model.Collection):
             isNavigable = 1
@@ -873,12 +873,12 @@ class UMLClass:
     
 
     class UseCaseInstance(Instance):
-        isAbstract = 0
+        _isAbstract = 0
         _XMINames = ('Behavioral_Elements.Use_Cases.UseCaseInstance',)
 
 
     class StateVertex(ModelElement):
-        isAbstract = 1
+        _isAbstract = 1
         _XMINames = ('Behavioral_Elements.State_Machines.StateVertex',)
     
         class container(model.Reference):
@@ -915,7 +915,7 @@ class UMLClass:
 
     class State(StateVertex):
 
-        isAbstract = 0
+        _isAbstract = 0
     
         class doActivity(model.Reference):
             isNavigable = 1
@@ -998,7 +998,7 @@ class UMLClass:
 
 
     class CompositeState(State):
-        isAbstract = 0
+        _isAbstract = 0
     
         class subvertices(model.Collection):
             isNavigable = 1
@@ -1028,7 +1028,7 @@ class UMLClass:
 
     class SubmachineState(CompositeState):
     
-        isAbstract = 0
+        _isAbstract = 0
     
         class submachine(model.Reference):
             isNavigable = 1
@@ -1044,7 +1044,7 @@ class UMLClass:
 
     class SubactivityState(SubmachineState):
 
-        isAbstract = 0
+        _isAbstract = 0
     
         class dynamicArguments(model.Field):
             isRequired = 1
@@ -1077,12 +1077,12 @@ class UMLClass:
 
 
     class Relationship(ModelElement):
-        isAbstract = 0
+        _isAbstract = 0
         _XMINames = ('Foundation.Core.Relationship',)
 
 
     class Dependency(Relationship):
-        isAbstract = 0
+        _isAbstract = 0
     
         class suppliers(model.Collection):
             isNavigable = 1
@@ -1109,13 +1109,13 @@ class UMLClass:
 
 
     class Usage(Dependency):
-        isAbstract = 0
+        _isAbstract = 0
         _XMINames = ('Foundation.Core.Usage',)
 
 
     class CallAction(Action):
 
-        isAbstract = 0
+        _isAbstract = 0
     
         class operation(model.Reference):
             isNavigable = 1
@@ -1131,7 +1131,7 @@ class UMLClass:
 
     class Include(Relationship):
 
-        isAbstract = 0
+        _isAbstract = 0
     
         class addition(model.Reference):
             isNavigable = 1
@@ -1163,7 +1163,7 @@ class UMLClass:
 
     class Feature(ModelElement):
 
-        isAbstract = 1
+        _isAbstract = 1
     
         class owner(model.Reference):
             isNavigable = 1
@@ -1201,7 +1201,7 @@ class UMLClass:
 
 
     class BehavioralFeature(Feature):
-        isAbstract = 1
+        _isAbstract = 1
     
         class isQuery(model.Field):
             isRequired = 1
@@ -1240,7 +1240,7 @@ class UMLClass:
             name = 'body'
             referencedType = 'ProcedureExpression'
     
-        isAbstract = 0
+        _isAbstract = 0
     
         class specification(model.Reference):
             isNavigable = 1
@@ -1256,7 +1256,7 @@ class UMLClass:
 
     class GeneralizableElement(ModelElement):
 
-        isAbstract = 1
+        _isAbstract = 1
 
         _XMINames = ('Foundation.Core.GeneralizableElement',)
     
@@ -1265,6 +1265,13 @@ class UMLClass:
             qualifiedName = 'Foundation.Core.GeneralizableElement.isRoot'
             _XMINames = ('Foundation.Core.GeneralizableElement.isRoot',)
             name = 'isRoot'
+            referencedType = Boolean
+
+        class isAbstract(model.Field):
+            isRequired = 1
+            qualifiedName = 'Foundation.Core.GeneralizableElement.isAbstract'
+            _XMINames = ('Foundation.Core.GeneralizableElement.isAbstract',)
+            name = 'isAbstract'
             referencedType = Boolean
 
 
@@ -1315,7 +1322,7 @@ class UMLClass:
 
     class Namespace(ModelElement):
 
-        isAbstract = 0
+        _isAbstract = 0
 
         _XMINames = ('Foundation.Core.Namespace',)
     
@@ -1332,7 +1339,7 @@ class UMLClass:
 
     class Classifier(GeneralizableElement,Namespace):
 
-        isAbstract = 0
+        _isAbstract = 0
     
         class structuralFeatures(model.Collection):
             isNavigable = 0
@@ -1457,7 +1464,7 @@ class UMLClass:
     
 
     class Node(Classifier):
-        isAbstract = 0
+        _isAbstract = 0
     
         class residents(model.Collection):
             isNavigable = 1
@@ -1479,7 +1486,7 @@ class UMLClass:
 
     class Association(GeneralizableElement,Relationship):
 
-        isAbstract = 0
+        _isAbstract = 0
     
         class connections(model.Sequence):
             isNavigable = 1
@@ -1520,7 +1527,7 @@ class UMLClass:
 
     class Class(Classifier):
 
-        isAbstract = 0
+        _isAbstract = 0
 
         _XMINames = ('Foundation.Core.Class',)
     
@@ -1534,13 +1541,13 @@ class UMLClass:
 
 
     class AssociationClass(Association,Class):
-        isAbstract = 0
+        _isAbstract = 0
         _XMINames = ('Foundation.Core.AssociationClass',)
 
 
     class Stimulus(ModelElement):
 
-        isAbstract = 0
+        _isAbstract = 0
 
         _XMINames = ('Behavioral_Elements.Common_Behavior.Stimulus',)
     
@@ -1602,7 +1609,7 @@ class UMLClass:
 
     class StateMachine(ModelElement):
 
-        isAbstract = 0
+        _isAbstract = 0
     
         class transitionses(model.Collection):
             isNavigable = 1
@@ -1653,7 +1660,7 @@ class UMLClass:
 
     class Event(ModelElement):
 
-        isAbstract = 1
+        _isAbstract = 1
     
         class states(model.Collection):
             isNavigable = 1
@@ -1693,7 +1700,7 @@ class UMLClass:
 
 
     class TimeEvent(Event):
-        isAbstract = 0
+        _isAbstract = 0
         _XMINames = ('Behavioral_Elements.State_Machines.TimeEvent',)
     
         class when(model.Field):
@@ -1707,18 +1714,18 @@ class UMLClass:
 
 
     class Object(Instance):
-        isAbstract = 0
+        _isAbstract = 0
         _XMINames = ('Behavioral_Elements.Common_Behavior.Object',)
 
 
     class TerminateAction(Action):
-        isAbstract = 0
+        _isAbstract = 0
         _XMINames = ('Behavioral_Elements.Common_Behavior.TerminateAction',)
 
 
     class ElementImport(Base):
 
-        isAbstract = 0
+        _isAbstract = 0
     
         class alias(model.Field):
             isRequired = 1
@@ -1762,14 +1769,14 @@ class UMLClass:
 
     class DestroyAction(Action):
 
-        isAbstract = 0
+        _isAbstract = 0
 
         _XMINames = ('Behavioral_Elements.Common_Behavior.DestroyAction',)
 
 
     class ClassifierInState(Classifier):
 
-        isAbstract = 0
+        _isAbstract = 0
     
         class type(model.Reference):
             isNavigable = 1
@@ -1796,7 +1803,7 @@ class UMLClass:
 
     class NodeInstance(Instance):
 
-        isAbstract = 0
+        _isAbstract = 0
     
         class residents(model.Collection):
             isNavigable = 1
@@ -1812,7 +1819,7 @@ class UMLClass:
 
     class Signal(Classifier):
 
-        isAbstract = 0
+        _isAbstract = 0
     
         class receptions(model.Collection):
             isNavigable = 1
@@ -1857,12 +1864,12 @@ class UMLClass:
     
 
     class Exception(Signal):
-        isAbstract = 0
+        _isAbstract = 0
         _XMINames = ('Behavioral_Elements.Common_Behavior.Exception',)
 
 
     class SimpleState(State):
-        isAbstract = 0
+        _isAbstract = 0
         _XMINames = ('Behavioral_Elements.State_Machines.SimpleState',)
 
 
@@ -1878,7 +1885,7 @@ class UMLClass:
 
     class ObjectFlowState(SimpleState):
 
-        isAbstract = 0
+        _isAbstract = 0
 
         _XMINames = ('Behavioral_Elements.Activity_Graphs.ObjectFlowState',)
     
@@ -1923,7 +1930,7 @@ class UMLClass:
             name = 'body'
             referencedType = 'BooleanExpression'
     
-        isAbstract = 0
+        _isAbstract = 0
         _XMINames = ('Foundation.Core.Constraint',)
     
         class constrainedElement2(model.Reference):
@@ -1957,7 +1964,7 @@ class UMLClass:
 
     class Transition(ModelElement):
 
-        isAbstract = 0
+        _isAbstract = 0
     
         class source(model.Reference):
             isNavigable = 1
@@ -2039,7 +2046,7 @@ class UMLClass:
 
     class Flow(Relationship):
 
-        isAbstract = 0
+        _isAbstract = 0
     
         class sources(model.Collection):
             isNavigable = 1
@@ -2080,7 +2087,7 @@ class UMLClass:
 
     class StructuralFeature(Feature):
 
-        isAbstract = 1
+        _isAbstract = 1
 
         _XMINames = ('Foundation.Core.StructuralFeature',)
     
@@ -2121,7 +2128,7 @@ class UMLClass:
 
     class UseCase(Classifier):
 
-        isAbstract = 0
+        _isAbstract = 0
     
         class extends2(model.Collection):
             isNavigable = 1
@@ -2181,7 +2188,7 @@ class UMLClass:
     
 
     class Actor(Classifier):
-        isAbstract = 0
+        _isAbstract = 0
         _XMINames = ('Behavioral_Elements.Use_Cases.Actor',)
 
 
@@ -2200,7 +2207,7 @@ class UMLClass:
 
     class AttributeLink(ModelElement):
 
-        isAbstract = 0
+        _isAbstract = 0
     
         class linkEnd(model.Reference):
             isNavigable = 1
@@ -2251,7 +2258,7 @@ class UMLClass:
 
 
     class SignalEvent(Event):
-        isAbstract = 0
+        _isAbstract = 0
     
         class signal(model.Reference):
             isNavigable = 1
@@ -2266,7 +2273,7 @@ class UMLClass:
 
 
     class Package(GeneralizableElement,Namespace):
-        isAbstract = 0
+        _isAbstract = 0
     
         class elementImports(model.Collection):
             isNavigable = 1
@@ -2282,7 +2289,7 @@ class UMLClass:
 
     class Subsystem(Package,Classifier):
 
-        isAbstract = 0
+        _isAbstract = 0
 
         _XMINames = ('Model_Management.Subsystem',)
     
@@ -2297,7 +2304,7 @@ class UMLClass:
 
     class CallEvent(Event):
 
-        isAbstract = 0
+        _isAbstract = 0
     
         class operation(model.Reference):
             isNavigable = 1
@@ -2323,7 +2330,7 @@ class UMLClass:
 
     class Attribute(StructuralFeature):
 
-        isAbstract = 0
+        _isAbstract = 0
     
         class initialValue(model.Field):
             isRequired = 1
@@ -2363,7 +2370,7 @@ class UMLClass:
     
 
     class StubState(StateVertex):
-        isAbstract = 0
+        _isAbstract = 0
         _XMINames = ('Behavioral_Elements.State_Machines.StubState',)
     
         class referenceState(model.Field):
@@ -2377,7 +2384,7 @@ class UMLClass:
 
     class AssociationEndRole(AssociationEnd):
 
-        isAbstract = 0
+        _isAbstract = 0
     
         class availableQualifiers(model.Collection):
             isNavigable = 1
@@ -2409,7 +2416,7 @@ class UMLClass:
 
     class SynchState(StateVertex):
 
-        isAbstract = 0
+        _isAbstract = 0
 
         _XMINames = ('Behavioral_Elements.State_Machines.SynchState',)
     
@@ -2423,13 +2430,13 @@ class UMLClass:
 
 
     class FinalState(State):
-        isAbstract = 0
+        _isAbstract = 0
         _XMINames = ('Behavioral_Elements.State_Machines.FinalState',)
 
 
     class Link(ModelElement):
 
-        isAbstract = 0
+        _isAbstract = 0
     
         class connections(model.Collection):
             isNavigable = 1
@@ -2462,7 +2469,7 @@ class UMLClass:
 
 
     class LinkObject(Object,Link):
-        isAbstract = 0
+        _isAbstract = 0
         _XMINames = ('Behavioral_Elements.Common_Behavior.LinkObject',)
 
 
@@ -2478,7 +2485,7 @@ class UMLClass:
 
     class Operation(BehavioralFeature):
 
-        isAbstract = 0
+        _isAbstract = 0
     
         class collaborations(model.Collection):
             isNavigable = 0
@@ -2553,7 +2560,7 @@ class UMLClass:
 
 
     class ActionState(SimpleState):
-        isAbstract = 0
+        _isAbstract = 0
     
         class dynamicArguments(model.Field):
             isRequired = 1
@@ -2582,7 +2589,7 @@ class UMLClass:
 
 
     class SendAction(Action):
-        isAbstract = 0
+        _isAbstract = 0
     
         class signal(model.Reference):
             isNavigable = 1
@@ -2598,7 +2605,7 @@ class UMLClass:
 
     class ElementResidence(Base):
 
-        isAbstract = 0
+        _isAbstract = 0
     
         class resident(model.Reference):
             isNavigable = 1
@@ -2639,7 +2646,7 @@ class UMLClass:
 
     class Binding(Dependency):
 
-        isAbstract = 0
+        _isAbstract = 0
 
         _XMINames = ('Foundation.Core.Binding',)
     
@@ -2655,7 +2662,7 @@ class UMLClass:
 
 
     class TemplateParameter(Base):
-        isAbstract = 0
+        _isAbstract = 0
     
         class modelElement(model.Reference):
             isNavigable = 1
@@ -2691,7 +2698,7 @@ class UMLClass:
 
     class ActionSequence(Action):
 
-        isAbstract = 0
+        _isAbstract = 0
 
         _XMINames = ('Behavioral_Elements.Common_Behavior.ActionSequence',)
     
@@ -2708,7 +2715,7 @@ class UMLClass:
 
     class Parameter(ModelElement):
 
-        isAbstract = 0
+        _isAbstract = 0
     
         class states(model.Collection):
             isNavigable = 0
@@ -2772,7 +2779,7 @@ class UMLClass:
 
     class ExtensionPoint(ModelElement):
 
-        isAbstract = 0
+        _isAbstract = 0
     
         class extends(model.Collection):
             isNavigable = 1
@@ -2810,7 +2817,7 @@ class UMLClass:
 
 
     class ComponentInstance(Instance):
-        isAbstract = 0
+        _isAbstract = 0
     
         class nodeInstance(model.Reference):
             isNavigable = 1
@@ -2839,7 +2846,7 @@ class UMLClass:
 
     class Abstraction(Dependency):
 
-        isAbstract = 0
+        _isAbstract = 0
         _XMINames = ('Foundation.Core.Abstraction',)
     
         class mapping(model.Field):
@@ -2852,13 +2859,13 @@ class UMLClass:
 
 
     class Permission(Dependency):
-        isAbstract = 0
+        _isAbstract = 0
         _XMINames = ('Foundation.Core.Permission',)
 
 
     class Collaboration(Namespace,GeneralizableElement):
 
-        isAbstract = 0
+        _isAbstract = 0
         _XMINames = ('Behavioral_Elements.Collaborations.Collaboration',)
     
         class representedClassifier(model.Reference):
@@ -2918,7 +2925,7 @@ class UMLClass:
 
     class Component(Classifier):
 
-        isAbstract = 0
+        _isAbstract = 0
     
         class deploymentLocations(model.Collection):
             isNavigable = 1
@@ -2944,7 +2951,7 @@ class UMLClass:
 
 
     class CallState(ActionState):
-        isAbstract = 0
+        _isAbstract = 0
         _XMINames = ('Behavioral_Elements.Activity_Graphs.CallState',)
 
 
@@ -2955,7 +2962,7 @@ class UMLClass:
 
 
     class ClassifierRole(Classifier):
-        isAbstract = 0
+        _isAbstract = 0
     
         class bases(model.Collection):
             isNavigable = 1
@@ -3017,12 +3024,12 @@ class UMLClass:
 
 
     class UninterpretedAction(Action):
-        isAbstract = 0
+        _isAbstract = 0
         _XMINames = ('Behavioral_Elements.Common_Behavior.UninterpretedAction',)
 
 
     class AssociationRole(Association):
-        isAbstract = 0
+        _isAbstract = 0
     
         class multiplicity(model.Field):
             isRequired = 1
@@ -3054,13 +3061,13 @@ class UMLClass:
             referencedEnd = 'communicationConnection'
 
     class Interface(Classifier):
-        isAbstract = 0
+        _isAbstract = 0
         _XMINames = ('Foundation.Core.Interface',)
 
 
 
     class Interaction(ModelElement):
-        isAbstract = 0
+        _isAbstract = 0
     
         class messages(model.Collection):
             isNavigable = 1
@@ -3084,7 +3091,7 @@ class UMLClass:
 
 
     class ChangeEvent(Event):
-        isAbstract = 0
+        _isAbstract = 0
         _XMINames = ('Behavioral_Elements.State_Machines.ChangeEvent',)
     
         class changeExpression(model.Field):
@@ -3098,7 +3105,7 @@ class UMLClass:
 
 
     class Extension(Base):
-        isAbstract = 0
+        _isAbstract = 0
         _XMINames = ('Extension',)
     
         class extenderID(model.Field):
@@ -3129,7 +3136,7 @@ class UMLClass:
 
 
     class ActivityGraph(StateMachine):
-        isAbstract = 0
+        _isAbstract = 0
         _XMINames = ('Behavioral_Elements.Activity_Graphs.ActivityGraph',)
     
         class partitions(model.Collection):
@@ -3152,7 +3159,7 @@ class UMLClass:
 
     class Partition(ModelElement):
 
-        isAbstract = 0
+        _isAbstract = 0
     
         class activityGraph(model.Reference):
             isNavigable = 1
@@ -3177,7 +3184,7 @@ class UMLClass:
 
     class Pseudostate(StateVertex):
 
-        isAbstract = 0
+        _isAbstract = 0
     
         class kind(model.Field):
             isRequired = 1
@@ -3193,7 +3200,7 @@ class UMLClass:
 
     class CreateAction(Action):
 
-        isAbstract = 0
+        _isAbstract = 0
     
         class instantiation(model.Reference):
             isNavigable = 1
@@ -3209,7 +3216,7 @@ class UMLClass:
 
     class Reception(BehavioralFeature):
 
-        isAbstract = 0
+        _isAbstract = 0
     
         class isAbstarct(model.Field):
             isRequired = 1
@@ -3258,7 +3265,7 @@ class UMLClass:
 
 
     class Model(Package):
-        isAbstract = 0
+        _isAbstract = 0
         _XMINames = ('Model_Management.Model',)
 
 
@@ -3275,7 +3282,7 @@ class UMLClass:
 
     class Comment(ModelElement):
 
-        isAbstract = 0
+        _isAbstract = 0
 
         _XMINames = ('Foundation.Core.Comment',)
     
@@ -3291,7 +3298,7 @@ class UMLClass:
 
     class LinkEnd(ModelElement):
 
-        isAbstract = 0
+        _isAbstract = 0
     
         class instance(model.Reference):
             isNavigable = 1
@@ -3354,7 +3361,7 @@ class UMLClass:
 
     class Extend(Relationship):
 
-        isAbstract = 0
+        _isAbstract = 0
     
         class base(model.Reference):
             isNavigable = 1
@@ -3394,12 +3401,12 @@ class UMLClass:
             referencedType = 'BooleanExpression'
     
     class DataType(Classifier):
-        isAbstract = 0
+        _isAbstract = 0
         _XMINames = ('Foundation.Core.DataType',)
 
 
     class Argument(ModelElement):
-        isAbstract = 0
+        _isAbstract = 0
     
         class action(model.Reference):
             isNavigable = 1
@@ -3430,7 +3437,7 @@ class UMLClass:
 
     class Generalization(Relationship):
 
-        isAbstract = 0
+        _isAbstract = 0
     
         class powertype(model.Reference):
             isNavigable = 1
@@ -3471,7 +3478,7 @@ class UMLClass:
     
     class Stereotype(GeneralizableElement):
 
-        isAbstract = 0
+        _isAbstract = 0
     
         class extendedElements(model.Collection):
             isNavigable = 1
@@ -3521,7 +3528,7 @@ class UMLClass:
     
 
     class Guard(ModelElement):
-        isAbstract = 0
+        _isAbstract = 0
         _XMINames = ('Behavioral_Elements.State_Machines.Guard',)
     
         class transition(model.Reference):
@@ -3550,7 +3557,7 @@ class UMLClass:
 
     class TaggedValue(Element):
 
-        isAbstract = 0
+        _isAbstract = 0
     
         class tag(model.Field):
             isRequired = 1
@@ -3591,7 +3598,7 @@ class UMLClass:
 
     class Message(ModelElement):
 
-        isAbstract = 0
+        _isAbstract = 0
     
         class interaction(model.Reference):
             isNavigable = 1
@@ -3683,7 +3690,7 @@ class UMLClass:
 
 
     class DataValue(Instance):
-        isAbstract = 0
+        _isAbstract = 0
         _XMINames = ('Behavioral_Elements.Common_Behavior.DataValue',)
 
 

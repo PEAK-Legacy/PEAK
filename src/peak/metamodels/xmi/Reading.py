@@ -26,6 +26,8 @@
 
         XMI 1.0
 
+        - XMI.field: needs model support for 'fromFields()'
+
         - handle CORBA types (YAGNI?)
 
         - HREF support (ugh!)  Note that cross-file HREF needs some way to cache
@@ -34,8 +36,6 @@
         XMI 1.1
 
         - Attribute-encoded datatypes
-
-        - XML namespaces (required by spec!)
 
         - metamodel lookups
 
@@ -67,8 +67,6 @@
           objects able to supply a relative or absolute reference to another
           document.  But this requires HREF support.  :(
 
-        - XMI.field: needs model support for 'fromFields()'
-
         - XMI.any, XMI.CorbaTypeCode, XMI.CorbaTcXXX ...?
 
 """
@@ -78,6 +76,8 @@ from peak.util import SOX
 from weakref import WeakValueDictionary
 
 __bases__ = model,
+
+
 
 
 class XMINode(object):
@@ -143,7 +143,11 @@ class XMINode(object):
         atts = self.attrs
         if 'xmi.value' in atts:
             return atts['xmi.value']
+        # XXX check for non-xmi. attrs to support attr-enc datatypes
         # XXX check for subnodes
+        # XXX if all subnodes are XMI.field, use fromFields()
+        # XXX if other subnodes, treat as object refs/values
+        # XXX also, we should probably refactor to handle multiplicity>1
         return ''.join(self.allNodes)
 
     def findNode(self,name):
@@ -153,10 +157,6 @@ class XMINode(object):
             f = node.findNode(name)
             if f is not None:
                 return f
-
-
-
-
 
 
 
