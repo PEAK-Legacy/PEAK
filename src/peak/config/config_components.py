@@ -156,8 +156,8 @@ def loadMapping(pMap, mapping, prefix='*'):
 
 
 def loadConfigFile(pMap, filename, prefix='*'):
-    ConfigReader(pMap,prefix).readFile(filename)
-
+    if filename:
+        ConfigReader(pMap,prefix).readFile(filename)
 
 
 
