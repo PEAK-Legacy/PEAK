@@ -253,7 +253,7 @@ class DescriptorTest(TestCase):
         data = HPC(self.data)
         svc  = HPC(self.data.aService)
         table = {data.ptr:"pass", None:"fail"}
-        strategy.validateCriterion(data, dispatch_by_hierarchy)
+        strategy.validateCriterion(data, strategy.make_node_type(dispatch_by_hierarchy)) # XXXXXX
         self.failUnless(svc.implies(data))
 
         for item in self.data, self.data.aService.thing5, self.data.thing8:
