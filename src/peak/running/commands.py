@@ -12,12 +12,12 @@ __all__ = [
     'ZConfigInterpreter', 'Bootstrap', 'rerunnableAsFactory',
     'callableAsFactory', 'appAsFactory', 'InvocationError', 'CGICommand',
     'CGIInterpreter', 'FastCGIAcceptor', 'Alias', 'runMain',
+    'NoSuchSubcommand',
 ]
 
 
 class InvocationError(Exception):
     """Problem with command arguments or environment"""
-
 
 
 
@@ -218,14 +218,14 @@ define a usage message for their subclass.
 
 
 
+class NoSuchSubcommand(AbstractCommand):
 
+    msg = "No such subcommand %r"
 
+    usage = binding.Obtain('usage', default="")
 
-
-
-
-
-
+    def _run(self):
+        raise InvocationError(self.msg % self.argv[0])
 
 
 
@@ -618,10 +618,7 @@ class Bootstrap(AbstractInterpreter):
         if not naming.URLMatch(name):
             name = "config:peak.running.shortcuts.%s/" % name
 
-        factory = self.lookupComponent(name, default=None)
-
-        if factory is None:
-            raise InvocationError("No such command: %s" % name)
+        factory = self.lookupComponent(name, default=NoSuchSubcommand)
 
         try:
             return self.getSubcommand(factory)
@@ -630,6 +627,9 @@ class Bootstrap(AbstractInterpreter):
             raise InvocationError(
                 "Invalid command object", factory, "found at", name
             )
+
+
+
 
 
 
