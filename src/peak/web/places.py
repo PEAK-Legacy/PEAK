@@ -16,14 +16,16 @@ class SimpleLocation(binding.Component):
     def getObject(self):
         return self
 
-    def getSublocation(self, name, interaction):
+    def getSublocation(self, name, interaction, forUser=NOT_GIVEN):
 
         ob = self.getObject()
         loc = getattr(ob, name, NOT_FOUND)
 
         if loc is not NOT_FOUND:
 
-            if not interaction.allows(ob, name):
+            if (forUser is not None
+                and not interaction.allows(ob, name, user=forUser)
+            ):
                 return NOT_ALLOWED
 
             loc = adapt(loc, interaction.locationProtocol)
@@ -32,8 +34,6 @@ class SimpleLocation(binding.Component):
 
     def preTraverse(self, interaction):
         pass    # Should do any traversal requirements checks
-
-
 
 
 
@@ -91,7 +91,7 @@ class ContainerAsLocation(ComponentAsLocation):
         asAdapterForTypes = [dict],
     )
 
-    def getSublocation(self, name, interaction):
+    def getSublocation(self, name, interaction, forUser=NOT_GIVEN):
 
         if name.startswith('@@'):
             return super(ContainerAsLocation,self).getSublocation(
@@ -105,7 +105,7 @@ class ContainerAsLocation(ComponentAsLocation):
                 name,interaction
             )
 
-        if interaction.allows(ob):
+        if forUser is None or interaction.allows(ob, user=forUser):
             return adapt(ob, interaction.locationProtocol)
 
         return NOT_ALLOWED
@@ -134,6 +134,7 @@ class CallableAsWebMethod(protocols.Adapter):
         request = interaction.request
         from zope.publisher.publish import mapply
         return mapply(self.subject, request.getPositionalArguments(), request)
+
 
 
 

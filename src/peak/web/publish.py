@@ -8,9 +8,30 @@ from zope.publisher import http, browser, xmlrpc, publish
 __all__ = [
     'Interaction', 'NullAuthenticationService', 'InteractionPolicy',
     'HTTPRequest', 'BrowserRequest', 'XMLRPCRequest', 'CGIPublisher',
+    'DefaultExceptionHandler', 'NullSkinService',
 ]
 
 
+class DefaultExceptionHandler(binding.Singleton):
+
+    def handleException(self, interaction, thrower, exc_info, retry_allowed=1):
+        try:
+            storage.abort(interaction.app)
+
+            # XXX note that the following assumes exc_info is available as
+            # XXX sys.exc_info; will this always be the case?
+            interaction.log.exception("ERROR:")
+
+            # XXX Maybe the following should be in a method on interaction?
+            interaction.response.reset()
+            interaction.response.setCharsetUsingRequest(interaction.request)
+            interaction.response.handleException(exc_info)
+
+        finally:
+            # Don't allow exc_info to leak, even if the above resulted in
+            # an error
+            exc_info = None
+        
 
 
 
@@ -18,25 +39,10 @@ __all__ = [
 
 
 
+class NullSkinService(binding.Singleton):
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    def getSkin(self, interaction):
+        return interaction.root
 
 
 class NullAuthenticationService(binding.Singleton):
@@ -61,18 +67,12 @@ class InteractionPolicy(binding.Component, protocols.StickyAdapter):
     fromComponent = classmethod(fromComponent)
 
     log              = binding.bindTo(APPLICATION_LOG)
+    errorProtocol    = binding.bindTo(LOCATION_PROTOCOL)
     locationProtocol = binding.bindTo(LOCATION_PROTOCOL)
     behaviorProtocol = binding.bindTo(BEHAVIOR_PROTOCOL)
     authSvc          = binding.bindTo(AUTHENTICATION_SERVICE)    
+    skinSvc          = binding.bindTo(SKIN_SERVICE)    
     defaultMethod    = binding.bindTo(DEFAULT_METHOD)
-
-
-
-
-
-
-
-
 
 
 
@@ -98,6 +98,7 @@ class Interaction(security.Interaction):
         
     root = binding.Once(root, suggestParent=False)
     
+    errorProtocol = binding.bindTo('policy/locationProtocol')
     locationProtocol = binding.bindTo('policy/locationProtocol')
     behaviorProtocol = binding.bindTo('policy/behaviorProtocol')
 
@@ -105,20 +106,19 @@ class Interaction(security.Interaction):
         lambda self,d,a: self.policy.authSvc.getUser(self)
     )
 
+    skin = binding.Once(
+        lambda self,d,a: self.policy.skinSvc.getSkin(self)
+    )
 
     def beforeTraversal(self, request):
         """Begin transaction before traversal"""
         storage.beginTransaction(self.app)
 
-
     def getApplication(self,request):
         return self.root
 
-
     def callTraversalHooks(self, request, ob):
         ob.preTraverse(self)
-
-
 
 
     def traverseName(self, request, ob, name, check_auth=1):
@@ -176,17 +176,15 @@ class Interaction(security.Interaction):
 
     def handleException(self, object, request, exc_info, retry_allowed=1):
 
-        """Abort transaction and delegate error handling to response"""
-
-        # XXX this should actually adapt the error to an error protocol,
-        # XXX and then delegate its handling there.
+        """Convert exception to a handler, and invoke it"""
 
         try:
-            storage.abort(self.app)
-            self.log.exception("Error handling request")
-            self.response.reset()
-            self.response.setCharsetUsingRequest(self.request)
-            self.response.handleException(exc_info)
+            handler = adapt(
+                exc_info[1], self.errorProtocol, DefaultExceptionHandler
+            )
+            return handler.handleException(
+                self, object, exc_info, retry_allowed
+            )
         finally:
             # Don't allow exc_info to leak, even if the above resulted in
             # an error
@@ -201,6 +199,8 @@ class Interaction(security.Interaction):
     def notAllowed(self, ob, name):
         from zope.publisher.interfaces import Unauthorized
         raise Unauthorized(name=name)   # XXX
+
+
 
 
 class HTTPRequest(http.HTTPRequest, http.HTTPCharsets):
