@@ -1,7 +1,7 @@
 from __future__ import generators
 
 from peak.api import *
-from peak.util.imports import importString, importObject
+from peak.util.imports import importString, importObject, whenImported
 from peak.binding.components import Component, Make, getParentComponent
 from peak.binding.interfaces import IAttachable
 from peak.util.EigenData import EigenCell,AlreadyRead
@@ -14,10 +14,10 @@ from protocols.advice import getMRO, determineMetaclass
 __all__ = [
     'PropertyMap', 'LazyRule', 'ConfigReader', 'loadConfigFiles',
     'loadConfigFile', 'loadMapping', 'PropertySet', 'fileNearModule',
-    'iterParents','findUtilities','findUtility', 'ProviderOf',
-    'provideInstance', 'instancePerComponent', 'Namespace'
+    'iterParents','findUtilities','findUtility', 'ProviderOf', 'FactoryFor',
+    'provideInstance', 'instancePerComponent', 'Namespace', 'ruleForExpr',
+    'CreateViaFactory'
 ]
-
 
 def _setCellInDict(d,key,value):
 
@@ -93,30 +93,30 @@ def findUtility(component, iface, default=NOT_GIVEN):
     return default
 
 
+def ruleForExpr(name,expr):
+    """Return 'config.IRule' for property 'name' based on 'expr' string"""
 
+    _ruleName = PropertyName(name)
+    _rulePrefix = _ruleName.asPrefix()
+    _lrp = len(_rulePrefix)
 
+    def f(propertyMap, configKey, targetObj):
+        ruleName = _ruleName
+        rulePrefix = _rulePrefix
+        if isinstance(configKey,PropertyName):
+            propertyName = configKey
+            ruleSuffix = propertyName[_lrp:]
+        result = eval(expr)
+        rule = adapt(result,ISmartProperty,None)
+        if rule is not None:
+            result = rule.computeProperty(
+                propertyMap, propertyName, rulePrefix, ruleSuffix,
+                targetObj
+            )
+        return result
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    protocols.adviseObject(f,provides=[IRule])
+    return f
 
 
 
@@ -140,14 +140,18 @@ class ProviderOf(object):
         else:
             mro = getMRO(klass)
 
+        iface = adapt(iface,IConfigKey)
+
         self.keys = tuple(
             [((i,base),d)
                 for base in bases
-                    for (i,d) in adapt(iface,IConfigKey).registrationKeys()
+                    for (i,d) in iface.registrationKeys()
             ]
         )
 
-        self.mro  = tuple([(iface,klass) for klass in mro])
+        self.mro  = tuple(
+            [(i,klass) for klass in mro for i in iface.lookupKeys()]
+        )
 
     def registrationKeys(self,depth=0):
         return self.keys
@@ -155,6 +159,84 @@ class ProviderOf(object):
     def lookupKeys(self):
         return self.mro
 
+
+
+
+class FactoryFor(ProviderOf):
+
+    """Config key for an 'IComponentFactory' that returns 'iface' objects"""
+
+    __slots__ = ()
+
+
+    def __init__(self, iface):
+
+        iface = adapt(iface,IConfigKey)
+
+        self.keys = tuple(
+            [((FactoryFor,i),d) for (i,d) in iface.registrationKeys()]
+        )
+
+        self.mro  = tuple(
+            [(FactoryFor,i) for i in iface.lookupKeys()]
+        )
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class CreateViaFactory(object):
+
+    """'IRule' for one-time creation of target interface using FactoryFor()"""
+
+    protocols.advise(
+        classProvides=[IRule]
+    )
+
+    __slots__ = 'iface','instance'
+
+
+    def __init__(self,iface):
+        self.iface = iface
+
+
+    def __call__(self, propertyMap, configKey, targetObj):
+
+        try:
+            return self.instance
+
+        except AttributeError:
+
+            factory = importObject(
+                findUtility(targetObj, FactoryFor(self.iface))
+            )
+
+            if factory is NOT_FOUND:
+                self.instance = factory
+            else:
+                self.instance = factory(
+                    binding.getParentComponent(propertyMap)
+                )
+
+            return self.instance
 
 
 
@@ -380,32 +462,9 @@ class ConfigReader(AbstractConfigParser):
         self.pMap = propertyMap
         self.prefix = PropertyName(prefix).asPrefix()
 
-
     def add_setting(self, section, name, value, lineInfo):
-
         _ruleName = PropertyName(section+name)
-        _rulePrefix = _ruleName.asPrefix()
-        _lrp = len(_rulePrefix)
-
-        def f(propertyMap, propertyName, targetObj):
-            ruleName = _ruleName
-            rulePrefix = _rulePrefix
-            ruleSuffix = propertyName[_lrp:]
-            result = eval(value)
-            rule = adapt(result,ISmartProperty,None)
-            if rule is not None:
-                result = rule.computeProperty(
-                    propertyMap, propertyName, rulePrefix, ruleSuffix,
-                    targetObj
-                )
-            return result
-
-        self.pMap.registerProvider(_ruleName,f)
-
-
-
-
-
+        self.pMap.registerProvider(_ruleName,ruleForExpr(_ruleName,value))
 
 
     def add_section(self, section, lines, lineInfo):
@@ -436,8 +495,27 @@ def do_include(parser, section, name, value, lineInfo):
     loader = importObject(CONFIG_LOADERS.of(propertyMap)[name])
     eval("loader(propertyMap,%s,includedFrom=parser)" % value)
 
-def provide_utility(parser, section, name, value, lineInfo):
-    parser.pMap.registerProvider(importString(name), eval(value))
+
+def provide_utility(parser, section, name, value, lineInfo):    # DEPRECATED!
+    module = '.'.join(name.replace(':','.').split('.')[:-1])
+    pMap = parser.pMap
+    whenImported(
+        module,
+        lambda x: pMap.registerProvider(importString(name), eval(value))
+    )
+
+
+def register_factory(parser, section, name, value, lineInfo):
+    module = '.'.join(name.replace(':','.').split('.')[:-1])
+    pMap = parser.pMap
+
+    def onImport(module):
+        iface = importString(name)
+        pMap.registerProvider(FactoryFor(iface), ruleForExpr(name,value))
+        pMap.registerProvider(iface, CreateViaFactory(iface))
+
+    whenImported(module, onImport)
+
 
 def on_demand(parser, section, name, value, lineInfo):
     parser.pMap.registerProvider(
@@ -447,6 +525,10 @@ def on_demand(parser, section, name, value, lineInfo):
             prefix = name
         )
     )
+
+
+
+
 
 
 class ConfigurationRoot(Component):
@@ -660,7 +742,7 @@ def instancePerComponent(factorySpec):
 
 
 def provideInstance(factorySpec):
-    """Use this to provide a single utility instance for all components"""
+    """DEPRECATED, use 'CreateViaFactory(key)' instead"""
     _ob = []
     def rule(foundIn, configKey, forObj):
         if not _ob:

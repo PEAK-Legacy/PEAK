@@ -2,6 +2,44 @@ Fixes and Enhancements since Version 0.5 alpha 2
 
  Changed, Enhanced, or Newly Deprecated Features
 
+ - Replaced the "[Provide Utilities]" section of .ini files with "[Component
+   Factories]".  The new section type is easier to use, much more versatile,
+   and does all registration and imports lazily.  See the 'peak.ini' file for
+   docs.  "[Provide Utilities]" and 'config.ProvideInstance()' are now
+   DEPRECATED, so please convert ASAP.
+
+ - 'binding.Make()' now accepts configuration keys, using them to look up a
+   factory object that's then invoked to create the attribute.  This makes it
+   a lot easier to define a component with its own transaction service,
+   'IBasicReactor', or other normally "global" component.  It also makes it
+   easier to globally specify a factory class for some interface.  Factories
+   are looked up under the 'config.FactoryFor(key)' configuration key.  (See
+   below.)
+
+ - Added 'config.FactoryFor(key)', a 'config.IConfigKey' implementation that
+   provides a configuration namespace for factories.
+
+   When you use 'binding.Make(ISomething)', it's roughly equivalent to::
+
+        binding.Make(
+            lambda self,d,a:
+                binding.lookupComponent(
+                    self, config.FactoryFor(ISomething),
+                    adaptTo = binding.IRecipe
+                )(self,d,a)
+        )
+
+   That is, the 'config.FactoryFor(ISomething)' is looked up and invoked.
+
+ - Added 'config.CreateViaFactory(key)', a 'config.IRule' implementation that
+   creates an implementation of 'key', by looking up 'config.FactoryFor(key)'
+   and invoking it.
+
+ - Added 'config.ruleForExpr(name,expr)', that returns a 'config.IRule' that
+   computes the Python expression in the string 'expr'.  This is the mechanism
+   used by configuration files to create rules, factored out into an API call
+   so that configuration extensions can use it, too.
+
  - The 'referencedType' of a 'model.StructuralFeature' can now be any
    'binding.IComponentKey', not just a type or a string.  Types are also now
    implicitly component keys, which means you can use 'binding.Obtain(SomeType)'
@@ -11,8 +49,9 @@ Fixes and Enhancements since Version 0.5 alpha 2
    collaborator classes, while implementing AOP-like features.)
 
  - Added 'naming.Indirect(key)', a 'binding.IComponentKey' that can be used to
-   do an indirect lookup via another 'IComponentKey' (such as a name).  Using
-   'naming.Indirect()', you can replace code like this::
+   do an indirect lookup via another 'IComponentKey' (such as a name).
+
+   Using 'naming.Indirect()', you can replace code like this::
 
         socket = binding.Obtain(
             lambda self: self.lookupComponent(self.socketURL),
@@ -325,7 +364,7 @@ Fixes and Enhancements since Version 0.5 alpha 2
    means you should change 'return foo, None' statements to just 'return foo'.
 
  - Property definition rules in an .ini file can now refer to 'rulePrefix' and
-   'ruleSuffix' variables.  'rulePrefix' is a '.'-terminated string,
+   'ruleSuffix' variables.  'rulePrefix' is a "."-terminated string,
    representing the name the rule was defined with.  For example, if the
    rule was defined for '"foo.bar.*"', then 'rulePrefix' will be '"foo.bar."'.
    The 'ruleSuffix' will be the portion of the 'propertyName' that follows

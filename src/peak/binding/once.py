@@ -5,6 +5,7 @@ from peak.api import NOT_FOUND, protocols, adapt
 from peak.util.imports import importObject, importString
 from peak.util.signature import ISignature, getPositionalArgs
 from interfaces import IAttachable, IActiveDescriptor, IRecipe
+from peak.config.interfaces import IConfigKey
 from _once import *
 from protocols import IOpenProvider, IOpenImplementor, NO_ADAPTER_NEEDED
 from protocols.advice import metamethod, getMRO
@@ -19,7 +20,6 @@ __all__ = [
 
 class ComponentSetupWarning(UserWarning):
     """Large iterator passed to suggestParentComponent"""
-
 
 def supertype(supertype,subtype):
 
@@ -502,11 +502,8 @@ def _callableAsRecipe(func, protocol):
     return f
 
 protocols.declareAdapter(
-    _callableAsRecipe,
-    provides = [IRecipe],
-    forProtocols = [ISignature]
+    _callableAsRecipe, provides = [IRecipe], forProtocols = [ISignature]
 )
-
 
 class _StringAsRecipe(_TypeAsRecipe):
 
@@ -517,7 +514,6 @@ class _StringAsRecipe(_TypeAsRecipe):
         asAdapterForTypes = [str]
     )
 
-
     def __call__(self, component, instDict, attrName):
         return adapt(importString(self.subject), IRecipe)(
             component, instDict, attrName
@@ -526,10 +522,14 @@ class _StringAsRecipe(_TypeAsRecipe):
     def __repr__(self):
         return self.subject
 
+def _configKeyAsRecipe(ob,proto):
+    from peak.api import config; from components import lookupComponent
+    return lambda self,d,a: \
+        lookupComponent(self,config.FactoryFor(ob),adaptTo=IRecipe)(self,d,a)
 
-
-
-
+protocols.declareAdapter(
+    _configKeyAsRecipe, provides=[IRecipe], forProtocols = [IConfigKey]
+)
 
 class Make(Attribute):
 

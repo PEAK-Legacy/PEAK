@@ -86,7 +86,6 @@ class A:
 class B(A):
     pass
 
-
 class IProvide(Interface):
     pass
 
@@ -111,15 +110,16 @@ class UtilityData(binding.Component):
         nestedService = binding.Make(nestedService, offerAs=[IS2U, provides(B)])
 
     aService = binding.Make(aService)
-
+    factory = binding.Make(lambda: UtilityData, offerAs=[config.FactoryFor(IProvide)])
+    thing = binding.Make(IProvide)
     deep = binding.Obtain('aService/nestedService/thing6/thing1')
-
 
 class ISampleUtility1(Interface):
     pass
 
 class ISampleUtility2(Interface):
     pass
+
 
 class UtilityTest(TestCase):
 
@@ -189,10 +189,10 @@ class UtilityTest(TestCase):
         assert config.findUtility(ns,provides(A)) is data
         assert config.findUtility(ns,provides(B)) is ns
 
-
-
-
-
+    def checkFindFactory(self):
+        data = self.data
+        assert isinstance(data.thing,UtilityData)
+        assert data.thing is not data
 
 
 
