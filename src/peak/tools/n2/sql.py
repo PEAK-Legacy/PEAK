@@ -86,6 +86,9 @@ class SQLInteractor(storage.TransactionComponent):
         while not self.quit:
             try:
                 l = self.readline(self.prompt()) + '\n'
+            except KeyboardInterrupt:
+                print >>shell.stderr, '^C'
+                continue
             except EOFError:
                 print >>shell.stdout
                 popRLHistory()
@@ -240,41 +243,24 @@ class SQLInteractor(storage.TransactionComponent):
 
 
 
-    def toStr(self, v, w=None):
-        if v is None:
-            if w is None:
-                return "NULL"
-            return "NULL".ljust(w)[:w]
-        elif w is None:
-            return str(v)
-        elif type(v) in (int, long):
-            return "%*d" % (w, v)
-        elif type(v) is float:
-            return "%*g" % (w, v)
-        else:
-            return str(v).ljust(w)[:w]
-
-
-
     def showResults(self, c, opts, stdout, stderr):
-        if c._cursor.description:
-            kw = {}
-                
-            if opts.has_key('-h'):
-                kw['header'] = False
+        kw = {}
 
-            if opts.has_key('-f'):
-                kw['footer'] = False
+        if opts.has_key('-h'):
+            kw['header'] = False
+
+        if opts.has_key('-f'):
+            kw['footer'] = False
                 
-            v = opts.get('-d')
-            if v is not None:
-                kw['delim'] = v
+        v = opts.get('-d')
+        if v is not None:
+            kw['delim'] = v
                 
-            v = opts.get('-N')
-            if v is not None:
-                kw['null'] = v
+        v = opts.get('-N')
+        if v is not None:
+            kw['null'] = v
                 
-            c.dumpTo(stdout, format = opts.get('-m'), **kw)
+        c.dumpTo(stdout, format = opts.get('-m'), **kw)
 
 
        
@@ -311,89 +297,66 @@ xacts\t\tnumber of times to repeat execution of the input. Only results
 
         noBackslash = True
 
-        args = ('N:d:m:hfs:nx:r:p', 0, 1)
+        args = ('N:d:m:hfnx:r:p', 0, 0)
 
         def cmd(self, cmd, opts, args, stdout, stderr, **kw):
-            secs = opts.get('-s', '0')
             try:
-                secs = float(secs)
-            except:
-                print >>stderr, "Invalid value for -s: '%s'" % secs
-                return
+                i = self.interactor.getBuf()
+                if i.strip():
+                    if self.interactor.state:
+                        print >>stderr, "Please finish comment or quotes first."
+                        return
+                else:
+                    i = self.interactor.getBuf('!!')
+                    if not i.strip():
+                        self.interactor.resetBuf()
+                        return
 
-            xacts = 0
-            if len(args) == 1:
-                try:
-                    xacts = int(args[0])
-                    if xacts <= 0:
-                        raise ValueError
-                except:
-                    print >>stderr, "Invalid value for xacts: '%s'" % args[0]
-                    return
+                if opts.has_key('-n'):
+                    sql = i
+                else:
+                    sql = self.interactor.substVar(i)
 
-            i = self.interactor.getBuf()
-            if i.strip():
-                if self.interactor.state:
-                    print >>stderr, "Please finish comment or quotes first."
-                    return
-            else:
-                i = self.interactor.getBuf('!!')
-                if not i.strip():
-                    self.interactor.resetBuf()
-                    return
-
-            if opts.has_key('-n'):
-                sql = i
-            else:
-                sql = self.interactor.substVar(i)
-
-            try:
                 con = self.interactor.con
-                
-                if xacts > 1:
-                    for j in range(xacts - 1):
-                        c = con(sql, outsideTxn=self.interactor.is_outside)
-                        c.fetchall()    # XXX doesn't handle multiresults!
-
-                        time.sleep(secs)
-
                 c = con(sql, multiOK=True, outsideTxn=self.interactor.is_outside)
-            except con.Exceptions:
+
+                ccode = opts.get('-x')
+                rcode = opts.get('-r')
+                pymode = opts.has_key('-p')
+
+                if ccode or rcode or pymode:
+                    shell = self.shell
+                
+                    if ccode or pymode:
+                        shell.setvar('cursor', c)
+                        try:
+                            if ccode:
+                                shell.execute(ccode)
+                            if pymode:
+                                shell.interact()
+                        finally:
+                            shell.unsetvar('cursor')
+
+                    if rcode:
+                        try:
+                            for row in c:
+                                shell.setvar('row', row)
+                                shell.execute(rcode)
+                        finally:
+                            shell.unsetvar('row')
+                else:
+                    self.interactor.showResults(c, opts, stdout, stderr)
+
+                self.interactor.setBuf(i, name='!!')
+
+                self.interactor.resetBuf()
+            except KeyboardInterrupt:
+                print >>stderr, '^C'
+                self.interactor.resetBuf()
+            except: # con.Exceptions:
                 # currently the error is logged
                 # sys.excepthook(*sys.exc_info()) # XXX
                 self.interactor.resetBuf()
-                return
-
-            ccode = opts.get('-x')
-            rcode = opts.get('-r')
-            pymode = opts.has_key('-p')
-
-            if ccode or rcode or pymode:
-                shell = self.shell
-                
-                if ccode or pymode:
-                    shell.setvar('cursor', c)
-                    try:
-                        if ccode:
-                            shell.execute(ccode)
-                        if pymode:
-                            shell.interact()
-                    finally:
-                        shell.unsetvar('cursor')
-
-                if rcode:
-                    try:
-                        for row in c:
-                            shell.setvar('row', row)
-                            shell.execute(rcode)
-                    finally:
-                        shell.unsetvar('row')
-            else:
-                self.interactor.showResults(c, opts, stdout, stderr)
-
-            self.interactor.setBuf(i, name='!!')
-
-            self.interactor.resetBuf()
 
     cmd_go = binding.Make(cmd_go)
 
