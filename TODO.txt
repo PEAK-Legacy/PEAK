@@ -8,11 +8,17 @@ Open Issues/To-Do Items
 
         * Up-to-date and complete Persistence package
 
-    peak.binding
+    peak.storage
 
-        - docstrings for reference
+        - URLs and drivers for gadfly, Sybase, and postgres
 
-    peak.config
+        - policy/providers for global/local txn scopes
+
+        - "alternate key" rack base class(es)
+
+        - "query" rack base class(es)
+
+        - unit tests for more complex object scenarios: references, thunks..?
 
         - docstrings for reference
 
@@ -24,10 +30,6 @@ Open Issues/To-Do Items
 
         - clean up TW docstrings & interfaces
 
-    peak.naming
-
-        - docstrings for reference
-
     peak.running
 
         - create a basic LogFile logging provider
@@ -38,18 +40,15 @@ Open Issues/To-Do Items
 
         - docstrings for reference
 
+    peak.binding
 
-    peak.storage
+        - docstrings for reference
 
-        - URLs and drivers for gadfly, Sybase, and postgres
+    peak.config
 
-        - "alternate key" rack base class(es)
+        - docstrings for reference
 
-        - "query" rack base class(es)
-
-        - add logging to transaction error handlers
-
-        - unit tests for more complex object scenarios: references, thunks..?
+    peak.naming
 
         - docstrings for reference
 
@@ -58,6 +57,7 @@ Open Issues/To-Do Items
         - docstrings for reference
 
         - more unit tests?
+
 
 
 

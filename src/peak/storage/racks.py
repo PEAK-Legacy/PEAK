@@ -239,7 +239,7 @@ class AbstractRack(TransactionComponent):
             for ob in self.cache.values():
                 ob._p_deactivate()
 
-        super(AbstractRack,self).finishTransaction(txnService)
+        super(AbstractRack,self).finishTransaction(txnService,committed)
 
 
 

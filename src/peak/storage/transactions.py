@@ -1,4 +1,4 @@
-from peak.api import binding, exceptions
+from peak.api import *
 from interfaces import *
 from time import time
 import sys
@@ -9,29 +9,111 @@ __all__ = [
 ]
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 class BasicTxnErrorHandler(object):
 
-    """Simple error handling policy: no logging, retries, etc."""
+    """Simple error handling policy, w/simple logging, no retries"""
     
     __implements__ = ITransactionErrorHandler
 
+
     def voteFailed(self, txnService, participant):
-        txnService.fail()
-        raise
+    
+        t,v,tb = sys.exc_info()
+
+        try:
+            LOG_WARNING(
+                "Error during participant vote", txnService, exc_info=(t,v,tb)
+            )
+
+            # Force txn to abort
+            txnService.fail()
+            raise t,v,tb
+
+        finally:
+            del t,v,tb
+
 
     def commitFailed(self, txnService, participant):
-        # XXX Hosed!!!
-        txnService.fail()
-        raise
+
+        t,v,tb = sys.exc_info()
+
+        try:
+            LOG_CRITICAL(
+                "Unrecoverable transaction failure", txnService,
+                exc_info=(t,v,tb)
+            )
+            txnService.fail()
+            raise t,v,tb
+
+        finally:
+            del t,v,tb
+
+
 
     def abortFailed(self, txnService, participant):
-        # remove and retry after fail
-        txnService.removeParticipant(participant)
-        raise
+
+        t,v,tb = sys.exc_info()
+
+        try:
+            LOG_WARNING(
+                "Error during participant abort", txnService, exc_info=(t,v,tb)
+            )
+
+            # remove and retry after fail
+            txnService.removeParticipant(participant)
+            raise t,v,tb
+            
+        finally:
+            del t,v,tb
         
+
     def finishFailed(self, txnService, participant, committed):
-        # ignore error
+
+        LOG_WARNING(
+            "Error during participant finishTransaction", txnService,
+            exc_info=True
+        )
+
+        # ignore the error
         txnService.removeParticipant(participant)
+
+
+
+
+
+
+
+
 
 
 

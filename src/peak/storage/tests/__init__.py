@@ -339,10 +339,14 @@ class RackTest(TestCase):
         self.table.INSERT(Items(a=1,b=2))
     
     def checkExistence(self):
+
         self._addData()
+
         ob = self.rack[1]
         assert ob.b==2
         self.ts.abort()
+
+        self.ts.begin()
         self.assertRaises(KeyError, lambda: ob.b)
 
 
@@ -360,10 +364,6 @@ class RackTest(TestCase):
 
         self.ts.abort()
         assert self.table.dump()==[(1,2)]
-
-
-
-
 
 
 
