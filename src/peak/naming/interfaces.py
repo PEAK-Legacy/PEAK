@@ -8,7 +8,7 @@ __all__ = [
 
     'IName', 'IAddress', 'IInitialContextFactory', 'IResolver', 'IPath',
     'IURLContextFactory', 'IAddressFactory', 'IObjectFactory', 'IState',
-    'IBasicContext', 'IReadContext', 'IWriteContext', 'IReferenceable',
+    'IBasicContext', 'IReadContext', 'IWriteContext',
     'COMPOUND_KIND', 'COMPOSITE_KIND', 'URL_KIND', 'IState', 'IReference',
     'IStreamFactory', 'IBaseURL',
 
@@ -388,23 +388,23 @@ class IInitialContextFactory(Interface):
         """Return a naming context for 'parentComponent' with 'options'"""
 
 
-class IReferenceable(Interface):
-    """Thing that can return a reference to itself, for binding in a context"""
-
-    def getReference():
-        """Return a '(IReference,attrs)' pair for saving in a naming context"""
-
 class IState(Interface):
     """Thing that stores an object's state in a naming context"""
 
     def restore(context, name):
         """Return the object that this is the state for"""
 
+
 class IReference(IState):
     """A reference to an object, described as a factory name + addresses"""
 
     factoryName = Attribute("Dotted name of an 'IObjectFactory'")
     addresses = Attribute("Sequence of strings or parsed address objects")
+
+
+
+
+
 
 
 

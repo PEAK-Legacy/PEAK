@@ -1,5 +1,9 @@
 Fixes and Enhancements since Version 0.5 alpha 3
 
+ - 'naming.IReferenceable' was REMOVED, as it is not in use anywhere in PEAK.
+   This will be replaced with a generic function when we do actually need this
+   functionality.
+
  - There is a new 'config.getStreamFactory' generic function, to make it easy
    to accept URLs, filenames, or 'naming.IStreamFactory' objects as the source
    of a "file".
