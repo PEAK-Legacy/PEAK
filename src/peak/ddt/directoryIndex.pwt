@@ -1,4 +1,4 @@
-<html>
+<html this:is="page">
  <head>
   <title>Index of <span domlet="text.notag:basename"/></title>
  </head>
