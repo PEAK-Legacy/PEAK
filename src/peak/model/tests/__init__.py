@@ -7,6 +7,7 @@ from peak.model.structural import FeatureClass
 class featureBase(object):
 
     __metaclass__ = FeatureClass
+
     singular = 1
 
     newVerbs = Items(
@@ -21,7 +22,6 @@ class featureBase(object):
 
     get_single.verb = 'get'
     get_single.installIf = lambda feature,method: feature.singular
-
 
     def get_multi(feature, self):
         return self.__dict__[feature.attrName]

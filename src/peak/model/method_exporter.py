@@ -7,8 +7,8 @@ __all__ = [
 
 from types import FunctionType
 from new import instancemethod
-from peak.binding.once import ActiveClass
-
+from peak.binding.once import ActiveClass, getInheritedRegistries
+from kjbuckets import kjGraph
 
 
 
@@ -217,9 +217,11 @@ class MethodExporter(ActiveClass):
             a true value, the function will be used as the template for the
             appropriate verb (inner and outer forms).  If the callable returns
             false, the function will not be used.  Note that 'installIf'
-            conditions should be arranged such that only *one* can be true at
-            a time, since if more than one is true, it is undefined which
-            variant of the verb will be used.
+            conditions should be arranged such that at most *one* can be true
+            at a time, because if more than one is true, a 'TypeError' will be
+            raised at class creation time.  If none of the 'installIf'
+            conditions are true, the verb will not appear as a method of the
+            feature class, nor will it be exported to any containing class.
 
         The 'verb' function attribute
 
@@ -239,7 +241,15 @@ class MethodExporter(ActiveClass):
 
                 class bar(object):
                     __metaclass__ = MethodExporter
+                    newVerbs = Items(baz='baz%(initCap)s')
                     baz = foo
+
+            Also note that methods are only exported if their 'verb' is listed
+            in the 'newVerbs' of the class or one of its base classes.  You can
+            make use of this behavior to create "private" verbs that are only
+            accessible from the feature.  Just set the 'verb' attribute of
+            your function templates to the name of the desired "private"
+            method.
 
         Parameters and Calling Conventions
 
@@ -297,6 +307,21 @@ class MethodExporter(ActiveClass):
             redefined in the subclass.  (In which case, the redefined behavior
             will be followed by the "Do you really have to do that?" question.)
 
+        Overriding Templates in Subclasses
+
+            If you override a template in a subclass, you don't need to specify
+            its 'verb', since that method name is already associated with the
+            verb.  However, if you need an 'installIf' condition you must
+            specify it in the subclass as well; otherwise it will be treated
+            as an unconditional template, which may lead to conflict between
+            install conditions.
+
+            Note that the above rules apply to any template you override,
+            regardless of its name, as long as it existed in the superclass.
+            If you add a new template for an existing or new verb, you *must*
+            specify its 'verb' attribute, or it must be an exported verb
+            defined in the subclass' 'newVerbs' list.
+
         Why 'self.__class__.back'?
 
             Sharp-eyed Pythonistas may wonder why we don't just say
@@ -323,6 +348,22 @@ class MethodExporter(ActiveClass):
     def subjectNames(self):
         """Return a nameMapping object for this feature"""
         return nameMapping(self)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -374,38 +415,79 @@ class MethodExporter(ActiveClass):
         self.attrName = className.split('.')[-1]
         super(MethodExporter,self).__init__(className, bases, classDict)
 
-        templateItems = []; d={}
-        verbItems = list(classDict.get('newVerbs',[]))[:]
-        
-        for b in bases:
-            templateItems.extend(getattr(b,'methodTemplates',d).items())
-            verbItems.extend(getattr(b,'verbs',d).items())
+        verbs = self.verbs = {}
+        mt    = self.methodTemplates = {}
+        vt    = kjGraph()
 
-        templateItems.reverse(); verbItems.reverse()
-        mt = self.methodTemplates = dict(templateItems)
-        verbs = self.verbs  = dict(verbItems)
+        for v in getInheritedRegistries(self,'verbs'):
+            verbs.update(v)
+
+        for d in getInheritedRegistries(self,'methodTemplates'):
+            mt.update(d)
+
+        for d in getInheritedRegistries(self,'verbTemplates'):
+            vt += d
+
+        self.verbTemplates = vt
+        verbs.update(dict(classDict.get('newVerbs',[])))
+        
 
         for methodName, func in classDict.items():
-            if not isinstance(func,FunctionType): continue
+
+            if not isinstance(func,FunctionType):
+                continue
+
             setattr(self,methodName,classmethod(func))
+            mt[methodName]=func
+
             if hasattr(func,'verb'):
-                mt[methodName]=func
+                vt[func.verb]=func.verb     # ensure verb itself is considered
+                vt[func.verb]=methodName
+
             elif methodName in verbs:
-                func.verb = methodName
-                mt[methodName]=func
+                vt[methodName]=methodName
+
 
 
         names = self.subjectNames()
         mn = self.methodNames = {}
 
-        for methodName,func in mt.items():
+        for verb in vt.keys():
 
-            installIf  = getattr(func,'installIf',None)
+            candidates = []
+            
+            for implName in vt.neighbors(verb):
 
-            if installIf is None or installIf(self,func):
-                verb = func.verb
-                if verb in verbs: mn[verb] = verbs[verb] % names
-                if verb not in classDict: setattr(self,verb,classmethod(func))
+                try:
+                    func = mt[implName]
+                except KeyError:
+                    continue
+
+                installIf  = getattr(func,'installIf',None)
+
+                if installIf is None or installIf(self,func):
+                    candidates.append(func)
+
+            if candidates:
+
+                if len(candidates)>1:
+                    raise TypeError(
+                        ("More than one version of '%s' template applies"
+                        % verb), self, candidates
+                    )
+
+                func, = candidates
+
+                if verb in verbs:
+                    mn[verb] = verbs[verb] % names
+
+                setattr(self,verb,classmethod(func))
+                
+            else:
+                setattr(self,verb,nullProperty(verb))
+
+
+
 
 
 class nameMapping(object):
@@ -468,4 +550,15 @@ class MethodWrapper(object):
         return instancemethod(self.im_func, ob, typ)
 
 
+class nullProperty(object):
+
+    __slots__ = 'attrName'
+
+    def __init__(self,attrName):
+        self.attrName = attrName
+        
+    def __get__(self, ob, typ=None):
+        raise AttributeError, self.attrName
+
+    __set__ = __delete__ = __get__
         

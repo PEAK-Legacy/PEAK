@@ -309,7 +309,7 @@ class StructuralFeature(object):
         """This must be defined in subclass"""
         raise NotImplementedError
 
-
+    _getList.installIf = lambda f, m: f.isDerived
 
 
 
@@ -514,14 +514,14 @@ class DerivedAssociation(Collection):
 
     isDerived = True
 
-    def get(feature, element):
-        return feature._getList(element)
-        
 
 
 class Sequence(Collection):
 
     isOrdered = True
+
+
+
 
 
 
