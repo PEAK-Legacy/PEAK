@@ -80,7 +80,6 @@ class LDAPCursor(AbstractCursor):
         """LDAP doesn't do multi-sets"""
         return False
 
-
     def __iter__(self, onlyOneSet=True):
 
         msgid, timeout = self.msgid, self.timeout
@@ -189,9 +188,9 @@ class LDAPConnection(ManagedConnection):
 
 
     def __getattr__(self, attr):
-        return getattr(self.connection, attr)
-
-
+        if not attr.startswith('_'):
+            return getattr(self.connection, attr)
+        raise AttributeError,attr
 
 
 
