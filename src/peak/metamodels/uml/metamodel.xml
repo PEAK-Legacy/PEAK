@@ -1,0 +1,922 @@
+<?xml version="1.0"?>
+<!DOCTYPE metamodel SYSTEM "metamodel.dtd">
+<metamodel>
+  <package name="root">
+    <element name="Base" abstract="true">
+    </element>
+    <element name="Extension" abstract="false">
+      <superclass type="Base"/>
+      <attribute name="extender" type="String" />
+      <attribute name="extenderID" type="String" />
+    </element>
+    <association>
+      <role name="baseElement" type="Base" composite="false" kind="ref" navigable="true" />
+      <role name="extension" type="Extension" composite="false" kind="bag" navigable="true" />
+    </association>
+    <package name="Foundation">
+      <package name="Core">
+        <element name="Classifier" abstract="false">
+          <superclass type="GeneralizableElement"/>
+          <superclass type="Namespace"/>
+        </element>
+        <element name="Class" abstract="false">
+          <superclass type="Classifier"/>
+          <attribute  name="isActive" type="Boolean"/>
+        </element>
+        <element name="DataType" abstract="false">
+          <superclass type="Classifier"/>
+        </element>
+        <element name="StructuralFeature" abstract="true">
+          <superclass type="Feature"/>
+          <attribute  name="multiplicity" type="Multiplicity"/>
+          <attribute  name="changeability" type="ChangeableKind"/>
+          <attribute  name="targetScope" type="ScopeKind"/>
+        </element>
+        <element name="Namespace" abstract="false">
+          <superclass type="ModelElement"/>
+        </element>
+        <element name="AssociationEnd" abstract="false">
+          <superclass type="ModelElement"/>
+          <attribute  name="isNavigable" type="Boolean"/>
+          <attribute  name="ordering" type="OrderingKind"/>
+          <attribute  name="aggregation" type="AggregationKind"/>
+          <attribute  name="targetScope" type="ScopeKind"/>
+          <attribute  name="multiplicity" type="Multiplicity"/>
+          <attribute  name="changeability" type="ChangeableKind"/>
+        </element>
+        <element name="Interface" abstract="false">
+          <superclass type="Classifier"/>
+        </element>
+        <element name="Constraint" abstract="false">
+          <superclass type="ModelElement"/>
+          <attribute  name="body" type="BooleanExpression"/>
+        </element>
+        <element name="Association" abstract="false">
+          <superclass type="GeneralizableElement"/>
+          <superclass type="Relationship"/>
+        </element>
+        <element name="Element" abstract="true">
+          <superclass type="Base"/>
+        </element>
+        <element name="GeneralizableElement" abstract="true">
+          <superclass type="ModelElement"/>
+          <attribute  name="isRoot" type="Boolean"/>
+          <attribute  name="isLeaf" type="Boolean"/>
+          <attribute  name="isAbstract" type="Boolean"/>
+        </element>
+        <element name="Attribute" abstract="false">
+          <superclass type="StructuralFeature"/>
+          <attribute  name="initialValue" type="Expression"/>
+        </element>
+        <element name="Operation" abstract="false">
+          <superclass type="BehavioralFeature"/>
+          <attribute  name="concurrency" type="CallConcurrencyKind"/>
+          <attribute  name="isRoot" type="Boolean"/>
+          <attribute  name="isLeaf" type="Boolean"/>
+          <attribute  name="isAbstract" type="Boolean"/>
+          <attribute  name="specification" type="String"/>
+        </element>
+        <element name="Parameter" abstract="false">
+          <superclass type="ModelElement"/>
+          <attribute  name="defaultValue" type="Expression"/>
+          <attribute  name="kind" type="ParameterDirectionKind"/>
+        </element>
+        <element name="Method" abstract="false">
+          <superclass type="BehavioralFeature"/>
+          <attribute  name="body" type="ProcedureExpression"/>
+        </element>
+        <element name="Generalization" abstract="false">
+          <superclass type="Relationship"/>
+          <attribute  name="discriminator" type="Name"/>
+        </element>
+        <element name="AssociationClass" abstract="false">
+          <superclass type="Association"/>
+          <superclass type="Class"/>
+        </element>
+        <element name="Feature" abstract="true">
+          <superclass type="ModelElement"/>
+          <attribute  name="ownerScope" type="ScopeKind"/>
+        </element>
+        <element name="BehavioralFeature" abstract="true">
+          <superclass type="Feature"/>
+          <attribute  name="isQuery" type="Boolean"/>
+        </element>
+        <element name="ModelElement" abstract="true">
+          <superclass type="Element"/>
+          <attribute  name="name" type="Name"/>
+          <attribute  name="visibility" type="VisibilityKind"/>
+          <attribute  name="isSpecification" type="Boolean"/>
+        </element>
+        <element name="Dependency" abstract="false">
+          <superclass type="Relationship"/>
+        </element>
+        <element name="Abstraction" abstract="false">
+          <superclass type="Dependency"/>
+          <attribute  name="mapping" type="MappingExpression"/>
+        </element>
+        <element name="PresentationElement" abstract="true">
+          <superclass type="Element"/>
+        </element>
+        <element name="Usage" abstract="false">
+          <superclass type="Dependency"/>
+        </element>
+        <element name="Binding" abstract="false">
+          <superclass type="Dependency"/>
+        </element>
+        <element name="Component" abstract="false">
+          <superclass type="Classifier"/>
+        </element>
+        <element name="Node" abstract="false">
+          <superclass type="Classifier"/>
+        </element>
+        <element name="Permission" abstract="false">
+          <superclass type="Dependency"/>
+        </element>
+        <element name="Comment" abstract="false">
+          <superclass type="ModelElement"/>
+        </element>
+        <element name="Flow" abstract="false">
+          <superclass type="Relationship"/>
+        </element>
+        <element name="Relationship" abstract="false">
+          <superclass type="ModelElement"/>
+        </element>
+        <element name="ElementResidence" abstract="false">
+          <superclass type="Base"/>
+          <attribute  name="visibility" type="VisibilityKind"/>
+        </element>
+        <element name="TemplateParameter" abstract="false">
+          <superclass type="Base"/>
+        </element>
+        <association>
+          <role name="association" type="Association" composite="true" kind="ref" navigable="true" />
+          <role name="connection" type="AssociationEnd" composite="false" kind="list" navigable="true" />
+        </association>
+        <association>
+          <role name="owner" type="Classifier" composite="true" kind="ref" navigable="true" />
+          <role name="feature" type="Feature" composite="false" kind="list" navigable="true" />
+        </association>
+        <association>
+          <role name="specification" type="Operation" composite="false" kind="ref" navigable="true" />
+          <role name="method" type="Method" composite="false" kind="bag" navigable="true" />
+        </association>
+        <association>
+          <role name="structuralFeature" type="StructuralFeature" composite="false" kind="bag" navigable="false" />
+          <role name="type" type="Classifier" composite="false" kind="ref" navigable="true" />
+        </association>
+        <association>
+          <role name="namespace" type="Namespace" composite="true" kind="ref" navigable="true" />
+          <role name="ownedElement" type="ModelElement" composite="false" kind="bag" navigable="true" />
+        </association>
+        <association>
+          <role name="behavioralFeature" type="BehavioralFeature" composite="true" kind="ref" navigable="true" />
+          <role name="parameter" type="Parameter" composite="false" kind="list" navigable="true" />
+        </association>
+        <association>
+          <role name="parameter" type="Parameter" composite="false" kind="bag" navigable="false" />
+          <role name="type" type="Classifier" composite="false" kind="ref" navigable="true" />
+        </association>
+        <association>
+          <role name="child" type="GeneralizableElement" composite="false" kind="ref" navigable="true" />
+          <role name="generalization" type="Generalization" composite="false" kind="bag" navigable="true" />
+        </association>
+        <association>
+          <role name="parent" type="GeneralizableElement" composite="false" kind="ref" navigable="true" />
+          <role name="specialization" type="Generalization" composite="false" kind="bag" navigable="true" />
+        </association>
+        <association>
+          <role name="qualifier" type="Attribute" composite="false" kind="list" navigable="true" />
+          <role name="associationEnd" type="AssociationEnd" composite="true" kind="ref" navigable="true" />
+        </association>
+        <association>
+          <role name="type" type="Classifier" composite="false" kind="ref" navigable="true" />
+          <role name="associationEnd" type="AssociationEnd" composite="false" kind="bag" navigable="false" />
+        </association>
+        <association>
+          <role name="participant" type="AssociationEnd" composite="false" kind="bag" navigable="true" />
+          <role name="specification" type="Classifier" composite="false" kind="bag" navigable="true" />
+        </association>
+        <association>
+          <role name="client" type="ModelElement" composite="false" kind="bag" navigable="true" />
+          <role name="clientDependency" type="Dependency" composite="false" kind="bag" navigable="true" />
+        </association>
+        <association>
+          <role name="modelElement" type="ModelElement" composite="true" kind="ref" navigable="true" />
+          <role name="taggedValue" type="TaggedValue" composite="false" kind="bag" navigable="true" />
+        </association>
+        <association>
+          <role name="constrainedElement" type="ModelElement" composite="false" kind="list" navigable="true" />
+          <role name="constraint" type="Constraint" composite="false" kind="bag" navigable="true" />
+        </association>
+        <association>
+          <role name="supplier" type="ModelElement" composite="false" kind="bag" navigable="true" />
+          <role name="supplierDependency" type="Dependency" composite="false" kind="bag" navigable="true" />
+        </association>
+        <association>
+          <role name="presentation" type="PresentationElement" composite="false" kind="bag" navigable="true" />
+          <role name="subject" type="ModelElement" composite="false" kind="bag" navigable="true" />
+        </association>
+        <association>
+          <role name="deploymentLocation" type="Node" composite="false" kind="bag" navigable="true" />
+          <role name="resident" type="Component" composite="false" kind="bag" navigable="true" />
+        </association>
+        <association>
+          <role name="implementationLocation" type="Component" composite="false" kind="ref" navigable="true" />
+          <role name="residentElement" type="ElementResidence" composite="false" kind="bag" navigable="true" />
+        </association>
+        <association>
+          <role name="modelElement" type="ModelElement" composite="true" kind="ref" navigable="true" />
+          <role name="templateParameter" type="TemplateParameter" composite="false" kind="list" navigable="true" />
+        </association>
+        <association>
+          <role name="targetFlow" type="Flow" composite="false" kind="bag" navigable="true" />
+          <role name="target" type="ModelElement" composite="false" kind="bag" navigable="true" />
+        </association>
+        <association>
+          <role name="sourceFlow" type="Flow" composite="false" kind="bag" navigable="true" />
+          <role name="source" type="ModelElement" composite="false" kind="bag" navigable="true" />
+        </association>
+        <association>
+          <role name="defaultElement" type="ModelElement" composite="false" kind="ref" navigable="true" />
+          <role name="templateParameter3" type="TemplateParameter" composite="false" kind="bag" navigable="true" />
+        </association>
+        <association>
+          <role name="binding" type="Binding" composite="false" kind="bag" navigable="true" />
+          <role name="argument" type="ModelElement" composite="false" kind="list" navigable="true" />
+        </association>
+        <association>
+          <role name="powertype" type="Classifier" composite="false" kind="ref" navigable="true" />
+          <role name="powertypeRange" type="Generalization" composite="false" kind="bag" navigable="true" />
+        </association>
+        <association>
+          <role name="comment" type="Comment" composite="false" kind="bag" navigable="true" />
+          <role name="annotatedElement" type="ModelElement" composite="false" kind="bag" navigable="true" />
+        </association>
+        <association>
+          <role name="elementResidence" type="ElementResidence" composite="false" kind="bag" navigable="true" />
+          <role name="resident" type="ModelElement" composite="false" kind="ref" navigable="true" />
+        </association>
+        <association>
+          <role name="modelElement2" type="ModelElement" composite="false" kind="ref" navigable="true" />
+          <role name="templateParameter2" type="TemplateParameter" composite="false" kind="bag" navigable="true" />
+        </association>
+      </package>
+      <package name="Data_Types">
+        <enumeration name="AggregationKind">
+          <literal name="none" />
+          <literal name="aggregate" />
+          <literal name="composite" />
+        </enumeration>
+        <primitive name="Boolean" />
+        <enumeration name="ChangeableKind">
+          <literal name="changeable" />
+          <literal name="frozen" />
+          <literal name="addOnly" />
+        </enumeration>
+        <enumeration name="OperationDirectionKind">
+          <literal name="provide" />
+          <literal name="require" />
+        </enumeration>
+        <datatype name="Multiplicity">
+        </datatype>
+        <primitive name="Name" />
+        <primitive name="Integer" />
+        <enumeration name="ParameterDirectionKind">
+          <literal name="in" />
+          <literal name="inout" />
+          <literal name="out" />
+          <literal name="return" />
+        </enumeration>
+        <enumeration name="MessageDirectionKind">
+          <literal name="activation" />
+          <literal name="return" />
+        </enumeration>
+        <enumeration name="ScopeKind">
+          <literal name="instance" />
+          <literal name="classifier" />
+        </enumeration>
+        <primitive name="String" />
+        <primitive name="Time" />
+        <enumeration name="VisibilityKind">
+          <literal name="public" />
+          <literal name="protected" />
+          <literal name="private" />
+        </enumeration>
+        <datatype name="ObjectSetExpression">
+          <superclass type="Expression"/>
+        </datatype>
+        <datatype name="TimeExpression">
+          <superclass type="Expression"/>
+        </datatype>
+        <datatype name="Expression">
+          <attribute  name="language" type="Name"/>
+          <attribute  name="body" type="String"/>
+        </datatype>
+        <datatype name="BooleanExpression">
+          <superclass type="Expression"/>
+        </datatype>
+        <enumeration name="PseudostateKind">
+          <literal name="initial" />
+          <literal name="final" />
+          <literal name="shallowHistory" />
+          <literal name="deepHistory" />
+          <literal name="join" />
+          <literal name="fork" />
+          <literal name="branch" />
+          <literal name="junction" />
+        </enumeration>
+        <datatype name="ActionExpression">
+          <superclass type="Expression"/>
+        </datatype>
+        <datatype name="MultiplicityRange">
+          <attribute  name="lower" type="Integer"/>
+          <attribute  name="upper" type="UnlimitedInteger"/>
+        </datatype>
+        <enumeration name="CallConcurrencyKind">
+          <literal name="sequential" />
+          <literal name="guarded" />
+          <literal name="concurrent" />
+        </enumeration>
+        <primitive name="Mapping" />
+        <datatype name="IterationExpression">
+          <superclass type="Expression"/>
+        </datatype>
+        <datatype name="TypeExpression">
+          <superclass type="Expression"/>
+        </datatype>
+        <datatype name="ArgListsExpression">
+          <superclass type="Expression"/>
+        </datatype>
+        <datatype name="MappingExpression">
+          <superclass type="Expression"/>
+        </datatype>
+        <primitive name="UnlimitedInteger" />
+        <datatype name="ProcedureExpression">
+          <superclass type="Expression"/>
+        </datatype>
+        <primitive name="LocationReference" />
+        <enumeration name="OrderingKind">
+          <literal name="unordered" />
+          <literal name="ordered" />
+          <literal name="sorted" />
+        </enumeration>
+        <primitive name="Geometry" />
+        <association>
+          <role name="multiplicity" type="Multiplicity" composite="true" kind="ref" navigable="true" />
+          <role name="range" type="MultiplicityRange" composite="false" kind="list" navigable="true" />
+        </association>
+      </package>
+      <package name="Extension_Mechanisms">
+        <element name="Stereotype" abstract="false">
+          <superclass type="GeneralizableElement"/>
+          <attribute  name="icon" type="Geometry"/>
+          <attribute  name="baseClass" type="Name"/>
+        </element>
+        <element name="TaggedValue" abstract="false">
+          <superclass type="Element"/>
+          <attribute  name="tag" type="Name"/>
+          <attribute  name="value" type="String"/>
+        </element>
+        <association>
+          <role name="requiredTag" type="TaggedValue" composite="false" kind="bag" navigable="true" />
+          <role name="stereotype" type="Stereotype" composite="true" kind="ref" navigable="true" />
+        </association>
+        <association>
+          <role name="stereotype" type="Stereotype" composite="false" kind="ref" navigable="false" />
+          <role name="extendedElement" type="ModelElement" composite="false" kind="bag" navigable="true" />
+        </association>
+        <association>
+          <role name="constrainedElement2" type="Stereotype" composite="true" kind="ref" navigable="false" />
+          <role name="stereotypeConstraint" type="Constraint" composite="false" kind="bag" navigable="true" />
+        </association>
+      </package>
+    </package>
+    <package name="Behavioral_Elements">
+      <package name="Use_Cases">
+        <element name="UseCase" abstract="false">
+          <superclass type="Classifier"/>
+        </element>
+        <element name="Actor" abstract="false">
+          <superclass type="Classifier"/>
+        </element>
+        <element name="UseCaseInstance" abstract="false">
+          <superclass type="Instance"/>
+        </element>
+        <element name="Extend" abstract="false">
+          <superclass type="Relationship"/>
+          <attribute  name="condition" type="BooleanExpression"/>
+        </element>
+        <element name="Include" abstract="false">
+          <superclass type="Relationship"/>
+        </element>
+        <element name="ExtensionPoint" abstract="false">
+          <superclass type="ModelElement"/>
+          <attribute  name="location" type="LocationReference"/>
+        </element>
+        <association>
+          <role name="base" type="UseCase" composite="false" kind="ref" navigable="true" />
+          <role name="extend2" type="Extend" composite="false" kind="bag" navigable="true" />
+        </association>
+        <association>
+          <role name="extension" type="UseCase" composite="false" kind="ref" navigable="true" />
+          <role name="extend" type="Extend" composite="false" kind="bag" navigable="true" />
+        </association>
+        <association>
+          <role name="include" type="Include" composite="false" kind="bag" navigable="true" />
+          <role name="addition" type="UseCase" composite="false" kind="ref" navigable="true" />
+        </association>
+        <association>
+          <role name="include2" type="Include" composite="false" kind="bag" navigable="true" />
+          <role name="base" type="UseCase" composite="false" kind="ref" navigable="true" />
+        </association>
+        <association>
+          <role name="extensionPoint" type="ExtensionPoint" composite="false" kind="bag" navigable="true" />
+          <role name="useCase" type="UseCase" composite="false" kind="ref" navigable="true" />
+        </association>
+        <association>
+          <role name="extensionPoint" type="ExtensionPoint" composite="false" kind="list" navigable="true" />
+          <role name="extend" type="Extend" composite="false" kind="bag" navigable="true" />
+        </association>
+      </package>
+      <package name="State_Machines">
+        <element name="StateMachine" abstract="false">
+          <superclass type="ModelElement"/>
+        </element>
+        <element name="Event" abstract="true">
+          <superclass type="ModelElement"/>
+        </element>
+        <element name="State" abstract="false">
+          <superclass type="StateVertex"/>
+        </element>
+        <element name="TimeEvent" abstract="false">
+          <superclass type="Event"/>
+          <attribute  name="when" type="TimeExpression"/>
+        </element>
+        <element name="CallEvent" abstract="false">
+          <superclass type="Event"/>
+        </element>
+        <element name="SignalEvent" abstract="false">
+          <superclass type="Event"/>
+        </element>
+        <element name="Transition" abstract="false">
+          <superclass type="ModelElement"/>
+        </element>
+        <element name="StateVertex" abstract="true">
+          <superclass type="ModelElement"/>
+        </element>
+        <element name="CompositeState" abstract="false">
+          <superclass type="State"/>
+          <attribute  name="isConcurent" type="Boolean"/>
+        </element>
+        <element name="ChangeEvent" abstract="false">
+          <superclass type="Event"/>
+          <attribute  name="changeExpression" type="BooleanExpression"/>
+        </element>
+        <element name="Guard" abstract="false">
+          <superclass type="ModelElement"/>
+          <attribute  name="expression" type="BooleanExpression"/>
+        </element>
+        <element name="Pseudostate" abstract="false">
+          <superclass type="StateVertex"/>
+          <attribute  name="kind" type="PseudostateKind"/>
+        </element>
+        <element name="SimpleState" abstract="false">
+          <superclass type="State"/>
+        </element>
+        <element name="SubmachineState" abstract="false">
+          <superclass type="CompositeState"/>
+        </element>
+        <element name="SynchState" abstract="false">
+          <superclass type="StateVertex"/>
+          <attribute  name="bound" type="UnlimitedInteger"/>
+        </element>
+        <element name="StubState" abstract="false">
+          <superclass type="StateVertex"/>
+          <attribute  name="referenceState" type="Name"/>
+        </element>
+        <element name="FinalState" abstract="false">
+          <superclass type="State"/>
+        </element>
+        <association>
+          <role name="state1" type="State" composite="true" kind="ref" navigable="false" />
+          <role name="entry" type="Action" composite="false" kind="ref" navigable="true" />
+        </association>
+        <association>
+          <role name="state2" type="State" composite="true" kind="ref" navigable="false" />
+          <role name="exit" type="Action" composite="false" kind="ref" navigable="true" />
+        </association>
+        <association>
+          <role name="event" type="Event" composite="true" kind="ref" navigable="false" />
+          <role name="parameter" type="Parameter" composite="false" kind="list" navigable="true" />
+        </association>
+        <association>
+          <role name="guard" type="Guard" composite="false" kind="ref" navigable="true" />
+          <role name="transition" type="Transition" composite="true" kind="ref" navigable="true" />
+        </association>
+        <association>
+          <role name="signal" type="Signal" composite="false" kind="ref" navigable="true" />
+          <role name="sendAction" type="SendAction" composite="false" kind="bag" navigable="true" />
+        </association>
+        <association>
+          <role name="signal" type="Signal" composite="false" kind="ref" navigable="true" />
+          <role name="occurrence" type="SignalEvent" composite="false" kind="bag" navigable="false" />
+        </association>
+        <association>
+          <role name="activityGraph" type="ActivityGraph" composite="true" kind="ref" navigable="true" />
+          <role name="partition" type="Partition" composite="false" kind="bag" navigable="true" />
+        </association>
+        <association>
+          <role name="behavior" type="StateMachine" composite="false" kind="bag" navigable="false" />
+          <role name="context" type="ModelElement" composite="false" kind="ref" navigable="true" />
+        </association>
+        <association>
+          <role name="contents" type="ModelElement" composite="false" kind="bag" navigable="true" />
+          <role name="partition1" type="Partition" composite="false" kind="bag" navigable="false" xmi.name="partition" />
+        </association>
+        <association>
+          <role name="classifierInState" type="ClassifierInState" composite="false" kind="bag" navigable="false" />
+          <role name="inState" type="State" composite="false" kind="bag" navigable="true" />
+        </association>
+        <association>
+          <role name="type" type="Classifier" composite="false" kind="ref" navigable="true" />
+          <role name="objectFlowState" type="ObjectFlowState" composite="false" kind="bag" navigable="false" />
+        </association>
+        <association>
+          <role name="type" type="Classifier" composite="false" kind="ref" navigable="true" />
+          <role name="classifierInState" type="ClassifierInState" composite="false" kind="bag" navigable="false" />
+        </association>
+        <association>
+          <role name="top" type="State" composite="false" kind="ref" navigable="true" />
+          <role name="stateMachine" type="StateMachine" composite="true" kind="ref" navigable="true" />
+        </association>
+        <association>
+          <role name="state" type="State" composite="false" kind="bag" navigable="true" />
+          <role name="deferrableEvent" type="Event" composite="false" kind="bag" navigable="true" />
+        </association>
+        <association>
+          <role name="occurrence" type="CallEvent" composite="false" kind="bag" navigable="false" />
+          <role name="operation" type="Operation" composite="false" kind="ref" navigable="true" />
+        </association>
+        <association>
+          <role name="container" type="CompositeState" composite="true" kind="ref" navigable="true" />
+          <role name="subvertex" type="StateVertex" composite="false" kind="bag" navigable="true" />
+        </association>
+        <association>
+          <role name="transition" type="Transition" composite="true" kind="ref" navigable="false" />
+          <role name="effect" type="Action" composite="false" kind="ref" navigable="true" />
+        </association>
+        <association>
+          <role name="state" type="State" composite="true" kind="ref" navigable="true" />
+          <role name="internalTransition" type="Transition" composite="false" kind="bag" navigable="true" />
+        </association>
+        <association>
+          <role name="transition" type="Transition" composite="false" kind="bag" navigable="true" />
+          <role name="trigger" type="Event" composite="false" kind="ref" navigable="true" />
+        </association>
+        <association>
+          <role name="stateMachine" type="StateMachine" composite="true" kind="ref" navigable="true" />
+          <role name="transition" type="Transition" composite="false" kind="bag" navigable="true" xmi.name="transitions" />
+        </association>
+        <association>
+          <role name="outgoing" type="Transition" composite="false" kind="bag" navigable="true" />
+          <role name="source" type="StateVertex" composite="false" kind="ref" navigable="true" />
+        </association>
+        <association>
+          <role name="incoming" type="Transition" composite="false" kind="bag" navigable="true" />
+          <role name="target" type="StateVertex" composite="false" kind="ref" navigable="true" />
+        </association>
+        <association>
+          <role name="submachineState" type="SubmachineState" composite="false" kind="bag" navigable="true" xmi.name="subMachineState" />
+          <role name="submachine" type="StateMachine" composite="false" kind="ref" navigable="true" />
+        </association>
+        <association>
+          <role name="parameter" type="Parameter" composite="false" kind="bag" navigable="true" />
+          <role name="state" type="ObjectFlowState" composite="false" kind="bag" navigable="false" />
+        </association>
+        <association>
+          <role name="state3" type="State" composite="true" kind="ref" navigable="false" />
+          <role name="doActivity" type="Action" composite="false" kind="ref" navigable="true" />
+        </association>
+      </package>
+      <package name="Collaborations">
+        <element name="Collaboration" abstract="false">
+          <superclass type="Namespace"/>
+          <superclass type="GeneralizableElement"/>
+        </element>
+        <element name="ClassifierRole" abstract="false">
+          <superclass type="Classifier"/>
+          <attribute  name="multiplicity" type="Multiplicity"/>
+        </element>
+        <element name="AssociationRole" abstract="false">
+          <superclass type="Association"/>
+          <attribute  name="multiplicity" type="Multiplicity"/>
+        </element>
+        <element name="AssociationEndRole" abstract="false">
+          <superclass type="AssociationEnd"/>
+        </element>
+        <element name="Message" abstract="false">
+          <superclass type="ModelElement"/>
+        </element>
+        <element name="Interaction" abstract="false">
+          <superclass type="ModelElement"/>
+        </element>
+        <association>
+          <role name="interaction" type="Interaction" composite="true" kind="ref" navigable="true" />
+          <role name="message" type="Message" composite="false" kind="bag" navigable="true" />
+        </association>
+        <association>
+          <role name="context" type="Collaboration" composite="true" kind="ref" navigable="true" />
+          <role name="interaction" type="Interaction" composite="false" kind="bag" navigable="true" />
+        </association>
+        <association>
+          <role name="classifierRole" type="ClassifierRole" composite="false" kind="bag" navigable="false" />
+          <role name="base" type="Classifier" composite="false" kind="bag" navigable="true" />
+        </association>
+        <association>
+          <role name="base" type="AssociationEnd" composite="false" kind="ref" navigable="true" />
+          <role name="associationEndRole" type="AssociationEndRole" composite="false" kind="bag" navigable="false" />
+        </association>
+        <association>
+          <role name="base" type="Association" composite="false" kind="ref" navigable="true" />
+          <role name="associationRole" type="AssociationRole" composite="false" kind="bag" navigable="false" />
+        </association>
+        <association>
+          <role name="classifierRole" type="ClassifierRole" composite="false" kind="bag" navigable="false" />
+          <role name="availableFeature" type="Feature" composite="false" kind="bag" navigable="true" />
+        </association>
+        <association>
+          <role name="collaboration1" type="Collaboration" composite="false" kind="bag" navigable="false" xmi.name="collaboration" />
+          <role name="constrainingElement" type="ModelElement" composite="false" kind="bag" navigable="true" />
+        </association>
+        <association>
+          <role name="message4" type="Message" composite="false" kind="bag" navigable="true" />
+          <role name="activator" type="Message" composite="false" kind="ref" navigable="true" />
+        </association>
+        <association>
+          <role name="collaboration" type="Collaboration" composite="false" kind="bag" navigable="false" />
+          <role name="representedClassifier" type="Classifier" composite="false" kind="ref" navigable="true" />
+        </association>
+        <association>
+          <role name="collaboration" type="Collaboration" composite="false" kind="bag" navigable="false" />
+          <role name="representedOperation" type="Operation" composite="false" kind="ref" navigable="true" />
+        </association>
+        <association>
+          <role name="message2" type="Message" composite="false" kind="bag" navigable="true" />
+          <role name="sender" type="ClassifierRole" composite="false" kind="ref" navigable="true" />
+        </association>
+        <association>
+          <role name="receiver" type="ClassifierRole" composite="false" kind="ref" navigable="true" />
+          <role name="message1" type="Message" composite="false" kind="bag" navigable="true" />
+        </association>
+        <association>
+          <role name="predecessor" type="Message" composite="false" kind="bag" navigable="true" />
+          <role name="message3" type="Message" composite="false" kind="bag" navigable="true" />
+        </association>
+        <association>
+          <role name="message" type="Message" composite="false" kind="bag" navigable="true" />
+          <role name="communicationConnection" type="AssociationRole" composite="false" kind="ref" navigable="true" />
+        </association>
+        <association>
+          <role name="classifierRole1" type="ClassifierRole" composite="false" kind="bag" navigable="false" xmi.name="classifierRole" />
+          <role name="availableContents" type="ModelElement" composite="false" kind="bag" navigable="true" />
+        </association>
+        <association>
+          <role name="action" type="Action" composite="false" kind="ref" navigable="true" />
+          <role name="message" type="Message" composite="false" kind="bag" navigable="false" />
+        </association>
+        <association>
+          <role name="associationEndRole" type="AssociationEndRole" composite="false" kind="bag" navigable="false" />
+          <role name="availableQualifier" type="Attribute" composite="false" kind="bag" navigable="true" />
+        </association>
+      </package>
+      <package name="Common_Behavior">
+        <element name="Instance" abstract="false">
+          <superclass type="ModelElement"/>
+        </element>
+        <element name="Signal" abstract="false">
+          <superclass type="Classifier"/>
+        </element>
+        <element name="CreateAction" abstract="false">
+          <superclass type="Action"/>
+        </element>
+        <element name="DestroyAction" abstract="false">
+          <superclass type="Action"/>
+        </element>
+        <element name="UninterpretedAction" abstract="false">
+          <superclass type="Action"/>
+        </element>
+        <element name="Action" abstract="false">
+          <superclass type="ModelElement"/>
+          <attribute  name="recurrence" type="IterationExpression"/>
+          <attribute  name="target" type="ObjectSetExpression"/>
+          <attribute  name="isAsynchronous" type="Boolean"/>
+          <attribute  name="script" type="ActionExpression"/>
+        </element>
+        <element name="AttributeLink" abstract="false">
+          <superclass type="ModelElement"/>
+        </element>
+        <element name="LinkObject" abstract="false">
+          <superclass type="Object"/>
+          <superclass type="Link"/>
+        </element>
+        <element name="Object" abstract="false">
+          <superclass type="Instance"/>
+        </element>
+        <element name="DataValue" abstract="false">
+          <superclass type="Instance"/>
+        </element>
+        <element name="CallAction" abstract="false">
+          <superclass type="Action"/>
+        </element>
+        <element name="SendAction" abstract="false">
+          <superclass type="Action"/>
+        </element>
+        <element name="ActionSequence" abstract="false">
+          <superclass type="Action"/>
+        </element>
+        <element name="Argument" abstract="false">
+          <superclass type="ModelElement"/>
+          <attribute  name="value" type="Expression"/>
+        </element>
+        <element name="Reception" abstract="false">
+          <superclass type="BehavioralFeature"/>
+          <attribute  name="specification" type="String"/>
+          <attribute  name="isRoot" type="Boolean"/>
+          <attribute  name="isLeaf" type="Boolean"/>
+          <attribute  name="isAbstarct" type="Boolean"/>
+        </element>
+        <element name="Link" abstract="false">
+          <superclass type="ModelElement"/>
+        </element>
+        <element name="LinkEnd" abstract="false">
+          <superclass type="ModelElement"/>
+        </element>
+        <element name="ReturnAction" abstract="false">
+          <superclass type="Action"/>
+        </element>
+        <element name="TerminateAction" abstract="false">
+          <superclass type="Action"/>
+        </element>
+        <element name="Stimulus" abstract="false">
+          <superclass type="ModelElement"/>
+        </element>
+        <element name="Exception" abstract="false">
+          <superclass type="Signal"/>
+        </element>
+        <element name="ComponentInstance" abstract="false">
+          <superclass type="Instance"/>
+        </element>
+        <element name="NodeInstance" abstract="false">
+          <superclass type="Instance"/>
+        </element>
+        <association>
+          <role name="instance" type="Instance" composite="false" kind="bag" navigable="false" />
+          <role name="classifier" type="Classifier" composite="false" kind="bag" navigable="true" />
+        </association>
+        <association>
+          <role name="actualArgument" type="Argument" composite="false" kind="list" navigable="true" />
+          <role name="action" type="Action" composite="true" kind="ref" navigable="true" />
+        </association>
+        <association>
+          <role name="createAction" type="CreateAction" composite="false" kind="bag" navigable="false" />
+          <role name="instantiation" type="Classifier" composite="false" kind="ref" navigable="true" />
+        </association>
+        <association>
+          <role name="attributeLink" type="AttributeLink" composite="false" kind="bag" navigable="false" />
+          <role name="attribute" type="Attribute" composite="false" kind="ref" navigable="true" />
+        </association>
+        <association>
+          <role name="attributeLink" type="AttributeLink" composite="false" kind="bag" navigable="true" />
+          <role name="value" type="Instance" composite="false" kind="ref" navigable="true" />
+        </association>
+        <association>
+          <role name="instance" type="Instance" composite="false" kind="ref" navigable="true" />
+          <role name="linkEnd" type="LinkEnd" composite="false" kind="bag" navigable="true" />
+        </association>
+        <association>
+          <role name="signal" type="Signal" composite="false" kind="ref" navigable="true" />
+          <role name="reception" type="Reception" composite="false" kind="bag" navigable="true" />
+        </association>
+        <association>
+          <role name="slot" type="AttributeLink" composite="false" kind="bag" navigable="true" />
+          <role name="instance" type="Instance" composite="true" kind="ref" navigable="true" />
+        </association>
+        <association>
+          <role name="argument" type="Instance" composite="false" kind="bag" navigable="true" />
+          <role name="stimulus1" type="Stimulus" composite="false" kind="bag" navigable="true" />
+        </association>
+        <association>
+          <role name="context" type="BehavioralFeature" composite="false" kind="bag" navigable="true" />
+          <role name="raisedSignal" type="Signal" composite="false" kind="bag" navigable="false" />
+        </association>
+        <association>
+          <role name="association" type="Association" composite="false" kind="ref" navigable="true" />
+          <role name="link" type="Link" composite="false" kind="bag" navigable="false" />
+        </association>
+        <association>
+          <role name="link" type="Link" composite="true" kind="ref" navigable="true" />
+          <role name="connection" type="LinkEnd" composite="false" kind="bag" navigable="true" />
+        </association>
+        <association>
+          <role name="associationEnd" type="AssociationEnd" composite="false" kind="ref" navigable="true" />
+          <role name="linkEnd" type="LinkEnd" composite="false" kind="bag" navigable="false" />
+        </association>
+        <association>
+          <role name="stimulus3" type="Stimulus" composite="false" kind="bag" navigable="true" />
+          <role name="sender" type="Instance" composite="false" kind="ref" navigable="true" />
+        </association>
+        <association>
+          <role name="callAction" type="CallAction" composite="false" kind="bag" navigable="false" />
+          <role name="operation" type="Operation" composite="false" kind="ref" navigable="true" />
+        </association>
+        <association>
+          <role name="actionSequence" type="ActionSequence" composite="true" kind="ref" navigable="true" />
+          <role name="action" type="Action" composite="false" kind="list" navigable="true" />
+        </association>
+        <association>
+          <role name="resident" type="ComponentInstance" composite="false" kind="bag" navigable="true" />
+          <role name="nodeInstance" type="NodeInstance" composite="false" kind="ref" navigable="true" />
+        </association>
+        <association>
+          <role name="resident" type="Instance" composite="false" kind="bag" navigable="true" />
+          <role name="componentInstance" type="ComponentInstance" composite="false" kind="ref" navigable="true" />
+        </association>
+        <association>
+          <role name="receiver" type="Instance" composite="false" kind="ref" navigable="true" />
+          <role name="stimulus2" type="Stimulus" composite="false" kind="bag" navigable="true" />
+        </association>
+        <association>
+          <role name="stimulus" type="Stimulus" composite="false" kind="bag" navigable="true" />
+          <role name="communicationLink" type="Link" composite="false" kind="ref" navigable="true" />
+        </association>
+        <association>
+          <role name="dispatchAction" type="Action" composite="false" kind="ref" navigable="true" />
+          <role name="stimulus" type="Stimulus" composite="false" kind="bag" navigable="true" />
+        </association>
+        <association>
+          <role name="qualifiedValue" type="AttributeLink" composite="false" kind="bag" navigable="true" />
+          <role name="linkEnd" type="LinkEnd" composite="true" kind="ref" navigable="true" />
+        </association>
+      </package>
+      <package name="Activity_Graphs">
+        <element name="ActivityGraph" abstract="false">
+          <superclass type="StateMachine"/>
+        </element>
+        <element name="Partition" abstract="false">
+          <superclass type="ModelElement"/>
+        </element>
+        <element name="SubactivityState" abstract="false">
+          <superclass type="SubmachineState"/>
+          <attribute  name="isDynamic" type="Boolean"/>
+          <attribute  name="dynamicArguments" type="ArgListsExpression"/>
+          <attribute  name="dynamicMultiplicity" type="Multiplicity"/>
+        </element>
+        <element name="CallState" abstract="false">
+          <superclass type="ActionState"/>
+        </element>
+        <element name="ObjectFlowState" abstract="false">
+          <superclass type="SimpleState"/>
+          <attribute  name="isSynch" type="Boolean"/>
+        </element>
+        <element name="ClassifierInState" abstract="false">
+          <superclass type="Classifier"/>
+        </element>
+        <element name="ActionState" abstract="false">
+          <superclass type="SimpleState"/>
+          <attribute  name="isDynamic" type="Boolean"/>
+          <attribute  name="dynamicArguments" type="ArgListsExpression"/>
+          <attribute  name="dynamicMultiplicity" type="Multiplicity"/>
+        </element>
+      </package>
+    </package>
+    <package name="Standard_Elements">
+    </package>
+    <package name="Model_Management">
+      <element name="Model" abstract="false">
+        <superclass type="Package"/>
+      </element>
+      <element name="Package" abstract="false">
+        <superclass type="GeneralizableElement"/>
+        <superclass type="Namespace"/>
+      </element>
+      <element name="Subsystem" abstract="false">
+        <superclass type="Package"/>
+        <superclass type="Classifier"/>
+        <attribute  name="isInstantiable" type="Boolean"/>
+      </element>
+      <element name="ElementImport" abstract="false">
+        <superclass type="Base"/>
+        <attribute  name="visibility" type="VisibilityKind"/>
+        <attribute  name="alias" type="Name"/>
+      </element>
+      <association>
+        <role name="package" type="Package" composite="false" kind="ref" navigable="true" />
+        <role name="elementImport" type="ElementImport" composite="false" kind="bag" navigable="true" />
+      </association>
+      <association>
+        <role name="modelElement" type="ModelElement" composite="false" kind="ref" navigable="true" />
+        <role name="elementImport2" type="ElementImport" composite="false" kind="bag" navigable="true" xmi.name="elementImport" />
+      </association>
+    </package>
+  </package>
+</metamodel>
