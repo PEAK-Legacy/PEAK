@@ -32,10 +32,3 @@ def lookup(name):
     return InitialContext().lookup(name)
 
 
-
-
-
-
-
-
-

@@ -4,9 +4,6 @@ from Interfaces import *
 from Names import *
 import SPI
 
-
-NNS_NAME = toName('/')
-
 _marker = object()
 
 
@@ -39,208 +36,6 @@ _marker = object()
 
 
 
-class Operation(object):
-
-    remainingNewName = None
-
-    def __init__(self, ctx, name, requiredInterface=IBasicContext):
-
-        self.ctx, self.requiredInterface = ctx, requiredInterface
-        
-        name = self.name = toName(name, acceptURL=ctx._acceptURLs)
-
-        if name.isURL:
-
-            self.localName, self.remainingName = name.scheme, name.body
-            
-            if not ctx._supportsScheme(name.scheme):
-            
-                schemeCtx = SPI.getURLContext(name.scheme,ctx.getEnvironment())
-    
-                if schemeCtx is None:
-                    raise InvalidNameException(
-                        "Unknown scheme %s in %r" % (name.scheme,name)
-                    )
-
-                self.ctx = schemeCtx
-                self.resType = 'resolve_passthru'
-                
-            else:
-                self.resType = 'resolve_url'
-
-
-        else:
-            mine, rest = ctx._splitName(name)
-            self.localName, self.remainingName = mine, rest
-
-            self.resType = self.getResolutionType(mine, rest)
-
-
-
-
-
-
-    def getResolutionType(self, mine, rest):
-
-        if not rest:
-            # (mine=?, rest=[])
-            return 'resolve_local'  # It's all local
-
-        if mine:
-            # (mine=[...], rest=[...])
-            return 'resolve_intermediate'          
-
-        elif not rest[0] and len(rest)==1:
-            # (mine=[], rest=[''])
-            return 'resolve_nns_ptr'
-
-        else:
-            # (mine=[], rest=[...])
-            return 'resolve_intermediate'
-            
-
-    def forceNNSboundary(self):
-        if not self.remainingName or self.remainingName[0]:
-            self.remainingName = NNS_NAME + self.remainingName
-
-
-    def skipNNSboundary(self):
-
-        if self.remainingName and not self.remainingName[0]:
-            self.remainingName = self.remainingName[1:]
-            
-        operation.localName += NNS_NAME
-
-
-
-
-
-
-
-
-
-
-
-    def resolve_url(self):
-        raise NotImplementedError
-
-    resolve_local = resolve_nns_ptr = resolve_passthru = resolve_url
-
-
-    def resolve_intermediate(self):
-                
-        # We have both local and non-local parts, so work it out
-
-        self.resolvedObj = self.ctx._getNextContext(self)
-        self.ctx = SPI.getContinuationContext(self.makeCPE())
-        return self.resolve_passthru()
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    def __call__(self, *args, **kw):
-
-        self.args, self.kw = args, kw
-
-        try:            
-            return getattr(self, self.resType)()
-
-        except CannotProceedException, cpe:
-            return self.resolve_cpe(cpe)
-
-
-    def resolve_cpe(self, cpe):
-
-        self.ctx = SPI.getContinuationContext(cpe)
-        
-        self.remainingName    = cpe.remainingName
-        self.remainingNewName = cpe.remainingNewName
-
-        return self.resolve_passthru()
-
-
-    def makeCPE(self):
-        return CannotProceedException(
-            resolvedObj      = self.resolvedObj,
-            altName          = self.localName,
-            remainingName    = self.remainingName,
-            remainingNewName = self.remainingNewName,
-            altNameCtx       = self.ctx,
-            environment      = self.ctx.getEnvironment(),
-            requiredInterface= self.requiredInterface
-        )
-
-
-
-
-
-
-
-
-
-
-class NonbindingOperation(Operation):
-
-    def resolve_nns_ptr(self):
-        return self.resolve_intermediate()
-
-
-class RenameOperation(NonbindingOperation):
-
-    def __init__(self, ctx, name, newName, requiredInterface=IWriteContext):
-
-        super(RenameOperation,self).__init__(self,ctx,name,requiredInterface)
-
-        target = Operation(ctx, newName, requiredInterface)
-        self.targetResType    = target.resType
-        self.newName          = target.name
-        self.newLocal         = target.localName
-        self.remainingNewName = target.remainingName
-        
-        if self.targetResType<>self.resType \
-           or self.resType not in ('resolve_url','resolve_local') \
-           and self.newLocal<>self.localName:
-           
-                raise InvalidNameException(
-                    "Incompatible names for rename", name, newName
-                )
-
-
-    def forceNNSboundary(self):
-        super(RenameOperation,self).forceNNSboundary()
-        if not self.remainingNewName or self.remainingNewName[0]:
-            self.remainingNewName = NNS_NAME + self.remainingNewName
-
-
-    def skipNNSboundary(self):
-        super(RenameOperation,self).skipNNSboundary()
-        if self.remainingNewName and not self.remainingNewName[0]:
-            self.remainingNewName = self.remainingNewName[1:]
-
 
 
 
@@ -251,7 +46,7 @@ class AbstractContext(object):
     _envWritten = 0
     _scheme = None
     _acceptURLs = 1
-    _nameClass = CompoundName
+    _makeName = CompoundName
 
     def __init__(self, env):
         self._environ = env
@@ -341,7 +136,6 @@ class AbstractContext(object):
             current namespace, and all others are assumed to be in subsequent
             namespaces.
         """
-
         return 1
 
 
@@ -357,54 +151,28 @@ class AbstractContext(object):
         else:
             localElements = self._numberOfLocalNameParts(name)
 
-        nameClass = self._nameClass
+        makeName = self._makeName
 
         mine = CompositeName(
-            [ toName(part, nameClass) for part in name[:localElements] ]
+            [ toName(part, makeName) for part in name[:localElements] ]
         )
 
         rest = name[localElements:]
         return mine, rest
 
 
-    # The real implementation stuff!
+
+    # The real implementation stuff goes here...
 
     def _lookup(self, operation):
-        """'mine' is always a composite name of compound names"""
+        raise NotImplementedError
 
-        if mine:
-            raise NotImplementedError
-        else:
-            return self.copy()
+    _search = _list = _rename = _getAttributes = _modifyAttributes = \
+    _unbind = _createSubcontext = _destroySubcontext = _lookupLink = \
+    _listBindings = _lookup
 
-
-
-
-
-        
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    def _bind(self, operation, rebind=0):
+        raise NotImplementedError
 
 
 

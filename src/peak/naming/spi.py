@@ -98,10 +98,9 @@ def getContinuationContext(cpe):
         return cctx
 
     elif IResolver.isImplementedBy(cctx):
-        cctx, cpe.remainingName, cpe.remainingNewName = \
-            cctx.resolveToInterface(
-                cpe.remainingName, opInterface, cpe.remainingNewName
-            )
+        cctx, cpe.remainingName = cctx.resolveToInterface(
+            cpe.remainingName, opInterface
+        )
         return cctx
         
     else:
@@ -117,6 +116,7 @@ def getStateToBind(obj, name, context, environment, attrs=None):
 
 def getObjectInstance(refInfo, name, context, environment, attrs=None):
     pass    # XXX
+
 
 
 

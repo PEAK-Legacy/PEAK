@@ -6,7 +6,7 @@ from types import StringTypes
 
 __all__ = [
     'Name', 'toName', 'CompositeName', 'CompoundName', 'OpaqueURL',
-    'Syntax', 'UnspecifiedSyntax',
+    'Syntax', 'UnspecifiedSyntax', 'NNS_NAME'
 ]
 
 
@@ -436,7 +436,7 @@ class CompoundName(Name):
 
     isCompound = 1
 
-    def __new__(klass, name, syntax=UnspecifiedSyntax() ):
+    def __new__(klass, name, syntax=Syntax() ):
 
         if isinstance(name,StringTypes):
             name = syntax.parse(name)
@@ -462,20 +462,19 @@ def toName(aName, nameClass=CompositeName, acceptURL=0):
         an InvalidNameException.
     """
     
-    if isinstance(aName,Name):
-        return aName
-        
-    elif isinstance(aName,StringTypes):
+    if isinstance(aName,StringTypes):
     
         if acceptURL and _URLMatch(aName):
             return OpaqueURL.parse(aName)
 
         return nameClass(aName)
 
+    elif IName.isImplementedBy(aName):
+        return aName
+
     else:
         raise InvalidNameException(aName)
 
 
-
-
+NNS_NAME = toName('/')
 
