@@ -2,14 +2,44 @@ Open Issues/To-Do Items
 
  Targeted for 0.5 Alpha 1
 
-    * Finish tutorial chapter 2
+    * Fix issue w/reading XMI 1.1 files where metamodel has nested packages
+
+    * Clean up __class_provides__ so that it isn't just something randomly
+      poked in by binding.Once(); it needs a clean infrastructure/interface.
+
+    * Refactor "Pythonic" UML 1.3 extensions so they're usable for most
+      MOF-aligned metamodels (e.g. all UML and CWM versions)
+
+    * Remove deprecated items from peak.model: Feature, Reference, Package,
+      Model, Namespace, DataType, etc.
+
+    * Get XMI writing in place, w/transaction support
 
     * Updated reference docstrings for 'peak.api', 'peak.binding',
       'peak.config', 'peak.exceptions', and 'peak.naming'.
 
+    * Finish tutorial chapter 2 (?)
+
+ Targeted for 0.5 Alpha 2
+
+    * On-the-fly class combination (think "runtime module inheritance",
+      without the modules) for DMs.
+
+    * ZConfig support, probably in the form of generating ZConfig schemas
+      from 'peak.model' or MOF models, but maybe in the form of 'fromZConfig'
+      constructor methods as well.
+
+    * 'peak.running' refactorings: use standard 'logging' module's log levels,
+       add 'logging' distro to 'peak.util' for 2.2 backward compatibility,
+       make daemons based on 'peak.model' (or at least define ZConfig schemas),
+       and possibly adjust cluster stuff to work off ZConfig primary and
+       generate clustertools file(s).  App startup tools based on ZConfig and
+       PEAK-style .ini files.
+
+    * 'peak.naming' refactorings: 'peak.model'-based syntax utilities for
+       creating address syntaxes.
 
  Targeted for 0.5 Final Release (or sooner)
-
 
     General
 
@@ -41,19 +71,14 @@ Open Issues/To-Do Items
 
     peak.running
 
-        - more docs for new 'cluster' tools
-
         - make 'cluster' parser complain about things that would cause
           the clusterit tools to choke or barf on the file, or which would
           produce ambiguous or unintended results.
 
-        - finish misc tasks on peak.running.logs's TODO list
-
-        - simple daemons comparable to those in MetaDaemon
-
-        - unit tests for daemons
+        - simple daemons comparable to those in MetaDaemon, unit tests
 
         - docstrings for reference
+
 
     peak.config
 
@@ -66,6 +91,22 @@ Open Issues/To-Do Items
         - docstrings for reference
 
         - more unit tests?
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
