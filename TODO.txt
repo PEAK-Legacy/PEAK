@@ -1,13 +1,22 @@
 Open Issues/To-Do Items
 
- Targeted for 0.5 Alpha 1
+ Release Checklist for 0.5 Alpha 1
 
-    * "Assembly Events" - have a way for root components to notify subcomponents that
-      they are connected to a root.  This is important for things like periodic tasks,
-      GUI components, etc., that need to perform actions as soon as they are part of
-      a valid "whole".
+    - Unit tests for event-driven operations: IMainLoop, IPeriodicTask, and ITaskQueue
 
-      
+    - Cleanup/document attribute binding mechanism as an 'IAttributeBinding' interface
+
+    - Make all API signatures start with context component
+
+    - Finalize name for 'config.Application' - probably 'config.DefaultContext'
+
+    - Review binding tutorial and correct any errors relative to current APIs
+
+    - Add 'fcgiapp' module sources to distribution; update README/INSTALL to credit
+      DC and OpenMarket and reference their licenses.
+
+
+
 Targeted for 0.5 Alpha 2
 
     * ZConfig Integration
@@ -16,7 +25,7 @@ Targeted for 0.5 Alpha 2
         services (e.g. it will use 'peak.naming' to resolve URLs)
 
       - App startup tools based on ZConfig files.
-      
+
       - Sample 'AdaptiveTask' classes that perform the same functions as those in
         the MetaDaemon package, with a ZConfig schema to run them in a daemon-like
 	application.
@@ -41,9 +50,6 @@ Targeted for 0.5 Alpha 2
 
  Targeted for 0.5 Beta 1
 
-    * Document interface expected of "active descriptors" and their complements
-      (e.g. __class_provides__), refactoring for cleanliness as needed.
-
     * Updated reference docstrings for 'peak.api', 'peak.binding',
       'peak.config', 'peak.exceptions', and 'peak.naming'.
 
@@ -51,12 +57,6 @@ Targeted for 0.5 Alpha 2
 
     * On-the-fly class combination (think "runtime module inheritance",
       without the modules) for DMs.
-
-
-
-
-
-
 
 
 
@@ -190,7 +190,7 @@ Targeted for 0.5 Alpha 2
   Messaging/ObjectSpaces
 
     * Support for sending and receiving remote cache invalidation
-      messages between RecordManagers.
+      messages between DataManagers.
 
 
 
@@ -266,6 +266,22 @@ Targeted for 0.5 Alpha 2
         or delegates this to its subclass services?
 
     * Simple Zope product demo (upload XMI, then browse the model via the web)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

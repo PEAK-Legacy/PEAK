@@ -67,19 +67,19 @@ class counter(object):
 
 class Outermost(assemblyTracer):
     foo = None
-    
+
 class InnerMost(assemblyTracer):
     pass
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
+class Middle(assemblyTracer):
+
+    def child(self,d,a):
+        return InnerMost(self,
+            id=self.id+1, log=self.log, activated=self.activated
+        )
+
+    child = binding.Once(child, activateUponAssembly = True)
+
 class AssemblyTests(TestCase):
 
     verbose = False
@@ -132,15 +132,15 @@ class AssemblyTests(TestCase):
         self.assertCompleteness(2)
 
 
-
-
-
-
-
-
-
-
-
+    def checkBindingSubscribes(self):
+        # create parent w/child that creates a child
+        log = self.append
+        root = Outermost(
+            log=log, activated=self.activated, id=1,
+            foo = Middle(id=2, log=log, activated=self.activated)
+        )
+        root.getParentComponent()
+        self.assertCompleteness(3)
 
 
 
