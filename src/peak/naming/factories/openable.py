@@ -3,13 +3,13 @@
 from peak.api import *
 
 
-class OpenableURL(naming.ParsedURL):
+class OpenableURL(naming.URL.Base):
 
     def retrieve(self, refInfo, name, context, attrs=None):
         return URLStreamFactory(target = str(self))
 
 
-class FileURL(naming.ParsedURL):
+class FileURL(naming.URL.Base):
 
     # XXX needs parser for //user:auth@host:port/path?query#frag
     # XXX could then be shared with URLs for http, ftp, https...

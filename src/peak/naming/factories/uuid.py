@@ -2,7 +2,7 @@ from peak.naming.api import *
 from peak.util.uuid import UUID
 from peak.api import model
 
-class uuidURL(ParsedURL):
+class uuidURL(URL.Base):
     """
     draft-kindel-uuid-uri-00 UUID urls
 
@@ -16,12 +16,12 @@ class uuidURL(ParsedURL):
 
     supportedSchemes = 'uuid',
 
-    class quals(model.structField):
+    class quals(URL.Field):
         upperBound = None
         defaultValue = ()
         referencedType = model.Any
 
-    class uuid(model.structField):
+    class uuid(URL.Field):
         class referencedType(model.String):
             def mdl_normalize(klass,value):
                 return UUID(value)

@@ -4,9 +4,11 @@ from interfaces import *
 from syntax     import *
 from names      import *
 from contexts   import *
-from URL import Base as ParsedURL
 import spi
 
+from peak.util.imports import lazyModule
+URL = lazyModule(__name__,'../URL')
+del lazyModule
 
 def InitialContext(parent, componentName=None, **options):
 
@@ -31,12 +33,10 @@ def InitialContext(parent, componentName=None, **options):
 
     return spi.getInitialContext(parent, componentName, **options)
 
-
 from peak.binding.interfaces import IComponentFactory
 InitialContext.__implements__ = IComponentFactory
 
 del IComponentFactory
-
 
 
 def lookup(parent, name, **options):

@@ -3,7 +3,7 @@ from peak.api import *
 import nis
 
 
-class nisURL(naming.ParsedURL):
+class nisURL(naming.URL.Base):
 
     supportedSchemes = 'nis',
     nameAttr = 'body'

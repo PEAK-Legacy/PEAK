@@ -8,7 +8,7 @@ from peak.api import exceptions, NOT_GIVEN
 from peak.binding.once import classAttr, Once, Activator
 from peak.model.elements import Struct
 from peak.model.features import structField
-from peak.model.datatypes import String
+from peak.model.datatypes import String, Integer
 from peak.model.interfaces import IType
 from peak.interface import implements, classProvides
 from interfaces import *
@@ -16,7 +16,7 @@ from arithmetic import *
 from names import CompoundName
 
 __all__ = [
-    'Base',
+    'Base', 'Field',
 ]
 
 
@@ -24,12 +24,16 @@ class MissingField(Exception):
     pass
 
 
+class Field(structField):
+    referencedType = String
+    defaultValue = None
 
+class RequiredField(structField):
+    referencedType = String
+    lowerBound = 1
 
-
-
-
-
+class IntField(structField):
+    referencedType = Integer
 
 
 

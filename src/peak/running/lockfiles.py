@@ -490,7 +490,7 @@ else:
 
 
 
-class lockfileURL(naming.ParsedURL):
+class lockfileURL(naming.URL.Base):
 
     supportedSchemes = (
         'lockfile', 'shlockfile', 'flockfile', 'winflockfile',

@@ -449,17 +449,17 @@ class GadflyConnection(SQLConnection):
 
 
 
-class GadflyURL(naming.ParsedURL):
+class GadflyURL(naming.URL.Base):
 
     supportedSchemes = ('gadfly',)
 
     pattern = "(//)?(?P<db>[^@]+)@(?P<dir>.+)"
 
-    class db(model.structField):
-        referencedType = model.String
+    class db(naming.URL.RequiredField):
+        pass
 
-    class dir(model.structField):
-        referencedType = model.String
+    class dir(naming.URL.RequiredField):
+        pass
 
     def retrieve(self, refInfo, name, context, attrs=None):
 
@@ -490,7 +490,7 @@ class GadflyURL(naming.ParsedURL):
 
 
 
-class GenericSQL_URL(naming.ParsedURL):
+class GenericSQL_URL(naming.URL.Base):
 
     supportedSchemes = ('sybase', 'pgsql')
 
@@ -506,20 +506,17 @@ class GenericSQL_URL(naming.ParsedURL):
     (/(?P<db>.+))?
     """
 
-    class user(model.structField):
-        referencedType = model.String
-        defaultValue = None
+    class user(naming.URL.Field):
+        pass
 
-    class passwd(model.structField):
-        referencedType = model.String
-        defaultValue = None
+    class passwd(naming.URL.Field):
+        pass
 
-    class server(model.structField):
-        referencedType = model.String
+    class server(naming.URL.RequiredField):
+        pass
 
-    class db(model.structField):
-        referencedType = model.String
-        defaultValue = None
+    class db(naming.URL.Field):
+        pass
 
     def retrieve(self, refInfo, name, context, attrs=None):
 
@@ -529,46 +526,8 @@ class GenericSQL_URL(naming.ParsedURL):
         )
 
 
-
-
 drivers = {
     'sybase': SybaseConnection,
     'pgsql':  PGSQLConnection,
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 

@@ -244,7 +244,7 @@ class distinguishedName(naming.CompoundName):
 
 
 
-class ldapURL(naming.ParsedURL):
+class ldapURL(naming.URL.Base):
 
     """RFC2255 LDAP URLs, with the following changes:
 

@@ -2,7 +2,7 @@ from peak.api import naming, model
 import smtplib
 
 
-class smtpURL(naming.ParsedURL):
+class smtpURL(naming.URL.Base):
 
     supportedSchemes = ('smtp', )
 
@@ -12,21 +12,17 @@ class smtpURL(naming.ParsedURL):
         (?P<host>[^:]*)(:(?P<port>[0-9]+))?         # host + port
     """
 
-    class user(model.structField):
-        referencedType=model.String
-        defaultValue=None
+    class user(naming.URL.Field):
+        pass
 
-    class port(model.structField):
-        referencedType=model.Integer
+    class port(naming.URL.IntField):
         defaultValue=smtplib.SMTP_PORT
 
-    class host(model.structField):
-        referencedType=model.String
-        defaultValue=None
+    class host(naming.URL.Field):
+        pass
 
-    class auth(model.structField):
-        referencedType=model.String
-        defaultValue=None
+    class auth(naming.URL.Field):
+        pass
 
     def retrieve(self, refInfo, name, context, attrs=None):
         return smtplib.SMTP(self.host, self.port)

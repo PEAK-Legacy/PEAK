@@ -17,7 +17,7 @@ from peak.interface import implements, classProvides
 
 __all__ = [
     'AbstractName', 'toName', 'CompositeName', 'CompoundName',
-    'NNS_NAME', '__ParsedURL', 'URLMatch',
+    'NNS_NAME', 'ParsedURL', 'URLMatch',
     'LinkRef', 'NNS_Reference', 'isBoundary', 'crossesBoundaries',
 ]
 
@@ -162,7 +162,7 @@ class URLMeta(Activator):
 
 
 
-class __ParsedURL(object):
+class ParsedURL(object):
 
     __metaclass__    = URLMeta
 
@@ -434,8 +434,8 @@ def toName(aName, nameClass=CompoundName, acceptURL=1):
         if acceptURL and URLMatch(aName):
             m = URLMatch(aName)
             scheme, body = m.group(1), aName[m.end():]
-            from URL import Base as ParsedURL
-            return ParsedURL(scheme,body)
+            import URL
+            return URL.Base(scheme,body)
 
         return (nameClass or CompoundName)(aName)
 

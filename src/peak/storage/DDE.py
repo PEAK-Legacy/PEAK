@@ -39,7 +39,7 @@ class ServerManager(object):
     close = __del__
 
 
-class ddeURL(naming.ParsedURL):
+class ddeURL(naming.URL.Base):
 
     """PEAK Win32 DDE URL
 
@@ -59,23 +59,23 @@ class ddeURL(naming.ParsedURL):
 
     supportedSchemes = 'win32.dde',
 
-    class service(model.structField):
-        referencedType = model.String
+    class service(naming.URL.RequiredField):
+        pass
 
-    class topic(model.structField):
-        referencedType = model.String
+    class topic(naming.URL.RequiredField):
+        pass
 
-    class file(model.structField):
-        referencedType = model.String
-        defaultValue = None
+    class file(naming.URL.Field):
+        pass
 
-    class retries(model.structField):
-        referencedType = model.Integer
+    class retries(naming.URL.IntField):
         defaultValue = 10
 
-    class sleep(model.structField):
-        referencedType = model.Integer
+    class sleep(naming.URL.IntField):
         defaultValue = 1
+
+
+
 
 
 

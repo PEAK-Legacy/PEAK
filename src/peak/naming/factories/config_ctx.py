@@ -19,7 +19,7 @@ class PropertyPath(naming.CompoundName):
     )
 
 
-class PropertyURL(naming.ParsedURL):
+class PropertyURL(naming.URL.Base):
 
     """The 'config:' URL scheme: property name in a composite name"""
 

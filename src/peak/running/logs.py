@@ -7,9 +7,9 @@
 '''
 
 from peak.binding.components import Component, Once, New, requireBinding
-from peak.naming.api import ParsedURL
+from peak.naming import URL
 from peak.interface import implements
-from peak.api import NOT_GIVEN, model
+from peak.api import NOT_GIVEN
 
 from interfaces import ILogger
 
@@ -244,15 +244,14 @@ class Event(Component):
 
 
 
-class logfileURL(ParsedURL):
+class logfileURL(URL.Base):
 
     supportedSchemes = ('logfile', )
 
-    class filename(model.structField):
-        referencedType = model.String
+    class filename(URL.RequiredField):
+        pass
 
-    class level(model.structField):
-        referencedType = model.Integer
+    class level(URL.IntField):
         defaultValue = ALL
 
 
@@ -285,7 +284,9 @@ class logfileURL(ParsedURL):
             filename=self.filename, level=self.level
         )
 
-class peakLoggerURL(ParsedURL):
+
+class peakLoggerURL(URL.Base):
+
     """URL that only looks up PEAK loggers, even if 'logging' is installed"""
 
     supportedSchemes = ('logging.logger', )
@@ -324,7 +325,6 @@ def _levelledMessage(lvl,exc_info=()):
                 )
             )
     return msg
-
 
 class AbstractLogger(Component):
 

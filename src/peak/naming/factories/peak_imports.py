@@ -2,7 +2,7 @@ from peak.naming.api import *
 from peak.util.imports import importString
 
 
-class importURL(ParsedURL):
+class importURL(URL.Base):
 
     supportedSchemes = 'import',
 
