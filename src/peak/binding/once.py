@@ -93,14 +93,16 @@ class Once(ActiveDescriptor):
         n = self.attrName
 
         if not n or getattr(obj.__class__,n) is not self:
-            raise TypeError(
-                "%s used in type which does not support ActiveDescriptors"
-                % self
-            )
+            self.usageError()
             
         d[n] = value = self.computeValue(obj, d, n)
         return value
 
+    def usageError(self):            
+        raise TypeError(
+            "%s used in type which does not support ActiveDescriptors"
+            % self
+        )
 
     def computeValue(self, obj, instanceDict, attrName):
         raise NotImplementedError
@@ -117,8 +119,6 @@ class Once(ActiveDescriptor):
             setattr(klass, attrName, newOb)
 
         klass.__volatile_attrs__.add(attrName)
-
-
 
 
 class OnceClass(Once, type):
