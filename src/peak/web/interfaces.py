@@ -12,6 +12,7 @@ __all__ = [
     'IDOMletElement', 'IDOMletElementFactory', 'ISkin', 'IPolicyInfo',
     'IViewTarget', 'IConfigurableLocation', 'IViewService',
     'VIEW_NAMES', 'TEMPLATE_SCHEMA', 'SITEMAP_SCHEMA', 'LOCATION_ID',
+    'IDOMletRenderable',
 ]
 
 DEFAULT_METHOD    = PropertyName('peak.web.defaultMethod')
@@ -22,7 +23,6 @@ VIEW_NAMES        = PropertyName('peak.web.views')
 TEMPLATE_SCHEMA   = PropertyName('peak.web.template_schema')
 SITEMAP_SCHEMA    = PropertyName('peak.web.sitemap_schema')
 LOCATION_ID       = lambda lid: PropertyName('peak.web.locations.'+lid)
-
 
 
 
@@ -449,9 +449,9 @@ class IDOMletState(IComponent):
 
 
 
-class IDOMletNode(Interface):
+class IDOMletRenderable(Interface):
 
-    """A component of a page template"""
+    """Something that can be rendered in a template"""
 
     def renderFor(ctx, state):
         """Write template's output by calling 'state.write()' 0 or more times
@@ -473,17 +473,17 @@ class IDOMletNode(Interface):
         method.
         """
 
+
+class IDOMletNode(IDOMletRenderable):
+
+    """A component of a page template"""
+
     staticText = Attribute(
         """The static XML text that represents this node, or None if
         the node contains any dynamic content."""
     )
 
     # XXX should be some kind of parseInfo w/source file/line/column
-
-
-
-
-
 
 
 

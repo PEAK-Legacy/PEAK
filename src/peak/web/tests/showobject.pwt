@@ -1,6 +1,6 @@
 <html>
  <head>
-  <title>Python Object <span this:replace="@@repr"/></title>
+  <title>Python Object <span this:replace="@@test-params" with:foo="@@repr"/></title>
  </head>
  <body>
 <h1>Python Object <span this:replace="@@repr"/></h1>

@@ -121,6 +121,47 @@ class ListHeaderFooterTest(BasicTest):
 
 
 
+class MiscTests(TestCase):
+
+    def setUp(self):
+        self.app = TestApp(testRoot())
+        self.policy = web.TestPolicy(self.app)
+        self.ctx = self.policy.newContext()
+
+    def testParameters(self):
+
+        class MockTemplate:
+            protocols.advise(instancesProvide=[web.IDOMletRenderable])
+            def renderFor(_self,ctx,state):
+                self.assert_(ctx is self.ctx)
+                self.assertEqual(state,123)
+
+        p = pwt.Parameters(self.ctx,{'t':MockTemplate(), 'p':u'bar', 'd':123})
+        ctx = self.ctx.childContext('xyz',p)
+        c2 = ctx.traverseName('t')
+
+        # Test a second time to ensure that result is cached
+        c2 = ctx.traverseName('t')
+
+        # It should render with the original context
+        c2.current.renderFor(c2,123)
+
+        # Paths should be traversed from the start point
+        c2 = ctx.traverseName('p')
+        self.assertEqual(c2.current, (1,2,3))
+        
+        # And data should just be returned
+        c2 = ctx.traverseName('d')
+        self.assertEqual(c2.current, (123))
+
+
+
+
+
+
+
+
+
 class ParserTests(TestCase):
 
     def setUp(self,**kw):
@@ -152,7 +193,7 @@ class ParserTests(TestCase):
 
 
 TestClasses = (
-    ParserTests, BasicTest, NSTest, NSTest2, ListHeaderFooterTest
+    MiscTests, ParserTests, BasicTest, NSTest, NSTest2, ListHeaderFooterTest
 )
 
 def test_suite():

@@ -27,6 +27,7 @@ from publish import TraversalPath
 from peak.util import SOX
 from places import Decorator
 from environ import traverseItem, traverseDefault
+from errors import NotFound
 
 __all__ = [
     'TEMPLATE_NS', 'DOMLETS_PROPERTY', 'TemplateDocument'
@@ -36,7 +37,6 @@ TEMPLATE_NS = 'http://peak.telecommunity.com/DOMlets/'
 DOMLETS_PROPERTY = PropertyName('peak.web.DOMlets')
 
 unicodeJoin = u''.join
-
 
 
 def infiniter(sequence):
@@ -58,6 +58,21 @@ class DOMletVars(Decorator):
         return traverseDefault(ctx, self.ob, 'attr', name, name, default)
 
 
+class DOMletMethod(object):
+    """Bind an 'IDOMletRenderable' to a specific context"""
+
+    protocols.advise(
+        instancesProvide = [IDOMletRenderable]
+    )
+
+    __slots__ = 'template','ctx'
+
+    def __init__(self,ctx,template):
+        self.ctx = ctx
+        self.template = template
+
+    def renderFor(self,ctx,state):
+        return self.template.renderFor(self.ctx,state)
 
 
 
@@ -65,17 +80,43 @@ class DOMletVars(Decorator):
 
 
 
+class Parameters:
+    """'params' object for templates"""
+
+    protocols.advise( instancesProvide = [IWebTraversable] )
+
+    def __init__(self,ctx,data):
+        self.ctx = ctx
+        self.data = data
+        self.cache = {}
+
+    def traverseTo(self, name, ctx, default=NOT_GIVEN):
+        try:
+            item = self.cache[name]
+        except KeyError:
+            try:
+                item = self.data[name]
+            except KeyError:
+                if default is not NOT_GIVEN:
+                    return default
+                raise NotFound(ctx,name,self)
+            else:
+                tmpl = IDOMletRenderable(item,None)
+                if tmpl is not None:
+                    item = self.cache[name] = DOMletMethod(self.ctx,tmpl)
+                else:
+                    path = adapt(item,TraversalPath,None)
+                    if path is not None:
+                        self.data[name] = path
+                        return path.traverse(self.ctx)
+        return ctx.childContext(name,item)
 
 
+    def beforeHTTP(self, ctx):
+        return ctx
 
-
-
-
-
-
-
-
-
+    def getURL(self,ctx):
+        return ctx.traversedURL
 
 
 
@@ -197,10 +238,10 @@ def negotiatorFactory(domletFactory):
 def nodeIs(mode, parser, data, name, value):
     data['attributes'].remove((name,value))
     data[mode+'.is'] = value
-    parent = data['previous']['pwt.content']
     data.setdefault(mode+'.register',[]).append(
-        lambda ob: parent.addParameter(value,ob)
+        lambda ob: binding.getParentComponent(ob).addParameter(value,ob)
     )
+
 
 
 def setupElement(parser,data):
@@ -232,11 +273,11 @@ def setupDocument(parser,data):
     data['pwt.content'] = data['pwt_document']
 
 
-
-
-
-
-
+def withParam(parser,data,name,value):
+    data['attributes'].remove((name,value))
+    data.setdefault('content.register',[]).append(
+        lambda ob: ob.addParameter(name.split(':',1)[-1],value)
+    )
 
 
 
@@ -581,16 +622,16 @@ class Replace(Element):
     def renderFor(self,data,state):
 
         if self.dataSpec:
-            data, state = self._traverse(data, state)
+            ctx, state = self._traverse(data, state)
 
         if self.params:
-            state = state.withData(params=self.params)
+            state = state.withData(params=Parameters(data,self.params))
 
-        current = data.current
+        current = ctx.current
 
-        domlet = IDOMletNode(current,None)
+        domlet = IDOMletRenderable(current,None)
         if domlet is not None:
-            return domlet.renderFor(data,state)
+            return domlet.renderFor(ctx,state)
 
         # XXX dyn var comp goes here
         # XXX if NOT_FOUND -> return

@@ -3,7 +3,7 @@
   <title>Python Object <span this:replace="@@repr"/></title>
  </head>
  <body>
-<h1 content:replace="@@test-params"><span content:is="foo">Python Object <span this:replace="../../../../@@repr"/></span></h1>
+<h1 content:replace="@@test-params"><span content:is="foo">Python Object <span this:replace="@@repr"/></span></h1>
 <hr />
 <table content:list=".">
 <tr this:is="header">
