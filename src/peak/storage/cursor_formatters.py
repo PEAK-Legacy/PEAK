@@ -267,3 +267,45 @@ class cursorToCSV(AbstractCursorFormatter):
             
         return nr
 
+
+class cursorToHTML(AbstractCursorFormatter):
+    def formatRows(self, c, stdout):
+        out = stdout.write
+        t, d, l = [], [], []
+        first = 1
+        nr = 0
+
+        print >>stdout, "<table border>"
+
+        if self.header:
+            print >>stdout, "<tr>"
+
+            for r in c._cursor.description:
+                print >>stdout, "    <th>%s</th>" % self.toStr(r[0])
+                
+            print >>stdout, "</tr>"
+
+        for r in c:
+            nr += 1
+            print >>stdout, "<tr>"
+            for v in r:
+                print >>stdout, "    <td align=left>%s</td>" % self.toStr(v)
+            print >>stdout, "</tr>"
+
+        print >>stdout, "</table>"
+
+        return nr
+
+    def printFooter(self, c, stdout, nr):
+        print >>stdout, "\n<p>\n    (%d rows)\n</p>" % nr
+
+    def toStr(self, v):
+        if v is None:
+            return self.null
+        elif type(v) is unicode:
+            v = v.encode('utf8')
+        elif type(v) is not str:
+            v = str(v)
+
+        v = v.replace('&','&amp;').replace('"','&quot')
+        return v.replace('<','&lt;').replace('>','&gt;')

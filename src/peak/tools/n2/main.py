@@ -4,6 +4,7 @@ from peak.api import *
 from peak.running.commands import AbstractCommand, InvocationError
 from peak.util.readline_stack import *
 from peak.util.imports import importString
+from peak.util.columns import lsFormat
 
 import sys, os, code, __main__
 from getopt import getopt, GetoptError
@@ -193,31 +194,5 @@ ls()\t\tshow contents of c
                 print >>self.stdout, str(k)
 
 
-    def printColumns(self, stdout, l, sort=1, rev=0):
-        """utility for things that want to print ls-like columnar output"""
-
-        if not l: return
-        if sort: l.sort()
-        if rev: l.reverse()
-
-        l = [
-            len(x) >= self.width and x[:self.width-4]+'...' or x
-            for x in l
-        ]
-        ml = max([len(x) for x in l])+1
-        nc = self.width / ml
-        # XXX readjust nc if we have space to spare to make more even
-        cw = self.width / nc
-        nr = (len(l) + nc - 1) / nc
-        #print ml, nc, cw, nr
-        l.extend(((nr*nc)-len(l)) * [''])
-        #print len(l), l
-        ll = []
-        for i in range(nc):
-            ll.append(l[i*nr:(i+1)*nr])
-        #print len(ll), ll
-        ll = zip(*ll)
-        ##print len(ll), ll
-        for l in ll:
-            l = [x.ljust(cw) for x in l[:nc-1]] + [l[nc-1]]
-            print >>stdout, ''.join(l)
+    def printColumns(self, stdout, l, sort=True, rev=False):
+        stdout.writelines(lsFormat(self.width, l, sort, rev))
