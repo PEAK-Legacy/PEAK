@@ -2,7 +2,7 @@
 
 """Distutils setup file"""
 
-from distutils.core import setup, Command
+from distutils.core import setup, Command, Extension
 from distutils.command.install_data import install_data
 from distutils.command.sdist import sdist as old_sdist
 import sys
@@ -145,6 +145,8 @@ setup(
     ],
     
     package_dir = {'':'src'},
+
+    ext_modules = [Extension("kjbuckets", ["src/kjbuckets/kjbucketsmodule.c"])],
 
     cmdclass = {
         'install_data': install_data, 'sdist': sdist, 'happy': happy,

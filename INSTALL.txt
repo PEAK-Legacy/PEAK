@@ -39,18 +39,18 @@ Installing PEAK
 
 
 
-
- OBTAINING AND INSTALLING DEPENDENCIES
+ THIRD PARTY SOFTWARE INCLUDED WITH PEAK
 
   Aaron Watters' 'kjbuckets' Module
 
-   See "http://gadfly.sf.net/":http://gadfly.sf.net/ for information on
-   downloading and installing kjbuckets for various platforms and versions
-   of Python.  For the installation, you only need to follow the part
-   of the installation which is described as "If you wish to speed up gadfly,
-   go to the kjbuckets directory and...".  Even if you choose to install
-   the entire gadfly package, you *must* be sure to do this extra step, or
-   the kjbuckets module will not be installed.
+   PEAK now includes a copy of Aaron Watters' 'kjbuckets' module for
+   your convenience, and automatically installs it alongside PEAK in
+   your Python 'site-packages' directory.  (Note that this will overwrite
+   any existing installation of the 'kjbuckets' module.)
+
+   'kjbuckets' is copyright Aaron Watters and contributors; please see
+   the 'src/kjbuckets/COPYRIGHT.txt' file for details of its license.
+
 
   The Zope 'Interface' Package
 

@@ -38,7 +38,21 @@ PEAK Release 0.5 alpha 1
     Zope and the Python DBAPI to construct web-based, GUI, or command-line
     applications, interacting with any kind of storage, or with no storage
     at all.  Whatever the application type, PEAK can help you put it together.
-    
+
+
+ Third-Party Software Included with PEAK
+
+     The 'kjbuckets' module is Copyright Aaron Watters and contributors;
+     please see the 'src/kjbuckets/COPYRIGHT.txt' file for details of its
+     license.
+
+     The 'Interface' package is Copyright Zope Corporation and contributors;
+     please see the 'src/Interface/LICENSE.txt' file for details of its
+     license.
+
+
  Installation Instructions
 
-    See the INSTALL.txt file.
+    Please see the INSTALL.txt file.
+
+
