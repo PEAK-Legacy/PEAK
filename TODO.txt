@@ -14,8 +14,6 @@ Open Issues/To-Do Items
 
         - Lock namespaces that have been iterated over
 
-      - Change existing configuration keys not to use tuples as surrogate keys
-
       - Add 'config.PluginsFor' key that finds plugins
 
         - May need 'suggestParentComponent()' to support dictionaries so plugin
@@ -34,6 +32,8 @@ Open Issues/To-Do Items
     * peak.storage
 
       - 'storage.dbType()'
+
+
 
 
 

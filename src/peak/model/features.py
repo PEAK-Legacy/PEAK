@@ -16,7 +16,7 @@ from peak.util.hashcmp import HashAndCompare
 from peak.util.advice import supermeta
 from peak.util import fmtparse
 from peak.naming.names import Indirect
-from peak.binding.interfaces import IComponentKey
+from peak.binding.components import ComponentName
 
 __all__ = [
     'StructuralFeature',  'Collection', 'Sequence',
@@ -98,7 +98,7 @@ class FeatureClass(HashAndCompare,MethodExporter):
         just refer to 'aFeature.typeObject'.  This will of course fail
         if the 'referencedType' attribute is invalid."""
 
-        rt = adapt(self.referencedType,IComponentKey,None)
+        rt = adapt(self.referencedType,ComponentName,None)
         if rt is not None:
             return rt.findComponent(self)
         return self.referencedType

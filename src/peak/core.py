@@ -172,16 +172,11 @@ class PropertyName(str):
         return self[-1:] not in '?*'
 
 
-    def matchPatterns(self):
-
-        if self.isWildcard():
-            raise exceptions.InvalidName(
-                "Can't match patterns against wildcard names", self
-            )
+    def lookupKeys(self):
 
         yield self
 
-        if self.isDefault():
+        if not self.isPlain():
             return
 
         name = self
@@ -194,11 +189,16 @@ class PropertyName(str):
         yield self
         yield self+'?'
 
-    lookupKeys = matchPatterns
+
 
 
     def registrationKeys(self,depth=0):
         return (self,depth),
+
+
+
+
+
 
 
 

@@ -6,13 +6,13 @@ from peak.binding.components import Component, Make, getParentComponent
 from peak.binding.interfaces import IAttachable, IRecipe
 from peak.util.EigenData import EigenCell,AlreadyRead
 from peak.util.FileParsing import AbstractConfigParser
-
+from registries import FactoryFor
 from interfaces import *
 from protocols.advice import getMRO, determineMetaclass
 
 __all__ = [
     'PropertyMap', 'LazyRule', 'PropertySet', 'fileNearModule',
-    'iterParents','findUtilities','findUtility', 'ProviderOf', 'FactoryFor',
+    'iterParents','findUtilities','findUtility',
     'provideInstance', 'instancePerComponent', 'Namespace',
     'CreateViaFactory'
 ]
@@ -98,88 +98,6 @@ def findUtility(component, iface, default=NOT_GIVEN):
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-class ProviderOf(object):
-
-    """Configuration key based on interface+class(es)"""
-
-    protocols.advise(
-        instancesProvide=[IConfigKey]
-    )
-
-    __slots__ = 'keys', 'mro'
-
-    def __init__(self, iface, klass, *others):
-        bases = (klass,)+others
-        if others:
-            meta = determineMetaclass(bases)
-            klass = meta("Dummy",bases,{})
-            mro = list(getMRO(klass))[1:]
-        else:
-            mro = getMRO(klass)
-
-        iface = adapt(iface,IConfigKey)
-
-        self.keys = tuple(
-            [((i,base),d)
-                for base in bases
-                    for (i,d) in iface.registrationKeys()
-            ]
-        )
-
-        self.mro  = tuple(
-            [(i,klass) for klass in mro for i in iface.lookupKeys()]
-        )
-
-    def registrationKeys(self,depth=0):
-        return self.keys
-
-    def lookupKeys(self):
-        return self.mro
-
-
-
-
-class FactoryFor(ProviderOf):
-
-    """Config key for an 'IComponentFactory' that returns 'iface' objects"""
-
-    __slots__ = ()
-
-
-    def __init__(self, iface):
-
-        iface = adapt(iface,IConfigKey)
-
-        self.keys = tuple(
-            [((FactoryFor,i),d) for (i,d) in iface.registrationKeys()]
-        )
-
-        self.mro  = tuple(
-            [(FactoryFor,i) for i in iface.lookupKeys()]
-        )
 
 
 

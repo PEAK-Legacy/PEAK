@@ -2,6 +2,16 @@ Fixes and Enhancements since Version 0.5 alpha 2
 
  Changed, Enhanced, or Newly Deprecated Features
 
+ - Added 'config.MultiKey()' and 'config.UnionOf()' configuration key classes,
+   to generalize existing specialty keys such as 'ProviderOf' and 'FactoryFor'.
+   (The latter two are now defined in terms of the former two.)  Also, made
+   classes and types usable as configuration keys.  This was needed for the
+   above generalization, but also makes many other class-lookup concepts
+   possible.  (Note that there may be some slight changes to the effective
+   registration and lookup order of these and other configuration keys as of
+   this change, as there were some previous errors and/or ambiguities to the
+   lookup order that were not covered by the test suite.)
+
  - Added "[Import on Demand]" section type to .ini files, allowing you to
    define shortcuts for modules that you frequently reference in your
    configuration.  This lets you replace e.g. 'importString("foo.bar.baz:Spam")'

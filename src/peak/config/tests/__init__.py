@@ -349,21 +349,21 @@ TestClasses = (
 )
 
 
-def test_suite():
+def _suite():
     s = []
     for t in TestClasses:
         s.append(makeSuite(t,'check'))
 
     return TestSuite(s)
 
+allSuites = [
+    'peak.config.tests:_suite',
+    'test_keys:test_suite',
+]
 
-
-
-
-
-
-
-
+def test_suite():
+    from peak.util.imports import importSuite
+    return importSuite(allSuites, globals())
 
 
 
