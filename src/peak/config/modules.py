@@ -158,6 +158,18 @@
             from peak.api import config
             config.setupModule()
 
+    Limitations of Package Inheritance
+
+        Because "package inheritance" is effectively just a '__path__' hack,
+        it is really only good for "single inheritance".  Python will not
+        automatically merge the modules or packages found on a package's
+        '__path__'.  So if you need multiple inheritance, you will need
+        to create a module or subpackage for each module or subpackage
+        that exists in more than one base package, and explicitly specify
+        the right '__bases__' for it.  If a module or subpackage only
+        appears in one base, however, and you have nothing to add to it,
+        you can omit it from the inheriting package.
+
 
     Using Relative Imports in Packages
 
@@ -194,6 +206,12 @@
 
     To-do Items
 
+        * Create a way to pre-specify mixins for submodules/subpackages, using
+          a ModuleType subclass similar to 'lazyModule()', but with support
+          for module inheritance.  This would let us make subpackage specs
+          much easier, and also allow module patching of "legacy" modules as
+          long as they hadn't been loaded yet.
+
         * The simulator should issue warnings for a variety of questionable
           situations, such as...
 
@@ -218,25 +236,7 @@
           there *does* need to be a reference-style explanation as well, that
           describes the precise semantics of interpretation for assignments,
           'def', and 'class', in modules running under simulator control.
-
-        * Add a way to patch modules that don't call 'setupModule()'.
 """
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
