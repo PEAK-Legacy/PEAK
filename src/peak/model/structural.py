@@ -1,8 +1,12 @@
 """Basic implementation of a domain metamodel (minus enumerations)
 
-   TODO:
-
-    * Default constructors for 'Immutable' and 'Element'
+    This module implements base classes for "Elements" and "Features"
+    in the sense of the "Service-Element-Feature" pattern.  By subclassing
+    from them, you get a wide variety of services automatically provided,
+    ranging from automatic generation of getter/setter/mutator methods,
+    metadata such as ordered lists of features provided by a class,
+    well-defined hookpoints for "event" trapping, persistence support,
+    and more.
 """
 
 from peak.api import *
@@ -11,16 +15,52 @@ from method_exporter import MethodExporter
 
 
 __all__ = [
-    'Immutable', 'Namespace', 'Package', 'Model',
+    'Immutable', 'Package', 'Model',
     'StructuralFeature', 'Field', 'Collection', 'Reference', 'Sequence',
     'Classifier','PrimitiveType','DataType', 'DerivedFeature',
     'DerivedAssociation', 'HashAndCompare', 'structField', 'Attribute'
 ]
 
 
+installIfChangeable = lambda f,m: f.isChangeable
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 class HashAndCompare(object):
 
-    """Mixin that allows 'hash' and 'cmp' operations on a delegate value"""
+    """Mixin that allows 'hash' and 'cmp' operations on a delegate value
+
+        'model.Immutable', 'model.DataType', and 'model.Enumeration' all use
+        this mixin so that their instances can be hashed and compared according
+        to a delegate value.  For enumerations, it's the "value" of the
+        enumeration, and for the others it's a tuple of attribute values.
+
+        You only need to use this mixin if you *aren't* using one of the
+        immutable element base classes such as 'model.Immutable' or
+        'model.DataType', but you want to be able to have your instances
+        implement '__hash__', '__cmp__', and '__nonzero__' based on a delegate
+        value in the same way.
+
+        To use this mixin, just add it to your base class list, and ensure
+        that your '_hashAndCompare' attribute is always the desired delegate
+        value.  If your instances are to be used as dictionary keys, the
+        value of the '_hashAndCompare' attribute must be hashable, immutable,
+        and must never vary.  That is, every access of the '_hashAndCompare'
+        value should return the same or an equivalent object.
+    """
 
     def __hash__(self):
         return hash(self._hashAndCompare)
@@ -31,7 +71,8 @@ class HashAndCompare(object):
     def __nonzero__(self):
         return self._hashAndCompare and True or False
 
-installIfChangeable = lambda f,m: f.isChangeable
+
+
 
 
 
@@ -40,6 +81,11 @@ installIfChangeable = lambda f,m: f.isChangeable
 
 
 class Namespace(binding.Base):
+
+    """Abstract base class for packages and classifiers -- DEPRECATED
+
+    This class currently exists only to mix in an '_XMIMap' registry.  It
+    may not exist for long; don't use it directly or rely on its presence."""
 
     def _XMIMap(self,d,a):
 
@@ -65,26 +111,21 @@ class Namespace(binding.Base):
 
 class Package(Namespace):
 
-    """Package of Element Classes"""
+    """Package of Element Classes -- DEPRECATED"""
 
 
 class Model(Package):
 
-    """Model or Metamodel containing Packages or Element classes"""
-
-
-
-
-
+    """Model or Metamodel containing Packages/classes -- DEPRECATED"""
 
 
 
 
 class FeatureClass(HashAndCompare,MethodExporter):
 
-    """Method-exporting Property
+    """Method-exporting Property (metaclass for StructuralFeature)
     
-        This metaclass adds property support to Meta.MethodExporter by adding
+        This metaclass adds property support to 'MethodExporter' by adding
         '__get__', '__set__', and '__delete__' methods, which are delegated
         to the method templates for the 'get', 'set' and 'delattr' verbs.
 
@@ -98,9 +139,9 @@ class FeatureClass(HashAndCompare,MethodExporter):
         (Note: this is true even if the Element class supplies its own 'setFoo'
         or 'getFoo' implementations, since the 'getMethod()' API is used.)
 
-        Please see the 'TW.API.Meta.MethodExporter' class documentation for
-        more detail on how method templates are defined, the use of naming
-        conventions, verbs, template variants, etc."""
+        Please see the 'peak.model.method_exporter.MethodExporter' class
+        documentation for more detail on how method templates are defined,
+        the use of naming conventions, verbs, template variants, etc."""
 
     __metaclass__ = binding.Activator   # metaclasses can't be components
 
@@ -131,6 +172,14 @@ class FeatureClass(HashAndCompare,MethodExporter):
 
 
     def typeObject(self,d,a):
+        """The actual type referred to by 'referencedType'
+
+            Since a feature's 'referencedType' can be either a string or
+            a type, the actual type object is cached in the 'typeObject'
+            attribute.  If you need to get the type of feature 'aFeature',
+            just refer to 'aFeature.typeObject'.  This will of course fail
+            if the 'referencedType' attribute is invalid.
+        """
         rt = self.referencedType
         if isinstance(rt,str):
             return binding.lookupComponent(rt,self)
@@ -138,29 +187,21 @@ class FeatureClass(HashAndCompare,MethodExporter):
 
     typeObject = binding.Once(typeObject)
 
-
     fromString = binding.bindTo('typeObject/fromString')
     fromFields = binding.bindTo('typeObject/fromFields')
 
     sortPosn   = None
 
     def _hashAndCompare(self,d,a):
+
+        """Features hash and compare based on position, name, and identity
+
+        Specifically, a feature is hashed and compared as though it were
+        a tuple of its 'sortPosn', '__name__', and 'id()'."""
+
         return self.sortPosn, self.__name__, id(self)
         
     _hashAndCompare = binding.Once(_hashAndCompare)
-
-
-
-
-
-
-
-
-
-
-
-
-
 
     isMany     = binding.Once(lambda s,d,a: s.upperBound<>1)
     isRequired = binding.Once(lambda s,d,a: s.lowerBound >0)
@@ -177,11 +218,11 @@ class FeatureClass(HashAndCompare,MethodExporter):
     )
 
     def isReference(self,d,a):
+        """Does the feature refer to a non-primitive/non-struct type?"""
         from datatypes import TCKind
         return self.typeObject.mdl_typeCode.unaliased().kind==TCKind.tk_objref
 
     isReference = binding.Once(isReference)
-
 
 
 
