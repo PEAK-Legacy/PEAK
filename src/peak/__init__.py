@@ -34,4 +34,7 @@ importAllFrom('TW.Components')
 importAllFrom('TW.Builders')
 import SEF
 
+NOT_GIVEN = []
+NOT_FOUND = []
+
 del sys
