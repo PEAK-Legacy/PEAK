@@ -63,12 +63,53 @@ http://127.0.0.1/++resources++/peak.running/EventDriven.xml
 </body>
 """
 
+class ResourceTests(TestCase):
+
+    def testSubObjectRejection(self):
+        # Files and templates shouldn't allow subitems in PATH_INFO
+        paths = 'peak.web/resource_defaults.ini', 'peak.web.tests/template1'
+        policy = web.TestPolicy(ResourceApp1(testRoot()))
+        for path in paths:
+            try:
+                policy.simpleTraverse('/++resources++/%s/subitem' % path, True)
+            except web.NotFound,v:
+                self.assertEqual(v.args[0], "subitem")
+            else:
+                raise AssertionError("Should have raised NotFound:", path)
+
+
+
+
 TestClasses = (
-    MethodTest1, MethodTest2
+    MethodTest1, MethodTest2, ResourceTests,
 )
 
 def test_suite():
-    return TestSuite([makeSuite(t,'check') for t in TestClasses])
+    return TestSuite([makeSuite(t,'test') for t in TestClasses])
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

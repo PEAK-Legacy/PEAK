@@ -67,7 +67,7 @@ class BasicTest(TestCase):
     def render(self):
         return self.policy.simpleTraverse('show')
 
-    def checkRendering(self):
+    def testRendering(self):
         self.assertEqual(self.render(),self.rendered)
 
 
@@ -100,7 +100,7 @@ TestClasses = (
 )
 
 def test_suite():
-    return TestSuite([makeSuite(t,'check') for t in TestClasses])
+    return TestSuite([makeSuite(t,'test') for t in TestClasses])
 
 
 

@@ -227,14 +227,14 @@ class TestNamespaces(TestCase):
         self.failUnless(res.current is ctx.skin)
         self.failUnless(res.parentContext() is ctx)
         self.assertEqual(res.name, RESOURCE_NS)
+        self.assertRaises(web.NotFound, web.traverseResource,
+            ctx, RESOURCE_NS[2:-2], 'xyz', RESOURCE_NS+"xyz"
+        )
 
     def testTraverseName(self):
         ctx = self.policy.newContext(start=123)
         self.failUnless(ctx.traverseName('++foo++bar') is self)
         self.assertEqual(ctx.traverseName('++bar++baz'), 'baz')
-
-
-
 
 
 

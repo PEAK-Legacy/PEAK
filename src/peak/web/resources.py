@@ -376,6 +376,9 @@ class TemplateResource(FSResource):
     )
 
     def handle_http(self, ctx):
+        name = ctx.shift()
+        if name is not None:
+            raise NotFound(ctx,name,self)   # No traversal to subobjects!
         s,h,b = IHTTPHandler(self.theTemplate).handle_http(ctx)
         # XXX replace content-type header w/self.mime_type
         return s,h,b
@@ -405,9 +408,6 @@ class TemplateResource(FSResource):
         # We're a method, so use our context URL, not container URL
         return ctx.traversedURL
 
-
-
-
 class FileResource(FSResource):
 
     protocols.advise( instancesProvide = [IHTTPHandler] )
@@ -420,6 +420,9 @@ class FileResource(FSResource):
         return open(self.filename, 'rb'), os.stat(self.filename).st_size
 
     def handle_http(self, ctx):
+        name = ctx.shift()
+        if name is not None:
+            raise NotFound(ctx,name,self)   # No traversal to subobjects!
 
         method = ctx.environ['REQUEST_METHOD'].upper()
 
@@ -444,9 +447,6 @@ class FileResource(FSResource):
             ('Content-Type', self.mime_type),
             ('Content-Length', str(size))
         ],  dump_data()
-
-
-
 
 
 class ImageResource(FileResource):

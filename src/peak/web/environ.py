@@ -57,9 +57,9 @@ def parseName(name):
 
 
 def traverseResource(ctx, ns, nm, qname):
-    return ctx.childContext(qname, ctx.skin)
-
-
+    if qname==ctx.policy.resourcePrefix:
+        return ctx.childContext(qname, ctx.skin)
+    raise errors.NotFound(ctx, qname, ctx.current)
 
 
 
@@ -273,11 +273,11 @@ def default_for_testing(environ):
         environ.setdefault('SERVER_NAME','127.0.0.1')
     )
 
+    environ.setdefault('REQUEST_METHOD','GET')
+
     if 'SCRIPT_NAME' not in environ and 'PATH_INFO' not in environ:
         environ.setdefault('SCRIPT_NAME','')
         environ.setdefault('PATH_INFO','/')
-
-
 
 
 

@@ -220,11 +220,12 @@ class TestPolicy(InteractionPolicy):
 
     def simpleTraverse(self, path, run=True):
 
-        path = adapt(path, TraversalPath)
-        ctx = self.newContext()
+        path = str(adapt(path, TraversalPath))  # Normalize path, verify syntax
 
-        for part in path:
-            ctx = ctx.traverseName(part)
+        if not path.startswith('/'):
+            path ='/'+path
+
+        ctx = self.newContext({'SCRIPT_NAME':'', 'PATH_INFO':path})
 
         if run:
             ctx.environ['wsgi.input'] = StringIO('')
@@ -232,13 +233,12 @@ class TestPolicy(InteractionPolicy):
             status, headers, body = ctx.renderHTTP()
             return ''.join(body)
 
-        return ctx
-
-
-
-
-
-
+        while True:
+            part = ctx.shift()
+            if part is None:
+                return ctx
+            ctx = ctx.traverseName(part)            
+            
 
 
 
