@@ -2,7 +2,7 @@
 
 from peak.api import *
 from interfaces import *
-from bisect import insort
+from bisect import insort_left
 from time import time
 
 
@@ -57,7 +57,7 @@ class ReactorBasedScheduler(binding.Component):
     def addPeriodic(ptask):
         """Add 'ptask' to the prioritized processing schedule"""
         insort_left(self.activeTasks, ptask)    # round-robins if same priority
-        self.callLater(0, self._processNextTask)
+        self._scheduleProcessing()  # ensure that we'll be called
 
     def run():
         """Loop polling for IO or GUI events and calling scheduled funcs"""
@@ -83,30 +83,52 @@ class ReactorBasedScheduler(binding.Component):
     def _checkIdle(self):
 
         # Check whether we've been idle long enough to stop
-
-        if time() > self.lastActivity + self.shutDownIfIdleFor:
+        idle = time() - self.lastActivity
+        
+        if idle >= self.shutDownIfIdleFor:
             self.stop()
+
         else:
-            self.callLater(self.shutDownIfIdleFor, self._checkIdle)
+            # reschedule check for the earliest point at which
+            # we could have been idle for the requisite amount of time
+            self.callLater(self.shutDownIfIdleFor - idle, self._checkIdle)
             
             
     def _processNextTask(self):
 
-        task = self.activeTasks.pop()  # Highest priority task
+        # Processes the highest priority pending task
+        
+        del self._scheduled
 
         try:
-            if task():
-                # It did something, make note of it
-                self.activityOccurred()
-                
-        except exceptions.StopRunning:
-            # Don't reschedule the task
+            task = self.activeTasks.pop()  # Highest priority task
+
+            try:
+                if task():
+                    # It did something, make note of it
+                    self.activityOccurred()
+                    
+            except exceptions.StopRunning:               
+                pass    # Don't reschedule the task
+
+            except:
+                self.callLater(task.pollInterval, self.addPeriodic, task)
+                raise
+
+            else:
+                self.callLater(task.pollInterval, self.addPeriodic, task)
+
+        finally:
+            self._scheduleProcessing()
+
+    _scheduled = False
+
+    def _scheduleProcessing(self):
+
+        if self._scheduled or not self.activeTasks:
             return
             
-        self.callLater(task.pollInterval, self.addPeriodic, task)
-
-
-
+        self._scheduled = self.callLater(0, self._processNextTask) or True
 
 
 
