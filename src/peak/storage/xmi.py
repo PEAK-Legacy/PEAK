@@ -169,6 +169,7 @@ from Persistence import Persistent
 from xml.sax import saxutils
 from types import StringTypes
 from peak.model.api import TCKind, SimpleTC, Boolean, TypeCode
+from kjbuckets import kjGraph
 
 XMI_METAMODELS = PropertyName('peak.xmi.metamodels')
 
@@ -194,7 +195,6 @@ _any_converters = {
     'string': str,
     'wstring': unicode,
 }
-
 
 
 
@@ -250,29 +250,29 @@ class XMINode(object):
 
     __slots__ = [
         '_name','subNodes','allNodes','attrs','index','document',
-        '__weakref__','parent','isExtension',
+        '__weakref__','parent','isExtension','ns2uri','uri2ns'
     ]
 
 
-    def __init__(self,name='',atts={}):
+    def __init__(self, parent=None, name='',atts={}):
         self._name = name
-        self.attrs = dict(atts.items())
+        self.attrs = atts
         self.subNodes = []
         self.allNodes = []
         self.isExtension = (self._name=='XMI.extension')
-
-    def _acquireFrom(self, parent):
-        self.index = parent.index
-        self.document = parent.document
-        self.parent = parent
-
+        if parent is not None:
+            self.index = parent.index
+            self.document = parent.document
+            self.parent = parent
+            self.ns2uri = parent.ns2uri
+            self.uri2ns = parent.uri2ns
 
     def _addNode(self,name,node):
         self.allNodes.append(node)
         self.subNodes.append(node)
 
     def _newNode(self,name,atts):
-        return self.__class__(name,atts)
+        return self.__class__(self,name,atts)
 
     def _addText(self,text):
         self.allNodes.append(text)
@@ -323,8 +323,8 @@ class XMINode(object):
 
         return self.index[ref].getId()
 
-
-
+    def _setNS(self, ns2uri, uri2ns):
+        self.ns2uri, self.uri2ns = ns2uri, uri2ns
 
     def getValue(self, feature, dm):
 
@@ -620,9 +620,11 @@ class XMIDocument(binding.Component, XMINode):
     subNodes = allNodes = binding.New(list)
     _name = None
     parent = None
+    ns2uri = {}
+    uri2ns = kjGraph()
 
     document = binding.bindToSelf()
-
+    nodeClass = XMINode
 
     def version(self,d,a):
         return self.attrs['xmi.version']
@@ -631,7 +633,7 @@ class XMIDocument(binding.Component, XMINode):
 
 
     def _newNode(self,name,atts):
-        return XMINode(name,atts)
+        return self.nodeClass(self,name,atts)
 
 
     def _finish(self):
@@ -646,8 +648,6 @@ class XMIDocument(binding.Component, XMINode):
         indStrm.write('<?xml version="1.0" encoding="utf-8">\n')
         for node in self.subNodes:
             node.writeTo(indStrm)
-
-
 
 
 
@@ -749,7 +749,7 @@ class DM(storage.StorableDM):
 
 def fromFile(filename_or_stream, parentComponent=None, **kw):
     document = XMIDocument(parentComponent)
-    SOX.load(filename_or_stream, document)
+    SOX.load(filename_or_stream, document, namespaces=True)
     return DM(parentComponent, document=document,**kw)[()]
 
 

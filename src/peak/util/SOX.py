@@ -53,24 +53,24 @@ class ISOXNode(Interface):
         processing guided by the XML structures, like an interpretive parser.
     """
 
-    def _newNode(self,name,attributeMap):
+    def _newNode(name,attributeMap):
         """Create new child node from 'name' and 'attributeMap'
 
            Child node must implement the 'ISOXNode' interface."""
-           
-    def _acquireFrom(self,parentNode):
+
+    def _acquireFrom(parentNode):
         """Parent-child relationship hook
 
            Called on newly created nodes to give them a chance to acquire
            context information from their parent node"""
-           
-    def _addText(self,text):
+
+    def _addText(text):
         """Add text string 'text' to node"""
 
-    def _addNode(self,subObj):
+    def _addNode(subObj):
         """Add finished sub-node 'subObj' to node"""
-        
-    def _finish(self):
+
+    def _finish():
         """Return an object to be used in place of this node in call to the
             parent's '_addNode()' method.  Returning 'None' will result in
             nothing being added to the parent."""
@@ -82,27 +82,27 @@ class ISOXNode(Interface):
 
 class ISOXNode_NS(Interface):
 
-    def _newNode(self, handler, name, attributeMap):
+    def _newNode(name, attributeMap):
 
         """Create new child node from 'name' and 'attributeMap'
 
            Child node must implement the 'ISOX2Node' interface."""
 
+    def _setNS(ns2uri, uri2ns):
+        """Set namespace declaration maps"""
 
-    def _addText(self,text):
+    def _addText(text):
         """Add text string 'text' to node"""
 
 
-    def _addNode(self,subObj):
+    def _addNode(subObj):
         """Add finished sub-node 'subObj' to node"""
-        
 
-    def _finish(self):
+
+    def _finish():
         """Return an object to be used in place of this node in call to the
             parent's '_addNode()' method.  Returning 'None' will result in
             nothing being added to the parent."""
-
-
 
 
 
@@ -124,11 +124,11 @@ class ISOXNode_NS(Interface):
 class ObjectMakingHandler(ContentHandler):
 
     """SAX handler that makes a pseudo-DOM"""
-    
+
     def __init__(self,documentRoot):
         self.stack = [documentRoot]
         ContentHandler.__init__(self)
-        
+
     def startElement(self, name, atts):
         top = self.stack[-1]
         node = top._newNode(name,atts)
@@ -141,12 +141,12 @@ class ObjectMakingHandler(ContentHandler):
     def endElement(self, name):
         stack = self.stack
         top = stack.pop()
-        
+
         if top._name != name:
             raise SyntaxError,"End tag '%s' found when '%s' was wanted" % (name, top._name)
-            
+
         out = top._finish()
-        
+
         if out is not None:
             stack[-1]._addNode(name,out)
 
@@ -177,7 +177,7 @@ class NSHandler(ObjectMakingHandler):
 
     def startElement(self, name, atts):
 
-        a = {}
+        a = {}; prefix=None
 
         for k,v in atts.items():
             a[k]=v
@@ -198,9 +198,9 @@ class NSHandler(ObjectMakingHandler):
                 self.add_prefix(prefix,v)
 
         top = self.stack[-1]
-        node = top._newNode(self,name,atts)
+        node = top._newNode(name,a)
         self.stack.append(node)
-
+        if prefix is not None: node._setNS(self.ns2uri, self.uri2ns)
 
 
     def add_prefix(self, prefix, uri):
@@ -247,16 +247,16 @@ class NSHandler(ObjectMakingHandler):
 class Node:
 
     """Simple, DOM-like ISOXNode implementation"""
-    
+
     __implements__ = ISOXNode
-    
+
     def __init__(self,name='',atts={},**kw):
         self._name = name
         self._subNodes = []
-        self._allNodes = []        
+        self._allNodes = []
         self.__dict__.update(atts)
         self.__dict__.update(kw)
-        
+
     def _addNode(self,name,node):
         self._allNodes.append(node)
         self._subNodes.append(node)
@@ -266,7 +266,7 @@ class Node:
 
     def _newNode(self,name,atts):
         return self.__class__(name,atts)
-        
+
     def _addText(self,text):
         self._allNodes.append(text)
 
@@ -299,37 +299,37 @@ class Document(Node):
     def _finish(self):
         self.documentElement = self._subNodes[0]
         return self
-        
+
     def _newNode(self,name,atts):
         return Node(name,atts)
 
 
 class Node_NS(Node):
 
-    def _newNode(self,handler,name,atts):
+    ns2uri = {}
+    uri2ns = kjGraph()
+
+    def _newNode(self,name,atts):
         node = self.__class__(
-            name, atts, ns2uri=handler.ns2uri, uri2ns=handler.uri2ns
+            name, atts, ns2uri=self.ns2uri, uri2ns=self.uri2ns
         )
         return node
+
+    def _setNS(self, ns2uri, uri2ns):
+        self.ns2uri, self.uri2ns = ns2uri, uri2ns
 
 
 class Document_NS(Node_NS):
 
     _finish = Document._finish.im_func
 
-    def _newNode(self,handler,name,atts):
-        node = Node_NS(
-            name, atts, ns2uri=handler.ns2uri, uri2ns=handler.uri2ns
-        )
-        return node
-
-
-
+    def _newNode(self,name,atts):
+        return Node_NS(name, atts)
 
 def load(filename_or_stream, documentObject=None, namespaces=False):
 
     """Build a tree from a filename/stream, rooted in a document object"""
-    
+
     if namespaces:
 
         if documentObject is None:
@@ -345,4 +345,25 @@ def load(filename_or_stream, documentObject=None, namespaces=False):
 
     parse(filename_or_stream, handler)
     return handler.document
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
