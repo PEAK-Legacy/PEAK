@@ -5,7 +5,7 @@ import Interface
 
 __all__ = [
 
-    'IName', 'ISyntax',
+    'IName', 'ISyntax', 'IAddress',
     'IObjectFactory', 'IStateFactory', 'IURLContextFactory',
     'I_NNS_Binding', 'IBasicContext', 'IReadContext', 'IWriteContext',
 
@@ -128,16 +128,16 @@ class ISyntax(Interface.Base):
 class IName(Interface.Base):
     """Abstract name object"""
 
+    isComposite = Interface.Attribute("True, if name is composite")
+    isCompound  = Interface.Attribute("True, if name is compound")
+    isURL       = Interface.Attribute("True, if name is URL")
 
 
+class IAddress(IName):
+    """Name that supports in-context self-retrieval"""
 
-
-
-
-
-
-
-
+    def retrieve(refInfo, name, context, environment, attrs=None):
+        """Retrieve the address"""
 
 
 

@@ -20,11 +20,6 @@
           from kwargs instead of a string.  Also need a metaclass to re.compile
           the 'pattern' attrib so subclassers don't need to import re.
 
-        * 'factories' package needs double registry for Reference.type vs.
-          RefAddr.type info, and registration methods so that one needn't
-          write directly into the alias registries.  A direct lookup mechanism
-          (non-alias based) for URL schemes might be a good idea too.
-
         * create FederationContext, set up to handle '+:' URL scheme, whose
           operations simply do a series of lookup/lookup_nns operations on the
           composite name path in order to implement all the "standard" operations

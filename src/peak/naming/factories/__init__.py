@@ -39,7 +39,6 @@ schemeParsers = {
 
 
 
-
 def getURLContext(scheme, context, environment, iface=IBasicContext):
 
     lscheme = scheme.lower()    
@@ -74,52 +73,21 @@ def getURLContext(scheme, context, environment, iface=IBasicContext):
             factory=importObject(factory,globals())
             schemeParsers[lscheme]=factory
             
-        from peak.naming.contexts import GenericURLContext
-        return GenericURLContext(environment)
+        if IAddress.isImplementedByInstancesOf(factory):
+            from peak.naming.contexts import GenericURLContext
+            return GenericURLContext(environment)
 
     return None
 
 
-
-addrTypes = {
-}
-
-
 def getObjectInstance(refInfo, name, context, environment, attrs=None):
 
-    def lookupByAddr(refAddr):    
-        factory = addrTypes.get(refAddr.type)
+    if IAddress.isImplementedBy(refInfo):
+        return refInfo.retrieve(refInfo, name, context, environment, attrs)
 
-        if factory is not None:
-            if isinstance(factory,str):
-                factory = importObject(factory, globals())
-                addrTypes[refAddr.type] = factory
-
-            if IObjectFactory.isImplementedBy(factory):
-                factory = factory.getObjectInstance
-
-            return factory(
-                refAddr, name, context, environment, attrs
-            )
-
-    if isinstance(refInfo, Reference):
-
-        for refAddr in refInfo:
-            obj = lookupByAddr(refAddr)
-            if obj is not None:
-                return obj
-
-    elif isinstance(refInfo, RefAddr):
-        return lookupByAddr(refInfo)
-
-    factory = getattr(refInfo,'_defaultObjectFactory',None)
-
-    if factory:
-        factory = importObject(factory)
-        return factory(refInfo, name, context, environment, attrs)
-
-
-
+    elif isinstance(refInfo, NNS_Reference):
+        # default is to treat the object as its own NNS
+        return refInfo.relativeTo
 
 
 def getStateToBind(obj, name, context, environment, attrs=None):

@@ -128,8 +128,7 @@ class AbstractContext(object):
         if name is None:
 
             return self._deref(
-                Reference( None, RefAddr("nns", self) ),
-                name, None
+                NNS_Reference( self ), name, None
             )
 
         obj = self[name]
@@ -147,8 +146,7 @@ class AbstractContext(object):
             # Not a context?  make it an NNS reference
 
             return self._deref(
-                Reference( None, RefAddr("nns", obj) ),
-                name, None
+                NNS_Reference( obj ), name, None
             )
 
         else:
@@ -158,6 +156,8 @@ class AbstractContext(object):
 
     def _supportsScheme(self, scheme):
         return scheme.lower() in self._supportedSchemes
+
+
 
 
 

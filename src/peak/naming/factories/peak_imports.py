@@ -7,8 +7,10 @@ from types import StringTypes
 
 class importURL(OpaqueURL):
 
-    def _defaultObjectFactory(self, refInfo, name, context, environment, attrs=None):
-        return importString(refInfo.body)
+    __implements__ = IAddress
+    
+    def retrieve(self, refInfo, name, context, environment, attrs=None):
+        return importString(self.body)
 
     def fromURL(klass, name):
         return klass.fromArgs(name.scheme, name.body)

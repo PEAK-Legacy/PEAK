@@ -1,12 +1,14 @@
-from peak.naming.api import ParsedURL
+from peak.naming.api import ParsedURL, IAddress
 
 import re, smtplib
 
 
 class smtpURL(ParsedURL):
 
-    def _defaultObjectFactory(self, refInfo, name, context, environment, attrs=None):
-        return smtplib.SMTP(refInfo.host, refInfo.port or smtplib.SMTP_PORT)
+    __implements__ = IAddress
+
+    def retrieve(self, refInfo, name, context, environment, attrs=None):
+        return smtplib.SMTP(self.host, self.port)
     
     _supportedSchemes = ('smtp', )
 
