@@ -106,7 +106,7 @@ class happy(Command):
             self.happy_options = [
                 '-t', 'PEAK Reference', '-d', self.doc_output_path,
                 '-i', 'examples', '-i', 'old', '-i', 'tests',
-                '-i', 'metamodels', '-i', 'Interface', '-i', 'Persistence',
+                '-i', 'Interface', '-i', 'Persistence',
                 '-i', 'kjbuckets', '.'
             ]
             if not self.verbose: self.happy_options.insert(0,'-q')
@@ -137,7 +137,7 @@ setup(
 
     packages=[
         'peak', 'peak.api', 'peak.binding', 'peak.model', 'peak.metamodels',
-        'peak.metamodels.mof', 'peak.metamodels.uml',
+        'peak.metamodels.uml',
         'peak.naming', 'peak.naming.factories', 'peak.util', 'peak.running',
         'peak.config', 'peak.storage',
 
