@@ -99,11 +99,12 @@ class DBCursor(binding.Component):
                     __implements__ = IRow, __module__ = __name__,
                 )
 
+                mkTuple = tuple.__new__
+
                 while rows:
 
                     for row in rows:
-                        row.__class__ = rowStruct
-                        yield row
+                        yield mkTuple(rowStruct,row)
 
                     rows = fetch()
 
@@ -118,7 +119,6 @@ class DBCursor(binding.Component):
 
         if onlyOneSet and self.nextset():
             raise self.tooMany
-
 
 
     def allSets(self):
