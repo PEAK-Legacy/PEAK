@@ -126,18 +126,18 @@ class LDAPConnection(ManagedConnection):
     cursorClass = LDAPCursor
 
     def _open(self):
-        address = self.address   
-        return ldap.open(address.host, address.port)
 
+        address = self.address
+        ext = address.extensions
 
+        conn = ldap.open(address.host, address.port)
 
+        if 'bindname' in ext and 'x-bindpw' in ext:
+            conn.simple_bind_s(
+                ext['bindname'][1], ext['x-bindpw'][1]
+            )
 
-
-
-
-
-
-
+        return conn
 
 
 
