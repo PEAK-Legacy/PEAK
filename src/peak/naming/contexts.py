@@ -98,7 +98,7 @@ class AbstractContext(Component):
 
             if self._supportsScheme(name.scheme):
             
-                if not isinstance(name,ParsedURL):
+                if name.__class__ is ParsedURL:
                     name = self._makeName(name)
 
                 return self, name
