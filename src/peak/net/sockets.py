@@ -123,11 +123,12 @@ fd_fmt = {0: 'stdin', 1: 'stdout', 2: 'stderr'}
 
 class fdURL(naming.URL.Base):
     """
-    fd:fileno[,type=af/kind]
+    fd:fileno[,type=af[/kind[/protocol]]]
     
-    example:
-        fd:stdin,type=inet6/dgram
     fileno can be an integer, or one of "stdin", "stdout", "stderr"
+
+    example:
+        fd:stdin,type=inet6/dgram/udp
     """
 
     supportedSchemes = 'fd',
@@ -138,24 +139,30 @@ class fdURL(naming.URL.Base):
             formatter = lambda x: fd_fmt.get(x, str(x)),
         )
 
-    class af(naming.URL.Field):
+    class af(naming.URL.IntField):
         defaultValue = getattr(socket, 'AF_UNIX', socket.AF_INET)
         syntax = naming.URL.Conversion(
             converter = lambda x: getattr(socket, 'AF_' + x.upper())
         )
         
-    class stype(naming.URL.Field):
+    class stype(naming.URL.IntField):
         defaultValue = socket.SOCK_STREAM
         syntax = naming.URL.Conversion(
             converter = lambda x: getattr(socket, 'SOCK_' + x.upper())
         )
 
+    class proto(naming.URL.IntField):
+        defaultValue = 0
+        syntax = naming.URL.Conversion(
+            converter = lambda x: socket.getprotobyname(x)
+        )
+
     syntax = naming.URL.Sequence(
-        fileno, (',type=', af, '/', stype)
+        fileno, (',type=', af, ('/', stype, ('/', proto)))
     )
 
     def asSocket(self):
-        return socket.fromfd(self.fileno, self.af, self.stype)
+        return socket.fromfd(self.fileno, self.af, self.stype, self.proto)
 
 
 protocols.declareAdapterForType(
