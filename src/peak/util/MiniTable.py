@@ -106,7 +106,7 @@ class Table(UserList):
 
     def DELETE(self, whereItems):
 
-        """table.DELETE(field1=value1, field2=value2...)
+        """table.DELETE(Items(field1=value1, field2=value2...))
         
             Delete rows which match the field values asserted in the keyword
             arguments.  Affects only the specific table it is called upon.
@@ -116,3 +116,26 @@ class Table(UserList):
         matches = where.subset
         self.data = [d for d in self.data if not matches(d)]
 
+
+
+
+
+
+    def SET(self, whereItems, setItems)
+
+        """table.SET( Items(key1=val1,...), Items(setfield1=setval1,...) )
+
+            Find a row matching 'whereItems' and update it with the values in
+            'setItems'.  If a matching row isn't found, insert a row
+            constructed from the fields in both 'whereItems' and 'setItems'.
+        """
+
+        where = kjDict(whereItems)
+        matches = where.subset
+
+        for d in self.data:
+            if matches(d):
+                map(d.add, setItems)
+                break
+        else:
+            self.INSERT(whereItems+setItems)            

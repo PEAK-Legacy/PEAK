@@ -1,5 +1,8 @@
 New Features and Bug Fixes since v0.2, preview 1
 
+ * Added 'SET' method (ala WarpCORE's set_X procedures) to
+   TW.Utils.MiniTable.
+
  * Added more docs to TW.Utils.Code, and removed 'iterFromEnd()' method
    from code objects.  Added experimental 'nextSplit' index to codeIndex
    objects that does top-level block analysis to allow splitting a code
