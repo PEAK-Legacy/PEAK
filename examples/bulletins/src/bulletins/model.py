@@ -163,7 +163,9 @@ class Category(model.Element):
         return bulletin
 
 
-
+UserDM = storage.DMFor(User)
+BulletinDM = storage.DMFor(Bulletin)
+CategoryDM = storage.DMFor(Category)
 
 
 

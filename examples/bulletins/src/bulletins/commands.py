@@ -1,8 +1,41 @@
 from peak.api import *
-
+from model import *
 from peak.running.commands import AbstractCommand, Bootstrap, InvocationError
 
-from bulletins.app import BulletinsApp
+
+class BulletinsApp(binding.Component):
+
+    dbURL = binding.Obtain("./db/address")
+    dbDDL = binding.Obtain(PropertyName('bulletins.databaseDDL'))
+
+    db = binding.Obtain(PropertyName('bulletins.db'))
+    log = binding.Obtain('logger:bulletins.app')
+
+    Bulletins = binding.Obtain(storage.DMFor(Bulletin))
+    Categories = binding.Obtain(storage.DMFor(Category))
+    Users = binding.Obtain(storage.DMFor(User))
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -29,10 +62,18 @@ class CreateDB(BulletinsApp, AbstractCommand):
             self.dbURL, self.dbDDL
         )
         storage.beginTransaction(self)
-        for ddl in open(self.dbDDL,'rt').read().split('\n;\n'):
+        dbDDL = config.getStreamFactory(self,self.dbDDL)
+        for ddl in dbDDL.open('t').read().split('\n;\n'):
             if not ddl.strip(): continue
             self.db(ddl)
         storage.commitTransaction(self)
+
+
+
+
+
+
+
 
 
 

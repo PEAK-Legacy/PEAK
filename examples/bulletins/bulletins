@@ -6,9 +6,11 @@ file = config.fileNearModule('bulletins', 'bulletins.ini')
 
 # From this point on, you can modify as appropriate:
 
+[Named Services]
+bulletins.db = naming.LinkRef('sqlite:///tmp/bulletins.db')
+ 
 [bulletins]
-databaseURL = 'sqlite:///tmp/bulletins.db'
-databaseDDL = config.fileNearModule('bulletins', 'sqlite-ddl.sql')
+databaseDDL = naming.LinkRef('pkgfile:bulletins/sqlite-ddl.sql')
 
 [peak.logs]
 # Set default logging to stderr, DEBUG level
