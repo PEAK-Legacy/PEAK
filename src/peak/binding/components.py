@@ -19,7 +19,7 @@ __all__ = [
     'Component', 'Obtain', 'Require', 'Delegate',
     'getRootComponent', 'getParentComponent', 'lookupComponent',
     'acquireComponent', 'notifyUponAssembly', 'PluginsFor', 'PluginKeys',
-    'getComponentName', 'getComponentPath', 'ComponentName',
+    'getComponentName', 'getComponentPath', 'ComponentName', 'iterParents'
 ]
 
 from _once import BaseDescriptor
@@ -39,6 +39,47 @@ class _proxy(BaseDescriptor):
 
 
 
+def iterParents(component,max_depth=100):
+
+    """Iterate over all parents of 'component', up to 'max_depth'"""
+
+    ct = max_depth
+
+    while component is not None:
+        yield component
+        ct -=1
+        if ct:
+            component = getParentComponent(component)
+        else:
+            raise RuntimeError("maximum recursion limit exceeded", component)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 def getComponentPath(component, relativeTo=None):
 
     """Get 'ComponentName' that would traverse from 'relativeTo' to 'component'
@@ -52,9 +93,7 @@ def getComponentPath(component, relativeTo=None):
     if relativeTo is None:
         root = getRootComponent(component)
 
-    c = component
-
-    while 1:
+    for c in iterParents(component):
 
         if c is root:
             path.append(''); break
@@ -66,11 +105,13 @@ def getComponentPath(component, relativeTo=None):
 
         c = getParentComponent(c)
 
-        if c is None:
-            break
 
     path.reverse()
     return ComponentName(path)
+
+
+
+
 
 
 
@@ -166,14 +207,10 @@ def getRootComponent(component):
 
     """Return the root component of the tree 'component' belongs to"""
 
-    next = component
-
-    while next is not None:
-        component = next
-        next = getParentComponent(component)
+    for component in iterParents(component):
+        pass
 
     return component
-
 
 
 
@@ -203,6 +240,10 @@ def notifyUponAssembly(parent,child):
 
 
 
+
+
+
+
 def acquireComponent(component, name):
 
     """Acquire 'name' relative to 'component', w/fallback to naming.lookup()
@@ -214,9 +255,9 @@ def acquireComponent(component, name):
     default naming context, if any.  Otherwise, a 'NameNotFound' error will be
     raised."""
 
-    prev = target = component
+    prev = component
 
-    while target is not None:
+    for target in iterParents(component):
 
         ob = getattr(target, name, NOT_FOUND)
 
@@ -224,9 +265,9 @@ def acquireComponent(component, name):
             return ob
 
         prev = target
-        target = getParentComponent(target)
 
     else:
+
         return adapt(
             prev, IConfigurationRoot, NullConfigRoot
         ).nameNotFound(

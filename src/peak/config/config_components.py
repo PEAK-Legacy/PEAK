@@ -2,7 +2,7 @@ from __future__ import generators
 
 from peak.api import *
 from peak.util.imports import importString, importObject, whenImported
-from peak.binding.components import Component, Make, getParentComponent
+from peak.binding.components import Component, Make, getParentComponent, iterParents
 from peak.binding.interfaces import IAttachable, IRecipe
 from peak.util.EigenData import EigenCell,AlreadyRead
 from peak.util.FileParsing import AbstractConfigParser
@@ -12,7 +12,7 @@ from protocols.advice import getMRO, determineMetaclass
 
 __all__ = [
     'ConfigMap', 'LazyRule', 'fileNearModule',
-    'iterParents', 'Value', 'iterKeys', 'Namespace', 'iterValues',
+    'Value', 'iterKeys', 'Namespace', 'iterValues',
     'CreateViaFactory', 'parentsProviding', 'parentProviding', 'lookup',
     'ServiceArea',
 ]
@@ -39,19 +39,6 @@ def fileNearModule(moduleName,filename):
 
 
 
-def iterParents(component):
-
-    """Iterate over all parents of 'component'"""
-
-    last = component
-
-    while component is not None:
-
-        yield component
-
-        component = getParentComponent(component)
-
-
 def iterValues(component, configKey):
 
     """Return iterator over all values of'configKey' for 'component'"""
@@ -73,6 +60,19 @@ def iterValues(component, configKey):
     adapt(
         component,IConfigurationRoot,NullConfigRoot
     ).noMoreValues(component, configKey, forObj)
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

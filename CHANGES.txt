@@ -1,5 +1,10 @@
 Fixes and Enhancements since Version 0.5 alpha 3
 
+ - The 'config.iterParents' API is now moved to 'binding.iterParents', and all
+   'binding' functions that walk the component hierarchy use it.  It has also
+   been changed to avoid infinite loops in the case of a pathological
+   component structure.
+
  - The 'persistence' package has been moved to 'peak.persistence' to avoid
    conflicts with ZODB3 and the latest version of Zope 3.  It will eventually
    be phased out, but for now this move is the simplest way to get it out of

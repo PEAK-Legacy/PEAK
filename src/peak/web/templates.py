@@ -54,7 +54,7 @@ class DOMletState(binding.Component):
 
         """Find nearest DOMletState implementing 'iface'"""
 
-        for c in config.iterParents(self):
+        for c in binding.iterParents(self):     # XXX not covered by tests!
             state = adapt(c,iface,None)
             if state is not None:
                 return state
