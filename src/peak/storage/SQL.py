@@ -125,12 +125,13 @@ class SQLCursor(AbstractCursor):
 
 
     def __iter__(self):
+	if not self._cursor.description:
+            return
 
         fetch = self._cursor.fetchmany
         rows = fetch()
 
         if rows:
-
             descr = self._cursor.description
 
             rowStruct = makeStructType('rowStruct',

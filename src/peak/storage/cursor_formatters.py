@@ -11,14 +11,9 @@ class AbstractCursorFormatter(binding.Component):
 
     def __call__(self, stdout):
         c = self.cursor
-        
-        if c._cursor.description is not None:
-            self.formatSet(c, stdout)
+        self.formatSet(c, stdout)
 
         while c.nextset():
-            if not c._cursor.description:
-                continue
-
             self.betweenSets(stdout)
             self.formatSet(c, stdout)
 

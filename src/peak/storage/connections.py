@@ -134,7 +134,7 @@ class AbstractCursor(binding.Component):
         fmt = factory(parentComponent=self, cursor=self, **kw)
 
         fmt(stream)
-
+	
 
 
 
