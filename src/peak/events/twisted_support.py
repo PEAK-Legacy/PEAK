@@ -1,5 +1,6 @@
 from __future__ import generators
 from peak.api import *
+from interfaces import *
 import io_events
 from twisted.internet import defer
 from twisted.python import failure
@@ -38,11 +39,10 @@ Reactor = getTwisted  # for easy reference in peak.ini
 
 
 
-
 class DeferredAsEventSource(protocols.Adapter):
 
     protocols.advise(
-        instancesProvide=[events.ITaskSwitch],
+        instancesProvide=[ITaskSwitch],
         asAdapterForTypes=[defer.Deferred],
     )
 
