@@ -2,12 +2,41 @@ cdef extern from "Python.h":
     int PyType_Check(object o)
     object PyDict_New()
     void *PyDict_GetItem(object dict,object key)
+    struct _object:
+        void *ob_type
 
 cdef extern object GET_DICTIONARY(object o)
 
 cdef void *_NOTFOUND
+cdef void *_lockType
 
 from peak.api import NOT_FOUND
+from peak.util.threads import get_ident
+
+
+cdef class bindingLock:
+
+    cdef int id
+
+    def __new__(self):
+        self.id = get_ident()
+
+
+_NOTFOUND = <void *> NOT_FOUND
+_lockType = <void *> bindingLock
+
+
+cdef int isLock(void *obj):
+    return (<_object *>obj).ob_type == _lockType
+
+cdef int isOurs(void *obj):
+    cdef int id
+    cdef bindingLock lock
+    id = get_ident()
+    lock = <bindingLock> obj
+    return lock.id == id
+
+
 
 
 cdef class OnceDescriptor:
@@ -29,16 +58,6 @@ cdef class OnceDescriptor:
 
 
 
-
-
-
-
-
-
-
-
-
-
     def __get__(self, void *obj, void *typ):
     
         # Compute the attribute value and cache it
@@ -55,32 +74,52 @@ cdef class OnceDescriptor:
 
         obj = PyDict_GetItem(d, n)
 
+
+
+
+
+
+
         if obj:
-            # XXX should check for a lock here instead, and acquire it
 
             if obj == _NOTFOUND:
                 raise AttributeError, n
 
-            return <object> obj
-            
-        if not n or getattr(ob.__class__, n, None) is not self:
-            self.usageError()
+            elif (<_object *>obj).ob_type == _lockType:
 
-        d[n] = <object> _NOTFOUND  # XXX recursion guard; should be a lock
+                if isOurs(obj):
+                    raise AttributeError(
+                        "Recursive attempt to compute attribute", n
+                    )
+
+            else:
+                return <object> obj
+
+        else:
+            # claim our spot
+            d[n] = bindingLock()
 
         try:
+            if not n or getattr(ob.__class__, n, None) is not self:
+                self.usageError()
+
             value = self.computeValue(ob, d, n)
+
         except:
-            del d[n]
+
+            # We can only remove the guard if it was put in
+            # place by this thread, and another thread hasn't
+            # already finished the computation
+
+            obj = PyDict_GetItem(d, n)
+
+            if obj and isLock(obj) and isOurs(obj):
+                del d[n]
+
             raise
 
         d[n] = value
-
         return value
-
-
-
-
 
 cdef class __attrName_Descriptor:
 
@@ -106,4 +145,4 @@ OnceDescriptor_attrName = __attrName_Descriptor()
 
 __all__ = ['OnceDescriptor_attrName', 'OnceDescriptor']
 
-_NOTFOUND = <void *> NOT_FOUND
+
