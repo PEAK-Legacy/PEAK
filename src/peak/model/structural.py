@@ -181,7 +181,7 @@ class StructuralFeature(object):
 
     referencedEnd  = None    # and without an 'other end'
     referencedType = None
-    defaultValue   = None
+    defaultValue   = NOT_GIVEN
 
     newVerbs = Items(
         get     = 'get%(initCap)s',
@@ -190,16 +190,16 @@ class StructuralFeature(object):
     )
     
     def get(feature, element):
-        return element._getBinding(feature.attrName, feature.defaultValue)
-
+        value = element._getBinding(feature.attrName, feature.defaultValue)
+        if value is NOT_GIVEN:
+            raise AttributeError,feature.attrName
+        return value
 
     def set(feature, element, val):
         element._setBinding(feature.attrName,val)
 
     def unset(feature, element):
         element._delBinding(feature.attrName)
-
-
 
 
 
@@ -375,22 +375,22 @@ class Reference(Collection):
 
 
     def get(feature, element):
-        vals = feature._getList(element)
-        if vals: return vals[0]
 
+        vals = feature._getList(element)
+
+        if vals:
+            return vals[0]
+
+        val = feature.defaultValue
+
+        if val is NOT_GIVEN:
+            raise AttributeError,feature.attrName
+
+        return val
 
     def set(feature, element, val):
         feature.__delete__(element)
         feature.getMethod(element,'add')(val)
-
-
-
-
-
-
-
-
-
 
 
 

@@ -403,7 +403,7 @@ class UMLClass(model.Model, storage.xmi.Loader):
         class name(model.Field):
             _XMINames = ('Foundation.Core.ModelElement.name',)
             referencedType = 'Name'
-    
+            defaultValue = None
 
 
 
