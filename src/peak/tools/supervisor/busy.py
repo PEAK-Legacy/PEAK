@@ -122,9 +122,7 @@ class BusyStarter(binding.Component):
 
 
     def processStarted(self, proxy):
-
         self.childCount.set(self.childCount()+1)
-
         busy   = proxy.isBusy.value
         closed = ~proxy.isOpen
         somethingChanged = events.AnyOf(busy,closed)
@@ -139,10 +137,12 @@ class BusyStarter(binding.Component):
             else:
                 self.busyCount.set(self.busyCount()-1)
 
+        if busy():
+            self.busyCount.set(self.busyCount()-1)
+
         self.childCount.set(self.childCount()-1)
 
     processStarted = events.taskFactory(processStarted)
-
 
     def monitorBusy(self):
         untilReadable = self.eventLoop.readable(self) 
