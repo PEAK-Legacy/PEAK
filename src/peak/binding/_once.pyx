@@ -1,10 +1,11 @@
 cdef extern from "Python.h":
     int PyType_Check(object o)
     object PyDict_New()
+    void *PyDict_GetItem(object dict,object key)
 
 cdef extern object GET_DICTIONARY(object o)
 
-cdef object _NOTFOUND
+cdef void *_NOTFOUND
 
 from peak.api import NOT_FOUND
 
@@ -38,7 +39,6 @@ cdef class OnceDescriptor:
 
 
 
-
     def __get__(self, void *obj, void *typ):
     
         # Compute the attribute value and cache it
@@ -53,16 +53,20 @@ cdef class OnceDescriptor:
         n = self.attrName
         d = GET_DICTIONARY(ob)
 
-        if n in d:
-            ob = d[n]
-            if ob is _NOTFOUND:
-                raise AttributeError,n
-            return d[n]
+        obj = PyDict_GetItem(d, n)
+
+        if obj:
+            # XXX should check for a lock here instead, and acquire it
+
+            if obj == _NOTFOUND:
+                raise AttributeError, n
+
+            return <object> obj
             
         if not n or getattr(ob.__class__, n, None) is not self:
             self.usageError()
 
-        d[n] = NOT_FOUND    # recursion/race guard
+        d[n] = <object> _NOTFOUND  # XXX recursion guard; should be a lock
 
         try:
             value = self.computeValue(ob, d, n)
@@ -73,8 +77,6 @@ cdef class OnceDescriptor:
         d[n] = value
 
         return value
-
-
 
 
 
@@ -104,4 +106,4 @@ OnceDescriptor_attrName = __attrName_Descriptor()
 
 __all__ = ['OnceDescriptor_attrName', 'OnceDescriptor']
 
-_NOTFOUND = NOT_FOUND
+_NOTFOUND = <void *> NOT_FOUND
