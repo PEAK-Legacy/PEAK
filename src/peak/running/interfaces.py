@@ -580,10 +580,24 @@ class IProcessProxy(Interface):
         """Check for changes in process status, and notify listeners if any"""
 
     def addListener(func):
-        """'func' will be called with the proxy when process status changes"""
+        """'func' will be called with the proxy when process status changes
+
+        Note that 'func' may be called from a signal handler, and thus can
+        be executed at any time, even between two operations in the same line
+        of code.  Thus, 'func' must take care not to create any race
+        conditions.
+
+        The simplest way to address this in a reactor-driven program is for
+        'func' to simply schedule its real action for later, via e.g.::
+
+            def func(proxy):
+                self.reactor.callLater(0, self.aMethod, proxy)
+
+        This prevents race conditions by waiting to do the real work until
+        the next reactor iteration."""
 
     def sendSignal(signal):
-        """Send 'signal' (name or number) to process"""
+        """Send 'signal' (name or number) to process, return success flag"""
 
     isFinished = Attribute(
         """Has the process exited? (WIFSIGNALED or WIFEXITED)"""
@@ -597,6 +611,8 @@ class IProcessProxy(Interface):
         """Is the process running? (not isFinished and not isStopped)"""
     )
 
+
+
     exitStatus = Attribute(
         """Returncode of the process, if finished (WEXITSTATUS)"""
     )
@@ -608,6 +624,31 @@ class IProcessProxy(Interface):
     exitedBecause  = Attribute(
         """Signal that killed the process, or None (WTERMSIG)"""
     )
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

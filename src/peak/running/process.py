@@ -95,6 +95,7 @@ class ChildProcess(binding.Component):
     stoppedBecause = None
     exitedBecause  = None
 
+    _checking     = False
     listeners     = binding.Make(list)
     signalManager = binding.Obtain(ISignalManager)
 
@@ -108,6 +109,17 @@ class ChildProcess(binding.Component):
     def SIGCHLD(self, signum, frame):
         self.checkStatus()
 
+    def addListener(self,func):
+        self.listeners.append(func)
+
+
+
+
+
+
+
+
+
 
     def sendSignal(self, signal):
 
@@ -118,15 +130,37 @@ class ChildProcess(binding.Component):
         elif signal not in signal_names:
             raise ValueError,"Unsupported signal", signal
 
-        self.os.kill(self.pid, signal)
+        try:
+            self.os.kill(self.pid, signal)
+        except:
+            return False
+        else:
+            return True
 
 
     def checkStatus(self):
-        # Check for process exited
-        p, s = self.os.waitpid(self.pid, self.os.WNOHANG)
-        if p==self.pid:
-            self._setStatus(s)
-            self._notify()
+
+        if not self.isFinished and not self._checking:
+
+            self._checking = True   # prevent re-entrance via signal handler
+
+            try:
+                p, s = self.os.waitpid(self.pid, self.os.WNOHANG)
+                if p==self.pid:
+                    self._setStatus(s)
+                    self._notify()
+            finally:
+                self._checking = False
+
+
+
+
+
+
+
+
+
+
 
     def _setStatus(self,status):
 
@@ -153,13 +187,20 @@ class ChildProcess(binding.Component):
 
         self.isRunning = not self.isFinished and not self.isStopped
 
+
     def _notify(self):
         # Notify listeners of status change
         for listener in self.listeners:
             listener(self)
 
-    def addListener(self,func):
-        self.listeners.append(func)
+
+
+
+
+
+
+
+
 
 
 class AbstractProcessTemplate(binding.Component):

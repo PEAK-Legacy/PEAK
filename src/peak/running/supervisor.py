@@ -253,9 +253,12 @@ class BusyProxy(ChildProcess):
     fileno     = binding.Obtain('busyStream/fileno')
     isBusy     = False
 
-
     def doRead(self):
+        if self.isFinished:
+            return
+
         try:
+            # We need this try block because the pipe could close at any time
             byte = self.busyStream.read(1)
         except ValueError:
             # already closed
@@ -280,9 +283,6 @@ class BusyProxy(ChildProcess):
         lambda self: self.reactor.addReader(self),
         uponAssembly = True
     )
-
-
-
 
 
 class BusyStarter(binding.Component):
@@ -391,14 +391,14 @@ class FastCGITemplate(AbstractProcessTemplate):
     )
 
     def runCGI(self, *args):
-        self.busyStream.write('+')      # start being busy
+        self.busyStream.write('+')      # start being busy  (XXX trap errors)
         try:
             self.command.runCGI(*args)
         finally:
-            self.busyStream.write('-')  # finish being busy
+            self.busyStream.write('-')  # finish being busy  (XXX trap errors)
 
     def _redirect(self):
-        self.os.dup2(self.stdin.fileno(),0)
+        self.os.dup2(self.stdin.fileno(),0) # XXX what does this do if 0,0?
 
     def _makeStub(self):
         from peak.running.commands import CGICommand
