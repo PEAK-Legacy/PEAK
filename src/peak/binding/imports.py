@@ -1,6 +1,6 @@
 """Tools for doing dynamic imports"""
 
-
+from types import StringTypes
 
 
 
@@ -128,7 +128,7 @@ def interpretSpec(spec):
     otherwise return it as-is.
     """
     
-    if isinstance(spec,str) or isinstance(spec,unicode):
+    if isinstance(spec,StringTypes):
         return importString(spec)
 
     return thing
@@ -146,7 +146,7 @@ def interpretSequence(specs):
     imports.
     """
     
-    if isinstance(specs,str) or isinstance(specs,unicode):
+    if isinstance(specs,StringTypes):
         return [importString(x.strip()) for x in specs.split(',')]
     else:
         return map(interpretSpec, specs)
