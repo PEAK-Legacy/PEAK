@@ -1,10 +1,12 @@
 from peak.api import *
 import ZConfig.loader
-from peak.running.commands import AbstractInterpreter
+from peak.running.commands import AbstractInterpreter, ICmdLineAppFactory
 from peak.naming.factories.openable import FileURL
 import os
 
 class BaseLoader(binding.Component, ZConfig.loader.BaseLoader):
+
+    protocols.advise(instancesProvide=[naming.IObjectFactory])
 
     def openResource(self, url):
         url = str(url)
@@ -29,13 +31,11 @@ class BaseLoader(binding.Component, ZConfig.loader.BaseLoader):
         return str(url)
 
 
-
-
-
-
-
-
-
+    def getObjectInstance(self, context, refInfo, name, attrs=None):
+        url, = refInfo.addresses
+        url = naming.toName(url, FileURL.fromFilename)
+        ob = adapt(naming.lookup(context,url), naming.IStreamFactory)
+        return self.loadFile(ob.open('t'), str(url))
 
 
 
@@ -45,7 +45,42 @@ class SchemaLoader(BaseLoader, ZConfig.loader.SchemaLoader):
     _cache   = binding.Make(dict)
     __init__ = binding.Component.__init__.im_func
 
-class ConfigRunner(AbstractInterpreter,BaseLoader,ZConfig.loader.ConfigLoader):
+    def loadResource(self, resource):
+        result = super(SchemaLoader,self).loadResource(resource)
+        return ConfigLoader(self.getParentComponent(), schema=result)
+
+
+class ConfigLoader(BaseLoader,ZConfig.loader.ConfigLoader):
+
+    schema = binding.Require("ZConfig schema to use")
+
+    def loadResource(self, resource):
+        sm = self.createSchemaMatcher()
+        self._parse_resource(sm, resource,
+            # lowercase version of os.environ; ZConfig lowercases its lookups
+            dict([(k.lower(),v) for k,v in os.environ.items()])
+        )
+        result = sm.finish(), ZConfig.loader.CompositeHandler(
+            sm.handlers, self.schema
+        )
+        return result
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class ConfigRunner(AbstractInterpreter,ConfigLoader):
 
     """Config-file interpreter"""
 
@@ -60,8 +95,6 @@ to 'running.ICmdLineAppFactory'.  It will be run with the remaining
 command-line arguments.
 """
 
-    schema = binding.Require("ZConfig schema to use")
-
     def interpret(self, filename):
         url = naming.toName(filename, FileURL.fromFilename)
         factory = adapt(self.lookupComponent(url), naming.IStreamFactory)
@@ -69,16 +102,24 @@ command-line arguments.
         binding.suggestParentComponent(self.getCommandParent(),None,ob)
         return self.getSubcommand(ob)
 
-    def loadResource(self, resource):
-        sm = self.createSchemaMatcher()
-        self._parse_resource(sm, resource,
-            # lowercase version of os.environ; ZConfig lowercases its lookups
-            dict([(k.lower(),v) for k,v in os.environ.items()])
-        )
-        result = sm.finish(), ZConfig.loader.CompositeHandler(
-            sm.handlers, self.schema
-        )
-        return result
+
+def loaderAsRunner(ob,proto):
+    schema, parent = ob.schema, ob.getParentComponent()
+
+    def factory(**kw):
+        kw.setdefault('schema', schema)
+        kw.setdefault('parentComponent', parent)
+        return ConfigRunner(**kw)
+
+    protocols.adviseObject(factory, provides=[ICmdLineAppFactory])
+    return factory
+
+protocols.declareAdapter(
+    loaderAsRunner,
+    provides = [ICmdLineAppFactory],
+    forTypes = [ConfigLoader]
+)
+
 
 class ZConfigSchemaURL(naming.URL.Base):
 
@@ -98,22 +139,22 @@ class ZConfigSchemaContext(naming.AddressContext):
 
     def _get(self, name, retrieve=1):
 
-        url = naming.toName(name.body, FileURL.fromFilename)
-        ob = adapt(naming.lookup(self,url), naming.IStreamFactory)
-
-        loader = SchemaLoader(self.creationParent).loadFile(
-            ob.open('t'), str(url)
+        return SchemaLoader(self.creationParent).getObjectInstance(
+            self, naming.Reference('',[name.body]), name
         )
-        parent = self.creationParent
 
-        def factory(**kw):
-            kw.setdefault('schema', loader)
-            kw.setdefault('parentComponent', parent)
-            return ConfigRunner(**kw)
 
-        protocols.adviseObject(factory, provides=[running.ICmdLineAppFactory])
 
-        return factory
+
+
+
+
+
+
+
+
+
+
 
 
 

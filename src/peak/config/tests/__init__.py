@@ -343,9 +343,34 @@ class AdviceTest(ModuleTest):
         self.M2 = testM1a
 
 
+class ZConfigTests(TestCase):
+
+    def checkSchemaLookup(self):
+        from peak.config.load_zconfig import ConfigLoader
+        ob = testRoot().lookupComponent(
+            'ref:zconfig.schema@pkgfile:peak.running/EventDriven.xml'
+        )
+        self.failUnless(isinstance(ob,ConfigLoader))
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 TestClasses = (
     PropertyTest, ModuleTest, AdviceTest, UtilityTest,
-    RegForward, RegBackward, RegUpdate,
+    RegForward, RegBackward, RegUpdate, ZConfigTests,
 )
 
 
@@ -364,6 +389,23 @@ allSuites = [
 def test_suite():
     from peak.util.imports import importSuite
     return importSuite(allSuites, globals())
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

@@ -118,8 +118,8 @@ validNames = {
     'fd.socket:27/inet/dgram': Items(fileno=27),
     'fd.socket:27//dgram': Items(fileno=27),
     'fd.file:stderr': Items(fileno=2),
-
-
+    'ref:some.thing@someURL':
+        Items(factoryName='some.thing',addresses=('someURL',)),
 
     'icb://nik:u@localhost/aGroup':
         Items(nick='nik',user='u',passwd=None,server='localhost',
@@ -162,9 +162,50 @@ canonical = {
 }
 
 
+class TestFactory(binding.Singleton):
+
+    protocols.advise(classProvides=[naming.IObjectFactory])
+
+    def getObjectInstance(self, context, refInfo, name, attrs=None):
+        return list(refInfo.addresses)
+
+
+class ReferenceTests(TestCase):
+
+    def testRefRestore(self):
+        ref = naming.Reference('peak.naming.tests.TestFactory',['x','y','z'])
+        self.assertEqual( ref.restore(testRoot(),''), ['x','y','z'] )
+
+    def testRefLookup(self):
+        url ='ref:peak.naming.tests.TestFactory@xyz'
+        self.assertEqual( testRoot().lookupComponent(url), ['xyz'] )
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 class NameParseTest(TestCase):
 
-    def checkValidAndCanonical(self):
+    def testValidAndCanonical(self):
 
         for name in validNames:
 
@@ -178,7 +219,7 @@ class NameParseTest(TestCase):
             self.assertEqual(parse(stdform),parsed)
 
 
-    def checkData(self):
+    def testData(self):
         for name,values in validNames.items():
             obj = parse(name)
             for (k,v) in values:
@@ -190,7 +231,7 @@ class NameParseTest(TestCase):
             for (k,v) in validNames[name]:
                 self.assertEqual([k,getattr(obj,k)], [k,v])
 
-    def checkNotFound(self):
+    def testNotFound(self):
         try:
             testRoot().lookupComponent('noSuchNameShouldBeFound')
         except exceptions.NameNotFound:
@@ -223,20 +264,20 @@ additions = [
 ]
 
 class NameAdditionTest(TestCase):
-    def checkAdds(self):
+    def testAdds(self):
         for n1,n2,res in additions:
             assert n1+n2==res, (n1,n2,n1+n2,res)
 
 
 TestClasses = (
-    NameParseTest, NameAdditionTest
+    NameParseTest, NameAdditionTest, ReferenceTests
 )
 
 
 def test_suite():
     s = []
     for t in TestClasses:
-        s.append(makeSuite(t,'check'))
+        s.append(makeSuite(t,'test'))
 
     return TestSuite(s)
 
