@@ -2,6 +2,9 @@ Fixes and Enhancements since Version 0.5 alpha 2
 
  Changed, Enhanced, or Newly Deprecated Features
 
+ - 'peak.util.imports.whenImported()' can now be used even when the specified
+   module has already been loaded.
+
  - The naming system no longer has 'objectFactories' and 'stateFactories' as
    utilities; they have been replaced with new mechanisms involving adaptation.
    Previously, addresses had a 'retrieve()' method that could be used to
@@ -110,7 +113,7 @@ Fixes and Enhancements since Version 0.5 alpha 2
   - The default reactor supplied in 'peak.running.scheduler' would consume
     CPU continuously if it was waiting for I/O and no tasks were scheduled.
 
-
+  - The 'peak.util.imports.whenImported' function didn't work.
 
 
 

@@ -207,32 +207,32 @@ def whenImported(moduleName, hook):
 
     """Call 'hook(module)' when module named 'moduleName' is first used
 
-    The module must not have been previously imported, or 'AlreadyRead'
-    is raised.  'moduleName' is a string containing a fully qualified
-    module name.  'hook' must accept one argument: the imported module
-    object.
+    'hook' must accept one argument: the module object named by 'moduleName',
+    which must be a fully qualified (i.e. absolute) module name.  The hook
+    should not raise any exceptions, or it may prevent later hooks from
+    running.
 
-    This function's name is a slight misnomer...  hooks are called when
-    a module is first *used*, not when it is imported.
+    If the module has already been imported normally, 'hook(module)' is
+    called immediately, and the module object is returned from this function.
+    If the module has not been imported, or has only been imported lazily,
+    then the hook is called when the module is first used, and a lazy import
+    of the module is returned from this function.  If the module was imported
+    lazily and used before calling this function, the hook is called
+    immediately, and the loaded module is returned from this function.
 
-    This function returns 'lazyModule(moduleName)', in case you need
-    the module object for future use."""
+    Note that using this function implies a possible lazy import of the
+    specified module, and lazy importing means that any 'ImportError' will be
+    deferred until the module is used.
+    """
 
-    if name in sys.modules and not name in postLoadHooks:
-        raise AlreadyRead("Module already imported", name)
+    if moduleName in modules and postLoadHooks.get(moduleName) is None:
+        # Module is already imported/loaded, just call the hook
+        module = modules[moduleName]
+        hook(module)
+        return module
 
     getModuleHooks(moduleName).append(hook)
-    return lazyModule(moduleName, reloader=_runHooks)
-
-
-
-
-
-
-
-
-
-
+    return lazyModule(moduleName)
 
 
 
