@@ -51,7 +51,7 @@ if include_tests:
     packages += [
         'peak.tests', 'peak.binding.tests', 'peak.config.tests',
         'peak.model.tests', 'peak.naming.tests', 'peak.running.tests',
-        'peak.storage.tests', 'peak.util.tests',
+        'peak.storage.tests', 'peak.util.tests', 'protocols.tests',
     ]
 
     data_files += [

@@ -5,7 +5,6 @@ an individual module to get just those tests."""
 
 
 allSuites = [
-    'advice:test_suite',
     'EigenData:test_suite',
     'dispatch:test_suite',
     'FileParsing:test_suite',
