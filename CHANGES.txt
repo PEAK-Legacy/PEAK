@@ -1,5 +1,7 @@
 Fixes and Enhancements since Version 0.5 alpha 1
 
+ Changed, Enhanced, or Newly Deprecated Features
+ 
  - DEPRECATED 'naming.ParsedURL'.  It will disappear in 0.5 alpha 3 or beta.
    It is replaced by the new 'naming.URL.Base'.  The 'naming.URL' package
    provides a new URL parsing framework based on 'peak.model'.  Upgrading from
@@ -48,6 +50,20 @@ Fixes and Enhancements since Version 0.5 alpha 1
    '_getConfigData', 'getComponentName', or 'notifyUponAssembly', you need
    to wrap them with 'binding.metamethod' now.
 
+ - Made 'NOT_GIVEN' and 'NOT_FOUND' recognizable by humans (they 'repr'
+   and 'str' to their names) and by Python (they can be pickled, and
+   when restored they come back as the same object).
+
+
+ Corrected Problems
+ 
+ - Fixed a problem where initializing single-valued immutable fields of
+  'peak.model' types did not perform type/value normalization.
+
+ - Fixed a problem where bindTo would use the attribute name as the
+   default value for a lookup, if the requested name/property/utility
+   was not found.
+
  - Fixed 'mof2py' generator script not working
 
  - Fixed model.Element not getting parent component set when passed as a
@@ -57,8 +73,4 @@ Fixes and Enhancements since Version 0.5 alpha 1
    objects.
 
  - Fixed IndentedStream generating all-whitespace lines
-
- - Made 'NOT_GIVEN' and 'NOT_FOUND' recognizable by humans (they 'repr'
-   and 'str' to their names) and by Python (they can be pickled, and
-   when restored they come back as the same object).
 

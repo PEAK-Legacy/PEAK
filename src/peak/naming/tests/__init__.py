@@ -14,7 +14,7 @@ validNames = {
 
     'ldap://cn=root:somePw@localhost:9912/cn=monitor':
         Items(
-            host='localhost', port=9912, basedn=('cn=monitor',),
+            host='localhost', port=9912, basedn=(('cn=monitor',),),
             extensions={'bindname':(1,'cn=root'), 'x-bindpw':(1,'somePw')},
             critical=('bindname','x-bindpw'),
         ),
@@ -28,12 +28,12 @@ validNames = {
     'ldap://localhost/cn=Bar,ou=Foo,o=eby-sarna.com%2Fx':
         Items(
             host='localhost', port=389,
-            basedn=('o=eby-sarna.com/x','ou=Foo','cn=Bar'),
+            basedn=(('o=eby-sarna.com/x','ou=Foo','cn=Bar'),),
         ),
 
     'ldap:///cn="A \\"quoted\\", and obscure thing",ou=Foo\\,Bar':
         Items(
-            basedn=('ou=Foo\\,Bar','cn="A \\"quoted\\", and obscure thing"'),
+            basedn=(('ou=Foo\\,Bar','cn="A \\"quoted\\", and obscure thing"',),)
         ),
 
     'uuid:6ba7b810-9dad-11d1-80b4-00c04fd430c8':

@@ -169,7 +169,6 @@ class Base(Struct):
     implements(IAddress)
     classProvides(IAddressFactory, IType)
 
-    pattern          = None
     nameKind         = URL_KIND
     nameAttr         = None
     supportedSchemes = ()
@@ -203,22 +202,20 @@ class Base(Struct):
 
 
 
-    class scheme(structField):
 
-        referencedType = String
-        sortPosn = 1
+    class scheme(RequiredField):
 
         _defaultValue = classAttr(bindTo('defaultScheme'))
 
         def _onLink(feature,element,item,posn):
+            # delegate scheme validation to element class
             if not element.supportsScheme(item):
                 raise exceptions.InvalidName(
                     "Unsupported scheme %r for %r" % (item, element.__class__)
                 )
 
-    class body(structField):
-        referencedType = String
-        sortPosn = 2
+
+    class body(NameField):
         defaultValue = ''
         unquote = False
 
@@ -240,6 +237,9 @@ class Base(Struct):
 
     def __str__(self):
         return "%s:%s" % (self.scheme, self.body)
+
+
+
 
 
 
@@ -317,7 +317,7 @@ class Base(Struct):
 
     def _hashAndCompare(self,d,a):
         klass = self.__class__
-        omitBody = klass.mdl_featureNames != ('scheme','body')
+        omitBody = len(klass.mdl_featureNames)!=2   # ('scheme','body')
         return tuple(
             [(f,getattr(self,f)) for f in self.__class__.mdl_featureNames
                 if (not omitBody or f!='body')
@@ -329,27 +329,6 @@ class Base(Struct):
     def parse(klass,scheme,body):
         if klass.syntax is not None:
             return parse(body, klass.syntax)
-
-        p = klass.pattern
-        if isinstance(p,str):
-            p = klass.pattern = re.compile(p)
-
-        if p is not None:
-            m = p.match(body)
-            if m:
-                na = klass.nameAttr
-                d=m.groupdict(NOT_GIVEN)
-                for k,v in d.items():
-                    f = getattr(klass,k)
-                    if v is NOT_GIVEN:
-                        del d[k]
-                        continue
-                    if k!=na and f.unquote:
-                        d[k] = v = unquote(v)
-                    d[k] = f.fromString(v)
-                return d
-            else:
-                raise exceptions.InvalidName("%s:%s" % (scheme,body))
 
         return {}
 
@@ -366,4 +345,25 @@ class Base(Struct):
                 or None
         )
     )
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 

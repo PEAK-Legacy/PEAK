@@ -93,28 +93,28 @@ class AbstractName(tuple):
     parse = classmethod(parse)
 
 
+    # IType methods
+
+    def mdl_fromString(klass,aString):
+        return klass.parse(aString)
+
+    mdl_fromString = classmethod(mdl_fromString)
 
 
+    def mdl_toString(klass,instance):
+        return instance.format()
+
+    mdl_toString = classmethod(mdl_toString)
 
 
+    def mdl_normalize(klass, value):
+        return klass(value)
+
+    mdl_normalize = classmethod(mdl_normalize)
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    mdl_syntax       = None       # XXX?
+    mdl_defaultValue = NOT_GIVEN
 
 
 
@@ -415,6 +415,39 @@ class CompoundName(AbstractName):
     nameKind = COMPOUND_KIND
     syntax   = FlatSyntax
 
+    def asCompositeType(klass):
+
+        """Get a 'CompositeName' subclass using this as first-element parser"""
+
+        class _CompositeName(CompositeName):
+
+            def mdl_fromString(_CNClass,aString):
+                # Parse plain composite name, using this as compound parser
+                name = CompositeName.parse(aString, klass)
+                if isinstance(name, klass):
+                    return CompositeName([name])
+                return name
+
+            mdl_fromString = classmethod(mdl_fromString)
+
+
+            def mdl_normalize(_CNClass, value):
+                if isinstance(value, klass):
+                    # normalize compound as part of Composite
+                    return CompositeName([value])
+                return CompositeName(value)
+
+            mdl_normalize = classmethod(mdl_normalize)
+
+
+        return _CompositeName
+
+
+    asCompositeType = classmethod(asCompositeType)
+
+
+
+
 
 def toName(aName, nameClass=CompoundName, acceptURL=1):
 
@@ -445,6 +478,14 @@ def toName(aName, nameClass=CompoundName, acceptURL=1):
 
 
 NNS_NAME = CompositeName.parse('/',CompoundName)
+
+
+
+
+
+
+
+
 
 
 

@@ -292,22 +292,14 @@ class ldapURL(URL.Base):
         defaultValue=389
 
     class basedn(URL.NameField):
-        defaultValue=''
-        syntax = URL.Conversion(
-            canBeEmpty = True,
-            converter = lambda x:
-                naming.CompositeName.parse(x,distinguishedName),
-            formatter = lambda x:
-                isinstance(x,distinguishedName) and
-                    str(naming.CompositeName([x]))
-                or str(x)
-        )
+        canBeEmpty = True
+        referencedType = distinguishedName.asCompositeType()
 
     class attrs(URL.Field):
         syntax = URL.Repeat(URL.ExtractQuoted(),separator = ',')  # XXX
 
     class scope(URL.IntField):
-        defaultValue=SCOPE_BASE
+        defaultValue = SCOPE_BASE
         syntax = URL.Conversion(
             canBeEmpty = True,
             converter = lambda x: scope_map[x.lower()],
@@ -316,15 +308,6 @@ class ldapURL(URL.Base):
 
     class filter(URL.Field):
         pass
-
-
-
-
-
-
-
-
-
 
     class extensions(URL.Field):
         referencedType=model.Any    # XXX
@@ -361,13 +344,6 @@ class ldapURL(URL.Base):
     )
 
 
-
-
-
-
-
-
-
     def parse(self, scheme, body):
 
         data = URL.parse(body, self.syntax)
@@ -389,12 +365,35 @@ class ldapURL(URL.Base):
 
 
 
+
+
     def retrieve(self, refInfo, name, context, attrs=None):
 
         return LDAPConnection(
             context.creationParent, context.creationName,
             address = self
         )
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
