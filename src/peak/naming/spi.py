@@ -80,7 +80,7 @@ def getInitialContext(parentComponent=None, **options):
 
 
 
-def getURLContext(scheme, context, iface=IBasicContext):
+def getURLContext(scheme, context=None, iface=IBasicContext):
 
     """Return a 'Context' object for the given URL scheme and interface."""
 

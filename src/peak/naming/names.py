@@ -171,7 +171,9 @@ class OpaqueURL(struct):
     __implements__ = IName
 
     __fields__ = 'scheme', 'body'
-    
+
+    formatString = "%(scheme)s:%(body)s"
+
     _supportedSchemes = ()
 
     isComposite = 0
@@ -190,7 +192,7 @@ class OpaqueURL(struct):
         
 
     def __str__(self):
-        return '%s:%s' % (self.scheme, self.body)
+        return self.formatString % self
 
     def __repr__(self):
         return "%s(%r)" % (self.__class__.__name__, str(self))
@@ -201,8 +203,6 @@ class OpaqueURL(struct):
 
     
 
-
-
 class ParsedURL(OpaqueURL):
 
     __implements__ = IAddress
@@ -212,11 +212,19 @@ class ParsedURL(OpaqueURL):
 
     pattern = ''
 
+    _defaultScheme = None
 
     def fromString(klass, name):
 
         m = URLMatch(name)
-        if m: return klass.fromURL(OpaqueURL(name))
+
+        if m:
+            return klass.fromURL(OpaqueURL(name))
+
+        if klass._defaultScheme:
+            name = '%s:%s' % klass._defaultScheme, name
+            return klass.fromURL(OpaqueURL(name))
+
         raise exceptions.InvalidName(name)
 
 
@@ -225,6 +233,15 @@ class ParsedURL(OpaqueURL):
             return klass.fromURL(url)
             
         raise exceptions.InvalidName(name)
+
+
+
+
+
+
+
+
+
 
 
     def fromURL(klass, url):
@@ -238,10 +255,34 @@ class ParsedURL(OpaqueURL):
                 d['scheme'] = url.scheme
                 d['body']   = url.body
                 
-                return klass(**d)
+                return klass.extractFromMapping(d)
                 
         raise exceptions.InvalidName(url)
         
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 class Syntax(object):
