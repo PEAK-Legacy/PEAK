@@ -247,7 +247,7 @@ class SybaseConnection(SQLConnection):
     def txnTime(self,d,a):
 
         # First, ensure that we're in a transaction
-        self.txnSvc
+        self.joinedTxn
 
         # Then retrieve the server's idea of the current time
         r = ~ self('SELECT getdate()')
@@ -299,7 +299,7 @@ class PGSQLConnection(SQLConnection):
             
 
     def txnTime(self,d,a):
-        self.txnSvc                 # Ensure that we're in a transaction,
+        self.joinedTxn              # Ensure that we're in a transaction,
         r = ~ self('SELECT now()')  # retrieve the server's idea of the time
         return r[0]
 

@@ -213,7 +213,7 @@ class QueryDM(TransactionComponent):
 
         if self.resetStatesAfterTxn:
             # must always be used in a txn
-            self.txnSvc
+            self.joinedTxn
         
         ob = self.cache.get(oid,self)
 
@@ -270,7 +270,7 @@ class QueryDM(TransactionComponent):
 
         if self.resetStatesAfterTxn:
             # must always be used in a txn
-            self.txnSvc
+            self.joinedTxn
 
         oid = ob._p_oid
         assert oid is not None
@@ -445,7 +445,7 @@ class EntityDM(QueryDM):
         # Ensure that we have a transaction service and we've joined
         # the transaction in progress...
         
-        return self.txnSvc
+        return self.joinedTxn
 
 
 

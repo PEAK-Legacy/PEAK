@@ -6,7 +6,7 @@ import sys
 __all__ = [
     'TransactionService', 'AbstractParticipant', 'TransactionComponent',
     'BasicTxnErrorHandler', 'getTransaction', 'beginTransaction',
-    'commitTransaction', 'abortTransaction',
+    'commitTransaction', 'abortTransaction', 'begin', 'commit', 'abort',
 ]
 
 
@@ -23,9 +23,9 @@ def abortTransaction(subject=None):
     getTransaction(subject).abort()
 
 
-
-
-
+begin  = beginTransaction
+commit = commitTransaction
+abort  = abortTransaction
 
 
 
@@ -375,20 +375,22 @@ class TransactionComponent(binding.AutoCreated, AbstractParticipant):
 
     inTransaction = False
 
-    txnAttrs = 'txnSvc', 'inTransaction'
+    txnAttrs = 'joinedTxn', 'inTransaction'
 
-    def txnSvc(self,d,a):
+    def joinedTxn(self,d,a):
 
         """Our TransactionService (auto-joined when attribute is accessed)"""
 
-        ts = self.lookupComponent(ITransactionService)
+        ts = self.txnSvc
         ts.join(self)
         self.inTransaction = True
         d[a] = ts
         self.onJoinTxn(ts)
         return ts
 
-    txnSvc = binding.Once(txnSvc)
+    joinedTxn = binding.Once(joinedTxn)
+
+    txnSvc = binding.Acquire(ITransactionService)
 
     def onJoinTxn(self, txnService):
         pass

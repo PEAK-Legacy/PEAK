@@ -224,22 +224,22 @@ class TxnTable(storage.TransactionComponent):
         self._delBinding('table')
 
     def DELETE(self, whereItems):
-        self.txnSvc
+        self.joinedTxn
         self.table.DELETE(whereItems)
 
     def INSERT(self, items):
-        self.txnSvc
+        self.joinedTxn
         self.table.INSERT(items)
 
     def INSERT_ROWS(self, rowList):
-        self.txnSvc
+        self.joinedTxn
         self.table.INSERT_ROWS(self.colNames, rowList)
 
     def SELECT(self, whereItems=()):
         return self.table.SELECT(whereItems)
 
     def SET(self, whereItems, setItems):
-        self.txnSvc
+        self.joinedTxn
         self.table.SET(whereItems, setItems)
 
 
@@ -293,7 +293,7 @@ class TableTest(TestCase):
 
     def tearDown(self):
         if storage.getTransaction().isActive():
-            storage.abortTransaction()
+            storage.abort()
     
     def checkNoChangeOutsideTxn(self):
         self.assertRaises(exceptions.OutsideTransaction,
@@ -303,27 +303,27 @@ class TableTest(TestCase):
     def checkRollback(self):
         assert self.table.dump()==[]
 
-        storage.beginTransaction()
+        storage.begin()
         self.table.INSERT(Items(a=1,b=2))
         assert self.table.dump()==[(1,2)]
-        storage.abortTransaction()
+        storage.abort()
 
         assert self.table.dump()==[]
 
     def checkCommit(self):
         assert self.table.dump()==[]
 
-        storage.beginTransaction()
+        storage.begin()
         self.table.INSERT(Items(a=1,b=2))
         assert self.table.dump()==[(1,2)]
-        storage.commitTransaction()
+        storage.commit()
 
         assert self.table.dump()==[(1,2)]
 
-        storage.beginTransaction()
+        storage.begin()
         self.table.INSERT(Items(a=3,b=4))
         assert self.table.dump()==[(1,2),(3,4)]
-        storage.abortTransaction()
+        storage.abort()
         assert self.table.dump()==[(1,2)]
 
 class DMTest(TestCase):
@@ -335,10 +335,10 @@ class DMTest(TestCase):
 
     def tearDown(self):
         if storage.getTransaction().isActive():
-            storage.abortTransaction()
+            storage.abort()
 
     def _addData(self):
-        storage.beginTransaction()
+        storage.begin()
         self.table.INSERT(Items(a=1,b=2))
     
     def checkExistence(self):
@@ -347,24 +347,24 @@ class DMTest(TestCase):
 
         ob = self.dm[1]
         assert ob.b==2
-        storage.abortTransaction()
+        storage.abort()
 
-        storage.beginTransaction()
+        storage.begin()
         self.assertRaises(KeyError, lambda: ob.b)
 
     def checkFlush(self):
 
         self._addData()
         assert self.table.dump()==[(1,2)]
-        storage.commitTransaction()
+        storage.commit()
         
-        storage.beginTransaction()
+        storage.begin()
         ob = self.dm[1]
         ob.b = 4
         self.dm.flush()
         assert self.table.dump()==[(1,4)]
 
-        storage.abortTransaction()
+        storage.abort()
         assert self.table.dump()==[(1,2)]
 
     def checkModify(self):
@@ -372,17 +372,17 @@ class DMTest(TestCase):
         ob = self.dm[1]
         ob.b = 4
         assert self.table.dump()==[(1,2)]
-        storage.commitTransaction()
+        storage.commit()
         assert self.table.dump()==[(1,4)]
 
 
     def checkNew(self):
-        storage.beginTransaction()
+        storage.begin()
         ob = self.dm.newItem()
         ob.a = 1
         ob.b = 2
         assert self.table.dump()==[]
-        storage.commitTransaction()
+        storage.commit()
         assert self.table.dump()==[(1,2)]
 
 

@@ -178,14 +178,14 @@ class ManagedConnection(TransactionComponent):
             override this implementation, you must ensure that the
             connection has joined the transaction first!
         """
-        return self.txnSvc.getTimestamp()
+        return self.joinedTxn.getTimestamp()
 
     txnTime = binding.Once(txnTime)
 
 
     def joinTxn(self):
         """Join the current transaction, if not already joined"""
-        return self.txnSvc
+        return self.joinedTxn
 
 
     def voteForCommit(self, txnService):
