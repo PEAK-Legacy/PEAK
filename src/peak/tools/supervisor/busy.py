@@ -135,9 +135,9 @@ class BusyStarter(binding.Component):
             if src is closed:
                 break
             elif evt:
-                self.busyCount.set(self.busyCount+1)
+                self.busyCount.set(self.busyCount()+1)
             else:
-                self.busyCount.set(self.busyCount-1)
+                self.busyCount.set(self.busyCount()-1)
 
         self.childCount.set(self.childCount()-1)
 

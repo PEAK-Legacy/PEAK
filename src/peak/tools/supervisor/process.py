@@ -1,5 +1,6 @@
 """Pre-forking process supervisor for FastCGI and other server-like apps"""
 
+from __future__ import generators
 from peak.api import *
 from interfaces import *
 from peak.running.commands import EventDriven, Bootstrap
@@ -14,7 +15,6 @@ def unquote(s):
     if s.startswith('"') or s.startswith("'"):
         s = s[1:-1]
     return s
-
 
 
 
@@ -167,7 +167,7 @@ class ProcessSupervisor(EventDriven, config.ServiceArea):
         startDelay = self.eventLoop.sleep(self.startInterval)
 
         somethingChanged = events.AnyOf(
-            self.processCount.value, self.desiredProcesses
+            self.processCount, self.desiredProcesses
         )
         
         while True:
@@ -176,7 +176,7 @@ class ProcessSupervisor(EventDriven, config.ServiceArea):
                  
                 self.log.debug(
                     "%d processes desired, %d running: requesting start",
-                    self.processCount(), self.desiredProcesses()
+                    self.desiredProcesses(), self.processCount()
                 )
                 
                 # Spawn a thread to start a process as soon as possible
@@ -203,7 +203,7 @@ class ProcessSupervisor(EventDriven, config.ServiceArea):
 
 
 
-     def _doStart(self):
+    def _doStart(self):
 
         # ensure we're in a top-level timeslice
         yield self.eventLoop.sleep(); events.resume()
