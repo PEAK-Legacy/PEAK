@@ -264,7 +264,7 @@ class XMI_DM(storage.EntityDM):
             if f is None: continue
 
             if model.IValue.isImplementedBy(f):
-                d[f.attrName] = node.getValue()
+                d[f.attrName] = f.fromString(node.getValue())
             else:
                 d.setdefault(f.attrName,[]).extend(
                     [self[n.getRef()]

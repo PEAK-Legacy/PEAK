@@ -172,20 +172,20 @@ class Field(StructuralFeature):
         return [feature.get(element)]
 
 
+    def fromString(feature, value):
 
+        tc = feature.referencedType
 
+        # XXX This is a hack for the fact that our current UML metamodel
+        # includes "referencedType='someType'" settings; if referencedType
+        # is a string, we don't use it here.  We should probably also have
+        # a fromFields() or fromTuple() capability to use specialty
+        # DataTypes.
 
+        if tc and not isinstance(tc,str):
+            return tc.fromString(value)
 
-
-
-
-
-
-
-
-
-
-
+        return value
 
 
 
@@ -411,22 +411,63 @@ class Sequence(Collection):
 class Classifier(binding.Base):
     """Basis for all flavors"""
 
+
 class PrimitiveType(Classifier):
     """A primitive type (e.g. Boolean, String, etc.)"""
 
+    def fromString(klass, value):
+        return value
+
+    fromString = classmethod(fromString)
+
+
+class EnumerationMeta(Classifier.__class__):
+
+    def __init__(klass, name, bases, cdict):
+
+        super(EnumerationMeta,klass).__init__(name, bases, cdict)
+
+        values = {}
+        bases = list(bases)
+        bases.reverse()
+        for b in bases:
+            values.update(getattr(b,'__values__',{}))
+
+        values.update(cdict.get('__values__',{}))
+
+        for k,v in cdict.items():
+            if not k.startswith('__') or not k.endswith('__'):
+                values[k]=v
+
+        klass.__values__ = values
+
+
+    def fromString(klass, value):
+        if value in klass.__values__:
+            return klass.__values__[value]
+        raise ValuError, value
+
+
+
 class Enumeration(Classifier):
+
     """An enumerated type"""
 
+    __metaclass__ = EnumerationMeta
+
+
 class DataType(Classifier):
+
     """A complex datatype"""
+
+    def fromString(klass, value):
+        return value
+
+    fromString = classmethod(fromString)
+
 
 class ElementMeta(DataType.__class__, Persistent.__class__):
     pass
-
-
-
-
-
 
 
 
