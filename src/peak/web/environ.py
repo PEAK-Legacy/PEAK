@@ -369,7 +369,7 @@ def traverseDefault(ctx, ob, ns, name, qname, default=NOT_GIVEN):
 
 def traverseLocationId(ctx, ob, ns, name, qname, default=NOT_GIVEN):
 
-    key = PropertyName('peak.web.locations.'+name)
+    key = LOCATION_ID(name)
 
     while ctx is not None:
         cob = ctx.current

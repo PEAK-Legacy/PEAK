@@ -368,11 +368,11 @@ class TestNamespaces(TestCase):
 
 
     def testTraverseLocationId(self):
-        ctx = self.policy.newContext(start=self.app)
-        id1 = '++id++spammity'
-        id2 = '++id++foo.bar'
-        key1 ='peak.web.locations.spammity'
-        key2 ='peak.web.locations.foo.bar'
+        ctx  = self.policy.newContext(start=self.app)
+        id1  = '++id++spammity'
+        id2  = '++id++foo.bar'
+        key1 = web.LOCATION_ID('spammity')
+        key2 = web.LOCATION_ID('foo.bar')
 
         # check default/error behavior
         self.invokeHandler(ctx,web.traverseLocationId,id1,fail=1)

@@ -246,9 +246,7 @@ class Location(Place,binding.Configurable):
 
     def registerLocation(self,location_id,path):
         path = adapt(path,web.TraversalPath)
-        self.registerProvider(
-            'peak.web.locations.'+location_id,config.Value(path)
-        )
+        self.registerProvider(LOCATION_ID(location_id),config.Value(path))
 
     def registerView(self,target,name,handler):
         self.have_views = True
@@ -260,6 +258,8 @@ class Location(Place,binding.Configurable):
     def addContainer(self,container,permissionNeeded=None):
         binding.suggestParentComponent(self,None,container)
         self.containers.append((permissionNeeded,container))
+
+
 
 
 
