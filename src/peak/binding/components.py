@@ -20,7 +20,7 @@ __all__ = [
     'bindTo', 'requireBinding', 'bindSequence', 'bindToParent', 'bindToSelf',
     'getRootComponent', 'getParentComponent', 'lookupComponent',
     'acquireComponent', 'globalLookup',
-    'bindToUtilities', 'bindToProperty', 'Constant',
+    'bindToUtilities', 'bindToProperty', 'Constant', 'delegateTo',
     'getComponentName', 'getComponentPath', 'Acquire', 'ComponentName',
 ]
 
@@ -351,21 +351,62 @@ class bindSequence(bindTo):
         self.__doc__ = kw.get('doc',("binding.bindSequence%s" % `targetNames`))
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+def delegateTo(delegateAttr, name=None, provides=None, doc=None):
+
+    """Delegate attribute to the same attribute of another object
+
+    Usage::
+
+        class PasswordFile(binding.Base):
+            shadow = binding.bindTo('config:etc.shadow/')
+            checkPwd = changePwd = binding.delegateTo('shadow')
+
+    The above is equivalent to this longer version::
+
+        class PasswordFile(binding.Base):
+            shadow = binding.bindTo('config:etc.shadow/')
+            checkPwd = binding.bindTo('shadow/checkPwd')
+            changePwd = binding.bindTo('shadow/changePwd')
+
+    Because 'delegateTo' uses the attribute name being looked up, you do not
+    need to create a separate binding for each attribute that is delegated,
+    as you do when using 'bindTo()'."""
+
+    return Once(
+        lambda s,d,a: getattr(getattr(s,delegateAttr),a), name, provides, doc
+    )
+
 def Acquire(key,doc=None):
+    """Provide a utility or property, but look it up if not supplied
+
+    'key' must be a configuration key (e.g. an Interface or a PropertyName).
+    If the attribute defined by this binding is not set, it will be looked up
+    by finding the appropriate utility or property.  The attribute will also
+    be registered as a source of that utility or property for child components.
+    This allows you to easily override the configuration of the utility or
+    property within a particular component subtree, simply by setting the
+    attribute (e.g. via a constructor keyword)."""
 
     if not IConfigKey.isImplementedBy(key):
         raise exceptions.InvalidName("Not a configuration key:", key)
 
     return bindTo(key,key,doc)
-
-
-
-
-
-
-
-
-
 
 def bindToParent(level=1, name=None, provides=None, doc=None):
 
@@ -649,8 +690,8 @@ class Component(Base):
 
 
 
-        
-        
-        
-        
-        
+
+
+
+
+
