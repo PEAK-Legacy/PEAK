@@ -618,10 +618,10 @@ class Bootstrap(AbstractInterpreter):
         if not naming.URLMatch(name):
             name = "config:peak.running.shortcuts.%s/" % name
 
-        factory = self.lookupComponent(name, default=NOT_FOUND)
+        factory = self.lookupComponent(name, default=None)
 
-        if factory is NOT_FOUND:
-            raise InvocationError("Name not found: %s" % name)
+        if factory is None:
+            raise InvocationError("No such command: %s" % name)
 
         try:
             return self.getSubcommand(factory)
