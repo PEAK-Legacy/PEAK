@@ -132,21 +132,21 @@ class ISavepoint(Interface):
 
         Note that a given savepoint can only be rolled back once!  If you wish
         to retry a nested transaction, you'll need to re-issue a 'savepoint()'
-        request following the rollback, and use the new savepoint object."""
+        request following the rollback, and use the new savepoint object.
 
-    def revert(txnService):
-        """Roll back to last savepoint, or raise
-        CannotRevertException; Database connections whose underlying
-        DB doesn't support savepoints should definitely raise
-        CannotRevertException.  Resource managers that write data to other
-        participants, should simply roll back state for all objects
-        changed since the last savepoint, whether written through to
-        the underlying storage or not.  Transactional caches may want
-        to reset on this message, also, depending on their precise
-        semantics. Note: this is not ZODB!  You will not get a
-        revert() before an abort_txn(), just because a savepoint has
-        occurred during the transaction!"""
-        
+        Resource managers that write data to other participants, should
+        simply roll back state for all objects changed since the savepoint,
+        whether written through to the underlying storage or not.
+        Transactional caches may want to reset on this message, also, depending
+        on their precise semantics."""
+
+
+try:
+    from Transaction.IRollback import IRollback as ISavepoint
+except ImportError:
+    # No ZODB transactions?  just use our own Savepoint interface
+    pass
+
 
 
 

@@ -113,14 +113,14 @@ class AbstractTransactionService(binding.Component):
         if self.isActive():
             raise TransactionInProgress
             
-        self.addInfo(**info)
         self.timestamp = time()
-
         self._begin()
+        self.addInfo(**info)
 
         for p in self.participants:
             p.beginTransaction(self)
-            
+
+
     def commit(self):
 
         if not self.isActive():
@@ -133,6 +133,7 @@ class AbstractTransactionService(binding.Component):
     def _commit(self):
         for p in self.participants:
             p.commitTransaction(self)
+        self._cleanup()
 
 
     def abort(self):
@@ -140,7 +141,10 @@ class AbstractTransactionService(binding.Component):
         if not self.isActive():
             raise OutsideTransaction
 
-        self._abort()
+        try:
+            self._abort()
+        finally:
+            self._cleanup()
 
 
     def _abort(self):
@@ -158,8 +162,20 @@ class AbstractTransactionService(binding.Component):
             
 
 
+    def addInfo(self, **info):
+        raise NotImplementedError
+    
+    def getInfo(self):
+        raise NotImplementedError
 
+    def _begin(self):        
+        raise NotImplementedError
 
+    def _cleanup(self):
+        raise NotImplementedError
+
+    def isActive(self):
+        raise NotImplementedError
 
 
 class AbstractParticipant(object):
@@ -184,22 +200,6 @@ class AbstractParticipant(object):
 
     def abortTransaction(self, txnService):
         pass
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -281,9 +281,9 @@ class ZODBTransactionService(AbstractTransactionService):
     def isActive(self):
         return self.ztxn is not None
 
+
     def _cleanup(self):
         self.ztxn = None
-
 
 class _NullSavepoint(object):
 
