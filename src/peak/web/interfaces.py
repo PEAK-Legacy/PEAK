@@ -9,7 +9,7 @@ __all__ = [
     'PATH_PROTOCOL', 'PAGE_PROTOCOL', 'INTERACTION_CLASS', 'RESOURCE_PREFIX',
     'DEFAULT_METHOD', 'APPLICATION_LOG', 'AUTHENTICATION_SERVICE',
     'ERROR_PROTOCOL', 'SKIN_SERVICE', 'IWebException', 'IDOMletState',
-    'IDOMletNode',    'IDOMletNodeFactory',
+    'IDOMletNode',    'IDOMletNodeFactory', 'ITraversalContext',
     'IDOMletElement', 'IDOMletElementFactory', 'ISkin', 'IPolicyInfo'
 ]
 
@@ -80,6 +80,47 @@ class IInteractionPolicy(IPolicyInfo):
     defaultMethod = Attribute("""Default method name (e.g. 'index_html')""")
     interactionClass = Attribute("Factory for interaction instances")
 
+class ITraversalContext(Interface):
+
+    """Traversal context methods for traversers to use"""
+
+    interaction = Attribute(
+        """The 'IWebInteraction' for this traversal context"""
+    )
+
+    def checkPreconditions():
+        """Invoked before traverse by web requests (calls 'preTraverse()')"""
+
+    def contextFor(name):
+        """Return a new traversal context for 'name'"""
+
+    def isNull():
+        """Return true if context location is not found/not authorized"""
+
+    def render():
+        """Return rendered value of underlying object"""
+
+    def asRenderable():
+        """Return object adapted to page protocol, or 'None'"""
+
+    def getAbsoluteURL():
+        """Absolute URL for object at this location"""
+
+    def getTraversedURL():
+        """This traversal's followed path, in absolute URL form"""
+
+    def getObject():
+        """The underlying object being traversed"""
+
+    def subcontext(name, ob):
+        """Create a new subcontext named 'name', for 'ob'"""
+
+#class ITraversalContextSPI(Interface):
+#
+#    """Traversal context methods for traversables to use"""
+
+
+
 class IWebTraversable(Interface):
 
     """A component that supports path traversal"""
@@ -109,10 +150,10 @@ class IWebTraversable(Interface):
     def getObject(interaction):
         """Return the underlying object that would be traversed"""
 
+    def getURL(context):
+        """Return this object's URL in traversal context 'context'"""
+
     localPath = Attribute("Relative URL (no leading '/') from skin/app root")
-
-
-
 
 
 
@@ -125,7 +166,7 @@ class IWebPage(Interface):
 
     """A component for rendering an HTTP response"""
 
-    def render(interaction):
+    def render(context):
         """Render a response"""
 
 
@@ -166,10 +207,6 @@ class IDOMletState(IComponent):
 
     """A component representing a DOMlet's current execution state"""
 
-    interaction = Attribute(
-        """The 'IWebInteraction' for this rendering"""
-    )
-
     def write(unicodeData):
         """Call this to write data to the output stream"""
 
@@ -180,6 +217,10 @@ class IDOMletState(IComponent):
         the state's parent components are searched and the first parent
         supporting the interface is returned.  'None' is returned if no parent
         supports the requested interface."""
+
+
+
+
 
 
 

@@ -51,6 +51,9 @@ class Resource(Traversable):
     def traverseTo(self, name, interaction):
         return NOT_FOUND
 
+    def getURL(self, ctx):
+        return ctx.interaction.getAbsoluteURL(self)
+
 
 class FSResource(Resource):
 
@@ -73,9 +76,6 @@ class FSResource(Resource):
         return klass(filename = url.getFilename())
 
     getObjectInstance = classmethod(getObjectInstance)
-
-
-
 
 
 
@@ -159,7 +159,7 @@ class ResourceDirectory(FSResource):
         ref = naming.Reference(factory, addresses=[FileURL.fromFilename(path)])
         obj = ref.restore(self,None)
         obj.setParentComponent(self, filename)
-        self.cache[name] = obj = adapt(obj,interaction.pathProtocol)
+        self.cache[name] = obj = adapt(obj,interaction.pathProtocol)    #XXX
         return obj
 
     def localPath(self,d,a):
@@ -238,9 +238,9 @@ class ResourceProxy(object):
         ob = adapt(self.getObject(interaction),interaction.pathProtocol)
         return ob.traverseTo(name, interaction)
 
-
-
-
+    def getURL(self,ctx):
+        interaction = ctx.interaction
+        return interaction.getAbsoluteURL(self.getObject(interaction))
 
 
 
@@ -354,20 +354,16 @@ class TemplateResource(FSResource):
     def getObject(self, interaction):
         return self.theTemplate
 
+    def getURL(self, ctx):
+        # We're a method, so use our context URL, not container URL
+        return ctx.getTraversedURL()
+
 
 class FileResource(FSResource):
     pass
 
 class ImageResource(FileResource):
     pass
-
-
-
-
-
-
-
-
 
 
 

@@ -35,8 +35,8 @@ def infiniter(sequence):
         for item in sequence:
             yield item
 
-def isNull(ob):
-    return ob is NOT_FOUND or ob is NOT_ALLOWED
+
+
 
 
 class DOMletState(binding.Component):
@@ -46,8 +46,6 @@ class DOMletState(binding.Component):
     protocols.advise(
         instancesProvide = [IDOMletState],
     )
-
-    interaction = binding.requireBinding("Current 'IWebInteraction'")
 
     write = binding.requireBinding("Unicode output stream write() method")
 
@@ -60,6 +58,8 @@ class DOMletState(binding.Component):
             state = adapt(c,iface,None)
             if state is not None:
                 return state
+
+
 
 
 
@@ -97,13 +97,13 @@ class DOMletAsWebPage(binding.Component):
 
     fromNode = classmethod(fromNode)
 
-    def render(self, interaction):
-        myOwner = self.getParentComponent()
+    def render(self, context):
+        myOwner = context.getParentComponent()
         data = []
         self.templateNode.renderFor(
             myOwner,
             DOMletState(
-                myOwner, interaction=interaction, write=data.append
+                myOwner, write=data.append
             )
         )
         return unicodeJoin(data)
@@ -479,12 +479,12 @@ class Element(binding.Component):
 
     def _traverse(self, data, state):
 
-        if isNull(data):
-            return data, state
-
         return self.dataSpec.traverse(
-            data, state.interaction, lambda o,i: self._wrapInteraction(i)
+            data, lambda ctx: self._wrapInteraction(ctx)
         ), state
+
+
+
 
 
 
@@ -638,8 +638,8 @@ class Text(ContentReplacer):
 
         write(self._openTag)
 
-        if not isNull(data):
-            write(unicode(data.getObject(state.interaction)))
+        if not data.isNull():
+            write(unicode(data.getObject()))
 
         write(self._closeTag)
 
@@ -663,26 +663,23 @@ class List(ContentReplacer):
 
         state.write(self._openTag)
 
-        i = infiniter(self.params['listItem'])
-        interaction = state.interaction
-        pathProtocol = interaction.pathProtocol
-        suggest = binding.suggestParentComponent
+        nextPattern = infiniter(self.params['listItem']).next
+        allowed     = data.interaction.allows
+        subcontext  = data.subcontext
         ct = 0
 
-        if not isNull(data):
+        if not data.isNull():
 
-            for item in data.getObject(interaction):
-                if not interaction.allows(item):
+            # XXX this should probably use an iteration location, or maybe
+            # XXX put some properties in execution context for loop vars?
+
+            for item in data.getObject():
+
+                if not allowed(item):
                     continue
 
-                loc = adapt(item, pathProtocol, None)
-                if loc is None:
-                    continue
-
-                # XXX this should probably use an iteration location, or maybe
-                # XXX put some properties in execution context for loop vars?
-                suggest(data,None,loc)  # XXX use numeric name?
-                i.next().renderFor(loc, state)
+                loc = subcontext(str(ct), item)
+                nextPattern().renderFor(loc, state)
                 ct += 1
 
         if not ct:
@@ -691,6 +688,9 @@ class List(ContentReplacer):
                 child.renderFor(data, state)
 
         state.write(self._closeTag)
+
+
+
 
 
 

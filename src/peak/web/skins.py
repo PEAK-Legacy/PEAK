@@ -1,6 +1,6 @@
 from peak.api import *
 from interfaces import *
-from places import Traversable, MultiTraverser
+from places import Traversable, MultiTraverser, TraversalContext
 from publish import TraversalPath
 
 __all__ = ['Skin',]
@@ -67,7 +67,7 @@ class Skin(Traversable):
     def traverseTo(self, name, interaction):
 
         if name == interaction.resourcePrefix:
-            return adapt(self.traverser, interaction.pathProtocol)
+            return self.traverser
 
         return self.root.traverseTo(name, interaction)
 
@@ -87,15 +87,17 @@ class Skin(Traversable):
         if path in self.cache:
             return self.cache[path]
 
-        traverser = self.traverser
         interaction = self.dummyInteraction
+        traverser = TraversalContext(
+            self, interaction=interaction, traversable=self.traverser
+        )
 
         resource = path.traverse(
-            traverser, interaction, getRoot = lambda o,i: traverser
+            traverser, getRoot = lambda ctx: traverser
         )
 
         if resource is not NOT_FOUND and resource is not NOT_ALLOWED:
-            resource = resource.getObject(interaction)
+            resource = resource.getObject()
 
         self.cache[path] = resource
         return resource
@@ -112,8 +114,6 @@ class Skin(Traversable):
             return '%s/%s' % (base, path)
         else:
             return base
-
-
 
 
 

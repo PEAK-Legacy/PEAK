@@ -2,7 +2,7 @@
 
 from peak.api import *
 from interfaces import *
-from peak.running.commands import EventDriven
+from places import TraversalContext
 
 __all__ = [
     'Interaction', 'NullAuthenticationService', 'InteractionPolicy',
@@ -48,35 +48,35 @@ class TraversalPath(naming.CompoundName):
         separator='/'
     )
 
-    def traverse(self, ob, interaction, getRoot = lambda o,i: o):
+    def traverse(self, ob, getRoot = lambda ctx: ctx):
 
         path = iter(self)
         part = path.next()
 
         if not part:
-            ob = getRoot(ob, interaction)
+            ob = getRoot(ob)
         else:
             # reset to beginning
             path = iter(self)
 
         for part in path:
-
-            if part == '..':
-                parent = binding.getParentComponent(ob)
-                if parent is not None and parent is not interaction.skin:
-                    ob = parent
-
-            elif part=='.':
-                pass
-
-            elif part:
-                newOb = ob.traverseTo(part, interaction)
-                if (newOb is NOT_FOUND or newOb is NOT_ALLOWED):
-                    return newOb
-                binding.suggestParentComponent(ob,part,newOb)
-                ob = newOb
+            if part:
+                ob = ob.contextFor(part)
 
         return ob
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -194,31 +194,21 @@ class Interaction(security.Interaction):
         storage.beginTransaction(self.app)
 
     def getApplication(self,request):
-        return [self.skin]
+        return TraversalContext(
+            self.skin, interaction=self, traversable=self.skin
+        )
 
     def callTraversalHooks(self, request, ob):
-        ob[-1].preTraverse(self)
-
-
+        ob.checkPreconditions()
 
 
 
     def traverseName(self, request, ob, name, check_auth=1):
-
-        nextOb = TraversalPath([name]).traverse(ob[-1],self)
-
-        if nextOb is NOT_FOUND:
-            return self.notFound(ob, name)
-
-        if nextOb is NOT_ALLOWED:
-            return self.notAllowed(ob, name)
-
-        return ob + [nextOb]
-
+        return ob.contextFor(name)
 
     def afterTraversal(self, request, ob):
         # Let the found object know it's being traversed
-        ob[-1].preTraverse(self)
+        ob.checkPreconditions()
 
 
     def getDefaultTraversal(self, request, ob):
@@ -227,38 +217,23 @@ class Interaction(security.Interaction):
 
         default = self.policy.defaultMethod
 
-        if default:
-            if adapt(ob[-1].getObject(self),self.pageProtocol,None) is None:
+        if default and ob.asRenderable() is None:
 
-                # Not renderable, try for default method
-                newOb = ob[-1].traverseTo(default, self)
+            # Not renderable, try for default method
 
-                if newOb is not NOT_FOUND:
-                    # Traversal will succeed, so tell the request to proceed
-                    return ob, (default,)
+            if not ob.contextFor(default).isNull():
+                # Traversal will succeed, so tell the request to proceed
+                return ob, (default,)
 
         # object is renderable, default traversal will fail, or no default
         # is in use: just render the object directly
         return ob, ()
 
 
-
-
     def callObject(self, request, ob):
-
-        page = adapt(ob[-1].getObject(self), self.pageProtocol, None)
-
-        if page is None:
-            # Render the found object directly
-            return ob[-1].getObject(self)
-
-        if len(ob)>1:
-            binding.suggestParentComponent(ob[-2],None,page)
-        return page.render(self)
-
+        return ob.render()
 
     def afterCall(self, request):
-
         """Commit transaction after successful hit"""
 
         storage.commitTransaction(self.app)
@@ -267,6 +242,7 @@ class Interaction(security.Interaction):
             # XXX a different response class for HEAD; Zope 3 should
             # XXX probably do it that way too.
             request.response.setBody('')
+
 
     def handleException(self, object, request, exc_info, retry_allowed=1):
 
@@ -301,23 +277,6 @@ class Interaction(security.Interaction):
         base = self.baseURL
         path = adapt(traversable,self.pathProtocol).localPath
         return '%s/%s' % (base, path)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

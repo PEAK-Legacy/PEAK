@@ -5,7 +5,7 @@ import posixpath
 
 __all__ = [
     'Traversable', 'Decorator', 'ContainerAsTraversable',
-    'MultiTraverser',
+    'MultiTraverser', 'TraversalContext',
 ]
 
 
@@ -22,6 +22,129 @@ __all__ = [
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class TraversalContext(binding.Component):
+
+    protocols.advise(
+        instancesProvide = [ITraversalContext]
+    )
+
+    interaction = binding.Acquire(IWebInteraction)
+    traversable = binding.requireBinding("Traversable being traversed")
+
+    subject = binding.Once(
+        lambda s,d,a: s.traversable.getObject(s.interaction),
+        suggestParent=False
+    )
+
+    renderable = binding.Once(
+        lambda s,d,a: adapt(s.subject, s.interaction.pageProtocol, None)
+    )
+
+    def isNull(self):
+        ob = self.subject
+        return ob is NOT_FOUND or ob is NOT_ALLOWED
+
+    def checkPreconditions(self):
+        """Invoked before traverse by web requests"""
+        self.traversable.preTraverse(self.interaction)
+
+    def subcontext(self, name, ob):
+        ob = adapt(ob, self.interaction.pathProtocol)
+        binding.suggestParentComponent(self.traversable, name, ob)
+        return self.__class__(self, name, traversable = ob)
+
+    def asRenderable(self):
+        return self.renderable
+
+    def getObject(self):
+        return self.subject
+
+
+
+
+
+    def contextFor(self, name):
+        """Return a new traversal context for 'name'"""
+
+        if name == '..':
+            parent = self.getParentComponent()
+            if parent is not interaction.skin:
+                return parent
+            return self
+
+        elif name=='.':
+            return self
+
+        ob = self.traversable.traverseTo(name, self.interaction)
+        if ob is NOT_GIVEN or ob is NOT_FOUND:
+            ob = NullTraversable(ob)
+
+        return self.subcontext(name, ob)
+
+
+    def render(self):
+
+        """Return rendered value for context object"""
+
+        page = self.renderable
+
+        if page is None:
+            # Render the found object directly
+            return ob
+
+        return page.render(self)
+
+
+
+
+
+
+
+
+
+
+
+    def getAbsoluteURL(self):
+        """Absolute URL for object at this location"""
+        return self.traversable.getURL(self)
+
+
+    def getTraversedURL(self, absolute=True):
+        """Traversed-to URL"""
+        if not absolute:
+            return self.localPath
+
+        return '%s/%s' % (self.interaction.baseURL, self.localPath)
+
+
+    def _getLocalPath(self, d, a):
+
+        name = self.getComponentName()
+
+        if name:
+            base = self.getParentComponent().localPath
+            return posixpath.join(base, name)   # handles empty parts OK
+
+        raise ValueError("Traversable was not assigned a name", self)
+
+    localPath = binding.Once(_getLocalPath)
 
 
 
@@ -60,8 +183,6 @@ class Traversable(binding.Component):
             if not interaction.allows(ob, name):
                 return NOT_ALLOWED
 
-            loc = adapt(loc, interaction.pathProtocol)
-
         return loc
 
     def preTraverse(self, interaction):
@@ -78,6 +199,49 @@ class Traversable(binding.Component):
         raise ValueError("Traversable was not assigned a name", self)
 
     localPath = binding.Once(_getLocalPath)
+
+    def getURL(self,ctx):
+        return ctx.getTraversedURL()
+
+class NullTraversable(object):
+
+    protocols.advise(
+        instancesProvide = [IWebTraversable]
+    )
+
+    __slots__ = 'ob'
+
+    def __init__(self,ob):
+        self.ob = ob
+
+    def getObject(self, interaction):
+        return self.ob
+
+    def traverseTo(self, name, interaction):
+        # We never go anywhere...
+        return self
+
+    def getURL(self,ctx):
+        return ctx.getTraversedURL()
+
+    def preTraverse(self, interaction):
+        pass
+
+    localPath = None
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 class Decorator(Traversable):
@@ -108,7 +272,7 @@ class Decorator(Traversable):
         if loc is not NOT_FOUND:
 
             if interaction.allows(self, name):
-                return adapt(loc, interaction.pathProtocol)
+                return loc
 
             # Access failed, see if attribute is private
             guard = adapt(self,security.IGuardedObject,None)
@@ -147,7 +311,7 @@ class ContainerAsTraversable(Decorator):
             )
 
         if interaction.allows(ob):
-            return adapt(ob, interaction.pathProtocol)
+            return ob
 
         return NOT_ALLOWED
 
@@ -199,7 +363,7 @@ class MultiTraverser(Traversable):
             loc = newItems[0]
         else:
             loc = self._subTraverser(self, name, items = newItems)
-        return adapt(loc, interaction.pathProtocol)
+        return loc
 
     _subTraverser = lambda self, *args, **kw: self.__class__(*args,**kw)
 
@@ -212,8 +376,8 @@ class CallableAsWebPage(protocols.Adapter):
         asAdapterForTypes = [FunctionType, MethodType]
     )
 
-    def render(self, interaction):
-        request = interaction.request
+    def render(self, context):
+        request = context.interaction.request
         from zope.publisher.publish import mapply
         return mapply(self.subject, request.getPositionalArguments(), request)
 
