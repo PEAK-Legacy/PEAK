@@ -11,8 +11,9 @@
     * does not separate "lexing" or "tokenizing" from "parsing", so lexical
       analysis can be parse-context dependent
 
-    * uses "Packrat Parsing" for fast recursive-descent parsing at arbitrary
-      lookahead depths
+    * uses "Packrat Parsing" for fast recursive-descent parsing with arbitrary
+      lookahead depths (see http://www.pdos.lcs.mit.edu/~baford/packrat/ for
+      more on this innovative approach)
 
     * is designed to accomodate parsing things other than strings (e.g. object
       streams, SAX event lists,...?)
@@ -35,7 +36,6 @@
 
     - Some parts of the framework may not be 100% Unicode-safe, even if a
       UnicodeInput type were implemented.  Code review and patches appreciated.
-
 
  TODO:
 

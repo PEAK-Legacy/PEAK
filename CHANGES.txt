@@ -11,8 +11,12 @@ Fixes and Enhancements since Version 0.5 alpha 1
    methods change slightly, and explicit field definitions (using
    'model.structField' or similar) are required.  See PEAK's 'URL.Base'
    subclasses for examples.  There is also a sophisticated parsing and
-   formatting framework that can be used in place of the old regex-based
-   approach.
+   formatting framework (see the 'peak.naming.URL' and 'peak.util.fmtparse'
+   modules) that can be used in place of the old regex-based approach.
+
+ - Added 'peak.util.fmtparse', a parsing and formatting framework, and
+   integrated it with 'peak.model' so that any element type can have a
+   syntax for parsing from, or formatting to, a string.
 
  - Added 'binding.whenAssembled(...)' as syntax sugar for
    'binding.Once(...,activateUponAssembly=True)'.

@@ -13,29 +13,29 @@ Open Issues/To-Do Items
         the MetaDaemon package, with a ZConfig schema to run them in a daemon-like
 	application.
 
-      - Generate ZConfig schemas from 'peak.model' or MOF models?
-
-
     * Fix issue w/reading XMI 1.1 files where metamodel has nested packages
 
     * Generate UML 1.4 and 1.5 and CWM 1.0 and 1.1, and add them to the
       'setup.py' package lists.
 
-    * Get XMI writing in place, w/transaction support
 
 
  Targeted for 0.5 Beta 1
-
-    * 'peak.naming' refactorings: 'peak.model'-based syntax utilities for
-       creating address syntaxes.
 
     * Updated reference docstrings for 'peak.api', 'peak.binding',
       'peak.config', 'peak.exceptions', and 'peak.naming'.
 
     * Finish tutorial chapter 2 (?)
 
+    * Web publishing framework sufficient to deploy page-based or object-
+      published apps
+
+    * Get XMI writing in place, w/transaction support
+
     * On-the-fly class combination (think "runtime module inheritance",
       without the modules) for DMs.
+
+
 
 
 
