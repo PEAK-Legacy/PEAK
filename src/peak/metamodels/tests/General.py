@@ -178,6 +178,29 @@ class X(SEF.Element):
         # test of subclassing from existing feature...
         singular = 1
 
+    class Overwrite(featureBase):
+        pass
+
+    def OverwriteDoubled(self):
+        return self.__class__.Overwrite.doubled(self) * 3
+
+
+class SubclassOfX(X):
+
+    class Overwrite(featureBase):
+        # Even though we redefine the feature here,
+        # the old OverwriteDoubled method in the class
+        # should apply...
+        singular = 0
+
+
+
+
+
+
+
+
+
 
 
 class checkExport(TestCase):
@@ -200,6 +223,24 @@ class checkExport(TestCase):
         assert self.el.zebraDoubled()==[2,2]
         del self.el.zebra
         assert not self.el.__dict__.has_key('zebra')
+
+    def checkOverwrite(self):
+
+        self.el.Overwrite = 1
+        assert self.el.OverwriteDoubled()==6
+
+        e2 = SubclassOfX()
+        e2.Overwrite = 1
+        assert e2.OverwriteDoubled()==[1,1,1,1,1,1]
+
+
+
+
+
+
+
+
+
 
 
 

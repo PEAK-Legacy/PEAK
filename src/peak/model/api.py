@@ -680,7 +680,6 @@ class FeatureMC(Meta.ActiveDescriptor, type):
 
 
     def activate(self,klass,attrName):
-
         """Install the feature's getX/setX/etc. methods upon use in a class"""
 
         if attrName != self.__name__:
@@ -690,10 +689,11 @@ class FeatureMC(Meta.ActiveDescriptor, type):
             )
 
         for verb,methodName in self.methodNames.items():
-            setattr(klass, methodName, getattr(self,verb))
-
-
-
+            old = getattr(klass, methodName, None)
+            if old is None or hasattr(
+                getattr(old,'im_func',None),'namingConvention'
+            ):
+                setattr(klass, methodName, getattr(self,verb))
 
     def __init__(self, className, bases, classDict):
 
