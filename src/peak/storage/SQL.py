@@ -14,15 +14,12 @@ __all__ = [
 
 def sqlsafestr(s):
     return s.replace("'", "''")
-    
+
 def _nothing():
     pass
 
 def NullConverter(descr,value):
     return value
-
-
-
 
 
 
@@ -75,9 +72,9 @@ class SQLCursor(AbstractCursor):
 
 
     def __getattr__(self,attr):
-        return getattr(self._cursor,attr)
-
-
+        if not attr.startswith('_'):
+            return getattr(self._cursor,attr)
+        raise AttributeError,attr
 
 
 
@@ -125,7 +122,7 @@ class SQLCursor(AbstractCursor):
 
 
     def __iter__(self):
-	if not self._cursor.description:
+        if not self._cursor.description:
             return
 
         fetch = self._cursor.fetchmany
@@ -156,7 +153,6 @@ class SQLCursor(AbstractCursor):
 
         if not self.multiOK and self.nextset():
             raise exceptions.TooManyResults
-
 
 
 
@@ -226,7 +222,7 @@ class SQLConnection(ManagedConnection):
         if self.twoPhase:
             self._prepare()
 
-    
+
     def typeMap(self):
         tm = {}
         ps = self.TYPES_NS
@@ -281,7 +277,7 @@ class SQLConnection(ManagedConnection):
             if self.dbTxnStarted:
                 raise exceptions.TransactionInProgress(
                     """Database connection already has an active transaction"""
-                )       
+                )
         elif outsideTxn is not None:
             if not self.dbTxnStarted:
                 self.dbTxnStarted = self._startDBTxn()
@@ -332,6 +328,9 @@ class ValueBasedTypeConn(SQLConnection):
 
 class SybaseConnection(ValueBasedTypeConn):
 
+    protocols.advise(
+        instancesProvide=[ISQLObjectLister, ISQLDDLExtractor]
+    )
     DRIVER    = "Sybase"
     hostname  = binding.Obtain(PropertyName('Sybase.client.hostname'), default=None, noCache=True)
     appname   = binding.Obtain(PropertyName('Sybase.client.appname'),  default=None, noCache=True)
@@ -355,23 +354,17 @@ class SybaseConnection(ValueBasedTypeConn):
         db = self.API.connect(
             a.server, a.user, a.passwd, a.db, auto_commit=1, delay_connect=1
         )
-
         if self.hostname is not None:
             db.set_property(self.API.CS_HOSTNAME, self.hostname)
-
         if self.appname is not None:
             db.set_property(self.API.CS_APPNAME, str(self.appname))
-
         if self.textlimit is not None:
             db.set_property(self.API.CS_TEXTLIMIT, int(self.textlimit))
 
         db.connect()
-
         if self.textsize is not None:
             db.execute('set textsize %d' % int(self.textsize))
-
         return db
-
 
 
     dbTxnStarted = False    # Sybase doesn't auto-chain transactions...
@@ -407,9 +400,17 @@ class SybaseConnection(ValueBasedTypeConn):
             from sysobjects%s ORDER BY name''' % (typecase, addsel, addwhere), outsideTxn=None)
 
 
+
+
+
+
+
+
+
+
     def _helptext(self, name, l):
         '''Append sp_helptext lines to list l'''
-        
+
         rs = self("sp_helptext '%s'" % name, multiOK=True)
         more = True
         while more:
@@ -420,15 +421,15 @@ class SybaseConnection(ValueBasedTypeConn):
                     l.append(r['Text'].replace('\r\n', '\n'))
             more = rs.nextset()
 
-        
+
     def _get_permissions(self, name, l, sybase):
         '''Append permissions rules to list l'''
-        
+
         if sybase:
             sybkludge = ' + 204'
         else:
             sybkludge = ''
-        
+
         rs = self("""
             SELECT upper(k.name) as k, upper(a.name) as a,
                 user_name(p.uid) as g
@@ -440,34 +441,35 @@ class SybaseConnection(ValueBasedTypeConn):
             WHERE p.id = OBJECT_ID('%s')
             ORDER BY k.name, a.name, user_name(p.uid)
             """ % (sybkludge, name))
-            
+
         for r in rs:
             l.append('%s %s ON %s TO %s\ngo\n' % (
                 r.k, r.a, name, r.g)
             )
 
-            
+
+
     def getDDLForObject(self, name):
         name = sqlsafestr(name)
 
         r = ~ self("""select * from sysobjects where id = OBJECT_ID('%s')""" % name)
-        kind = r.type.strip() 
+        kind = r.type.strip()
 
         sybase = r.has_key('sysstat2')
-        
+
         if kind == 'P' and sybase:
             mode = (r.sysstat2 >> 4 & 0x3)
             mode = {0 : 'unchained', 1 : 'chained', 2 : 'anymode'}.get(mode)
         else:
             mode = None
-        
+
         if kind in ('P', 'TR', 'V'):
             kind, otype = {
                 'P' : ('PROCEDURE', 'proc'),
                 'TR': ('TRIGGER',   'trigger'),
                 'V' : ('VIEW',      'view')
-            }[kind] 
-    
+            }[kind]
+
             d = []
 
             if not sybase:
@@ -486,35 +488,47 @@ class SybaseConnection(ValueBasedTypeConn):
                 "        PRINT '<<< DROPPED %s %s >>>'\n" % (kind, name),
                 "END\ngo\n"
             ])
-            
+
+
             self._helptext(name, d)
-            
+
             d.extend([
                 "\ngo\nIF OBJECT_ID('%s') IS NOT NULL\n" % name,
                 "    PRINT '<<< CREATED %s %s >>>'\n" % (kind, name),
                 "ELSE\n",
                 "    PRINT '<<< FAILED CREATING %s %s >>>'\ngo\n" % (kind, name),
             ])
-            
+
             if mode is not None:
                 d.append("EXEC sp_procxmode '%s','%s'\ngo\n" % (name, mode))
-            
+
             self._get_permissions(name, d, sybase)
-            
+
             if not sybase:
                 d.append('SET ANSI_NULLS OFF\ngo\n')
                 d.append('SET QUOTED_IDENTIFIER OFF\ngo\n')
 
             return (otype, ''.join(d))
-        
-       
-    protocols.advise(
-        instancesProvide=[ISQLObjectLister, ISQLDDLExtractor]
-    )
+
 
 
     def _prepare(self):
         self('PREPARE TRAN')
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 class PGSQLConnection(ValueBasedTypeConn):
@@ -861,10 +875,10 @@ class CXOracleConnection(OracleBase):
 
     def _begin(self):
         if not hasattr(self.API,'TRANS_NEW'):
-            return self._doBegin()           
+            return self._doBegin()
         kind = self.API.TRANS_NEW
         if self.serializable:
-            kind += self.API.TRANS_SERIALIZABLE             
+            kind += self.API.TRANS_SERIALIZABLE
         self._doBegin(kind)
 
     def _doBegin(self,*extra):
