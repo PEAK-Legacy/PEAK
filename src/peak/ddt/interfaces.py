@@ -116,9 +116,13 @@ class ICellMapper(protocols.Interface):
         If an error occurs, mark the cell with an exception, and return 'None'.
         """
 
+    def format(targetInstance):
+        """Return 'extract(targetInstance)' as a formatted string"""
+
+
+
     def extract(targetInstance):
         """Return the value of the feature for targetInstance"""
-
 
         
     def suggestType(dataType):
@@ -128,10 +132,6 @@ class ICellMapper(protocols.Interface):
         type supplied by this method.  If a cell mapper does not know what type
         to use, it should default to 'model.String' unless this method is
         called."""
-
-
-
-
 
 
 

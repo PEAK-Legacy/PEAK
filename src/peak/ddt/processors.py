@@ -6,8 +6,8 @@ from kjbuckets import kjGraph, kjSet
 
 __all__ = [
     'titleAsPropertyName', 'titleAsMethodName', 'DocumentProcessor',
-    'AbstractProcessor', 'MethodProcessor', 'ModelProcessor',
-    'RowProcessor', 'ActionProcessor', 'Summary'
+    'AbstractProcessor', 'MethodChecker', 'ModelChecker',
+    'RecordChecker', 'ActionChecker', 'Summary'
 ]
 
 
@@ -203,11 +203,11 @@ class AbstractProcessor(binding.Component):
 
 
 
-class MethodProcessor(AbstractProcessor):
+class MethodChecker(AbstractProcessor):
 
-    """Perform tests by mapping columns to processor methods
+    """Perform tests by mapping columns to methods of the checker
 
-    If a table has columns named 'x', 'y', and 'z', this processor will call
+    If a table has columns named 'x', 'y', and 'z', this checker will call
     'self.x(cell)' for the first cell in each row, 'self.y(cell)' for the
     second, and so on across each row.  It's up to you to define those methods
     in a subclass to do whatever is appropriate for the given cell, such
@@ -326,11 +326,11 @@ class MethodProcessor(AbstractProcessor):
 
 
 
-class ModelProcessor(MethodProcessor):
+class ModelChecker(MethodChecker):
 
     """Test a domain object by getting/setting attributes or invoking methods
 
-    Unlike 'ddt.ModelProcessor', this class can be used without subclassing.
+    Unlike 'ddt.MethodChecker', this class can be used without subclassing.
     Just specify the 'targetClass' in the constructor, and optionally set
     'itemPerRow' to 'False' if you want one target instance to be used for
     all rows.  You can also supply 'methodTypes' to list the 'model.IType'
@@ -339,7 +339,7 @@ class ModelProcessor(MethodProcessor):
 
         [peak.ddt.processors]
 
-        MyProcessor = ddt.ModelProcessor(
+        MyProcessor = ddt.ModelChecker(
             targetClass = importString('my_model.MyElement'),
             methodTypes = Items(
                 someMethodReturningInt = model.Integer,
@@ -352,7 +352,7 @@ class ModelProcessor(MethodProcessor):
     test, the cell value will be converted to/from an integer or float as
     appropriate.
 
-    By default, 'ModelProcessor' checks whether a column heading ends in ':'
+    By default, 'ModelChecker' checks whether a column heading ends in ':'
     (indicating a "set" operation) or '?' (indicating a "get" operation).
     If you would like to override this, you can supply a 'columnSuffixes'
     argument to the constructor, or override it in a subclass.  See the
@@ -490,25 +490,69 @@ class ModelProcessor(MethodProcessor):
             mapper.suggestType(self._methodMap[name])
         return mapper
 
-class RowProcessor(ModelProcessor):
+class RecordChecker(ModelChecker):
 
-    """Verify that table contents match a computed dataset"""
+    """Verify that table contents match a computed recordset
 
-    mappers = ()    # mapper objects
-    columns = ()    # column names (for 'getData')
+    The records may be supplied via the 'records' constructor keyword, or by
+    defining a binding for 'records' in a subclass.  Records must be instances
+    of 'self.targetClass', but by default the 'targetClass' is taken from the
+    class of the first item in 'records', if any.
+
+    The checker will compare the contents of the supplied table with the
+    list of records, mark missing rows, add extra rows, and compare cells of
+    matching rows automatically.
+    """
+
+    def mappers(self):
+        """List of 'ICellMapper' objects corresponding to table columns"""
+        mappers = []        
+        for cell in self.headings:
+            try:
+                mappers.append(self.getMapper(cell.text))
+            except:
+                cell.exception()
+                return []        # don't process any rows
+
+        return mappers
+
+    mappers = binding.Make(mappers)
+
+    columns = binding.Make(
+        lambda self: [titleAsMethodName(cell.text) for cell in self.headings]
+    )
+
+    headings = binding.Require("The table row containing headers")
+    records  = binding.Require("The records to be validated")
+
+    # Default class is class of first record
+    targetClass = binding.Make(lambda self: self.records[0].__class__)
 
 
+
+    
     def processRows(self,rows):
 
         """Compare contents against generated data"""
 
         row = rows.next()
+        self.headings = row.cells
+
         table = row.table
 
         try:
-            if self.setupColumns(row):
-    
-                missing, extra = self.compare(list(rows), self.getData())
+            # We don't want to run a comparison if there was an error computing
+            # the mappers.  But, there may be an error computing the mappers if
+            # there are no records (since we can't get 'targetClass' then).
+            # So, if there are no records, we just go ahead because the
+            # comparison doesn't use the mappers.  But, if there *are* records,
+            # we want to make sure that we *can* get the mappers, and if not,
+            # don't bother comparing the contents.  Thus, these many lines of
+            # comments to explain 'not self.records or self.mappers'.  :)
+
+            if not self.records or self.mappers:
+
+                missing, extra = self.compare(list(rows), self.records)
     
                 for row in missing:
                     row.cell[0].annotation = "missing"
@@ -516,8 +560,9 @@ class RowProcessor(ModelProcessor):
     
                 for record in extra:
                     newRow = table.newRow(
-                        cells = [       # XXX mapper.format?
-                            table.newCell(text=str(value)) for value in record
+                        cells = [       
+                            table.newCell(text=mapper.format(record))
+                                for mapper in self.mappers
                         ]
                     )
                     newRow.cells[0].annotation = "extra"
@@ -525,37 +570,6 @@ class RowProcessor(ModelProcessor):
                     table.addRow(newRow)
         finally:
             self.tearDown() # do any cleanup needed
-
-
-
-
-
-
-    def setupColumns(self,row):
-        """Set up mappers and column names from heading row"""
-
-        self.mappers = mappers = []
-        self.columns = names = []
-
-        for cell in row.cells:
-            try:
-                mappers.append(self.getMapper(cell.text))
-                names.append(titleAsMethodName(cell.text))
-            except:
-                cell.exception()
-                return False        # don't process table body
-
-        return True     # okay to proceed
-
-
-    def getData(self):
-        """Return the rows to be compared against the table contents
-
-        The return value must be a list of indexable sequences of uniform
-        length, corresponding exactly in order to the columns listed in
-        'self.columns'.  The default implementation just returns an empty list.
-        """
-        return []
 
 
     def compareRow(self,row,record):
@@ -570,6 +584,33 @@ class RowProcessor(ModelProcessor):
 
     def tearDown(self):
         """Perform any post-comparison cleanup"""
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
     def compare(self,rows,data,column=0):
@@ -594,14 +635,12 @@ class RowProcessor(ModelProcessor):
         else:
             # Partition the data into subsets based on current column,
             # then assemble missing/extra data by recursing on subsets
-
-            recordMap = kjGraph(
-                [(record[column],record) for record in data]
-            )
-            parse = self.mappers[column].parse
-            rowMap = kjGraph(
-                [(parse(row.cells[column]),row) for row in rows]
-            )
+            mapper = self.mappers[column]
+            extract = mapper.extract
+            parse = mapper.parse
+            
+            recordMap = kjGraph([(extract(record),record) for record in data])
+            rowMap = kjGraph([(parse(row.cells[column]),row) for row in rows])
 
             column += 1
             missing, extra = [], []
@@ -611,27 +650,29 @@ class RowProcessor(ModelProcessor):
                 )
                 missing.extend(m)
                 extra.extend(e)
+
             return missing,extra
 
-class ActionProcessor(ModelProcessor):
+
+class ActionChecker(ModelChecker):
 
     """Test a domain object using a "script" of actions
 
-    This 'ModelProcessor' subclass reads actions from a table with three or
+    This 'ModelChecker' subclass reads actions from a table with three or
     more columns.  The first cell in each row is a "command", such as "start",
     "enter", "press", or "check", that is used to look up a method on the
     action processor itself.  The invoked method can then use the remaining
     cells from the row to obtain its arguments.  See the docs for the 'start',
     'enter', 'press', and 'check' methods for more details.
 
-    Note that tables used with 'ActionProcessor' must *not* include column
-    headings, as 'ActionProcessor' does not parse them.  (As a result, it also
+    Note that tables used with 'ActionChecker' must *not* include column
+    headings, as 'ActionChecker' does not parse them.  (As a result, it also
     has no need for a 'columnSuffix' attribute or 'parseHeader()' method.)
 
-    Unlike 'ModelProcessor', 'ActionProcessor' should not be given a specific
+    Unlike 'ModelChecker', 'ActionChecker' should not be given a specific
     'targetClass' to use.  Instead, the 'start' command is used to create an
     instance of a specified class, which is then used until another 'start'
-    command is executed.  Also, 'ActionProcessor' does not use the
+    command is executed.  Also, 'ActionChecker' does not use the
     'columnSuffixes' attribute, because it does not parse column headings.
     """
 
@@ -805,18 +846,18 @@ class PropertyAsCellMapper(object):
         self._set(instance, value)
 
     def invoke(self,instance,cell):
-        try:
-            raise TypeError("Descriptors can't be invoked", self.subject)
-        except:
-            cell.exception()
+        try:    raise TypeError("Descriptors can't be invoked", self.subject)
+        except: cell.exception()
 
     def parse(self,cell):
-        try:
-            return self.dataType.mdl_fromString(cell.text)
-        except:
-            cell.exception()
+        try:    return self.dataType.mdl_fromString(cell.text)
+        except: cell.exception()
+
+    def format(self,instance):
+        return self.dataType.mdl_toString(self.extract(instance))
 
 
+        
 
 class CallableAsCellMapper(PropertyAsCellMapper):
 
@@ -895,8 +936,8 @@ class FeatureAsCellMapper(PropertyAsCellMapper):
         except:
             cell.exception()
 
-
-
+    def format(self,instance):
+        return self._format(self.extract(instance))
 
 
 

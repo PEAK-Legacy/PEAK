@@ -3,7 +3,7 @@ import peak.ddt.api as ddt
 
 class ArithmeticModel(model.Element):
 
-    """Simple arithmetic model that's testable via 'ddt.ModelProcessor'"""
+    """Simple arithmetic model that's testable via 'ddt.ModelChecker'"""
 
     class x(model.Attribute):
         referencedType = model.Integer
@@ -39,7 +39,7 @@ class ArithmeticModel(model.Element):
 
 
 
-class ArithmeticDemo(ddt.MethodProcessor):
+class ArithmeticDemo(ddt.MethodChecker):
     """Demo processor for http://fit.c2.com/files/arithmetic.html
 
     Try running::
