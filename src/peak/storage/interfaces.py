@@ -2,6 +2,7 @@
 
 from Interface import Interface
 from Interface.Attribute import Attribute
+from peak.binding.interfaces import IComponent
 
 __all__ = [
     'ITransactionService', 'ITransactionParticipant', 'ICache',
@@ -37,7 +38,6 @@ class ITransactionService(Interface):
     def abort():
         """Abort the transaction, or raise OutsideTransaction if not in
         progress."""
-
 
     def fail():
         """Force transaction to fail (i.e. no commits allowed, only aborts)"""
@@ -207,7 +207,7 @@ class ITransactionErrorHandler(Interface):
 
 from Persistence.IPersistentDataManager import IPersistentDataManager
 
-class IDataManager(ITransactionParticipant, IPersistentDataManager):
+class IDataManager(IComponent,ITransactionParticipant,IPersistentDataManager):
 
     """Data manager for persistent objects or queries"""
 
@@ -287,7 +287,7 @@ class IWritableDM_SPI(IDataManager_SPI):
 
 # Connection interfaces
 
-class IManagedConnection(ITransactionParticipant):
+class IManagedConnection(IComponent,ITransactionParticipant):
 
     """Transactable "Connection" object that appears to always be open"""
 

@@ -289,8 +289,6 @@ class ActiveClass(type, ActiveDescriptor):
 
     """Type which gives its descriptors a chance to find out their names"""
 
-    __class_implements__ = IBindingSPI
-
     __name__ = 'ActiveClass'    # trick to make instances' __name__ writable
 
     def __init__(klass, name, bases, dict):
@@ -325,6 +323,8 @@ class ActiveClass(type, ActiveDescriptor):
 
     def _getConfigData(self, configKey, forObj):
         return NOT_FOUND
+
+
 
     def __parent__(self,d,a):
 
