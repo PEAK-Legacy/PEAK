@@ -222,7 +222,7 @@ class ParsedURL(OpaqueURL):
             return klass.fromURL(OpaqueURL(name))
 
         if klass._defaultScheme:
-            name = '%s:%s' % klass._defaultScheme, name
+            name = '%s:%s' % (klass._defaultScheme, name)
             return klass.fromURL(OpaqueURL(name))
 
         raise exceptions.InvalidName(name)
@@ -255,7 +255,7 @@ class ParsedURL(OpaqueURL):
                 d['scheme'] = url.scheme
                 d['body']   = url.body
                 
-                return klass.extractFromMapping(d)
+                return klass.fromMapping(d)
                 
         raise exceptions.InvalidName(url)
         
