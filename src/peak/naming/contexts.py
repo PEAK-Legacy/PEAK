@@ -85,23 +85,18 @@ class AbstractContext(Component):
         parser = self.schemeParser
         name = toName(name, self.nameClass, self._acceptStringURLs)
 
-        if name.isComposite:
-        
+        if name.isComposite:        
             if self._allowCompositeNames:
                 return self, name
-                
             else:
-                # convert to URL
-                name=ParsedURL('+',str(name))
+                name=ParsedURL('+',str(name))   # convert to URL
 
 
         if name.isURL:
 
             if parser:
-
                 if isinstance(name,parser):
                     return self, name
-
                 elif parser.supportsScheme(name.scheme):
                     return self, parser(name.scheme, name.body)
 
@@ -114,10 +109,15 @@ class AbstractContext(Component):
 
             return ctx, name
 
-        if parser and not self.nameClass:
+        if self.nameClass:
+            return self, name
+
+        elif parser:
             return self, parser(self.defaultScheme, str(name))
 
-        return self, name
+        raise exceptions.InvalidName(
+            "This context only supports URLs", name
+        )
 
 
 
