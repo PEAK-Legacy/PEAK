@@ -114,7 +114,7 @@ class Once(ActiveDescriptor):
     """
 
     attrName = None
-    provides = None
+    _provides = None
     
     def __init__(self, func, name=None, provides=None, doc=None):
         self.computeValue = func

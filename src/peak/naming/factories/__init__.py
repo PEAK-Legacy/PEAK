@@ -39,11 +39,6 @@ def getInitialContext(parentComponent=None, **options):
 
 
 
-
-
-
-
-
 def getURLContext(scheme, context, iface=IBasicContext):
 
     lscheme = scheme.lower()    

@@ -4,7 +4,7 @@ from Interface import Interface
 from Interface.Attribute import Attribute
 
 __all__ = [
-    'ITransactionService', 'ITransactionParticipant',
+    'ITransactionService', 'ITransactionParticipant', 'ICache',
     'ITransactionErrorHandler', 'BrokenTransaction',
     'NotReadyError', 'TransactionInProgress', 'OutsideTransaction',
     'IRack', 'IRackImplementation', 'IManagedConnection', 'IManagedConnImpl',
@@ -353,4 +353,45 @@ class IManagedConnImpl(Interface):
             method on 'self._connection', you can override this method
             to do so.
         """
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class ICache(Interface):
+
+    """Cache - a restricted subset of the standard dictionary interface"""
+
+    def get(key, default=None):
+        """Retrieve object denoted by 'key', or 'default' if not found
+        
+            Note that cache implementations do not have to guarantee that
+            'get()' will return items placed in the cache, or indeed
+            ever return anything other than 'default'.  For example, the
+            'NoCache' type always returns 'default'.
+        """
+
+    def __setitem__(key,value):
+        """Save 'value' in the cache under 'key'
+
+            Note that no particular lifetime for 'value' remaining in the
+            cache is required.  For example, the 'NoCache' type implements
+            this method as a no-op.
+        """
+
+    def clear():
+        """Clear cache contents, if any"""
+
+
+    def values():
+        """Return a sequence of the cache's contents"""
 
