@@ -10,6 +10,7 @@ __all__ = [
     'IDOMletState', 'IHTTPHandler', 'IHTTPApplication', 'INamespaceHandler',
     'IDOMletNode',    'IDOMletNodeFactory', 'IPlace', 'ITraversalContext',
     'IDOMletElement', 'IDOMletElementFactory', 'ISkin', 'IPolicyInfo',
+    'IViewTarget', 'IConfigurableLocation',
     'VIEW_NAMES',
 ]
 
@@ -35,7 +36,6 @@ class IAuthService(Interface):
 
     def getUser(environ):
         """Return a user object for the given WSGI 'environ'"""
-
 
 
 
@@ -108,7 +108,7 @@ class ITraversalContext(IInteraction):
     def parentContext():
         """Return this context's parent, or self if no parent"""
 
-    def traverseName(name):
+    def traverseName(name, default=NOT_GIVEN):
         """Return a new context obtained by traversing to 'name'"""
 
     def renderHTTP():
@@ -235,7 +235,7 @@ class IWebTraversable(Interface):
         'IHTTPHandler'.
         """
 
-    def traverseTo(name, context):
+    def traverseTo(name, context, default=NOT_GIVEN):
         """Return next 'ITraversalContext', or raise 'NotAllowed'/'NotFound'"""
 
     def getURL(context):
@@ -285,6 +285,27 @@ class ISkin(IResourceService):
 
 
 
+class IViewTarget(Interface):
+    """Thing that can be adapted "from", like a class, protocol, or instance"""
+
+    def registerWithProtocol(protocol,adapter):
+        """Register the given adapter "from" this source "to" the protocol
+
+        For example, an 'IViewTarget' adapter for a class would do something
+        like::
+
+            protocols.declareAdapter(
+                adapter,[protocol],forTypes=[self.subject]
+            )
+
+        while an 'IViewTarget' adapter for a protocol would use::
+
+            protocols.declareAdapter(
+                adapter,[protocol],forProtocols=[self.subject]
+            )           
+        """
+
+
 class INamespaceHandler(Interface):
     """A function returning a new context for a given context/ns/name"""
 
@@ -305,6 +326,27 @@ class INamespaceHandler(Interface):
         for the returned default is the caller's responsibility."""
 
 
+class IConfigurableLocation(IWebTraversable,IPlace):
+    """Location that can be configured via a sitemap file"""
+
+    def registerView(target,name,handler):
+        """Register 'handler' to implement view 'name' for 'target'
+
+        'target' must be an 'IViewTarget', and 'handler' must be an
+        'INamespaceHandler'.
+        """
+
+    def addContainer(container,permissionNeeded=None):
+        """Register 'container' for item lookups"""
+
+    def registerLocation(location_id,path):
+        """Register 'path' (relative to location) as target of 'location_id'
+
+        The registered location can then be accessed using the '++id++'
+        namespace."""
+
+
+
 class IDOMletState(IComponent):
 
     """A component representing a DOMlet's current execution state"""
@@ -319,7 +361,6 @@ class IDOMletState(IComponent):
         the state's parent components are searched and the first parent
         supporting the interface is returned.  'None' is returned if no parent
         supports the requested interface."""
-
 
 
 

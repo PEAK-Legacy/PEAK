@@ -173,19 +173,19 @@ class Context:
         environ['SCRIPT_NAME'] += self.policy.defaultMethod
         return self.policy.defaultMethod
 
-    def traverseName(self,name):
+    def traverseName(self,name,default=NOT_GIVEN):
         ns, nm = parseName(name)
         if ns:
             handler = self.policy.ns_handler(ns,None)
             if handler is None:
                 raise errors.NotFound(self,name,self.current)
-            return handler(self, self.current, ns, nm, name)
+            return handler(self, self.current, ns, nm, name, default)
         if name=='..':
             return self.parentContext()
         elif not name or name=='.':
             return self
         else:
-            return IWebTraversable(self.current).traverseTo(name,self)
+            return IWebTraversable(self.current).traverseTo(name,self,default)
 
     def requireAccess(self,qname,*args,**kw):
         result = self.allows(*args,**kw)

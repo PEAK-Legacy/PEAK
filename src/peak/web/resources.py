@@ -190,13 +190,13 @@ class ResourceProxy(object):
     def preTraverse(self, ctx):
         return IWebTraversable(ctx.getResource(self.path)).preTraverse(ctx)
 
-    def traverseTo(self, name, ctx):
-        return IWebTraversable(ctx.getResource(self.path)).traverseTo(name,ctx)
+    def traverseTo(self, name, ctx, default=NOT_GIVEN):
+        return IWebTraversable(
+            ctx.getResource(self.path)
+        ).traverseTo(name,ctx,default)
 
     def getURL(self,ctx):
         return IWebTraversable(ctx.getResource(self.path)).getURL(ctx)
-
-
 
 
 
@@ -245,44 +245,44 @@ def bindResource(path, pkg=None, **kw):
 
 
 class DefaultLayer(Resource):
-
     cache = fileCache = binding.Make(dict)
     permissionNeeded = security.Anybody
 
-    def traverseTo(self, name, ctx):
+    def traverseTo(self, name, ctx, default=NOT_GIVEN):
         if name in self.cache:
             result = self.cache[name]
-            if result is NOT_FOUND:
-                raise NotFound(ctx,name)
-            return ctx.childContext(name,result)
-
-        # convert name to a property name
-        name = PropertyName.fromString(name)
-
-        # look it up in allowed-packages namespace
-        ok = ALLOWED_PACKAGES.of(self).get(name,None)
-        if not ok:
-            self.cache[name]=NOT_FOUND
-            raise NotFound(ctx,name)
-
-        try:
-            pkg, mod = findPackage(name)
-        except ImportError:
-            self.cache[name] = NOT_FOUND
-            raise NotFound(ctx,name)
         else:
-            filename = os.path.dirname(mod.__file__)
-            if filename in self.fileCache:
-                d = self.fileCache[filename]
-            else:
-                d = PACKAGE_FACTORY(self)(
-                    self, pkg, filename=filename, isRoot=True
-                )
-                self.fileCache[filename] = d
+            # convert name to a property name
+            name = PropertyName.fromString(name)
 
-        # cache and return it
-        self.cache[name] = self.cache[pkg] = d
-        return ctx.childContext(name,d)
+            # look it up in allowed-packages namespace
+            ok = ALLOWED_PACKAGES.of(self).get(name,None)
+            if not ok:
+                result = self.cache[name] = NOT_FOUND
+            else:
+                try:
+                    pkg, mod = findPackage(name)
+                except ImportError:
+                    result = self.cache[name] = NOT_FOUND
+                else:
+                    filename = os.path.dirname(mod.__file__)
+                    if filename in self.fileCache:
+                        result = self.fileCache[filename]
+                    else:
+                        result = PACKAGE_FACTORY(self)(
+                            self, pkg, filename=filename, isRoot=True
+                        )
+                        self.fileCache[filename] = result
+
+                    # cache and return it
+                    self.cache[name] = self.cache[pkg] = result
+
+        if result is NOT_FOUND:
+            if default is NOT_GIVEN:
+                raise NotFound(ctx,name)
+            return default
+
+        return ctx.childContext(name,result)
 
 
 class TemplateResource(FSResource):
@@ -319,8 +319,8 @@ class TemplateResource(FSResource):
 
     theTemplate = binding.Make(theTemplate)
 
-    def traverseTo(self, name, ctx):
-        return IWebTraversable(self.theTemplate).traverseTo(name, ctx)
+    def traverseTo(self, name, ctx, default=NOT_GIVEN):
+        return IWebTraversable(self.theTemplate).traverseTo(name, ctx, default)
 
     def getURL(self, ctx):
         # We're a method, so use our context URL, not container URL

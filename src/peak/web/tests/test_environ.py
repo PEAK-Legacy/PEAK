@@ -367,9 +367,6 @@ class TestNamespaces(TestCase):
 
 
 
-
-
-
 NO_SUCH_NAME = '__nonexistent__$$@'
 
 TestClasses = (

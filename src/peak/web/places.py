@@ -1,13 +1,13 @@
 from peak.api import *
 from interfaces import *
-from types import FunctionType, MethodType
+from types import FunctionType, MethodType, ClassType
 import posixpath
 from errors import NotFound, NotAllowed, WebException
 from environ import traverseAttr, traverseDefault
 from urlparse import urljoin
 
 __all__ = [
-    'Traversable', 'Place', 'Decorator', 'MultiTraverser',
+    'Traversable', 'Place', 'Decorator', 'MultiTraverser', 'Location',
 ]
 
 
@@ -47,8 +47,8 @@ class Traversable(binding.Component):
         instancesProvide = [IWebTraversable]
     )
 
-    def traverseTo(self, name, ctx):
-        return traverseDefault(ctx, self, 'attr', name, name)
+    def traverseTo(self, name, ctx, default=NOT_GIVEN):
+        return traverseDefault(ctx, self, 'attr', name, name, default)
 
     def preTraverse(self, ctx):
         return ctx    # Should do any traversal requirements checks
@@ -162,6 +162,88 @@ class Place(Traversable):
 
 
 
+class TypeAsViewTarget(protocols.Adapter):
+
+    protocols.advise(
+        instancesProvide = [IViewTarget],
+        asAdapterForTypes=[type,ClassType]
+    )
+
+    def registerWithProtocol(self,protocol,adapter):
+        protocols.declareAdapter(
+            adapter,[protocol],forTypes=[self.subject]
+        )
+
+
+class ProtocolAsViewTarget(protocols.Adapter):
+    protocols.advise(
+        instancesProvide = [IViewTarget],
+        asAdapterForProtocols=[protocols.IOpenProtocol]
+    )
+
+    def registerWithProtocol(self,protocol,adapter):
+        protocols.declareAdapter(
+            adapter,[protocol],forProtocols=[self.subject]
+        )
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class Location(Place,binding.Configurable):
+    """A location suitable for configuration via site map"""
+
+    protocols.advise(
+        instancesProvide = [IConfigurableLocation]
+    )
+
+    containers = binding.Make(list)
+
+    def addContainer(self,container,permissionNeeded=None):
+        binding.suggestParentComponent(self,None,container)
+        self.containers.append((permissionNeeded,container))
+
+    def traverseTo(self, name, ctx, default=NOT_GIVEN):
+        result = Place.traverseTo(self,name,ctx,NOT_FOUND)
+        if result is NOT_FOUND:
+            for perm,cont in self.containers:
+                if perm is not None:
+                    if not ctx.allows(cont,permissionNeeded=perm):
+                        continue
+                context = ctx.clone(current=cont)
+                result = context.traverseName(name,NOT_FOUND)
+                if result is not NOT_FOUND:
+                    return result
+
+        if default is NOT_GIVEN:
+            raise NotFound(ctx,name)
+        return default
+
+    def registerLocation(self,location_id,path):
+        path = adapt(path,web.TraversalPath)
+        self.registerProvider(
+            'peak.web.locations.'+location_id,config.Value(path)
+        )
+
+    def registerView(self,target,name,handler):
+        IViewTarget(target).registerWithProtocol(
+            config.registeredProtocol(self,VIEW_NAMES+'.'+name),
+            lambda ob:handler
+        )
+
 class Decorator(Traversable):
 
     """Traversal adapter whose local attributes add/replace the subject's"""
@@ -180,13 +262,13 @@ class Decorator(Traversable):
     asTraversableFor = classmethod(asTraversableFor)
 
 
-    def traverseTo(self, name, ctx):
+    def traverseTo(self, name, ctx, default=NOT_GIVEN):
         try:
             loc = traverseAttr(ctx, self, 'attr', name, name, NOT_FOUND)
             if loc is not NOT_FOUND:
                 return loc
 
-        except NotAllowed:           
+        except NotAllowed:
             # Access failed, see if attribute is private
             guard = adapt(self, security.IGuardedObject, None)
 
@@ -195,7 +277,7 @@ class Decorator(Traversable):
                 raise
 
         # attribute is absent or private, fall through to underlying object
-        return traverseDefault(ctx, self.ob, 'attr', name, name)
+        return traverseDefault(ctx, self.ob, 'attr', name, name, default)
 
 
 
@@ -214,14 +296,13 @@ class MultiTraverser(Traversable):
             ctx = IWebTraversable(item).preTraverse(ctx)
         return ctx
 
-    def traverseTo(self, name, ctx):
+    def traverseTo(self, name, ctx, default=NOT_GIVEN):
 
         newItems = []
 
         for item in self.items:
-            try:
-                loc = IWebTraversable(item).traverseTo(name, ctx)
-            except NotFound:    # XXX NotAllowed too?
+            loc = IWebTraversable(item).traverseTo(name, ctx, NOT_FOUND)
+            if loc is NOT_FOUND:    # XXX trap NotAllowed too?
                 continue
             else:
                 # we should suggest the parent, since our caller won't
@@ -229,7 +310,9 @@ class MultiTraverser(Traversable):
                 newItems.append(loc.current)
 
         if not newItems:
-            raise NotFound(ctx,name)
+            if default is NOT_GIVEN:
+                raise NotFound(ctx,name)
+            return default
 
         if len(newItems)==1:
             loc = newItems[0]
@@ -238,7 +321,6 @@ class MultiTraverser(Traversable):
         return ctx.childContext(name,loc)
 
     _subTraverser = lambda self, *args, **kw: self.__class__(*args,**kw)
-
 
 
 

@@ -76,7 +76,7 @@ class Skin(MultiTraverser,Place):
             layers.append(layer)
         return layers
 
-    items = binding.Make(items)
+    items = binding.Make(items, suggestParent=False)
 
 
 

@@ -80,6 +80,88 @@ http://127.0.0.1/++resources++/peak.running/EventDriven.xml
 
 
 
+class LocationTests(TestCase):
+
+    def setUp(self):
+        self.root = web.Location(testRoot())
+        self.policy = web.TestPolicy(self.root)
+        self.ctx = self.policy.newContext()
+
+    def testBasics(self):
+        self.failUnless(web.IConfigurableLocation(self.root) is self.root)
+        self.assertEqual(self.root.place_url, '')
+
+    def testContainers(self):
+        c1 = {'bar':'baz'}; c2={'foo':'bar'}
+        self.assertEqual(self.ctx.traverseName('foo',None), None)
+        self.assertEqual(self.ctx.traverseName('bar',None), None)
+        self.root.addContainer(c1,security.Nobody)
+        self.assertEqual(self.ctx.traverseName('foo',None), None)
+        self.assertEqual(self.ctx.traverseName('bar',None), None)
+        self.root.addContainer(c2)
+        self.assertEqual(self.ctx.traverseName('foo',None).current, 'bar')
+        self.assertEqual(self.ctx.traverseName('bar',None), None)
+        self.root.addContainer(c1,security.Anybody)
+        self.assertEqual(self.ctx.traverseName('foo',None).current, 'bar')
+        self.assertEqual(self.ctx.traverseName('bar',None).current, 'baz')
+
+    def testOffers(self):
+        self.root.addContainer({'bar':'baz'})
+        self.root.registerLocation('test.1','bar')
+        self.assertEqual(
+            self.ctx.traverseName('++id++test.1',None).current,'baz'
+        )
+        self.root.registerLocation('test2','.')
+        self.failUnless(self.ctx.traverseName('++id++test2') is self.ctx)
+
+    def testTypeView(self):
+        bar_handler = lambda ctx,o,ns,nm,qn,d: ctx.childContext(qn,"baz")
+        self.root.registerView(int,'bar',bar_handler)
+        self.root.addContainer({'foo':123})
+        ctx = web.TraversalPath('foo/@@bar').traverse(self.ctx)
+        self.assertEqual(ctx.current,'baz')
+
+    def testProtocolView(self):
+        bar_handler = lambda ctx,o,ns,nm,qn,d: ctx.childContext(qn,"baz")
+        self.root.registerView(protocols.IOpenProtocol,'bar',bar_handler)
+        self.root.addContainer({'foo':web.IWebTraversable})
+        ctx = web.TraversalPath('foo/@@bar').traverse(self.ctx)
+        self.assertEqual(ctx.current,'baz')
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 class ResourceTests(TestCase):
 
     def testSubObjectRejection(self):
@@ -122,7 +204,7 @@ class ResourceTests(TestCase):
 
 
 TestClasses = (
-    MethodTest1, MethodTest2, ResourceTests,
+    LocationTests, MethodTest1, MethodTest2, ResourceTests,
 )
 
 def test_suite():
