@@ -49,8 +49,10 @@ Fixes and Enhancements since Version 0.5 alpha 2
    that errors due to an unusable parameter type occur at class creation time
    instead of waiting until lookup time.
 
- - The following 'binding' forms are now deprecated, and will go away before
+ - The following 'binding' forms are now DEPRECATED, and will go away before
    0.5 beta is released:
+
+   'bindSequence(key1,key2,...)' -- use 'bindTo([key1,key,...])'
 
    'bindToProperty(x,y)' -- use 'bindTo(PropertyName(x),default=y)'
 
