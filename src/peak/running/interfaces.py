@@ -7,7 +7,7 @@ __all__ = [
 
     'CLUSTER',
 
-    'IPeriodicTask', 'ISystemScheduler', 'IAdaptiveTask', 'IAdaptiveTaskSPI',
+    'IPeriodicTask', 'ITaskScheduler', 'IAdaptiveTask', 'IAdaptiveTaskSPI',
 
 ]
 
@@ -39,13 +39,13 @@ class IPeriodicTask(Interface):
 
 
 
-class ISystemScheduler(Interface):
+class ITaskScheduler(Interface):
 
-    """System-wide task and I/O scheduler
+    """Single-threaded task and I/O scheduler
 
-        There should be only one instance per interpreter.  This is our
-        access point to Twisted or a replacement thereof, with some additions
-        for better managing periodic tasks and "transient" servers such as an
+        Only one instance is useful per thread.  This is our access point to
+        Twisted or a replacement thereof, with some additions for better
+        managing periodic tasks and "transient" servers such as an
         all-daemon worker process or a webserver-invoked FastCGI process."""
 
     def addPeriodic(ptask):
