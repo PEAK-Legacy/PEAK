@@ -60,7 +60,7 @@ def adapt(obj, protocol, default=_marker, factory=IMPLEMENTATION_ERROR):
             if result is not None:
                 return result
         except TypeError:
-            #XXX if exc_info()[2].tb_frame is not _getframe():
+            if exc_info()[2].tb_next is not None:
                 raise
 
     try:
@@ -73,7 +73,7 @@ def adapt(obj, protocol, default=_marker, factory=IMPLEMENTATION_ERROR):
             if result is not None:
                 return result
         except TypeError:
-            #XXX if exc_info()[2].tb_frame is not _getframe():
+            if exc_info()[2].tb_next is not None:
                 raise
 
     if default is _marker:
