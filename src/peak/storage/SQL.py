@@ -341,6 +341,8 @@ class SybaseConnection(ValueBasedTypeConn):
         'proc' : 'P',
         'table' : 'U',
         'view' : 'V',
+        'trigger' : 'TR',
+        'rule' : 'R',
     }
 
     def _open(self):

@@ -715,23 +715,14 @@ class ISQLObjectLister(Interface):
         the object name, and a column 'obtype' second, with one of
         the following values standardized:
 
-            table, systable, view, proc, index, synonym
+            table, systable, view, proc, index, synonym, trigger,
+            rule
 
         if obtypes is given, it shall be a sequence of the above types,
         and rows shall only be returned for the given types.
         """
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
+class ISQLDDLExtractor(Interface):
+    def getDDLForObject(name):
+        """Return string with DDL necessary to recreate named object"""
