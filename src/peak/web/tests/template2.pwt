@@ -1,4 +1,4 @@
-<body xmlns:this="mid:pwt-this@peak-dev.org">
+<body xmlns:this="mid:pwt-this@peak-dev.org" with:page-layout="/default">
 <h1 domlet="text:foo">Title Goes Here</h1>
 
 <ul domlet="list:bar">

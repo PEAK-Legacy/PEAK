@@ -82,7 +82,7 @@ class BasicTest(TestCase):
 
 class NSTest(BasicTest):
 
-    template = "data:,"+quote("""<body>
+    template = "data:,"+quote("""<body with:page-layout="/default">
 <h1 content:replace="foo">Title Goes Here</h1>
 <ul content:list="bar">
     <li this:is="listItem" content:replace="."></li>
@@ -97,7 +97,7 @@ class NSTest(BasicTest):
 
 class NSTest2(NSTest):
 
-    template = "data:,"+quote("""<body>
+    template = "data:,"+quote("""<body with:page-layout="/default">
 <h1 content:replace="foo">Title Goes Here</h1>
 <ul><div this:list="bar">
     <li this:is="listItem"><span this:replace=".">foo</span></li>
@@ -105,7 +105,7 @@ class NSTest2(NSTest):
 </body>""")
 
 class ListHeaderFooterTest(BasicTest):
-    template = "data:,"+quote("""<ul content:list="bar"
+    template = "data:,"+quote("""<ul content:list="bar" this:is="page"
     ><li this:is="header">Header</li><li this:is="listItem" content:replace="."
     ></li><li this:is="footer">Footer</li></ul>""")
 
@@ -155,10 +155,92 @@ class MiscTests(TestCase):
         # Paths should be traversed from the start point
         c2 = ctx.traverseName('p')
         self.assertEqual(c2.current, (1,2,3))
-        
+
         # And data should just be returned
         c2 = ctx.traverseName('d')
         self.assertEqual(c2.current, (123))
+
+
+
+    def renderDoc(self,doc):
+        ctx = self.ctx.childContext('x',doc)
+        ctx.shift() # get rid of 'index.html'
+        return ctx.renderHTTP()
+
+    def renderFragment(self,doc):
+        ctx = self.ctx.childContext('x',doc)
+        ctx.shift() # get rid of 'index.html'
+        data = []
+        doc.renderFor(ctx, pwt.DOMletState(doc, write=data.append))
+        return ''.join(data)
+        
+    def testContentType(self):
+        s,h,b = self.renderDoc(
+            pwt.TemplateDocument(
+                self.app,
+                content_type='text/plain', params={'page-layout':'/default'}
+            )
+        )
+        self.assertEqual(h,[('Content-type','text/plain')])
+
+
+    def testRenderFragment(self):
+        doc = pwt.TemplateDocument(self.app,params={'page-layout':'/default'})
+        doc.addChild(pwt.Literal(doc,xml="foo"))
+        doc.fragment = pwt.Literal(doc,xml="bar")
+        doc.addChild(doc.fragment)
+        s,h,b = self.renderDoc(doc)
+        self.assertEqual(''.join(b), "foobar")
+        self.assertEqual(self.renderFragment(doc), "bar")
+
+    def testRenderPage(self):
+        doc = pwt.TemplateDocument(self.app)
+        doc.addChild(pwt.Literal(doc,xml="foo"))
+        doc.page = pwt.Literal(doc,xml="bar")
+        doc.addChild(doc.page)
+        s,h,b = self.renderDoc(doc)
+        self.assertEqual(''.join(b), "bar")
+
+
+
+    def testNonRendering(self):
+        doc = pwt.TemplateDocument(self.app,fragment=None)
+        self.assertRaises(TypeError,self.renderFragment,doc)
+        doc = pwt.TemplateDocument(self.app,page=None)
+        self.assertRaises(web.UnsupportedMethod,self.renderDoc,doc)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -192,12 +274,94 @@ class ParserTests(TestCase):
         self.assertRaises(SyntaxError,self.endElement)
 
 
+
+
+
+
+
+
+
+
+
+
+
+    def testLayoutArgs(self):
+        doc = self.parse("data:,"+quote(
+            """<html with:page-layout="baz" with:foo="bar"
+                with:fragment-layout="spam" content:is="fragment"
+                this:is="page" with:content-type="text/plain"/>"""))
+
+        self.assertEqual(doc.content_type,"text/plain")
+        self.assert_(isinstance(doc.page,pwt.Replace))
+        self.assert_(isinstance(doc.fragment,pwt.Replace))
+
+        page = doc.params['page']
+        fragment = doc.params['fragment']
+        self.assert_(fragment.getParentComponent() is page)
+
+        # We used 'layout' options, so page/frag attrs will be driven by those
+        self.assert_(doc.fragment.getParentComponent() is doc)
+        self.assert_(doc.page.getParentComponent() is doc)
+
+
+    def testNonLayoutArgs(self):
+        doc = self.parse("data:,"+quote(
+            """<html with:foo="bar"
+                this:is="page" content:is="fragment"/>"""))
+        self.assert_(isinstance(doc.page,pwt.Element))
+        self.assert_(isinstance(doc.fragment,pwt.Element))
+
+        # We used non-layout options, so page/frag attrs will be related
+        self.assert_(doc.fragment.getParentComponent() is doc.page)
+        self.assert_(doc.page.getParentComponent() is doc)
+
+
+    def testDefaultLayoutArgs(self):
+        doc = self.parse("data:,"+quote("""<html/>"""))
+        self.assert_(doc.fragment)
+        self.assert_(not doc.page)
+
+
+
+
+
+
 TestClasses = (
     MiscTests, ParserTests, BasicTest, NSTest, NSTest2, ListHeaderFooterTest
 )
 
 def test_suite():
     return TestSuite([makeSuite(t,'test') for t in TestClasses])
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

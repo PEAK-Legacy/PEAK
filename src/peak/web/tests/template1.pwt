@@ -1,4 +1,4 @@
-<html><head>
+<html with:page-layout="/default"><head>
 <title>Template test: <span domlet="text.notag:foo"/></title>
 </head>
 <body>

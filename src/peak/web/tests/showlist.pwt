@@ -1,4 +1,4 @@
-<html>
+<html with:page-layout="/default">
  <head>
   <title>Python Object <span this:replace="@@repr"/></title>
  </head>

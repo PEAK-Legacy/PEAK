@@ -581,24 +581,27 @@ class TemplateDocument(TaglessElement):
         classProvides = [naming.IObjectFactory],
     )
 
-
     acceptParams = '*',     # handle any top-level parameters
 
-
     def renderFor(self, ctx, state):
-        return super(TemplateDocument,self).renderFor(ctx.parentContext(),state)
-
+        if not self.fragment:
+            raise TypeError("Can't be used as a fragment")
+        return self.fragment.renderFor(ctx.parentContext(),state)
 
     def handle_http(self, ctx):
         name = ctx.shift()
         if name is not None:
             raise web.NotFound(ctx,name,self)   # No traversal to subobjects!
+        if not self.page:
+            raise web.UnsupportedMethod(ctx)    # We're not a page!
         data = []
-        self.renderFor(
-            ctx, DOMletState(self, write=data.append)
+        self.page.renderFor(
+            ctx.parentContext(), DOMletState(self, write=data.append)
         )
-        # XXX set content-type header
-        return '200 OK', [], [str(unicodeJoin(data))]    # XXX encoding
+        h = []
+        if self.content_type:
+            h.append(('Content-type',self.content_type))
+        return '200 OK', h, [str(unicodeJoin(data))]    # XXX encoding
 
 
     def getObjectInstance(klass, context, refInfo, name, attrs=None):
@@ -608,6 +611,44 @@ class TemplateDocument(TaglessElement):
         )
 
     getObjectInstance = classmethod(getObjectInstance)
+
+
+    content_type = binding.Make(lambda self: self.params.get('content-type'))
+
+    def layoutDOMlet(self,d,attrName):
+
+        if attrName+'-layout' in self.params:
+            path = self.params[attrName+'-layout'] + ''  # ensure stringness
+            if path=='/nothing':
+                return None
+            elif path=='/default':
+                return super(TemplateDocument,self)
+            else:
+                return Replace(self, dataSpec=path, params=self.params.copy())
+
+        if attrName in self.params:
+            return IDOMletRenderable(self.params[attrName])
+
+        if attrName=='fragment':
+            # It's okay to be a fragment by default
+            return super(TemplateDocument,self)
+
+    fragment = page = binding.Make(layoutDOMlet)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -647,7 +688,7 @@ class Replace(Element):
 class ReplaceXML(Replace):
     escaped = False
 
-            
+
 
 
 
