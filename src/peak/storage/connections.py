@@ -60,16 +60,16 @@ class AbstractCursor(binding.Component):
         self._delBinding('_conn')
 
 
-    def execute(self, *args, **kw):
-        raise NotImplementedError
-
-
     def __iter__(self, onlyOneSet=True):
         raise NotImplementedError
 
 
     def nextset(self):
         raise NotImplementedError
+
+
+
+
 
 
 

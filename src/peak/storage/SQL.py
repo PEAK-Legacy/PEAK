@@ -167,9 +167,8 @@ class GenericSQL_URL(naming.ParsedURL):
     _supportedSchemes = ('sybase',)
 
     pattern = """(?x)
-
-    (   # optional user:pass@
-    
+    (//)?
+    (   # optional user:pass@    
         (?P<user>[^:]+)
         (:(?P<passwd>[^@]+))?
         @
@@ -201,6 +200,7 @@ class GenericSQL_URL(naming.ParsedURL):
             context.creationParent,
             address = self
         )
+
 
 
 drivers = {
