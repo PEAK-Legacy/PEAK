@@ -34,6 +34,47 @@ class ICB_URL(naming.URL.Base):
 
 
 
+class IICBListener(Interface):
+    connection = Attribute("Connection we're listening to")
+
+    def loginOK(con):
+        """Login was successful"""
+
+    def publicMessage(con, nick, message):
+        """Public message was sent by nick"""
+
+    def privateMessage(con, nick, message):
+        """Private message was sent to us by nick"""
+
+    def Status(con, category, message):
+        """Status message in a given category"""
+
+    def Error(con, message):
+        """Report an error message"""
+
+    def importantMessage(con, category, message):
+        """Report an important message in category"""
+
+    def serverExit(con, self):
+        """Server Exiting"""
+
+    def commandOutput(con, data):
+        """Output resulting (maybe) from a command"""
+
+    def protocolLevel(con, protover, host, server):
+        """Initial protocol information"""
+
+    def beepFrom(con, nick):
+        """We got beeped by nick"""
+
+    def gotPing(con, message):
+        """We were pinged by the server"""
+
+    def unknownPacket(con, kind, data):
+        """We got an unknown packet"""
+
+
+
 class ICBConnection(binding.Component):
     address = binding.Require(
         "Address used to create the actual connection",
@@ -156,29 +197,29 @@ class ICBConnection(binding.Component):
         target = self.target
         kind, data = p[0], p[1:].split('\x01')
         if kind == 'a':
-            target.loginOK()
+            target.loginOK(self)
         elif kind == 'b':
-            target.publicMessage(*data)
+            target.publicMessage(self, *data)
         elif kind == 'c':
-            target.privateMessage(*data)
+            target.privateMessage(self, *data)
         elif kind == 'd':
-            target.Status(*data)
+            target.Status(self, *data)
         elif kind == 'e':
-            target.Error(data[0])
+            target.Error(self, data[0])
         elif kind == 'f':
-            target.importantMessage(*data)
+            target.importantMessage(self, *data)
         elif kind == 'g':
-            target.serverExit()
+            target.serverExit(self)
         elif kind == 'i' and data[0] == 'co':
-            target.commandOutput(data[1])
+            target.commandOutput(self, data[1])
         elif kind == 'j':
-            target.protocolLevel(int(data[0]), data[1], data[2])
+            target.protocolLevel(self, int(data[0]), data[1], data[2])
         elif kind == 'k':
-            target.beepFrom(data[0])
+            target.beepFrom(self, data[0])
         elif kind == 'l':
-            target.gotPing(data[0])
+            target.gotPing(self, data[0])
         else:
-            target.unknownPacket(kind, data)
+            target.unknownPacket(self, kind, data)
 
 
 
@@ -193,47 +234,6 @@ class ICBConnection(binding.Component):
     protocols.advise(
         classProvides = [naming.IObjectFactory]
     )
-
-
-
-class IICBListener(Interface):
-    connection = Attribute("Connection we're listening to")
-
-    def loginOK():
-        """Login was successful"""
-
-    def publicMessage(nick, message):
-        """Public message was sent by nick"""
-
-    def privateMessage(nick, message):
-        """Private message was sent to us by nick"""
-
-    def Status(category, message):
-        """Status message in a given category"""
-
-    def Error(message):
-        """Report an error message"""
-
-    def importantMessage(category, message):
-        """Report an important message in category"""
-
-    def serverExit(self):
-        """Server Exiting"""
-
-    def commandOutput(data):
-        """Output resulting (maybe) from a command"""
-
-    def protocolLevel(protover, host, server):
-        """Initial protocol information"""
-
-    def beepFrom(nick):
-        """We got beeped by nick"""
-
-    def gotPing(message):
-        """We were pinged by the server"""
-
-    def unknownPacket(kind, data):
-        """We got an unknown packet"""
 
 
 
