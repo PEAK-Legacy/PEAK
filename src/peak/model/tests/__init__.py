@@ -52,6 +52,13 @@ class Factor(model.Element):
     )
 
 
+class XX(model.Element):
+
+    class yy(model.Sequence):
+        referencedType = model.Integer
+        separator = ','
+
+
 class parseFmtTest(TestCase):
 
     def checkSimpleParse(self):
@@ -60,18 +67,11 @@ class parseFmtTest(TestCase):
         Thing.mdl_fromString('(X,((X)),(X,X,(X)))')
 
 
-
-
-
-
-
-
-
-
-
-
-
-
+    def checkFeatureParse(self):
+        self.assertEqual(
+            {'yy':[1,2,3]}, fmtparse.parse('1,2,3', XX.yy._syntax)
+        )
+            
 
 
 

@@ -449,16 +449,16 @@ class StringConstant(Rule, str):
 
 
 
-class Repeat(Sequence):
+class Repeat(Rule):
     minCt = 0
     maxCt = None
     sepMayTerm = False  # is separator allowed as terminator?
-
+    closingChars = ''
     separator = Epsilon()
 
     def parse(self, input, produce, startState):
 
-        rule = super(Repeat,self)
+        rule = self.rule
         state = startState
         data = []
 
@@ -495,7 +495,7 @@ class Repeat(Sequence):
         if not data:
             return
 
-        rule = super(Repeat,self)
+        rule = self.rule
 
         for d in data[:-1]:
             rule.format(d,write)
@@ -511,22 +511,79 @@ class Repeat(Sequence):
             return memo[key][0]
 
         kw = self.__dict__.copy()
-        if 'rules' in kw:
-            del kw['rules']
-
-        kw['closingChars'] = terminators + self.sep.getOpening('',memo)
-
+        if 'rule' in kw:
+            del kw['rule']
         del kw['initArgs']
 
-        r = self.__class__(*self.initArgs, **kw)
+        kw['closingChars'] = uniquechars(terminators+self.closingChars)
+        r = self.__class__(
+            self.rule.withTerminators(kw['closingChars'],memo),
+            **kw
+        )
         memo[key] = r, self
-        r._computeRules(memo)
+        r._computeRule(memo)
         return r
 
 
-    def __init__(self,*__args,**_kw):
-        super(Repeat,self).__init__(*__args,**_kw)
+
+
+
+
+
+
+    def _computeRule(self, memo=None):
+
+        rule = self.rule = adapt(self.initArgs[0],IRule)
+
+        closeAll = uniquechars(self.closingChars)
+
+        if not memo:
+            memo = { (id(self),closeAll): (self, self) }
+
+        key = id(rule), closeAll
+
+        if key in memo:
+            rule = memo[key][0]
+        else:
+            rule = rule.withTerminators(closeAll, memo)
+            memo[key] = rule, self
+
+        return rule
+
+    rule = Make(lambda self: self._computeRule(), attrName='rule')
+
+    closingChars = ''
+
+    def __init__(self, *__args, **__kw):
+        if len(__args)<>1:
+            return self.__init__(Sequence(*__args),**__kw)
+        self.__dict__.update(__kw)
+        self.initArgs = __args
         self.sep = adapt(self.separator, IRule)
+        if 'closingChars' not in self.__dict__:
+            self.closingChars = self.sep.getOpening('',{})
+
+    def getOpening(self,closing,memo):
+        if 'rule' not in self.__dict__:
+            self.rule = self._computeRule(memo)
+        return self.rule.getOpening(closing,memo)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
