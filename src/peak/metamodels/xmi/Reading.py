@@ -1,4 +1,4 @@
-from TW import *
+from TW.API import *
 from TW.Utils.SOX import Node, Document, load
 from kjbuckets import kjGraph
 
@@ -121,14 +121,14 @@ class XMIFactory:
 
 
 
-class XMIMapMaker(RegistryBuilder):
+class XMIMapMaker(RegistryMaker):
 
     def registerItem(self,reg,attName,attVal):
         for k in getattr(attVal,'_XMINames',()):
             reg[k] = attName
         return reg
         
-XMIMapMaker = XMIMapMaker()
+XMIMapMaker = XMIMapMaker('_XMIMap')
 
 
 
@@ -164,7 +164,7 @@ XMIMapMaker = XMIMapMaker()
 
 class XMIReading(Bundle):
 
-    prefix = SEF.prefix
+    bundlePrefix = SEF.bundlePrefix
     
     class StructuralFeature:
     
@@ -185,7 +185,7 @@ class XMIReading(Bundle):
         def _fromXMI(self,node):
             return self
 
-        _XMIMap = XMIMapMaker
+    Classifier += XMIMapMaker
 
 
     class Reference:
@@ -203,10 +203,8 @@ class XMIReading(Bundle):
 
 
 
-    topLevelItems = '_fromXMI', '_XMIroot', 'importFromXMI', '_XMIMap'
+    topLevelItems = '_fromXMI', '_XMIroot', 'importFromXMI'
     
-    _XMIMap = XMIMapMaker
-
     def _fromXMI(self,node):
         return node
 
@@ -221,3 +219,5 @@ class XMIReading(Bundle):
     def importFromXMI(self,filename_or_stream):
         return load(filename_or_stream, self._XMIroot())
 
+    
+XMIReading += XMIMapMaker

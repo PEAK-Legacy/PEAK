@@ -1,7 +1,7 @@
 from kjbuckets import *
 from TW.Utils import SOX
 
-from TW import Template, SEF
+from TW.API import Template, SEF
 from TW.Utils.Misc import upToDate
 from TW.Utils.Pluralizer import Pluralizer
 
@@ -95,7 +95,7 @@ class MetaModelNode(SOX.Node):
         apply(SOX.Node.__init__.im_func,(self,name,atts or {}),kw)
 
         for a in atts.keys():
-            setattr(self,a,str(atts[a]).encode('latin-1'))   # De-unicode attrs!
+            setattr(self,a,str(atts[a]))   # De-unicode attrs!
 
 
     def _newNode(self,name,atts):

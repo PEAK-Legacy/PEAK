@@ -39,7 +39,7 @@ MetaModel = MMX.load(mmx,cache,UMLPlurals,name='UML_MetaModel')
 
 
 
-from TW import Catalyst
+from TW.API import Catalyst
 
 class _ComputedFeatures(Catalyst):
 
