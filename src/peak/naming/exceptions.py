@@ -146,7 +146,7 @@ class CannotProceedException(NamingException):
     )
     
     otherattrs   = NamingException.otherattrs + (
-        'altNameCtx', 'environment', 'opInterface'
+        'altNameCtx', 'environment', 'requiredInterface'
     )
 
     __slots__ = list( formattables + otherattrs )

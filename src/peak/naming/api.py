@@ -1,6 +1,6 @@
 """Functions directly usable from the TW.Naming package"""
 
-__all__ = ['InitialContext', 'lookup', 'parseName']
+__all__ = ['InitialContext', 'lookup']
 
 import SPI
 
@@ -27,32 +27,15 @@ def InitialContext(environ=None, **kw):
     return SPI.getInitialContext(environ)
 
 
-def lookup(name, requiredInterface=None):
-    """Look up 'name' in default context, returning 'requiredInterface'"""
-    return defaultInitialContext().lookup(name, requiredInterface)
-
-
-def parseName(name):
-    """Parse 'name' in default initial context, and return a name object"""
-    return defaultInitialContext().parseName(name)
+def lookup(name):
+    """Look up 'name' in a default context, returning 'requiredInterface'"""
+    return InitialContext().lookup(name)
 
 
 
 
-_initCtx = None
 
-def defaultInitialContext():
 
-    """Return the default initial context used for simple lookups/parsing
 
-    Note: any changes made to the default initial context will affect all
-    lookups done with 'Naming.lookup()' and 'Naming.parseName()', so be
-    sure you know what you're doing if you do something with this!  That's
-    why this function isn't exported from the 'Naming.API' module."""
 
-    if _initCtx is None:
-        global _initCtx
-        _initCtx = getInitialContext()
-
-    return _initCtx
 

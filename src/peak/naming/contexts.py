@@ -5,14 +5,14 @@ from Names import *
 import SPI
 
 
-def URLsNotAccepted(self, name):
-    """Default operation handler for URL-type names"""
-    raise InvalidNameException("Did not expect URL: %r" % name)
-
-
 NNS_NAME = toName('/')
 
 _marker = object()
+
+
+
+
+
 
 
 
@@ -107,7 +107,7 @@ class Operation(object):
     def skipNNSboundary(self):
 
         if self.remainingName and not self.remainingName[0]:
-            self.remainingName = CompositeName(self.remainingName[1:])
+            self.remainingName = self.remainingName[1:]
             
         operation.localName += NNS_NAME
 
@@ -239,7 +239,7 @@ class RenameOperation(NonbindingOperation):
     def skipNNSboundary(self):
         super(RenameOperation,self).skipNNSboundary()
         if self.remainingNewName and not self.remainingNewName[0]:
-            self.remainingNewName = CompositeName(self.remainingNewName[1:])
+            self.remainingNewName = self.remainingNewName[1:]
 
 
 
@@ -363,7 +363,7 @@ class AbstractContext(object):
             [ toName(part, nameClass) for part in name[:localElements] ]
         )
 
-        rest = CompositeName(name[localElements:])       
+        rest = name[localElements:]
         return mine, rest
 
 

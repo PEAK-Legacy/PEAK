@@ -70,13 +70,13 @@ class Name(tuple):
 
     def __add__(self, other):
         return self.__class__(
-            super(Name,self).__add__(self,other)
+            super(Name,self).__add__(other)
         )
 
-
-
-
-
+    def __getslice__(self, *args):
+        return self.__class__(
+            super(Name,self).__getslice__(*args)
+        )
 
 
 
