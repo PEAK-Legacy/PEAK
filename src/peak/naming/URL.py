@@ -52,7 +52,7 @@ class ExtractQuoted(Rule):
 
     def parse(self, inputStr, produce, startAt):
         out = []
-        pos = inputStr.parse(self.rule, out.append, startAt)
+        pos = self.rule.parse(inputStr, out.append, startAt)
         if isinstance(pos,ParseError):
             return pos
 

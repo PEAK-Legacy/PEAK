@@ -11,10 +11,6 @@
     * does not separate "lexing" or "tokenizing" from "parsing", so lexical
       analysis can be parse-context dependent
 
-    * uses "Packrat Parsing" for fast recursive-descent parsing with arbitrary
-      lookahead depths (see http://www.pdos.lcs.mit.edu/~baford/packrat/ for
-      more on this innovative approach)
-
     * is designed to accomodate parsing things other than strings (e.g. object
       streams, SAX event lists,...?)
 
@@ -22,7 +18,7 @@
       that can be fitted into the framework to handle specialized input types,
       context passing, etc.
 
- The first four features were critical requirements for PEAK's URL-parsing
+ The first three features were critical requirements for PEAK's URL-parsing
  tools.  We wanted to make it super-easy to create robust URL syntaxes that
  would produce canonical representations of URLs from input data as well as
  sensibly parse input strings.  And part of "super-easy" meant not having
@@ -78,6 +74,10 @@ from peak.binding.once import Make  # XXX Core being used in a utility!
 
 def uniquechars(s):
     return ''.join(dict([(c,c) for c in s]))
+
+
+
+
 
 
 class IRule(protocols.Interface):
@@ -211,26 +211,12 @@ class Input(object):
 
     def __init__(self, *__args,**__kw):
         super(Input,self).__init__(*__args,**__kw)
-        self.reset()
 
     def reset(self):
-        self.memo = {}
+        pass
 
     def parse(self, rule, produce, state):
-
-        key = rule, state
-        memo = self.memo
-
-        if key in memo:
-            state, result = memo[key]
-        else:
-            result = []
-            state = rule.parse(self, result.append, state)
-            memo[key] = state, result
-
-        map(produce,result)
-        return state
-
+        return rule.parse(self, produce, state)
 
     def error(self, rule, state, *args):
         return ParseError(rule=rule, state=state, *args)
@@ -240,6 +226,20 @@ class Input(object):
 
     def finished(self,state):
         raise NotImplementedError
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -296,10 +296,10 @@ class Sequence(Rule):
     def parse(self, input, produce, startState):
 
         state = startState
-        data = []
+        data = []; append = data.append
 
         for rule in self.rules:
-            state = input.parse(rule, data.append, state)
+            state = rule.parse(input, append, state)
             if isinstance(state,ParseError):
                 return state
 
@@ -372,7 +372,7 @@ class Optional(Sequence):
     """Wrapper that makes a construct optional"""
 
     def parse(self, input, produce, startState):
-        state = input.parse(super(Optional,self),produce,startState)
+        state = super(Optional,self).parse(input,produce,startState)
         if isinstance(state,ParseError):
             return startState
         return state
@@ -458,11 +458,11 @@ class Repeat(Rule):
 
     def parse(self, input, produce, startState):
 
-        rule = self.rule
+        rule = self.rule.parse
         state = startState
-        data = []
+        data = []; append = data.append; sep=self.sep.parse
 
-        newState = input.parse(rule, data.append, state)
+        newState = rule(input, append, state)
 
         if isinstance(newState,ParseError):
             if self.minCt>0:
@@ -473,12 +473,12 @@ class Repeat(Rule):
         ct = 1; maxCt = self.maxCt; state = newState
         while not input.finished(state) and (maxCt is None or ct<maxCt):
 
-            newState = input.parse(self.sep, data.append, state)
+            newState = sep(input, append, state)
             if isinstance(newState,ParseError):
                 break   # no more items
 
             state = newState
-            newState = input.parse(rule, data.append, state)
+            newState = rule(input, append, state)
             if isinstance(newState,ParseError):
                 if self.sepMayTerm:
                     break   # if sep can be term, it's okay to end here
@@ -579,7 +579,7 @@ class Tuple(Sequence):
     def parse(self, input, produce, startState):
 
         out = []
-        state = input.parse(super(Tuple,self), out.append, startState)
+        state = super(Tuple,self).parse(input, out.append, startState)
 
         if isinstance(state,ParseError):
             return state
@@ -707,7 +707,7 @@ class ExtractString(Rule):
 
     def parse(self, input, produce, startState):
         out = []
-        state = input.parse(self.rule, out.append, startState)
+        state = self.rule.parse(input, out.append, startState)
         if isinstance(state,ParseError):
             return state
 
@@ -793,7 +793,7 @@ class Conversion(Rule):
     def parse(self, input, produce, startState):
 
         out = []
-        state = input.parse(self.rule, out.append, startState)
+        state = self.rule.parse(input, out.append, startState)
         if isinstance(state,ParseError):
             return state
 
@@ -878,7 +878,7 @@ class Alternatives(Rule):
 
     def parse(self, input, produce, startState):
         for rule in self.alternatives:
-            state = input.parse(rule,produce,startState)
+            state = rule.parse(input,produce,startState)
             if not isinstance(state,ParseError):
                 return state
         else:
@@ -909,7 +909,7 @@ class Set(Alternatives):
 
         while rules and not input.finished(state):
             for rule in rules:
-                newPos = input.parse(rule,produce,state)
+                newPos = rule.parse(input,produce,state)
                 if isinstance(newPos,ParseError):
                     continue
                 else:
@@ -1000,7 +1000,7 @@ def parse(input, rule):
 
     out = []
     input = adapt(input,IInput)
-    state = input.parse(rule, out.append, input.startState())
+    state = rule.parse(input, out.append, input.startState())
 
     if isinstance(state,ParseError):
         raise state
