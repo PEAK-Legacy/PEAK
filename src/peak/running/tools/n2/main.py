@@ -2,10 +2,10 @@
 
 from peak.api import *
 from peak.running.commands import AbstractCommand, InvocationError
+from peak.util.readline_stack import *
 
 import sys, os, code, __main__
 from getopt import getopt
-from rlhist import *
 
 from interfaces import *
 import ns, sql

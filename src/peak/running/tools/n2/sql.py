@@ -5,7 +5,7 @@ SQL Interactor
 from peak.api import *
 from commands import *
 from interfaces import *
-from rlhist import *
+from peak.util.readline_stack import *
 
 from tempfile import mktemp
 import sys, os, time, re
