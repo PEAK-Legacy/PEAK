@@ -123,7 +123,37 @@ class PersistentQuery(Persistent, ListProxy):
 
 class QueryLink(ListProxy):
 
-    """PersistentQuery proxy for use in Collection, Sequence, or Reference"""
+    """PersistentQuery proxy for use in Collection or Sequence
+
+    QueryLinks are designed primarily for use with relational databases and
+    other systems that implement one-to-many relationships via a pointer on
+    the "one" side, and a query on the "many" side. The QueryLink is used on
+    the "many" side, while the "one" side is implemented via a
+    straightforward load/save on the "pointer" (foreign key).
+
+    A QueryLink is a proxy for use in an object's loaded state, to reference
+    a persistent query whose contents represent the value of a collection or
+    sequence property.  Using a QueryLink keeps changes to the object from
+    affecting the underlying query, and they also prevent execution of the
+    query if the object is modified without actually looking at the results
+    of the query.
+
+    In this way, if you have a collection with 10,000 things in it
+    ("virtually"), it isn't necessary to load the list of 10,000 things to
+    add an item to it.  What happens is that if the query hasn't already
+    executed, the QueryLink ignores the modification attempts (under the
+    assumption that if you look at the collection later, the query will
+    execute and be up-to-date). If the query has executed, the QueryLink
+    makes a copy of the query results, and modifies the copy.
+
+    Last, but not least, whenever any operation (whether read or write) is
+    performed on a QueryLink, it checks whether the data in the underlying
+    query has been refreshed since the QueryLink made a copy of it, and if
+    so, discards its local copy.
+
+    Normal usage looks like this (in a DM's '_load()' method)::
+
+        return {'someCollection': QueryLink(aQueryDM[foreignKey]), ..."""
 
     __cacheData = None
     __localData = None
@@ -173,7 +203,6 @@ class QueryLink(ListProxy):
             self.data += self._cast(other)
         return self
 
-
     def append(self, item):
         if self.__isActive():
             self.data.append(item)
@@ -192,6 +221,18 @@ class QueryLink(ListProxy):
     def extend(self, other):
         if self.__isActive():
             self.data.extend(self._cast(other))
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
