@@ -39,7 +39,7 @@ cdef int isOurs(void *obj):
     lock = <bindingLock> obj
     return lock.id == id
 
-cdef class OnceDescriptor:
+cdef class BaseDescriptor:
 
     """Data descriptor base class for 'Once' bindings"""
 
@@ -101,6 +101,9 @@ cdef class OnceDescriptor:
 
         try:
             value = self.computeValue(ob, d, n)
+            if not self.isVolatile:
+                value = self.onSet(ob, n, value)
+
         except:
             # We can only remove the guard if it was put in
             # place by this thread, and another thread hasn't
@@ -118,9 +121,6 @@ cdef class OnceDescriptor:
 
         return value
 
-
-
-
     def usageError(self):
         raise TypeError(
             "%s was used in a type which does not support active bindings,"
@@ -129,11 +129,11 @@ cdef class OnceDescriptor:
         )
 
 
+    def computeValue(self, ob, idict, attrName):
+        raise AttributeError, attrName
 
-__all__ = ['OnceDescriptor']
 
-
-
+__all__ = ['BaseDescriptor']
 
 
 

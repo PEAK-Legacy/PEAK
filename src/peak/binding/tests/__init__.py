@@ -53,9 +53,12 @@ class assemblyTracer(binding.Component):
         super(assemblyTracer,self).uponAssembly()
         self.log(('exiting',self.id))
 
-    def notifyUponAssembly(self,child):
-        self.log(('requesting notify for',child,'by',self))
-        super(assemblyTracer,self).notifyUponAssembly(child)
+    # The following operation doesn't work because self.log may not be
+    # initialized yet.  If you want to log 'notifyUponAssembly' events, it has
+    # to be done some other way.
+    #def notifyUponAssembly(self,child):
+    #    self.log(('requesting notify for',child,'by',self))
+    #    super(assemblyTracer,self).notifyUponAssembly(child)
 
 class counter(object):
     v = 0
@@ -64,7 +67,7 @@ class counter(object):
         return self.v
 
 class Outermost(assemblyTracer):
-    foo = None
+    foo = binding.requireBinding("A component goes here")
 
 class InnerMost(assemblyTracer):
     thingy = binding.whenAssembled(lambda *x: None)
@@ -75,10 +78,7 @@ class Middle(assemblyTracer):
         return InnerMost(self,
             id=self.id+1, log=self.log, activated=self.activated
         )
-
     child = binding.whenAssembled(child)
-
-
 
 class AssemblyTests(TestCase):
 
@@ -166,7 +166,7 @@ testList = [1,2,'buckle your shoe']
 
 class DescriptorData(binding.Component):
 
-    thing1 = "this is my thing"
+    thing1 = binding.Constant("this is my thing")
     thing2 = binding.bindTo('thing1')
     thing3 = binding.requireBinding('This is required')
     thing4 = binding.bindSequence('thing1','thing2')

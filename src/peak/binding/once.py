@@ -3,15 +3,20 @@
 from __future__ import generators
 from peak.api import NOT_FOUND, protocols, adapt
 from peak.util.imports import importObject, importString
-from interfaces import IComponentFactory
+from interfaces import IComponentFactory, IComponent
 from _once import *
 from protocols import IOpenProvider, IOpenImplementor, NO_ADAPTER_NEEDED
 from peak.util.advice import metamethod
+from warnings import warn
 
 __all__ = [
     'Once', 'New', 'Copy', 'Activator', 'ActiveClass', 'ActiveClasses',
     'getInheritedRegistries', 'classAttr', 'Singleton', 'metamethod',
+    'Attribute', 'ComponentSetupWarning', 'suggestParentComponent'
 ]
+
+class ComponentSetupWarning(UserWarning):
+    """Large iterator passed to suggestParentComponent"""
 
 
 def supertype(supertype,subtype):
@@ -33,9 +38,18 @@ def supertype(supertype,subtype):
     raise TypeError("Not sub/supertypes:", supertype, subtype)
 
 
-class OnceBase(OnceDescriptor):
+
+class Descriptor(BaseDescriptor):
+
     def __init__(self,**kw):
-        for k,v in kw.items(): setattr(self,k,v)
+
+        klass = self.__class__
+
+        for k,v in kw.items():
+            if hasattr(klass,k):
+                setattr(self,k,v)
+            else:
+                raise TypeError("%r has no keyword argument %r" % (klass,k))
 
 
 
@@ -66,21 +80,48 @@ def getInheritedRegistries(klass, registryName):
 
 
 
+def suggestParentComponent(parent,name,child):
+
+    """Suggest to 'child' that it has 'parent' and 'name'
+
+    If 'child' does not support 'IComponent' and is a container that derives
+    from 'tuple' or 'list', all of its elements that support 'IComponent'
+    will be given a suggestion to use 'parent' and 'name' as well.  Note that
+    this means it would not be a good idea to use this on, say, a 10,000
+    element list (especially if the objects in it aren't components), because
+    this function has to check all of them."""
+
+    ob = adapt(child,IComponent,None)
+
+    if ob is not None:
+        # Tell it directly
+        ob.setParentComponent(parent,name,suggest=True)
+
+    elif isinstance(child,(list,tuple)):
+
+        ct = 0
+
+        for ob in child:
+
+            ob = adapt(ob,IComponent,None)
+
+            if ob is not None:
+                ob.setParentComponent(parent,name,suggest=True)
+            else:
+                ct += 1
+                if ct==100:
+                    warn(
+                        ("Large iterator for %s; if it will never"
+                         " contain components, this is wasteful" % name),
+                        ComponentSetupWarning, 3
+                    )
 
 
 
 
 
 
-
-
-
-
-
-
-
-
-def New(obtype, name=None, offerAs=(), doc=None, activateUponAssembly=False):
+def New(obtype, **kw):
 
     """One-time binding of a new instance of 'obtype'
 
@@ -103,16 +144,8 @@ def New(obtype, name=None, offerAs=(), doc=None, activateUponAssembly=False):
     such as when you're not deriving from a standard PEAK base class.)
     """
 
-    def mkNew(s,d,a):
-        factory = importObject(obtype)
-        cfact = adapt(factory, IComponentFactory, None) # XXX introspection!
-
-        if cfact is factory:
-            return factory(s,a)
-        else:
-            return factory()
-
-    return Once( mkNew, name, offerAs, doc, activateUponAssembly)
+    kw.setdefault('doc', 'New %s' % obtype)
+    return Once( lambda s,d,a: importObject(obtype)(), **kw)
 
 
 
@@ -121,7 +154,15 @@ def New(obtype, name=None, offerAs=(), doc=None, activateUponAssembly=False):
 
 
 
-def Copy(obj, name=None, offerAs=(), doc=None, activateUponAssembly=False):
+
+
+
+
+
+
+
+
+def Copy(obj, **kw):
 
     """One-time binding of a copy of 'obj'
 
@@ -148,7 +189,7 @@ def Copy(obj, name=None, offerAs=(), doc=None, activateUponAssembly=False):
 
     from copy import copy
     return Once(
-        (lambda s,d,a: copy(obj)), name, offerAs, doc, activateUponAssembly
+        (lambda s,d,a: copy(obj)), **kw
     )
 
 
@@ -162,61 +203,56 @@ def Copy(obj, name=None, offerAs=(), doc=None, activateUponAssembly=False):
 
 
 
-class Once(OnceDescriptor):
+class AttributeClass(type):
 
-    """One-time Properties
+    """Help attribute classes keep class docs separate from instance docs"""
 
-        Usage ('Once(callable,name)')::
+    def __new__(meta, name, bases, cdict):
+        classDoc = cdict.get('__doc__')
+        cdict['__doc__'] = Descriptor(
+            attrName = '__doc__',
+            computeValue = lambda s,d,a: s.doc,
+            ofClass = lambda a,k: classDoc
+        )
+        return supertype(AttributeClass,meta).__new__(meta,name,bases,cdict)
 
-            class someClass(object):
 
-                def anAttr(self, __dict__, attrName):
-                    return self.foo * self.bar
 
-                anAttr = Once(anAttr, 'anAttr')
 
-        When 'anInstanceOfSomeClass.anAttr' is accessed for the first time,
-        the 'anAttr' function will be called, and saved in the instance
-        dictionary.  Subsequent access to the attribute will return the
-        cached value.  Deleting the attribute will cause it to be computed
-        again on the next access.
 
-        The 'name' argument is optional.  If not supplied, it will default
-        to the '__name__' of the supplied callable.  (So in the usage
-        example above, it could have been omitted.)
 
-        'Once' is an "active descriptor", so if you place an
-        instance of it in a class which supports descriptor naming (i.e.,
-        has a metaclass derived from 'binding.Activator'), it will
-        automatically know the correct attribute name to use in the instance
-        dictionary, even if it is different than the supplied name or name of
-        the supplied callable.  However, if you place a 'Once' instance in a
-        class which does *not* support descriptor naming, and you did not
-        supply a valid name, attribute access will fail with a 'TypeError'.
-    """
 
-    declareAsProviderOf = ()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class Attribute(Descriptor):
+
+    __metaclass__ = AttributeClass
+
+    offerAs = ()
     activateUponAssembly = False
-
-    def __repr__(self):
-        return "Once binding: %s" % (self.__doc__ or '')
-
-
-
-    def __init__(self,
-        func, name=None, offerAs=(), doc=None, activateUponAssembly=False):
-
-        self.computeValue = func
-        self.attrName = self.__name__ = name or getattr(func,'__name__',None)
-        self.declareAsProviderOf = offerAs
-        self.__doc__ = doc or getattr(func,'__doc__',None) or self.attrName
-        if activateUponAssembly:
-            self.activateUponAssembly = True
-
-
-    def computeValue(self, obj, instanceDict, attrName):
-        raise NotImplementedError
-
+    doc = None
+    adaptTo = None
+    suggestParent = True
 
     def activate(self,klass,attrName):
         setattr(klass, attrName, self._copyWithName(attrName))
@@ -224,7 +260,7 @@ class Once(OnceDescriptor):
 
 
     def _copyWithName(self, attrName):
-        return OnceBase(
+        return Descriptor(
             attrName     = attrName,
             computeValue = self.computeValue,
             ofClass      = self.ofClass,
@@ -232,13 +268,18 @@ class Once(OnceDescriptor):
         )
 
 
+    def __repr__(self):
+        return "Binding: %s" % (self.__doc__ or '(undocumented)')
 
 
+    def onSet(self, obj, attrName, value):
 
+        if self.adaptTo is not None:
+            value = adapt(value, self.adaptTo)
 
-
-
-
+        if self.suggestParent:
+            suggestParentComponent(obj, attrName, value)
+        return value
 
 
 
@@ -283,6 +324,47 @@ class Once(OnceDescriptor):
 
         # If we get here, we were not found under the name we were given
         self.usageError()
+
+
+class Once(Attribute):
+    """One-time Properties
+
+        Usage ('Once(callable)')::
+
+            class someClass(object):
+
+                def anAttr(self, __dict__, attrName):
+                    return self.foo * self.bar
+
+                anAttr = Once(anAttr, attrName='anAttr')
+
+        When 'anInstanceOfSomeClass.anAttr' is accessed for the first time,
+        the 'anAttr' function will be called, and saved in the instance
+        dictionary.  Subsequent access to the attribute will return the
+        cached value.  Deleting the attribute will cause it to be computed
+        again on the next access.
+
+        The 'attrName' argument is optional.  If not supplied, it will default
+        to the '__name__' of the supplied callable.  (So in the usage
+        example above, it could have been omitted.)
+
+        'Once' is an "active descriptor", so if you place an
+        instance of it in a class which supports descriptor naming (i.e.,
+        has a metaclass derived from 'binding.Activator'), it will
+        automatically know the correct attribute name to use in the instance
+        dictionary, even if it is different than the supplied name or name of
+        the supplied callable.  However, if you place a 'Once' instance in a
+        class which does *not* support descriptor naming, and you did not
+        supply a valid name, attribute access will fail with a 'TypeError'."""
+
+    def __init__(self, computeValue, **kw):
+        self.computeValue = computeValue
+        kw.setdefault('attrName',getattr(computeValue, '__name__', None))
+        kw.setdefault('doc',
+            getattr(computeValue,'__doc_',None) or kw['attrName']
+        )
+        super(Once,self).__init__(**kw)
+
 
 
 class classAttr(object):
@@ -469,7 +551,7 @@ class ActiveClass(Activator):
     __cname__ = Once(__cname__)
 
 
-ActiveClasses = (Once, ActiveClass, classAttr)
+ActiveClasses = (Attribute, ActiveClass, classAttr)
 
 
 

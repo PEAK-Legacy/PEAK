@@ -6,17 +6,11 @@ Open Issues/To-Do Items
 
       - get rid of cruft (such as JNDI 'attrs' hangover) and duplication
 
-      - make adaptation available for bindings (e.g. 'adaptTo=' keyword),
-        including when bindings are set via kwargs in component constructor
-
       - streamline descriptor mechanisms used by binding and model to make them
         uniform and cleanly functional (in both senses of the word functional)
 
       - clean up attribute metadata framework and get rid of all the special
         cases (e.g. isinstance() checks, special attribute names, etc.)
-
-      - add class framework for bindings so that new features like 'adaptTo'
-        don't have to be added to a jillion individual binding constructors
 
       - make indirection convenient (e.g. bind to looking up something from
         another binding)
@@ -30,6 +24,7 @@ Open Issues/To-Do Items
 
       - Viewer/Controller adaptation mechanisms
 
+
  Targeted for 0.5 Beta 1
 
     * Up-to-date reference docstrings for all packages
@@ -38,6 +33,11 @@ Open Issues/To-Do Items
 
     * Web publishing framework sufficient to deploy page-based or object-
       published apps
+
+
+
+
+
 
  Targeted for 0.5 Final Release (or sooner)
 

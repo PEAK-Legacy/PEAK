@@ -12,23 +12,20 @@ from peak.util.EigenData import AlreadyRead, EigenRegistry
 from peak.config.interfaces import IConfigKey, IPropertyMap, \
     IConfigurationRoot, NullConfigRoot
 from peak.util.imports import importString
-from warnings import warn
 
-class ComponentSetupWarning(UserWarning):
-    """Large iterator passed to suggestParentComponent"""
 
 __all__ = [
-    'Base', 'Component', 'ComponentSetupWarning', 'whenAssembled',
+    'Base', 'Component', 'whenAssembled',
     'bindTo', 'requireBinding', 'bindSequence', 'bindToParent', 'bindToSelf',
     'getRootComponent', 'getParentComponent', 'lookupComponent',
-    'acquireComponent', 'suggestParentComponent', 'notifyUponAssembly',
+    'acquireComponent', 'notifyUponAssembly',
     'bindToUtilities', 'bindToProperty', 'Constant', 'delegateTo',
     'getComponentName', 'getComponentPath', 'Acquire', 'ComponentName',
 ]
 
-from _once import OnceDescriptor
+from _once import BaseDescriptor
 
-class _proxy(OnceDescriptor):
+class _proxy(BaseDescriptor):
 
     def __init__(self,attrName):
         self.attrName = attrName
@@ -37,6 +34,9 @@ class _proxy(OnceDescriptor):
         raise AttributeError, self.attrName
 
     def computeValue(self,ob,d,a): raise AttributeError, a
+
+
+
 
 
 def getComponentPath(component, relativeTo=None):
@@ -80,9 +80,9 @@ def getComponentPath(component, relativeTo=None):
 
 
 
-def Constant(value, offerAs=(), doc=None):
+def Constant(value, **kw):
     """Supply a constant as a property or utility"""
-    return Once(lambda s,d,a: value, offerAs=offerAs, doc=doc)
+    return Once(lambda s,d,a: value, **kw)
 
 
 class ModuleAsNode(object):
@@ -449,7 +449,7 @@ class NameFinder(object):
 
 
 
-class bindTo(Once):
+class bindTo(Attribute):
 
     """Automatically look up and cache a relevant component
 
@@ -462,19 +462,18 @@ class bindTo(Once):
         'someClass' can then refer to 'self.thingINeed' instead of
         calling 'self.lookupComponent("path/to/service")' repeatedly.
     """
-    defaultValue = NOT_GIVEN
+    default = NOT_GIVEN
     singleValue = True
 
-    def __init__(self,targetName,offerAs=(),doc=None,default=NOT_GIVEN,
-        activateUponAssembly=False):
-        self.defaultValue = default
+
+    def __init__(self,targetName,**kw):
         self.targetNames = (targetName,)
-        self.declareAsProviderOf = offerAs
-        self.__doc__ = doc or ("binding.bindTo(%r)" % targetName)
-        self.activateUponAssembly = activateUponAssembly
+        kw.setdefault('doc', ("binding.bindTo(%r)" % targetName))
+        super(bindTo,self).__init__(**kw)
+
 
     def computeValue(self, obj, instanceDict, attrName):
-        default = self.defaultValue
+        default = self.default
         names   = self.targetNames
         obs     = [lookupComponent(obj,n,default,attrName) for n in names]
 
@@ -489,6 +488,7 @@ class bindTo(Once):
                 return newOb
 
         return tuple(obs)
+
 
 class bindSequence(bindTo):
 
@@ -511,16 +511,17 @@ class bindSequence(bindTo):
 
     def __init__(self, *targetNames, **kw):
         self.targetNames = targetNames
-        self.declareAsProviderOf = kw.get('offerAs',())
-        self.__doc__ = kw.get('doc',("binding.bindSequence%s" % `targetNames`))
-        self.activateUponAssembly = kw.get('activateUponAssembly')
+        kw.setdefault('doc', ("binding.bindSequence%s" % `targetNames`))
+
+        # Note: the following intentionally skips bindTo.__init__, as it
+        # has an incompatible signature:
+        super(bindTo,self).__init__(**kw)
 
 
-def whenAssembled(func, name=None, offerAs=(), doc=None):
+def whenAssembled(func, **kw):
     """'Once' function with 'activateUponAssembly' flag set"""
-    return Once(
-        func, name=name, offerAs=offerAs, doc=doc, activateUponAssembly=True
-    )
+    kw['activateUponAssembly'] = True
+    return Once(func, **kw)
 
 
 
@@ -530,49 +531,7 @@ def whenAssembled(func, name=None, offerAs=(), doc=None):
 
 
 
-
-def suggestParentComponent(parent,name,child):
-
-    """Suggest to 'child' that it has 'parent' and 'name'
-
-    If 'child' does not support 'IComponent' and is a container that derives
-    from 'tuple' or 'list', all of its elements that support 'IComponent'
-    will be given a suggestion to use 'parent' and 'name' as well.  Note that
-    this means it would not be a good idea to use this on, say, a 10,000
-    element list (especially if the objects in it aren't components), because
-    this function has to check all of them."""
-
-    ob = adapt(child,IComponent,None)
-
-    if ob is not None:
-        # Tell it directly
-        ob.setParentComponent(parent,name,suggest=True)
-
-    elif isinstance(child,(list,tuple)):
-
-        ct = 0
-
-        for ob in child:
-
-            ob = adapt(ob,IComponent,None)
-
-            if ob is not None:
-                ob.setParentComponent(parent,name,suggest=True)
-            else:
-                ct += 1
-                if ct==100:
-                    warn(
-                        ("Large iterator for %s; if it will never"
-                         " contain components, this is wasteful" % name),
-                        ComponentSetupWarning, 3
-                    )
-
-
-
-
-
-
-def delegateTo(delegateAttr, name=None, offerAs=(), doc=None):
+def delegateTo(delegateAttr, **kw):
 
     """Delegate attribute to the same attribute of another object
 
@@ -594,10 +553,10 @@ def delegateTo(delegateAttr, name=None, offerAs=(), doc=None):
     as you do when using 'bindTo()'."""
 
     return Once(
-        lambda s,d,a: getattr(getattr(s,delegateAttr),a), name, offerAs, doc
+        lambda s,d,a: getattr(getattr(s,delegateAttr),a), **kw
     )
 
-def Acquire(key, doc=None, default=NOT_GIVEN, activateUponAssembly=False):
+def Acquire(key, **kw):
     """Provide a utility or property, but look it up if not supplied
 
     'key' must be a configuration key (e.g. an Interface or a PropertyName).
@@ -609,11 +568,11 @@ def Acquire(key, doc=None, default=NOT_GIVEN, activateUponAssembly=False):
     attribute (e.g. via a constructor keyword)."""
 
     key = adapt(key,IConfigKey)
-    return bindTo(key,[key],doc,default,
-        activateUponAssembly=activateUponAssembly
-    )
+    kw['offerAs'] = [key]   # XXX should check that kwarg wasn't supplied
+    return bindTo(key,**kw)
 
-def bindToParent(level=1, name=None, offerAs=(), doc=None):
+
+def bindToParent(level=1, **kw):
 
     """Look up and cache a reference to the nth-level parent component
 
@@ -636,10 +595,10 @@ def bindToParent(level=1, name=None, offerAs=(), doc=None):
 
         return obj
 
-    return Once(computeValue, name=name, offerAs=offerAs, doc=doc)
+    return Once(computeValue, **kw)
 
 
-def bindToSelf(name=None, offerAs=(), doc=None):
+def bindToSelf(**kw):
 
     """Cached reference to the 'self' object
 
@@ -649,39 +608,39 @@ def bindToSelf(name=None, offerAs=(), doc=None):
     can refer to 'self.delegateForInterfaceX.someMethod()', and have
     'delegateForInterfaceX' be a 'bindToSelf()' by default."""
 
-    return bindToParent(0,name,offerAs,doc)
+    return bindToParent(0, **kw)
 
 
 
 
-class requireBinding(Once):
+class requireBinding(Attribute):
 
     """Placeholder for a binding that should be (re)defined by a subclass"""
 
-    def __init__(self,description="",name=None,offerAs=(),doc=None):
-        self.description = description
-        self.declareAsProviderOf = offerAs
-        self.__doc__ = doc or ("binding.requireBinding: %s" % description)
-        self.attrName = self.__name__ = name
+    description = ''
+
+    def __init__(self, description="", **kw):
+        kw['description'] = description
+        kw.setdefault('doc', "Required: %s" % description)
+        super(requireBinding,self).__init__(**kw)
+
 
     def computeValue(self, obj, instanceDict, attrName):
-
         raise NameError("Class %s must define %s; %s"
             % (obj.__class__.__name__, attrName, self.description)
         )
 
 
-def bindToUtilities(iface,offerAs=(),doc=None,activateUponAssembly=False):
+def bindToUtilities(iface, **kw):
 
     """Binding to a list of all 'iface' utilities above the component"""
 
-    return Once(lambda s,d,a: list(config.findUtilities(s,iface)),
-        offerAs=offerAs, doc=doc, activateUponAssembly=activateUponAssembly
-    )
+    return Once(lambda s,d,a: list(config.findUtilities(s,iface)), **kw)
 
 
-def bindToProperty(propName, default=NOT_GIVEN, offerAs=(), doc=None,
-    activateUponAssembly=False):
+
+
+def bindToProperty(propName, default=NOT_GIVEN, **kw):
 
     """Binding to property 'propName', defaulting to 'default' if not found
 
@@ -691,9 +650,9 @@ def bindToProperty(propName, default=NOT_GIVEN, offerAs=(), doc=None,
 
     propName = PropertyName(propName)
 
-    return Once(lambda s,d,a: config.getProperty(s,propName,default),
-        offerAs=offerAs, doc=doc, activateUponAssembly = activateUponAssembly
-    )
+    return Once(lambda s,d,a: config.getProperty(s,propName,default), **kw)
+
+
 
 class _Base(object):
 
@@ -791,28 +750,28 @@ class Component(_Base):
 
         # Set up keywords first, so state is sensible
         if kw:
-            klass = self.__class__
-            suggest = []; add = suggest.append; sPC = suggestParentComponent
 
-            for kv in kw.iteritems():
-                k,v = kv
+            klass = self.__class__
+
+            for k,v in kw.iteritems():
                 if hasattr(klass,k):
-                    add(kv); setattr(self,k,v)
+                    setattr(self,k,v)
                 else:
                     raise TypeError(
                         "%s constructor has no keyword argument %s" %
                         (klass, k)
                     )
 
-            # Suggest parents only after our attrs are stable
-            for k,v in suggest:
-                sPC(self,k,v)
-
         # set our parent component and possibly invoke assembly events
         if parentComponent is not NOT_GIVEN or componentName is not None:
             self.setParentComponent(parentComponent,componentName)
 
     lookupComponent = lookupComponent
+
+
+
+
+
 
 
 
@@ -874,7 +833,7 @@ class Component(_Base):
 
         return parent
 
-    __parentComponent = Once(__parentComponent)
+    __parentComponent = Once(__parentComponent, suggestParent=False)
 
 
     def getParentComponent(self):
@@ -990,13 +949,9 @@ class Component(_Base):
         register = cp.register
 
         for attrName, descr in klass.__class_descriptors__.items():
-            offerAs = getattr(descr,'declareAsProviderOf',())
-            try:
-                for key in offerAs:
-                    register(adapt(key,IConfigKey), attrName)
-            except TypeError:
-                print "Error:", klass, attrName, offerAs
-                raise
+            offerAs = getattr(descr,'offerAs',())
+            for key in offerAs:
+                register(adapt(key,IConfigKey), attrName)
 
         cp.lock()   # make it immutable
         return cp

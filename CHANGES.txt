@@ -12,27 +12,25 @@ Fixes and Enhancements since Version 0.5 alpha 2
    'config.IConfigurable()' also now accepts only a single configuration key,
    as does 'EigenRegistry.register()'.
 
+   Also, all 'peak.binding' APIs now only accept positional parameters for
+   items unique to that API.  Items common to multiple APIs (such as 'offerAs',
+   'doc', 'attrName', etc.) should now be supplied as keyword arguments.
 
+   Bindings also now automatically "suggest" the containing object as a parent
+   component for the contained object, whenever a value is assigned to them or
+   computed.  If a non-None 'adaptTo' is set on the binding, the value assigned
+   or computed will be adapted to the specified protocol before the parent
+   component is suggested.  'binding.New()' no longer relies on the
+   'IComponentFactory' interface, but instead uses the new adapt/suggest
+   mechanisms.
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+   Previously, parent components were only "suggested" when a binding was set
+   via component constructor keyword arguments.  Now, this is done at any time
+   bindings are set, but *not* for non-binding keyword arguments.  In other
+   words, ordinary attributes of a component do not receive "suggested parent"
+   notices, even when set via constructor keyword arguments.  If you want an
+   attribute to do this, you must define the attribute with the binding API;
+   e.g. via 'requireBinding()' or 'binding.Constant()'.
 
 
 
