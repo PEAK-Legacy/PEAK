@@ -1,5 +1,6 @@
 from protocols import Interface, Attribute
 from peak.security.interfaces import IAuthorizedPrincipal, IInteraction
+import protocols
 
 __all__ = [
     'IWebInteraction', 'IWebLocation', 'IWebMethod',
@@ -38,13 +39,15 @@ class IWebInteraction(IInteraction):
 
     # XXX skin, ...?
 
-
 class IWebLocation(Interface):
 
     """A component representing a URL location"""
 
+    def preTraverse(interaction):
+        """Invoked before traverse by web requests"""
+
     def getSublocation(name, interaction):
-        """Return an IWebLocation for the named sublocation, or NOT_FOUND"""
+        """Return named IWebLocation, or NOT_ALLOWED/NOT_FOUND"""
 
     def getObject(interaction):
         """Return the underlying object that is at this location"""
@@ -54,9 +57,6 @@ class IWebMethod(Interface):
 
     def render(interaction):
         """Render a response"""
-
-
-
 
 
 

@@ -50,21 +50,17 @@ class BaseInteraction(security.Interaction):
     locationProtocol = binding.bindTo('../locationProtocol')
     behaviorProtocol = binding.bindTo('../behaviorProtocol')
 
-
     def beforeTraversal(self, request):
         """Begin transaction before traversal"""
         storage.beginTransaction(self.app)
-
 
     def getApplication(self,request):
         app = adapt(self, self.locationProtocol)
         binding.suggestParentComponent(None,None,app)
         return app
 
-
     def callTraversalHooks(self, request, ob):
-        pass    # no such thing as traversal hooks at present
-
+        ob.preTraverse(self)
 
     def traverseName(self, request, ob, name, check_auth=1):
 
@@ -77,8 +73,12 @@ class BaseInteraction(security.Interaction):
                 return parent
             return ob
 
-        return ob.getSublocation(name, self)
-
+        nextOb = ob.getSublocation(name, self)
+        if nextOb is NOT_FOUND:
+            return self.notFound(ob, name)
+        if nextOb is NOT_ALLOWED:
+            return self.notAllowed(ob, name)
+        return nextOb
 
     def afterTraversal(self, request, ob):
         pass    # nothing to do after traversal yet
@@ -113,6 +113,47 @@ class BaseInteraction(security.Interaction):
             # Don't allow exc_info to leak, even if the above resulted in
             # an error
             exc_info = None
+
+
+
+
+
+
+
+
+    def notFound(self, ob, name):
+        from zope.publisher.interfaces import NotFound
+        raise NotFound(ob, name, self.request)          # XXX
+
+
+    def notAllowed(self, ob, name):
+        from zope.publisher.interfaces import Unauthorized
+        raise Unauthorized(name=name)   # XXX
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -164,7 +205,7 @@ class CGIPublisher(binding.Component):
 
     protocols.advise(
         instancesProvide=[running.IRerunnableCGI],
-        asAdapterForTypes=[binding.component],
+        asAdapterForTypes=[binding.Component],
         factoryMethod = 'fromApp',
     )
 

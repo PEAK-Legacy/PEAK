@@ -31,9 +31,9 @@ import protocols
 from protocols import adapt
 
 __all__ = [
-    'NOT_GIVEN', 'NOT_FOUND', 'Items', 'PropertyName',
+    'NOT_GIVEN', 'NOT_FOUND', 'NOT_ALLOWED', 'Items', 'PropertyName',
     'binding', 'naming', 'model', 'config', 'running', 'logs', 'storage',
-    'exceptions', 'adapt', 'protocols', 'security',
+    'exceptions', 'adapt', 'protocols', 'security', 'web'
 ]
 
 
@@ -51,6 +51,7 @@ running     = lazyModule('peak.running.api')
 storage     = lazyModule('peak.storage.api')
 logs        = lazyModule('peak.running.logs')
 security    = lazyModule('peak.security.api')
+web         = lazyModule('peak.web.api')
 
 class _Symbol(object):
 
@@ -75,10 +76,9 @@ class _Symbol(object):
 
     __str__ = __repr__
 
-# XXX we need to wrap these in security proxies if zope.security present
-
-NOT_GIVEN = _Symbol("NOT_GIVEN", __name__)
-NOT_FOUND = _Symbol("NOT_FOUND", __name__)
+NOT_GIVEN   = _Symbol("NOT_GIVEN", __name__)
+NOT_FOUND   = _Symbol("NOT_FOUND", __name__)
+NOT_ALLOWED = _Symbol("NOT_ALLOWED", __name__)
 
 def Items(mapping=None, **kwargs):
 
