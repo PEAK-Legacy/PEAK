@@ -244,88 +244,6 @@ class SimplificationAndEquality(TestCase):
 
 
 
-    def testPhysicalDB(self):
-
-        db = PhysicalDB(
-            tables = Items(
-                Branch = (
-                    'headempnr','branchnr','cityname','statecode','country'
-                ),
-                Employee = (
-                    'empnr','empname','branchnr','salary','cityname','statecode',
-                    'country', 'supervisor_empnr', 'mainphone', 'otherphone'
-                ),
-                Speaks = ('empnr','languagename'),
-                Drives = ('empnr','carregnr'),
-                Car = ('carregnr','carmodelname','color'),
-                LangUse = ('languagename','country'),
-            )
-        )
-
-        Branch = db['Branch']
-        Employee = db['Employee']
-
-        x,y,z = self.condX, self.condY, self.condZ
-
-        self.assertEqual(
-            Branch(join=[Employee],where=x), Employee(join=[Branch],where=x)
-        )
-
-        # Single-db join should have the same DB
-        self.failUnless(Branch(join=[Employee],where=x).getDB() is db)
-
-        # Mixed-db joins should have a DB of None (for now)
-        self.failUnless(Branch(join=[self.rvA],where=x).getDB() is None)
-
-
-
-
-
-
-
-
-
-        for tbl in 'Branch','Employee','Speaks','Drives','Car','LangUse':
-
-            # table objects must be unique
-            self.failUnless(db[tbl] is not db[tbl])
-
-            # column objects must be unique
-            self.assertNotEqual(
-                db[tbl].attributes(), db[tbl].attributes()
-            )
-
-            tbl = db[tbl]
-
-            # table's db should be db
-            self.failUnless(tbl.getDB() is db)
-
-            # a projection of table should still have the same DB
-            self.failUnless(
-                tbl(keep=tbl.keys()[:-1]).getDB() is db
-            )
-
-            for colName in tbl.keys():
-                self.failUnless(tbl[colName].getRV() is tbl)
-                self.failUnless(tbl[colName].getDB() is db)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     def testReferences(self):
         x,y,z = self.condX, self.condY, self.condZ
         A,B,C,D = self.rvA, self.rvB, self.rvC, self.rvD
@@ -449,8 +367,131 @@ class SimplificationAndEquality(TestCase):
 
 
 
+class DatabaseTests(TestCase):
+
+    db = PhysicalDB(
+        tables = Items(
+            Branch = (
+                'headempnr','branchnr','cityname','statecode','country'
+            ),
+            Employee = (
+                'empnr','empname','branchnr','salary','cityname','statecode',
+                'country', 'supervisor_empnr', 'mainphone', 'otherphone'
+            ),
+            Speaks = ('empnr','languagename'),
+            Drives = ('empnr','carregnr'),
+            Car = ('carregnr','carmodelname','color'),
+            LangUse = ('languagename','country'),
+        )
+    )
+
+    def testPhysicalDB(self):
+
+        db = self.db
+        Branch = db['Branch']
+        Employee = db['Employee']
+
+        x = Cmp(Branch['branchnr'],'=',Employee['branchnr'])
+        A = Table('X',('foo','bar'))
+
+        self.assertEqual(
+            Branch(join=[Employee],where=x), Employee(join=[Branch],where=x)
+        )
+
+        # Single-db join should have the same DB
+        self.failUnless(Branch(join=[Employee],where=x).getDB() is db)
+
+        # Mixed-db joins should have a DB of None (for now)
+        self.failUnless(Branch(join=[A],where=x).getDB() is None)
+
+
+
+
+
+        for tbl in 'Branch','Employee','Speaks','Drives','Car','LangUse':
+
+            # table objects must be unique
+            self.failUnless(db[tbl] is not db[tbl])
+
+            # column objects must be unique
+            self.assertNotEqual(
+                db[tbl].attributes(), db[tbl].attributes()
+            )
+
+            tbl = db[tbl]
+
+            # table's db should be db
+            self.failUnless(tbl.getDB() is db)
+
+            # a projection of table should still have the same DB
+            self.failUnless(
+                tbl(keep=tbl.keys()[:-1]).getDB() is db
+            )
+
+            for colName in tbl.keys():
+                self.failUnless(tbl[colName].getRV() is tbl)
+                self.failUnless(tbl[colName].getDB() is db)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    def testSimpleSQL(self):
+
+        db = self.db
+        Branch = db['Branch']
+        Employee = db['Employee']
+
+        self.assertEqual(Branch.simpleSQL(), "SELECT * FROM Branch")
+        self.assertEqual(Employee.simpleSQL(), "SELECT * FROM Employee")
+
+        EmployeesByBranch = Branch(
+            join=[Employee],
+            where=Cmp(Branch['branchnr'],'=',Employee['branchnr'])
+        )
+
+        self.assertEqual(
+            EmployeesByBranch.simpleSQL(),
+            "SELECT * FROM Branch, Employee"
+            " WHERE Branch.branchnr=Employee.branchnr"
+        )
+
+        self.assertEqual(
+            Branch(where=Cmp(Branch['branchnr'],'=',42)).simpleSQL(),
+            "SELECT * FROM Branch WHERE Branch.branchnr=42"
+        )
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 TestClasses = (
-    SimplificationAndEquality,
+    SimplificationAndEquality, DatabaseTests,
 )
 
 

@@ -39,10 +39,10 @@ class _expr:
 
 
 
-class _empty:
+class EMPTY(binding.Singleton):
 
     protocols.advise(
-        instancesProvide = [IBooleanExpression],
+        classProvides = [IBooleanExpression],
     )
 
     def conjuncts(self):
@@ -60,7 +60,8 @@ class _empty:
     def __or__(self,other):
         return other
 
-EMPTY = _empty()
+    def simpleSQL(self):
+        return ''
 
 
 class PhysicalDB(binding.Component):
@@ -73,7 +74,6 @@ class PhysicalDB(binding.Component):
 
     def __getitem__(self,name):
         return Table(name,self.tableMap[name],self)
-
 
 
 
@@ -140,6 +140,8 @@ class Table:
     def keys(self):
         return self.columns.keys()
 
+    def simpleSQL(self):
+        return "SELECT * FROM %s" % self.name
 
 class Column:
 
@@ -157,10 +159,8 @@ class Column:
     def getDB(self):
         return self.table.getDB()
 
-
-
-
-
+    def simpleSQL(self):
+        return self.table.name+'.'+self.name
 
 class BasicJoin(Table, HashAndCompare):
 
@@ -222,14 +222,14 @@ class BasicJoin(Table, HashAndCompare):
                 return None
         return db
 
-
-
-
-
-
-
-
-
+    def simpleSQL(self):
+        condSQL = self.condition.simpleSQL()
+        tablenames = [tbl.name for tbl in self.relvars]
+        tablenames.sort()
+        sql = "SELECT * FROM "+", ".join(tablenames)
+        if condSQL:
+            sql += " WHERE " + condSQL
+        return sql
 
 
 
@@ -296,6 +296,8 @@ class And(_compound):
     def __invert__(self):
         return Or(*tuple([~op for op in self.operands]))
 
+    def simpleSQL(self):
+        return ' AND '.join([op.simpleSQL() for op in self.operands])
 
 class Or(_compound):
 
@@ -308,6 +310,8 @@ class Or(_compound):
     def __invert__(self):
         return And(*tuple([~op for op in self.operands]))
 
+    def simpleSQL(self):
+        return '('+' OR '.join([op.simpleSQL() for op in self.operands])+')'
 
 class Not(_compound):
 
@@ -318,12 +322,8 @@ class Not(_compound):
     def __invert__(self):
         return self.operands[0]
 
-
-
-
-
-
-
+    def simpleSQL(self):
+        return 'NOT (%s)' % self.operands[0].simpleSQL()
 
 
 class Cmp(_expr, HashAndCompare):
@@ -349,19 +349,19 @@ class Cmp(_expr, HashAndCompare):
     def __repr__(self):
         return 'Cmp%r' % (self.arg1,self.op,self.arg2)
 
+    def simpleSQL(self):
+        return '%s%s%s' % (self.sqlize(self.arg1),self.op,self.sqlize(self.arg2))
 
-class ExpressionWrapper(protocols.Adapter, _expr, HashAndCompare):
+    def sqlize(self,arg):
+        v = adapt(arg,IRelationAttribute,None)
+        if v is not None:
+            return v.simpleSQL()
+        return `arg`
 
-    protocols.advise(
-        instancesProvide = [IBooleanExpression],
-        asAdapterForTypes = [object],
-    )
 
-    def __init__(self,subject,protocol):
-        self.subject = self._hashAndCompare = subject
 
-    def __repr__(self):
-        return `self.subject`
+
+
 
 
 
