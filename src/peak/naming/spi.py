@@ -14,13 +14,18 @@
 """
 
 from peak.binding.imports import importObject, importSequence
-
+from peak.binding.components import findUtilities, findUtility, Provider
+from peak.api import config
 
 from interfaces import *
 from references import *
 from names import *
 
 import factories
+
+config.registerGlobalProvider(
+    factories.__implements__, Provider(lambda x: factories)
+)
 
 __all__ = [
     'getInitialContext',
@@ -34,39 +39,34 @@ __implements__ = (
 )
 
 
-
-    
-
-
-
 def getInitialContext(parentComponent=None, **options):
 
     """Return an initial context using supplied parent and options
 
     The initial context created is determined by asking the supplied
-    'parentComponent' for an 'IInitialContextFactory' utility.  If no
-    'parentComponent' is supplied, a default parent will be created via
-    'config.newDefaultConfig()'.  Keyword options are passed through to
-    the actual factory."""
+    'parentComponent' for an 'IInitialContextFactory' utility.  Keyword
+    options are passed through to the actual factory.
 
-    if parentComponent is None:
-        from peak.api import config
-        parentComponent = config.newDefaultConfig()
-        saveConfig = True
-    else:
-        saveConfig = False
-  
-    factory = parentComponent.acquireUtility(IInitialContextFactory)
-    if factory is None: factory = factories
+    If no 'parentComponent' is supplied, the new initial context will
+    be a root component, and acquire its configuration options from a
+    default local configuration object.
+    """
 
-    context = factory.getInitialContext(parentComponent,**options)
+    factory = findUtility(parentComponent, IInitialContextFactory)
 
-    if saveConfig:
-        config.setLocal(context, parentComponent)
-        
-    return context
+    return factory.getInitialContext(parentComponent, **options)
 
 
+def getURLContext(scheme, context, iface=IBasicContext):
+
+    """Return a 'Context' object for the given URL scheme and interface."""
+
+    for factory in findUtilities(context,IURLContextFactory):
+
+        context = factory.getURLContext(scheme, context, iface)
+
+        if context is not None:
+            return context
 
 
 
@@ -85,10 +85,7 @@ def getStateToBind(obj, name, context, attrs=None):
     if IReferenceable.isImplementedBy(obj):
         return (obj.getReference(obj), attrs)
 
-    factory = context.acquireUtility(IStateFactory)
-    if factory is None: factory = factories
-
-    if factory is not None:
+    for factory in findUtilities(context,IStateFactory):
 
         result = factory.getStateToBind(
             obj, name, context, attrs
@@ -105,10 +102,7 @@ def getObjectInstance(refInfo, name, context, attrs=None):
     if isinstance(refInfo,LinkRef):
         return context[refInfo.linkName]
 
-    factory = context.acquireUtility(IObjectFactory)
-    if factory is None: factory = factories
-
-    if factory is not None:
+    for factory in findUtilities(context,IObjectFactory):
 
         result = factory.getObjectInstance(
             refInfo, name, context, attrs
@@ -121,18 +115,10 @@ def getObjectInstance(refInfo, name, context, attrs=None):
 
 
 
-def getURLContext(scheme, context, iface=IBasicContext):
 
-    """Return a 'Context' object for the given URL scheme and interface."""
 
-    factory = context.acquireUtility(IURLContextFactory)
-    if factory is None: factory = factories
 
-    if factory is not None:
 
-        context = factory.getURLContext(scheme, context, iface)
 
-        if context is not None:
-            return context
 
 

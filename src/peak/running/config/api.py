@@ -25,10 +25,14 @@ def getGlobal():
 
 def setGlobal(cfg):
     _globalCfg.set(cfg)
-
+    setLocal(cfg, None)     # force local config for global config to be None
+    
 
 def getLocal(forRoot):
 
+    if forRoot is None:
+        return newDefaultConfig()
+        
     if not _localCfgs.data.has_key(forRoot):
         setLocal(forRoot, newDefaultConfig())
 

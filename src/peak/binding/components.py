@@ -1,5 +1,6 @@
 """Basic binding tools"""
 
+from __future__ import generators
 from once import Once, New, WeakBinding
 import meta, modules
 
@@ -17,12 +18,11 @@ __all__ = [
     'Component','AutoCreated','Provider','CachingProvider',
     'bindTo', 'requireBinding', 'bindToNames', 'bindToParent', 'bindToSelf',
     'getRootComponent', 'getParentComponent', 'lookupComponent',
-    'acquireComponent', 'globalLookup'
+    'acquireComponent', 'globalLookup', 'findUtility', 'findUtilities'
 ]
 
 
 InterfaceClass = Interface.__class__
-
 
 
 
@@ -162,6 +162,47 @@ def acquireComponent(component, name):
 
 
 
+def findUtilities(component, iface, forObj=None):
+
+    if forObj is None:
+        forObj = component
+        
+    last = component
+    
+    while component is not None:
+
+        utility = component._getUtility(iface, forObj)
+
+        if utility is not None:
+            yield utility
+
+        last      = component
+        component = component.getParentComponent()
+
+
+    cfg = config.getLocal(last)
+
+    if cfg is not None:
+        for u in findUtilities(cfg, iface, forObj):
+            yield u
+
+    
+def findUtility(component, iface, forObj=None):
+
+    for u in findUtilities(component, iface, forObj):
+        return u
+
+
+
+
+
+
+
+
+
+
+
+
 ComponentNameSyntax = Syntax(
     direction = 1,
     separator = '/',
@@ -210,8 +251,8 @@ def lookupComponent(component, name):
     'name' can be any name acceptable to the 'peak.naming' package, or an
     Interface object.  Strings and 'CompoundName' names will be interpreted
     as paths relative to the starting component.  An empty name will return
-    the starting component.  Interfaces will be lookedup using
-    'component.acquireUtility()'.  All other kinds of names, including URL
+    the starting component.  Interfaces will be looked up using
+    'findUtility(component,...)'.  All other kinds of names, including URL
     strings and 'CompositeName' instances, will be looked up using
     'binding.globalLookup()'.
     
@@ -238,7 +279,7 @@ def lookupComponent(component, name):
         path segment."""
 
     if isinstance(name, InterfaceClass):
-        utility = component.acquireUtility(name)
+        utility = findUtility(component, name)
         if utility is None:
             raise NameNotFoundException(name, resolvedObj = component)
         
@@ -531,37 +572,37 @@ class Component(object):
 
 
 
-    def acquireUtility(self, iface, forObj=None, localLookup=True):
-
-        if forObj is None:
-            forObj=self
-
-        if localLookup:
-        
-            provider = self.__instance_provides__.get(iface)
+    def _getUtility(self, iface, forObj):
+    
+        provider = self.__instance_provides__.get(iface)
             
-            if provider is not None:
-                return provider(self,forObj)
+        if provider is not None:
+            return provider(self,forObj)
 
-            attr = self.__class_provides__.get(iface)
+        attr = self.__class_provides__.get(iface)
 
-            if attr is not None:
+        if attr is not None:
 
-                utility = getattr(self,attr)
+            utility = getattr(self,attr)
 
-                if utility is not NOT_FOUND:
-                    return utility
+            if utility is not NOT_FOUND:
+                return utility
 
-        parent = self.getParentComponent()
-
-        if parent is None:
-            parent = config.getLocal(self)
-        
-        return parent.acquireUtility(iface,forObj)
             
 
     def registerProvider(self, ifaces, provider):
         self.__instance_provides__.register(ifaces, provider)
+
+
+
+
+
+
+
+
+
+
+
 
 
 
