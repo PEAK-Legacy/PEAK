@@ -116,7 +116,7 @@ class DescriptorData(binding.Component):
 
     deep = binding.bindTo('aService/nestedService/thing6/thing1')
 
-
+    testImport = binding.bindTo('import:unittest:TestCase')
 
 
 
@@ -198,9 +198,8 @@ class DescriptorTest(TestCase):
         assert nested.getUp() is data.aService
 
 
-
-
-
+    def checkImport(self):
+        assert self.data.testImport is TestCase
 
 
 

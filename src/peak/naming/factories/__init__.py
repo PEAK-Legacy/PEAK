@@ -9,6 +9,7 @@ __implements__ = IObjectFactory, IStateFactory, IURLContextFactory
 
 schemes = {
     'smtp'  :   'smtp:smtpContext',
+    'import':   'peak_imports:importContext',
 }
 
 
@@ -38,9 +39,9 @@ def getURLContext(scheme, context, environment, iface=IBasicContext):
 
 
 
-
 addrTypes = {
     'smtp'  :   'smtp:smtpFactory',
+    'PEAK Import Specifier' : 'peak_imports:importFactory',
 }
 
 
@@ -73,7 +74,6 @@ def getObjectInstance(refInfo, name, context, environment, attrs=None):
 
     elif isinstance(refInfo, RefAddr):
         return lookupByAddr(refInfo)
-
 
 
 
