@@ -1,7 +1,7 @@
 from kjbuckets import *
 import TW.SOX
 
-from TW import Template
+from TW import Template, SEF
 from TW.Utilities import Pluralizer, upToDate, toString
 
 
@@ -72,8 +72,8 @@ class MetaModelNode(TW.SOX.Node):
     _acquiredAttrs = ('factory','path','pluralize')
     
     featureTypeMap = {
-        'ref': '_sefReference', 'bag': '_sefCollection', 'list': '_sefSequence',
-        'value': '_sefField',
+        'ref': SEF.Reference, 'bag': SEF.Collection, 'list': SEF.Sequence,
+        'value': SEF.Field,
     }
 
 
@@ -144,10 +144,10 @@ class MetaModelNode(TW.SOX.Node):
 
 
     def _finish_primitive(self):
-        self._makeClass('_sefPrimitiveType')
+        self._makeClass(SEF.PrimitiveType)
         
     def _finish_enumeration(self):
-        self._makeClass('_sefEnumeration', features = self._get('literal'))
+        self._makeClass(SEF.Enumeration, features = self._get('literal'))
 
     def _finish_literal(self):
         return self.name, self.name
@@ -163,11 +163,11 @@ class MetaModelNode(TW.SOX.Node):
         )
 
     def _finish_datatype(self):
-        self._makeClass('_sefDataType', self._get('superclass'), self._get('attribute'))
+        self._makeClass(SEF.DataType, self._get('superclass'), self._get('attribute'))
 
 
     def _finish_element(self):
-        t = self._makeClass('_sefElement', self._get('superclass'), self._get('attribute'))
+        t = self._makeClass(SEF.Element, self._get('superclass'), self._get('attribute'))
         t['isAbstract'] = (self.abstract=='true')
 
 

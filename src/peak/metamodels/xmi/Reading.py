@@ -162,11 +162,11 @@ XMIMapMaker = XMIMapMaker()
 
 
 
-class XMIReading:
+class XMIReading(Bundle):
 
-    _XMIMap = XMIMapMaker
-
-    class _sefStructuralFeature:
+    prefix = SEF.prefix
+    
+    class StructuralFeature:
     
         def _fromXMI(self,node):
         
@@ -181,7 +181,7 @@ class XMIReading:
             else:
                 return node
 
-    class _sefClassifier:
+    class Classifier:
     
         def _fromXMI(self,node):
             return self
@@ -189,15 +189,23 @@ class XMIReading:
         _XMIMap = XMIMapMaker
 
 
-    class _sefReference:
+    class Reference:
         def _fromXMI(self,node):
             map(self.set,node._subNodes)
     
-    class _sefCollection:
+    class Collection:
         def _fromXMI(self,node):
             add = self.addItem
             for node in node._subNodes:
                 if not self.isReferenced(node): add(node)
+
+
+
+
+
+    topLevelItems = '_fromXMI', '_XMIroot', 'importFromXMI', '_XMIMap'
+    
+    _XMIMap = XMIMapMaker
 
     def _fromXMI(self,node):
         return node
@@ -209,6 +217,7 @@ class XMIReading:
         document.target = self
         return document
 
+
     def importFromXMI(self,filename_or_stream):
-        return load(filename_or_stream,self._XMIroot())
+        return load(filename_or_stream, self._XMIroot())
 
