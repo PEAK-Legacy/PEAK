@@ -482,12 +482,12 @@ class NegotiatingParser:
     def splitName(self,name):
         if ':' in name:
             ns,nm = name.split(':',1)
-            if self.ns_info.get(ns):
-                return self.ns_info[ns][-1], nm
-            else:
-                return None, name
         else:
-            return '',name
+            ns,nm = '',name
+        if self.ns_info.get(ns):
+            return self.ns_info[ns][-1], nm
+        else:
+            return None, name
 
 
     def startElement(self,name,attrs):

@@ -223,12 +223,12 @@ class XMLParser(Component):
        
         def lookupElement(ns,nm):
             if ns is None:
-                nm=nm.split(':',1)[1]
+                nm=nm.split(':',1)[-1]
             return lookup(self,XMLKey('element',ns or '*',nm),None)
     
         def lookupAttribute(ns,nm):
             if ns is None:
-                nm = nm.split(':',1)[1]
+                nm = nm.split(':',1)[-1]
             return lookup(self,XMLKey('attribute',ns or '*',nm),None)
     
         p.setLookups(lookupElement,lookupAttribute)

@@ -357,7 +357,7 @@ class NegotiationTests(TestCase):
 
         self.n.setLookups(lookup,lookup)
         self.n.startElement('foo',['xmlns:a','foobly','xmlns:b','do'])
-        self.check_log([('','foo')])
+        self.check_log([(None,'foo')])
 
         self.log = []
         self.n.startElement('a:b',['b:c','foo','c:d','bar'])
@@ -375,7 +375,7 @@ class NegotiationTests(TestCase):
         self.assertEqual(self.n.splitName('a:b'), ('foobly','b'))
         self.assertEqual(self.n.splitName('b:c'), ('do','c'))
         self.assertEqual(self.n.splitName('c:d'), (None,'c:d'))
-        self.assertEqual(self.n.splitName('de'), ('','de'))
+        self.assertEqual(self.n.splitName('de'), (None,'de'))
         self.n.endElement('foo')
 
         self.assertEqual(self.n.splitName('a:b'), (None,'a:b'))
