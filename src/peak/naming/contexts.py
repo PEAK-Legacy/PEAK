@@ -254,7 +254,7 @@ class AbstractContext(object):
 
     def info(self):
         """Return a sequence of (name,refInfo) pairs"""
-        return [ (name,self._get(name,retrieve=RETRIEVE_INFO))
+        return [ (name,self._get(name,retrieve=1))
                     for name in self
         ]
 
