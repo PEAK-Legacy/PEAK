@@ -86,6 +86,7 @@ class Scheduler(binding.Component,events.Scheduler):
 
     reactor = binding.Obtain(running.ITwistedReactor)
     now     = binding.Obtain('import:time.time')
+    isEmpty = binding.Make(lambda: events.Condition(True))
 
     def time_available(self):
         return 0    # no way to find this out from a reactor :(
@@ -96,7 +97,6 @@ class Scheduler(binding.Component,events.Scheduler):
     def _callAt(self, what, when):
         self.isEmpty.set(False)
         self.reactor.callLater(when-self.now(), what, self, when)
-
 
 
 
