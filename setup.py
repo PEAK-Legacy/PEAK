@@ -22,7 +22,7 @@ packages = [
     'peak', 'peak.api', 'peak.binding', 'peak.config', 'peak.model',
     'peak.naming', 'peak.naming.factories', 'peak.net', 'peak.running',
     'peak.tools', 'peak.tools.n2', 'peak.security', 'peak.tools.supervisor',
-    'peak.storage', 'peak.util', 'peak.web', 'protocols',
+    'peak.storage', 'peak.util', 'peak.web', 'peak.ddt', 'protocols',
     'peak.tools.version', 'peak.query', 'peak.events',
 ]
 
@@ -54,7 +54,7 @@ if include_tests:
         'peak.model.tests', 'peak.naming.tests', 'peak.running.tests',
         'peak.security.tests', 'peak.web.tests', 'peak.query.tests',
         'peak.storage.tests', 'peak.util.tests', 'protocols.tests',
-        'peak.events.tests'
+        'peak.events.tests', 'peak.ddt.tests',
     ]
     data_files += [
         ('peak/running/tests', ['src/peak/running/tests/test_cluster.txt']),
