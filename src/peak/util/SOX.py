@@ -408,6 +408,252 @@ class IndentedXML(XMLGenerator):
 
 
 
+class INegotiationData(Interface):
+    """
+    All of the negotiator's behavior is controlled by 'data' dictionaries that
+    may contain the following functions:
+
+    * 'start(parser,data)' -- called to create the current element
+
+    * 'finish(parser,data)' -- a function that's called when the current
+      element is finished
+
+    * 'child(result)' -- gets passed the return value from each
+      child element's 'finish' function, if that child had a 'finish'
+      function.
+
+    * 'text(text)' -- a function that's passed any character data within
+      the current element
+
+    * 'literal(text)' -- a function that's passed any literal
+      (non-character) data within the current element, such as comments,
+      processing instructions, etc.
+
+    Negotiation data can be changed at any time by either the negotiator
+    functions, or by any of the above functions.
+    """
+
+class INegotiatorLookup(Interface):
+    def __call__(nsURI, name):
+        """Return a negotiator function for the specified element or attribute
+        """
+
+class IElementNegotiator(Interface):
+    def __call__(parser, data):
+        """Alter 'data' as needed to ensure element is processed correctly"""
+
+class IAttributeNegotiator(Interface):
+    def __call__(parser, data, name, value):
+        """Alter 'data' as needed to ensure element is processed correctly
+
+        'name' and 'value' are the name and value of the applicable attribute.
+        """
+
+class NegotiatingParser:
+
+    """XML processor that lets elements and attributes "negotiate" w/each other
+
+    Basic usage::
+
+        neg = Negotiator()
+        neg.setLookup(elem_lookup_func, attr_lookup_func)
+        neg.parseStream(file,root)  # or neg.parseString(text,root)
+
+    """
+
+    def __init__(self):
+        self.element_map = {}
+        self.attribute_map = {}
+        self.ns_info = {}
+        self.stack = [{}]
+        self.lookup_element = self.lookup_attribute = lambda ns,name=None:None
+
+
+    def addNamespace(self,prefix,ns_uri):
+        self.ns_info.setdefault(prefix,[]).append(ns_uri)
+        self.stack[-1].setdefault('prefixes',[]).append(prefix)
+        # We have new XML namespaces, so our caches are invalid until 
+        # we're done with this element: reset caches for now
+        self.resetCaches()
+    
+
+    def splitName(self,name):
+        if ':' in name:
+            ns,nm = name.split(':',1)
+            if self.ns_info.get(ns):
+                return self.ns_info[ns][-1], nm
+            else:
+                return None, name
+        else:
+            return '',name
+
+
+
+
+    def startElement(self,name,attrs):
+
+        a = []; append = a.append; negattrs=[]
+        attrs.reverse(); pop = attrs.pop
+        data = {'name':name, 'attributes':a, 'previous':self.stack[-1]}
+        self.stack.append(data)
+
+        while attrs:
+            k=pop(); v=pop()
+            append((k,v))
+            if k=='xmlns':
+                self.addNamespace('',v)
+            elif ':' in k:
+                if k.startswith('xmlns:'):
+                    self.addNamespace(k[6:],v)
+                else:
+                    negattrs.append((k,v))
+
+        try:
+            f = self.element_map[name]
+        except KeyError:
+            ns,nm = self.splitName(name)
+            f = self.element_map[name] = self.lookup_element(ns,nm)
+        if f:
+            f(self,data)
+
+        # do attrs negotiation
+        for k,v in negattrs:
+            try:
+                f = self.attribute_map[k]
+            except KeyError:
+                ns,nm = self.splitName(k)
+                f = self.attribute_map[k] = self.lookup_attribute(ns,nm)
+            if f:
+                f(self,data,k,v)
+
+        # execute start function
+        start = data.get('start')
+        if start:
+            start(self,data)
+
+    def endElement(self,name):
+        data = self.stack.pop()
+
+        finish = data.get('finish')
+        if finish:
+            result = finish(self,data)
+            child = self.stack[-1].get('child')
+            if child:
+                child(result)
+
+        if 'prefixes' in data:
+            for prefix in data['prefixes']:
+                self.ns_info[prefix].pop()
+            
+        if 'caches' in data:
+            self.attribute_map, self.element_map = data['caches']
+            if 'lookups' in data:
+                self.lookup_element, self.lookup_attribute = data['lookups']
+
+
+    def resetCaches(self):
+        data = self.stack[-1]
+        if 'caches' not in data:
+            # only save once per stack level
+            data['caches'] = self.attribute_map, self.element_map
+
+        self.attribute_map, self.element_map = {}, {}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    def setLookups(self,element=None,attribute=None):
+        self.resetCaches()
+
+        data = self.stack[-1]
+        if 'lookups' not in data:
+            # only save once per stack level
+            data['lookups'] = (
+                self.lookup_element, self.lookup_attribute,
+            )
+
+        if element is not None:
+            self.lookup_element = element
+        if attribute is not None:
+            self.lookup_attribute = attribute
+
+
+    def text(self,text):
+        f = self.stack[-1].get('text')
+        if f:
+            f(text)
+
+    def literal(self,text):
+        f = self.stack[-1].get('literal')
+        if f:
+            f(text)
+
+    def comment(self,text):
+        f = self.stack[-1].get('literal')   # comment is literal w/<!--/-->
+        if f:
+            f(u'<!--%s-->' % text)
+
+
+
+
+
+
+
+
+
+
+
+    def makeParser(self):
+        from xml.parsers.expat import ParserCreate
+        p = ParserCreate()
+        p.ordered_attributes = True
+        p.returns_unicode = True
+        p.specified_attributes = True
+        p.StartElementHandler = self.startElement
+        p.EndElementHandler = self.endElement
+        p.CommentHandler = self.comment
+        p.DefaultHandler = self.literal
+        p.CharacterDataHandler = self.text
+        return p
+
+
+    def _beforeParsing(self,root=None):
+        root = root or {}
+        self.stack.append(root)
+        return self.makeParser()
+
+    def _afterParsing(self):
+        data = self.stack.pop()
+        finish = data.get('finish')
+        if finish:
+            return finish(self,data)
+        
+
+    def parseString(self,text,root=None):
+        self._beforeParsing(root).Parse(text,True)
+        return self._afterParsing()        
+        
+
+    def parseStream(self,stream,root=None):
+        self._beforeParsing(root).ParseFile(stream)
+        return self._afterParsing()        
+
+
+
+
+
+
+
 class ExpatBuilder:
 
     """Parser that assembles a document"""
@@ -495,7 +741,7 @@ class ExpatBuilder:
         prefixes = []; a = []
         pop = attrs.pop
         append = a.append
-        
+
         while attrs:
             k = pop(0); v=pop(0)
             append((k,v))
