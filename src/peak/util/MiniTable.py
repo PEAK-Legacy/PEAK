@@ -1,7 +1,43 @@
 """An even more primitive and lightweight data table than even TinyTables..."""
 
 from UserList import UserList
-from kjbuckets import *
+from sets import Set
+
+class Record(dict):
+
+    def subset(self,other):
+        for key in self:
+            if key not in other or self[key]!=other[key]:
+                return False
+        return True
+
+    def dump(self,keys):
+        return tuple([self[key] for key in keys])
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 class Table(UserList):
@@ -9,7 +45,7 @@ class Table(UserList):
     """Table( tupleOfColNames, listOfRowTuples )
 
         Tables are 'UserList' objects, so you can iterate over them, access
-        rows by row number, take slices, etc.  Each row is a 'kjbuckets.kjDict'
+        rows by row number, take slices, etc.  Each row is a dictionary-like
         mapping object, with column names mapping to values.  Mass 'SELECT',
         'UPDATE', and 'DELETE' operations are also available.  Note that since
         rows are mutable, modifying rows in row slices or 'SELECT' slices will
@@ -34,7 +70,13 @@ class Table(UserList):
             specific table it is called upon.
         """
 
-        self.data.append(kjDict(items))
+        self.data.append(Record(items))
+
+
+
+
+
+
 
 
 
@@ -49,7 +91,7 @@ class Table(UserList):
             perform an 'UPDATE' on it to make changes.
         """
 
-        where = kjDict(whereItems); matches = where.subset
+        where = Record(whereItems); matches = where.subset
         return self.__class__(
             rawData = [d for d in self.data if matches(d)]
         )
@@ -69,9 +111,9 @@ class Table(UserList):
             affect the value of rows in any tables that contain them, since
             the row objects are shared between tables.
         """
-
+        setItems = dict(setItems)
         for d in self.data:
-            map(d.add,setItems)
+            d.update(setItems)
 
 
 
@@ -101,7 +143,7 @@ class Table(UserList):
 
         """
 
-        self.data.extend( [kjUndump(colNames,row) for row in rowList] )
+        self.data.extend( [Record(zip(colNames,row)) for row in rowList] )
 
 
     def DELETE(self, whereItems):
@@ -112,7 +154,7 @@ class Table(UserList):
             arguments.  Affects only the specific table it is called upon.
         """
 
-        where = kjDict(whereItems)
+        where = Record(whereItems)
         matches = where.subset
         self.data = [d for d in self.data if not matches(d)]
 
@@ -130,12 +172,12 @@ class Table(UserList):
             constructed from the fields in both 'whereItems' and 'setItems'.
         """
 
-        where = kjDict(whereItems)
+        where = Record(whereItems)
         matches = where.subset
 
         for d in self.data:
             if matches(d):
-                map(d.add, setItems)
+                d.update(dict(setItems))
                 break
         else:
             self.INSERT(whereItems+setItems)
