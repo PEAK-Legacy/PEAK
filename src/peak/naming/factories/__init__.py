@@ -13,10 +13,15 @@ schemes = {
 }
 
 schemeParsers = {
-    'import':   'peak_imports:importURL',
-    'ldap'  :   'ldap:ldapURL',
-    'smtp'  :   'smtp:smtpURL',
-    'uuid'  :   'uuid:uuidURL',
+    'import':       'peak_imports:importURL',
+    'ldap':         'ldap:ldapURL',
+    'smtp':         'smtp:smtpURL',
+    'uuid':         'uuid:uuidURL',
+    'lockfile':     'lockfiles:lockfileURL',
+    'nulllockfile': 'lockfiles:lockfileURL',
+    'shlockfile':   'lockfiles:lockfileURL',
+    'flockfile':    'lockfiles:lockfileURL',
+    'winflockfile': 'lockfiles:lockfileURL',
 }
 
 
