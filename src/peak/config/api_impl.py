@@ -17,7 +17,6 @@ __all__ = [
     'setPropertyFor',    'setRuleFor',    'setDefaultFor',
 ]
 
-
 _globalCfg = EigenCell()
 
 
@@ -26,7 +25,9 @@ def getGlobal():
     """Return the global configuration object"""
 
     if not _globalCfg.locked:
-        setGlobal(GlobalConfig())
+        g = GlobalConfig()
+        setGlobal(g)
+        g.startup()
 
     return _globalCfg.get()
 
@@ -37,7 +38,6 @@ def setGlobal(cfg):
 
     _globalCfg.set(cfg)
     setLocal(cfg, None)     # force local config for global config to be None
-
 
 _defaultCfg = EigenCell()
 _localCfgs = EigenDict()
@@ -54,8 +54,10 @@ def getLocal(forRoot=None):
         return _localCfgs[forRoot]
         
     if not _defaultCfg.locked:
-        setLocal(None, newDefaultConfig())
-
+        c = newDefaultConfig()
+        setLocal(None, c)
+        c.startup()
+        
     return _defaultCfg.get()
 
 
@@ -75,8 +77,6 @@ def newDefaultConfig():
     """Return a new, default local configuration object based on getGlobal()"""
 
     return LocalConfig(getGlobal())
-
-
 
 
 

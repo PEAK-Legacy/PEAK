@@ -12,11 +12,13 @@ Open Issues/To-Do Items
 
         - URLs and drivers for gadfly, Sybase, and postgres
 
-        - policy/providers for global/local txn scopes
+        - LDAP schema properties, SQL type mapping utilities
 
-        - "alternate key" rack base class(es)
+        - Rack -> DM
 
-        - "query" rack base class(es)
+        - "facade" DM base class(es)
+
+        - "query" DM base class(es)
 
         - unit tests for more complex object scenarios: references, thunks..?
 
@@ -42,6 +44,8 @@ Open Issues/To-Do Items
 
     peak.binding
 
+        - object names/paths
+
         - docstrings for reference
 
     peak.config
@@ -57,10 +61,6 @@ Open Issues/To-Do Items
         - docstrings for reference
 
         - more unit tests?
-
-
-
-
 
 
 

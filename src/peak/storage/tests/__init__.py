@@ -246,11 +246,6 @@ class TxnTable(storage.TransactionComponent):
 
 class Harness(binding.Component):
 
-    ts = binding.New(
-        storage.TransactionService,
-        provides=storage.ITransactionService
-    )
-
     class sampleTable(TxnTable):
         colNames = 'a', 'b'
         
@@ -285,57 +280,65 @@ class Harness(binding.Component):
 
 
 
+
+
+
+
+
 class TableTest(TestCase):
 
     def setUp(self):
         self.harness = Harness()
         self.table = self.harness.sampleTable
-        self.ts    = self.harness.ts
-        
+
+    def tearDown(self):
+        if storage.getTransaction().isActive():
+            storage.abortTransaction()
+    
     def checkNoChangeOutsideTxn(self):
         self.assertRaises(exceptions.OutsideTransaction,
             self.table.INSERT, Items(a=1,b=2)
         )
 
     def checkRollback(self):
-
         assert self.table.dump()==[]
 
-        self.ts.begin()
+        storage.beginTransaction()
         self.table.INSERT(Items(a=1,b=2))
         assert self.table.dump()==[(1,2)]
-        self.ts.abort()
+        storage.abortTransaction()
 
         assert self.table.dump()==[]
-
 
     def checkCommit(self):
-
         assert self.table.dump()==[]
 
-        self.ts.begin()
+        storage.beginTransaction()
         self.table.INSERT(Items(a=1,b=2))
         assert self.table.dump()==[(1,2)]
-        self.ts.commit()
+        storage.commitTransaction()
 
         assert self.table.dump()==[(1,2)]
 
-        self.ts.begin()
+        storage.beginTransaction()
         self.table.INSERT(Items(a=3,b=4))
         assert self.table.dump()==[(1,2),(3,4)]
-        self.ts.abort()
+        storage.abortTransaction()
         assert self.table.dump()==[(1,2)]
-        
+
 class RackTest(TestCase):
 
     def setUp(self):
         self.harness = Harness()
         self.table = self.harness.sampleTable
-        self.ts    = self.harness.ts
         self.rack  = self.harness.testRack
 
+    def tearDown(self):
+        if storage.getTransaction().isActive():
+            storage.abortTransaction()
+
     def _addData(self):
-        self.ts.begin()
+        storage.beginTransaction()
         self.table.INSERT(Items(a=1,b=2))
     
     def checkExistence(self):
@@ -344,45 +347,42 @@ class RackTest(TestCase):
 
         ob = self.rack[1]
         assert ob.b==2
-        self.ts.abort()
+        storage.abortTransaction()
 
-        self.ts.begin()
+        storage.beginTransaction()
         self.assertRaises(KeyError, lambda: ob.b)
-
 
     def checkFlush(self):
 
         self._addData()
         assert self.table.dump()==[(1,2)]
-        self.ts.commit()
+        storage.commitTransaction()
         
-        self.ts.begin()
+        storage.beginTransaction()
         ob = self.rack[1]
         ob.b = 4
         self.rack.flush()
         assert self.table.dump()==[(1,4)]
 
-        self.ts.abort()
+        storage.abortTransaction()
         assert self.table.dump()==[(1,2)]
-
-
 
     def checkModify(self):
         self._addData()
         ob = self.rack[1]
         ob.b = 4
         assert self.table.dump()==[(1,2)]
-        self.ts.commit()
+        storage.commitTransaction()
         assert self.table.dump()==[(1,4)]
 
 
     def checkNew(self):
-        self.ts.begin()
+        storage.beginTransaction()
         ob = self.rack.newItem()
         ob.a = 1
         ob.b = 2
         assert self.table.dump()==[]
-        self.ts.commit()
+        storage.commitTransaction()
         assert self.table.dump()==[(1,2)]
 
 

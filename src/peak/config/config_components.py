@@ -2,7 +2,7 @@ from __future__ import generators
 
 from peak.api import *
 from peak.util.imports import importString, importObject
-from peak.binding.components import Component, New, Base, Provider, Once
+from peak.binding.components import Component, New, Base, Once
 
 from peak.util.EigenData import EigenCell, AlreadyRead
 from peak.util.FileParsing import AbstractConfigParser
@@ -203,13 +203,14 @@ class ConfigReader(AbstractConfigParser):
 
         self.process_settings(section, lines, handler)
 
-
-
 class GlobalConfig(Component):
 
     def __init__(self):
-        self.setup(self.__instance_provides__)
+        pass
 
+    def startup(self):
+        self.setup(self.__instance_provides__)
+    
     def config_filenames(self,d,a):
         import os; from peak import __file__ as filebase
         return [os.path.join(os.path.dirname(filebase), 'peak.ini')]
@@ -243,16 +244,15 @@ class GlobalConfig(Component):
 
 
 
-
-
-
 class LocalConfig(Component):
 
     def __init__(self,parent):
         self.setParentComponent(parent)
-        self.setup()
 
-    def setup(self):
+    def startup(self):
+        self.setup(self.__instance_provides__)
+
+    def setup(self, propertyMap):
         pass
 
     def setParentComponent(self,parent):

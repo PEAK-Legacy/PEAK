@@ -39,7 +39,6 @@ def New(obtype, name=None, provides=None, doc=None):
 
 
 
-
 def Copy(obj, name=None, provides=None, doc=None):
 
     """One-time binding of a copy of 'obj'

@@ -21,7 +21,7 @@ __all__ = [
     'bindTo', 'requireBinding', 'bindSequence', 'bindToParent', 'bindToSelf',
     'getRootComponent', 'getParentComponent', 'lookupComponent',
     'acquireComponent', 'globalLookup', 'findUtility', 'findUtilities',
-    'bindToUtilities', 'bindToProperty', 'iterParents',
+    'bindToUtilities', 'bindToProperty', 'iterParents', 'Constant',
 ]
 
 
@@ -43,18 +43,25 @@ def Provider(callable):
     return lambda foundIn, configKey, forObj: callable(forObj)
 
 
-def CachingProvider(callable, weak=False):
+def CachingProvider(callable, weak=False, local=False):
 
     def provider(foundIn, configKey, forObj):
 
-        # get the owner of the property map
-        foundIn = foundIn.getParentComponent()
+        if local:
 
-        fid = id(foundIn)
-        utility = provider.cache.get(fid)
+            foundIn = config.getLocal(forObj)
+
+            if foundIn is None:
+                foundIn = config.getGlobal()
+
+        else:
+            # get the owner of the property map
+            foundIn = foundIn.getParentComponent()
+
+        utility = provider.cache.get(foundIn)
 
         if utility is None:
-            utility = provider.cache[fid] = callable(foundIn)
+            utility = provider.cache[foundIn] = callable(foundIn)
 
         return utility
 
@@ -66,17 +73,10 @@ def CachingProvider(callable, weak=False):
     return provider
 
 
-
-
-
-
-
-
-
-
-
-
-
+def Constant(provides, value, doc=None):
+    """Supply a constant as a property or utility"""
+    return Once(lambda s,d,a: value, provides=provides, doc=doc)
+    
 
 
 
@@ -490,14 +490,12 @@ def bindToProperty(propName, default=NOT_GIVEN, provides=None, doc=None):
 
 
 
-class Meta(meta.AssertInterfaces, meta.ActiveDescriptors):
-    pass
-
 class Base(object):
+
     """Thing that can be composed into a component tree, w/binding & lookups"""
 
     __implements__ = IBindingAPI
-    __metaclass__  = Meta
+    __metaclass__  = meta.ActiveDescriptors
 
     def __init__(self, parent=None, **kw):
         if kw:
@@ -530,6 +528,8 @@ class Base(object):
 
     def getBindingIfPresent(self,attr,default=None):
         return self.__dict__.get(attr,default)
+
+
 
 class Component(Base):
 
@@ -572,7 +572,7 @@ class Component(Base):
 
 
 
-class AutoCreatable(OnceClass, Meta):
+class AutoCreatable(OnceClass, meta.ActiveDescriptors):
 
     """Metaclass for components which auto-create when used"""
 

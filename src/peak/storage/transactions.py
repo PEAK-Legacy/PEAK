@@ -5,22 +5,22 @@ import sys
 
 __all__ = [
     'TransactionService', 'AbstractParticipant', 'TransactionComponent',
-    'BasicTxnErrorHandler'
+    'BasicTxnErrorHandler', 'getTransaction', 'beginTransaction',
+    'commitTransaction', 'abortTransaction',
 ]
 
 
+def getTransaction(subject=None):
+    return binding.findUtility(ITransactionService, subject)
 
+def beginTransaction(subject=None, **info):
+    getTransaction(subject).begin(**info)
 
+def commitTransaction(subject=None):
+    getTransaction(subject).commit()
 
-
-
-
-
-
-
-
-
-
+def abortTransaction(subject=None):
+    getTransaction(subject).abort()
 
 
 
