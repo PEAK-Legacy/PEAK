@@ -24,6 +24,7 @@ class StateMachine(Core.ModelElement):
     class top(_model.StructuralFeature):
         referencedType = 'State'
         referencedEnd = 'stateMachine'
+        isComposite = True
         upperBound = 1
         lowerBound = 1
         sortPosn = 1
@@ -31,6 +32,7 @@ class StateMachine(Core.ModelElement):
     class transitions(_model.StructuralFeature):
         referencedType = 'Transition'
         referencedEnd = 'stateMachine'
+        isComposite = True
         sortPosn = 2
     
     class subMachineState(_model.StructuralFeature):
@@ -45,6 +47,7 @@ class Event(Core.ModelElement):
     
     class parameter(_model.StructuralFeature):
         referencedType = 'Foundation/Core/Parameter'
+        isComposite = True
         sortPosn = 0
     
     class state(_model.StructuralFeature):
@@ -85,11 +88,13 @@ class State(StateVertex):
     
     class entry(_model.StructuralFeature):
         referencedType = 'Common_Behavior/Action'
+        isComposite = True
         upperBound = 1
         sortPosn = 0
     
     class exit(_model.StructuralFeature):
         referencedType = 'Common_Behavior/Action'
+        isComposite = True
         upperBound = 1
         sortPosn = 1
     
@@ -107,10 +112,12 @@ class State(StateVertex):
     class internalTransition(_model.StructuralFeature):
         referencedType = 'Transition'
         referencedEnd = 'state'
+        isComposite = True
         sortPosn = 4
     
     class doActivity(_model.StructuralFeature):
         referencedType = 'Common_Behavior/Action'
+        isComposite = True
         upperBound = 1
         sortPosn = 5
     
@@ -147,11 +154,13 @@ class Transition(Core.ModelElement):
     class guard(_model.StructuralFeature):
         referencedType = 'Guard'
         referencedEnd = 'transition'
+        isComposite = True
         upperBound = 1
         sortPosn = 0
     
     class effect(_model.StructuralFeature):
         referencedType = 'Common_Behavior/Action'
+        isComposite = True
         upperBound = 1
         sortPosn = 1
     
@@ -199,6 +208,7 @@ class CompositeState(State):
     class subvertex(_model.StructuralFeature):
         referencedType = 'StateVertex'
         referencedEnd = 'container'
+        isComposite = True
         sortPosn = 1
     
 

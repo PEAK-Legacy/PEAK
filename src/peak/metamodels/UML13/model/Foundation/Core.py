@@ -100,6 +100,7 @@ class ModelElement(Element):
     class templateParameter(_model.StructuralFeature):
         referencedType = 'TemplateParameter'
         referencedEnd = 'modelElement'
+        isComposite = True
         sortPosn = 14
     
     class templateParameter2(_model.StructuralFeature):
@@ -148,6 +149,7 @@ class Namespace(ModelElement):
     class ownedElement(_model.StructuralFeature):
         referencedType = 'ModelElement'
         referencedEnd = 'namespace'
+        isComposite = True
         sortPosn = 0
     
 
@@ -158,6 +160,7 @@ class Classifier(GeneralizableElement, Namespace):
     class feature(_model.StructuralFeature):
         referencedType = 'Feature'
         referencedEnd = 'owner'
+        isComposite = True
         sortPosn = 0
     
     class participant(_model.StructuralFeature):
@@ -278,6 +281,7 @@ class AssociationEnd(ModelElement):
     class qualifier(_model.StructuralFeature):
         referencedType = 'Attribute'
         referencedEnd = 'associationEnd'
+        isComposite = True
         sortPosn = 7
     
     class type(_model.StructuralFeature):
@@ -320,6 +324,7 @@ class Association(GeneralizableElement, Relationship):
     class connection(_model.StructuralFeature):
         referencedType = 'AssociationEnd'
         referencedEnd = 'association'
+        isComposite = True
         lowerBound = 2
         sortPosn = 0
     
@@ -351,6 +356,7 @@ class BehavioralFeature(Feature):
     class parameter(_model.StructuralFeature):
         referencedType = 'Parameter'
         referencedEnd = 'behavioralFeature'
+        isComposite = True
         sortPosn = 1
     
 
@@ -524,6 +530,7 @@ class Component(Classifier):
     class residentElement(_model.StructuralFeature):
         referencedType = 'ElementResidence'
         referencedEnd = 'implementationLocation'
+        isComposite = True
         sortPosn = 1
     
 

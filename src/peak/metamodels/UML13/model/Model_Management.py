@@ -20,6 +20,7 @@ class Package(Core.GeneralizableElement, Core.Namespace):
     class elementImport(_model.StructuralFeature):
         referencedType = 'ElementImport'
         referencedEnd = 'package'
+        isComposite = True
         sortPosn = 0
     
 

@@ -31,6 +31,7 @@ class Stereotype(Core.GeneralizableElement):
     class requiredTag(_model.StructuralFeature):
         referencedType = 'TaggedValue'
         referencedEnd = 'stereotype'
+        isComposite = True
         sortPosn = 2
     
     class extendedElement(_model.StructuralFeature):
@@ -39,6 +40,7 @@ class Stereotype(Core.GeneralizableElement):
     
     class stereotypeConstraint(_model.StructuralFeature):
         referencedType = 'Core/Constraint'
+        isComposite = True
         sortPosn = 4
     
 

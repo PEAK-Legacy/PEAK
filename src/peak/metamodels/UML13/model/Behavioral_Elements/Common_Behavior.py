@@ -34,6 +34,7 @@ class Instance(Core.ModelElement):
     class slot(_model.StructuralFeature):
         referencedType = 'AttributeLink'
         referencedEnd = 'instance'
+        isComposite = True
         sortPosn = 3
     
     class stimulus1(_model.StructuralFeature):
@@ -106,6 +107,7 @@ class Action(Core.ModelElement):
     class actualArgument(_model.StructuralFeature):
         referencedType = 'Argument'
         referencedEnd = 'action'
+        isComposite = True
         sortPosn = 4
     
     class actionSequence(_model.StructuralFeature):
@@ -181,6 +183,7 @@ class Link(Core.ModelElement):
     class connection(_model.StructuralFeature):
         referencedType = 'LinkEnd'
         referencedEnd = 'link'
+        isComposite = True
         lowerBound = 2
         sortPosn = 1
     
@@ -222,6 +225,7 @@ class ActionSequence(Action):
     class action(_model.StructuralFeature):
         referencedType = 'Action'
         referencedEnd = 'actionSequence'
+        isComposite = True
         sortPosn = 0
     
 
@@ -299,6 +303,7 @@ class LinkEnd(Core.ModelElement):
     class qualifiedValue(_model.StructuralFeature):
         referencedType = 'AttributeLink'
         referencedEnd = 'linkEnd'
+        isComposite = True
         sortPosn = 3
     
 

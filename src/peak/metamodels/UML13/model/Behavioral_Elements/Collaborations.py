@@ -19,6 +19,7 @@ class Collaboration(Core.GeneralizableElement, Core.Namespace):
     class interaction(_model.StructuralFeature):
         referencedType = 'Interaction'
         referencedEnd = 'context'
+        isComposite = True
         sortPosn = 0
     
     class representedClassifier(_model.StructuralFeature):
@@ -167,6 +168,7 @@ class Interaction(Core.ModelElement):
     class message(_model.StructuralFeature):
         referencedType = 'Message'
         referencedEnd = 'interaction'
+        isComposite = True
         lowerBound = 1
         sortPosn = 0
     

@@ -18,6 +18,7 @@ class Multiplicity(_model.Element):
     class range(_model.StructuralFeature):
         referencedType = 'MultiplicityRange'
         referencedEnd = 'multiplicity'
+        isComposite = True
         lowerBound = 1
         sortPosn = 0
     

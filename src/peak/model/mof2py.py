@@ -94,6 +94,8 @@ class MOFGenerator(binding.Component):
     NameNotFound = binding.bindTo("metamodel/NameNotFound")
     NameNotResolved = binding.bindTo("metamodel/NameNotResolved")
     StructuralFeature = binding.bindTo("metamodel/StructuralFeature")
+    
+    Composite = binding.bindTo("metamodel/AggregationKind/composite")
 
     fileObject = binding.New(StringIO)
 
@@ -109,8 +111,6 @@ class MOFGenerator(binding.Component):
     writeFiles = False
 
     sepLine = '# ' + '-'*78 + '\n'
-
-
 
 
 
@@ -631,6 +631,9 @@ _datatypes           = _lazy('peak.model.datatypes')
             if inverseRef is not None:
                 self.write('referencedEnd = %r\n' % str(inverseRef.name))
 
+            if feature.referencedEnd.otherEnd().aggregation == self.Composite:
+                self.write('isComposite = True\n')
+
         elif feature.isDerived:
             self.write('isDerived = True\n')
 
@@ -645,9 +648,6 @@ _datatypes           = _lazy('peak.model.datatypes')
 
         self.write('sortPosn = %r\n' % posn)
         self.pop()
-
-
-
 
 
 

@@ -20,6 +20,7 @@ class ActivityGraph(State_Machines.StateMachine):
     class partition(_model.StructuralFeature):
         referencedType = 'Partition'
         referencedEnd = 'activityGraph'
+        isComposite = True
         sortPosn = 0
     
 
