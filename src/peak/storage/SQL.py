@@ -7,7 +7,7 @@ from connections import ManagedConnection, AbstractCursor, RowBase
 
 __all__ = [
     'SQLCursor', 'GenericSQL_URL', 'SQLConnection', 'SybaseConnection',
-    'GadflyURL', 'GadflyConnection',
+    'GadflyURL', 'GadflyConnection'
 ]
 
 
@@ -263,7 +263,7 @@ class ValueBasedTypeConn(SQLConnection):
                     tm[v] = c
                 else:
                     # We support either '.int4' or '.INTEGER' style properties
-                    tm[v] = importObject(ps.get(v,c))
+                    tm[v] = importObject(ps.get(v.replace(' ','_'),c)) # XXX
 
         return tm
 
@@ -530,4 +530,54 @@ class GenericSQL_URL(naming.URL.Base):
 
 
 
+
+
+class OracleURL(naming.URL.Base):
+
+    supportedSchemes = {
+        'dcoracle2': 'peak.storage.SQL.DCOracle2Connection',
+#       'cxoracle':  'peak.storage.SQL.CXOracleConnection',
+    }
+
+    defaultFactory = property(
+        lambda self: self.supportedSchemes[self.scheme]
+    )
+
+    class user(naming.URL.Field):
+        pass
+
+    class passwd(naming.URL.Field):
+        pass
+
+    class server(naming.URL.RequiredField):
+        pass
+
+    syntax = naming.URL.Sequence(
+        ('//',), (user, (':', passwd), '@'), server, ('/',)
+    )
+
+
+
+class DCOracle2Connection(ValueBasedTypeConn):
+
+    API = binding.bindTo("import:DCOracle2")
+
+    def _open(self):
+        a = self.address
+
+        return self.API.connect(
+            user=a.user, password=a.passwd, database=a.server, 
+        )
+
+
+    def txnTime(self,d,a):
+        self.joinedTxn              # Ensure that we're in a transaction,
+        r = ~ self('SELECT SYSDATE FROM DUAL')  # retrieve the server's idea of the time
+        return r[0]
+
+    txnTime = binding.Once(txnTime)
+
+    supportedTypes = (
+        'BINARY','DATETIME','NUMBER','ROWID','STRING',
+    )
 
