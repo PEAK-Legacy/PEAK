@@ -41,7 +41,7 @@ def unquote(s):
 
 class ProcessSupervisor(EventDriven):
 
-    # log         = logger (to where?)
+    log           = binding.Obtain('logging.logger:supervisor')
 
     pidFile       = binding.Require("Filename where process ID is kept")
     minChildren   = 1
@@ -99,7 +99,9 @@ class ProcessSupervisor(EventDriven):
     reactor = binding.Make(
         'peak.running.scheduler:UntwistedReactor', offerAs=[IBasicReactor]
     )
-
+    mainLoop = binding.Make(
+        'peak.running.scheduler.MainLoop', offerAs=[IMainLoop]
+    )
     taskQueue = binding.Make(
         'peak.running.daemons.TaskQueue', offerAs=[ITaskQueue]
     )
@@ -113,18 +115,16 @@ class ProcessSupervisor(EventDriven):
 
     from time import time
 
-
     def setup(self):
         template = adapt(self.template, ISupervisorPluginProvider, None)
         if template is not None:
             self.plugins.extend(template.getSupervisorPlugins(self))
 
 
-
     def _run(self):
 
         if not self.startLock.attempt():
-            # self.log.warn("Another process is starting")
+            self.log.warning("Another process is starting")
             return 1        # exit with errorlevel 1
 
         try:
@@ -207,7 +207,7 @@ class ProcessSupervisor(EventDriven):
         self.pidLock.obtain()
         try:
             pf = open(self.pidFile,'w')
-            pf.write('%d\n', self.os.getpid())
+            pf.write('%d\n' % self.os.getpid())
             pf.close()
         finally:
             self.pidLock.release()

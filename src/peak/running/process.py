@@ -86,6 +86,7 @@ class ChildProcess(binding.Component):
         instancesProvide = [IProcessProxy]
     )
 
+    pid        = None
     isStopped  = False
     isFinished = False
     isRunning  = True
@@ -118,7 +119,6 @@ class ChildProcess(binding.Component):
             raise ValueError,"Unsupported signal", signal
 
         self.os.kill(self.pid, signal)
-
 
 
     def checkStatus(self):
@@ -218,6 +218,7 @@ class AbstractProcessTemplate(binding.Component):
         # Set parent component *after* the pipes are set up, in case
         # the proxy has assembly events that make use of the pipes.
         proxy.setParentComponent(parentComponent)
+        return proxy
 
 
     def _redirect(self):
@@ -232,7 +233,6 @@ class AbstractProcessTemplate(binding.Component):
             return cmd
 
         return runner
-
 
 
 
