@@ -203,78 +203,36 @@ class StructuralFeature(object):
 
 
 
-    def _get_many(feature, element):
-        try:
-            return feature._doGet(element)
-        except AttributeError:
-            return []
+    def get(f):
 
-    _get_many.installIf = lambda f,m: f.isMany and not f.isDerived
-    _get_many.verb      = 'get'
+        if f.isDerived:
 
+            def get(feature,element):
+                raise NotImplementedError
 
-    def _get_one(feature, element):
+        elif f.isMany:
 
-        try:
-            return feature._doGet(element)
-        except AttributeError:
-            value = feature._defaultValue
-            if value is NOT_GIVEN:
-                raise AttributeError,feature.attrName
-            return value
-
-    _get_one.installIf = lambda f, m: not f.isMany and not f.isDerived
-    _get_one.verb      = 'get'
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    def _set_one(feature, element, val):
-        feature.__delete__(element)
-        feature._notifyLink(element,val)
-
-    _set_one.installIf = lambda f,m: f.isChangeable and not f.isMany
-    _set_one.verb      = 'set'
-
-
-
-    def _unset_one(feature, element):
-        try:
-            item = feature._doGet(element)
-        except AttributeError:
-            pass
+            def get(feature,element):
+                try:
+                    return feature._doGet(element)
+                except AttributeError:
+                    return []
+            
         else:
-            feature._notifyUnlink(element,item)
 
-    _unset_one.installIf = lambda f,m: f.isChangeable and not f.isMany
-    _unset_one.verb      = 'unset'
-
-
-
-
-
-
-
-
-
+            def get(feature,element):
+                try:
+                    return feature._doGet(element)
+                except AttributeError:
+                    value = feature._defaultValue
+                    if value is NOT_GIVEN:
+                        raise AttributeError,feature.attrName
+                    return value
+            
+        return get
 
 
-
+    get.isTemplate = True
 
 
 
@@ -285,16 +243,87 @@ class StructuralFeature(object):
 
 
 
-    def _set_many(feature, element, val):
 
-        feature.__delete__(element)
-        add = feature._notifyLink
+    def set(f):
 
-        for v in val:
-            add(element,v)
+        if not f.isChangeable:
+            set = None
 
-    _set_many.installIf = lambda f,m: f.isChangeable and f.isMany
-    _set_many.verb      = 'set'
+        elif f.isMany:
+        
+            def set(feature, element, val):
+
+                feature.unset(element)
+                add = feature._notifyLink
+
+                for v in val:
+                    add(element,v)
+
+        else:
+        
+            def set(feature, element, val):
+                feature.unset(element)
+                feature._notifyLink(element,val)
+
+        return set
+
+    set.isTemplate = True
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    def unset(f):
+
+        if not f.isChangeable:
+            unset = None
+
+        elif f.isMany:
+
+            def unset(feature, element):
+
+                d = feature.get(element)
+
+                items = zip(range(len(d)),d)
+                items.reverse()
+
+                remove = feature._notifyUnlink
+
+                # remove items in reverse order, to simplify deletion and
+                # to preserve any invariant that was relevant for addition
+                # order...
+        
+                for posn,item in items:
+                    remove(element,item,posn)
+            
+                feature._doDel(element)
+
+        else:
+
+            def unset(feature, element):
+                try:
+                    item = feature._doGet(element)
+                except AttributeError:
+                    pass
+                else:
+                    feature._notifyUnlink(element,item)
+
+        return unset
+
+
+    unset.isTemplate = True
 
 
     def replace(feature, element, oldItem, newItem):
@@ -313,60 +342,6 @@ class StructuralFeature(object):
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-    def _unset_many(feature, element):
-
-        """Unset the value of the feature (like __delattr__)"""
-
-        d = feature.get(element)
-
-        items = zip(range(len(d)),d)
-        items.reverse()
-
-        remove = feature._notifyUnlink
-
-        # remove items in reverse order, to simplify deletion and
-        # to preserve any invariant that was relevant for addition
-        # order...
-        
-        for posn,item in items:
-            remove(element,item,posn)
-            
-        feature._doDel(element)
-
-
-    _unset_many.installIf = lambda f,m: f.isChangeable and f.isMany
-    _unset_many.verb      = 'unset'
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     def add(feature, element, item, posn=None):
 
         """Add the item to the collection/relationship"""      
@@ -375,17 +350,6 @@ class StructuralFeature(object):
 
     add.installIf = lambda f,m: f.isChangeable and f.isMany
 
-
-    def _notifyLink(feature, element, item, posn=None):
-
-        item = feature._link(element,item,posn)
-        referencedEnd = feature.referencedEnd
-
-        if referencedEnd:
-            otherEnd = getattr(item.__class__,referencedEnd)
-            otherEnd._link(item,element)
-
-    _notifyLink.installIf = installIfChangeable
 
 
     def remove(feature, element, item, posn=None):
@@ -397,6 +361,39 @@ class StructuralFeature(object):
     remove.installIf = lambda f,m: f.isChangeable and f.isMany
 
 
+
+
+
+
+
+
+    def _notifyLink(f):
+
+        _link = f.methodTemplates['_link'](f)
+        refEnd = f.referencedEnd
+
+        if not f.isChangeable:
+            _notifyLink = None
+
+        elif refEnd:
+
+            def _notifyLink(feature, element, item, posn=None):
+                item     = _link(feature,element,item,posn)
+                otherEnd = getattr(item.__class__, refEnd)
+                otherEnd._link(item,element)
+
+        else:
+            # Return the _link method "in line"; _notify isn't needed
+            _notifyLink = _link
+
+        return _notifyLink
+
+
+    _notifyLink.verb       = '_notifyLink'
+    _notifyLink.isTemplate = True
+
+
+
     def _notifyUnlink(feature, element, item, posn=None):
 
         feature._unlink(element,item,posn)
@@ -406,47 +403,50 @@ class StructuralFeature(object):
             otherEnd = getattr(item.__class__,referencedEnd)
             otherEnd._unlink(item,element)
 
-    _notifyUnlink.installIf = installIfChangeable
-
-    def _link_one(feature,element,item,posn=None):
-
-        item = feature.normalize(item)
-        feature._onLink(element,item,posn)
-        feature._doSet(element,item)
-        return item
-
-    _link_one.installIf = lambda f,m: f.isChangeable and not f.isMany
-    _link_one.verb      = '_link'
+    _notifyUnlink.verb       = '_notifyUnlink'
+    _notifyUnlink.installIf  = installIfChangeable
 
 
-    def _link_many(feature,element,item,posn=None):
 
-        ub = feature.upperBound
-        d=feature.get(element)
+    def _link(f):
 
-        if ub and len(d)>=ub:
-            raise ValueError("Too many items")
+        if not f.isChangeable:
+            _link = None
 
-        item = feature.normalize(item)
-        feature._onLink(element,item,posn)
+        elif f.isMany:
 
-        feature._doSet(element,d)
+            def _link(feature,element,item,posn=None):
 
-        if posn is None:
-            d.append(item)
+                ub = feature.upperBound
+                d=feature.get(element)
+
+                if ub and len(d)>=ub:
+                    raise ValueError("Too many items")
+
+                item = feature.normalize(item)
+                feature._onLink(element,item,posn)
+
+                feature._doSet(element,d)
+
+                if posn is None:
+                    d.append(item)
+                else:
+                    d.insert(posn,item)
+                return item
+
         else:
-            d.insert(posn,item)
-        return item
 
-    _link_many.installIf = lambda f,m: f.isChangeable and f.isMany
-    _link_many.verb      = '_link'
+            def _link(feature,element,item,posn=None):
 
+                item = feature.normalize(item)
+                feature._onLink(element,item,posn)
+                feature._doSet(element,item)
+                return item
 
+        return _link
 
-
-
-
-
+    _link.verb       = '_link'
+    _link.isTemplate = True
 
 
     def _unlink(feature,element,item,posn=None):

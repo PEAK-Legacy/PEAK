@@ -278,6 +278,52 @@ class MethodExporter(ActiveClass):
             class, or they can be used directly as instance methods of the
             outer class.
 
+        Dynamic Method Templates
+
+            By using the 'isTemplate' function attribute, you can indicate that
+            the function should be called in order to obtain the actual code to
+            be used.  Here's the earlier code generation example, rewritten
+            using dynamic templates::
+
+                class slappableFeature(object):
+
+                    __metaclass__ = MethodExporter
+
+                    thickness = 5
+                
+                    newVerbs = [ ('slap', "slap%(initCap)s") ]
+
+                    def slap(feature):
+
+                        if feature.thickness > 10:
+
+                            def slap(feature, self):
+                                print "THUD!", feature.thickness
+            
+                        else:
+                            def slap(feature, self):
+                                print "SMACK!", feature.thickness                       
+
+                        return slap
+
+                    slap.isTemplate = True
+
+        
+            As you can see, this can often be a more readable approach, if you
+            don't need to redefine the variants in subclasses.  The outer
+            'slap' function shown above is passed the feature object (or one
+            of its subclasses) being defined, and must return the function to
+            be used as a verb implementation.  If it returns 'None', the verb
+            will not exist in the defined feature, nor will it be exported to
+            any class the feature is placed in.
+
+            The same rules apply for recognizing a template as any other verb
+            implementation: it must be named the same as a verb, or it must
+            have a 'verb' function attribute identifying the appropriate verb.
+            It can also have an 'installIf' attribute, if desired.  The
+            'installIf' attribute is checked first, and the template function
+            is only called if the 'installIf' check returns a true value.
+
         Inner and Outer Method Definitions
 
             Sometimes, one needs to modify an "off-the-shelf" method
@@ -348,11 +394,6 @@ class MethodExporter(ActiveClass):
     def subjectNames(self):
         """Return a nameMapping object for this feature"""
         return nameMapping(self)
-
-
-
-
-
 
 
 
@@ -457,7 +498,6 @@ class MethodExporter(ActiveClass):
             candidates = []
             
             for implName in vt.neighbors(verb):
-
                 try:
                     func = mt[implName]
                 except KeyError:
@@ -477,6 +517,11 @@ class MethodExporter(ActiveClass):
                     )
 
                 func, = candidates
+                if getattr(func,'isTemplate',False):
+                    func = func(self)
+                    if not func:
+                        setattr(self,verb,nullProperty(verb))
+                        continue
 
                 if verb in verbs:
                     mn[verb] = verbs[verb] % names
@@ -485,10 +530,6 @@ class MethodExporter(ActiveClass):
                 
             else:
                 setattr(self,verb,nullProperty(verb))
-
-
-
-
 
 class nameMapping(object):
 
