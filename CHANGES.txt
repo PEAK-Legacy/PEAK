@@ -1,5 +1,12 @@
 Fixes and Enhancements since Version 0.5 alpha 3
 
+ - PEAK no longer supports Python 2.2; Python 2.3.4 or better is required.
+
+ - The kjbuckets extension module is no longer built and installed by default;
+   you must explicitly enable it with a '--with-kjbuckets' flag passed to
+   'setup.py'.  Please port your code as soon as practical, this option will
+   go away soon.
+
  - Use of the included 'kjbuckets' module is now DEPRECATED, due to increasing
    bitrot.  Aaron Watters originally wrote this extension for Python 1.2, and
    it has not been well-maintained for newer versions of the Python/C API.

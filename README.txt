@@ -92,10 +92,6 @@ PEAK Release 0.5 alpha 4
      please see the 'src/kjbuckets/COPYRIGHT.txt' file for details of its
      license.
 
-     The 'csv' module is part of Python 2.3 and above, and is included for
-     backward compatibility in Python 2.2.  See the Python license for license
-     details.
-
      The included 'pyexpat', 'doctest', 'optparse', and 'textwrap' modules in
      'peak.util' are from Python 2.4, and are included for backward
      compatibility in Python 2.2 and 2.3.  See the Python license for license
@@ -106,7 +102,7 @@ PEAK Release 0.5 alpha 4
      Expat maintainers.  See the 'COPYING' file in 'src/expat' for details of
      its license.
 
-     The 'datetime', 'persistence' and 'ZConfig' packages are Copyright Zope
+     The 'persistence' and 'ZConfig' packages are Copyright Zope
      Corporation and contributors; please see the 'LICENSE.txt' files in their
      directories for details of their licenses.
 
@@ -119,5 +115,9 @@ PEAK Release 0.5 alpha 4
  Installation Instructions
 
     Please see the INSTALL.txt file.
+
+
+
+
 
 

@@ -11,7 +11,7 @@ Installing PEAK
 
  SYSTEM REQUIREMENTS
 
-  Python 2.2.2 or better is required.  Some portions of PEAK may support only
+  Python 2.3.4 or better is required.  Some portions of PEAK may support only
   POSIX-like and/or Windows operating systems.  Installation from a source
   distribution requires a C compiler that works with Python.
 
@@ -103,7 +103,7 @@ Installing PEAK
 
     peak test
 
-  This will run over 120 tests on various parts of PEAK.  If you have
+  This will run over 800 tests on various parts of PEAK.  If you have
   installed everything correctly, 100% of the tests should succeed.  If
   anything is broken, you will probably be unable to run the tests at all.
 
@@ -125,10 +125,11 @@ Installing PEAK
 
   Aaron Watters' 'kjbuckets' Module
 
-   PEAK now includes a copy of Aaron Watters' 'kjbuckets' module for
-   your convenience, and automatically installs it alongside PEAK in
-   your Python 'site-packages' directory.  (Note that this will overwrite
-   any existing installation of the 'kjbuckets' module.)
+   Use of this module is deprecated; if your software depends on it, you must
+   supply a '--with-kjbuckets' argument to 'setup.py' in order to build and
+   install it.  Please use an alternate distribution of kjbuckets or port your
+   software to use the Python 2.3 'Set' type and the 'peak.util.Graph' module,
+   as appropriate.
 
    'kjbuckets' is copyright Aaron Watters and contributors; please see
    the 'src/kjbuckets/COPYRIGHT.txt' file for details of its license.
@@ -143,9 +144,7 @@ Installing PEAK
 
    - 'ZConfig'
 
-   (Also, if you are using a Python version that does not include the 'datetime'
-   or 'csv' packages (i.e. versions < 2.3), replacement versions are installed
-   as well.)  These packages are automatically installed alongside PEAK in your
+   These packages are automatically installed alongside PEAK in your
    'site-packages' directory, unless you specify an alternate installation
    location to 'setup.py'.  Note that this will overwrite any existing
    installation of these packages.
@@ -158,9 +157,10 @@ Installing PEAK
    will not install any of the Zope packages listed above, in order to avoid
    overwriting newer versions from your Zope installation.
 
-   The 'datetime', 'persistence' and 'ZConfig' packages are Copyright Zope
-   Corporation and contributors; please see the 'LICENSE.txt' files in their
-   directories for details of their licenses.
+   The 'persistence' and 'ZConfig' packages are Copyright Zope Corporation and
+   contributors; please see the 'LICENSE.txt' files in their directories for
+   details of their licenses.
+
 
   The 'fcgiapp' Module
 

@@ -8,8 +8,8 @@ from setuptools import setup, Extension, Feature, find_packages
 PACKAGE_NAME = "PEAK"
 PACKAGE_VERSION = "0.5a4"
 HAPPYDOC_IGNORE = [
-    '-i','datetime', '-i','old', '-i','tests', '-i','setup', '-i','examples',
-    '-i', 'kjbuckets', '-i', 'ZConfig', '-i', 'csv',
+    '-i','old', '-i','tests', '-i','setup', '-i','examples',
+    '-i', 'kjbuckets', '-i', 'ZConfig',
 ]
 
 
@@ -24,7 +24,6 @@ extensions = [
         include_dirs=["src/expat"],
         define_macros=[('XML_STATIC',1),('HAVE_MEMMOVE',1)]   # XXX
     ),
-    Extension("kjbuckets", ["src/kjbuckets/kjbucketsmodule.c"]),
     Extension(
         "peak.binding._once", [
             "src/peak/binding/_once.pyx", "src/peak/binding/getdict.c"
@@ -36,8 +35,9 @@ extensions = [
     Extension(
         "peak.persistence._persistence", ["src/peak/persistence/persistence.c"]
     ),
-    Extension('_csv', ['src/_csv.c']),
 ]
+
+
 
 try:
     # Check if Zope X3 is installed; we use zope.component
@@ -81,7 +81,6 @@ if os.name=='posix' and hasattr(os, 'uname'):
 
 
 execfile('src/setup/common.py')
-
 features = {
     'tests': Feature(
         "test modules", standard = True,
@@ -90,11 +89,12 @@ features = {
     'metamodels': Feature(
         "MOF/UML metamodels", standard = True, remove=['peak.metamodels']
     ),
-    'legacy-support': Feature(
-        "Python 2.2 support packages",
-        standard = sys.version_info < (2,3), optional = False,
-        remove = ['datetime','csv','_csv'],
-    ),
+    'kjbuckets': Feature(
+        "Aaron Watters' kjbuckets module (DEPRECATED!)", standard = False,
+        ext_modules = [
+            Extension("kjbuckets", ["src/kjbuckets/kjbucketsmodule.c"]),
+        ]
+    ),    
     'fcgiapp': Feature(
         "FastCGI support", standard = (os.name=='posix'),
         ext_modules = [
