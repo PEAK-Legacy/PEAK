@@ -55,13 +55,13 @@ Fixes and Enhancements since Version 0.5 alpha 2
 
         socket = binding.Obtain(
             lambda self: self.lookupComponent(self.socketURL),
-            adaptTo = [IListeningSocket]
+            adaptTo=[IListeningSocket]
         )
 
    with code like this::
 
         socket = binding.Obtain(
-            naming.Indirect('socketURL'), adaptTo = [IListeningSocket]
+            naming.Indirect('socketURL'), adaptTo=[IListeningSocket]
         )
 
  - Added 'peak.running.supervisor', a mini-framework for pre-forking,
@@ -177,7 +177,7 @@ Fixes and Enhancements since Version 0.5 alpha 2
 
    'Constant(value)' -- use 'Make(lambda: value)'
 
-   'Acquire(key)' -- use 'Obtain(key, offerAs=[key])'
+   'Acquire(key)' -- use 'Obtain(key, offerAs=[key,])'
 
    'Copy(value)' -- use 'Make(lambda: <expr to copy value>)'
 
@@ -366,7 +366,8 @@ Fixes and Enhancements since Version 0.5 alpha 2
  - Property definition rules in an .ini file can now refer to 'rulePrefix' and
    'ruleSuffix' variables.  'rulePrefix' is a "."-terminated string,
    representing the name the rule was defined with.  For example, if the
-   rule was defined for '"foo.bar.*"', then 'rulePrefix' will be '"foo.bar."'.
+   rule was defined for '"foo.bar.*"', then 'rulePrefix' will be '"foo.bar."'
+
    The 'ruleSuffix' will be the portion of the 'propertyName' that follows
    'rulePrefix'.  So, if looking up property '"foo.bar.baz"', then the
    '"foo.bar.*"' rule will execute with a 'ruleSuffix' of '"baz"'.  This should
