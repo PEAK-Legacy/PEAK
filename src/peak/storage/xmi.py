@@ -180,7 +180,7 @@ _any_converters = {
     'float': float,
     'double': float,
 
-    'boolean': Boolean.fromString,
+    'boolean': Boolean.mdl_fromString,
     'char': str,
     'wchar': unicode,
     

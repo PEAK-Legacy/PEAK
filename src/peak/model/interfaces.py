@@ -44,10 +44,10 @@ class IClassifier(Interface):
     """A model type"""
 
 
-    def fromString(aString):
+    def mdl_fromString(aString):
         """Return an instance of type created based on 'aString'"""
     
-    def fromFields(fieldSequence):
+    def mdl_fromFields(fieldSequence):
         """Return an instance of type created based on 'fieldSequence'
 
         'fieldSequence' must be an iterable object whose contents
@@ -208,10 +208,10 @@ class IFeature(Interface):
     )
 
     def fromString(aString):
-        """See 'IClassifier.fromString()'"""
+        """See 'IClassifier.mdl_fromString()'"""
         
     def fromFields(fieldSequence):
-        """See 'IClassifier.fromFields()'"""
+        """See 'IClassifier.mdl_fromFields()'"""
 
     def __get__(element,type=None):
         """Retrieve value of the feature for 'element'"""

@@ -81,7 +81,7 @@ class TCKind(SimpleTC):
 
 
 class Integer(PrimitiveType):
-    fromString = int
+    mdl_fromString = int
 
 class Short(Integer):
     pass
@@ -96,7 +96,7 @@ class ULong(Integer):
     pass
 
 class Float(PrimitiveType):
-    fromString = float
+    mdl_fromString = float
 
 class Double(PrimitiveType):
     pass
@@ -106,10 +106,10 @@ class String(PrimitiveType):
 
     length = 0
 
-    def fromString(klass,value):
+    def mdl_fromString(klass,value):
         return value
 
-    fromString = classmethod(fromString)
+    mdl_fromString = classmethod(mdl_fromString)
 
     mdl_typeKind = TCKind.tk_string
 
@@ -166,11 +166,11 @@ class UnlimitedInteger(Integer):
 
     UNBOUNDED = -1
 
-    def fromString(klass, value):
+    def mdl_fromString(klass, value):
         if value=='*': return klass.UNBOUNDED
         return int(value)
 
-    fromString = classmethod(fromString)
+    mdl_fromString = classmethod(mdl_fromString)
 
 
 class Name(String):

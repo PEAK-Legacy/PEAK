@@ -58,15 +58,10 @@ class MailModel(model.Model):
             referencedEnd  = 'envelope'
 
 
-    class String(model.PrimitiveType):
-        def fromString(klass,value):
-            return value
-        fromString = classmethod(fromString)
-
     class Address(model.Struct):
     
         class name(model.structField):
-            referencedType = 'String'
+            referencedType = model.String
 
         class streetNumber(name):   pass
         class street(name):         pass
@@ -79,6 +74,11 @@ class MailModel(model.Model):
                 [self.name, '%s %s' % (self.streetNumber,self.street),
                     self.city, '%s %s' % (self.state, self.zip) ]
             )
+
+
+
+
+
 
 MailText="""<?xml version="1.0"?>
 

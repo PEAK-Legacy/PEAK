@@ -430,20 +430,11 @@ class Enumeration(PrimitiveType, HashAndCompare):
     def __repr__(self):
         return "%s.%s" % (self.__class__.__name__,self.name)
 
-    def fromString(klass, value):
+    def mdl_fromString(klass, value):
         """Return an enumeration instance for string 'value'"""
         return klass[value]
 
-    fromString = classmethod(fromString)
-
-    def fromFields(klass, fieldSequence):
-        """Enumeration cannot be constructed from fields"""
-        raise TypeError(
-            "Enumeration cannot be constructed from fields",
-            klass, fieldSequence
-        )
-        
-    fromFields = classmethod(fromFields)
+    mdl_fromString = classmethod(mdl_fromString)
 
     def __reduce__(self):
         return self.__class__, (self._hashAndCompare,)

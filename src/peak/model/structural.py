@@ -146,8 +146,8 @@ class FeatureClass(HashAndCompare,MethodExporter):
 
     typeObject = binding.Once(typeObject)
 
-    fromString = binding.bindTo('typeObject/fromString')
-    fromFields = binding.bindTo('typeObject/fromFields')
+    fromString = binding.bindTo('typeObject/mdl_fromString')
+    fromFields = binding.bindTo('typeObject/mdl_fromFields')
 
     sortPosn   = None
 
@@ -754,17 +754,17 @@ class Classifier(Namespace):
         return super(Classifier,klass).__new__(klass,*__args,**__kw)
 
 
-    def fromFields(klass,fieldSeq):
+    def mdl_fromFields(klass,fieldSeq):
         """Return a new instance from a sequence of fields"""
         return klass(**dict(zip(klass.mdl_featureNames,fieldSeq)))
 
-    fromFields = classmethod(fromFields)
+    mdl_fromFields = classmethod(mdl_fromFields)
 
 
-    def fromString(klass, value):
+    def mdl_fromString(klass, value):
         raise NotImplementedError
 
-    fromString = classmethod(fromString)
+    mdl_fromString = classmethod(mdl_fromString)
 
 
 
@@ -924,11 +924,11 @@ class PrimitiveType(Classifier):
 
     __metaclass__ = PrimitiveTypeClass
 
+    def mdl_fromFields(klass,fieldSeq):
+        # primitive types don't have fields...
+        raise NotImplementedError
 
-
-
-
-
+    mdl_fromFields = classmethod(mdl_fromFields)
 
 
 
