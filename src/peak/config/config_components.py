@@ -14,7 +14,8 @@ __all__ = [
     'ConfigMap', 'PropertyMap', 'LazyRule', 'PropertySet', 'fileNearModule',
     'iterParents','findUtilities','findUtility', 'Value', 'iterKeys',
     'provideInstance', 'instancePerComponent', 'Namespace', 'iterValues',
-    'CreateViaFactory', 'parentsProviding', 'parentProviding', 'lookup'
+    'CreateViaFactory', 'parentsProviding', 'parentProviding', 'lookup',
+    'ServiceArea',
 ]
 
 
@@ -35,7 +36,6 @@ _emptyRuleCell.exists()
 def fileNearModule(moduleName,filename):
     filebase = importString(moduleName+':__file__')
     import os; return os.path.join(os.path.dirname(filebase), filename)
-
 
 
 
@@ -170,31 +170,31 @@ class CreateViaFactory(object):
         classProvides=[IRule]
     )
 
-    __slots__ = 'iface','instance'
+    __slots__ = 'configKey'
 
 
-    def __init__(self,iface):
-        self.iface = iface
+    def __init__(self,configKey):
+        self.configKey = configKey
 
 
     def __call__(self, propertyMap, configKey, targetObj):
 
-        try:
-            return self.instance
+        serviceArea = parentProviding(targetObj, IServiceArea)
 
-        except AttributeError:
-
-            factory = lookup(targetObj, FactoryFor(self.iface))
+        def create():
+            factory = lookup(serviceArea, FactoryFor(self.configKey))
 
             if factory is NOT_FOUND:
-                self.instance = factory
-            else:
-                self.instance = factory()
-                binding.suggestParentComponent(
-                    binding.getParentComponent(propertyMap),None,self.instance
-                )
+                return factory
 
-            return self.instance
+            instance = factory()
+            binding.suggestParentComponent(serviceArea, None, instance)
+            return instance
+
+        # We use our 'self' as a rule key, in case we're registered under
+        # more than one configuration key
+        return serviceArea.getService(self, create)
+
 
 
 
@@ -408,7 +408,48 @@ class NamingStateAsSmartProperty(protocols.Adapter):
 
 
 
-class ConfigurationRoot(Component):
+class ServiceArea(Component):
+
+    """Component that acts as a home for "global"-ish services"""
+
+    protocols.advise(instancesProvide=[IServiceArea])
+
+    __services = binding.Make('peak.util.EigenData:EigenDict')
+
+    def getService(self,ruleKey,factory):
+        return self.__services.get(ruleKey,NOT_FOUND,factory=factory)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class ConfigurationRoot(ServiceArea):
 
     """Default implementation for a configuration root.
 

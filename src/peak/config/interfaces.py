@@ -5,6 +5,7 @@ __all__ = [
     'IConfigKey', 'IConfigurable', 'IConfigSource', 'IConfigurationRoot',
     'ISmartProperty', 'IRule', 'IPropertyMap', 'ISettingLoader',
     'IIniParser', 'ISettingParser', 'NullConfigRoot', 'IConfigMap',
+    'IServiceArea',
 ]
 
 
@@ -30,7 +31,6 @@ class IConfigKey(Interface):
 
     def parentKeys():
         """Iterate over keys that are containing namespaces for this key"""
-
 
 
 
@@ -80,8 +80,14 @@ class IConfigurable(IConfigSource):
 
 
 
-class IConfigurationRoot(IConfigSource):
+class IServiceArea(IConfigSource):
+    """A component that acts as a home for services and their configuration"""
 
+    def getService(ruleKey, factory):
+        """Return service for 'ruleKey', creating w/'factory' if needed"""
+
+
+class IConfigurationRoot(IServiceArea):
     """A root component that acknowledges its configuration responsibilities"""
 
     def noMoreValues(root,configKey,forObj):
@@ -95,7 +101,6 @@ class IConfigurationRoot(IConfigSource):
 
 
 class _NullConfigRoot(object):
-
     """Adapter to handle missing configuration root"""
 
     def noMoreValues(self,root,configKey,forObj):
@@ -114,11 +119,6 @@ class _NullConfigRoot(object):
         return self.noMoreValues(root,configKey,forObj)
 
 NullConfigRoot = _NullConfigRoot()
-
-
-
-
-
 
 
 class IIniParser(Interface):

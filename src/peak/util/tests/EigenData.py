@@ -121,22 +121,22 @@ class CheckDict(TestCase):
         else:
             raise AssertionError("Shouldn't be able to delete read key")
 
+    def checkGetWithFactory(self):
+        ed = self.ed
+        self.assertEqual(ed.get('a',None), 9)
+        self.assertEqual(ed.get('a',factory=lambda:27), 9)
+        self.assertEqual(ed.get('q',None), None)
+        self.assertEqual(ed.get('z',factory=lambda:42), 42)
+        ed.keys() # lock it
+        self.assertEqual(ed.get('x',factory=lambda:59), None)
+
+
 TestClasses = (
     CheckEmpty, CheckEmpty2, CheckUnset, CheckFull, CheckDict,
 )
 
 def test_suite():
     return TestSuite([makeSuite(t,'check') for t in TestClasses])
-
-
-
-
-
-
-
-
-
-
 
 
 

@@ -341,14 +341,13 @@ class IniInterpreter(AbstractInterpreter):
         if not isfile(filename):
             raise InvocationError("Not a file:", filename)
 
-        parent = self.getCommandParent()
-
-        config.loadConfigFile(parent, filename)
+        cfg = config.ServiceArea(self.getCommandParent())
+        config.loadConfigFile(cfg, filename)
 
         # Set up a command factory based on the configuration setting
 
         executable = importObject(
-            config.lookup(parent, 'peak.running.app', None)
+            config.lookup(cfg, 'peak.running.app', None)
         )
 
         if executable is None:
@@ -358,8 +357,9 @@ class IniInterpreter(AbstractInterpreter):
 
         # Now create and return the subcommand
         return self.getSubcommand(executable,
-            parentComponent=parent, componentName = self.commandName
+            parentComponent=cfg, componentName = self.commandName
         )
+
 
 
 

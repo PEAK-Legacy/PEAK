@@ -254,13 +254,13 @@ class EigenDict(object):
         raise KeyError, key
 
 
-    def get(self, key, failobj=None):
+    def get(self, key, failobj=None, factory=None):
 
         cell = self._setCell(key)
 
-        if cell.exists():
-            return cell.get()
-        else:
+        try:
+            return cell.get(factory)
+        except AttributeError:
             return failobj
 
 

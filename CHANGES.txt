@@ -2,6 +2,23 @@ Fixes and Enhancements since Version 0.5 alpha 2
 
  Changed, Enhanced, or Newly Deprecated Features
 
+ - "Global" services defined by '[Component Factories]' sections now live in
+   the closest "service area" to the component that requests them.  A "service
+   area" is a parent component that implements 'config.IServiceArea', such as
+   a configuration root returned by 'config.makeRoot()'.  Applications loaded
+   by the 'peak runIni' command are now created in their own service area,
+   which means that settings in the .ini file being run will apply to services
+   the application uses.  (Because the application will have its own,
+   application-specific service instances, and they will use the configuration
+   loaded into the service area.)
+
+   If you need to create your own service area, you can do so by mixing in
+   'config.ServiceArea' to your component class.  However, you should *not* do
+   this unless you know exactly what "outside" services you may need to use
+   from "inside" the newly created service area, so that you can explicitly
+   connect them "into" the service area.  (In short, if you don't know *why*
+   you're creating a service area, don't do it.)
+
  - 'config.Namespace()' objects now have a 'keys()' method that can be used
    when the namespace is bound to a context component.  It returns a list of
    strings that may be used as keys for that namespace.  Example usage::
