@@ -1,13 +1,12 @@
 """Domain logic and convenience features for manipulating UML Models
 
-    This module adds a couple of domain logic features to the 'UMLClass'
-    class family defined by 'peak.metamodels.uml.MetaModel'.  Specifically,
+    This module adds a couple of domain logic features to the UML structural
+    model defined by 'peak.metamodels.UML13.model'.  Specifically,
     it adds some computed features, such as the notion of a "qualified name"
     of a UML model element, and the "superclasses" and "subclasses" of UML
-    generalizable elements.
-
-    It also redefines 'model' to be 'peak.metamodels.SimpleModel', which adds
-    querying and XMI reading aspects to the basic in-memory structural model.
+    generalizable elements.  It also gives namespaces a '__getitem__' method
+    for easy retrieval of object contents, and a 'find' operation for running
+    queries over a UML model.
 """
 
 from peak.util.imports import lazyModule
@@ -39,7 +38,12 @@ from peak.model.queries import query
 
 
 
+
 class ModelElement:
+
+    class name:
+        defaultValue = None
+
 
     class qualifiedName(model.DerivedAssociation):
 
@@ -76,32 +80,40 @@ class GeneralizableElement:
 
 
 
-
-
-
-
 class Namespace:
 
-        def __getitem__(self,key):
-
-            if '.' in key:
-                ob = self
-                for k in key.split('.'):
-                    ob = ob[k]
-                return ob
-
-            for ob in self.ownedElements:
-                if getattr(ob,'name',None)==key:
-                    return ob
-
-            raise KeyError, key
+    _contentsIndex = binding.Once(
+        lambda s,d,a: dict([
+            (ob.name, ob) for ob in s.ownedElement
+        ])
+    )
 
 
-        def find(self,*criteria):
-            q = query(self.ownedElements)
-            for c in criteria:
-                q = q[c]
-            return q
+    class ownedElement:
+
+        def _onLink(feature, element, item, posn=None):                
+            element._contentsIndex[item.name]=item
+
+        def _onUnlink(feature, element, item, posn=None):
+            del element._contentsIndex[item.name]
+
+
+    def __getitem__(self,key):
+
+        if '.' in key:
+            ob = self
+            for k in key.split('.'):
+                ob = ob[k]
+            return ob
+
+        return self._contentsIndex[key]
+
+
+    def find(self,*criteria):
+        q = query(self.ownedElements)
+        for c in criteria:
+            q = q[c]
+        return q
 
 
 config.setupModule()
