@@ -32,5 +32,6 @@ else:
 importAllFrom('TW.Interfaces')
 importAllFrom('TW.Components')
 importAllFrom('TW.Builders')
+import SEF
 
 del sys
