@@ -3,7 +3,7 @@ from __future__ import generators
 from peak.binding.components import Component, getRootComponent, New, \
     AutoCreated
 
-from peak.api import NOT_FOUND
+from peak.api import NOT_FOUND, NOT_GIVEN
 from peak.util.EigenData import EigenCell, AlreadyRead
 from interfaces import *
 
@@ -45,14 +45,18 @@ class PropertyMap(AutoCreated):
     rules    = New(dict)
     defaults = New(dict)
 
+
     _provides = IPropertyMap
+
 
     def setRule(self, propName, ruleObj):
         if self.values.has_key(propName): raise AlreadyRead
         _setCellInDict(self.rules, propName, ruleObj)
 
+
     def setDefault(self, propName, defaultRule):
         _setCellInDict(self.defaults, propName, defaultRule)
+
 
     def setPropertyFor(self, obj, propName, value):
         if obj is not self.getParentComponent():
@@ -62,52 +66,82 @@ class PropertyMap(AutoCreated):
         _setCellInDict(self.values, propName, value)
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     def getPropertyFor(self, obj, propName):
 
+        # First we try values
+        
         cell = self.values.get(propName)
 
         if cell is not None:
             return cell.get()
 
-        rules      = self.rules
-        defaults   = self.defaults
 
         # Initialize loop invariants
         
+        rules      = self.rules
+        xRules     = []
         rulesUsed  = False
         value      = NOT_FOUND
-        xRules     = []
-        xDefaults  = []
 
 
+        # Check regular & wildcard rules
+        
         for name in _enumWildcards(propName):
 
             rule = rules.get(name)
 
             if rule is None:
-                xRules.append(name)
+                xRules.append(name)     # track unspecified rules
 
             elif rule is not _emptyRuleCell:
-                rulesUsed = True
+
                 value = rule.get()(self, propName, obj)
-                if value is not NOT_FOUND: break
 
-            default = rules.get(name)
+                if value is NOT_GIVEN:
+                    value = NOT_FOUND
+                    continue
+                    
+                rulesUsed = True    # we depended on the rule's return value
 
-            if default is None:
-                xDefaults.append(name)
-
-            elif default is not _emptyRuleCell:
-                value = default.get()(self, propName)
-                if value is not NOT_FOUND: break
+                if value is not NOT_FOUND:
+                    break
 
 
-        # ensure that undefined rules/defaults stay that way, if they
+        # ensure that unspecified rules stay that way, if they
         # haven't been replaced in the meanwhile by a higher-level
         # wildcard rule
 
-        for name in xDefaults: defaults.setdefault(name,emptyRuleCell)
-        for name in xRules:       rules.setdefault(name,emptyRuleCell)
+        for name in xRules:
+            rules.setdefault(name,emptyRuleCell)
+
+
+        if value is NOT_FOUND:
+
+            # Rules didn't work, or else they loaded something
+            # let's try values again, then defaults...
+
+            cell = self.values.get(propName)
+
+            if cell is not None:
+                return cell.get()
+
+            default = self.defaults.setdefault(propName, emptyRuleCell)
+            value = default.get()(self, propName)
+
 
         if rulesUsed:
             return value
@@ -120,6 +154,13 @@ class PropertyMap(AutoCreated):
         cell.set(value)
 
         return cell.get()
+
+
+
+
+
+
+
 
 class GlobalConfig(Component):
 

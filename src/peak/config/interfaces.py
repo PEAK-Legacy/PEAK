@@ -49,12 +49,26 @@ class IRule(Interface):
 
         The rule object is allowed to call any 'IPropertyMap' methods on the
         'propertyMap' that is requesting computation of this rule.  It is
-        also allowed to call 'config.getProperty()' relative to 'targetObject'.
+        also allowed to call 'config.getProperty()' relative to 'targetObject'
+        or 'propertyMap'.
 
         What an IRule must *not* do, however, is return different results over
         time for the same input parameters.  If it cannot guarantee this
         algorithmically, it must cache its results keyed by the parameters it
-        used, and not compute the results a second time."""
+        used, and not compute the results a second time.
+
+        In the event a rule cannot speak to the presence or absence of a
+        property value for a given name and target, it may return the
+        'NOT_GIVEN' singleton.  In this case, the 'propertyMap' will continue
+        the search for a value, but will not consider the rule to have
+        participated in the determination of the value.  This is important
+        for rules that load configuration values, rules, or defaults, but do
+        not directly involve themselves in the computation of property values.
+        Such rules should return 'NOT_GIVEN' for every call after the first
+        one, in order to "bow out" of the property calculation process once
+        they've done their job.  They can also return 'NOT_GIVEN' on the first
+        call, so long as all the data they load is either values or defaults.
+        """
 
 
 class IDefault(Interface):
@@ -63,20 +77,6 @@ class IDefault(Interface):
 
     def __call__(propertyMap, propName):
         """Compute default for property 'propName' or return 'NOT_FOUND'"""
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -92,8 +92,8 @@ class IPropertyMap(Interface):
 
         Note also that 'propName' may be a "wildcard", of the form
         '"part.of.a.name.*"' or '"*"' by itself in the degenerate case.
-        Wildcard rules and defaults are checked in most-specific-first
-        order, after the non-wildcard name."""
+        Wildcard rules are checked in most-specific-first order, after
+        the non-wildcard name, and before the property's default."""
 
 
     def setDefault(propName, defaultObj):
@@ -103,9 +103,8 @@ class IPropertyMap(Interface):
         accessed, an 'AlreadyRead' exception results.  Also, if a value has
         already been set for the property, the default will be ignored.  The
         default will also be ignored if a rule exists for the same 'propName',
-        unless the rule returns 'NOT_FOUND'.
-
-        As with 'setRule()', 'propName' may be a "wildcard"."""
+        unless the rule returns 'NOT_FOUND'.  Note: unlike rules, defaults
+        can *not* be registered for a wildcard 'propName'."""
 
 
     def setPropertyFor(obj, propName, value):
