@@ -243,7 +243,9 @@ class SQLInteractor(binding.Component):
 
     def toStr(self, v, w=None):
         if v is None:
-            return "NULL"
+            if w is None:
+                return "NULL"
+            return "NULL".ljust(w)[:w]
         elif w is None:
             return str(v)
         elif type(v) in (int, long):
