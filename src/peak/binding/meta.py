@@ -214,7 +214,7 @@ class MethodExporter(ActiveDescriptor, type):
         Typically, you will define MethodExporters with multiple verbs, and
         you may also use template variants, which are chosen by metadata in
         subclasses.  For example, suppose we wanted 'slappableFeatures' to
-        implement slap differently depending on skin thickness::
+        implement the 'slap' verb differently depending on skin thickness::
       
             class slappableFeature(object):
 
@@ -340,7 +340,7 @@ class MethodExporter(ActiveDescriptor, type):
 
             You've probably noticed that our method templates refer to
             'self.__class__.__feature__' in order to access the feature
-            object itself.  And you may be wondering, "How does __feature__
+            object itself.  And you may be wondering, "How does '__feature__'
             know whether to be 'face' or 'back'?"  The answer is in the
             magic of code rebinding.
 
@@ -415,7 +415,7 @@ class MethodExporter(ActiveDescriptor, type):
         Sometimes, one wishes to access a possibly-overridden method of a
         feature, knowing the verb and subject, but not the method name.
         That is, one knows about 'slap', and 'face', but not 'slapFace'.
-        In that case, 'face.getMethod(object,"slap") can be used to obtain
+        In that case, 'face.getMethod(object,"slap")' can be used to obtain
         the 'object.slapFace' method, without needing to know the naming
         convetions used by the object.
 

@@ -666,7 +666,7 @@ class Collection(StructuralFeature):
     def _getList(feature, element):
         return element.__dict__.setdefault(feature.__name__, [])
         
-    def get(self, asSeq=None):
+    def get(self):
         feature = self.__class__.__feature__
         return feature._getList(self)
 
