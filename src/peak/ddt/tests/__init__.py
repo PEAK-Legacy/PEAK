@@ -304,9 +304,9 @@ class BasicTests(TestCase):
                 stdout = StringIO(), stderr = StringIO(),
             )
             runner.run()
-            self.assertEqual(runner.stdout.getvalue(), output)
-
-
+            self.assertEqual(
+                runner.stdout.getvalue().replace('\r\n','\n'), output
+            )
 
 
 
