@@ -169,7 +169,7 @@ class StructuralFeature(object):
 
     isDerived     = False
     isRequired    = False
-
+    isComposite   = False
     isOrdered     = False
     isChangeable  = True    # default is to be changeable
 
@@ -412,7 +412,7 @@ class Sequence(Collection):
 
     __class_implements__ = ISequence
 
-    isOrdered = 1
+    isOrdered = True
 
     newVerbs = Items(
         insertBefore = 'insert%(initCap)sBefore',
@@ -453,6 +453,15 @@ class Classifier(Namespace):
 
     """Basis for all flavors"""
 
+    def __new__(klass,*__args,**__kw):
+
+        """Don't allow instantiation if this is an abstract class"""
+
+        if klass.mdl_isAbstract:
+            raise TypeError, "Can't instantiate an abstract class!"
+        return super(Classifier,klass).__new__(klass,*__args,**__kw)
+
+
     def mdl_featuresDefined(self,d,a):
 
         """Sorted tuple of feature objects defined/overridden by this class"""
@@ -474,15 +483,6 @@ class Classifier(Namespace):
     mdl_featureNames = binding.classAttr(binding.Once(mdl_featureNames))
 
 
-    def mdl_sortedFeatures(self,d,a):
-
-        """All feature objects of this classifier, in sorted order"""
-
-        fl = list(self.mdl_features)
-        fl.sort
-        return tuple(fl)
-
-    mdl_sortedFeatures = binding.classAttr(binding.Once(mdl_sortedFeatures))
 
 
 
@@ -544,6 +544,47 @@ class Classifier(Namespace):
         return tuple(out)
 
     mdl_features = binding.classAttr( binding.Once(mdl_features) )
+
+
+    def mdl_sortedFeatures(self,d,a):
+
+        """All feature objects of this classifier, in sorted order"""
+
+        fl = list(self.mdl_features)
+        fl.sort
+        return tuple(fl)
+
+    mdl_sortedFeatures = binding.classAttr(binding.Once(mdl_sortedFeatures))
+
+
+    mdl_compositeFeatures = binding.classAttr(
+        binding.Once(
+            lambda s,d,a: tuple([f for f in s.mdl_features if f.isComposite]),
+            doc="""Ordered subset of 'mdl_features' that are composite"""
+            
+        )
+    )
+
+
+
+
+
+
+
+
+    mdl_isAbstract = binding.classAttr(
+        binding.Constant(None, False, doc = \
+            """Is this an abstract class?  Defaults to 'False'.
+
+                To make a 'model.Classifier' subclass abstract, set this
+                to 'True' in the class definition.  Note that you don't
+                ever need to set this to 'False', since it will default
+                to that value in every new subclass, even the subclasses of
+                abstract classes.
+            """
+        )
+    )
+
 
 
 

@@ -122,11 +122,12 @@ class checkExport(TestCase):
 
 
 class aBase(model.Element):
+    mdl_isAbstract = True
     class f1(model.Field): pass
     class f2(model.Field): pass
 
 class aSub(aBase):
-    class f3(model.Field): pass
+    class f3(model.Collection): isComposite=True
     class f1(model.Field): pass
     class a(model.Field): pass
 
@@ -135,13 +136,13 @@ class ordered(model.Element):
     class b(model.Field): sortPosn = 2
     class c(model.Field): sortPosn = 1
 
-
 class checkMetaData(TestCase):
 
-    def checkNames(self):
+    def checkFeatures(self):
         assert aBase.mdl_featureNames   == ('f1','f2')
         assert aSub.mdl_featureNames    == ('f1','f2','a','f3')
         assert ordered.mdl_featureNames == ('c','b','a')
+        assert aSub.mdl_compositeFeatures == (aSub.f3,)
 
     def checkIntroduced(self):
         assert aBase.mdl_featuresDefined == (aBase.f1, aBase.f2)
@@ -157,10 +158,9 @@ class checkMetaData(TestCase):
         else:
             raise AssertionError,"Immutable allowed changeable features"
 
-
-
-
-
+    def checkCreate(self):
+        self.assertRaises(TypeError,aBase) # base is abstract...
+        aSub()  # but subclass shouldn't be!
 
 class anElement1(model.Element):
 

@@ -272,7 +272,7 @@ class UMLClass(model.Model, storage.xmi.Loader):
 
 
     class Base(model.Element):
-        _isAbstract = 1
+        mdl_isAbstract = True
     
         class extensions(model.Collection):
             _XMINames = ('Base.extension',)
@@ -283,7 +283,7 @@ class UMLClass(model.Model, storage.xmi.Loader):
 
 
     class Element(Base):
-        _isAbstract = 1
+        mdl_isAbstract = True
         _XMINames = ('Foundation.Core.Element',)
 
 
@@ -293,7 +293,7 @@ class UMLClass(model.Model, storage.xmi.Loader):
             _XMINames = ('Foundation.Core.ModelElement.isSpecification',)
             referencedType = 'Boolean'
     
-        _isAbstract = 1
+        mdl_isAbstract = True
     
         class elementResidences(model.Collection):
             _XMINames = ('Foundation.Core.ModelElement.elementResidence',)
@@ -441,8 +441,6 @@ class UMLClass(model.Model, storage.xmi.Loader):
 
     class Action(ModelElement):
 
-        _isAbstract = 0
-    
         class state3(model.Reference):
             isNavigable = False
             _XMINames = ('Behavioral_Elements.Common_Behavior.Action.state3',)
@@ -524,12 +522,11 @@ class UMLClass(model.Model, storage.xmi.Loader):
     
 
     class ReturnAction(Action):
-        _isAbstract = 0
         _XMINames = ('Behavioral_Elements.Common_Behavior.ReturnAction',)
 
 
     class PresentationElement(Element):
-        _isAbstract = 1
+        mdl_isAbstract = True
     
         class subjects(model.Collection):
             _XMINames = ('Foundation.Core.PresentationElement.subject',)
@@ -544,8 +541,6 @@ class UMLClass(model.Model, storage.xmi.Loader):
         class isNavigable(model.Field):
             _XMINames = ('Foundation.Core.AssociationEnd.isNavigable',)
             referencedType = 'Boolean'
-    
-        _isAbstract = 0
     
         class changeability(model.Field):
             _XMINames = ('Foundation.Core.AssociationEnd.changeability',)
@@ -635,8 +630,6 @@ class UMLClass(model.Model, storage.xmi.Loader):
 
     class Instance(ModelElement):
     
-        _isAbstract = 0
-    
         class stimuli1(model.Collection):
             _XMINames = ('Behavioral_Elements.Common_Behavior.Instance.stimulus1',)
             referencedType = 'Stimulus'
@@ -694,12 +687,11 @@ class UMLClass(model.Model, storage.xmi.Loader):
     
 
     class UseCaseInstance(Instance):
-        _isAbstract = 0
         _XMINames = ('Behavioral_Elements.Use_Cases.UseCaseInstance',)
 
 
     class StateVertex(ModelElement):
-        _isAbstract = 1
+        mdl_isAbstract = True
         _XMINames = ('Behavioral_Elements.State_Machines.StateVertex',)
     
         class container(model.Reference):
@@ -724,8 +716,6 @@ class UMLClass(model.Model, storage.xmi.Loader):
 
     class State(StateVertex):
 
-        _isAbstract = 0
-    
         class doActivity(model.Reference):
             _XMINames = ('Behavioral_Elements.State_Machines.State.doActivity',)
             referencedType = 'Action'
@@ -780,7 +770,6 @@ class UMLClass(model.Model, storage.xmi.Loader):
 
 
     class CompositeState(State):
-        _isAbstract = 0
     
         class subvertices(model.Collection):
             _XMINames = ('Behavioral_Elements.State_Machines.CompositeState.subvertex',)
@@ -803,8 +792,6 @@ class UMLClass(model.Model, storage.xmi.Loader):
 
     class SubmachineState(CompositeState):
     
-        _isAbstract = 0
-    
         class submachine(model.Reference):
             _XMINames = ('Behavioral_Elements.State_Machines.SubmachineState.submachine',)
             referencedType = 'StateMachine'
@@ -815,8 +802,6 @@ class UMLClass(model.Model, storage.xmi.Loader):
 
     class SubactivityState(SubmachineState):
 
-        _isAbstract = 0
-    
         class dynamicArguments(model.Field):
             _XMINames = ('Behavioral_Elements.Activity_Graphs.SubactivityState.dynamicArguments',)
             referencedType = 'ArgListsExpression'
@@ -839,12 +824,10 @@ class UMLClass(model.Model, storage.xmi.Loader):
 
 
     class Relationship(ModelElement):
-        _isAbstract = 0
         _XMINames = ('Foundation.Core.Relationship',)
 
 
     class Dependency(Relationship):
-        _isAbstract = 0
     
         class suppliers(model.Collection):
             _XMINames = ('Foundation.Core.Dependency.supplier',)
@@ -863,14 +846,11 @@ class UMLClass(model.Model, storage.xmi.Loader):
 
 
     class Usage(Dependency):
-        _isAbstract = 0
         _XMINames = ('Foundation.Core.Usage',)
 
 
     class CallAction(Action):
 
-        _isAbstract = 0
-    
         class operation(model.Reference):
             _XMINames = ('Behavioral_Elements.Common_Behavior.CallAction.operation',)
             referencedType = 'Operation'
@@ -881,8 +861,6 @@ class UMLClass(model.Model, storage.xmi.Loader):
 
     class Include(Relationship):
 
-        _isAbstract = 0
-    
         class addition(model.Reference):
             _XMINames = ('Behavioral_Elements.Use_Cases.Include.addition',)
             referencedType = 'UseCase'
@@ -905,7 +883,7 @@ class UMLClass(model.Model, storage.xmi.Loader):
 
     class Feature(ModelElement):
 
-        _isAbstract = 1
+        mdl_isAbstract = True
     
         class owner(model.Reference):
             _XMINames = ('Foundation.Core.Feature.owner',)
@@ -933,7 +911,7 @@ class UMLClass(model.Model, storage.xmi.Loader):
 
 
     class BehavioralFeature(Feature):
-        _isAbstract = 1
+        mdl_isAbstract = True
     
         class isQuery(model.Field):
             _XMINames = ('Foundation.Core.BehavioralFeature.isQuery',)
@@ -958,8 +936,6 @@ class UMLClass(model.Model, storage.xmi.Loader):
         class body(model.Field):
             _XMINames = ('Foundation.Core.Method.body',)
             referencedType = 'ProcedureExpression'
-    
-        _isAbstract = 0
     
         class specification(model.Reference):
             _XMINames = ('Foundation.Core.Method.specification',)
@@ -989,7 +965,7 @@ class UMLClass(model.Model, storage.xmi.Loader):
 
     class GeneralizableElement(ModelElement):
 
-        _isAbstract = 1
+        mdl_isAbstract = True
 
         _XMINames = ('Foundation.Core.GeneralizableElement',)
     
@@ -1022,22 +998,18 @@ class UMLClass(model.Model, storage.xmi.Loader):
 
     class Namespace(ModelElement):
 
-        _isAbstract = 0
-
         _XMINames = ('Foundation.Core.Namespace',)
     
         class ownedElements(model.Collection):
             _XMINames = ('Foundation.Core.Namespace.ownedElement',)
             referencedType = 'ModelElement'
             referencedEnd = 'namespace'
-
+            isComposite = True
 
 
 
     class Classifier(GeneralizableElement,Namespace):
 
-        _isAbstract = 0
-    
         class structuralFeatures(model.Collection):
             isNavigable = False
             _XMINames = ('Foundation.Core.Classifier.structuralFeature',)
@@ -1133,7 +1105,6 @@ class UMLClass(model.Model, storage.xmi.Loader):
 
 
     class Node(Classifier):
-        _isAbstract = 0
     
         class residents(model.Collection):
             _XMINames = ('Foundation.Core.Node.resident',)
@@ -1146,8 +1117,6 @@ class UMLClass(model.Model, storage.xmi.Loader):
 
     class Association(GeneralizableElement,Relationship):
 
-        _isAbstract = 0
-    
         class connections(model.Sequence):
             _XMINames = ('Foundation.Core.Association.connection',)
             referencedType = 'AssociationEnd'
@@ -1170,8 +1139,6 @@ class UMLClass(model.Model, storage.xmi.Loader):
 
 
     class Class(Classifier):
-
-        _isAbstract = 0
 
         _XMINames = ('Foundation.Core.Class',)
     
@@ -1198,13 +1165,10 @@ class UMLClass(model.Model, storage.xmi.Loader):
 
 
     class AssociationClass(Association,Class):
-        _isAbstract = 0
         _XMINames = ('Foundation.Core.AssociationClass',)
 
 
     class Stimulus(ModelElement):
-
-        _isAbstract = 0
 
         _XMINames = ('Behavioral_Elements.Common_Behavior.Stimulus',)
     
@@ -1261,8 +1225,6 @@ class UMLClass(model.Model, storage.xmi.Loader):
 
     class StateMachine(ModelElement):
 
-        _isAbstract = 0
-    
         class transitionses(model.Collection):
             _XMINames = ('Behavioral_Elements.State_Machines.StateMachine.transitions',)
             referencedType = 'Transition'
@@ -1296,7 +1258,7 @@ class UMLClass(model.Model, storage.xmi.Loader):
 
     class Event(ModelElement):
 
-        _isAbstract = 1
+        mdl_isAbstract = True
     
         class states(model.Collection):
             _XMINames = ('Behavioral_Elements.State_Machines.Event.state',)
@@ -1324,7 +1286,6 @@ class UMLClass(model.Model, storage.xmi.Loader):
 
 
     class TimeEvent(Event):
-        _isAbstract = 0
         _XMINames = ('Behavioral_Elements.State_Machines.TimeEvent',)
     
         class when(model.Field):
@@ -1333,12 +1294,10 @@ class UMLClass(model.Model, storage.xmi.Loader):
 
 
     class Object(Instance):
-        _isAbstract = 0
         _XMINames = ('Behavioral_Elements.Common_Behavior.Object',)
 
 
     class TerminateAction(Action):
-        _isAbstract = 0
         _XMINames = ('Behavioral_Elements.Common_Behavior.TerminateAction',)
 
 
@@ -1353,8 +1312,6 @@ class UMLClass(model.Model, storage.xmi.Loader):
 
     class ElementImport(Base):
 
-        _isAbstract = 0
-    
         class alias(model.Field):
             _XMINames = ('Model_Management.ElementImport.alias',)
             referencedType = 'Name'
@@ -1380,15 +1337,11 @@ class UMLClass(model.Model, storage.xmi.Loader):
 
     class DestroyAction(Action):
 
-        _isAbstract = 0
-
         _XMINames = ('Behavioral_Elements.Common_Behavior.DestroyAction',)
 
 
     class ClassifierInState(Classifier):
 
-        _isAbstract = 0
-    
         class type(model.Reference):
             _XMINames = ('Behavioral_Elements.Activity_Graphs.ClassifierInState.type',)
             referencedType = 'Classifier'
@@ -1413,8 +1366,6 @@ class UMLClass(model.Model, storage.xmi.Loader):
 
     class NodeInstance(Instance):
 
-        _isAbstract = 0
-    
         class residents(model.Collection):
             _XMINames = ('Behavioral_Elements.Common_Behavior.NodeInstance.resident',)
             referencedType = 'ComponentInstance'
@@ -1425,8 +1376,6 @@ class UMLClass(model.Model, storage.xmi.Loader):
 
     class Signal(Classifier):
 
-        _isAbstract = 0
-    
         class receptions(model.Collection):
             _XMINames = ('Behavioral_Elements.Common_Behavior.Signal.reception',)
             referencedType = 'Reception'
@@ -1455,12 +1404,10 @@ class UMLClass(model.Model, storage.xmi.Loader):
     
 
     class Exception(Signal):
-        _isAbstract = 0
         _XMINames = ('Behavioral_Elements.Common_Behavior.Exception',)
 
 
     class SimpleState(State):
-        _isAbstract = 0
         _XMINames = ('Behavioral_Elements.State_Machines.SimpleState',)
 
 
@@ -1476,7 +1423,6 @@ class UMLClass(model.Model, storage.xmi.Loader):
 
     class ObjectFlowState(SimpleState):
 
-        _isAbstract = 0
 
         _XMINames = ('Behavioral_Elements.Activity_Graphs.ObjectFlowState',)
     
@@ -1510,7 +1456,6 @@ class UMLClass(model.Model, storage.xmi.Loader):
             _XMINames = ('Foundation.Core.Constraint.body',)
             referencedType = 'BooleanExpression'
     
-        _isAbstract = 0
         _XMINames = ('Foundation.Core.Constraint',)
     
         class constrainedElement2(model.Reference):
@@ -1537,8 +1482,6 @@ class UMLClass(model.Model, storage.xmi.Loader):
 
     class Transition(ModelElement):
 
-        _isAbstract = 0
-    
         class source(model.Reference):
             _XMINames = ('Behavioral_Elements.State_Machines.Transition.source',)
             referencedType = 'StateVertex'
@@ -1591,8 +1534,6 @@ class UMLClass(model.Model, storage.xmi.Loader):
 
     class Flow(Relationship):
 
-        _isAbstract = 0
-    
         class sources(model.Collection):
             _XMINames = ('Foundation.Core.Flow.source',)
             referencedType = 'ModelElement'
@@ -1624,7 +1565,7 @@ class UMLClass(model.Model, storage.xmi.Loader):
 
     class StructuralFeature(Feature):
 
-        _isAbstract = 1
+        mdl_isAbstract = True
 
         _XMINames = ('Foundation.Core.StructuralFeature',)
     
@@ -1652,8 +1593,6 @@ class UMLClass(model.Model, storage.xmi.Loader):
 
     class UseCase(Classifier):
 
-        _isAbstract = 0
-    
         class extends2(model.Collection):
             _XMINames = ('Behavioral_Elements.Use_Cases.UseCase.extend2',)
             referencedType = 'Extend'
@@ -1692,7 +1631,6 @@ class UMLClass(model.Model, storage.xmi.Loader):
     
 
     class Actor(Classifier):
-        _isAbstract = 0
         _XMINames = ('Behavioral_Elements.Use_Cases.Actor',)
 
 
@@ -1714,8 +1652,6 @@ class UMLClass(model.Model, storage.xmi.Loader):
 
     class AttributeLink(ModelElement):
 
-        _isAbstract = 0
-    
         class linkEnd(model.Reference):
             _XMINames = ('Behavioral_Elements.Common_Behavior.AttributeLink.linkEnd',)
             referencedType = 'LinkEnd'
@@ -1749,7 +1685,6 @@ class UMLClass(model.Model, storage.xmi.Loader):
 
 
     class SignalEvent(Event):
-        _isAbstract = 0
     
         class signal(model.Reference):
             _XMINames = ('Behavioral_Elements.State_Machines.SignalEvent.signal',)
@@ -1760,7 +1695,6 @@ class UMLClass(model.Model, storage.xmi.Loader):
 
 
     class Package(GeneralizableElement,Namespace):
-        _isAbstract = 0
     
         class elementImports(model.Collection):
             _XMINames = ('Model_Management.Package.elementImport',)
@@ -1772,8 +1706,6 @@ class UMLClass(model.Model, storage.xmi.Loader):
 
     class Subsystem(Package,Classifier):
 
-        _isAbstract = 0
-
         _XMINames = ('Model_Management.Subsystem',)
     
         class isInstantiable(model.Field):
@@ -1784,8 +1716,6 @@ class UMLClass(model.Model, storage.xmi.Loader):
 
     class CallEvent(Event):
 
-        _isAbstract = 0
-    
         class operation(model.Reference):
             _XMINames = ('Behavioral_Elements.State_Machines.CallEvent.operation',)
             referencedType = 'Operation'
@@ -1805,8 +1735,6 @@ class UMLClass(model.Model, storage.xmi.Loader):
 
     class Attribute(StructuralFeature):
 
-        _isAbstract = 0
-    
         class initialValue(model.Field):
             _XMINames = ('Foundation.Core.Attribute.initialValue',)
             referencedType = 'Expression'
@@ -1832,7 +1760,6 @@ class UMLClass(model.Model, storage.xmi.Loader):
     
 
     class StubState(StateVertex):
-        _isAbstract = 0
         _XMINames = ('Behavioral_Elements.State_Machines.StubState',)
     
         class referenceState(model.Field):
@@ -1843,8 +1770,6 @@ class UMLClass(model.Model, storage.xmi.Loader):
 
     class AssociationEndRole(AssociationEnd):
 
-        _isAbstract = 0
-    
         class availableQualifiers(model.Collection):
             _XMINames = ('Behavioral_Elements.Collaborations.AssociationEndRole.availableQualifier',)
             referencedType = 'Attribute'
@@ -1863,8 +1788,6 @@ class UMLClass(model.Model, storage.xmi.Loader):
 
     class SynchState(StateVertex):
 
-        _isAbstract = 0
-
         _XMINames = ('Behavioral_Elements.State_Machines.SynchState',)
     
         class bound(model.Field):
@@ -1873,14 +1796,11 @@ class UMLClass(model.Model, storage.xmi.Loader):
 
 
     class FinalState(State):
-        _isAbstract = 0
         _XMINames = ('Behavioral_Elements.State_Machines.FinalState',)
 
 
     class Link(ModelElement):
 
-        _isAbstract = 0
-    
         class connections(model.Collection):
             _XMINames = ('Behavioral_Elements.Common_Behavior.Link.connection',)
             referencedType = 'LinkEnd'
@@ -1900,14 +1820,11 @@ class UMLClass(model.Model, storage.xmi.Loader):
 
 
     class LinkObject(Object,Link):
-        _isAbstract = 0
         _XMINames = ('Behavioral_Elements.Common_Behavior.LinkObject',)
 
 
     class Operation(BehavioralFeature):
 
-        _isAbstract = 0
-    
         class collaborations(model.Collection):
             isNavigable = False
             _XMINames = ('Foundation.Core.Operation.collaboration',)
@@ -1956,7 +1873,6 @@ class UMLClass(model.Model, storage.xmi.Loader):
 
 
     class ActionState(SimpleState):
-        _isAbstract = 0
     
         class dynamicArguments(model.Field):
             _XMINames = ('Behavioral_Elements.Activity_Graphs.ActionState.dynamicArguments',)
@@ -1977,7 +1893,6 @@ class UMLClass(model.Model, storage.xmi.Loader):
 
 
     class SendAction(Action):
-        _isAbstract = 0
     
         class signal(model.Reference):
             _XMINames = ('Behavioral_Elements.Common_Behavior.SendAction.signal',)
@@ -1989,8 +1904,6 @@ class UMLClass(model.Model, storage.xmi.Loader):
 
     class ElementResidence(Base):
 
-        _isAbstract = 0
-    
         class resident(model.Reference):
             _XMINames = ('Foundation.Core.ElementResidence.resident',)
             referencedType = 'ModelElement'
@@ -2012,8 +1925,6 @@ class UMLClass(model.Model, storage.xmi.Loader):
 
     class Binding(Dependency):
 
-        _isAbstract = 0
-
         _XMINames = ('Foundation.Core.Binding',)
     
         class arguments(model.Sequence):
@@ -2024,8 +1935,6 @@ class UMLClass(model.Model, storage.xmi.Loader):
 
 
     class TemplateParameter(Base):
-        _isAbstract = 0
-    
         class modelElement(model.Reference):
             _XMINames = ('Foundation.Core.TemplateParameter.modelElement',)
             referencedType = 'ModelElement'
@@ -2051,8 +1960,6 @@ class UMLClass(model.Model, storage.xmi.Loader):
 
     class ActionSequence(Action):
 
-        _isAbstract = 0
-
         _XMINames = ('Behavioral_Elements.Common_Behavior.ActionSequence',)
     
         class actions(model.Sequence):
@@ -2066,8 +1973,6 @@ class UMLClass(model.Model, storage.xmi.Loader):
 
     class Parameter(ModelElement):
 
-        _isAbstract = 0
-    
         class states(model.Collection):
             isNavigable = False
             _XMINames = ('Foundation.Core.Parameter.state',)
@@ -2105,8 +2010,6 @@ class UMLClass(model.Model, storage.xmi.Loader):
     
     class ExtensionPoint(ModelElement):
 
-        _isAbstract = 0
-    
         class extends(model.Collection):
             _XMINames = ('Behavioral_Elements.Use_Cases.ExtensionPoint.extend',)
             referencedType = 'Extend'
@@ -2126,8 +2029,7 @@ class UMLClass(model.Model, storage.xmi.Loader):
 
 
     class ComponentInstance(Instance):
-        _isAbstract = 0
-    
+
         class nodeInstance(model.Reference):
             _XMINames = ('Behavioral_Elements.Common_Behavior.ComponentInstance.nodeInstance',)
             referencedType = 'NodeInstance'
@@ -2150,7 +2052,6 @@ class UMLClass(model.Model, storage.xmi.Loader):
 
     class Abstraction(Dependency):
 
-        _isAbstract = 0
         _XMINames = ('Foundation.Core.Abstraction',)
     
         class mapping(model.Field):
@@ -2160,13 +2061,10 @@ class UMLClass(model.Model, storage.xmi.Loader):
 
 
     class Permission(Dependency):
-        _isAbstract = 0
         _XMINames = ('Foundation.Core.Permission',)
 
 
     class Collaboration(Namespace,GeneralizableElement):
-
-        _isAbstract = 0
         _XMINames = ('Behavioral_Elements.Collaborations.Collaboration',)
     
         class representedClassifier(model.Reference):
@@ -2213,8 +2111,6 @@ class UMLClass(model.Model, storage.xmi.Loader):
 
     class Component(Classifier):
 
-        _isAbstract = 0
-    
         class deploymentLocations(model.Collection):
             _XMINames = ('Foundation.Core.Component.deploymentLocation',)
             referencedType = 'Node'
@@ -2231,7 +2127,6 @@ class UMLClass(model.Model, storage.xmi.Loader):
 
 
     class CallState(ActionState):
-        _isAbstract = 0
         _XMINames = ('Behavioral_Elements.Activity_Graphs.CallState',)
 
 
@@ -2245,8 +2140,7 @@ class UMLClass(model.Model, storage.xmi.Loader):
 
 
     class ClassifierRole(Classifier):
-        _isAbstract = 0
-    
+
         class bases(model.Collection):
             _XMINames = ('Behavioral_Elements.Collaborations.ClassifierRole.base',)
             referencedType = 'Classifier'
@@ -2284,12 +2178,10 @@ class UMLClass(model.Model, storage.xmi.Loader):
 
 
     class UninterpretedAction(Action):
-        _isAbstract = 0
         _XMINames = ('Behavioral_Elements.Common_Behavior.UninterpretedAction',)
 
 
     class AssociationRole(Association):
-        _isAbstract = 0
     
         class multiplicity(model.Field):
             _XMINames = ('Behavioral_Elements.Collaborations.AssociationRole.multiplicity',)
@@ -2313,13 +2205,11 @@ class UMLClass(model.Model, storage.xmi.Loader):
             referencedEnd = 'communicationConnection'
 
     class Interface(Classifier):
-        _isAbstract = 0
         _XMINames = ('Foundation.Core.Interface',)
 
 
 
     class Interaction(ModelElement):
-        _isAbstract = 0
     
         class messages(model.Collection):
             _XMINames = ('Behavioral_Elements.Collaborations.Interaction.message',)
@@ -2336,7 +2226,6 @@ class UMLClass(model.Model, storage.xmi.Loader):
 
 
     class ChangeEvent(Event):
-        _isAbstract = 0
         _XMINames = ('Behavioral_Elements.State_Machines.ChangeEvent',)
     
         class changeExpression(model.Field):
@@ -2345,7 +2234,6 @@ class UMLClass(model.Model, storage.xmi.Loader):
 
 
     class Extension(Base):
-        _isAbstract = 0
         _XMINames = ('Extension',)
     
         class extenderID(model.Field):
@@ -2364,7 +2252,6 @@ class UMLClass(model.Model, storage.xmi.Loader):
     
 
     class ActivityGraph(StateMachine):
-        _isAbstract = 0
         _XMINames = ('Behavioral_Elements.Activity_Graphs.ActivityGraph',)
     
         class partitions(model.Collection):
@@ -2375,8 +2262,6 @@ class UMLClass(model.Model, storage.xmi.Loader):
 
     class Partition(ModelElement):
 
-        _isAbstract = 0
-    
         class activityGraph(model.Reference):
             _XMINames = ('Behavioral_Elements.Activity_Graphs.Partition.activityGraph',)
             referencedType = 'ActivityGraph'
@@ -2393,8 +2278,6 @@ class UMLClass(model.Model, storage.xmi.Loader):
 
     class Pseudostate(StateVertex):
 
-        _isAbstract = 0
-    
         class kind(model.Field):
             _XMINames = ('Behavioral_Elements.State_Machines.Pseudostate.kind',)
             referencedType = 'PseudostateKind'
@@ -2406,8 +2289,6 @@ class UMLClass(model.Model, storage.xmi.Loader):
 
     class CreateAction(Action):
 
-        _isAbstract = 0
-    
         class instantiation(model.Reference):
             _XMINames = ('Behavioral_Elements.Common_Behavior.CreateAction.instantiation',)
             referencedType = 'Classifier'
@@ -2418,10 +2299,8 @@ class UMLClass(model.Model, storage.xmi.Loader):
 
     class Reception(BehavioralFeature):
 
-        _isAbstract = 0
-    
-        class isAbstarct(model.Field):
-            _XMINames = ('Behavioral_Elements.Common_Behavior.Reception.isAbstarct',)
+        class isAbstract(model.Field):
+            _XMINames = ('Behavioral_Elements.Common_Behavior.Reception.isAbstract',)
             referencedType = 'Boolean'
     
         _XMINames = ('Behavioral_Elements.Common_Behavior.Reception',)
@@ -2450,7 +2329,6 @@ class UMLClass(model.Model, storage.xmi.Loader):
 
 
     class Model(Package):
-        _isAbstract = 0
         _XMINames = ('Model_Management.Model',)
 
 
@@ -2484,8 +2362,6 @@ class UMLClass(model.Model, storage.xmi.Loader):
 
     class Comment(ModelElement):
 
-        _isAbstract = 0
-
         _XMINames = ('Foundation.Core.Comment',)
     
         class annotatedElements(model.Collection):
@@ -2496,8 +2372,6 @@ class UMLClass(model.Model, storage.xmi.Loader):
 
     class LinkEnd(ModelElement):
 
-        _isAbstract = 0
-    
         class instance(model.Reference):
             _XMINames = ('Behavioral_Elements.Common_Behavior.LinkEnd.instance',)
             referencedType = 'Instance'
@@ -2546,8 +2420,6 @@ class UMLClass(model.Model, storage.xmi.Loader):
 
     class Extend(Relationship):
 
-        _isAbstract = 0
-    
         class base(model.Reference):
             _XMINames = ('Behavioral_Elements.Use_Cases.Extend.base',)
             referencedType = 'UseCase'
@@ -2571,13 +2443,11 @@ class UMLClass(model.Model, storage.xmi.Loader):
             referencedType = 'BooleanExpression'
     
     class DataType(Classifier):
-        _isAbstract = 0
         _XMINames = ('Foundation.Core.DataType',)
 
 
     class Argument(ModelElement):
-        _isAbstract = 0
-    
+
         class action(model.Reference):
             _XMINames = ('Behavioral_Elements.Common_Behavior.Argument.action',)
             referencedType = 'Action'
@@ -2606,8 +2476,6 @@ class UMLClass(model.Model, storage.xmi.Loader):
 
     class Generalization(Relationship):
 
-        _isAbstract = 0
-    
         class powertype(model.Reference):
             _XMINames = ('Foundation.Core.Generalization.powertype',)
             referencedType = 'Classifier'
@@ -2632,8 +2500,6 @@ class UMLClass(model.Model, storage.xmi.Loader):
     
     class Stereotype(GeneralizableElement):
 
-        _isAbstract = 0
-    
         class extendedElements(model.Collection):
             _XMINames = ('Foundation.Extension_Mechanisms.Stereotype.extendedElement',)
             referencedType = 'ModelElement'
@@ -2664,7 +2530,6 @@ class UMLClass(model.Model, storage.xmi.Loader):
     
 
     class Guard(ModelElement):
-        _isAbstract = 0
         _XMINames = ('Behavioral_Elements.State_Machines.Guard',)
     
         class transition(model.Reference):
@@ -2689,8 +2554,6 @@ class UMLClass(model.Model, storage.xmi.Loader):
 
     class TaggedValue(Element):
 
-        _isAbstract = 0
-    
         class tag(model.Field):
             _XMINames = ('Foundation.Extension_Mechanisms.TaggedValue.tag',)
             referencedType = 'Name'
@@ -2716,8 +2579,6 @@ class UMLClass(model.Model, storage.xmi.Loader):
 
     class Message(ModelElement):
 
-        _isAbstract = 0
-    
         class interaction(model.Reference):
             _XMINames = ('Behavioral_Elements.Collaborations.Message.interaction',)
             referencedType = 'Interaction'
@@ -2772,7 +2633,6 @@ class UMLClass(model.Model, storage.xmi.Loader):
 
 
     class DataValue(Instance):
-        _isAbstract = 0
         _XMINames = ('Behavioral_Elements.Common_Behavior.DataValue',)
 
 

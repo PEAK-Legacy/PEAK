@@ -328,7 +328,6 @@ class MOFModel(model.Model):
 
     class Namespace(ModelElement):
 
-
         mdl_isAbstract = True
 
 
@@ -336,6 +335,7 @@ class MOFModel(model.Model):
         
             referencedType = 'ModelElement'
             referencedEnd  = 'container'
+            isComposite    = True
 
             def validateAdd(feature, element, item):    # XXX
 
