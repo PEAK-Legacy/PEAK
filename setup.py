@@ -44,6 +44,7 @@ extensions = [
 data_files = [
     ('peak',     ['src/peak/peak.ini']),
     ('peak/web', ['src/peak/web/resource_defaults.ini']),
+    ('ZConfig/doc', ['src/ZConfig/doc/schema.dtd']),
 ] + findDataFiles('src/peak/running', 1, '*.xml', '*.ini')
 
 
@@ -55,7 +56,6 @@ if include_tests:
         'peak.storage.tests', 'peak.util.tests', 'protocols.tests',
         'peak.events.tests'
     ]
-
     data_files += [
         ('peak/running/tests', ['src/peak/running/tests/test_cluster.txt']),
         ('peak/config/tests',  ['src/peak/config/tests/test_links.ini']),
