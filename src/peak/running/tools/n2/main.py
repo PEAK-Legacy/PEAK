@@ -1,7 +1,7 @@
 """N2 Main Program"""
 
 from peak.api import *
-from peak.running.commands import AbstractCommand
+from peak.running.commands import AbstractCommand, InvocationError
 
 import sys, os, code, __main__
 from getopt import getopt
@@ -38,12 +38,10 @@ ls()\t\tshow contents of c
             opts, args = getopt(self.argv[1:], 'ep')
             self.opts = dict(opts)
         except:
-            self.invocationError('illegal argument')
-            return 1
+            raise InvocationError('illegal argument')
 
         if len(args) > 1:
-            self.invocationError('too many arguments')
-            return 1
+            raise InvocationError('too many arguments')
 
 
         cprt = 'Type "copyright", "credits" or "license" for more information.'

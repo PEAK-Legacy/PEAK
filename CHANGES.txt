@@ -2,6 +2,12 @@ Fixes and Enhancements since Version 0.5 alpha 2
 
  Changed, Enhanced, or Newly Deprecated Features
 
+ - 'peak.running.commands.AbstractCommand' now offers a '_run()' method that
+   can be overridden in subclasses, instead of 'run()'.  If you override the
+   new '_run()' method instead, you get the advantage of automatic handling
+   for invocation errors and 'SystemExit' exceptions, provided for you by the
+   'run()' method.
+
  - There is now a 'storage.DMFor(class)' function that returns a configuration
    key for registering or looking up data managers by class.  You can use the
    returned key in a binding's 'offerAs' list, or as the target of a 'bindTo()'

@@ -54,9 +54,9 @@ class AbstractCommand(binding.Component):
     stderr  = binding.bindTo('import:sys:stderr')
     environ = binding.bindTo('import:os:environ')
 
-    def run(self):
+    def _run(self):
+        """Override this in subclasses to implement desired behavior"""
         raise NotImplementedError
-
 
     usage = """
 Either this is an abstract command class, or somebody forgot to
@@ -101,7 +101,7 @@ define a usage message for their subclass.
         return factory(**kw)
 
 
-    def invocationError(self, msg):
+    def _invocationError(self, msg):
 
         """Write msg and usage to stderr if interactive, otherwise re-raise"""
 
@@ -111,7 +111,7 @@ define a usage message for their subclass.
             # XXX output last traceback frame?
             return 1    # exit errorlevel
         else:
-            raise
+            raise   # XXX is this really appropriate?
 
 
     def getCommandParent(self):
@@ -121,22 +121,58 @@ define a usage message for their subclass.
 
 
 
-class AbstractInterpreter(AbstractCommand):
-
-    """Creates and runs a subcommand by interpreting the file in 'argv[1]'"""
-
     def run(self):
-        """Interpret argv[1] and run it as a subcommand"""
+
+        """Run the command"""
+
         try:
-            if len(self.argv)<2:
-                raise InvocationError("missing argument(s)")
-            return self.interpret(self.argv[1]).run()
+            return self._run() or 0
 
         except SystemExit, v:
             return v.args[0]
 
         except InvocationError, msg:
-            return self.invocationError(msg)
+            return self._invocationError(msg)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class AbstractInterpreter(AbstractCommand):
+
+    """Creates and runs a subcommand by interpreting the file in 'argv[1]'"""
+
+    def _run(self):
+        """Interpret argv[1] and run it as a subcommand"""
+
+        if len(self.argv)<2:
+            raise InvocationError("missing argument(s)")
+
+        return self.interpret(self.argv[1]).run()
 
 
     def interpret(self, filename):
@@ -159,6 +195,11 @@ class AbstractInterpreter(AbstractCommand):
         return basename(self.argv[1])
 
     commandName = binding.Once(commandName)
+
+
+
+
+
 
 
 
@@ -250,7 +291,7 @@ class CallableAsCommand(AbstractCommand):
 
     invoke = binding.requireBinding("Any callable")
 
-    def run(self):
+    def _run(self):
 
         old = sys.stdin, sys.stdout, sys.stderr, os.environ, sys.argv
 
@@ -260,10 +301,7 @@ class CallableAsCommand(AbstractCommand):
                 setattr(sys,v,getattr(self,v))
 
             os.environ = self.environ
-            try:
-                return self.invoke()
-            except SystemExit, v:
-                return v.args[0]
+            return self.invoke()
 
         finally:
             # Ensure it's back to normal when we leave
@@ -276,13 +314,16 @@ class RerunnableAsCommand(AbstractCommand):
 
     runnable = binding.requireBinding("An IRerunnable")
 
-    def run(self):
-        try:
-            return self.runnable.run(
-                self.stdin, self.stdout, self.stderr, self.environ, self.argv
-            )
-        except SystemExit, v:
-            return v.args[0]
+    def _run(self):
+        return self.runnable.run(
+            self.stdin, self.stdout, self.stderr, self.environ, self.argv
+        )
+
+
+
+
+
+
 
 
 def callableAsFactory(ob,proto=None):
@@ -544,7 +585,7 @@ class EventDriven(AbstractCommand):
     # Placeholder to allow adding components via ZConfig
     components = binding.Constant(None)
 
-    def run(self):
+    def _run(self):
 
         """Perform setup, then run the event loop until done"""
 
