@@ -15,6 +15,10 @@ class refURL(naming.URL.Base):
         pass
 
     class addresses(naming.URL.Collection):
+        class referencedType(naming.URL.String):
+            mdl_syntax = naming.URL.ExtractString(
+                naming.URL.MatchString('[^|]+([|][^|]+)*')
+            )
         separator = '||'
         lowerBound = 1
 

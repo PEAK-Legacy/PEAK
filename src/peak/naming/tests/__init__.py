@@ -118,8 +118,8 @@ validNames = {
     'fd.socket:27/inet/dgram': Items(fileno=27),
     'fd.socket:27//dgram': Items(fileno=27),
     'fd.file:stderr': Items(fileno=2),
-    'ref:some.thing@someURL||secondURL':
-        Items(factoryName='some.thing',addresses=('someURL','secondURL')),
+    'ref:some.thing@some|URL||secondURL':
+        Items(factoryName='some.thing',addresses=('some|URL','secondURL')),
 
     'icb://nik:u@localhost/aGroup':
         Items(nick='nik',user='u',passwd=None,server='localhost',
