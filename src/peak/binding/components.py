@@ -526,10 +526,10 @@ class Base(object):
 
 
     def hasBinding(self,attr):
-        return self.__dict__.has_key(attr)
+        return attr in self.__dict__
 
-
-
+    def getBindingIfPresent(self,attr,default=None):
+        return self.__dict__.get(attr,default)
 
 class Component(Base):
 
@@ -542,19 +542,23 @@ class Component(Base):
 
     def __instance_provides__(self,d,a):
         from peak.config.config_components import PropertyMap
-        return PropertyMap(self)
+        pm=PropertyMap()
+        pm.setParentComponent(self)
+        return pm
 
     __instance_provides__ = Once(__instance_provides__, provides=IPropertyMap)
-
-    __class_provides__ = EigenRegistry()
+    __class_provides__    = EigenRegistry()
     
 
     def _getConfigData(self, configKey, forObj):
     
-        value = self.__instance_provides__.getValueFor(configKey, forObj)
+        attr = self.getBindingIfPresent('__instance_provides__')
+
+        if attr:
+            value = attr.getValueFor(configKey, forObj)
             
-        if value is not NOT_FOUND:
-            return value
+            if value is not NOT_FOUND:
+                return value
 
         attr = self.__class_provides__.get(configKey)
 
@@ -566,10 +570,6 @@ class Component(Base):
 
     def registerProvider(self, ifaces, provider):
         self.__instance_provides__.registerProvider(ifaces, provider)
-
-
-
-
 
 
 class AutoCreatable(OnceClass, Meta):

@@ -1,6 +1,6 @@
 from __future__ import generators
 
-from peak.binding.components import Component, New, AutoCreated, Provider
+from peak.binding.components import Component, New, Base, Provider
 
 from peak.api import NOT_FOUND, NOT_GIVEN
 from peak.util.EigenData import EigenCell, AlreadyRead
@@ -39,7 +39,7 @@ _emptyRuleCell.exists()
 
 
 
-class PropertyMap(AutoCreated):
+class PropertyMap(Base):
 
     rules     = New(dict)
     provided  = New(dict)   
@@ -82,7 +82,7 @@ class PropertyMap(AutoCreated):
 
     def getValueFor(self, configKey, forObj=None):
 
-        rules      = self.rules
+        rules      = self.getBindingIfPresent('rules')
         value      = NOT_FOUND
 
         if not rules:
@@ -119,7 +119,7 @@ class PropertyMap(AutoCreated):
        
         return value
 
-
+    _getConfigData = getValueFor
 
 class LoadingRule(object):
 
