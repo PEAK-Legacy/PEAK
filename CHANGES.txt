@@ -2,6 +2,10 @@ Fixes and Enhancements since Version 0.5 alpha 2
 
  Changed, Enhanced, or Newly Deprecated Features
 
+ - Added 'peak.util.mockets', offering imitation socket services like
+   'socket()' and 'select()', allowing socket-based services to be tested
+   without using real sockets.
+   
  - Added limited support for two-phase commit of database connections to Sybase
    and Oracle.  Changed Oracle "outside transaction" semantics to allow read
    operations only, and added a property to set Oracle transactions to
