@@ -17,7 +17,7 @@ __all__ = [
 
     'IBasicReactor', 'ITwistedReactor', 'ILogger', 'ICheckableResource',
 
-    'ISignalManager', 'IProcessProxy',
+    'ISignalManager', 'IProcessProxy', 'IMainCmdFactory'
 
 ]
 
@@ -121,6 +121,14 @@ class ICmdLineApp(IComponent, IExecutable):
 
 
 
+class IMainCmdFactory(Interface):
+
+    """Callable that can create a "main" 'ICmdLineApp' w/out further input"""
+
+    def __call__():
+        """Return a ready-to-run 'ICmdLineApp'"""
+
+
 class IRerunnable(IExecutable):
 
     """Like a command-line app, but serially reusable
@@ -148,14 +156,6 @@ def CGIFromComponent(ob,proto):
 declareAdapter(CGIFromComponent,
     provides=[IRerunnableCGI], forProtocols=[IComponent]
 )
-
-
-
-
-
-
-
-
 
 
 

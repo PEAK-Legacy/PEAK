@@ -2,6 +2,17 @@ Fixes and Enhancements since Version 0.5 alpha 2
 
  Changed, Enhanced, or Newly Deprecated Features
 
+ - Added 'peak.running.commands.runMain()', a convenience function for starting
+   an application's "main" command, that also makes it easy for forked child
+   processes to exit and replace the parent process' "main".  The 'peak' script
+   has now been shortened to::
+   
+       from peak.running import commands
+       commands.runMain( commands.Bootstrap )
+
+   so it's now much easier to create alternative startup scripts, if you need
+   to, or to add an 'if __name__=="__main__"' clause to a module.
+   
  - Added 'peak.util.mockdb', a "mock object" implementation of a DBAPI 2.0
    driver module.  'mockdb' connections can be told to 'expect()' queries
    and 'provide()' data to their callers, and will raise AssertionErrors when

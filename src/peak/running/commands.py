@@ -11,7 +11,7 @@ __all__ = [
     'AbstractCommand', 'AbstractInterpreter', 'IniInterpreter', 'EventDriven',
     'ZConfigInterpreter', 'Bootstrap', 'rerunnableAsFactory',
     'callableAsFactory', 'appAsFactory', 'InvocationError', 'CGICommand',
-    'CGIInterpreter', 'FastCGIAcceptor', 'Alias'
+    'CGIInterpreter', 'FastCGIAcceptor', 'Alias', 'runMain',
 ]
 
 
@@ -22,6 +22,88 @@ class InvocationError(Exception):
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+def runMain(factory):
+    """Use 'factory' to create and run a "main" program
+
+    'factory' must be adaptable to 'ICmdLineApp', 'ICmdLineAppFactory', or
+    'IMainCmdFactory'.  In each case, it will be used to create and run a
+    "main program", whose 'run()' method's return code will be passed to
+    'sys.exit()'.  Example usage::
+
+        from peak.running import commands
+
+        class MyCommand(commands.AbstractCommand):
+            def _run(self):
+                print "Hello world!"
+
+        if __name__ == '__main__':
+            commands.runMain(MyCommand)
+
+    To support "child processes" created with PEAK's process management tools,
+    this function will check the 'run()' method's return code to see if it is
+    another 'ICmdLineApp', 'ICmdLineAppFactory', or 'IMainCmdFactory'.  If so,
+    it will create and run a new "main program" based on that result, after
+    allowing the previous "main program" to be garbage collected.  This looping
+    will continue until 'run()' returns a non-command object."""
+
+    try:
+        factory = adapt(factory,IMainCmdFactory)
+
+        while True:
+            result = factory().run()
+            factory = adapt(result,IMainCmdFactory,None)
+
+            if factory is None:
+                # Not an app, so don't tail-recurse
+                sys.exit(result)
+
+            result = None   # allow result to be GC'd
+
+    finally:
+        # Ensure that commands don't leak
+        result = factory = None
+
+def appAsMainFactory(ob,proto):
+    """Build 'IMainCmdFactory' that just returns an existing app object"""
+    factory = lambda: ob
+    protocols.adviseObject(factory, provides=[IMainCmdFactory])
+    return factory
+
+protocols.declareAdapter(
+    appAsMainFactory,
+    provides=[IMainCmdFactory],
+    forProtocols=[ICmdLineApp]
+)
+
+
+def factoryAsMainFactory(ob,proto):
+    """Build 'IMainCmdFactory' that creates a config root per-invocation"""
+    factory = lambda: ob(config.makeRoot())
+    protocols.adviseObject(factory, provides=[IMainCmdFactory])
+    return factory
+
+protocols.declareAdapter(
+    factoryAsMainFactory,
+    provides=[IMainCmdFactory],
+    forProtocols=[ICmdLineAppFactory]
+)
 
 
 
@@ -372,7 +454,7 @@ def callableAsFactory(ob,proto=None):
     """Convert a callable object to an 'ICmdLineAppFactory'"""
 
     if not callable(ob):
-        raise NotImplementedError("Object must be callable",ob)
+        return None
 
     def factory(parentComponent=NOT_GIVEN, componentName=None, **kw):
         if parentComponent is not NOT_GIVEN:
