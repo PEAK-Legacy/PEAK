@@ -80,6 +80,18 @@ class AdviceTests(TestCase):
 
 
 
+    def checkSingleExplicitMeta(self):
+
+        class M(type): pass
+
+        class C(M):
+            __metaclass__ = M
+            ping([],1)
+
+        C, = C
+        assert C.__class__ is M
+
+
     def checkMixedMetas(self):
 
         class M1(type): pass
@@ -105,18 +117,6 @@ class AdviceTests(TestCase):
         assert isinstance(C,list)
         C, = C
         assert isinstance(C,M3)
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

@@ -209,11 +209,7 @@ def determineMetaclass(bases, explicit_mc=None):
 
     meta = [getattr(b,'__class__',type(b)) for b in bases]
 
-    if len(meta)==1:
-        # easy case
-        return meta[0]
-       
-    elif tuple(meta)==bases:
+    if tuple(meta)==bases:
         # This would happen if mixing 'type' and 'ExtensionClass'
         # (for example)
         raise TypeError("Incompatible root metatypes", bases)
@@ -222,6 +218,11 @@ def determineMetaclass(bases, explicit_mc=None):
         # The explicit metaclass needs to be verified for compatibility
         # as well, and allowed to resolve the incompatible bases, if any
         meta.append(explicit_mc)
+
+    if len(meta)==1:
+        # easy case
+        return meta[0]
+       
 
     candidates = []
 
