@@ -11,7 +11,7 @@ from tempfile import mktemp
 import sys, os, time, re
 
 
-varpat = re.compile('\\$\\{((?:[a-zA-Z0-9_]+)|(?:=[^}]+))\\}')
+varpat = re.compile('\\$\\{((?:[a-zA-Z0-9_\\.]+)|(?:=[^}]+))\\}')
 
 
 def bufname(s):
@@ -24,9 +24,6 @@ def bufname(s):
         return s[1:]
 
     return s
-
-
-EXPORTED = object() # indicates variable is exported to a python variable
 
 
 class SQLInteractor(storage.TransactionComponent):
@@ -46,8 +43,6 @@ class SQLInteractor(storage.TransactionComponent):
     is_outside = False
     txnAttrs = storage.TransactionComponent.txnAttrs + ('is_outside',)
 
-    vars = binding.Make(lambda: {'prompt':'$S$L$T> '})
-
 
     def obnames(self):
         """Object names for completer"""
@@ -64,7 +59,7 @@ class SQLInteractor(storage.TransactionComponent):
 
 
     def prompt(self):
-        p = self.getVar('prompt')
+        p = self.getVar('sql.prompt')
         p = p.replace('$L', str(self.line))
         p = p.replace('$S', self.state)
         p = p.replace('$T', self.is_outside and 'U' or '')
@@ -121,35 +116,7 @@ class SQLInteractor(storage.TransactionComponent):
 
 
     def getVar(self, name):
-        v = self.vars.get(name, '')
-        if v is EXPORTED:
-            return self.shell.getvar(name, '')
-
-        return v
-
-
-
-    def setVar(self, name, val, export=False):
-        if not export:
-            if self.vars.get(name, '') is EXPORTED:
-                export = True
-
-        if export:
-            self.vars[name] = EXPORTED
-            self.shell.setvar(name, val)
-        else:
-            self.vars[name] = val
-
-
-
-    def importVar(self, name):
-        self.vars[name] = EXPORTED
-
-
-
-    def exportVar(self, name):
-        self.setVar(name, self.getVar(name), True)
-
+        return self.shell.getvar(name, '')
 
 
     def substVar(self, s):
@@ -187,9 +154,9 @@ class SQLInteractor(storage.TransactionComponent):
         if name.startswith('$'):
             name = name[1:]
             if append:
-                self.setVar(name, self.getVar(name) + val)
+                self.shell.setvar(name, self.getVar(name) + val)
             else:
-                self.setVar(name, val)
+                self.shell.setvar(name, val)
         elif append:
             self.bufs[name] = self.bufs.get(name, '') + val
         else:
@@ -629,6 +596,7 @@ default for src is '!.', the current input buffer"""
 
             return True
 
+    cmd_e = binding.Make(cmd_buf_edit)
     cmd_buf_edit = binding.Make(cmd_buf_edit)
 
 
@@ -751,14 +719,11 @@ default for src is '!.', the current input buffer"""
 
 
     class cmd_set(ShellCommand):
-        """\\set [-x] name=val [name2=val2] [...] -- set variables
+        """\\set name=val [name2=val2] [...] -- set variables"""
 
--x\texport variables to python"""
-
-        args = ('x', 1, sys.maxint)
+        args = ('', 1, sys.maxint)
 
         def cmd(self, cmd, opts, args, stderr, **kw):
-            export = opts.has_key('-x')
             for x in args:
                 try:
                     k, v = x.split('=', 1)
@@ -767,39 +732,11 @@ default for src is '!.', the current input buffer"""
                     continue
 
                 try:
-                    self.interactor.setVar(k, v, export)
+                    self.shell.setvar(k, v)
                 except KeyError:
                     print >>stderr, "%s: unable to set '%s'" % (cmd, args[0])
 
     cmd_set = binding.Make(cmd_set)
-
-
-
-    class cmd_import(ShellCommand):
-        """\\import name -- import variable from python"""
-
-        args = ('', 1, 1)
-
-        def cmd(self, cmd, args, stderr, **kw):
-            self.interactor.importVar(args[0])
-
-    cmd_import = binding.Make(cmd_import)
-
-
-
-    class cmd_export(ShellCommand):
-        """\\export name -- export variable to python"""
-
-        args = ('', 1, 1)
-
-        def cmd(self, cmd, args, stderr, **kw):
-            try:
-                self.interactor.exportVar(args[0])
-            except KeyError:
-                print >>stderr, "%s: unable to export '%s'" % (cmd, args[0])
-                return
-
-    cmd_export = binding.Make(cmd_export)
 
 
 

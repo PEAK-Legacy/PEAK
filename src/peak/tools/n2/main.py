@@ -12,6 +12,8 @@ import sys, os, code, __main__
 from interfaces import *
 import ns, sql
 
+vars_ns = PropertyName('peak.n2')
+
 class N2(AbstractCommand):
 
     # We put this here so help(n2) will work in the interpreter shell
@@ -118,7 +120,11 @@ ls()\t\tshow contents of c
 
 
     def getvar(self, var, default=NOT_GIVEN):
-        v = self.idict.get(var, default)
+        v = self.idict.get(var, NOT_GIVEN)
+        if v is NOT_GIVEN:
+            v = vars_ns.of(self).get('.' + var, NOT_GIVEN)
+        if v is NOT_GIVEN:
+            v = default
         if v is NOT_GIVEN:
             raise KeyError, var
         else:
