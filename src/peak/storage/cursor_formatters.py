@@ -190,3 +190,49 @@ class cursorToLDIF(AbstractCursorFormatter):
             print >>stdout
 
         return nr
+
+
+class cursorToCopy(AbstractCursorFormatter):
+    """PostgreSQL/SQLite "COPY FROM" compatible format"""
+    
+    delim = binding.Make(lambda: '\t')
+    null  = binding.Make(lambda: '\\N')
+    footer = binding.Make(lambda: False)
+   
+    _map = {
+        '\\' : '\\\\',  '\b' : '\\b',   '\f' : '\\f',
+        '\n' : '\\n',   '\r' : '\\r',   '\t' : '\\t',   '\v' : '\\v'
+    }
+            
+    def formatRows(self, c, stdout):
+        nr = 0
+        for r in c:
+            print >>stdout, self.delim.join([self.toStr(v) for v in r])
+            nr += 1
+
+        return nr
+
+    def toStr(self, v):
+        if v is None:
+            return self.null
+        elif type(v) is unicode:
+            v = v.encode('utf8')
+        elif type(v) is not str:
+            v = str(v)
+
+        # XXX replace below with .encode('string_escape') in python 2.3?
+        # XXX but, it does \x not \nnn escapes...
+
+        nv = []
+        
+        for ch in v:
+            o = ord(ch)
+            m = self._map.get(ch)
+            if m is not None:
+                nv.append(m)
+            elif o < 32 or o > 126:
+                nv.append('\\%3o' % o)
+            else:
+                nv.append(ch)
+
+        return ''.join(nv)

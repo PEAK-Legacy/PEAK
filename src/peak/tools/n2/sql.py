@@ -256,11 +256,17 @@ class SQLInteractor(binding.Component):
 
     def showResults(self, c, opts, stdout, stderr):
         if c._cursor.description:
-            kw = {
-                'header' : not opts.has_key('-h'),
-                'footer' : not opts.has_key('-f'),
-                'delim'  : opts.get('-d', '|')
-            }
+            kw = {}
+                
+            if opts.has_key('-h'):
+                kw['header'] = False
+
+            if opts.has_key('-f'):
+                kw['footer'] = False
+                
+            v = opts.get('-d')
+            if v is not None:
+                kw['delim'] = v
                 
             c.dumpTo(stdout, format = opts.get('-m'), **kw)
 
