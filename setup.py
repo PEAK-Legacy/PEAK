@@ -1,76 +1,35 @@
 #!/usr/bin/env python
 """Distutils setup file"""
 
-execfile('src/setup/prologue.py')
-
-include_tests      = True   # edit this to stop installation of test modules
-include_metamodels = True   # edit this to stop installation of MOF, UML, etc.
-include_fcgiapp    = True   # edit this to stop installation of 'fcgiapp'
+import sys, os
+from setuptools import setup, Extension, Feature, findPackages
 
 # Metadata
 PACKAGE_NAME = "PEAK"
-PACKAGE_VERSION = "0.5a3"
+PACKAGE_VERSION = "0.5a4"
 HAPPYDOC_IGNORE = [
     '-i','datetime', '-i','old', '-i','tests', '-i','setup', '-i','examples',
     '-i', 'kjbuckets', '-i', 'ZConfig', '-i', 'persistence', '-i', 'csv',
 ]
 
-# Base packages for installation
+
 scripts = ['scripts/peak']
-packages = [
-    'peak', 'peak.api', 'peak.binding', 'peak.config', 'peak.model',
-    'peak.naming', 'peak.naming.factories', 'peak.net', 'peak.running',
-    'peak.tools', 'peak.tools.n2', 'peak.security', 'peak.tools.supervisor',
-    'peak.storage', 'peak.util', 'peak.web', 'peak.ddt', 'protocols',
-    'peak.tools.version', 'peak.query', 'peak.events',
-]
+
+packages = findPackages('src')
 
 extensions = [
     Extension("kjbuckets", ["src/kjbuckets/kjbucketsmodule.c"]),
     Extension(
         "peak.binding._once", [
-            "src/peak/binding/_once" + EXT,
-            "src/peak/binding/getdict.c"
+            "src/peak/binding/_once.pyx", "src/peak/binding/getdict.c"
         ]
     ),
-    Extension("peak.util.buffer_gap", ["src/peak/util/buffer_gap" + EXT]),
-    Extension("peak.util._Code", ["src/peak/util/_Code" + EXT]),
-    Extension("protocols._speedups", ["src/protocols/_speedups" + EXT]),
+    Extension("peak.util.buffer_gap", ["src/peak/util/buffer_gap.pyx"]),
+    Extension("peak.util._Code", ["src/peak/util/_Code.pyx"]),
+    Extension("protocols._speedups", ["src/protocols/_speedups.pyx"]),
+    Extension("persistence._persistence", ["src/persistence/persistence.c"]),
+    Extension('_csv', ['src/_csv.c']),
 ]
-
-
-if include_tests:
-
-    packages += [
-        'peak.tests', 'peak.binding.tests', 'peak.config.tests',
-        'peak.model.tests', 'peak.naming.tests', 'peak.running.tests',
-        'peak.security.tests', 'peak.web.tests', 'peak.query.tests',
-        'peak.storage.tests', 'peak.util.tests', 'protocols.tests',
-        'peak.events.tests', 'peak.ddt.tests',
-    ]
-
-
-if include_metamodels:
-    packages += [
-        'peak.metamodels',
-        'peak.metamodels.UML13', 'peak.metamodels.UML14',
-        'peak.metamodels.UML13.model', 'peak.metamodels.UML14.model',
-        'peak.metamodels.UML13.model.Foundation',
-        'peak.metamodels.UML13.model.Behavioral_Elements',
-    ]
-
-    if include_tests:
-        packages += [ 'peak.metamodels.tests' ]
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -91,125 +50,81 @@ except ImportError:
     zope_installed = False
 
 
-if not zope_installed:
+have_uuidgen = False
 
-    packages += [
-        'persistence', 'ZConfig',
-    ]
+if os.name=='posix' and hasattr(os, 'uname'):
 
-    extensions += [
-        Extension("persistence._persistence", ["src/persistence/persistence.c"])
-    ]
+    un = os.uname()
 
-    if include_tests:
-        packages += [
-            'persistence.tests', 'ZConfig.tests', 'ZConfig.tests.library',
-            'ZConfig.tests.library.thing', 'ZConfig.tests.library.widget',
-        ]
+    if un[0] == 'FreeBSD' and int(un[2].split('.')[0]) >= 5:
+        have_uuidgen = True
 
+    elif un[0] == 'NetBSD' and int(un[2].split('.')[0]) >= 2:
+        have_uuidgen = True
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-import sys
-
-if sys.version_info < (2,3):
-    # Install datetime and csv if we're not on 2.3
-
-    packages += ['datetime','csv']
-    if include_tests:
-        packages += ['datetime.tests']
-
-    extensions += [
-        Extension('_csv', ['src/_csv.c'])
-    ]
-
-import os
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-if os.name=='posix':
-
-    # install 'fcgiapp' module on posix systems
-    if include_fcgiapp:
-        extensions += [
-            Extension("fcgiapp", [
-                "src/fcgiapp/fcgiappmodule.c", "src/fcgiapp/fcgiapp.c"
-            ])
-        ]
-
-    uuidgen = False
-    if hasattr(os, 'uname'):
-        un = os.uname()
-        if un[0] == 'FreeBSD' and int(un[2].split('.')[0]) >= 5:
-            uuidgen = True
-        elif un[0] == 'NetBSD' and int(un[2].split('.')[0]) >= 2:
-            uuidgen = True
-        elif un[0] == 'NetBSD' and un[2].startswith('1.6Z'):
-            # XXX for development versions before 2.x where uuidgen
-            # is present -- this should be removed at some point
-            try:
-                if len(un[2]) > 4:
-                    if ord(un[2][4]) >= ord('I'):
-                        if os.path.exists('/lib/libc.so.12'):
-                            l = os.listdir('/lib')
-                            l = [x for x in l if x.startswith('libc.so.12.')]
-                            l = [int(x.split('.')[-1]) for x in l]
-                            l.sort(); l.reverse()
-                            if l[0] >= 111:
-                                uuidgen = True
-            except:
-                pass
-
-    if uuidgen:
-        extensions += [
-            Extension("peak.util._uuidgen", ["src/peak/util/_uuidgen" + EXT]),
-        ]
-
+    elif un[0] == 'NetBSD' and un[2].startswith('1.6Z'):
+        # XXX for development versions before 2.x where uuidgen
+        # is present -- this should be removed at some point
+        try:
+            if len(un[2]) > 4:
+                if ord(un[2][4]) >= ord('I'):
+                    if os.path.exists('/lib/libc.so.12'):
+                        l = os.listdir('/lib')
+                        l = [x for x in l if x.startswith('libc.so.12.')]
+                        l = [int(x.split('.')[-1]) for x in l]
+                        l.sort(); l.reverse()
+                        if l[0] >= 111:
+                            have_uuidgen = True
+        except:
+            pass
 
 
 
 execfile('src/setup/common.py')
-from setuptools import setup
+
+features = {
+    'tests': Feature(
+        "test modules", standard = True,
+        remove = [p for p in packages if p.endswith('.tests')]
+    ),
+    'metamodels': Feature(
+        "MOF/UML metamodels", standard = True, remove=['peak.metamodels']
+    ),
+    'legacy-support': Feature(
+        "Python 2.2 support packages",
+        standard = sys.version_info < (2,3), optional = False,
+        remove = ['datetime','csv','_csv'],
+    ),
+    'fcgiapp': Feature(
+        "FastCGI support", standard = (os.name=='posix'),
+        ext_modules = [
+            Extension("fcgiapp", [
+                "src/fcgiapp/fcgiappmodule.c", "src/fcgiapp/fcgiapp.c"
+            ])
+        ]
+    ),
+    'ZConfig': Feature(
+        "ZConfig 2.0", standard = not zope_installed, remove = ['ZConfig']
+    ),
+    'persistence': Feature(
+        "ZODB 4 persistence", standard = not zope_installed,
+        remove = ['persistence']
+    ),
+    'uuidgen': Feature(
+        "UUID generation via BSD system libraries",
+        available = have_uuidgen, standard = have_uuidgen,
+        optional = have_uuidgen,
+        ext_modules = [
+            Extension("peak.util._uuidgen", ["src/peak/util/_uuidgen.c"]),
+        ]
+    ),
+}
+
 
 ALL_EXTS = [
     '*.ini', '*.html', '*.conf', '*.xml', '*.pwt', '*.dtd', '*.txt',
 ]
-    
+
 setup(
     name=PACKAGE_NAME,
     version=PACKAGE_VERSION,
@@ -232,10 +147,13 @@ setup(
         'peak.metamodels': ['*.asdl']
     },
 
+    features = features,
     test_suite = 'peak.tests.test_suite',
     ext_modules = extensions,
     scripts = scripts,
 )
+
+
 
 
 
