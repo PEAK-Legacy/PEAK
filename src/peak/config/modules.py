@@ -148,7 +148,7 @@
         To override a module within the 'spam' package, just create it,
         and use module inheritance to specify the base in the original
         package.  For example, you can extend 'foo.bar' by creating
-        'spam.bar' as follows:
+        'spam.bar' as follows::
 
             import foo.bar
             __bases__ = foo.bar,
@@ -186,7 +186,7 @@
 
         While this is more verbose in the simple case, it works for
         more complex relative paths than Python allows; for example
-        you can do this:
+        you can do this::
 
             eggs = lazyModule(__name__, '../ni/eggs')
 
@@ -196,11 +196,11 @@
     Import Paths
 
         To make using relative imports easier, '__bases__' can include
-        '/'-separated relative path strings instead of modules, e.g.::
+        "/"-separated relative path strings instead of modules, e.g.::
 
             __bases__ = '../../foo/bar',
 
-        A '/' at the beginning of the path makes it absolute, so '/foo/bar'
+        A / at the beginning of the path makes it absolute, so '/foo/bar'
         would also work.
 
 
@@ -535,11 +535,11 @@ def setupModule():
 
     """setupModule() - Build module, w/patches and inheritance
 
-        'setupModule()' should be called only at the very end of a module's
-        code.  This is because any code which follows 'setupModule()' will be
-        executed twice.  (Actually, the code before 'setupModule()' gets
-        executed twice, also, but the module dictionary is reset in between,
-        so its execution is cleaner.)
+    'setupModule()' should be called only at the very end of a module's
+    code.  This is because any code which follows 'setupModule()' will be
+    executed twice.  (Actually, the code before 'setupModule()' gets
+    executed twice, also, but the module dictionary is reset in between,
+    so its execution is cleaner.)
     """
 
     frame = sys._getframe(1)
@@ -618,11 +618,12 @@ def patchModule(moduleName):
     """"Patch" a module - like a runtime (aka "monkey") patch, only better
 
         Usage::
-            from peak.api import *
 
-            ...
+            from peak.api import config
 
-            patchModule('moduleToPatch')
+            # ... body of module
+
+            config.patchModule('moduleToPatch')
 
     'patchModule()' works much like 'setupModule()'.  The main difference
     is that it applies the current module as a patch to the supplied module
@@ -651,7 +652,6 @@ def patchModule(moduleName):
         raise SpecificationError(
             "Patch modules cannot use '__bases__'"
         )
-
 
 
     if sys.modules.has_key(moduleName):
