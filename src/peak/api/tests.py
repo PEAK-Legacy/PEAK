@@ -8,6 +8,7 @@ allSuites = [
     'peak.config.tests:test_suite',
     'peak.model.tests:test_suite',
     'peak.naming.tests:test_suite',
+    'peak.running.tests:test_suite',
     'peak.storage.tests:test_suite',
 ]
 

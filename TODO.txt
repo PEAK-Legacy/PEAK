@@ -2,10 +2,6 @@ Open Issues/To-Do Items
 
  Targeted for 0.5 Alpha 1
 
-    * "Rule"-oriented configuration files (section specifies component rather
-      than property name prefix), w/support for chaining loader objects across
-      includes, and the ability to specify "Load on Demand" sections.
-
     * Review possible cross-locational or "root" things like
       'PropertyName' -- should these things move to the API?
       Or where?  They're not 'util' things, certainly.  Perhaps
@@ -70,12 +66,16 @@ Open Issues/To-Do Items
 
         - docstrings for reference
 
+    peak.config
+
+        - "Rule"-oriented configuration files (section specifies component
+          rather than property name prefix).
+
     peak.util
 
         - docstrings for reference
 
         - more unit tests?
-
 
 
 

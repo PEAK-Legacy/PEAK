@@ -137,7 +137,7 @@ setup(
 
         'peak.binding.tests', 'peak.config.tests', 'peak.storage.tests',
         'peak.metamodels.tests', 'peak.util.tests', 'peak.naming.tests',
-        'peak.model.tests', 'peak.tests',
+        'peak.model.tests', 'peak.tests', 'peak.running.tests',
 
         'Interface', 'Interface.tests',
         'Interface.Common', 'Interface.Common.tests',
@@ -145,7 +145,6 @@ setup(
         'Persistence',
     ],
     package_dir = {'':'src'},
-
     ext_modules = [
         Extension("kjbuckets", ["src/kjbuckets/kjbucketsmodule.c"]),
         Extension("Persistence.cPersistence",
@@ -158,6 +157,7 @@ setup(
     },
     data_files = [
         ('peak', ['src/peak/peak.ini']),
+        ('peak/running/tests', ['src/peak/running/tests/test_cluster.txt']),
         ('peak/metamodels/tests', ['src/peak/metamodels/tests/MetaMeta.xml']),
     ],
 )

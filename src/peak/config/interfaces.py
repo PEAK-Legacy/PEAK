@@ -99,6 +99,28 @@ class IRule(Interface):
         used, and not compute the results a second time."""
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 class ISettingLoader(Interface):
 
     """Callable used to load configuration data"""
@@ -118,7 +140,26 @@ class ISettingLoader(Interface):
             loader(propertyMap, importString('os.environ'), prefix='environ.*')
 
         So it's up to the author of the loader to choose and document the
-        arguments to be used in configuration files."""
+        arguments to be used in configuration files.
+
+        However, one keyword argument which all 'ISettingLoader' functions
+        must accept is 'includedFrom'.  This is an implementation-defined
+        object which represents the state of the 'ISettingLoader' which is the
+        caller.  Currently, this argument is only supplied by the default
+        'config.loadConfigFile()' loader, and the value passed is a
+        'ConfigReader' instance.
+        """
+
+
+
+
+
+
+
+
+
+
+
 
 
 class IPropertyMap(IConfigurable):

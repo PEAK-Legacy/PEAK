@@ -127,7 +127,7 @@ class LazyLoader(object):
 
     def __init__(self, loadFunc, prefix='*', **kw):
         self.load = loadFunc
-        self.prefix = PropertyName(prefix).asPrefix()
+        self.prefix = prefix
         self.__dict__.update(kw)
 
 
@@ -146,20 +146,61 @@ class LazyLoader(object):
         return NOT_FOUND
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 def _value(v):
     return lambda *x: v
 
-def loadMapping(pMap, mapping, prefix='*'):
+
+def loadMapping(pMap, mapping, prefix='*', includedFrom=None):
 
     prefix = PropertyName(prefix).asPrefix()
 
     for k,v in mapping.items():
         pMap.registerProvider(PropertyName(prefix+k), _value(v))
 
+loadMapping.__implements__ = ISettingLoader
 
-def loadConfigFile(pMap, filename, prefix='*'):
+
+def loadConfigFile(pMap, filename, prefix='*', includedFrom=None):
+
     if filename:
         ConfigReader(pMap,prefix).readFile(filename)
+
+loadConfigFile.__implements__ = ISettingLoader
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 class ConfigReader(AbstractConfigParser):
@@ -168,6 +209,7 @@ class ConfigReader(AbstractConfigParser):
         self.pMap = propertyMap
         self.prefix = PropertyName(prefix).asPrefix()
 
+
     def add_setting(self, section, name, value, lineInfo):
         _ruleName = PropertyName(section+name)
         def f(propertyMap, propertyName, targetObj):
@@ -175,32 +217,72 @@ class ConfigReader(AbstractConfigParser):
                 return eval(value)
         self.pMap.registerProvider(_ruleName,f)
 
+
     def do_include(self, section, name, value, lineInfo):
         from api_impl import getProperty
         propertyMap = self.pMap
         loader = getProperty("peak.config.loaders."+name, propertyMap)
         loader = importObject(loader)
-        eval("loader(propertyMap,%s)" % value)
+        eval("loader(propertyMap,%s,includedFrom=self)" % value)
 
+
+    def on_demand(self, section, name, value, lineInfo):
+        self.pMap.registerProvider(
+            PropertyName(name),
+            LazyLoader(
+                lambda propertyMap, ruleName, propertyName: eval(value),
+                prefix = name
+            )
+        )
+            
 
     def provide_utility(self, section, name, value, lineInfo):
         self.pMap.registerProvider(importString(name), eval(value))
 
+
+
+
+
+
+    section_handlers = {
+        'load settings from': 'do_include',
+        'provide utilities':  'provide_utility',
+        'load on demand':     'on_demand',
+    }
+
+
     def add_section(self, section, lines, lineInfo):
+
         if section is None:
             section='*'
             
         s = ' '.join(section.strip().lower().split())
 
-        if s=='load settings from':
-            handler = self.do_include
-        elif s=='provide utilities':
-            handler = self.provide_utility
+        if ' ' in s:
+            handler = self.section_handlers.get(s)
+
+            if handler:
+                handler = getattr(self,handler)
+            else:
+                raise SyntaxError("Invalid section type", section, lineInfo)
+        
         else:
             section = self.prefix + PropertyName(section).asPrefix()
             handler = self.add_setting
 
         self.process_settings(section, lines, handler)
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 class BasicConfig(Component):
@@ -301,7 +383,7 @@ class PropertySet(object):
         return self.__class__(self.prefix+attr, self.target)
 
     def of(self, target):
-        return self.__class__(self.prefix, target)
+        return self.__class__(self.prefix[:-1], target)
     
     def __call__(self, default=None, forObj=NOT_GIVEN):
 

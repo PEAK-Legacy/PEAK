@@ -169,23 +169,26 @@ def parseCluster(prefix, fn):
     return props
 
 
+def _value(v):
+    return lambda *x: v
 
 
-cache = {}
-
-
-def loadCluster(propertyName, prefix, targetObj=None):
+def loadCluster(propertyMap, filename=None, prefix='peak.running.cluster.*',
+                propertyName=None, includedFrom=None
+    ):
 
     prefix = naming.PropertyName(prefix).asPrefix()
-    
-    r = cache.get((prefix, targetObj))
 
-    if r is None:
-        fn = config.getProperty(prefix + '_filename', targetObj)
-        r = parseCluster(prefix, fn)
-            
-        cache[(prefix, targetObj)] = r
-    
-    return r.get(propertyName, NOT_FOUND)
+    r = parseCluster(prefix, filename)
 
-    
+    for k,v in r.items():
+        propertyMap.registerProvider(
+            naming.PropertyName(k), _value(v)
+        )
+
+    if propertyName:
+        return r.get(propertyName, NOT_FOUND)
+
+    return NOT_FOUND
+
+loadCluster.__implements__ = config.ISettingLoader
