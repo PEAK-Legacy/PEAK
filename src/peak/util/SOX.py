@@ -16,7 +16,7 @@
 
 
 from xml.sax import ContentHandler, parse
-import Interface
+from Interface import Interface
 
 
 
@@ -39,7 +39,7 @@ import Interface
 
 
 
-class ISOXNode(Interface.Base):
+class ISOXNode(Interface):
 
     """Object mapping from an XML element
 

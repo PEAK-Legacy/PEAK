@@ -9,7 +9,8 @@
   refactoring them for 0.2.
 """
 
-import Interface
+from Interface import Interface
+from Interface.Attribute import Attribute
 
 __all__ = [
     'ISEF','IService','ISpecialist','IElement','IFeature','IQuerying',
@@ -38,8 +39,7 @@ __all__ = [
 
 
 
-
-class ISEF(Interface.Base):
+class ISEF(Interface):
 
     """Basic interface supplied by all StructuralModel objects"""
 
@@ -80,7 +80,7 @@ class IService(ISEF):
 
 
 
-class IQuerying(Interface.Base):
+class IQuerying(Interface):
 
     def Get(name,recurse=None):
         """Return a sequence representing SEF child 'name', w/optional recursion
@@ -205,24 +205,24 @@ class IElement(IDataType):
 
 class IFeature(ISEF):
 
-    lowerBound = Interface.Attribute(
+    lowerBound = Attribute(
         """Lower bound of multiplicity; 0 unless overridden in class definition
         or by isRequired"""
     )
 
-    upperBound = Interface.Attribute(
+    upperBound = Attribute(
         "Upper bound of multiplicity; None=unbounded"
     )
 
-    isRequired = Interface.Attribute(
+    isRequired = Attribute(
         "May be set to true in class definition to force lowerBound=1"
     )
 
-    isOrdered     = Interface.Attribute(
+    isOrdered     = Attribute(
         "Flag for whether feature is ordered sequence"
     )
 
-    isChangeable  = Interface.Attribute(
+    isChangeable  = Attribute(
         "Flag for whether feature is changeable"
     )
 
