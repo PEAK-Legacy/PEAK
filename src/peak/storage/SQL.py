@@ -233,7 +233,7 @@ class PGSQLConnection(SQLConnection):
         self.txnSvc
 
         # Then retrieve the server's idea of the current time
-        r = ~ self('SELECT CURRENT_TIMESTAMP')
+        r = ~ self('SELECT now()')
         return r[0]
 
     txnTime = binding.Once(txnTime)
