@@ -445,7 +445,7 @@ class Obtain(Attribute):
         if self.__doc__:
             return "binding.Obtain(%r):\n\n%s" % (self.targetName,self.__doc__)
         else:
-            return "binding.Obtain(%r)" % self.targetName
+            return "binding.Obtain(%r)" % (self.targetName,)
 
 bindTo = Obtain     # XXX DEPRECATED
 
@@ -524,7 +524,7 @@ class Delegate(Make):
                 self.delegateAttr,self.__doc__
             )
         else:
-            return "binding.Delegate(%r)" % self.delegateAttr
+            return "binding.Delegate(%r)" % (self.delegateAttr,)
 
 
 delegateTo = Delegate   # XXX DEPRECATED; backward compat.
@@ -594,7 +594,7 @@ class Require(Attribute):
                 self.description,self.__doc__
             )
         else:
-            return "binding.Require(%r)" % self.description
+            return "binding.Require(%r)" % (self.description,)
 
 requireBinding = Require    # XXX DEPRECATED
 
