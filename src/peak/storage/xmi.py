@@ -574,8 +574,7 @@ class XMINode(object):
 
     def writeTo(self, indStrm):
 
-        write = indStrm.write
-        indStrm.push()
+        write = indStrm.write; indStrm.push()
 
         try:
             write('<%s' % self._name.encode('utf-8'))
@@ -590,6 +589,7 @@ class XMINode(object):
                     write('\n'); indStrm.setMargin(1)
                     for node in self.subNodes:
                         node.writeTo(indStrm); write('\n')
+                    indStrm.setMargin(-1)
 
                 elif self.subNodes:
                     indStrm.setMargin(absolute=0)    # turn off indenting
