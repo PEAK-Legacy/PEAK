@@ -156,6 +156,8 @@ def inet_address(s):
         try:
             port = port_number(s)
         except ValueError:
+            if len(s.split()) != 1:
+                raise ValueError("not a valid host name: " + repr(s))
             host = s.lower()
     return host, port
 
@@ -269,8 +271,7 @@ stock_datatypes = {
                                            }),
     }
 
-class Registry:
-    __metatype__ = type
+class Registry(object):
     __slots__ = '_stock', '_other', '_basic_key'
 
     def __init__(self, stock=None):

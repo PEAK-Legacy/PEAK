@@ -84,7 +84,7 @@ class BaseLoader:
     # utilities
 
     def loadResource(self, resource):
-        raise NotImpementedError(
+        raise NotImplementedError(
             "BaseLoader.loadResource() must be overridden by a subclass")
 
     def openResource(self, url):
@@ -189,10 +189,7 @@ class ConfigLoader(BaseLoader):
 
     # config parser support API
 
-    def startSection(self, parent, type, name, delegatename):
-        if delegatename:
-            raise NotImpementedError(
-                "section delegation is not yet supported")
+    def startSection(self, parent, type, name):
         t = self.schema.gettype(type)
         if t.isabstract():
             raise ZConfig.ConfigurationError(
@@ -200,15 +197,12 @@ class ConfigLoader(BaseLoader):
                 " found abstract type " + `type`)
         return parent.createChildMatcher(t, name)
 
-    def endSection(self, parent, type, name, delegatename, matcher):
-        assert not delegatename
+    def endSection(self, parent, type, name, matcher):
         sectvalue = matcher.finish()
         parent.addSection(type, name, sectvalue)
 
     def importSchemaComponent(self, pkgname):
         schema = self.schema
-        if schema.hasComponent(pkgname):
-            return
         if not self._private_schema:
             # replace the schema with an extended schema on the first %import
             self._loader = SchemaLoader(self.schema.registry)
@@ -216,8 +210,10 @@ class ConfigLoader(BaseLoader):
             self._private_schema = True
             self.schema = schema
         url = self._loader.schemaComponentSource(pkgname, '')
+        if schema.hasComponent(url):
+            return
         resource = self.openResource(url)
-        schema.addComponent(pkgname)
+        schema.addComponent(url)
         try:
             ZConfig.schema.parseComponent(resource, self._loader, schema)
         finally:
@@ -238,8 +234,7 @@ class ConfigLoader(BaseLoader):
         parser.parse(matcher)
 
 
-class CompositeHandler:
-    __metatype__ = type
+class CompositeHandler(object):
     __slots__ = '_handlers', '_convert'
 
     def __init__(self, handlers, schema):

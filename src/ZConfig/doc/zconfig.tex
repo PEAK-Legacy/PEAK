@@ -19,9 +19,9 @@
 
 \title{ZConfig Package Reference}
 
-%\date{\today}
-\release{1.0}
-\setshortversion{1.0}
+\date{27 October 2003}
+\release{2.0}
+\setshortversion{2.0}
 
 \author{Zope Corporation}
 \authoraddress{
@@ -56,8 +56,8 @@ Corporation.  Any software written in Python is free to use the
 ensure compatibility.  This software is covered by the Zope Public
 License, version 2.0.
 
-The \module{ZConfig} package has been tested with Python 2.1 and 2.2.
-Python 2.0 is not supported.
+The \module{ZConfig} package has been tested with Python 2.1, 2.2, and
+2.3.  Python 2.0 is not supported.
 \module{ZConfig} only relies on the Python standard library.
 
 Configurations which use \module{ZConfig} are described using
@@ -78,16 +78,15 @@ Like the \ulink{\module{ConfigParser}}
 format, this format supports key-value pairs arranged in sections.
 Unlike the \module{ConfigParser} format, sections are typed and can be
 organized hierarchically.
-% XXX and support delegation of value lookup to other sections.
-Additional files may be included if needed.  Though both formats are
-substantially line-oriented, this format is more flexible.
+Additional files may be included if needed.  Schema components not
+specified in the application schema can be imported from the
+configuration file.  Though both formats are substantially
+line-oriented, this format is more flexible.
 
 The intent of supporting nested section is to allow setting up the
 configurations for loosely-associated components in a container.  For
 example, each process running on a host might get its configuration
 section from that host's section of a shared configuration file.
-% XXX Each section may use the delegation syntax to share a base
-% configuration with other components of the same type.
 
 The top level of a configuration file consists of a series of
 inclusions, key-value pairs, and sections.
@@ -140,10 +139,9 @@ denote optional parts):
 \begin{alltt}
 <\var{section-type} \optional{\var{name}} >
 \end{alltt}
-% <\var{section-type} \optional{\var{name}} \optional{(\var{basename})} >
 
-\var{section-type} and \var{name} % and \var{basename}
-all have the same syntactic constraints as key names.
+\var{section-type} and \var{name} all have the same syntactic
+constraints as key names.
 
 The terminator looks like this:
 
@@ -168,40 +166,92 @@ of one or more key-value pairs and sections.  For example:
 (The indentation is used here for clarity, but is not required for
 syntactic correctness.)
 
-% If the \var{basename} component is given for a section header
-% (regardless of the presence of the name component), that section
-% acquires additional values from another section having \var{basename}
-% as its \var{name} and an application-supported type.  For example, an
-% application that supports the types \code{host} and \code{hostclass}
-% might use configuration like this:
-
-% \begin{verbatim}
-% <hostclass secondary>
-%     server-type secondary
-%     port 1234
-% </hostclass>
-
-% <host grendel (secondary)>
-%     port 2345
-% </host>
-% \end{verbatim}
-
-% In this application, sections of type \code{host} would be allowed to
-% acquire configuration data only from the \code{hostclass} type, so the
-% section named \code{grendel} would only be allowed to acquire
-% configuration data from a section with type \code{hostclass} and name
-% \code{secondary}.  The \code{hostclass} section named \code{secondary}
-% could in turn acquire additional key-value pairs from some other
-% section, based on the allowed type relationships of the
-% \code{hostclass} type.
-
 The header for empty sections is similar to that of non-empty
 sections, but there is no terminator:
 
 \begin{alltt}
 <\var{section-type} \optional{\var{name}} />
 \end{alltt}
-% <\var{section-type} \optional{\var{name}} \optional{(\var{basename})} />
+
+
+\subsection{Extending the Configuration Schema}
+
+As we'll see in section~\ref{writing-schema}, ``Writing Configuration
+Schema,'' what can be written in a configuration is controlled by
+schemas which can be built from \emph{components}.  These components
+can also be used to extend the set of implementations of objects the
+application can handle.  What this means when writing a configuration
+is that third-party implementations of application object types can be
+used wherever those application types are used in the configuration,
+if there's a \module{ZConfig} component available for that
+implementation.
+
+The configuration file can use an \keyword{\%import} directive to load
+a named component:
+
+\begin{verbatim}
+%import Products.Ape
+\end{verbatim}
+
+The text to the right of the \keyword{\%import} keyword must be the
+name of a Python package; the \module{ZConfig} component provided by
+that package will be loaded and incorporated into the schema being
+used to load the configuration file.  After the import, section types
+defined in the component may be used in the configuration.
+
+More detail is needed for this to really make sense.
+
+A schema may define section types which are \emph{abstract}; these
+cannot be used directly in a configuration, but multiple concrete
+section types can be defined which \emph{implement} the abstract
+types.  Wherever the application allows an abstract type to be used,
+any concrete type which implements that abstract type can be used in
+an actual configuration.
+
+The \keyword{\%import} directive allows loading schema components
+which provide alternate concrete section types which implement the
+abstract types defined by the application.  This allows third-party
+implementations of abstract types to be used in place of or in
+addition to implementations provided with the application.
+
+Consider an example application application which supports logging in
+the same way Zope 2 does.  There are some parameters which configure
+the general behavior of the logging mechanism, and an arbitrary number
+of \emph{log handlers} may be specified to control how the log
+messages are handled.  Several log handlers are provided by the
+application.  Here is an example logging configuration:
+
+\begin{verbatim}
+<eventlog>
+  level verbose
+
+  <logfile>
+    path /var/log/myapp/events.log
+  </logfile>
+</eventlog>
+\end{verbatim}
+
+A third-party extension may provide a log handler to send
+high-priority alerts the system administrator's text pager or
+SMS-capable phone.  All that's needed is to install the implementation
+so it can be imported by Python, and modify the configuration:
+
+\begin{verbatim}
+%import my.pager.loghandler
+
+<eventlog>
+  level verbose
+
+  <logfile>
+    path /var/log/myapp/events.log
+  </logfile>
+
+  <pager>
+    number   1-800-555-1234
+    message  Something broke!
+  </pager>
+</eventlog>
+\end{verbatim}
 
 
 \subsection{Textual Substitution in Values}
@@ -420,13 +470,15 @@ The following elements are used to describe a schema:
 \end{elementdesc}
 
 \begin{elementdesc}{import}{EMPTY}
-  Import a schema component.
-  Exactly one of the two possible attributes must be specified.
+  Import a schema component.  Exactly one of the attributes
+  \attribute{package} and \attribute{src} must be specified.
 
   \begin{attributedesc}{file}{file name without directory information}
     Name of the component file within a package; if not specified,
     \file{component.xml} is used.  This may only be given when
-    \attribute{package} is used.
+    \attribute{package} is used.  (The \file{component.xml} file is
+    always used when importing via \keyword{\%import} from a
+    configuration file.)
   \end{attributedesc}
 
   \begin{attributedesc}{package}{\datatype{dotted-name}}
@@ -662,6 +714,8 @@ directly reference datatype code.  Schema components are provided by
 Python packages.  The component definition is normally stored in the
 file \file{component.xml}; an alternate filename may be specified
 using the \attribute{file} attribute of the \element{import} element.
+Components imported using the \keyword{\%import} keyword from a
+configuration file must be named \file{component.xml}.
 The component defines the types provided by that component; it must
 have a \element{component} element as the document element.
 
@@ -1280,7 +1334,5 @@ The following is the XML Document Type Definition for \module{ZConfig}
 schema:
 
 \verbatiminput{schema.dtd}
-
-%\input{oldapi}
 
 \end{document}
