@@ -310,4 +310,4 @@ class FLockFile(LockFileBase):
 if posix:
     LockFile = SHLockFile
 else:
-    LockFile = FLockFile
+    pass # XXX win32
