@@ -1,4 +1,4 @@
-"""'Straw Man' Transaction Interfaces"""
+"""Storage Interfaces"""
 
 from protocols import Interface, Attribute, advise
 from peak.binding.interfaces import IComponent
@@ -43,31 +43,31 @@ class IDelta(Interface):
 
     """A change that can be undone or redone"""
 
-    undoable = Attribute("""True if this action can potentially be undone""")
+    active = Attribute(
+        """True until 'finish()' or 'undo()' is called"""
+    )
+
+    undoable = Attribute("""True if this change can potentially be undone""")
 
     key = Attribute(
-       """A unique key identifying the subject of this delta, or None"""
+        """A unique key identifying the subject of this delta, or None"""
     )
 
     def undo():
-       """Undo the behavior"""
+        """Undo the behavior"""
 
     def redo():
-       """Reapply the behavior"""
+        """Reapply the behavior"""
 
+    def merge(delta):
+        """Incorporate 'delta' into this delta
+        
+       Raise an error if delta is already checkpointed or undone, or 'delta' is
+       not of a compatible type.       
+       """
 
-
-
-
-
-
-
-
-
-
-
-
-
+    def finish():
+        """Notification that a checkpoint has occurred"""
 
 
 
@@ -82,7 +82,13 @@ class IDelta(Interface):
 
 class IHistory(IDelta):
 
-    """A history of changes that will be undone/redone as a group"""
+    """A sequence of changes that will be undone/redone as a group
+    
+    Note that passing an 'IHistory' to the 'merge()' method of an 'IHistory'
+    should be implemented by merging their contained deltas by key, except
+    for deltas with keys of 'None', which are simply aggregated in the resulting
+    history.
+    """
 
     def __contains__(key):
         """Does this history have a delta keyed as 'key'?"""
@@ -90,21 +96,15 @@ class IHistory(IDelta):
     def __iter__():
         """Yield the deltas that comprise the group"""
 
-    active = Attribute(
-        """True until 'finish()' or 'undo()' is called on this group"""
-    )
 
-    def add(delta):
-       """Add IDelta delta to the history
 
-       Raise an error if history is no longer active.  If 'delta' is
-       an 'IHistory', recursively invoke 'add()' on all of its
-       contents, except those whose keys are already present in this
-       history.
-       """
 
-    def finish():
-        """Stop allowing deltas to be added (also called by 'undo()')"""
+
+
+
+
+
+
 
 
 
@@ -126,7 +126,11 @@ class IUndoManager(Interface):
     """Perform undo/redo of recorded actions"""
 
     def record(delta):
-        """Record delta as part of the current history (see 'IHistory.add()')"""
+        """Record delta as part of the current history (see 'IDelta.merge()')"""
+        
+    def has_delta_for(key):
+        """True if a delta with key 'key' is in current history"""
+
 
     def checkpoint():
         """Finish current history and add to undo stack
@@ -136,6 +140,7 @@ class IUndoManager(Interface):
     def revert():
         """Roll back current history to last checkpoint or undo/redo"""
 
+
     def undoLast():
         """Undo the last history added to the undo stack
         (while moving it to the redo stack)"""
@@ -144,13 +149,8 @@ class IUndoManager(Interface):
         """Pop a history from the redo stack and redo it
         (while moving it to the undo stack)"""
 
+
     # XXX canUndo(), canRedo(), clear()?
-
-
-
-
-
-
 
 
 
