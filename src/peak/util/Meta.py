@@ -153,8 +153,12 @@ def makeClass(name,bases,dict):
     
         # If we have metaclasses, it's not a classic class, so derive a
         # single metaclass, and ask it to create the class.
-        
-        metaclass = derivedMeta(metaclasses)
+
+        if len(metaclasses)==1:
+            metaclass = metaclasses[0]        
+        else:
+            metaclass = derivedMeta(metaclasses)
+
         return metaclass(name,bases,dict)
 
     # No metaclasses, it's a classic class, so use 'new.classobj'
