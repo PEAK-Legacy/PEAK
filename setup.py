@@ -53,7 +53,7 @@ class test(Command):
     def finalize_options(self):
 
         if self.test_module is None:
-            self.test_module = 'peak.tests'
+            self.test_module = 'peak.api.tests'
 
         self.test_args = [self.test_module+'.test_suite']
 
