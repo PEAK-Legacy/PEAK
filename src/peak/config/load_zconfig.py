@@ -2,6 +2,7 @@ from peak.api import *
 import ZConfig.loader
 from peak.running.commands import AbstractInterpreter
 from peak.naming.factories.openable import FileURL
+import os
 
 class BaseLoader(binding.Component, ZConfig.loader.BaseLoader):
 
@@ -26,7 +27,6 @@ class BaseLoader(binding.Component, ZConfig.loader.BaseLoader):
             raise ZConfig.ConfigurationError(
                 "fragment identifiers are not supported")
         return str(url)
-
 
 
 
@@ -71,11 +71,11 @@ command-line arguments.
         binding.suggestParentComponent(self.getCommandParent(),None,ob)
         return self.getSubcommand(ob)
 
-
-
-
-
-
+    def loadResource(self, resource):
+        sm = self.createSchemaMatcher()
+        self._parse_resource(sm, resource, os.environ.copy())
+        result = sm.finish(), CompositeHandler(sm.handlers, self.schema)
+        return result
 
 
 
