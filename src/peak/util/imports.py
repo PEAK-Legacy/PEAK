@@ -76,7 +76,7 @@ def importString(name, globalDict=defaultGlobalDict):
                 pass
 
         path.append(part)
-        item = __import__('.'.join(path), globalDict, globalDict, [part])
+        item = __import__('.'.join(path), globalDict, globalDict, ['__name__'])
 
     return item
 
