@@ -403,7 +403,7 @@ class ConfigurationRoot(Component):
     def noMoreUtilities(self,root,configKey,forObj): pass
 
     def nameNotFound(self,root,name,forObj,bindName):
-        return naming.lookup(component, name,
+        return naming.lookup(forObj, name,
             creationParent=forObj, creationName=bindName
         )
 
