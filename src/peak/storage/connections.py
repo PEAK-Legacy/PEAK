@@ -82,34 +82,43 @@ class DBCursor(binding.Component):
 
     def __iter__(self, onlyOneSet=True):
 
-        fetch = self._cursor.fetchone
-        row = fetch()
+        fetch = self._cursor.fetchmany
+        rows = fetch()
 
+        if rows:
 
-        # we don't want to mess with souped-up row types
-        # so require an exact match to 'tuple' type
-        
-        if type(row) is tuple:  
+            # we don't want to mess with souped-up row types
+            # so require an exact match to 'tuple' type
 
-            rowStruct = makeStructType('rowStruct',
-                [d[0] for d in self._cursor.description],
-                __implements__ = IRow, __module__ = __name__,
-            )
-            
-            row.__class__ = rowStruct
-            yield row
-            
-            for row in iter(fetch, None):
-                row.__class__ = rowStruct
-                yield row
+            row = rows[0]
 
-        else:
-            yield row
-            for row in iter(fetch, None):
-                yield row
+            if type(row) is tuple:  
+
+                rowStruct = makeStructType('rowStruct',
+                    [d[0] for d in self._cursor.description],
+                    __implements__ = IRow, __module__ = __name__,
+                )
+
+                while rows:
+
+                    for row in rows:
+                        row.__class__ = rowStruct
+                        yield row
+
+                    rows = fetch()
+
+            else:
+
+                while rows:
+
+                    for row in rows:
+                        yield row
+
+                    rows = fetch()
 
         if onlyOneSet and self.nextset():
             raise self.tooMany
+
 
 
     def allSets(self):
@@ -120,6 +129,7 @@ class DBCursor(binding.Component):
 
         while self.nextset():
             yield list(oneSet(False))
+
 
     def nextset(self):
         return getattr(self._cursor, 'nextset', _nothing)()
@@ -143,16 +153,6 @@ class DBCursor(binding.Component):
 
 
     __invert__ = justOne
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -295,7 +295,7 @@ class LDAPCursor(DBCursor):
     msgid        = None
     bulkRetrieve = False
 
-    disconnects = binding.bindToNames('import:ldap.SERVER_DOWN',)
+    disconnects = binding.bindSequence('import:ldap.SERVER_DOWN',)
 
     def close(self):
 
