@@ -75,9 +75,9 @@ class BasicTxnErrorHandler(object):
             exc_info=True
         )
 
-        # remove and retry after fail
-        txnService.removeParticipant(participant)
-        raise
+        # ignore the error
+
+
 
 
     def finishFailed(self, txnService, participant, committed):
@@ -88,7 +88,7 @@ class BasicTxnErrorHandler(object):
         )
 
         # ignore the error
-        txnService.removeParticipant(participant)
+
 
 
 

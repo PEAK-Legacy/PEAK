@@ -207,6 +207,11 @@ Fixes and Enhancements since Version 0.5 alpha 2
 
  Corrected Problems
 
+  - Transaction participants that raised an error in their 'abortTransaction()'
+    method, would not receive a 'finishTransaction()' call, the error was
+    passed through to the transaction service's caller, and later participants
+    might not have received an 'abortTransaction()' message either.
+
   - SQL connections didn't close their cursors before aborting a transaction
 
   - The logging system would raise an error if a log message with no arguments
