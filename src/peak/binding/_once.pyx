@@ -43,23 +43,26 @@ cdef class OnceDescriptor:
 
     """Data descriptor base class for 'Once' bindings"""
 
-    cdef object attrName
+    cdef public object attrName
+    cdef public int isVolatile
+
 
     def __set__(self, obj, value):
-
         d = GET_DICTIONARY(obj)
-        d[self.attrName] = value
-
+        d[self.attrName] = self.onSet(obj, self.attrName, value)
 
     def __delete__(self, obj):
         d = GET_DICTIONARY(obj)
         del d[self.attrName]
 
+    def onSet(self, obj, attrName, value):
+        return value
 
+    def ofClass(self, attrName, klass):
+        return self
 
 
     def __get__(self, ob, typ):
-
         # Compute the attribute value and cache it
 
         # Note: fails if attribute name not supplied or doesn't reference
@@ -68,17 +71,14 @@ cdef class OnceDescriptor:
         cdef void *obj
 
         if ob is Py_None:
-            return self
+            return self.ofClass(self.attrName, typ)
 
         n = self.attrName
+        if not n: # or getattr(ob.__class__, n, None) is not self:
+            self.usageError()
+
         d = GET_DICTIONARY(ob)
         obj = PyDict_GetItem(d, n)
-
-
-
-
-
-
 
         if obj:
 
@@ -100,65 +100,24 @@ cdef class OnceDescriptor:
             d[n] = bindingLock()
 
         try:
-            if not n or getattr(ob.__class__, n, None) is not self:
-                self.usageError()
-
             value = self.computeValue(ob, d, n)
-
         except:
-
             # We can only remove the guard if it was put in
             # place by this thread, and another thread hasn't
             # already finished the computation
 
             obj = PyDict_GetItem(d, n)
-
             if obj and isLock(obj) and isOurs(obj):
                 del d[n]
-
             raise
 
-        d[n] = value
+        if self.isVolatile:
+            del d[n]
+        else:
+            d[n] = value
+
         return value
 
-cdef class __attrName_Descriptor:
-
-    """The attribute name this descriptor will handle."""
-
-
-    def __get__(self, obj, typ):
-
-        if obj is Py_None:
-            return self
-
-        return (<OnceDescriptor>obj).attrName
-
-
-    def __set__(self, OnceDescriptor obj, value):
-        obj.attrName = value
-
-    def __delete__(self, OnceDescriptor obj):
-        obj.attrName = None
-
-
-OnceDescriptor_attrName = __attrName_Descriptor()
-
-__all__ = ['OnceDescriptor_attrName', 'OnceDescriptor']
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+__all__ = ['OnceDescriptor']
 
 

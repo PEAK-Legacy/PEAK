@@ -26,8 +26,9 @@ __all__ = [
     'getComponentName', 'getComponentPath', 'Acquire', 'ComponentName',
 ]
 
+from _once import OnceDescriptor
 
-class _proxy(Once):
+class _proxy(OnceDescriptor):
 
     def __init__(self,attrName):
         self.attrName = attrName
@@ -35,8 +36,7 @@ class _proxy(Once):
     def usageError(self):
         raise AttributeError, self.attrName
 
-    def computeValue(self,d,a): raise AttributeError, a
-
+    def computeValue(self,ob,d,a): raise AttributeError, a
 
 
 def getComponentPath(component, relativeTo=None):

@@ -33,9 +33,9 @@ def supertype(supertype,subtype):
     raise TypeError("Not sub/supertypes:", supertype, subtype)
 
 
-
-
-
+class OnceBase(OnceDescriptor):
+    def __init__(self,**kw):
+        for k,v in kw.items(): setattr(self,k,v)
 
 
 
@@ -195,12 +195,12 @@ class Once(OnceDescriptor):
         supply a valid name, attribute access will fail with a 'TypeError'.
     """
 
-    attrName = OnceDescriptor_attrName
     declareAsProviderOf = None
     activateUponAssembly = False
 
     def __repr__(self):
         return "Once binding: %s" % (self.__doc__ or '')
+
 
 
     def __init__(self,
@@ -227,21 +227,21 @@ class Once(OnceDescriptor):
 
 
     def activate(self,klass,attrName):
-
-        if attrName !=self.attrName:
-            self = self._copyWithName(attrName)
-            setattr(klass, attrName, self)
-
+        setattr(klass, attrName, self._copyWithName(attrName))
         return self
 
 
     def _copyWithName(self, attrName):
+        return OnceBase(
+            attrName     = attrName,
+            computeValue = self.computeValue,
+            ofClass      = self.ofClass,
+            onSet        = self.onSet,
+        )
 
-        from copy import copy
-        newOb = copy(self)
 
-        newOb.attrName = newOb.__name__ = attrName
-        return newOb
+
+
 
 
 class classAttr(object):
