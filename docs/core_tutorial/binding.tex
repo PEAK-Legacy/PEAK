@@ -481,8 +481,8 @@ So, if you plan to use attribute bindings in your program, it's probably best
 to subclass \class{binding.Base}; it'll save you a lot of typing!
 
 There are other \module{peak.binding} base classes which you'll use that
-derive from \class{binding.Base}, though, like \class{binding.Component} and
-\class{binding.AutoCreated}.  You'll use these latter two a lot when defining
+derive from \class{binding.Base}, though, like \class{binding.Component}.
+You'll likely use \class{binding.Component} a lot when defining
 Service components.  \class{binding.Base} is designed to be a minimalist
 component base, without a lot of the extra features found in its subclasses.
 
@@ -865,8 +865,8 @@ getRootComponent}, \function{binding.lookupComponent}, \function{binding.%
 getComponentName}, and \function{binding.getComponentPath} do pretty much as
 you would expect from their names.  (One thing we didn't show, however, was
 that \function{binding.getComponentPath}  doesn't actually return a string,
-but a special path object that just looks like a string when printed.  More
-about this later.)
+but a \class{ComponentName} instance that just looks like a string when
+printed.  More about this later.)
 
 \subsubsection{How Hierarchies Are Assembled}
 
@@ -878,14 +878,15 @@ interfaces.
 
 \subsection{Hierarchy-Building Tools}
 
-XXX Base, Component, bindToParent, iterParents, ...
+XXX Base, Component, bindToParent, ...
 
-XXX AutoCreated, OnceClass?
 
 
 \section{Connecting Components by Name or Interface}
 
 XXX bindSequence, bindTo, bindToProperty, bindToUtilities, Constant, Acquire,
-findUtility, findUtilities, ... getComponentName, getComponentPath,
-ComponentName, 
+ComponentName, ...
 
+
+XXX Stuff that needs to go to config chapter: iterParents, findUtility,
+findUtilities
