@@ -532,8 +532,7 @@ class NegotiatingParser:
             start(self,data)
 
     def endElement(self,name):
-        data = self.stack.pop()
-
+        data = self.stack.pop(); result = None
         finish = data.get('finish')
         if finish:
             result = finish(self,data)
@@ -549,6 +548,7 @@ class NegotiatingParser:
             self.attribute_map, self.element_map = data['caches']
             if 'lookups' in data:
                 self.lookup_element, self.lookup_attribute = data['lookups']
+        return result   # for tests
 
     def resetCaches(self):
         data = self.stack[-1]
