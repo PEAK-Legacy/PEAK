@@ -64,12 +64,12 @@ class SQLCursor(AbstractCursor):
 
     def __setattr__(self,attr,val):
 
-        descr = getattr(self.__class__,attr,None)
+        if hasattr(self.__class__,attr):
+            super(SQLCursor,self).__setattr__(attr,val)
 
-        if hasattr(descr,'__set__'):
-            descr.__set__(self,val)
-        elif self._hasBinding(attr) or descr is not None:
+        elif self._hasBinding(attr):
             self._setBinding(attr,val)
+
         else:
             setattr(self._cursor,attr,val)
 
