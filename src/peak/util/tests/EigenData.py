@@ -121,7 +121,7 @@ class CheckDict(TestCase):
         else:
             raise AssertionError("Shouldn't be able to delete read key")
 
-from Interface import Interface
+from peak.interface import Interface
 
 #   IA
 #    |
