@@ -3,12 +3,45 @@
 from unittest import TestCase, makeSuite, TestSuite
 from peak.api import *
 from peak.model.queries import *
+from peak.util.imports import lazyModule
+
+UML13 = lazyModule('peak.metamodels.UML13')
+
+
+class UMLClass(storage.xmi.Loader):
+
+    class XMI_DM_Class(storage.xmi.XMI_DM):
+        metamodel = UML13
+        document  = binding.New(storage.xmi.XMIDocument)
+
+    UML13 = UML13
+    
+    Data_Types        = binding.bindTo('UML13/Foundation/Data_Types')
+    Multiplicity      = binding.bindTo('Data_Types/Multiplicity')
+    MultiplicityRange = binding.bindTo('Data_Types/MultiplicityRange')
+
+    Package           = binding.bindTo('UML13/Model_Management/Package')
+    Class             = binding.bindTo('UML13/Foundation/Core/Class')
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 class UMLTest(TestCase):
 
     def setUp(self):
-        global UMLClass
-        from peak.metamodels.uml.Model import UMLClass
         self.m = m = UMLClass()
         self.pkg = m.Package()
 
@@ -20,24 +53,32 @@ class UMLTest(TestCase):
     def checkAdd(self):
         pkg = self.pkg
         Class = self.m.Class()
-        assert not pkg.ownedElements
-        pkg.addOwnedElements(Class)
-        v = pkg.ownedElements
+        assert not pkg.ownedElement
+        pkg.addOwnedElement(Class)
+        v = pkg.ownedElement
         assert len(v)==1
         assert v[0] is Class
 
     def checkDel(self):
         self.checkAdd()
         pkg = self.pkg
-        oe = pkg.ownedElements
-        pkg.removeOwnedElements(oe[0])
+        oe = pkg.ownedElement
+        pkg.removeOwnedElement(oe[0])
         assert len(oe)==0
 
     def checkImm(self):
-        mr = UMLClass.MultiplicityRange(lower=0,upper=-1)
-        m = UMLClass.Multiplicity(ranges=[mr])
-        assert m.ranges[0].lower==0
-        assert UMLClass.Multiplicity().ranges==[]
+        mr = self.m.MultiplicityRange(lower=0,upper=-1)
+        m  = self.m.Multiplicity(range=[mr])
+        assert m.range[0].lower==0
+        assert self.m.Multiplicity().range==[]
+
+
+
+
+
+
+
+
 
 class QueryTests(TestCase):
 
@@ -47,7 +88,7 @@ class QueryTests(TestCase):
         pkg.name = 'SomePackage'
         self.klass = klass = self.m.Class()
         klass.name = 'FooClass'
-        pkg.addOwnedElements(klass)
+        pkg.addOwnedElement(klass)
         
         
     def checkNameGet(self):
@@ -64,7 +105,7 @@ class QueryTests(TestCase):
     def checkContentsGet(self):
         pkg = self.pkg
         klass = self.klass
-        oe = list(query([pkg])['ownedElements'])
+        oe = list(query([pkg])['ownedElement'])
         assert len(oe)==1, oe
         ns = list(query([klass])['namespace'])
         assert len(ns)==1
@@ -72,7 +113,7 @@ class QueryTests(TestCase):
     def checkContentsWhere(self):
         pkg = self.pkg
         klass = self.klass
-        oe = list(query([pkg])['ownedElements'][ANY('name',EQ('FooClass'))])
+        oe = list(query([pkg])['ownedElement'][ANY('name',EQ('FooClass'))])
         assert len(oe)==1, oe
         ns = list(query([klass])['namespace'][ANY('name',EQ('SomePackage'))])
         assert len(ns)==1
@@ -97,7 +138,7 @@ class XMITests(TestCase):
         m = LoadedUML
         self.roots = query(m.roots)
         self.root = list(self.roots)[0]
-        mm = self.mm = query([self.root])['ownedElements'][
+        mm = self.mm = query([self.root])['ownedElement'][
             ANY('name',EQ('Meta-MetaModel'))
         ]
 
@@ -109,11 +150,11 @@ class XMITests(TestCase):
         assert l==['Data'], l
 
     def checkContents(self):
-        assert list(self.mm['ownedElements'][ANY('name',EQ('AttributeKind'))])
-        assert not list(self.mm['ownedElements'][ANY('name',EQ('foobar'))])
+        assert list(self.mm['ownedElement'][ANY('name',EQ('AttributeKind'))])
+        assert not list(self.mm['ownedElement'][ANY('name',EQ('foobar'))])
 
     def checkSuperclasses(self):
-        enum = self.roots['ownedElements*'][ANY('name',EQ('enumeration'))]
+        enum = self.roots['ownedElement*'][ANY('name',EQ('enumeration'))]
         assert len(list(enum))==1
         sc = enum['superclasses']
         assert len(list(sc))==1, list(sc)

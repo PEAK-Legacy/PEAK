@@ -137,7 +137,15 @@ setup(
 
     packages=[
         'peak', 'peak.api', 'peak.binding', 'peak.model', 'peak.metamodels',
-        'peak.metamodels.uml',
+
+        'peak.metamodels.UML13',
+        'peak.metamodels.UML13.Foundation',
+
+        'peak.metamodels.UML13.model',
+        'peak.metamodels.UML13.model.Foundation',
+        'peak.metamodels.UML13.model.Behavioral_Elements',
+        
+
         'peak.naming', 'peak.naming.factories', 'peak.util', 'peak.running',
         'peak.config', 'peak.storage',
 
@@ -153,14 +161,11 @@ setup(
 
     package_dir = {'':'src'},
 
+
     cmdclass = {
         'install_data': install_data, 'sdist': sdist, 'happy': happy,
         'test': test, 'sdist_nodoc': old_sdist, 'build_ext': build_ext,
     },
-
-
-
-
 
     data_files = [
         ('peak', ['src/peak/peak.ini']),
