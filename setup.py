@@ -135,7 +135,7 @@ setup(
     packages=[
         'TW', 'TW.API', 'TW.Database', 'TW.MOF', 'TW.SEF', 'TW.UML', 'TW.XMI',
         'TW.Utils', 'TW.API.tests', 'TW.Database.tests', 'TW.SEF.tests',
-        'TW.Utils.tests', 'TW.tests', 
+        'TW.Utils.tests', 'TW.tests', 'TWX', 'TWX.Diagrams',
     ],
     
     package_dir = {'':'src'},

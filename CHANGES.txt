@@ -1,5 +1,9 @@
 New Features and Bug Fixes since v0.2, preview 1
 
+ * Added 'TWX' package for extensions; added 'TWX.Diagrams.GraphViz'
+   diagramming utility module.  Very hacky and first-draft, with no unit
+   tests, but I've manually verified most of the functionality so far.
+
  * Added support for pickling instances of nested classes; this required
    changing all uses of '__name__' which needed an unqualified class name.
    Notably, one should use 'feature.attrName' instead of 'feature.__name__'
