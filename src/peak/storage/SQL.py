@@ -326,7 +326,48 @@ class SybaseConnection(SQLConnection):
 
 
 
-class PGSQLConnection(SQLConnection):
+class ValueBasedTypeMap(object):
+
+    def typeMap(self, d, a):
+
+        tm = {}
+        ps = PropertyName('peak.sql_types').of(self)
+        api = self.API
+
+        for k in self.supportedTypes:
+
+            c = ps.get(k,NullConverter)
+
+            for v in getattr(api,k).values:
+                try:
+                    v+''
+                except:
+                    tm[v] = c
+                else:
+                    # We support either '.int4' or '.INTEGER' style properties
+                    tm[v] = importObject(ps.get(v,c))
+
+        return tm
+
+    typeMap = binding.Once(typeMap)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class PGSQLConnection(ValueBasedTypeMap, SQLConnection):
 
     API = binding.bindTo("import:pgdb")
 
@@ -367,45 +408,16 @@ class PGSQLConnection(SQLConnection):
 
 
 
-    def typeMap(self, d, a):
+class SqliteConnection(ValueBasedTypeMap, SQLConnection):
 
-        tm = {}
-        ps = PropertyName('peak.sql_types').of(self)
-        api = self.API
+    API = binding.bindTo("import:sqlite")
 
-        for k in self.supportedTypes:
+    supportedTypes = (
+        'DATE', 'INT', 'NUMBER', 'ROWID', 'STRING', 'TIME', 'TIMESTAMP',
+    )
 
-            c = ps.get(k,NullConverter)
-
-            for v in getattr(api,k).values:
-                # We support either '.int4' or '.INTEGER' style properties
-                tm[v] = importObject(ps.get(v,c))
-
-        return tm
-
-    typeMap = binding.Once(typeMap)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    def _open(self):
+        return self.API.connect(self.address.getFilename())
 
 
 class GadflyConnection(SQLConnection):
@@ -437,18 +449,6 @@ class GadflyConnection(SQLConnection):
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
 class GadflyURL(naming.URL.Base):
 
     supportedSchemes = ('gadfly',)
@@ -472,16 +472,16 @@ protocols.declareAdapter(
 
 
 
+from peak.naming.factories.openable import FileURL
 
+class SqliteURL(FileURL):
+    supportedSchemes = 'sqlite',
 
-
-
-
-
-
-
-
-
+protocols.declareAdapter(
+    lambda url, proto: SqliteConnection(address=url),
+    provides = [ISQLConnection],
+    forTypes = [SqliteURL],
+)
 
 
 
