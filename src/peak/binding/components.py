@@ -619,13 +619,10 @@ class Component(Base):
 
     __implements__ = IComponent
 
-    def __instance_provides__(self,d,a):
-        from peak.config.config_components import PropertyMap
-        pm=PropertyMap()
-        pm.setParentComponent(self)
-        return pm
+    __instance_provides__ = New(
+        'peak.config.config_components:PropertyMap', provides=IPropertyMap
+    )
 
-    __instance_provides__ = Once(__instance_provides__, provides=IPropertyMap)
     __class_provides__    = EigenRegistry()
     
 
@@ -649,7 +646,6 @@ class Component(Base):
 
     def registerProvider(self, configKeys, provider):
         self.__instance_provides__.registerProvider(configKeys, provider)
-
 
 
 
