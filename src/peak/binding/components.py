@@ -1,17 +1,17 @@
 """Basic binding tools"""
 
-from once import Once
+from once import Once, New
 import meta, modules
 
-from weakref import ref
+from weakref import ref, WeakValueDictionary
 from peak.naming.names import toName, Syntax, CompoundName
 from peak.naming.interfaces import NameNotFoundException
-
-    
+from peak.util.EigenData import EigenRegistry
+from Interface import Interface    
 
 
 __all__ = [
-    'Component','AutoCreated',
+    'Component','AutoCreated','Provider','CachingProvider',
     'bindTo', 'requireBinding', 'bindToNames', 'bindToParent', 'bindToSelf',
     'getRootComponent', 'getParentComponent', 'lookupComponent',
     'acquireComponent', 'globalLookup'
@@ -20,6 +20,47 @@ __all__ = [
 _ACQUIRED = object()
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+def Provider(callable):
+    return lambda foundIn, forObj: callable(forObj)
+
+
+def CachingProvider(callable, weak=False):
+
+    def provider(foundIn, forObj):
+
+        fid = id(foundIn)
+        utility = provider.cache.get(fid)
+
+        if utility is None:
+            utility = provider.cache[fid] = callable(foundIn)
+
+        return utility
+
+    if weak:
+        provider.cache = WeakValueDictionary()
+    else:
+        provider.cache = {}
+
+    return provider
 
 
 
@@ -166,15 +207,16 @@ def lookupComponent(component, name):
 
     """Lookup 'name' relative to 'component'
 
-    'name' can be any name acceptable to the 'peak.naming' package.  Strings
-    and 'CompoundName' names will be interpreted as paths relative to the
-    starting component.  An empty name will return the starting component.
-    All other kinds of names, including URL strings and 'CompositeName'
-    instances, will be looked up using 'binding.globalLookup()'.
+    'name' can be any name acceptable to the 'peak.naming' package, or an
+    Interface object.  Strings and 'CompoundName' names will be interpreted
+    as paths relative to the starting component.  An empty name will return
+    the starting component.  Interfaces will be lookedup using
+    'component.acquireUtility()'.  All other kinds of names, including URL
+    strings and 'CompositeName' instances, will be looked up using
+    'binding.globalLookup()'.
     
     Regardless of how the lookup is processed, a 'naming.NameNotFoundException'
     will be raised if the name cannot be found.
-   
 
     Component Path Syntax
 
@@ -193,9 +235,13 @@ def lookupComponent(component, name):
         All path segments after the first are interpreted as attribute names
         to be looked up, beginning at the component referenced by the first
         path segment.  '.' and '..' are interpreted the same as for the first
-        path segment.   
-    """
+        path segment."""
 
+    if isinstance(name, Interface):
+        utility = component.acquireUtility(name)
+        if utility is None:
+            raise NameNotFoundException(name, resolvedObj = component)
+        
     parsedName = toName(name, ComponentName, 1)
 
     # URL's and composite names must be handled globally
@@ -216,7 +262,6 @@ def lookupComponent(component, name):
         ob = pc(component)
     else:
         ob = acquireComponent(component,attr)
-
 
     resolved = []
     append = resolved.append
@@ -239,10 +284,6 @@ def lookupComponent(component, name):
         )
 
     return ob
-
-
-
-
 
 class bindTo(Once):
 
@@ -514,11 +555,52 @@ class Component(object):
 
     _componentName = Once(_componentName)
 
+    __instance_provides__ = New(EigenRegistry)
+
+    __class_provides__ = EigenRegistry()
+    
 
 
 
 
 
+
+
+
+
+
+
+
+
+    def acquireUtility(self, iface, forObj=None, localLookup=True):
+
+        if forObj is None:
+            forObj=self
+
+        if localLookup:
+        
+            provider = self.__instance_provides__.get(iface)
+            
+            if provider is not None:
+                return provider(self,forObj)
+
+            attr = self.__class_provides__.get(iface)
+
+            if attr is not None:
+
+                utility = getattr(self,attr)
+
+                if utility is not _ACQUIRED:
+                    return utility
+
+        parent = self.getParentComponent()
+
+        if parent is not None:
+            return parent.acquireUtility(iface,forObj)
+            
+
+    def registerProvider(self, ifaces, provider):
+        self.__instance_provides__.register(ifaces, provider)
 
 
 
