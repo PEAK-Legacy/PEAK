@@ -177,7 +177,7 @@ class ChildProcess(binding.Component):
             self.stoppedBecause = self.os.WSTOPSIG(status)
 
         if self.os.WIFSIGNALED(status):
-            self.exitedBecause = self.os.WTERMSIG(stauts)
+            self.exitedBecause = self.os.WTERMSIG(status)
 
         self.isFinished = (
             self.exitedBecause is not None or self.exitStatus is not None
