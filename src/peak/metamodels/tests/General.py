@@ -121,8 +121,76 @@ class XMITests(TestCase):
         sc = enum.Get('superclasses*').Get('name'); sc.sort()
         assert sc==['AttributeKind','PackageElement'], sc
 
+from TW.SEF.Basic import FeatureMC, Element
+
+class featureBase(object):
+
+    __metaclass__ = FeatureMC
+
+    singular = 1
+
+    def get_single(self):
+        feature = self.__class__.__feature__
+        return self.__dict__[feature.__name__][0]
+
+    get_single.namingConvention = 'get%(initCap)s'
+    get_single.verb = 'get'
+    get_single.installIf = lambda feature,method: feature.singular
+
+
+    def get_multi(self):
+        feature = self.__class__.__feature__
+        return self.__dict__[feature.__name__]
+
+    get_multi.namingConvention = 'get%(initCap)s'
+    get_multi.verb = 'get'
+    get_multi.installIf = lambda feature,method: not feature.singular
+
+
+    def set(self,val):
+        feature = self.__class__.__feature__
+        self.__dict__[feature.__name__]=[val]
+
+    set.namingConvention = 'set%(initCap)s'
+
+
+    def doubled(self):
+        feature = self.__class__.__feature__
+        return feature.get(self) * 2
+
+    doubled.namingConvention = '%(name)sDoubled'
+
+
+
+class X(Element):
+
+    class Y(featureBase):
+        pass
+
+    class zebra(featureBase):
+        singular = 0
+
+
+
+class checkExport(TestCase):
+
+    def setUp(self):
+        self.el = X()
+
+    def checkMethods(self):
+        self.el.setY(1)
+        assert self.el.getY()==1
+        assert self.el.__dict__['Y']==[1]
+        assert self.el.YDoubled()==2
+        
+    def checkDescr(self):
+        self.el.zebra = 2
+        assert self.el.zebra==[2]
+        assert self.el.__dict__['zebra']==[2]
+        assert self.el.zebraDoubled()==[2,2]
+
 TestClasses = (
-    UMLTest, QueryTests, XMILoad, XMITests
+    checkExport, UMLTest, QueryTests, XMILoad, XMITests
 )
 
 
