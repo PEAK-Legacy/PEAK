@@ -685,26 +685,49 @@ specifying that a component must have the attribute, and that a subclass or
 instance must supply the value.
 
 By the way, it's important to note that bindings do \emph{not} participate in
-persistence, as they diectly alter the associated object's dictionary, bypassing
-the normal ``set attribute" machinery.  You should carefully consider the use of
-attribute bindings in persistent objects, as to how they will interact with your
-persistence machinery (e.g. whether they should be saved or not) and whether you
-will want to code them in such a way as to consider the object ``changed" when
-an attribute is computed.
+persistence, as they directly alter the associated object's dictionary,
+bypassing the normal ``set attribute" machinery.  You should carefully
+consider the use of attribute bindings in persistent objects, as to how they
+will interact with your persistence machinery (e.g. whether they should be
+saved or not) and whether you will want to code them in such a way as to
+consider the object ``changed" when an attribute is computed.
 
 
 
 
-\subsection{Available Binding Types}
+\subsection{Creating Attribute Bindings}
 
-XXX AutoCreated, bindSequence, bindTo, requireBinding, bindToParent, 
-bindToProperty, bindToUtilities, Constant, Acquire, bindToSelf, Copy, New,
-Once, OnceClass
+\subsubsection{Binding API conventions}
+
+name, provides, doc
+
+\subsubsection{Basic Binding Classes/Functions}
+
+\begin{classdesc}{Once}{func, name=None, provides=None, doc=None}
+\end{classdesc}
+
+\begin{funcdesc}{New}{obtype, bindToOwner=None, name=None, provides=None,
+doc=None}
+\end{funcdesc}
+
+\begin{funcdesc}{Copy}{obj, name=None, provides=None, doc=None}
+\end{funcdesc}
+
+\begin{classdesc}{requireBinding}{description="", provides=None, doc=None}
+\end{classdesc}
+
+\begin{funcdesc}{bindToSelf}{provides=None, doc=None}
+\end{funcdesc}
+
+XXX AutoCreated, OnceClass
 
 
 \section{Composing Hierarchies with \class{binding.Component} Objects}
 
+XXX bindToParent
 
 
 \section{Connecting Components by Name or Interface}
+
+XXX bindSequence, bindTo, bindToProperty, bindToUtilities, Constant, Acquire
 
