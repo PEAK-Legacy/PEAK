@@ -11,18 +11,9 @@ from new import instancemethod
 
 class ActiveDescriptors(type):
 
-    """Type which gives its descriptors a chance to find out their names,
-       and supports tracking volatile attributes for __getstate__ filtering"""
+    """Type which gives its descriptors a chance to find out their names"""
     
     def __init__(klass, name, bases, dict):
-
-        va = kjSet()
-        e  = kjSet()
-
-        for k in klass.__mro__:
-            va += getattr(k,'__volatile_attrs__',e)
-            
-        klass.__volatile_attrs__ = va
 
         for k,v in dict.items():
             if isinstance(v,ActiveDescriptor):
@@ -32,11 +23,20 @@ class ActiveDescriptors(type):
 
 
 class ActiveDescriptor(object):
+
     """This is just a (simpler sort of) interface assertion class""" 
 
     def activate(self,klass,attrName):
         """Informs the descriptor that it is in 'klass' with name 'attrName'"""
         raise NotImplementedError
+
+
+
+
+
+
+
+
 
 
 class AssertInterfaces(type):

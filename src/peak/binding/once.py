@@ -172,8 +172,6 @@ class Once(ActiveDescriptor):
             newOb.attrName = attrName
             setattr(klass, attrName, newOb)
 
-        klass.__volatile_attrs__.add(attrName)
-        
         if self._provides is not None:
 
             if not klass.__dict__.has_key('__class_provides__'):
@@ -184,6 +182,8 @@ class Once(ActiveDescriptor):
                 klass.__class_provides__ = cp
 
             klass.__class_provides__.register(self._provides,attrName)
+
+
 
 
 
@@ -230,10 +230,10 @@ class OnceClass(Once, type):
 
     def computeValue(self, *args):
         return self(*args)
-    
+
     def activate(self,klass,attrName):
 
         if attrName !=self.attrName:
             setattr(klass, attrName, Once(self.computeValue, attrName))
 
-        klass.__volatile_attrs__.add(attrName)
+
