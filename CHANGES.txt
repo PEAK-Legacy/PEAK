@@ -2,6 +2,21 @@ Fixes and Enhancements since Version 0.5 alpha 2
 
  Changed, Enhanced, or Newly Deprecated Features
 
+ - Added 'peak serve' and 'peak launch' commands, for running "CGI" apps in
+   a browser from the local machine.  For example, doing this::
+
+    PYTHONPATH=examples/trivial_cgi peak launch import:the_cgi.DemoCGI
+
+   from the base directory of a PEAK CVS checkout or source distribution will 
+   launch the 'trivial_cgi' demo program in a new or current browser window.
+   Any application runnable with 'peak CGI' should also be runnable with 
+   'peak serve' or 'peak launch', which makes it very useful for running
+   local browser-based apps or testing an application without CGI or FastCGI
+   available.  The modules that support this new functionality are
+   'peak.util.WSGIServer' (which implements a web server based on Python's
+   'BaseHTTPServer', that can run 'running.IRerunnableCGI' objects) and
+   'peak.tools.local_server' (which provides PEAK integration.)
+
  - Added 'peak.ddt' framework for Document-Driven Testing.  DDT can parse HTML
    files to extract test descriptions from HTML tables, run the tests, and then
    output an annotated version of the input document, illustrating the results
