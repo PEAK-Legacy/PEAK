@@ -12,6 +12,7 @@
     dot-maint optional build ".%(build)s"
     full      "%(major)s.%(minor)s %(status)s %(build)s"
     short     "%(major)s.%(minor)s%(trailer)s"
+    tag       "PEAK-%(major)s_%(minor)s%(trailer)s"
     </Formats>
 </Scheme>
 

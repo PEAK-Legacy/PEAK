@@ -1,7 +1,7 @@
 <?xml version = '1.0' encoding = 'ISO-8859-1' ?>
-<!DOCTYPE component SYSTEM '../../../../ZConfig/doc/schema.dtd' >
+<!DOCTYPE component SYSTEM '../../../ZConfig/doc/schema.dtd' >
 
-<component prefix="peak.running.tools.version">
+<component prefix="peak.tools.version">
 
 
 
