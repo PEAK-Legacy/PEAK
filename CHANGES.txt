@@ -1,5 +1,15 @@
 Fixes and Enhancements since Version 0.5 alpha 1
 
+ - Fixed 'mof2py' generator script not working
+
+ - Fixed model.Element not getting parent component set when passed as a
+   constructor argument.
+
+ - Fixed property/utility lookups not working correctly on model.*
+   objects.
+
+ - Fixed IndentedStream generating all-whitespace lines
+
  - Made 'NOT_GIVEN' and 'NOT_FOUND' recognizable by humans (they 'repr'
    and 'str' to their names) and by Python (they can be pickled, and
    when restored they come back as the same object).
