@@ -13,9 +13,9 @@
 
 from weakref import WeakValueDictionary
 from types import ClassType
+from advice import minimalBases
 
 __all__ = ['makeClass']
-
 
 
 
@@ -66,18 +66,18 @@ def derivedMeta(metaclasses):
 
     return derived
 
+
 def normalizeBases(allBases):
-    bases = []
-    for b in allBases:
-        if b is ClassType or b is makeClass: continue
-        bases = [bc for bc in bases if not issubclass(b,bc)]
-        bases.append(b)
-    return tuple(bases)
+    return minimalBases([b for b in allBases if b is not makeClass])
+
 
 def metaFromBases(bases):
     meta = tuple([getattr(b,'__class__',type(b)) for b in bases])
     if meta==bases: raise TypeError("Incompatible root metatypes",bases)
     return derivedMeta(meta)
+
+
+
 
 
 def makeClass(name,bases,dict):

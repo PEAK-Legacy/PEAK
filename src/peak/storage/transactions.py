@@ -371,7 +371,7 @@ class TransactionComponent(binding.Component, AbstractParticipant):
 
     """Object that has a 'txnSvc' and auto-joins transactions"""
 
-    __implements__ = (
+    implements(
         binding.Component.__implements__, AbstractParticipant.__implements__
     )
 

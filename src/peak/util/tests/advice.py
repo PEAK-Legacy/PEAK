@@ -80,8 +80,6 @@ class AdviceTests(TestCase):
 
 
 
-
-
     def checkSingleExplicitMeta(self):
 
         class M(type): pass
@@ -123,17 +121,20 @@ class AdviceTests(TestCase):
 
 
 
+    def checkMetaOfClass(self):
+        class metameta(type):
+            pass
+        class meta(type):
+            __metaclass__ = metameta
+        from peak.util.advice import determineMetaclass
+        assert determineMetaclass((meta,type))==metameta
+
 TestClasses = (
     AdviceTests,
 )
 
 def test_suite():
     return TestSuite([makeSuite(t,'check') for t in TestClasses])
-
-
-
-
-
 
 
 

@@ -218,13 +218,7 @@ def determineMetaclass(bases, explicit_mc=None):
         # easy case
         return meta[0]
 
-
-    candidates = []
-
-    for b in meta:
-        if b is ClassType: continue
-        candidates = [bc for bc in candidates if not issubclass(b,bc)]
-        candidates.append(b)
+    candidates = minimalBases(meta) # minimal set of metaclasses
 
     if not candidates:
         # they're all "classic" classes
@@ -236,6 +230,53 @@ def determineMetaclass(bases, explicit_mc=None):
 
     # Just one, return it
     return candidates[0]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+def minimalBases(classes):
+    """Reduce a list of base classes to its ordered minimum equivalent"""
+
+    classes = [c for c in classes if c is not ClassType]
+    candidates = []
+
+    for m in classes:
+        for n in classes:
+            if issubclass(n,m) and m is not n:
+                break
+        else:
+            # m has no subclasses in 'classes'
+            if m in candidates:
+                candidates.remove(m)    # ensure that we're later in the list
+            candidates.append(m)
+
+    return candidates
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
