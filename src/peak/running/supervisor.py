@@ -62,7 +62,6 @@ class ProcessSupervisor(EventDriven):
             Bootstrap,
             argv = ['supervise'] + self.cmdLine,
             parentComponent = config.makeRoot(),
-            componentName = self.commandName
         ),
         adaptTo=IProcessTemplate,
         offerAs=[IProcessTemplate],
@@ -76,6 +75,7 @@ class ProcessSupervisor(EventDriven):
     pidLockURL = binding.Make(
         lambda self: "flockfile:%s.lock" % self.pidFile
     )
+
 
 
 
@@ -255,18 +255,21 @@ class BusyProxy(ChildProcess):
 
 
     def doRead(self):
-        byte = self.busyStream.read()[-1]
+        try:
+            byte = self.busyStream.read()[-1:]
+        except ValueError:
+            # already closed
+            return
+
         if byte=='+':
             self.isBusy = True
             self._notify()
         elif byte=='-':
             self.isBusy = False
             self._notify()
-        else:
-            return
 
 
-    def _setStatus(status):
+    def _setStatus(self,status):
         super(BusyProxy,self)._setStatus(status)
         if self.isFinished:
             self.reactor.removeReader(self)
@@ -277,9 +280,6 @@ class BusyProxy(ChildProcess):
         lambda self: self.reactor.addReader(self),
         uponAssembly = True
     )
-
-
-
 
 
 
@@ -304,7 +304,7 @@ class BusyStarter(binding.Component):
 
     def statusChanged(self, proxy):
         if not proxy.isRunning:
-            if proxy.pid in self.allChildren:
+            if proxy.pid in self.children:
                 del self.children[proxy.pid]
         else:
             self.children[proxy.pid] = proxy.isBusy
@@ -400,7 +400,7 @@ class FastCGITemplate(AbstractProcessTemplate):
     def _redirect(self):
         self.os.dup2(self.stdin.fileno(),0)
 
-    def makeStub(self):
+    def _makeStub(self):
         from peak.running.commands import CGICommand
         return CGICommand(self, cgiCommand=self, stdin=self.stdin)
 
