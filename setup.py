@@ -16,7 +16,7 @@ setup(
     ],
     package_dir = {'':'src'},
     data_files = [
-        ('TW/tests/StructuralModel', ['TW/tests/StructuralModel/MetaMeta.xml']),
+        ('TW/tests/StructuralModel', ['src/TW/tests/StructuralModel/MetaMeta.xml']),
     ],
 )
 
