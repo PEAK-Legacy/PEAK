@@ -60,7 +60,7 @@ class makeMethod(object):
 
     def __init__(self, im_func, im_self, im_class):
         self.im_func, self.im_self, self.im_class = im_func, im_self, im_class
-
+        self.__doc__ = getattr(im_func,'__doc__',None)
 
     def __call__(self, *__args, **__kwargs):
 
