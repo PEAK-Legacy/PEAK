@@ -15,7 +15,7 @@
 
     'model' -- a lazy import of the 'peak.model.api' module
 
-    'config' -- a lazy import of the 'peak.running.config.api' module
+    'config' -- a lazy import of the 'peak.config.api' module
 
  and the following objects for convenience in interacting with PEAK:
  
@@ -36,7 +36,7 @@ from peak.binding.imports import lazyImport
 binding = lazyImport('peak.binding.api')
 naming  = lazyImport('peak.naming.api')
 model   = lazyImport('peak.model.api')
-config  = lazyImport('peak.running.config.api')
+config  = lazyImport('peak.config.api')
 running = lazyImport('peak.running.api')
 
 # Convenience features

@@ -3,7 +3,7 @@
 from __future__ import generators
 from once import Once, New, WeakRefBinding
 import meta
-from peak.running.config.modules import setupModule
+from peak.config.modules import setupModule
 
 from weakref import ref, WeakValueDictionary
 

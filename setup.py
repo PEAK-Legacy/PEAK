@@ -136,7 +136,7 @@ setup(
         'peak', 'peak.api', 'peak.binding', 'peak.model', 'peak.metamodels',
         'peak.metamodels.mof', 'peak.metamodels.uml', 'peak.metamodels.xmi',
         'peak.naming', 'peak.naming.factories', 'peak.util', 'peak.running',
-        'peak.running.config',
+        'peak.config',
 
         'peak.binding.tests',
         'peak.metamodels.tests', 'peak.util.tests', 'peak.tests',
