@@ -17,7 +17,6 @@ HAPPYDOC_IGNORE = [
 
 # Base packages for installation
 scripts = ['scripts/peak']
-modules = []
 packages = [
     'peak', 'peak.api', 'peak.binding', 'peak.config', 'peak.model',
     'peak.naming', 'peak.naming.factories', 'peak.net', 'peak.running',
@@ -38,6 +37,7 @@ extensions = [
     Extension("peak.util._Code", ["src/peak/util/_Code" + EXT]),
     Extension("protocols._speedups", ["src/protocols/_speedups" + EXT]),
 ]
+
 
 # Base data files
 
@@ -126,11 +126,10 @@ import sys
 if sys.version_info < (2,3):
     # Install datetime and csv if we're not on 2.3
 
-    packages += ['datetime']
+    packages += ['datetime','csv']
     if include_tests:
         packages += ['datetime.tests']
 
-    modules += ['csv']
     extensions += [
         Extension('_csv', ['src/_csv.c'])
     ]
@@ -146,6 +145,7 @@ if os.name=='posix':
                 "src/fcgiapp/fcgiappmodule.c", "src/fcgiapp/fcgiapp.c"
             ])
         ]
+
 
 
 
@@ -180,9 +180,9 @@ setup(
     cmdclass = SETUP_COMMANDS,
     data_files = data_files,
     ext_modules = extensions,
-    py_modules=modules,
     scripts = scripts,
 )
+
 
 
 
