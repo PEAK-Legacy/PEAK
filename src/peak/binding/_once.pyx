@@ -54,12 +54,15 @@ cdef class OnceDescriptor:
         d = GET_DICTIONARY(ob)
 
         if n in d:
+            ob = d[n]
+            if ob is NOT_FOUND:
+                raise AttributeError,n
             return d[n]
             
         if not n or getattr(ob.__class__, n, None) is not self:
             self.usageError()
 
-        d[n] = NOT_FOUND    # recursion guard
+        d[n] = NOT_FOUND    # recursion/race guard
 
         try:
             value = self.computeValue(ob, d, n)
@@ -70,9 +73,6 @@ cdef class OnceDescriptor:
         d[n] = value
 
         return value
-
-
-
 
 
 
