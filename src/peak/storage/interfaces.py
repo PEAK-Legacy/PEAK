@@ -9,6 +9,7 @@ __all__ = [
     'ITransactionErrorHandler', 'ICursor', 'IRow',
     'IDataManager', 'IDataManager_SPI', 'IWritableDM', 'IWritableDM_SPI',
     'IManagedConnection', 'IManagedConn_SPI', 'IKeyableDM',
+    'ISQLConnection'
 ]
 
 class ITransactionService(Interface):
@@ -352,10 +353,10 @@ class IManagedConnection(IComponent,ITransactionParticipant):
 
 
 
+class ISQLConnection(IManagedConnection):
+    """A ManagedConnection that talks SQL"""
 
-
-
-
+    # Needs fleshing out... API, exceptions, etc
 
 
 

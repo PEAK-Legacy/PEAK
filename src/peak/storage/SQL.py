@@ -164,6 +164,8 @@ class SQLCursor(AbstractCursor):
 
 class SQLConnection(ManagedConnection):
 
+    __implements__ = ISQLConnection
+    
     def commitTransaction(self, txnService):
         self.connection.commit()
 

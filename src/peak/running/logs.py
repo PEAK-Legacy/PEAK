@@ -17,7 +17,7 @@
       just the second part
 '''
 
-from peak.binding.components import Component, Once, New, findUtilities
+from peak.binding.components import Component, Once, New
 from peak.api import binding, config, naming, NOT_GIVEN, PropertyName
 from time import time, localtime, strftime
 import sys, os, traceback
@@ -170,7 +170,7 @@ class Event(Component):
         if self.priority<config.getProperty(LOG_LEVEL, publishTo, PRI_WARNING):
             return
             
-        for sink in findUtilities(ILogSink, publishTo):  # XXX need interface
+        for sink in config.findUtilities(ILogSink, publishTo):
             if sink.sink(self):
                 return  # if absorbed, we're done
 
