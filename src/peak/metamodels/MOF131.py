@@ -3,7 +3,7 @@
 from __future__ import generators
 from peak.api import *
 from kjbuckets import *
-
+from peak.util.imports import importObject
 from peak.model.datatypes import Name, String, Boolean, Integer, \
     UnlimitedInteger, UNBOUNDED, TypeCode
 
@@ -36,8 +36,8 @@ TAGGED_ELEMENTS_DEP = 'tagged elements'
 INDIRECT_DEP = 'indirect'
 ALL_DEP = 'all'
 
-
-
+_readers = PropertyName('peak.metamodels.mof1.3.readers.*')
+_writers = PropertyName('peak.metamodels.mof1.3.writers.*')
 
 class MultiplicityType(model.DataType):
 
@@ -501,12 +501,6 @@ class MOFModel(model.Model, storage.xmi.Loader):
 
                 yield ns
 
-                for imp in ns.findElementsByType(MOFModel.Import, False):
-                    for nns in imp.importedNamespace._extMRO():
-                        if nns in seen: continue
-                        seen[nns] = True
-                        yield nns
-
 
         def lookupElementExtended(self,name):
 
@@ -530,7 +524,13 @@ class MOFModel(model.Model, storage.xmi.Loader):
                     names[item.name]=item; output.append(item)
 
             return output
-                
+
+
+
+
+
+
+
     class Import(ModelElement):
 
         def _visitDependencies(self,visitor):
@@ -624,30 +624,30 @@ class MOFModel(model.Model, storage.xmi.Loader):
 
         )
 
+
+
         def externalize(self, format='peak.model'):
 
-            if format=='peak.model':
-                from peak.model.mof2py import MOFGenerator
-                from peak.util.IndentedStream import IndentedStream
-                from cStringIO import StringIO
-                s = StringIO()
-                MOFGenerator(self,
-                    MOFModel=MOFModel, stream=IndentedStream(s)
-                ).writePackage(self)
-                return s
+            externalize = importObject(_writers.of(self).get(format))
 
-            raise FormatNotSupported(format)    # XXX should allow Python gen.
+            if externalize is None:
+                raise FormatNotSupported(format)
+
+            return externalize(MOFModel, self, format)
+
 
 
         def internalize(klass, format, stream):
-            raise FormatNotSupported(format)    # XXX
+
+            internalize = importObject(_readers.of(klass).get(format))
+
+            if internalize is None:
+                raise FormatNotSupported(format)
+
+            return internalize(MOFModel, klass, format, stream)
+
 
         internalize = classmethod(internalize)
-
-
-
-
-
 
 
 
@@ -975,4 +975,5 @@ class MOFModel(model.Model, storage.xmi.Loader):
 
     MultiplicityType = MultiplicityType
 
+    NameNotFound = NameNotFound
     
