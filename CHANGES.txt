@@ -2,6 +2,14 @@ Fixes and Enhancements since Version 0.5 alpha 2
 
  Changed, Enhanced, or Newly Deprecated Features
 
+ - There is now a 'peak.security' package, available from 'peak.api' as
+   'security'.  It provides permission management functions: you can define
+   abstract permissions by subclassing 'security.Permission', then create
+   permission checking rules by subclassing 'security.RuleSet', and declare
+   the permissions needed to access attributes of a class with
+   'security.allow()'.  The test suite demonstrates a complex application
+   ruleset with dynamic, data-driven permissions.
+
  - There is now an interface for "Active Descriptors":
    'binding.IActiveDescriptor'.  'peak.binding' now uses this interface to
    identify active descriptors, so you can now create your own.  (Previously,
@@ -64,14 +72,6 @@ Fixes and Enhancements since Version 0.5 alpha 2
    e.g. via 'requireBinding()' or 'binding.Constant()'.  If you do *not* want
    a binding to suggest a parent component, use 'suggestParent=False' in the
    binding definition.
-
-
-
-
-
-
-
-
 
 
 

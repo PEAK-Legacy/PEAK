@@ -4,6 +4,7 @@ from protocols import Interface, Attribute
 __all__ = [
     'IAuthorizedPrincipal', 'IInteraction', 'IAccessAttempt',
     'IPermissionType', 'IPermissionChecker', 'IGuardedObject',
+    'INamePermissions',
 ]
 
 class IAccessAttempt(Interface):
@@ -26,9 +27,8 @@ class IAccessAttempt(Interface):
     def isAllowed():
         """Return true if access should be allowed"""
 
-
-
-
+    def new(**kw):
+        """Return a new attempt with 'kw' replacements for current values"""
 
 
 
@@ -49,7 +49,7 @@ class IAuthorizedPrincipal(Interface):
         a false value to deny it.
 
         Note that principals are not responsible for local grants/denials."""
-        
+
 
 
 
@@ -58,7 +58,7 @@ class IInteraction(Interface):
     """Component representing a security-controlled user/app interaction"""
 
     user = Attribute("""The IPrincipal responsible for the interaction""")
-    
+
     def checkAccess(attempt):
         """Return true if 'IAccessAttempt' 'attempt' should be allowed"""
 
@@ -72,7 +72,7 @@ class IInteraction(Interface):
         If 'user' is not supplied, the interaction's user should be used.  If
         the permissions are not supplied, 'subject' should be adapted to
         'IGuardedObject' in order to obtain the required permissions."""
-        
+
 
 
 
@@ -109,4 +109,15 @@ class IGuardedObject(Interface):
         """Return (abstract) permission types needed for 'attempt'"""
 
 
-    
+class INamePermissions(Interface):
+    """Object that knows permissions needed to access subobjects by name"""
+
+    def getPermissionsForName(name):
+        """Return (abstract) permission types needed to access 'name'"""
+
+
+
+
+
+
+
