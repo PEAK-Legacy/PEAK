@@ -57,6 +57,7 @@ if include_tests:
 
     data_files += [
         ('peak/running/tests', ['src/peak/running/tests/test_cluster.txt']),
+        ('peak/config/tests',  ['src/peak/config/tests/test_links.ini']),
     ]
 
 

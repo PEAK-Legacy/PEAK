@@ -2,6 +2,17 @@ Fixes and Enhancements since Version 0.5 alpha 2
 
  Changed, Enhanced, or Newly Deprecated Features
 
+ - .ini files now support "smart property" objects ('config.ISmartProperty').
+   If a property rule defined in an .ini file evaluates at runtime to an object
+   that implements 'ISmartProperty', the object will be given a chance to
+   compute a value for the property, in place of being used itself.  This helps
+   to simplify definition of complex property rules in .ini files, by allowing
+   the use of helper classes.  Also, 'naming.LinkRef' and 'naming.Reference'
+   (indirectly) support this interface, so you can now use them in .ini files
+   to refer to an object via the naming system.  (Previously, 'naming.LinkRef'
+   wouldn't do the right thing unless the property was looked up via a
+   'config:' URL, and 'naming.Reference' didn't exist.)
+
  - 'peak.util.imports.whenImported()' can now be used even when the specified
    module has already been loaded.
 
@@ -15,7 +26,7 @@ Fixes and Enhancements since Version 0.5 alpha 2
    object.  (This is simpler than it sounds; for URLs that reference
    ManagedConnections, for example, all you need to do is provide the fully
    qualified name of the connection class.)
-   
+
    Meanwhile, writable naming contexts must have a 'serializationProtocol'
    attribute, specifying what interface an object should be adapted to before
    attempting to store it in that context.
@@ -42,7 +53,7 @@ Fixes and Enhancements since Version 0.5 alpha 2
    '"foo.bar.*"' rule will execute with a 'ruleSuffix' of '"baz"'.  This should
    make it easier to work with hierarchical property namespaces.
 
- - Added simple example scripts and small applications in the 'examples' 
+ - Added simple example scripts and small applications in the 'examples'
    directory.
 
  - There is a new command-line namespace introspection tool, 'n2', which
@@ -109,6 +120,9 @@ Fixes and Enhancements since Version 0.5 alpha 2
    binding definition.
 
  Corrected Problems
+
+  - There was a typo in peak.naming.arithmetic that caused homogeneous non-URL
+    name subtraction to fail.
 
   - The default reactor supplied in 'peak.running.scheduler' would consume
     CPU continuously if it was waiting for I/O and no tasks were scheduled.

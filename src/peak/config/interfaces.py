@@ -3,7 +3,8 @@ from protocols import Interface
 
 __all__ = [
     'IConfigKey', 'IConfigurable', 'IConfigSource', 'IConfigurationRoot',
-    'IRule', 'IPropertyMap', 'ISettingLoader', 'NullConfigRoot',
+    'ISmartProperty', 'IRule', 'IPropertyMap', 'ISettingLoader',
+    'NullConfigRoot',
 ]
 
 
@@ -18,7 +19,6 @@ class IConfigKey(Interface):
 
     This module automatically marks both 'PropertyName' and 'Interface' as
     supporting this interface."""
-
 
     def getBases():
         """Return a sequence of the base interfaces, or empty sequence
@@ -143,6 +143,47 @@ class IRule(Interface):
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class ISmartProperty(Interface):
+
+    """An property value that itself should be treated as a rule
+
+    Objects that implement this interface will have their 'computeProperty()'
+    method called when they are used as the return value of an .ini-file
+    property definition.  For example:
+
+        [myapp.settings]
+        foo.* = SomeRuleObject()
+
+    If 'SomeRuleObject()' implements 'ISmartProperty', the return value of its
+    'computeProperty()' method is returned as the value of any properties
+    requested from the 'myapp.settings.foo.*' property namespace."""
+
+    def computeProperty(propertyMap, name, prefix, suffix, targetObject):
+        """Retrieve property 'rulePrefix+propertySuffix' from 'propertyMap'
+
+        This is basically the same as 'IRule.__call__', except that the key
+        must be a property name ('name'), and it is also broken into a 'prefix'
+        for the name under which the rule was defined, and the 'suffix',
+        if any."""
 
 
 

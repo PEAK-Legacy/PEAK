@@ -122,7 +122,7 @@ def name_radd(self, other):
 
 
 def same_minus_same(n1,n2):
-    if not n2 or self[:len(n2)] == n2:
+    if not n2 or n1[:len(n2)] == n2:
         return n1[len(n2):]
 
 def compound_minus_composite(n1,n2):

@@ -285,6 +285,47 @@ protocols.adviseObject(loadConfigFiles, provides=[ISettingLoader])
 
 
 
+from peak.naming.interfaces import IState
+
+class NamingStateAsSmartProperty(protocols.Adapter):
+
+    protocols.advise(
+        instancesProvide = [ISmartProperty],
+        asAdapterForProtocols = [IState],
+    )
+
+    def computeProperty(self, propertyMap, name, prefix, suffix, targetObject):
+
+        from peak.naming.factories.config_ctx import PropertyPath
+        from peak.naming.factories.config_ctx import PropertyContext
+
+        ctx = PropertyContext(targetObject,
+            creationParent = targetObject,
+            nameInContext = PropertyPath(prefix[:-1]), # strip any trailing '.'
+        )
+
+        result = self.subject.restore(ctx, PropertyPath(suffix))
+
+        rule = adapt(result, ISmartProperty, None)
+        if rule is not None:
+            result = rule.computeProperty(
+                propertyMap, name, prefix, suffix, targetObject
+            )
+
+        return result
+
+
+
+
+
+
+
+
+
+
+
+
+
 class ConfigReader(AbstractConfigParser):
 
     def __init__(self, propertyMap, prefix='*'):
@@ -293,14 +334,24 @@ class ConfigReader(AbstractConfigParser):
 
 
     def add_setting(self, section, name, value, lineInfo):
+
         _ruleName = PropertyName(section+name)
         _rulePrefix = _ruleName.asPrefix()
         _lrp = len(_rulePrefix)
+
         def f(propertyMap, propertyName, targetObj):
             ruleName = _ruleName
             rulePrefix = _rulePrefix
             ruleSuffix = propertyName[_lrp:]
-            return eval(value)
+            result = eval(value)
+            rule = adapt(result,ISmartProperty,None)
+            if rule is not None:
+                result = rule.computeProperty(
+                    propertyMap, propertyName, rulePrefix, ruleSuffix,
+                    targetObj
+                )
+            return result
+
         self.pMap.registerProvider(_ruleName,f)
 
 
@@ -312,6 +363,10 @@ class ConfigReader(AbstractConfigParser):
         eval("loader(propertyMap,%s,includedFrom=self)" % value)
 
 
+    def provide_utility(self, section, name, value, lineInfo):
+        self.pMap.registerProvider(importString(name), eval(value))
+
+
     def on_demand(self, section, name, value, lineInfo):
         self.pMap.registerProvider(
             PropertyName(name),
@@ -320,10 +375,6 @@ class ConfigReader(AbstractConfigParser):
                 prefix = name
             )
         )
-
-
-    def provide_utility(self, section, name, value, lineInfo):
-        self.pMap.registerProvider(importString(name), eval(value))
 
 
     section_handlers = {
@@ -353,16 +404,6 @@ class ConfigReader(AbstractConfigParser):
             handler = self.add_setting
 
         self.process_settings(section, lines, handler)
-
-
-
-
-
-
-
-
-
-
 
 
 

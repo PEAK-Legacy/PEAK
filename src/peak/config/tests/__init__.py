@@ -7,6 +7,36 @@ from peak.config.interfaces import *
 from peak.tests import testRoot
 
 
+class TestRule(object):
+
+    protocols.advise(
+        instancesProvide = [ISmartProperty]
+    )
+
+    def computeProperty(self, propertyMap, name, prefix, suffix, targetObject):
+        return propertyMap, name, prefix, suffix, targetObject
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 class PropertyTest(TestCase):
@@ -28,13 +58,24 @@ class PropertyTest(TestCase):
             for k,v in environ.items():
                 assert ps[k] is v
 
+    def checkSmartProps(self):
 
+        app = testRoot()
+        obj = binding.Component(app)
 
+        config.loadConfigFile(obj,
+            config.fileNearModule(__name__,'test_links.ini')
+        )
 
+        for k in '.spew,.blue,.knew'.split(','):
+            prop = 'foo.bar.rule%s' % k
+            suff = k.startswith('.') and k[1:] or k
+            assert config.getProperty(obj, prop) == (
+                obj.__instance_offers__, prop, 'foo.bar.rule.', suff, obj
+            ), config.getProperty(obj, prop)
 
-
-
-
+        assert config.getProperty(obj,'foo.bar.spam') is testRoot
+        assert config.getProperty(obj,'foo.bar.baz') is testRoot
 
 
 
