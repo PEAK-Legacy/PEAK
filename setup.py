@@ -21,9 +21,9 @@ scripts = ['scripts/peak']
 packages = [
     'peak', 'peak.api', 'peak.binding', 'peak.config', 'peak.model',
     'peak.naming', 'peak.naming.factories', 'peak.net', 'peak.running',
-    'peak.running.tools', 'peak.running.tools.n2', 'peak.security',
+    'peak.tools', 'peak.tools.n2', 'peak.security',
     'peak.storage', 'peak.util', 'peak.web', 'protocols',
-    'peak.running.tools.version', 'peak.query',
+    'peak.tools.version', 'peak.query',
 ]
 
 extensions = [

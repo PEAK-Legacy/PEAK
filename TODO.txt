@@ -41,8 +41,6 @@ Open Issues/To-Do Items
 
     * Misc.
 
-      - Namespace re-orgs?  (e.g. peak.running.tools -> peak.tools?)
-
       - API consolidation? (some users only want core API's in peak.api)
 
 

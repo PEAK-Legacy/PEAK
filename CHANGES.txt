@@ -2,6 +2,8 @@ Fixes and Enhancements since Version 0.5 alpha 2
 
  Changed, Enhanced, or Newly Deprecated Features
 
+ - 'peak.running.tools' was promoted to 'peak.tools'.
+
  - Replaced the "[Provide Utilities]" section of .ini files with "[Component
    Factories]".  The new section type is easier to use, much more versatile,
    and does all registration and imports lazily.  See the 'peak.ini' file for
@@ -237,7 +239,7 @@ Fixes and Enhancements since Version 0.5 alpha 2
    file that describes your project's version numbering scheme(s), formats,
    and the files that need to be edited, while the 'version.dat' file contains
    the current version number values.  Source for the tool, including the
-   configuration file schema, is in the 'peak.running.tools.version' package.
+   configuration file schema, is in the 'peak.tools.version' package.
    (Error handling and documentation, alas, are still minimal.)
 
  - Added new 'Alias' command in 'peak.running.commands'.  An 'Alias' instance
