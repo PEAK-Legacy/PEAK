@@ -13,7 +13,7 @@ from interfaces import *
 from peak.util.Struct import struct, structType
 
 __all__ = [
-    'Name', 'toName', 'CompositeName', 'CompoundName',
+    'AbstractName', 'toName', 'CompositeName', 'CompoundName',
     'Syntax', 'UnspecifiedSyntax', 'NNS_NAME', 'ParsedURL', 'URLMatch',
     'LinkRef', 'NNS_Reference'
 ]
@@ -39,13 +39,93 @@ class UnspecifiedSyntax(object):
 
 
 
-class Name(tuple):
+def any_plus_url(n1,n2):
+    return n2
+
+
+def compound_plus_compound(n1,n2):
+    return n1.__class__(list(n1)+list(n2))
+
+
+def composite_plus_composite(n1,n2):
+
+    l = list(n1)
+    if not l[-1]: l.pop()   # remove extra '/'
+
+    l.extend(list(n2))
+    return CompositeName(l)
+
+
+def composite_plus_compound(n1,n2):
+
+    l = list(n1)
+    last = l.pop()
+
+    if not last:
+        l.append(n2)
+    else:
+        l.append(last+n2)
+
+    return CompositeName(l)
+
+
+
+
+
+
+
+
+
+
+
+
+
+def compound_plus_composite(n1,n2):
+
+    l = list(n2)
+    first = l[0]
+
+    if first:
+        l[0] = n1+first
+    else:
+        l[0] = n1
+        
+    return CompositeName(l)
+
+
+def url_plus_other(n1,n2):
+    return n1.__add__(n2)   # XXX URLs don't actually implement __add__ yet
+
+
+
+_name_addition = {
+    (COMPOSITE_KIND,      URL_KIND): any_plus_url,
+    (COMPOUND_KIND,       URL_KIND): any_plus_url,
+    (URL_KIND,            URL_KIND): any_plus_url,
+    (URL_KIND,       COMPOUND_KIND): url_plus_other,
+    (URL_KIND,      COMPOSITE_KIND): url_plus_other,
+
+    (COMPOSITE_KIND,COMPOSITE_KIND): composite_plus_composite,
+    (COMPOUND_KIND,  COMPOUND_KIND): compound_plus_compound,
+    (COMPOSITE_KIND, COMPOUND_KIND): composite_plus_compound,
+    (COMPOUND_KIND, COMPOSITE_KIND): compound_plus_composite,
+}
+
+
+
+
+
+
+
+
+
+
+
+class AbstractName(tuple):
 
     __implements__ = IName
     
-    isComposite = 0
-    isCompound  = 0
-    isURL       = 0
+    nameKind    = None
 
     def __new__(klass, *args):
 
@@ -59,8 +139,7 @@ class Name(tuple):
             elif isinstance(s,StringTypes):
                 return klass.parse(s)
                 
-        return super(Name,klass).__new__(klass,*args)
-
+        return super(AbstractName,klass).__new__(klass,*args)
 
     def __str__(self):
         return self.format()
@@ -69,16 +148,19 @@ class Name(tuple):
         return "%s(%r)" % (self.__class__.__name__, list(self))
 
     def __add__(self, other):
-        return self.__class__(
-            super(Name,self).__add__(other)
-        )
+        if self and other:
+            return _name_addition[self.nameKind,other.nameKind](self,other)
+        return self or other
+
+    def __radd__(self, other):
+        if self and other:
+            return _name_addition[other.nameKind,self.nameKind](other,self)
+        return self or other
 
     def __getslice__(self, *args):
         return self.__class__(
-            super(Name,self).__getslice__(*args)
+            super(AbstractName,self).__getslice__(*args)
         )
-
-
 
     # syntax-based methods
 
@@ -142,9 +224,7 @@ class ParsedURL(object):
     __metaclass__  = URLMeta
     __implements__ = IAddress
 
-    isComposite = 0
-    isCompound  = 0
-    isURL       = 1
+    nameKind = URL_KIND
 
     _defaultScheme = None
     _supportedSchemes = ()
@@ -155,6 +235,8 @@ class ParsedURL(object):
 
     scheme = None
     body   = None
+
+
 
 
 
@@ -228,7 +310,6 @@ class ParsedURL(object):
 
     def __setattr__(self, n, v):
         raise AttributeError, "Immutable object"
-
 
 
 
@@ -491,7 +572,7 @@ class Syntax(object):
 
 
 
-class CompositeName(Name):
+class CompositeName(AbstractName):
 
     """A name whose parts may belong to different naming systems
 
@@ -510,14 +591,14 @@ class CompositeName(Name):
         escape="\\"
     )
 
-    isComposite = 1
+    nameKind = COMPOSITE_KIND
 
 
-class CompoundName(Name):
+class CompoundName(AbstractName):
 
     """A multi-part name with all parts in the same naming system"""
 
-    isCompound = 1
+    nameKind = COMPOUND_KIND
 
     def __new__(klass, name, syntax=Syntax() ):
 

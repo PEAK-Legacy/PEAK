@@ -70,7 +70,7 @@ class NameContext(Component):
             return self._resolveLocal(CompoundName([]), iface) # XXX .nameClass
         else:
             local = name[0]
-            if self.nameClass and self.nameClass.isComposite:
+            if self.nameClass and self.nameClass.nameKind == COMPOSITE_KIND:
                 local = CompoundName(local) # XXX use URL parser syntax?
 
             if len(name)==1:
@@ -125,11 +125,12 @@ class NameContext(Component):
 
         parser = self.schemeParser
         name = toName(name, self.nameClass, self._acceptStringURLs)
-
-        if name.isComposite:        
+        kind = name.nameKind
+        
+        if kind == COMPOSITE_KIND:
             return self._resolveComposite(name, iface)
 
-        if name.isURL:
+        elif kind == URL_KIND:
 
             if parser:
                 if isinstance(name,parser):
@@ -149,7 +150,6 @@ class NameContext(Component):
             return ctx.resolveToInterface(name,iface)
 
         return self._resolveLocal(name,iface)
-
 
 
 

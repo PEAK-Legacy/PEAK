@@ -6,31 +6,72 @@ from Interface.Attribute import Attribute
 
 __all__ = [
 
-    'IName', 'ISyntax', 'IAddress', 'IInitialContextFactory',
+    'IName', 'IAddress', 'IInitialContextFactory',
     'IObjectFactory', 'IStateFactory', 'IURLContextFactory',
     'I_NNS_Binding', 'IBasicContext', 'IReadContext', 'IWriteContext',
+    'COMPOUND_KIND', 'COMPOSITE_KIND', 'URL_KIND', 'isName', 'isAddress',
+    'isAddressClass',
 ]
 
 
 
-class ISyntax(Interface):
-    """Syntax object"""
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+COMPOUND_KIND  = 1
+COMPOSITE_KIND = 2
+URL_KIND       = 3
 
 
 class IName(Interface):
+
     """Abstract name object"""
 
-    isComposite = Attribute("True, if name is composite")
-    isCompound  = Attribute("True, if name is compound")
-    isURL       = Attribute("True, if name is URL")
+    nameKind = Attribute("One of COMPOUND_KIND, COMPOSITE_KIND, or URL_KIND")
+
+    def __add__(other):
+        """Add 'other' to name, composing a name that is relative to this one"""
+
+    def __radd__(other):
+        """Add name to 'other', using this name as a relative name to it"""
+        
+
+isName = IName.isImplementedBy
+
 
 
 class IAddress(IName):
+
     """Name that supports in-context self-retrieval"""
 
     def retrieve(refInfo, name, context, attrs=None):
         """Retrieve the address"""
 
+
+isAddress = IAddress.isImplementedBy
+
+isAddressClass = IAddress.isImplementedByInstancesOf
 
 
 

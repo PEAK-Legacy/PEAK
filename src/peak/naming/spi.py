@@ -96,7 +96,7 @@ def getURLContext(scheme, context=None, iface=IBasicContext):
         elif iface.isImplementedByInstancesOf(factory):
             return factory(context)
 
-        elif IAddress.isImplementedByInstancesOf(factory):
+        elif isAddressClass(factory):
             from contexts import GenericURLContext
             return GenericURLContext(context, schemeParser=factory)
 
@@ -108,7 +108,7 @@ def getObjectInstance(refInfo, name, context=None, attrs=None):
 
     """Default rules for loading objects from state"""
 
-    if IAddress.isImplementedBy(refInfo):
+    if isAddress(refInfo):
         return refInfo.retrieve(refInfo, name, context, attrs)
 
     elif isinstance(refInfo, NNS_Reference):

@@ -7,7 +7,7 @@ from once import *
 from interfaces import *
 from weakref import WeakValueDictionary
 
-from peak.naming.names import toName, Syntax, Name
+from peak.naming.names import toName, Syntax, AbstractName, COMPOUND_KIND
 from peak.util.EigenData import EigenRegistry, EigenCell
 from peak.config.interfaces import IConfigKey, IPropertyMap
 from peak.util.imports import importString
@@ -162,7 +162,7 @@ def acquireComponent(name, component=None, targetName=None):
 
 
 
-class ComponentName(Name):
+class ComponentName(AbstractName):
 
     """Path between components
 
@@ -186,7 +186,7 @@ class ComponentName(Name):
         path segment.
     """
 
-    isCompound = 1
+    nameKind = COMPOUND_KIND
 
     syntax = Syntax(
         direction = 1,
@@ -251,7 +251,7 @@ def _lookupComponent(component, name, targetName=None):
         
     parsedName = toName(name, ComponentName, 1)
 
-    if not parsedName.isCompound:
+    if not parsedName.nameKind == COMPOUND_KIND:
         # URL's and composite names must be handled globally
         return globalLookup(name, component, targetName)
 

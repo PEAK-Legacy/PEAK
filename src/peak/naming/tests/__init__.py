@@ -59,8 +59,46 @@ class NameParseTest(TestCase):
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+from peak.naming.api import CompoundName as lname, CompositeName as gname
+
+
+additions = [
+    ( lname(['x','y']), lname(['z']), lname(['x','y','z']) ),
+    ( '', lname(['foo']), lname(['foo']) ),
+    ( gname(['a','b','']), lname(['x']), gname(['a','b',lname(['x'])]) ),
+    ( gname(['a','b','']), gname(['','c']), gname(['a','b','','c']) ),
+]
+
+
+class NameAdditionTest(TestCase):
+    def checkAdds(self):
+        for n1,n2,res in additions:
+            assert n1+n2==res, (n1,n2,res)
+
+
 TestClasses = (
-    NameParseTest,
+    NameParseTest, NameAdditionTest
 )
 
 
