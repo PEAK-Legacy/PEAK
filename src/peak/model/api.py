@@ -170,10 +170,10 @@ class Specialist(Service):
             are subclasses of each other.  To activate this support, supply
             a 'subtypeSpecialists' class attribute which is a sequence of the
             specialists which specialize in direct subtypes.
-            'SEF.bindToNames()' is an easy way to provide such a sequence,
+            'binding.bindSequence()' is an easy way to provide such a sequence,
             e.g.::
 
-                class Task(SEF.Element):
+                class Task(model.Element):
                     ...
 
                 class ToDo(Task):
@@ -182,22 +182,22 @@ class Specialist(Service):
                 class Project(Task):
                     ...
 
-                class Tasks(SEF.Specialist):
+                class Tasks(model.Specialist):
 
                     elementClass = Task
-                    subtypeSpecialists = SEF.bindToNames('ToDos', 'Projects')
+                    subtypeSpecialists = SEF.bindSequence('ToDos', 'Projects')
 
                     ...
 
 
-                class ToDos(SEF.Specialist):
+                class ToDos(model.Specialist):
 
                     elementClass = ToDo
 
                     ...
 
 
-                class Projects(SEF.Specialist):
+                class Projects(model.Specialist):
 
                     elementClass = Project
 

@@ -90,7 +90,7 @@ class DescriptorData(binding.Component):
 
     thing3 = binding.requireBinding('This is required')
 
-    thing4 = binding.bindToNames('thing1','thing2')
+    thing4 = binding.bindSequence('thing1','thing2')
 
     underflow = binding.bindToParent(50)
 

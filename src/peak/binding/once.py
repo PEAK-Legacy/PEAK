@@ -4,7 +4,7 @@ from meta import ActiveDescriptor
 from weakref import ref
 from peak.api import NOT_FOUND
 
-__all__ = ['Once', 'New', 'Copy', 'WeakBinding', 'OnceClass']
+__all__ = ['Once', 'New', 'Copy', 'WeakRefBinding', 'OnceClass']
 
 
 def New(obtype, name=None, provides=None):
@@ -133,7 +133,7 @@ class Once(ActiveDescriptor):
         d = obj.__dict__
         n = self.attrName
 
-        if not n or getattr(obj.__class__,n) is not self:
+        if not n or getattr(obj.__class__,n,None) is not self:
             self.usageError()
 
         d[n] = NOT_FOUND    # recursion guard
@@ -149,8 +149,8 @@ class Once(ActiveDescriptor):
 
     def usageError(self):            
         raise TypeError(
-            "%s used in type which does not support ActiveDescriptors"
-            "and a name was not supplied"
+            "%s was used in a type which does not support ActiveDescriptors,"
+            " but a valid attribute name was not supplied"
             % self
         )
 
@@ -203,7 +203,7 @@ class Once(ActiveDescriptor):
 
 
 
-class WeakBinding(Once):
+class WeakRefBinding(Once):
 
     """Like Once, but keeps a weak reference only
     

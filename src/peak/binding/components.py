@@ -1,7 +1,7 @@
 """Basic binding tools"""
 
 from __future__ import generators
-from once import Once, New, WeakBinding
+from once import Once, New, WeakRefBinding
 import meta, modules
 
 from weakref import ref, WeakValueDictionary
@@ -16,14 +16,14 @@ from peak.api import config, NOT_FOUND
 
 __all__ = [
     'Component','AutoCreated','Provider','CachingProvider',
-    'bindTo', 'requireBinding', 'bindToNames', 'bindToParent', 'bindToSelf',
+    'bindTo', 'requireBinding', 'bindSequence', 'bindToParent', 'bindToSelf',
     'getRootComponent', 'getParentComponent', 'lookupComponent',
-    'acquireComponent', 'globalLookup', 'findUtility', 'findUtilities'
+    'acquireComponent', 'globalLookup', 'findUtility', 'findUtilities',
+    'bindToUtilities',
 ]
 
 
 InterfaceClass = Interface.__class__
-
 
 
 
@@ -408,7 +408,7 @@ class bindTo(Once):
 
 
 
-class bindToNames(bindTo):
+class bindSequence(bindTo):
 
     """Automatically look up and cache a sequence of services by name
 
@@ -416,7 +416,7 @@ class bindToNames(bindTo):
 
             class someClass(binding.AutoCreated):
 
-                thingINeed = binding.bindToNames(
+                thingINeed = binding.bindSequence(
                     "path/to/service", "another/path", ...
                 )
 
@@ -449,7 +449,7 @@ class bindToNames(bindTo):
 
 
 
-class bindToParent(WeakBinding):
+class bindToParent(WeakRefBinding):
 
     """Look up and cache a weak ref to the nth-level parent component
 
@@ -505,8 +505,8 @@ class requireBinding(Once):
         )
 
 
-
-
+def bindToUtilities(iface):
+    return Once(lambda s,d,a: [u for u in findUtilities(s,iface,s)])
 
 
 
