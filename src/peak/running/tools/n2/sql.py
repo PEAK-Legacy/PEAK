@@ -462,6 +462,8 @@ rollback -- abort current transaction"""
             elif state == '/':
                 if c == '*':
                     state = 'C'
+                elif c == ';' and self.semi < 0:
+                    self.semi = len(self.buf) + i
                 else:
                     state = ''
             elif state == 'C':
@@ -478,6 +480,10 @@ rollback -- abort current transaction"""
             elif state[0] == 'D':
                 if c == state[1]:
                     state = state[1]
+                elif c == '/':
+                    state = c
+                elif c == ';' and self.semi < 0:
+                    self.semi = len(self.buf) + i
                 else:
                     state = ''
             i += 1
