@@ -2,7 +2,7 @@ from peak.api import *
 
 __all__ = [
     'ITaskSwitch', 'IEventSource', 'ISubscription', 'IValue', 'IState',
-    'IQueue', 'IProactor', 'IThread',
+    'IQueue', 'IThread', 'IClock' , 'ISelector',
 ]
 
 class ITaskSwitch(protocols.Interface):
@@ -24,7 +24,7 @@ class ITaskSwitch(protocols.Interface):
         Typically, this will be implemented as something like::
 
             def shouldSuspend(self, thread):
-                self.addCallback(thread.run)
+                self.addCallback(thread.enable)
                 return True
 
         at least in cases where the scheduler is also an 'IEventSource'.
@@ -32,7 +32,7 @@ class ITaskSwitch(protocols.Interface):
         This method is explicitly allowed to call the thread's 'schedule()'
         method, thus "interrupting" the currently running routine in that
         thread.  The 'ITaskSwitch' adapter for generators schedules the
-        generator, and returns 'False', indicating that the thread should
+        generator and returns 'False', indicating that the thread should
         continue execution immediately, within the supplied generator.
         """
 
@@ -47,8 +47,8 @@ class IEventSource(ITaskSwitch):
     task switcher is an event source.  Generators, for example, can control
     task flow, but do not really produce any "events".
 
-    Event callbacks must *not* raise errors: event sources are not required
-    to ensure that all callbacks are executed, if a callback raises an error.
+    Event callbacks must *not* raise errors, as event sources are not required
+    to ensure that all callbacks are executed when a callback raises an error.
     """
 
     def addCallback(func):
@@ -66,6 +66,18 @@ class IEventSource(ITaskSwitch):
         as a callback, then re-adds itself as a callback each time it's
         called.)
         """
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 class ISubscription(protocols.Interface):
@@ -93,37 +105,25 @@ class IValue(IEventSource):
     def asQueue():
         """Return an 'IQueue' that yields each new value set"""
 
+    def when(condition=lambda v:v):
+        """'IEventSource' that triggers when 'condition(value)' is true"""
+
+    def equals(val):
+        """'IEventSource' that triggers when value is set to 'val'"""
+
 
 class IState(IValue):
     """An 'IValue' that only triggers events when its value is *changed*
 
-    (That is, when 'oldValue<>newValue'.)
+    That is, when 'oldValue<>newValue'.  Note that this affects the
+    behavior of dependent event sources such as supplied by the 'when()',
+    'equals()', and 'asQueue()' methods.
     """
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 class IQueue(IEventSource):
 
-    """An iterator that triggers events when new values are available
+    """An iterator that triggers events as values become available
 
     Note that queues do not "multicast".  If multiple callbacks are registered
     for the same queue, they will receive items in a "round robin" fashion.
@@ -150,8 +150,17 @@ class IQueue(IEventSource):
         no items in the queue (meaning that somebody isn't yielding to the
         queue, or else is sharing it.)"""
 
+    def push(ob):
+        """Push 'ob' on the beginning of the queue
+
+        This can be used by a reader to put back an item they don't want (yet).
+        Note that if there are no other readers and the reader yields to the
+        queue, the reader will read the pushed item on its next read attempt.
+        """
+
     def __iter__():
         """Must return 'self' (i.e. queues are not reiterable!)"""
+
 
     readersWaiting = protocols.Attribute(
         """'IState' for whether callbacks registered > items buffered
@@ -160,20 +169,6 @@ class IQueue(IEventSource):
         wants the information they're putting in the queue.)
         """
     )
-
-
-class IProactor(protocols.Interface):
-
-    """Like a reactor, but supplying 'IEventSources' instead of callbacks"""
-
-    def sleep(secs=0):
-        """Get 'IEventSource' that delays 'secs' from each callback request"""
-
-    def readable(stream):
-        """Get 'IEventSource' that triggers each time 'stream' is readable"""
-
-    def writable(stream):
-        """Get 'IEventSource' that triggers each time 'stream' is writable"""
 
 
 class IThread(protocols.Interface):
@@ -190,15 +185,102 @@ class IThread(protocols.Interface):
     basis of arbitrary events.
     """
 
-    def run(iterator=None):
-        """Run until thread is finished (or suspended by an 'ITaskSwitch')"""
+    def step():
+        """Run until thread is suspended by an 'ITaskSwitch' or finishes"""
 
-    def schedule(iterator):
-        """Put 'iterable' at the top of the list for the next 'run()'"""
+    def enable():
+        """Un-suspend the thread"""
+
+    def call(iterator):
+        """Put 'iterable' at the top of the stack for the next 'step()'"""
 
     isFinished = protocols.Attribute(
         """An 'IState' that's set to 'True' when the thread is completed"""
     )
+
+
+
+
+
+
+class IClock(protocols.Interface):
+
+    """A clock controls the running of an event-driven program"""
+
+    now = protocols.Attribute("""'IValue' representing the current time""")
+
+    def tick():
+        """Update 'now', and invoke scheduled callbacks"""
+
+    def run():
+        """'tick()' until no events/foreground threads, or 'stop()' called"""
+
+    def stop():
+        """Exit 'run()' as soon as due or overdue callbacks are finished"""
+
+    def crash():
+        """Force immediate exit from 'run()', without triggering any events"""
+
+    def schedule(callback, delay=0):
+        """Call 'callback' after at least 'delay' seconds"""
+
+    def spawn(iterator, background=True):
+        """Return a new (possibly background) thread running 'iterator'"""
+
+    def sleep(secs=0):
+        """Get 'IEventSource' that fires 'secs' from now"""
+
+    def until(time):
+        """Get 'IEventSource' that fires when 'clock.now() >= time'"""
+
+    def idleFor():
+        """Return number of seconds until next scheduled callback"""
+
+    starting = protocols.Attribute(
+        """'IEventSource' that fires when 'run()' is first called"""
+    )
+
+    stopping = protocols.Attribute(
+        """'IEventSource' that fires when 'run()' is about to exit"""
+    )
+
+class ISelector(protocols.Interface):
+
+    """Like a reactor, but supplying 'IEventSources' instead of callbacks
+
+    May be implemented using a callback on 'IClock.now' that calls a reactor's
+    'iterate()' method with a delay of 'IClock.idleFor()' seconds.
+    """
+
+    def readable(stream):
+        """Get 'IEventSource' that triggers each time 'stream' is readable"""
+
+    def writable(stream):
+        """Get 'IEventSource' that triggers each time 'stream' is writable"""
+
+    def signal(signame):
+        """Get 'IEventSource' that triggers whenever named signal occurs"""
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

@@ -1,10 +1,43 @@
 from peak.api import *
 from interfaces import *
 from peak.util.EigenData import AlreadyRead
+from weakref import ref
 
 __all__ = [
-    'Subscription', 'AbstractEventSource', 'Value', 'State', 'Queue',
+    'Subscription', 'EventSource', 'OneShot', 'Queue', 'Value', 'State',
 ]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 class Subscription(object):
 
@@ -39,7 +72,15 @@ class Subscription(object):
             self.subscribed = True
 
 
-class AbstractEventSource(object):
+
+
+
+
+
+
+
+
+class EventSource(object):
 
     __slots__ = '_callbacks'
 
@@ -60,8 +101,16 @@ class AbstractEventSource(object):
     def addSubscriber(self,func):
         return Subscription(self,func)
 
-    def _trigger(self):
+    def fire(self,count=None):
+        """Fire the event (not usually invoked directly in subclasses)
+
+        If the optional 'count' is supplied, it requests that no more than
+        'count' directly registered callbacks be invoked."""
+
         callbacks,self._callbacks = self.callbacks, []
+        if count is not None and count<len(callbacks):
+            self._callbacks[0:0] = callbacks[count:]
+            callbacks = callbacks[:count]
         try:
             while callbacks:
                 callbacks.pop(0)()
@@ -72,6 +121,27 @@ class AbstractEventSource(object):
             # ...and let the caller figure out what the heck to do about it!
             raise
 
+class OneShot(EventSource):
+
+    """Event that can be fired only once"""
+
+    __slots__ = '_fired'
+
+    def __init__(self):
+        self._fired = False
+        super(OneShot,self).__init__()
+
+
+    def fire(self):
+        if self._fired:
+            raise AlreadyRead("OneShot can be fired only once")
+        self._fired = True
+        super(OneShot,self).fire()
+
+
+    def addCallback(self,func):
+        if not self._fired:
+            super(OneShot,self).addCallback(func)
 
 
 
@@ -80,9 +150,21 @@ class AbstractEventSource(object):
 
 
 
-class Queue(AbstractEventSource):
 
-    __slots__ = 'buffer', 'closed', 'readersWaiting'
+
+
+
+
+
+
+
+
+
+
+
+class Queue(EventSource):
+
+    __slots__ = 'buffer', 'closed', 'readersWaiting', '_triggering'
 
     protocols.advise(
         instancesProvide=[IValue]
@@ -92,19 +174,33 @@ class Queue(AbstractEventSource):
         self.buffer = []
         self.closed = False
         self.readersWaiting = State(False)
-        super(Queue,self).__init__(self)
-
+        super(Queue,self).__init__()
 
     def put(self,ob):
         if self.closed:
             raise AlreadyRead
-
-        self.buffer.append(ob)
-        if self._callbacks:
-            self._callbacks.pop(0)()    # invoke only one callback per value
         else:
-            # We now have more data than readers
-            self.readersWaiting.set(False)
+            self.buffer.append(ob)
+            self.fire()
+
+    def push(self,ob):
+        if self.closed:
+            raise AlreadyRead
+        else:
+            self.buffer.insert(0,ob)
+            self.fire()
+
+    def next(self):
+        if self.buffer:
+            item = self.buffer.pop(0)
+            if self._callbacks and not self.buffer:
+                self.readersWaiting.set(True)
+            return item
+        elif self.closed:
+            raise StopIteration
+        else:
+            # Buffer underflow!
+            raise AlreadyRead
 
 
     def close(self):
@@ -113,26 +209,26 @@ class Queue(AbstractEventSource):
     def __iter__(self):
         return self
 
+
+    def shouldSuspend(self,thread):
+        if self.buffer:
+            return False    # don't suspend if data is available
+        else:
+            self.addCallback(thread.enable)
+            return True
+
+
     def addCallback(self,func):
-        super(Queue,self).addCallback(func)
-        if len(self._callbacks)>len(self.buffer):
+        if self.buffer:
+            func()  # data's available, so go ahead
+        else:
+            super(Queue,self).addCallback(func)
             self.readersWaiting.set(True)
 
 
-
-
-    def next(self):
-        if self.buffer:
-            item = self.buffer.pop(0)
-            if len(self._callbacks)>len(self.buffer):
-                self.readersWaiting.set(True)
-            return item
-
-        if self.closed:
-            raise StopIteration
-        else:
-            # Buffer underflow!
-            raise AlreadyRead
+    def fire(self, count=1):
+        super(Queue,self).fire(count)
+        self.readersWaiting.set(len(self._callbacks)>len(self.buffer))
 
 
 
@@ -148,21 +244,7 @@ class Queue(AbstractEventSource):
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-class Value(AbstractEventSource):
+class Value(EventSource):
 
     __slots__ = 'value'
 
@@ -172,11 +254,11 @@ class Value(AbstractEventSource):
 
     def __init__(self,value=NOT_GIVEN):
         self.value = value
-        super(Value,self).__init__(self)
+        super(Value,self).__init__()
 
     def set(self,value):
         self.value = value
-        self._trigger()
+        self.fire()
 
     def __call__(self):
         return self.value
@@ -186,10 +268,21 @@ class Value(AbstractEventSource):
         queue = Queue()
 
         def put():
-            queue.put(self.value)
+            queue.put(self.value)   # XXX weakref + handle closed queue!
 
         self.addSubscriber(put)
         return queue
+
+
+    def when(condition=lambda v:v):
+        """'IEventSource' that triggers when 'condition(value)' is true"""
+        raise NotImplementedError   # XXX return Condition(condition,self)
+
+    def equals(val):
+        """'IEventSource' that triggers when value is set to 'val'"""
+        raise NotImplementedError   # XXX return Condition(lambda v: v==val,self)
+
+
 
 
 class State(Value):
@@ -201,5 +294,35 @@ class State(Value):
     def set(self,value):
         if value<>self.value:
             super(State,self).set(value)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
