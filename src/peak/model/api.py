@@ -207,6 +207,7 @@ class StructuralFeature(object):
 
     __metaclass__ = FeatureMC
 
+    isDerived     = 0
     isRequired    = 0
     lowerBound    = 0
     upperBound    = None    # None means unbounded upper end
@@ -243,7 +244,6 @@ class StructuralFeature(object):
 
 
 
-
 class Field(StructuralFeature):
 
     __class_implements__ = IValue    
@@ -255,27 +255,27 @@ class Field(StructuralFeature):
 
 
 
+class DerivedAssociation(StructuralFeature):
 
+    isDerived = 1
 
+    def _getList(feature, element):
+        """This must be defined in subclass"""
+        raise NotImplementedError
+        
+    def get(feature, element):
+        return feature._getList(element)
 
+    def set(feature, element, val):
+        raise TypeError(
+            "DerivedAssociation %s cannot be changed" % feature.attrName
+        )
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    def delete(feature, element):
+        raise TypeError(
+            "DerivedAssociation %s cannot be changed" % feature.attrName
+        )
+        
 
 
 

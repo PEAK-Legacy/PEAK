@@ -1,8 +1,8 @@
 """Integration/acceptance tests for SEF.SimpleModel, etc."""
 
 from unittest import TestCase, makeSuite, TestSuite
-from peak.metamodels.querying import ANY, Equals
 from peak.api import *
+from peak.model.queries import *
 
 class UMLTest(TestCase):
 
@@ -52,29 +52,29 @@ class QueryTests(TestCase):
         
     def checkNameGet(self):
         for obj in self.pkg, self.klass:
-            names = obj.Get('name')
-            assert len(names)==1
+            names = list(query([obj])['name'])
+            assert len(names)==1, list(names)
             assert names[0]==obj.name, (names[0],obj.name)
 
     def checkSelfWhere(self):
         for obj in self.pkg, self.klass:
-            where = obj.Where(ANY('name',Equals(obj.name)))
+            where = list(query([obj], ANY('name',EQ(obj.name))))
             assert len(where)==1
 
     def checkContentsGet(self):
         pkg = self.pkg
         klass = self.klass
-        oe = pkg.Get('ownedElements')
-        assert len(oe)==1
-        ns = klass.Get('namespace')
+        oe = list(query([pkg])['ownedElements'])
+        assert len(oe)==1, oe
+        ns = list(query([klass])['namespace'])
         assert len(ns)==1
 
     def checkContentsWhere(self):
         pkg = self.pkg
         klass = self.klass
-        oe = pkg.Get('ownedElements').Where(ANY('name',Equals('FooClass')))
-        assert len(oe)==1
-        ns = klass.Get('namespace').Where(ANY('name',Equals('SomePackage')))
+        oe = list(query([pkg])['ownedElements'][ANY('name',EQ('FooClass'))])
+        assert len(oe)==1, oe
+        ns = list(query([klass])['namespace'][ANY('name',EQ('SomePackage'))])
         assert len(ns)==1
         
 
@@ -95,30 +95,30 @@ class XMITests(TestCase):
 
     def setUp(self):
         m = LoadedUML
-        from peak.metamodels.querying import NodeList
-        self.roots = NodeList(m.roots)
-        self.root = self.roots[0]
-        mm = self.mm = self.root.Get('ownedElements').Where(ANY('name',Equals('Meta-MetaModel')))
+        self.roots = query(m.roots)
+        self.root = list(self.roots)[0]
+        mm = self.mm = query([self.root])['ownedElements'][
+            ANY('name',EQ('Meta-MetaModel'))
+        ]
 
     def checkModel(self):
         assert self.root.name=='Data'
         
     def checkSubModel(self):
-        assert self.mm
-        assert self.mm.Get('namespace').Get('name')==['Data']
+        assert self.mm; l = list(self.mm['namespace']['name'])
+        assert l==['Data'], l
 
     def checkContents(self):
-        assert self.mm.Get('ownedElements').Where(ANY('name',Equals('AttributeKind')))
-        assert not self.mm.Get('ownedElements').Where(ANY('name',Equals('foobar')))
+        assert list(self.mm['ownedElements'][ANY('name',EQ('AttributeKind'))])
+        assert not list(self.mm['ownedElements'][ANY('name',EQ('foobar'))])
 
     def checkSuperclasses(self):
-        enum = self.roots.Get('ownedElements*').Where(ANY('name',Equals('enumeration')))
-        assert len(enum)==1
-        sc = enum.Get('superclasses')
-        assert len(sc)==1
-        assert sc.Get('name')==['AttributeKind'],sc.Get('name')
-        
-        sc = enum.Get('superclasses*').Get('name'); sc.sort()
+        enum = self.roots['ownedElements*'][ANY('name',EQ('enumeration'))]
+        assert len(list(enum))==1
+        sc = enum['superclasses']
+        assert len(list(sc))==1, list(sc)
+        assert list(sc['name'])==['AttributeKind']
+        sc = list(enum['superclasses*']['name']); sc.sort()
         assert sc==['AttributeKind','PackageElement'], sc
 
 TestClasses = (

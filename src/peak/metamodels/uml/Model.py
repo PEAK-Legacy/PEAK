@@ -11,12 +11,12 @@
 """
 
 from peak.api import *
-import peak.metamodels.uml.MetaModel
-import peak.metamodels.SimpleModel as model
-from types import StringType, FunctionType
-from peak.metamodels.querying import NodeList, ComputedFeature
+from peak.metamodels.uml import MetaModel
+from peak.model.queries import query
 
-__bases__ = peak.metamodels.uml.MetaModel,
+__bases__ = MetaModel,
+
+
 
 
 
@@ -43,36 +43,36 @@ class UMLClass(model.App):
 
     class ModelElement:
     
-        def QualifiedName(self):
-            name = self.name
-            if not name:
-                return NodeList([])
-                
-            names = self.Get('namespace*').Get('name')
-            names.reverse(); names.append(name)
-            
-            return NodeList(['.'.join(names)])
+        class QualifiedName(model.DerivedAssociation):
 
-        QualifiedName = ComputedFeature(QualifiedName)
+            def _getList(feature,element):
+
+                name = element.name
+
+                if not name:
+                    return []
+                
+                names = list(query([self])['namespace*']['name'])
+                names.reverse(); names.append(name)
+            
+                return ['.'.join(names)]
 
 
     class GeneralizableElement:
-    
-        def superclasses(self):
-            return self.Get('generalizations').Get('parent')
 
-        superclasses = ComputedFeature(superclasses)
+        class superclasses(model.DerivedAssociation):
+
+            def _getList(feature,element):
+                return list(query([element])['generalizations']['parent'])
         
-        def subclasses(self):
-            return self.Get('specializations').Get('child')
 
-        subclasses = ComputedFeature(subclasses)
+        class subclasses(model.DerivedAssociation):
+
+            def _getList(feature,element):
+                return list(query([element])['specializations']['child'])
 
 
 config.setupModule()
-
-
-
 
 
 
