@@ -51,6 +51,7 @@ class AbstractCursor(binding.Component):
         self.setParentComponent(parentComponent,componentName)
 
         for k,v in kw.items():
+            binding.suggestParentComponent(self,k,v)
             setattr(self,k,v)
 
         parentComponent.registerCursor(self)
@@ -66,7 +67,6 @@ class AbstractCursor(binding.Component):
 
     def nextset(self):
         raise NotImplementedError
-
 
 
 

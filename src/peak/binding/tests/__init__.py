@@ -49,7 +49,7 @@ class DescriptorData(binding.Component):
     thing4 = binding.bindSequence('thing1','thing2')
 
     underflow = binding.bindToParent(50)
-    
+
     class aService(binding.Component):
 
         thing5 = binding.bindToParent()
@@ -69,7 +69,7 @@ class DescriptorData(binding.Component):
             getUp = binding.bindTo('..')
 
         nestedService = binding.New(nestedService)
-        
+
     aService = binding.New(aService)
     newDict  = binding.New(dict)
 
@@ -96,7 +96,7 @@ class DescriptorTest(TestCase):
 
 
     def checkBinding(self):
-        thing2 = self.data.thing2 
+        thing2 = self.data.thing2
         assert (thing2 is self.data.thing1), thing2
         assert self.data.__dict__['thing2'] is thing2
 
@@ -147,12 +147,12 @@ class DescriptorTest(TestCase):
 
 
     def checkNew(self):
-    
+
         data = self.data
         d = data.newDict
         assert type(d) is dict      # should be dict
         assert data.newDict is d    # only compute once
-        
+
         data = DescriptorData()
         assert d == data.newDict        # should be equal
         assert d is not data.newDict    # but separate!
@@ -177,7 +177,7 @@ class DescriptorTest(TestCase):
         data = self.data
         thing = data.thing1
         assert data.deep is thing
-        
+
         nested = data.aService.nestedService
 
         assert nested.deep is thing
@@ -214,6 +214,36 @@ class DescriptorTest(TestCase):
         )=='/aService/nestedService/namedThing'
 
 
+    def checkSuggestions(self):
+        data = DescriptorData(None, 'data',
+            thing1 = binding.Base(),
+            thing2 = DescriptorData(thing4 = [binding.Base(), binding.Base()]),
+            thing3 = "foo",
+            thing4 = binding.Base(1)
+        )
+        assert binding.getParentComponent(data.thing1) is data
+        assert binding.getParentComponent(data.thing2) is data
+        assert binding.getParentComponent(data.thing3) is None
+        assert binding.getParentComponent(data.thing4) == 1
+
+        assert binding.getComponentName(data.thing1)=='thing1'
+        assert binding.getComponentName(data.thing2)=='thing2'
+        assert data.thing3 == "foo"
+        assert binding.getComponentName(data.thing4) is None
+
+        assert isinstance(data.thing2.thing4, list)
+        assert len(data.thing2.thing4) == 2
+
+        for ob in data.thing2.thing4:
+            assert ob.__class__ is binding.Base
+            assert binding.getParentComponent(ob) is data.thing2
+            assert binding.getComponentName(ob) == 'thing4'
+            assert ob is not data.thing2.thing1
+            assert ob is not data.thing2.thing2
+
+
+
+
 TestClasses = (
     ClassAttrTest, DescriptorTest,
 )
@@ -225,8 +255,6 @@ def test_suite():
         s.append(makeSuite(t,'check'))
 
     return TestSuite(s)
-
-
 
 
 

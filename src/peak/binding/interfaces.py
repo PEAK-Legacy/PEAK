@@ -49,10 +49,17 @@ class IBindingAPI(IBindingSPI):
         """Look up a name in context - see 'binding.lookupComponent()'"""
 
 
-    def setParentComponent(parent):
-        """Set the object's parent to 'parent'; raises 'AlreadyRead' if
-        the parent has already been used by the component for any purpose."""
-        
+    def setParentComponent(parentComponent,componentName=None,suggest=False):
+        """Set the object's parent to 'parentComponent' (or suggest it)
+
+        If 'suggest' is true, this should not change an already-specified
+        parent.  If 'suggest' is false, and the current parent has already been
+        used by the component for any purpose, this method raises an
+        'AlreadyRead' exception.
+
+        The component's 'componentName' will only be set if the parent is
+        successfully set."""
+
 
     def _hasBinding(attr,useSlot=False):
         """Return true if binding named 'attr' has been activated"""
@@ -68,19 +75,8 @@ class IBindingAPI(IBindingSPI):
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
 class IComponent(IBindingAPI, IConfigurable):
 
     """API supplied by binding.Components"""
+
 

@@ -10,16 +10,20 @@ from types import ModuleType
 
 from peak.naming.names import toName, AbstractName, COMPOUND_KIND
 from peak.naming.syntax import PathSyntax
-from peak.util.EigenData import EigenCell
+from peak.util.EigenData import EigenCell, AlreadyRead
 from peak.config.interfaces import IConfigKey, IPropertyMap
 from peak.util.imports import importString
+from peak.interface import adapt
+from warnings import warn, warn_explicit
 
+class ComponentSetupWarning(UserWarning):
+    """Large iterator passed to suggestParentComponent"""
 
 __all__ = [
-    'Base', 'Component',
+    'Base', 'Component', 'ComponentSetupWarning',
     'bindTo', 'requireBinding', 'bindSequence', 'bindToParent', 'bindToSelf',
     'getRootComponent', 'getParentComponent', 'lookupComponent',
-    'acquireComponent', 'globalLookup',
+    'acquireComponent', 'globalLookup', 'suggestParentComponent',
     'bindToUtilities', 'bindToProperty', 'Constant', 'delegateTo',
     'getComponentName', 'getComponentPath', 'Acquire', 'ComponentName',
 ]
@@ -34,10 +38,6 @@ class _proxy(Once):
         raise AttributeError, self.attrName
 
     def computeValue(self,d,a): raise AttributeError, a
-
-
-
-
 
 def getComponentPath(component, relativeTo=None):
 
@@ -367,6 +367,47 @@ class bindSequence(bindTo):
 
 
 
+def suggestParentComponent(parent,name,child):
+
+    """Suggest to 'child' that it has 'parent' and 'name'
+
+    If 'child' does not support 'IBindingAPI' and is a non-string, reiterable
+    container, all of its elements that support 'IBindingAPI' will be given
+    a suggestion to use 'parent' and 'name' as well.  Note that this
+    means it would not be a good idea to use this on, say, a 10,000 element
+    list or dictionary (especially if the objects in it aren't components),
+    because this function has to check all of them."""
+
+    ob = adapt(child,IBindingAPI,None)
+
+    if ob is not None:
+        # Tell it directly
+        ob.setParentComponent(parent,name,suggest=True)
+
+    elif not isinstance(child,(str,unicode)):
+
+        # Check for a sequence of components
+
+        try:
+            i = iter(child)
+        except TypeError:
+            return
+
+        if i is not child:              # avoid non-reiterables
+            ct = 0
+            for ob in i:
+                ob = adapt(ob,IBindingAPI,None)
+                if ob is not None:
+                    ob.setParentComponent(parent,name,suggest=True)
+                else:
+                    ct += 1
+                    if ct==100:
+                        warn(
+                            ("Large iterator for %s; if it will never"
+                             " contain components, this is wasteful" % name),
+                            ComponentSetupWarning, 3
+                        )
+
 def delegateTo(delegateAttr, name=None, provides=None, doc=None):
 
     """Delegate attribute to the same attribute of another object
@@ -501,7 +542,8 @@ class Base(object):
 
     def __init__(self, parentComponent=None, componentName=None, **kw):
 
-        self.setParentComponent(parentComponent,componentName)
+        if parentComponent is not None or componentName is not None:
+            self.setParentComponent(parentComponent,componentName)
 
         if kw:
 
@@ -510,6 +552,7 @@ class Base(object):
             for k,v in kw.iteritems():
 
                 if hasattr(klass,k):
+                    suggestParentComponent(self,k,v)
                     setattr(self,k,v)
 
                 else:
@@ -520,30 +563,55 @@ class Base(object):
 
     lookupComponent = _lookupComponent
 
-    def setParentComponent(self, parentComponent, componentName=None):
-        self.__parentCell.set(parentComponent)
+
+
+
+
+
+
+
+
+
+    def setParentComponent(self, parentComponent, componentName=None,
+        suggest=False):
+
+        if suggest:
+            # Change the parent only if it's not set
+            pc = self.__parentCell.get(lambda: parentComponent)
+
+            if pc is not parentComponent:
+                # don't change the name unless the parent change worked
+                return
+
+        elif parentComponent is None:
+            # Empty the cell so that 'suggest' has a chance to default it
+            self.__parentCell.unset()
+
+        else:
+            # We have a non-None parent, set it and lock it
+            self.__parentCell.set(parentComponent)
+            self.__parentCell.get()
+
+        # If change of parent succeeded, set the name
         self.__componentName = componentName
 
+
+    __parentCell    = binding.New(EigenCell)
     __componentName = None
 
 
-
-
-
-
     def getParentComponent(self):
-        return self.__parentCell.get()
+        cell = self.__parentCell
+        self.getParentComponent = cell.get
+        return cell.get(lambda: None)   # default to None if not set
+
 
     def getComponentName(self):
         return self.__componentName
 
-    def __parentCell(s,d,a):
-        cell = EigenCell()
-        cell.set(None)
-        s.getParentComponent = cell.get
-        return cell
 
-    __parentCell = Once(__parentCell)
+
+
 
     def _getConfigData(self, configKey, forObj):
 
@@ -569,6 +637,20 @@ class Base(object):
 
     def _postGet(self,attr,value,isSlot=False):
         return value
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

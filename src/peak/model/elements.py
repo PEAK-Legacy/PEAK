@@ -54,7 +54,7 @@ class Namespace(binding.Base):
             xm.update(m)
 
         for k,v in self.__class_descriptors__.iteritems():
-        
+
             for n in getattr(v,'_XMINames',()):
 
                 xm[n] = k
@@ -69,17 +69,17 @@ class Namespace(binding.Base):
 
 
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
+
+
+
+
+
+
+
+
+
+
+
 class TypeClass(Namespace.__class__):
 
     """Basis for all flavors"""
@@ -110,7 +110,7 @@ class TypeClass(Namespace.__class__):
 
 
     mdl_isAbstract = binding.Constant(
-        None, False, doc = 
+        None, False, doc =
         """Is this an abstract class?  Defaults to 'False'.
 
             To make a 'model.Type' subclass abstract, set this
@@ -136,7 +136,7 @@ class TypeClass(Namespace.__class__):
 
             class A(model.Type):
                 class foo(model.Attribute): pass
-                
+
             class B(A):
                 class foo(model.Attribute): pass
                 class bar(model.Attribute): pass
@@ -151,7 +151,7 @@ class TypeClass(Namespace.__class__):
         also be useful for GUI layouts, where it's also desirable to have a
         subtype's display look "the same" as a base type's display, except for
         those features that it adds to the supertype."""
-        
+
         out  = []
         posn = {}
         add  = out.append
@@ -161,7 +161,7 @@ class TypeClass(Namespace.__class__):
             binding.getInheritedRegistries(self,'mdl_features')
         )
         all.append(self.mdl_featuresDefined)
-      
+
         for nf in all:
             for f in nf:
                 n = f.attrName
@@ -171,7 +171,7 @@ class TypeClass(Namespace.__class__):
                     add(f)
                 else:
                     out[p] = f
-                    
+
         return tuple(out)
 
     mdl_features = binding.Once(mdl_features)
@@ -344,7 +344,7 @@ class Immutable(Type, HashAndCompare):
     def setParentComponent(self, parentComponent, componentName=None):
         if parentComponent is not None or componentName is not None:
             raise TypeError("Data values are not components")
-    
+
     def getParentComponent(self):
         return None
 
@@ -424,7 +424,7 @@ class Struct(Immutable):
             member_types = [
                 f.typeObject.mdl_typeCode for f in klass.mdl_features
             ]
-            
+
         )
 
     mdl_typeCode = binding.classAttr( binding.Once(mdl_typeCode) )
@@ -460,23 +460,23 @@ class Element(Type, Persistent):
     __implements__ = binding.IBindingAPI
     __metaclass__  = ElementClass
 
-    def setParentComponent(self, parentComponent, componentName=None):
+    def setParentComponent(self, parentComponent, componentName=None,
+        suggest=False):
+
+        if suggest:
+            return  # don't accept suggestions
+
         if parentComponent is not None:
             self._p_jar = parentComponent
+
         self._p_oid = componentName
+
 
     def getParentComponent(self):
         return self._p_jar
 
     def getComponentName(self):
         return self._p_oid
-
-
-
-
-
-
-
 
 
 
@@ -540,15 +540,35 @@ class Element(Type, Persistent):
 
 
     def _postGet(self,attr,value,isSlot=False):
-    
+
         if isinstance(value,LazyLoader):
             if isSlot:
                 getattr(self.__class__,attr).__delete__(self)
             else:
                 del self.__dict__[attr]
 
-            value.load(self,attr)   # XXX           
+            value.load(self,attr)   # XXX
             return self._getBinding(attr,NOT_FOUND)
 
         return value
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
