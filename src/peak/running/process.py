@@ -3,7 +3,7 @@ from peak.api import *
 from interfaces import *
 from weakref import WeakValueDictionary, ref
 from peak.events.io_events import signals, signal_names     # XXX
-
+import errno
 
 
 
@@ -104,24 +104,24 @@ class ChildProcess(binding.Component):
 
     def _checkStatus(self):
         try:
-            try:
-                p, s = self.os.waitpid(self.pid, self.os.WNOHANG)
-            except OSError,v:
-                self.log.exception("Unexpected error in waitpid()")
+            p, s = self.os.waitpid(self.pid, self.os.WNOHANG)
+        except OSError,v:
+            if v==errno.ECHILD:
+                self._setStatus(None)
+            elif v==errno.EINTR:
+                self._checkStatus() # retry
             else:
-                if p==self.pid:
-                    self._setStatus(s)
-        finally:
-            self._checking = False
+                self.log.exception("Unexpected error in waitpid()")
+        else:
+            if p==self.pid:
+                self._setStatus(s)
 
 
 
 
 
 
-
-
-    def _setStatus(self,status):
+    def _setStatus(self,status=None):
 
         for event in self.statusEvents:
             event.disable()
@@ -129,16 +129,20 @@ class ChildProcess(binding.Component):
         self.exitedBecause.set(None)
         self.stoppedBecause.set(None)
 
-        self.isStopped.set(self.os.WIFSTOPPED(status))
-
-        if self.os.WIFEXITED(status):
-            self.exitStatus.set(self.os.WEXITSTATUS(status))
-
-        if self.isStopped:
-            self.stoppedBecause.set(self.os.WSTOPSIG(status))
-
-        if self.os.WIFSIGNALED(status):
-            self.exitedBecause.set(self.os.WTERMSIG(status))
+        if status is None:
+            self.exitedBecause.set(-1)
+            self.exitStatus.set(-1)
+        else:
+            self.isStopped.set(self.os.WIFSTOPPED(status))
+    
+            if self.os.WIFEXITED(status):
+                self.exitStatus.set(self.os.WEXITSTATUS(status))
+    
+            if self.isStopped:
+                self.stoppedBecause.set(self.os.WSTOPSIG(status))
+    
+            if self.os.WIFSIGNALED(status):
+                self.exitedBecause.set(self.os.WTERMSIG(status))
 
         self.isFinished.set(
             self.exitedBecause() is not None or self.exitStatus() is not None
@@ -149,10 +153,6 @@ class ChildProcess(binding.Component):
                 event.enable()
             except:
                 self.log.exception("Unexpected error in process listener")
-
-
-
-
 
 
 
