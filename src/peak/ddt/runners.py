@@ -93,33 +93,33 @@ exitlevel is nonzero if there were any problems.
 """
 
     def DM(self):
-        if len(self.argv)<2:
-            raise commands.InvocationError("Input filename required")
-
-        name = naming.toName(self.argv[1], FileURL.fromFilename)
-        target = self.lookupComponent(name,adaptTo=naming.IStreamFactory)
-
-        dm = HTMLDocument(self,
-            text = target.open('b').read(), useAC = True,
-        )
-
+        stream = self.inputFactory.open('b')
+        dm = HTMLDocument(self,text = stream.read(), useAC = True)
+        stream.close()
         if self.outputURL:
             dm.output = self.lookupComponent(
                 self.outputURL,adaptTo=naming.IStreamFactory
             )
         else:
             dm.stream = self.stdout
-
         return dm
 
     DM = binding.Make(DM)
 
+    inputFactory = binding.Obtain(
+        naming.Indirect('inputURL'),adaptTo=naming.IStreamFactory
+    )
+    
+    def inputURL(self):
+        if len(self.argv)<2:
+            raise commands.InvocationError("Input filename required")
+        return naming.toName(self.argv[1], FileURL.fromFilename)
+    inputURL = binding.Make(inputURL)
+
     def outputURL(self):
         if len(self.argv)>2:
             return naming.toName(self.argv[2], FileURL.fromFilename)
-
     outputURL = binding.Make(outputURL)
-
 
     def _run(self):
 
