@@ -88,11 +88,11 @@ class SQLCursor(AbstractCursor):
         if rows:
 
             # we don't want to mess with souped-up row types
-            # so require an exact match to 'tuple' type
+            # so require an exact match to 'tuple' or 'list' type
 
             row = rows[0]
 
-            if type(row) is tuple:  
+            if type(row) in (tuple, list):
 
                 rowStruct = makeStructType('rowStruct',
                     [d[0] for d in self._cursor.description],
@@ -228,19 +228,12 @@ class PGSQLConnection(SQLConnection):
         )
             
 
-    def onJoinTxn(self, txnService):
-        # XXX 
-        self.connection.begin()
-
-
-
     def txnTime(self,d,a):
-        # XXX
         # First, ensure that we're in a transaction
         self.txnSvc
 
         # Then retrieve the server's idea of the current time
-        r = ~ self('SELECT getdate()')
+        r = ~ self('SELECT CURRENT_TIMESTAMP')
         return r[0]
 
     txnTime = binding.Once(txnTime)
