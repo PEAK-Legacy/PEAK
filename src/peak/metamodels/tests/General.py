@@ -128,7 +128,7 @@ class XMILoad(TestCase):
         global LoadedUML
         self.m = m = LoadedUML = UML_DM()
         from os import path
-        m.roots = m.importFromXMI(
+        m.roots = storage.xmi.fromFile(
             config.fileNearModule(__name__,'MetaMeta.xml')
         )
         

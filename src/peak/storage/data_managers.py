@@ -59,7 +59,7 @@ class FacadeDM(binding.Component):
             del self.cache[oid]
 
         ob = self._retrieve(oid, state)
-        
+
         if ob is not None:
             self.cache[oid] = ob
             return ob
@@ -78,7 +78,7 @@ class FacadeDM(binding.Component):
     def oidFor(self, ob):
         """Return this DM's OID for 'ob'; used to validate consistency"""
         raise NotImplementedError
-        
+
 
 class PersistentQuery(Persistent, ListProxy):
 
@@ -167,7 +167,7 @@ class QueryLink(ListProxy):
         if self.__cacheData is not self.__query.data:
             self.__cacheData = self.__query.data
             self.__localData = self.__cacheData[:]
-            
+
         return self.__localData
 
     data = property(data)
@@ -196,7 +196,7 @@ class QueryLink(ListProxy):
         if self.__isActive():
             i = max(i, 0); j = max(j, 0)
             del self.data[i:j]
-    
+
 
     def __iadd__(self, other):
         if self.__isActive():
@@ -255,7 +255,7 @@ class QueryDM(TransactionComponent):
         if self.resetStatesAfterTxn:
             # must always be used in a txn
             self.joinedTxn
-        
+
         ob = self.cache.get(oid,self)
 
         if ob is not self:
@@ -473,7 +473,7 @@ class EntityDM(QueryDM):
 
         # Ensure that we have a transaction service and we've joined
         # the transaction in progress...
-        
+
         self.joinedTxn
 
         # precondition:
@@ -484,7 +484,7 @@ class EntityDM(QueryDM):
         #   DM is registered w/transaction if not previously registered
 
         key = id(ob)
-        
+
         # Ensure it's in the 'dirty' set
         self.dirty.setdefault(key,ob)
 
@@ -522,57 +522,57 @@ class EntityDM(QueryDM):
 
 
 
-            
 
 
 
-    
+
+
 
 
 
 
 class StorableDMClass(EntityDM.__class__, Persistent.__class__):
     pass
-    
+
 class StorableDM(EntityDM,Persistent):
     __metaclass__ = StorableDMClass
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

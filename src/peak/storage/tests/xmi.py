@@ -124,8 +124,9 @@ MailText="""<?xml version="1.0"?>
 class XMIModelTests(TestCase):
 
     def setUp(self):
-        dm = storage.xmi.DM(metamodel=MailModel)
-        self.envelope, self.letter = dm.importFromXMI(StringIO(MailText))
+        self.envelope, self.letter = storage.xmi.fromFile(
+            StringIO(MailText), metamodel=MailModel
+        )
 
     def checkTypes(self):
         assert isinstance(self.envelope,MailModel.Envelope)

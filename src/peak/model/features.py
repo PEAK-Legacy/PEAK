@@ -162,6 +162,47 @@ class FeatureClass(HashAndCompare,MethodExporter):
 
 
 
+    rawTypeCode = binding.bindTo('typeObject/mdl_typeCode')
+    typeKind    = binding.bindTo('typeCode/kind')
+    typeCode    = binding.Once(lambda s,d,a: s.rawTypeCode.unaliased() )
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 class StructuralFeature(object):
 
     __metaclass__ = FeatureClass

@@ -106,7 +106,7 @@
         XMI 1.2
 
             XMI 1.2 is mostly a simplification and clarification of XMI 1.1:
-            
+
                 - Encoding of multi-valued attributes; note that it is not
                   permissible to have a value for a feature both in an
                   object tag's attribute and in the object's contained tags.
@@ -170,6 +170,7 @@ from xml.sax import saxutils
 from types import StringTypes
 from peak.model.api import TCKind, SimpleTC, Boolean, TypeCode
 
+XMI_METAMODELS = PropertyName('peak.xmi.metamodels')
 
 _any_converters = {
 
@@ -183,17 +184,16 @@ _any_converters = {
     'boolean': Boolean.mdl_fromString,
     'char': str,
     'wchar': unicode,
-    
+
     'octet': None, # XXX
 
     'longlong': long,
     'ulonglong': long,
     'longdouble': long,
-    
+
     'string': str,
     'wstring': unicode,
 }
-
 
 
 
@@ -265,7 +265,7 @@ class XMINode(object):
         self.index = parent.index
         self.document = parent.document
         self.parent = parent
-        
+
 
     def _addNode(self,name,node):
         self.allNodes.append(node)
@@ -273,7 +273,7 @@ class XMINode(object):
 
     def _newNode(self,name,atts):
         return self.__class__(name,atts)
-        
+
     def _addText(self,text):
         self.allNodes.append(text)
 
@@ -322,8 +322,8 @@ class XMINode(object):
             ref = self.getId()
 
         return self.index[ref].getId()
-        
-    
+
+
 
 
     def getValue(self, feature, dm):
@@ -364,7 +364,7 @@ class XMINode(object):
             fields.append(node.getValue(f,dm))
 
         return feature.fromFields(tuple(fields))
-        
+
 
 
     def getTypeCode(self, feature, dm):
@@ -384,7 +384,7 @@ class XMINode(object):
             raise ValueError(
                 "Don't know how to handle type code kind", tag
             )
-            
+
         if kind in SimpleTC or kind==TCKind.tk_objref:
             return TypeCode(kind=kind)
 
@@ -620,7 +620,7 @@ class XMIDocument(binding.Component, XMINode):
     subNodes = allNodes = binding.New(list)
     _name = None
     parent = None
-    
+
     document = binding.bindToSelf()
 
 
@@ -654,12 +654,53 @@ class XMIDocument(binding.Component, XMINode):
 
 
 
-class DM(storage.EntityDM):
+    def metamodel(self,d,a):
+        models = []
+        for node in self.findNode('XMI.header').subNodes:
+            if node._name == 'XMI.metamodel':
+                if 'xmi.version' in node.attrs:
+                    models.append('%(xmi.name)s.%(xmi.version)s' % node.attrs)
+                else:
+                    models.append(node.attrs['xmi.name'])
+
+        if len(models)==1:
+            return XMI_METAMODELS.of(self)[models[0]]
+
+        raise ValueError("XMI file must have exactly one 'XMI.metamodel'")
+
+    metamodel = binding.Once(metamodel)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class DM(storage.StorableDM):
 
     resetStatesAfterTxn = False
 
     index     = binding.bindTo('document/index')
-    metamodel = binding.requireBinding("Metamodel with _XMIMap")
+    metamodel = binding.bindTo('document/metamodel')
     document  = binding.requireBinding("XMIDocument with data to use")
 
     def _ghost(self, oid, state=None):
@@ -675,7 +716,7 @@ class DM(storage.EntityDM):
 
 
     def getClass(self,name):
-        name = name.split(':',1)[-1].replace('.','/')       
+        name = name.split(':',1)[-1].replace('.','/')
         try:
             return getattr(self.metamodel, name.split('/')[-1])
         except AttributeError:
@@ -692,25 +733,47 @@ class DM(storage.EntityDM):
             return getattr(klass,xm[name],None)
         else:
             name = name.split('.')[-1]
-            return getattr(klass,name,None)  
+            return getattr(klass,name,None)
 
 
     def _load(self, oid, ob):
-        
+
         target = self.index[oid]
 
         if oid==():
             return [
                 self[n.getRef()] for n in target.subNodes if not n.isExtension
             ]
-        
+
         return target.stateForClass(ob.__class__, self)
 
+def fromFile(filename_or_stream, parentComponent=None, **kw):
+    document = XMIDocument(parentComponent)
+    SOX.load(filename_or_stream, document)
+    return DM(parentComponent, document=document,**kw)[()]
 
-    def importFromXMI(self,filename_or_stream):
-        self.document = XMIDocument()
-        SOX.load(filename_or_stream, self.document)
-        return self[()]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
