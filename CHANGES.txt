@@ -1,5 +1,9 @@
 New Features and Bug Fixes since v0.2, preview 1
 
+ * Removed 'Meta.ClassInit' and '__class_init__' support.  Use metaclass
+   '__init__' methods instead; see 'TW.Database.DataModel.RecordTypeMC'
+   for one example of the conversion.
+
  * Added 'SEF.bindToParent()', 'SEF.bindToNames()', and 'SEF.bindToSelf()'
    descriptors, to allow more flexible component parameter bindings.
 

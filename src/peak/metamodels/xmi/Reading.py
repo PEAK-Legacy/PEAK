@@ -162,24 +162,24 @@ class XMIFactory:
 
 
 
-class XMIMapMaker(SEF.Base):
+class XMIMapMaker_Meta(type):
 
-    def __class_init__(thisClass, newClass, next):
+    def __init__(klass, name, bases, dict):
 
-        if __proceed__ is not None:
-            __proceed__(thisClass, newClass, next)
-        else:
-            next().__class_init__(newClass,next)
+        super(XMIMapMaker_Meta,klass).__init__(name, bases, dict)
 
-        xm = newClass._XMIMap = {}
+        xm = {}
 
-        for attName in dir(newClass):
-            for k in getattr(getattr(newClass,attName),'_XMINames',()):
+        for attName in dir(klass):
+            for k in getattr(getattr(klass,attName),'_XMINames',()):
                 xm[k] = attName
 
+        klass._XMIMap = xm
 
 
+class XMIMapMaker:
 
+    __metaclass__ = XMIMapMaker_Meta
 
 
 

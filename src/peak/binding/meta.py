@@ -1,7 +1,7 @@
 """Frequently Useful Metaclasses (And Friends)"""
 
 __all__ = [
-    'ClassInit', 'AssertInterfaces', 'ActiveDescriptors', 'ActiveDescriptor',
+    'AssertInterfaces', 'ActiveDescriptors', 'ActiveDescriptor',
     'Singleton',
 ]
 
@@ -36,47 +36,6 @@ class ActiveDescriptor(object):
     def activate(self,klass,attrName):
         """Informs the descriptor that it is in 'klass' with name 'attrName'"""
         raise NotImplementedError
-
-
-
-class ClassInit(type):
-
-    """Lets classes have a '__class_init__(thisClass,newClass,next)' method"""
-    
-    class _sentinel:
-        def __class_init__(thisClass, newClass, next):
-            pass
-
-    sentinel = _sentinel()
-    
-
-    def __new__(meta, name, bases, dict):
-        
-        try:
-            ci = dict['__class_init__']
-        except KeyError:
-            pass
-        else:
-            # Guido take note: a legitimate use for 'classmethod'!
-            dict['__class_init__'] = classmethod(ci)
-
-        return super(ClassInit, meta).__new__(meta,name,bases,dict)
-
-
-    def __init__(newClass, name, bases, dict):
-
-        super(ClassInit, newClass).__init__(name,bases,dict)
-
-        initSupers = iter(
-            [base for base in newClass.__mro__
-                   if base.__dict__.has_key('__class_init__')
-             ]+[ClassInit.sentinel]
-        )
-
-        next = initSupers.next
-        next().__class_init__(newClass, next)
-
-
 
 
 
