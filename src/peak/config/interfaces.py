@@ -136,7 +136,6 @@ class IPropertyMap(Interface):
         Wildcard rules are checked in most-specific-first order, after
         the non-wildcard name, and before the property's default."""
 
-
     def setDefault(propName, defaultObj):
         """Set IDefault 'defaultObj' as function to compute 'propName' default
 
@@ -148,15 +147,16 @@ class IPropertyMap(Interface):
         'NOT_GIVEN'.  Note: like values and unlike rules, defaults can *not*
         be registered for a wildcard 'propName'."""
 
-
     def setPropertyFor(obj, propName, value):
         """Set property 'propName' to 'value' for 'obj'
 
         No wildcards allowed.  'AlreadyRead' is raised if the property
         has already been accessed for the target object.  If 'obj' is
         outside the property map's scope or it only manages properties for
-        its owner, an 'ObjectOutOfScope' exception will be raised."""
-
+        its owner, an 'ObjectOutOfScope' exception will be raised.
+        'obj' may be 'None', in which case it is assumed that the property
+        should be set for all objects within the map's scope, unless they
+        have properties more specifically set upon them."""
 
     def getPropertyFor(obj, propName):
         """Return value of property for 'obj' or return 'NOT_FOUND'"""
