@@ -6,7 +6,7 @@ from kjbuckets import *
 
 class Table(UserList):
 
-    """Table( ('c1Name', 'c2Name'...), [ (r1c1,r1c2...), (r2c1,r2c2...) ...] )
+    """Table( tupleOfColNames, listOfRowTuples )
 
         Tables are 'UserList' objects, so you can iterate over them, access
         rows by row number, take slices, etc.  Each row is a 'kjbuckets.kjDict'
@@ -26,22 +26,22 @@ class Table(UserList):
             self.INSERT_ROWS(colNames, rowList)
 
 
-    def INSERT(self, **values):
+    def INSERT(self, items):
 
-        """table.INSERT(field1=value1, field2=value2...)
+        """table.INSERT(Items(field1=value1, field2=value2...))
         
             Insert a row with the supplied field values.  Affects only the
             specific table it is called upon.
         """
 
-        self.data.append(kjDict(values.items()))
+        self.data.append(kjDict(items))
 
 
 
 
-    def SELECT(self, **where):
+    def SELECT(self, whereItems):
 
-        """table.SELECT(field1=value1, field2=value2...) -> Table slice
+        """table.SELECT(Items(field1=value1, field2=value2...)) -> Table slice
 
             'SELECT' returns a new table which is the subset of rows from the
             original table which match the field values asserted by the keyword
@@ -49,20 +49,20 @@ class Table(UserList):
             perform an 'UPDATE' on it to make changes.
         """
 
-        where = kjDict(where.items()); matches = where.subset
+        where = kjDict(whereItems); matches = where.subset
         return self.__class__(
             rawData = [d for d in self.data if matches(d)]
         )
 
 
-    def UPDATE(self, **setVals):
+    def UPDATE(self, setItems):
 
-        """table.UPDATE(setCol1=setVal1, setCol2=setVal2...)
+        """table.UPDATE(Items(setCol1=setVal1, setCol2=setVal2...))
 
             Sets the specified column values for all rows in the table.
             This is most useful in conjunction with 'SELECT', e.g.::
 
-                table.SELECT(foo=27).UPDATE(bar=50)
+                table.SELECT(Items(foo=27)).UPDATE(Items(bar=50))
 
             The above would set 'bar=50' on all rows of the original table
             where the 'foo' value was equal to 27.  Note that updates
@@ -70,8 +70,8 @@ class Table(UserList):
             the row objects are shared between tables.
         """
 
-        sets = setVals.items()
-        for d in self.data: map(d.add,sets)
+        for d in self.data:
+            map(d.add,setItems)
 
 
 
@@ -104,7 +104,7 @@ class Table(UserList):
         self.data.extend( [kjDict(zip(colNames,row)) for row in rowList] )
 
 
-    def DELETE(self, **where):
+    def DELETE(self, whereItems):
 
         """table.DELETE(field1=value1, field2=value2...)
         
@@ -112,7 +112,7 @@ class Table(UserList):
             arguments.  Affects only the specific table it is called upon.
         """
 
-        where = kjDict(where.items())
+        where = kjDict(whereItems)
         matches = where.subset
         self.data = [d for d in self.data if not matches(d)]
 
