@@ -2,6 +2,15 @@ Fixes and Enhancements since Version 0.5 alpha 2
 
  Changed, Enhanced, or Newly Deprecated Features
 
+ - Property definition rules in an .ini file can now refer to 'rulePrefix' and
+   'ruleSuffix' variables.  'rulePrefix' is a '.'-terminated string,
+   representing the name the rule was defined with.  For example, if the
+   rule was defined for '"foo.bar.*"', then 'rulePrefix' will be '"foo.bar."'.
+   The 'ruleSuffix' will be the portion of the 'propertyName' that follows
+   'rulePrefix'.  So, if looking up property '"foo.bar.baz"', then the
+   '"foo.bar.*"' rule will execute with a 'ruleSuffix' of '"baz"'.  This should
+   make it easier to work with hierarchical property namespaces.
+
  - Added simple example scripts and small applications in the 'examples' 
    directory.
 

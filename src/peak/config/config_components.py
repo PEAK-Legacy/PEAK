@@ -294,9 +294,13 @@ class ConfigReader(AbstractConfigParser):
 
     def add_setting(self, section, name, value, lineInfo):
         _ruleName = PropertyName(section+name)
+        _rulePrefix = _ruleName.asPrefix()
+        _lrp = len(_rulePrefix)
         def f(propertyMap, propertyName, targetObj):
-                ruleName = _ruleName
-                return eval(value)
+            ruleName = _ruleName
+            rulePrefix = _rulePrefix
+            ruleSuffix = propertyName[_lrp:]
+            return eval(value)
         self.pMap.registerProvider(_ruleName,f)
 
 
@@ -320,10 +324,6 @@ class ConfigReader(AbstractConfigParser):
 
     def provide_utility(self, section, name, value, lineInfo):
         self.pMap.registerProvider(importString(name), eval(value))
-
-
-
-
 
 
     section_handlers = {
