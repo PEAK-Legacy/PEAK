@@ -358,10 +358,10 @@ class XMINode(object):
                 return child.getAny(feature,dm)
 
         fields = []
-        for node in sub:
+        for node,f in zip(sub,feature.typeObject.mdl_features):
             if node._name <> 'XMI.field':
                 raise ValueError("Don't know how to handle", node._name) #XXX
-            fields.append(node.getValue(feature,dm))
+            fields.append(node.getValue(f,dm))
 
         return feature.fromFields(tuple(fields))
         
