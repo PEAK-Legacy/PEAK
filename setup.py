@@ -43,7 +43,7 @@ extensions = [
 
 data_files = [
     ('peak', ['src/peak/peak.ini']),
-]
+] + findDataFiles('src/peak/running', 1, '*.xml')
 
 
 if include_tests:
