@@ -739,34 +739,33 @@ class Component(_Base):
     def setParentComponent(self, parentComponent, componentName=None,
         suggest=False):
 
-        if suggest:
-            # Change the parent only if it's not set
-            pc = self.__parentCell.get(lambda: parentComponent)
-            if pc is not parentComponent:
-                # don't change the name unless the parent change worked
-                return
+        pc = self.__parentSetting
 
-        elif parentComponent is None:
-            # Empty the cell so that 'suggest' has a chance to default it
-            self.__parentCell.unset()
+        if pc is NOT_GIVEN:
+            self.__parentSetting = parentComponent
+            self.__componentName = componentName            
+            self.__parentComponent  # lock and invoke assembly events
+            return
 
-        else:
-            self.__parentCell.set(parentComponent)
+        elif suggest:
+            return
 
-        # If change of parent succeeded, set the name
-        self.__componentName = componentName
+        raise AlreadyRead(
+            "Component %r already has parent %r; tried to set %r"
+            % (self,pc,parentComponent)
+        )
 
-        if parentComponent is not None:
-            # We have a non-None parent: lock and handle assembly
-            self.getParentComponent()
-
-
-    __parentCell    = New(EigenCell)
+    __parentSetting = NOT_GIVEN #New(EigenCell)
     __componentName = None
 
 
-    def __parent(self,d,a):
-        parent = d[a] = self.__parentCell.get(lambda: None)
+    def __parentComponent(self,d,a):
+
+        parent = self.__parentSetting
+        if parent is NOT_GIVEN:
+            parent = self.__parentSetting = None
+
+        d[a] = parent
         if parent is None:
             self.uponAssembly()
         elif (self.__class__.__attrsToBeAssembled__
@@ -775,10 +774,11 @@ class Component(_Base):
 
         return parent
 
-    __parent = Once(__parent)
+    __parentComponent = Once(__parentComponent)
+
 
     def getParentComponent(self):
-        return self.__parent
+        return self.__parentComponent
 
     def getComponentName(self):
         return self.__componentName
