@@ -21,12 +21,10 @@
             to this new node, so that potential containers can tell if they've
             seen it.
 
-          - We only care about keeping XMI.Extension tags, and then probably
-            only ones contained directly in an element.  If a node is modified,
-            its extension tags should all be moved to the end of the modified
-            node's children, with comments to trace where they came from, and
-            a warning issued if any extensions are moved from their original
-            position.
+          - We only care about keeping XMI.Extension tags contained directly
+            in an element, in the top-level object list (XMI.content), and
+            in the XMI.Extensions block.  If a node is modified, its extension
+            tags may be moved to the end of the modified node's children.
 
           - Generate new ID's as UUIDs, and place in both UUID and ID fields;
             need to standardize on a '__uuid__' or similar field in elements
@@ -38,9 +36,8 @@
             way, and thus switch between XMI 1.0 and 1.1 (or other) storage
             formats.
 
-
           - For thunking to be effective, XMI.extensions must be sharable,
-            and therefore immutable -- so XMI extension/text class is needed.
+            and therefore immutable -- so we need an XMI extension/text class.
 
           - XMIDocument should become persistent, and use a second-order DM to
             load/save it.  Modifying XMINode instances should flag the
@@ -53,22 +50,61 @@
           - Need to research 'ignorableWhitespace' et al to ensure that we can
             write cleanly indented files but with same semantics as originals.
 
+        XMI 1.2
+
+            XMI 1.2 is mostly a simplification and clarification of XMI 1.1;
+            we should consider whether the dropped features are really
+            necessary even in our 1.1 support; it's highly unlikely we'll
+            encounter them in actual use.  We may wish to simply implement
+            XMI 1.2 and call it "backward compatible" with XMI 1.1:
+
+            * XMI 1.2 drops support for CORBA types in favor of
+              MOF 1.4 types, and using XML Schema Datatypes for the boolean,
+              integer, long, float, double, and string types.
+
+            * The list of removed types includes: XMI.struct, XMI.arrayLen,
+              XMI.array, XMI.discrim, XMI.union, and XMI.any.  (Note that
+              XMI.any is used by the CWM 1.0 metamodel!)
+
+            * Datatype elements kept are: XMI.field, XMI.sequence,
+              XMI.seqItem, and XMI.enum.
+                        
+            Clarifications added to 1.2 spec that should probably be
+            interpreted as applicable in 1.1 as well:
+            
+                - Encoding of multi-valued attributes; note that it is not
+                  permissible to have a value for a feature both in an
+                  object tag's attribute and in the object's contained tags.
+
+                - "Nested packages may result in name collision; a namespace
+                  prefix is required in this case."  Need to review EBNF,
+                  and "Namespace Qualified XML Element Names".  This may
+                  require metadata support on the writing side.
+
+        XMI 2.0
+
+            * Requires full URI-based namespace handling; maybe we should
+              go ahead and add this to current implementation?
+
 
         Other
 
-        - XMI.any  (it's used by OMG metamodels such as CWM 1.0)
+          - XMI.any  (it's used by OMG metamodels such as CWM 1.0, mainly
+            for things like strings, when the feature the value is stored in
+            allows "any" value.)
 
-        - metamodel lookups
+          - metamodel lookups
 
-        - cross-reference between files could be supported by having document
-          objects able to supply a relative or absolute reference to another
-          document.  But this requires HREF support.  :(  Note that cross-file
-          HREF needs some way to cache the other documents and an associated
-          DM, if it's to be dynamic.
+          - cross-reference between files could be supported by having document
+            objects able to supply a relative or absolute reference to another
+            document.  But this requires HREF support.  :(  Note that
+            cross-file HREF needs some way to cache the other documents and an
+            associated DM, if it's to be dynamic.
 
-        - XMI.CorbaTypeCode, XMI.CorbaTcXXX ...?  
-
+          - XMI.CorbaTypeCode, XMI.CorbaTcXXX ...?  These are gone in XMI 1.2;
+            do we have any 1.0 or 1.1 models that need them?
 """
+
 
 from peak.api import *
 from peak.util import SOX
@@ -76,6 +112,11 @@ from weakref import WeakValueDictionary
 from Persistence import Persistent
 from xml.sax import saxutils
 from types import StringTypes
+
+
+
+
+
 
 
 
@@ -169,10 +210,11 @@ class XMINode(object):
         if 'xmi.value' in atts:
             return feature.fromString(atts['xmi.value'])
 
-        sub = [node for node in self.subNodes if not node.isExtension]
 
-        if not sub:
+        if not self.subNodes:
             return feature.fromString(''.join(self.allNodes))
+
+        sub = self.subNodes
 
         if len(sub)==1 and not sub[0]._name.startswith('XMI.'):
             return dm[sub[0].getRef()]
@@ -185,7 +227,6 @@ class XMINode(object):
 
         return feature.fromFields(tuple(fields))
         
-
 
 
 
@@ -230,8 +271,7 @@ class XMINode(object):
                 d[f.attrName] = node.getValue(f, dm)
             else:
                 d.setdefault(f.attrName,[]).extend(
-                    [dm[n.getRef()]
-                        for n in node.subNodes if not n.isExtension]
+                    [dm[n.getRef()] for n in node.subNodes]
                 )
 
         coll = self.parent
@@ -243,7 +283,8 @@ class XMINode(object):
         f = dm.getFeature(owner.__class__, coll._name)
 
         other = f.referencedEnd
-        
+
+
         if other:
             d['__xmi_parent_attr__'] = pa = getattr(klass,other).attrName
             d.setdefault(pa,[owner])
