@@ -39,6 +39,88 @@ class ClassAttrTest(TestCase):
 
 
 
+class assemblyTracer(binding.Component):
+    """Tracing for assembly events"""
+
+    log = binding.requireBinding("list to append events to")
+    activated = binding.requireBinding("list to append ids to")
+    id = binding.requireBinding("identity of this object")
+
+    def uponAssembly(self):
+        if self.__objectsToBeAssembled__ is not None:
+            self.activated.append(self.id)
+        self.log(('entering',self.id,self.__objectsToBeAssembled__))
+        super(assemblyTracer,self).uponAssembly()
+        self.log(('exiting',self.id))
+        
+    def notifyUponAssembly(self,child):
+        self.log(('requesting notify for',child,'by',self))
+        super(assemblyTracer,self).notifyUponAssembly(child)
+
+class counter(object):
+    v = 0
+    def next(self):
+        self.v += 1
+        return self.v
+
+class Outermost(assemblyTracer):
+    counter = binding.New(counter)
+    id = binding.Once(
+        lambda self,d,a: self.counter.next(),
+        activateUponAssembly=True
+    )
+
+class InnerMost(assemblyTracer):
+    counter = binding.bindTo('counter')
+    log = binding.bindTo('log')
+    activated = binding.bindTo('activated')
+    id = binding.Once(
+        lambda self,d,a: self.counter.next(),
+        activateUponAssembly=True
+    )
+
+
+class BaseAssemblyTest(TestCase):
+
+    expectedSize = 0
+
+    def setUp(self):
+        self.log = []
+        self.activated = []
+        self.makeObjects()
+
+    def checkOnceAndOnlyOnce(self):
+        a = self.activated[:]
+        a.sort()
+        assert a == range(1,self.expectedSize+1), a
+
+    def tearDown(self):
+        #print "Event log for", self
+        #from pprint import pprint
+        #pprint(self.log)
+        return None
+
+class SimpleAssembly1(BaseAssemblyTest):
+
+    expectedSize = 2
+
+    def makeObjects(self):
+        log = self.log.append
+        log("Create outermost")
+        root = Outermost(log=self.log.append, activated=self.activated, id = 1)
+        log("Create innermost")
+        root.foo = InnerMost(root, id=2)
+        log("done innermost")
+        root.getParentComponent()
+
+
+
+
+
+
+
+
+
 testList = [1,2,'buckle your shoe']
 
 class DescriptorData(binding.Component):
@@ -245,7 +327,7 @@ class DescriptorTest(TestCase):
 
 
 TestClasses = (
-    ClassAttrTest, DescriptorTest,
+    SimpleAssembly1, ClassAttrTest, DescriptorTest,
 )
 
 

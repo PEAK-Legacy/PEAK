@@ -763,19 +763,22 @@ class Component(_Base):
     __parentCell    = New(EigenCell)
     __componentName = None
 
-    def getParentComponent(self):
-        get = self.getParentComponent = self.__parentCell.get
-        parent = get(lambda: None)   # default to None if not set
 
+    def __parent(self,d,a):
+        parent = d[a] = self.__parentCell.get(lambda: None)
         if parent is None:
             self.uponAssembly()
-        else:
-            if (self.__class__.__attrsToBeAssembled__
-                or self._getBinding('__objectsToBeAssembled__')):
+        elif (self.__class__.__attrsToBeAssembled__
+            or self._getBinding('__objectsToBeAssembled__')):
                 notifyUponAssembly(parent,self)
 
         return parent
 
+    __parent = Once(__parent)
+
+
+    def getParentComponent(self):
+        return self.__parent
 
     def getComponentName(self):
         return self.__componentName
@@ -783,6 +786,7 @@ class Component(_Base):
     __instance_provides__ = New(
         'peak.config.config_components:PropertyMap', provides=IPropertyMap
     )
+
 
     def _getConfigData(self, configKey, forObj):
 
@@ -806,19 +810,12 @@ class Component(_Base):
         self.__instance_provides__.registerProvider(configKeys, provider)
 
 
-    __objectsToBeAssembled__ = New(list)
 
-    def __attrsToBeAssembled__(klass,d,a):
-        aa = {}
-        map(aa.update, getInheritedRegistries(klass, '__attrsToBeAssembled__'))
 
-        for attrName, descr in klass.__class_descriptors__.items():
-            notify = getattr(descr,'activateUponAssembly',False)
-            if notify: aa[attrName] = True
 
-        return aa
 
-    __attrsToBeAssembled__ = classAttr(Once(__attrsToBeAssembled__))
+
+
 
 
     def notifyUponAssembly(self,child):
@@ -859,6 +856,24 @@ class Component(_Base):
             raise
 
 
+
+
+
+    __objectsToBeAssembled__ = New(list)
+
+    def __attrsToBeAssembled__(klass,d,a):
+        aa = {}
+        map(aa.update, getInheritedRegistries(klass, '__attrsToBeAssembled__'))
+
+        for attrName, descr in klass.__class_descriptors__.items():
+            notify = getattr(descr,'activateUponAssembly',False)
+            if notify: aa[attrName] = True
+
+        return aa
+
+    __attrsToBeAssembled__ = classAttr(Once(__attrsToBeAssembled__))
+
+
     def __class_provides__(klass,d,a):
 
         cp = EigenRegistry()
@@ -878,21 +893,6 @@ class Component(_Base):
 
 
 Base = Component    # XXX backward compatibility; deprecated
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
