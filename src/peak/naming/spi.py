@@ -21,10 +21,10 @@ from properties import *
 from names import NNS_Reference
 
 
-
 __all__ = [
     'getInitialContext', 'getURLContext',
 ]
+
 
 __implements__ = (
     IURLContextFactory, IInitialContextFactory, IObjectFactory
@@ -54,14 +54,14 @@ def getInitialContext(parentComponent=None, **options):
     default local configuration object.
     """
 
-    factory = importObject(
-        config.getProperty(
-            INIT_CTX_FACTORY, parentComponent,
-            'peak.naming.contexts:BasicInitialContext'
-        )
-    )
+    factory = importObject( INIT_CTX_FACTORY(parentComponent) )
+    return factory(parentComponent, **options)
 
-    return factory.getInitialContext(parentComponent, **options)
+
+
+
+
+
 
 
 
@@ -84,7 +84,7 @@ def getURLContext(scheme, context=None, iface=IBasicContext):
 
     """Return a 'Context' object for the given URL scheme and interface."""
 
-    factory = config.getProperty(SCHEMES_PREFIX+scheme, context, None)
+    factory = SCHEMES_PREFIX.of(context)[scheme]
 
     if factory is not None:
 

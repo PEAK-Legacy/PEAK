@@ -5,17 +5,17 @@ from names import *
 from properties import *
 from peak.util.imports import importObject
 
-from peak.binding.components import Component, bindToProperty, Once, \
-    bindToUtilities, Constant
+from peak.binding.components import Component, bindToProperty, Once
 
 from peak import exceptions
-from peak.api import config
+
 
 import spi
 
 _marker = object()
 
-__all__ = ['AbstractContext', 'BasicInitialContext', 'GenericURLContext']
+__all__ = ['AbstractContext', 'GenericURLContext']
+
 
 
 
@@ -52,17 +52,17 @@ class AbstractContext(Component):
     _allowCompositeNames = 0
 
     creationParent = bindToProperty(CREATION_PARENT, provides=CREATION_PARENT)
-
     objectFactories= bindToProperty(OBJECT_FACTORIES,provides=OBJECT_FACTORIES)
-
-    stateFactories = bindToProperty(STATE_FACTORIES,provides=STATE_FACTORIES)
+    stateFactories = bindToProperty(STATE_FACTORIES, provides=STATE_FACTORIES)
 
 
     def close(self):
         pass
 
-    def __del__(self):
-        self.close()
+
+
+
+
 
 
 
@@ -421,16 +421,16 @@ class GenericURLContext(AbstractContext):
         if parser.supportsScheme(scheme):
             return parser
 
-        parser = config.getProperty(SCHEMES_PREFIX+scheme, context, None)
+        parser = importObject(SCHEMES_PREFIX.of(context).get(scheme))
 
         if parser is not None:
 
-            parser = importObject(parser)
-    
             if IAddress.isImplementedByInstancesOf(parser):
                 return parser
 
         return None
+
+
 
 
 
@@ -490,21 +490,4 @@ class GenericURLContext(AbstractContext):
 
 
 
-class BasicInitialContext(AbstractContext):
-
-    # Default binding for 'creationParent' is None, if not overridden via
-    # kwarg to 'naming.InitialContext()' or 'naming.lookup()'
-    #
-    creationParent = Constant(CREATION_PARENT, None)
-
-    objectFactories= bindToUtilities(IObjectFactory, provides=OBJECT_FACTORIES)
-    stateFactories = bindToUtilities(IStateFactory,  provides=STATE_FACTORIES)
-
-
-    __class_implements__ = IInitialContextFactory
-
-    def getInitialContext(klass, parentComponent=None, **options):
-        return klass(parentComponent, **options)
-
-    getInitialContext = classmethod(getInitialContext)
 

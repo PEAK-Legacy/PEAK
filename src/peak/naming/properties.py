@@ -14,5 +14,5 @@ OBJECT_FACTORIES = PropertyName('peak.naming.objectFactories')
 STATE_FACTORIES  = PropertyName('peak.naming.stateFactories')
 SCHEME_PARSER    = PropertyName('peak.naming.schemeParser')
 
-SCHEMES_PREFIX   = 'peak.naming.schemes.'
+SCHEMES_PREFIX   = PropertyName('peak.naming.schemes')
 
