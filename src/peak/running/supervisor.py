@@ -4,7 +4,7 @@ from peak.api import *
 from interfaces import *
 from peak.net.interfaces import IListeningSocket
 from commands import EventDriven, Bootstrap, AbstractInterpreter
-from process import signals, ChildProcess, AbstractProcessTemplate
+from process import signals, signal_names, ChildProcess, AbstractProcessTemplate
 from shlex import shlex
 from cStringIO import StringIO
 
@@ -116,15 +116,15 @@ class ProcessSupervisor(EventDriven):
     from time import time
 
     def setup(self):
+        self.log.debug("Beginning setup")
         template = adapt(self.template, ISupervisorPluginProvider, None)
         if template is not None:
             self.plugins.extend(template.getSupervisorPlugins(self))
 
-
     def _run(self):
 
         if not self.startLock.attempt():
-            self.log.warning("Another process is starting")
+            self.log.warning("Another process is in startup; exiting")
             return 1        # exit with errorlevel 1
 
         try:
@@ -149,7 +149,6 @@ class ProcessSupervisor(EventDriven):
 
 
     def requestStart(self):
-
         if self.nextStart is None:
 
             if self.lastStart is None:
@@ -158,8 +157,9 @@ class ProcessSupervisor(EventDriven):
                 self.nextStart = max(
                     self.lastStart + self.startInterval, self.time()
                 )
-
-            self.reactor.callLater(self.nextStart-self.time(), self._doStart)
+            delay = self.nextStart-self.time()
+            self.log.debug("Scheduling child start in %.1d seconds",delay)
+            self.reactor.callLater(delay, self._doStart)
 
 
     def _doStart(self):
@@ -167,36 +167,77 @@ class ProcessSupervisor(EventDriven):
         if len(self.processes)>=self.maxChildren:
             return
 
-        self.lastStart = self.time()
-        self.nextStart = None
-
+        self.log.debug("Spawning new child process")
         proxy, stub = self.template.spawn(self)
+
         if proxy is None:
             self.mainLoop.childForked(stub)
             return
 
-        # XXX log started
         proxy.addListener(self._childChange)
         self.processes[proxy.pid] = proxy
 
         for plugin in self.plugins:
             plugin.processStarted(proxy)
 
+        self.lastStart = self.time()
+        self.nextStart = None
+
         if len(self.processes)<self.minChildren:
             self.requestStart()
 
 
+    def killProcesses(self):
+        self.log.debug("Killing child processes")
+        for pid,proxy in self.processes.items():
+            proxy.sendSignal('SIGTERM')
+
+
+
+
+
+
+
+
+
+
+
+
     def _childChange(self,proxy):
+
         if proxy.isFinished:
-            # XXX log exited
+
+            if proxy.exitedBecause:
+                self.log.warning(
+                    "Child process %d exited due to signal %d (%s)",
+                    proxy.pid, proxy.exitedBecause,
+                    signal_names.getdefault(proxy.exitedBecause,('?',))[0]
+                )
+            elif proxy.exitStatus:
+                self.log.warning(
+                    "Child process %d exited with errorlevel %d",
+                    proxy.pid, proxy.exitStatus
+                )
+            else:
+                self.log.debug("Child process %d has finished", proxy.pid)
+
             del self.processes[proxy.pid]
+
             if len(self.processes)<self.minChildren:
                 self.requestStart()
 
+        elif proxy.stoppedBecause:
+            self.log.error("Child process %d stopped due to signal %d (%s)",
+                proxy.pid, proxy.stoppedBecause,
+                signal_names.getdefault(proxy.stoppedBecause,('?',))[0]
+            )
 
-    def killProcesses(self):
-        for pid,proxy in self.processes.items():
-            proxy.sendSignal('SIGTERM')
+        elif proxy.isStopped:
+            self.log.error("Child process %d has stopped", proxy.pid)
+
+
+
+
 
 
 
@@ -228,26 +269,26 @@ class ProcessSupervisor(EventDriven):
 
         def removeIfMe(pid):
             if pid==self.os.getpid():
+                self.log.debug("Unlinking %s", self.pidFile)
                 self.os.unlink(self.pidFile)
 
         self.readPidFile(removeIfMe)
-
 
     def killPredecessor(self):
 
         def doKill(pid):
             try:
+                self.log.debug("Killing predecessor (process #%d)", pid)
                 self.os.kill(pid,signals['SIGTERM'])
             except:
                 pass # XXX
 
         self.readPidFile(doKill)
 
-
 class BusyProxy(ChildProcess):
 
     """Proxy for process that communicates its "busy" status"""
-
+    log        = binding.Obtain('logging.logger:supervisor.busy-monitor')
     reactor    = binding.Obtain(IBasicReactor)
     busyStream = binding.Require("readable pipe from child")
     fileno     = binding.Obtain('busyStream/fileno')
@@ -265,19 +306,19 @@ class BusyProxy(ChildProcess):
             return
 
         if byte=='+':
+            self.log.debug("Child process %d is now busy", self.pid)
             self.isBusy = True
             self._notify()
         elif byte=='-':
+            self.log.debug("Child process %d is now free", self.pid)
             self.isBusy = False
             self._notify()
-
 
     def _setStatus(self,status):
         super(BusyProxy,self)._setStatus(status)
         if self.isFinished:
             self.reactor.removeReader(self)
             self.busyStream.close()
-
 
     __onStart = binding.Make(
         lambda self: self.reactor.addReader(self),
