@@ -668,17 +668,11 @@ if available.  Similarly, if you don't supply a \var{doc}, the \samp{__doc__}
 attribute of the \var{func} parameter is used, if available.
 \end{funcdesc}
 
-\begin{funcdesc}{New}{obtype, bindToOwner=None, name=None, provides=None,
-doc=None, activateUponAssembly=False}
+\begin{funcdesc}{New}{obtype, name=None, provides=None, doc=None,
+activateUponAssembly=False}
 As we've already seen, the \function{binding.New} function just needs a class or
 type object as its \var{obtype} parameter, and it creates a new instance of that
-type.  The optional \var{bindToOwner} flag, if specified, tells
-\function{binding.New} whether it should pass the owning object and
-attribute name into the type's constructor.  If you don't specify a value for
-this parameter, the \function{binding.New} function will ``guess" by checking
-whether the constructor supports the \class{binding.IComponentFactory}
-interface.  Ordinarily, you can ignore this parameter, and the ``right thing"
-will happen.
+type.
 
 \function{binding.New} will also accept a string for its \var{obtype} parameter,
 in which case it will interpret the string as an \strong{import specification},
@@ -692,6 +686,12 @@ The \function{binding.Copy} function does just what it says.  When accessed, it
 will create a copy of its \var{obj} parameter, using the \function{copy}
 function from the Python standard library's \module{copy} module.
 \end{funcdesc}
+
+
+
+
+
+
 
 
 

@@ -5,17 +5,39 @@ from peak.api import NOT_FOUND
 from peak.util.imports import importObject, importString
 from interfaces import IComponentFactory
 from _once import *
-from peak.interface import implements, IDirectProvider
+from peak.interface import adapt, implements, classProvides, \
+    IProtocolProvider, IProtocolImplementor, NO_ADAPTER_NEEDED, \
+    declareAdapterForType
+from peak.util.advice import metamethod
 
 __all__ = [
     'Once', 'New', 'Copy', 'Activator', 'ActiveClass', 'ActiveClasses',
     'getInheritedRegistries', 'classAttr', 'Singleton', 'metamethod',
+    'Adaptable',
 ]
 
 
-def metamethod(func):
-    """Wrapper for metaclass method that might be confused w/instance method"""
-    return property(lambda ob: func.__get__(ob,ob.__class__))
+def supertype(supertype,subtype):
+
+    """Workaround for 'super()' not handling metaclasses well"""
+
+    mro = iter(subtype.__mro__)
+
+    for cls in mro:
+        if cls is supertype:
+            return mro.next()
+    else:
+        raise TypeError("Not sub/supertypes:", supertype, subtype)
+
+
+
+
+
+
+
+
+
+
 
 def getInheritedRegistries(klass, registryName):
 
@@ -39,8 +61,26 @@ def getInheritedRegistries(klass, registryName):
 
 
 
-def New(obtype, bindToOwner=None, name=None, provides=None, doc=None,
-    activateUponAssembly=False):
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+def New(obtype, name=None, provides=None, doc=None, activateUponAssembly=False):
 
     """One-time binding of a new instance of 'obtype'
 
@@ -65,15 +105,16 @@ def New(obtype, bindToOwner=None, name=None, provides=None, doc=None,
 
     def mkNew(s,d,a):
         factory = importObject(obtype)
+        cfact = adapt(factory, IComponentFactory, None) # XXX introspection!
 
-        if bindToOwner or (
-            bindToOwner is None and IComponentFactory.isImplementedBy(factory)
-        ):
+        if cfact is factory:
             return factory(s,a)
         else:
             return factory()
 
     return Once( mkNew, name, provides, doc, activateUponAssembly)
+
+
 
 
 
@@ -168,7 +209,7 @@ class Once(OnceDescriptor):
         self.computeValue = func
         self.attrName = self.__name__ = name or getattr(func,'__name__',None)
         self.declareAsProviderOf = provides
-        self.__doc__ = doc or getattr(func,'__doc__','')
+        self.__doc__ = doc or getattr(func,'__doc__',None) or self.attrName
         if activateUponAssembly:
             self.activateUponAssembly = True
 
@@ -249,10 +290,8 @@ class Activator(type):
     """Descriptor metadata management"""
 
     __name__ = 'Activator'    # trick to make instances' __name__ writable
-    __class_descriptors__ = {}
-    __all_descriptors__ = {}
 
-    implements(IDirectProvider)
+    implements(IProtocolProvider)
 
     def __new__(meta, name, bases, cdict):
 
@@ -285,6 +324,8 @@ class Activator(type):
         klass.__name__ = name
 
 
+
+
         d = klass.__class_descriptors__ = {}
 
         for k in class_descr:
@@ -295,35 +336,35 @@ class Activator(type):
         map(ad.update, getInheritedRegistries(klass, '__all_descriptors__'))
         ad.update(klass.__class_descriptors__)
         klass.__all_descriptors__ = ad
-
-        ps = {}
-        map(ps.update,getInheritedRegistries(klass, '__protocols_supported__'))
-        klass.__protocols_supported__ = ps
+        pp = {}
+        map(pp.update,getInheritedRegistries(klass, '__protocols_provided__'))
+        klass.__protocols_provided__ = pp
+        pi = {}
+        map(pi.update,
+            getInheritedRegistries(klass, '__protocols_implemented__')
+        )
+        klass.__protocols_implemented__ = pi
 
         return klass
 
+    def declareProvides(self,protocol,adapter=NO_ADAPTER_NEEDED):
+        """This lets our instances support 'classProvides'"""
+        self.__protocols_provided__[protocol] = adapter
+        return adapter
 
-    def declareSupportFor(self,*protocols):
-        reg = self.__protocols_supported__
-        for p in protocols:
-            reg[p] = True
+    declareProvides = metamethod(declareProvides)
 
-    declareSupportFor = metamethod(declareSupportFor)
+    def declareClassImplements(self, protocol,adapter=NO_ADAPTER_NEEDED):
+        self.__protocols_implemented__[protocol] = adapter
+        for sc in self.__subclasses__():
+            declareAdapterForType(protocol, adapter, sc)
 
-    def __conform__(self,proto):
-        if self.__protocols_supported__.get(proto):
-            return self
+    def __conform__(self,protocol):
+        adapter = self.__protocols_provided__.get(protocol)
+        if adapter is not None:
+            return adapter(self,protocol)
 
     __conform__ = metamethod(__conform__)
-
-
-
-
-
-
-
-
-
 
 
 class ActiveClass(Activator):
@@ -390,15 +431,56 @@ class ActiveClass(Activator):
 ActiveClasses = (Once, ActiveClass, classAttr)
 
 
-def supertype(supertype,subtype):
 
-    mro = iter(subtype.__mro__)
 
-    for cls in mro:
-        if cls is supertype:
-            return mro.next()
-    else:
-        raise TypeError("Not sub/supertypes:", supertype, subtype)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class Adaptable(object):
+
+    """Base class for adaptable objects"""
+
+    __metaclass__ = ActiveClass
+
+    classProvides(IProtocolImplementor)
+
+    def __conform__(self,protocol):
+        adapter = self.__class__.__protocols_implemented__.get(protocol)
+        if adapter is not None:
+            return adapter(self,protocol)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

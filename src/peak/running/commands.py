@@ -5,7 +5,8 @@ from interfaces import *
 from peak.util.imports import importObject
 from os.path import isfile
 import sys, os
-from peak.interface import adapt
+from peak.interface import declareAdapterForType, declareAdapterForProtocol
+from types import ClassType, FunctionType
 
 __all__ = [
     'AbstractCommand', 'AbstractInterpreter', 'IniInterpreter', 'EventDriven',
@@ -16,7 +17,6 @@ __all__ = [
 
 class InvocationError(Exception):
     """Problem with command arguments or environment"""
-
 
 
 
@@ -285,15 +285,15 @@ class _runner(AbstractCommand):
             return v.args[0]
 
 
-def callableAsFactory(callable,proto=None):
+def callableAsFactory(ob,proto=None):
 
     """Convert a callable object to an 'ICmdLineAppFactory'"""
 
-    if not hasattr(callable,'__call__'):
-        raise NotImplementedError("Object must be callable",callable)
+    if not callable(ob):
+        raise NotImplementedError("Object must be callable",ob)
 
     def factory(**kw):
-        kw.setdefault('callable',callable)
+        kw.setdefault('callable',ob)
         return _caller(**kw)
 
     directlyProvides(factory, ICmdLineAppFactory)
@@ -322,9 +322,9 @@ def rerunnableAsFactory(runnable,proto=None):
     return factory
 
 
-ICmdLineAppFactory.registerImplementation(object, callableAsFactory)
-ICmdLineApp.addImpliedProtocol(ICmdLineAppFactory, appAsFactory)
-IRerunnable.addImpliedProtocol(ICmdLineAppFactory, rerunnableAsFactory)
+declareAdapterForType(ICmdLineAppFactory,callableAsFactory,object)
+declareAdapterForProtocol(ICmdLineAppFactory,appAsFactory,ICmdLineApp)
+declareAdapterForProtocol(ICmdLineAppFactory,rerunnableAsFactory,IRerunnable)
 
 class Bootstrap(AbstractInterpreter):
 

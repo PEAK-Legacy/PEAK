@@ -32,7 +32,7 @@ __all__ = [
     'NOT_GIVEN', 'NOT_FOUND', 'Items', 'PropertyName',
     'binding', 'naming', 'model', 'config', 'running', 'logs', 'storage',
     'exceptions', 'implements', 'classProvides', 'directlyProvides',
-    'moduleProvides',
+    'moduleProvides', 'adapt',
 ]
 
 

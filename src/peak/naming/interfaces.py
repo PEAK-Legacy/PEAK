@@ -8,9 +8,9 @@ __all__ = [
 
     'IName', 'IAddress', 'IInitialContextFactory', 'IResolver', 'IPath',
     'IObjectFactory', 'IStateFactory', 'IURLContextFactory', 'IAddressFactory',
-    'IBasicContext', 'IReadContext', 'IWriteContext',
-    'COMPOUND_KIND', 'COMPOSITE_KIND', 'URL_KIND', 'isName', 'isAddress',
-    'isAddressClass', 'isResolver', 'IStreamFactory',
+    'IBasicContext', 'IReadContext', 'IWriteContext', 'IReferenceable',
+    'COMPOUND_KIND', 'COMPOSITE_KIND', 'URL_KIND',
+    'IStreamFactory',
 
     'CREATION_PARENT', 'OBJECT_FACTORIES', 'STATE_FACTORIES', 'SCHEMES_PREFIX',
     'CREATION_NAME', 'INIT_CTX_FACTORY', 'SCHEME_PARSER',
@@ -29,11 +29,11 @@ SCHEME_PARSER    = PropertyName('peak.naming.schemeParser')
 SCHEMES_PREFIX   = PropertyName('peak.naming.schemes')
 
 
+class IReferenceable(Interface):
+    """Thing that can return a reference to itself, for binding in a context"""
 
-
-
-
-
+    def getReference():
+        """Return a reference object that can be saved in a naming context"""
 
 
 
@@ -68,7 +68,7 @@ class IName(Interface):
         """Should be usable as a dictionary key"""
 
 
-isName = IName.isImplementedBy
+
 
 
 
@@ -86,7 +86,7 @@ class IPath(IName):
 
     def __iter__():
         """Iterate over path segments"""
-        
+
     def __getitem__(pos):
         """Return a designated segment"""
 
@@ -97,17 +97,6 @@ class IPath(IName):
         """Return a slice of the path as a path of the same type"""
 
 
-class IAddress(IName):
-
-    """URL/Name that supports in-context self-retrieval (URL_KIND)"""
-
-    def retrieve(refInfo, name, context, attrs=None):
-        """Retrieve the address"""
-
-    def getAuthorityAndName():
-        """Return an 'authority,name' tuple"""
-
-isAddress = IAddress.isImplementedBy
 
 
 
@@ -121,17 +110,14 @@ isAddress = IAddress.isImplementedBy
 
 
 
-class IAddressFactory(Interface):
 
-    """Class for creating parsed URLs from scheme and body"""
 
-    def __call__(scheme,body):
-        """Return a new address object for scheme and body"""
 
-    def supportsScheme(scheme):
-        """Is URL scheme 'scheme' supported by this factory?"""
-    
-isAddressClass = IAddressFactory.isImplementedBy
+
+
+
+
+
 
 
 
@@ -150,7 +136,21 @@ class IResolver(Interface):
         is called on.
         """
 
-isResolver = IResolver.isImplementedBy
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -369,13 +369,6 @@ class IStreamFactory(Interface):
 
 # Framework interfaces
 
-class IInitialContextFactory(Interface):
-    """Get access to an initial naming context"""
-
-    def getInitialContext(parentComponent, componentName=None, **options):
-        """Return a naming context for 'parentComponent' with 'options'"""
-
-
 class IObjectFactory(Interface):
     """Convert data in a naming system into a useful retrieved object"""
 
@@ -402,11 +395,59 @@ class IObjectFactory(Interface):
         behavior."""
 
 
+class IAddress(IName, IObjectFactory):
+
+    """URL/Name that supports in-context self-retrieval (URL_KIND)"""
+
+    def retrieve(refInfo, name, context, attrs=None):
+        """Retrieve the address"""
+
+    def getAuthorityAndName():
+        """Return an 'authority,name' tuple"""
+
+
+
+
+class IInitialContextFactory(Interface):
+    """Get access to an initial naming context"""
+
+    def getInitialContext(parentComponent, componentName=None, **options):
+        """Return a naming context for 'parentComponent' with 'options'"""
+
+
 class IStateFactory(Interface):
     """Convert an object into state that can be stored in a naming system"""
 
     def getStateToBind(context, obj, name, attrs=None):
         """Return the '(obj,attrs)' state that should be used to save 'obj'"""
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 class IURLContextFactory(Interface):
 
@@ -461,15 +502,15 @@ class IURLContextFactory(Interface):
         """
 
 
+class IAddressFactory(IURLContextFactory):
 
+    """Class for creating parsed URLs from scheme and body"""
 
+    def __call__(scheme,body):
+        """Return a new address object for scheme and body"""
 
-
-
-
-
-
-
+    def supportsScheme(scheme):
+        """Is URL scheme 'scheme' supported by this factory?"""
 
 
 

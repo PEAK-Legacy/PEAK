@@ -94,8 +94,7 @@ class TypeClass(Namespace.__class__):
 
         """Sorted tuple of feature objects defined/overridden by this class"""
 
-        isFeature = IFeature.isImplementedBy
-        mine = [v for (k,v) in d.items() if isFeature(v)]
+        mine = filter(None,[adapt(v,IFeature,None) for (k,v) in d.items()])
         mine.sort()
         return tuple(mine)
 
@@ -120,6 +119,7 @@ class TypeClass(Namespace.__class__):
             abstract classes.
         """
     )
+
 
     def mdl_features(self,d,a):
         """All feature objects of this type, in monotonic order

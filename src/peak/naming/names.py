@@ -189,14 +189,14 @@ class ParsedURL(object):
     def __init__(self, scheme=None, body=None):
         self.setup(locals())
 
+    def getURLContext(klass,parent,scheme,iface,componentName=None,**options):
+        if klass.supportsScheme(scheme):
+            from contexts import AddressContext
+            return AddressContext(
+                parent, componentName, schemeParser=klass, **options
+            )
 
-
-
-
-
-
-
-
+    getURLContext = classmethod(getURLContext)
 
 
 
@@ -214,11 +214,14 @@ class ParsedURL(object):
         if not other:
             return self
 
-        if not isName(other):
+        name = adapt(other,IName,None)
+
+        if name is None:
             raise TypeError(
                 "Only names can be added to URLs", self, other
             )
 
+        other = name
         if other.nameKind==URL_KIND:
             return other
 
@@ -236,9 +239,6 @@ class ParsedURL(object):
         res.__dict__.update(d)
 
         return res
-
-
-
 
 
 
@@ -468,18 +468,18 @@ def toName(aName, nameClass=CompoundName, acceptURL=1):
             import URL
             return URL.Base.mdl_fromString(aName)
 
-        return (nameClass or CompoundName)(aName)
-
-    elif IName.isImplementedBy(aName):
-        return aName
+        return nameClass(aName)
 
     else:
-        raise exceptions.InvalidName(aName)
+        name = adapt(aName,IName,None)
+
+        if name is not None:
+            return name
+
+    raise exceptions.InvalidName(aName)
 
 
 NNS_NAME = CompositeName.parse('/',CompoundName)
-
-
 
 
 
@@ -515,6 +515,9 @@ class NNS_Reference(object):
     def __repr__(self):
         return "NNS_Reference(%s)" % `self.relativeTo`
 
+    def getObjectInstance(self, context, refInfo, name, attrs=None):
+        # default is to treat the object as its own NNS
+        return self.relativeTo
 
 
 

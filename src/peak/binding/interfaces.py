@@ -6,8 +6,15 @@ from peak.api import NOT_GIVEN
 
 __all__ = [
     'IComponentFactory', 'IBindingNode', 'IComponent',
-    'IBindableAttrs',
+    'IBindableAttrs', 'IComponentKey',
 ]
+
+
+class IComponentKey(Interface):
+    """Key that can be looked up via 'Component.lookupComponent()'"""
+
+    def lookup(context, default=NOT_GIVEN, creationName=None):
+        """Return self up in 'context', 'default' or raise NameNotFound"""
 
 
 class IComponentFactory(Interface):
@@ -28,13 +35,6 @@ class IComponentFactory(Interface):
         omit the 'parentComponent' argument.  But if you do not know this is
         true for the object you are calling, you should assume the parent
         component is required."""
-
-
-
-
-
-
-
 
 
 

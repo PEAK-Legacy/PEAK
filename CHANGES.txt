@@ -2,10 +2,37 @@ Fixes and Enhancements since Version 0.5 alpha 1
 
  Changed, Enhanced, or Newly Deprecated Features
 
+ - 'binding.Acquire()' now accepts a 'default' value argument, and
+   'binding.New()' no longer accepts the 'bindToOwner' flag.
+
+ - There is a new 'binding.IComponentKey' interface that is used to implement
+   'IComponent.lookupComponent()'.  Now you can implement this interface,
+   or create an adapter for it, in order to make an object usable as an
+   argument to 'binding.lookupComponent()' - and therefore usable as a key
+   for 'binding.bindTo()' or 'binding.bindToSequence()'.  Not that it's
+   necessarily very useful to do so; you're probably better off simply
+   creating a naming scheme.  But it might be useful for lookups done
+   in the context of classes, since naming schemes aren't usable there.
+   (It was actually added in order to factor out all the type testing that
+   'lookupComponent' used to do, so it doesn't matter if it's useful for
+   much else.)
+
+ - PEAK has been refactored to avoid the use of 'isImplementedBy()' and
+   similar introspection, in favor of 'adapt()'.  As a result, some
+   'peak.naming' interfaces have changed.  This should not affect you
+   if you are only subclassing PEAK-provided naming components and not
+   implementing these interfaces "from scratch".  However, the various
+   'isAddress', 'isAddressClass', 'isResolver', and 'isName' APIs have
+   also been removed, as they were based on 'isImplementedBy()'.
+
  - REMOVED ability to use '__implements__' and '__class_implements__' to
    declare support for interfaces.  Use 'implements()', 'classProvides()',
    'directlyProvides()', 'moduleProvides()', etc. to do this now; they
-   are now available automatically from 'peak.api'.
+   are now available automatically from 'peak.api'.  Similarly, the ability
+   to use 'isImplementedBy()' with interfaces declared by PEAK is REMOVED.
+   You can still use 'isImplementedBy()' with Zope interfaces, of course,
+   but we recommend you switch to 'adapt()', which will work with both PEAK
+   and Zope interfaces.
 
  - Replaced all use of 'zope.interface' with 'peak.interface' because
    the new 'peak.interface':
@@ -35,6 +62,11 @@ Fixes and Enhancements since Version 0.5 alpha 1
      any number of interface types, in a single 'implements()' or
      'classProvides()'
 
+   * uses adaptation as the fundamental approach to dealing with interfaces,
+     and avoids the use of 'isImplementedBy()'.  In the *rare* case that you
+     need to introspect rather than adapt, you can always call adapt() and
+     check the result.
+
    Most of these features are unavailable in 'zope.interface', and some have
    been declared by the Zope Pope to be unacceptable or undesirable features
    for Zope interfaces.  (Others may be available in some form in future
@@ -63,7 +95,10 @@ Fixes and Enhancements since Version 0.5 alpha 1
    provides a new URL parsing framework based on 'peak.model'.  Upgrading from
    'ParsedURL' to 'URL.Base' is trivial for ParsedURL subclasses that used
    only the 'scheme' and 'body' fields, and in fact may not require any
-   changes except for the choice of base class.
+   changes except for the choice of base class.  Also, the 'retrieve()' method
+   of URLs is deprecated; please begin defining the 'getObjectInstance()'
+   method instead.  This is to cut down a bit on the number of ways that the
+   naming package spells the idea of retrieving something!
 
    For more complex URL classes, the '__init__' methods go away, 'parse'
    methods change slightly, and explicit field definitions (using

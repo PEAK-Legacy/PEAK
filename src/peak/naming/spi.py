@@ -15,7 +15,7 @@
 """
 
 from peak.util.imports import importObject
-from peak.api import directlyProvides, moduleProvides
+from peak.api import directlyProvides, moduleProvides, adapt
 from interfaces import *
 from names import NNS_Reference
 
@@ -115,33 +115,33 @@ def getURLContext(parent, scheme, iface, componentName=None, **options):
     """
 
     factory = SCHEMES_PREFIX.of(parent).get(scheme.lower())
+    if factory is None:
+        return None
+
+    factory = adapt(importObject(factory), IURLContextFactory, None)
+
 
     if factory is not None:
 
-        factory = importObject(factory)
-
-
-        if IURLContextFactory.isImplementedBy(factory):
-
-            return factory.getURLContext(
-                parent, scheme, iface, componentName, **options
-            )
-
-        elif iface.isImplementedByInstancesOf(factory):
-
-            return factory(
-                parent, componentName, **options
-            )
-
-        elif isAddressClass(factory):
-
-            from contexts import AddressContext
-
-            return AddressContext(
-                parent, componentName, schemeParser=factory, **options
-            )
+        return factory.getURLContext(
+            parent, scheme, iface, componentName, **options
+        )
 
     return None
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -188,12 +188,12 @@ def getObjectInstance(context, refInfo, name, attrs=None):
     handlers will be tried first.
     """
 
-    if isAddress(refInfo):
-        return refInfo.retrieve(refInfo, name, context, attrs)
+    factory = adapt(refInfo, IObjectFactory, None)
 
-    elif isinstance(refInfo, NNS_Reference):
-        # default is to treat the object as its own NNS
-        return refInfo.relativeTo
+    if factory is not None:
+        return factory.getObjectInstance(context, refInfo, name, attrs)
+
+
 
 
 

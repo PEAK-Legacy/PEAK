@@ -167,7 +167,7 @@ class Base(Struct):
     """Basic scheme/body URL"""
 
     implements(IAddress)
-    classProvides(IAddressFactory, IType)
+    classProvides(IAddressFactory)
 
     nameKind         = URL_KIND
     nameAttr         = None
@@ -255,11 +255,14 @@ class Base(Struct):
         if not other:
             return self
 
-        if not isName(other):
+        name = adapt(other,IName,None)
+
+        if name is None:
             raise TypeError(
                 "Only names can be added to URLs", self, other
             )
 
+        other = name
         if other.nameKind==URL_KIND:
             return other
 
@@ -276,9 +279,6 @@ class Base(Struct):
 
         res = self.__class__(**d)
         return res
-
-
-
 
 
 
@@ -347,16 +347,17 @@ class Base(Struct):
     )
 
 
+    def getURLContext(klass,parent,scheme,iface,componentName=None,**options):
+        if klass.supportsScheme(scheme):
+            from contexts import AddressContext
+            return AddressContext(
+                parent, componentName, schemeParser=klass, **options
+            )
 
+    getURLContext = classmethod(getURLContext)
 
-
-
-
-
-
-
-
-
+    def getObjectInstance(self, context, refInfo, name, attrs=None):
+        return self.retrieve(refInfo, name, context, attrs)
 
 
 

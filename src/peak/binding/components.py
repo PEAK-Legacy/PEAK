@@ -6,13 +6,13 @@ from peak.api import *
 from once import *
 from interfaces import *
 from types import ModuleType
-from peak.naming.names import toName, AbstractName, COMPOUND_KIND
+from peak.naming.names import toName, AbstractName, COMPOUND_KIND, IName
 from peak.naming.syntax import PathSyntax
 from peak.util.EigenData import AlreadyRead, EigenRegistry
 from peak.config.interfaces import IConfigKey, IPropertyMap, \
     IConfigurationRoot, NullConfigRoot
 from peak.util.imports import importString
-from peak.interface import adapt
+from peak.interface import adapt, adapterForProtocols, adapterForTypes
 from warnings import warn
 
 class ComponentSetupWarning(UserWarning):
@@ -234,10 +234,51 @@ class ComponentName(AbstractName):
         separator = '/',
     )
 
+    implements(IComponentKey)
 
 
 
 
+
+
+
+
+
+    def lookup(self, component, default=NOT_GIVEN, creationName=None):
+
+        if not self:  # empty name refers to self
+            return component
+
+        parts = iter(self)
+        attr = parts.next()                 # first part
+        pc = _getFirstPathComponent(attr)
+
+
+        if pc:  ob = pc(component)
+        else:   ob = acquireComponent(component, attr, creationName)
+
+        resolved = []
+        append = resolved.append
+
+        try:
+            for attr in parts:
+                pc = _getNextPathComponent(attr)
+                if pc:  ob = pc(ob)
+                else:   ob = getattr(ob,attr)
+                append(attr)
+
+        except AttributeError:
+
+            if default is not NOT_GIVEN:
+                return default
+
+            raise exceptions.NameNotFound(
+                resolvedName = ComponentName(resolved),
+                remainingName = ComponentName([attr] + [a for a in parts]),
+                resolvedObj = ob
+            )
+
+        return ob
 
 
 
@@ -259,32 +300,6 @@ _getNextPathComponent = dict( (
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 def lookupComponent(component, name, default=NOT_GIVEN, creationName=None):
 
     """Lookup 'name' relative to 'component'
@@ -301,56 +316,7 @@ def lookupComponent(component, name, default=NOT_GIVEN, creationName=None):
     Regardless of how the lookup is processed, an 'exceptions.NameNotFound'
     error will be raised if the name cannot be found."""
 
-
-    if IConfigKey.isImplementedBy(name):
-        return config.findUtility(component, name, default)
-
-    parsedName = toName(name, ComponentName, 1)
-
-    if not parsedName.nameKind == COMPOUND_KIND:
-        # URL's and composite names must be handled globally
-        try:
-            return naming.lookup(component, name,
-                creationParent=component, creationName=creationName
-            )
-        except exceptions.NameNotFound:
-            if default is NOT_GIVEN:
-                raise
-            return default
-
-    if not parsedName:  # empty name refers to self
-        return component
-
-    parts = iter(parsedName)
-    attr = parts.next()                 # first part
-    pc = _getFirstPathComponent(attr)
-
-
-    if pc:  ob = pc(component)
-    else:   ob = acquireComponent(component, attr, creationName)
-
-    resolved = []
-    append = resolved.append
-
-    try:
-        for attr in parts:
-            pc = _getNextPathComponent(attr)
-            if pc:  ob = pc(ob)
-            else:   ob = getattr(ob,attr)
-            append(attr)
-
-    except AttributeError:
-
-        if default is not NOT_GIVEN:
-            return default
-
-        raise exceptions.NameNotFound(
-            resolvedName = ComponentName(resolved),
-            remainingName = ComponentName([attr] + [a for a in parts]),
-            resolvedObj = ob
-        )
-
-    return ob
+    return adapt(name, IComponentKey).lookup(component, default, creationName)
 
 
 
@@ -360,11 +326,45 @@ def lookupComponent(component, name, default=NOT_GIVEN, creationName=None):
 
 
 
+class ConfigFinder(object):
+
+    __slots__ = 'ob'
+
+    adapterForProtocols(IComponentKey, [IConfigKey])
+
+    def __init__(self, ob, proto):
+        self.ob = ob
+
+    def lookup(self, component, default, creationName=None):
+        return config.findUtility(component, self.ob, default)
 
 
 
+class NameFinder(object):
 
+    __slots__ = 'name'
 
+    adapterForTypes(IComponentKey, [str, unicode])
+    adapterForProtocols(IComponentKey, [IName])
+
+    def __init__(self, ob, proto):
+        self.name = ob
+
+    def lookup(self, component, default=NOT_GIVEN, creationName=None):
+        parsedName = toName(self.name, ComponentName, 1)
+
+        if not parsedName.nameKind == COMPOUND_KIND:
+            # URL's and composite names must be handled globally
+            try:
+                return naming.lookup(component, self.name,
+                    creationParent=component, creationName=creationName
+                )
+            except exceptions.NameNotFound:
+                if default is NOT_GIVEN:
+                    raise
+                return default
+
+        return ComponentName(parsedName).lookup(component,default,creationName)
 
 
 class bindTo(Once):
@@ -515,7 +515,7 @@ def delegateTo(delegateAttr, name=None, provides=None, doc=None):
         lambda s,d,a: getattr(getattr(s,delegateAttr),a), name, provides, doc
     )
 
-def Acquire(key,doc=None,activateUponAssembly=False):
+def Acquire(key, doc=None, default=NOT_GIVEN, activateUponAssembly=False):
     """Provide a utility or property, but look it up if not supplied
 
     'key' must be a configuration key (e.g. an Interface or a PropertyName).
@@ -526,10 +526,10 @@ def Acquire(key,doc=None,activateUponAssembly=False):
     property within a particular component subtree, simply by setting the
     attribute (e.g. via a constructor keyword)."""
 
-    if not IConfigKey.isImplementedBy(key):
-        raise exceptions.InvalidName("Not a configuration key:", key)
+    key = adapt(key,IConfigKey)
+    return bindTo(key,key,doc,default,activateUponAssembly=activateUponAssembly)
 
-    return bindTo(key,key,doc,activateUponAssembly=activateUponAssembly)
+
 
 def bindToParent(level=1, name=None, provides=None, doc=None):
 
@@ -613,11 +613,10 @@ def bindToProperty(propName, default=NOT_GIVEN, provides=None, doc=None,
         provides=provides, doc=doc, activateUponAssembly = activateUponAssembly
     )
 
-class _Base(object):
+class _Base(Adaptable):
 
     """Basic attribute management and "active class" support"""
 
-    __metaclass__  = ActiveClass
     implements(IBindableAttrs)
 
     def _setBinding(self, attr, value, useSlot=False):
@@ -647,6 +646,7 @@ class _Base(object):
                 return default
 
         return val
+
 
 
 

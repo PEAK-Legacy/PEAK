@@ -1,4 +1,4 @@
-from peak.interface import Interface, Attribute
+from peak.interface import *
 from peak.api import exceptions, PropertyName, NOT_GIVEN
 
 __all__ = [
@@ -25,9 +25,9 @@ class IConfigKey(Interface):
            if object is a property name"""
 
 
-IConfigKey.registerImplementation(Interface.__class__)
-IConfigKey.registerImplementation(PropertyName)
-
+instancesProvide(Interface.__class__, IConfigKey)
+instancesProvide(PropertyName, IConfigKey)
+declareAdapterForType(IConfigKey,PropertyName,str)
 
 
 

@@ -1,6 +1,7 @@
 """Base classes for naming contexts"""
 
 from peak.api import *
+from peak.interface import adapt
 
 from interfaces import *
 from names import *
@@ -38,10 +39,10 @@ __all__ = [
 
 
 
-
 class NameContext(Component):
 
     implements(IBasicContext)
+    classProvides(IURLContextFactory)
 
     parseURLs       = True
     creationName    = Acquire(CREATION_NAME)
@@ -56,12 +57,11 @@ class NameContext(Component):
     namingAuthority = Once( lambda s,d,a: s.schemeParser() )
     nameInContext   = Once( lambda s,d,a: s.compoundParser(()) )
 
+    def getURLContext(klass, parent, scheme, iface, componentName, **options):
+        if klass.schemeParser.supportsScheme(scheme):
+            return adapt(klass(parent, componentName, **options), iface, None)
 
-
-
-
-
-
+    getURLContext = classmethod(getURLContext)
 
 
 
@@ -94,8 +94,7 @@ class NameContext(Component):
         else:
 
             if isBoundary(name):    # /, x/
-                self._checkSupported(name, iface)
-                return self, name
+                return self._checkSupported(name, iface)
 
             local = toName(name[0], self.compoundParser, self.parseURLs)
 
@@ -107,9 +106,10 @@ class NameContext(Component):
             # '/y', 'x/y' -- lookup the part through the '/' and continue
 
             ctx = self[CompositeName((local,''))]
+            res = adapt(ctx,IResolver,None)
 
-            if isResolver(ctx):
-                return ctx.resolveToInterface(name[1:], iface)
+            if res is not None:
+                return res.resolveToInterface(name[1:], iface)
 
             raise exceptions.NotAContext(
                 "Unsupported interface", iface,
@@ -123,8 +123,10 @@ class NameContext(Component):
 
     def _checkSupported(self, name, iface):
 
-        if iface.isImplementedBy(self):
-            return
+        ctx = adapt(self, iface, None)
+
+        if ctx is not None:
+            return ctx, name
 
         raise exceptions.NotAContext(
             "Unsupported interface", iface,
@@ -160,19 +162,18 @@ class NameContext(Component):
 
 
 
-
-
     def _resolveLocal(self, name, iface):
 
         if len(name)<2:
-            self._checkSupported(name, iface)
-            return self, name
+            ob, name = self._checkSupported(name, iface)
+            if ob is not self:
+                return ob,name
 
         try:
             ctx = self[name[:1]]
-
-            if isResolver(ctx):
-                return ctx.resolveToInterface(name[1:],iface)
+            res = adapt(ctx,IResolver,None)
+            if res is not None:
+                return res.resolveToInterface(name[1:],iface)
 
         except exceptions.NotAContext:
             pass
@@ -180,8 +181,8 @@ class NameContext(Component):
         # It wasn't a resolver, or didn't support the target interface,
         # so fall back to self and name, if possible.
 
-        self._checkSupported(name, iface)
-        return self, name
+        return self._checkSupported(name, iface)
+
 
 
 
@@ -196,7 +197,6 @@ class NameContext(Component):
         else:
             ctx = self.__class__(self, namingAuthority=auth)
             return ctx.resolveToInterface(nic, iface)
-
 
 
 
@@ -267,9 +267,11 @@ class NameContext(Component):
             # so delegate the NNS lookup to it
             return ob._contextNNS(attrs)
 
-        elif isResolver(ob):
-            # it's a context, so let it go as-is
-            return state, attrs
+        else:
+            res = adapt(ob, IResolver, None)    # XXX introspection!
+            if res is ob:
+                # it's a context, so let it go as-is
+                return state, attrs
 
         # Otherwise, wrap it in an NNS_Reference
         return NNS_Reference( ob ), attrs
@@ -277,8 +279,6 @@ class NameContext(Component):
 
     def close(self):
         pass
-
-
 
 
 
@@ -302,8 +302,10 @@ class NameContext(Component):
 
     def _mkref(self, object, name, attrs):
 
-        if IReferenceable.isImplementedBy(object):
-            return (object.getReference(object), attrs)
+        ref = adapt(object, IReferenceable, None)
+
+        if ref is not None:
+            return (ref.getReference(), attrs)
 
         for factory in self.stateFactories:
 
@@ -313,8 +315,6 @@ class NameContext(Component):
                 return result
 
         return object, attrs
-
-
 
 
 
@@ -586,8 +586,8 @@ class AddressContext(NameContext):
         # Since the URL contains all data needed, there's no need
         # to extract naming authority; just handle the URL directly
 
-        self._checkSupported(name, iface)
-        return self, name
+        return self._checkSupported(name, iface)
+
 
 
     def _resolveLocal(self, name, iface):
