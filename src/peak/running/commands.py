@@ -541,7 +541,8 @@ class EventDriven(AbstractCommand):
 
     mainLoop = binding.bindTo(IMainLoop)
 
-    components = None   # Placeholder to allow adding components via ZConfig
+    # Placeholder to allow adding components via ZConfig
+    components = binding.Constant(None)
 
     def run(self):
 
@@ -554,7 +555,6 @@ class EventDriven(AbstractCommand):
         )
 
         # XXX we should probably log start/stop events
-
 
 
 
