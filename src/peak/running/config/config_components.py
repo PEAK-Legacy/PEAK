@@ -1,3 +1,4 @@
+from peak.api import NOT_FOUND
 from peak.binding.components import Component
 
 __all__ = ['GlobalConfig', 'LocalConfig']
@@ -38,7 +39,6 @@ class LocalConfig(Component):
 
 
 
-
     def acquireUtility(self, iface, forObj=None, localLookup=True):
 
         if forObj is None:
@@ -57,7 +57,7 @@ class LocalConfig(Component):
 
                 utility = getattr(self,attr)
 
-                if utility is not _ACQUIRED:
+                if utility is not NOT_FOUND:
                     return utility
 
 

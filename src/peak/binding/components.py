@@ -1,14 +1,16 @@
 """Basic binding tools"""
 
-from once import Once, New
+from once import Once, New, WeakBinding
 import meta, modules
 
 from weakref import ref, WeakValueDictionary
+
 from peak.naming.names import toName, Syntax, CompoundName
 from peak.naming.interfaces import NameNotFoundException
 from peak.util.EigenData import EigenRegistry
+
 from Interface import Interface
-from peak.api import config
+from peak.api import config, NOT_FOUND
 
 
 __all__ = [
@@ -18,10 +20,8 @@ __all__ = [
     'acquireComponent', 'globalLookup'
 ]
 
-_ACQUIRED = object()
 
 InterfaceClass = Interface.__class__
-
 
 
 
@@ -129,9 +129,9 @@ def acquireComponent(component, name):
     
     while target is not None:
 
-        ob = getattr(target, name, _ACQUIRED)
+        ob = getattr(target, name, NOT_FOUND)
 
-        if ob is not _ACQUIRED:
+        if ob is not NOT_FOUND:
             return ob
 
         target = getParentComponent(target)
@@ -305,11 +305,11 @@ class bindTo(Once):
 
     singleValue = True
 
-    def __init__(self,targetName,weak=False):
+    def __init__(self,targetName,weak=False,provides=None):
 
         self.targetNames = (targetName,)
         self.weak = weak
-
+        self._provides=provides
 
 
 
@@ -328,14 +328,12 @@ class bindTo(Once):
 
     def computeValue(self, obj, instanceDict, attrName):
 
-        instanceDict[attrName] = _ACQUIRED   # recursion guard
-
         names = self.targetNames
         obs   = map(obj.lookupComponent, names)
 
         for name,newOb in zip(names, obs):
 
-            if newOb is _ACQUIRED:
+            if newOb is NOT_FOUND:
             
                 del instanceDict[attrName]
                 raise NameNotFoundError(attrName, resolvedName = name)
@@ -351,6 +349,8 @@ class bindTo(Once):
             obs = map(ref,obs)
 
         return tuple(obs)
+
+
 
 
 
@@ -391,6 +391,7 @@ class bindToNames(bindTo):
     def __init__(self, *targetNames, **kw):
         self.targetNames = targetNames
         self.weak = kw.get('weak')
+        self._provides = kw.get('provides')
 
 
 
@@ -407,10 +408,9 @@ class bindToNames(bindTo):
 
 
 
+class bindToParent(WeakBinding):
 
-class bindToParent(Once):
-
-    """Look up and cache a reference to the nth-level parent service
+    """Look up and cache a weak ref to the nth-level parent component
 
         Usage::
 
@@ -420,55 +420,11 @@ class bindToParent(Once):
 
        'someClass' can then refer to 'self.grandPa' instead of calling
        'self.getParentComponent().getParentComponent()'.
-
-       This binding descriptor saves a weak reference to its target in
-       the object's instance dictionary, and dereferences it on each access.
-       It therefore supports '__set__' and '__delete__' as well as '__get__'
-       methods, and retrieval is slower than for other 'Once' attributes.  But
-       it avoids creating circular reference garbage.
     """
 
-    def __init__(self,level=1):
+    def __init__(self,level=1,provides=None):
         self.level = level
-
-    def __get__(self, obj, typ=None):
-    
-        if obj is None: return self
-
-        d = obj.__dict__
-        n = self.attrName
-
-        if not n or getattr(obj.__class__,n) is not self:
-            self.usageError()
-
-        ref = d.get(n)
-
-        if ref is None:
-            d[n] = ref = self.computeValue(obj, d, n)
-
-        return ref()
-
-
-    def __set__(self, obj, val):
-
-        n = self.attrName
-
-        if not n or getattr(obj.__class__,n) is not self:
-            self.usageError()
-
-        from weakref import ref
-        obj.__dict__[n] = ref(val)
-
-
-    def __delete__(self, obj):
-
-        n = self.attrName
-
-        if not n or getattr(obj.__class__,n) is not self:
-            self.usageError()
-
-        del obj.__dict__[n]
-
+        self._provides = provides
 
     def computeValue(self, obj, instDict, attrName):
 
@@ -477,20 +433,10 @@ class bindToParent(Once):
             if newObj is None: break
             obj = newObj
 
-        from weakref import ref
-        return ref(obj)
+        return obj
 
 
-
-
-
-
-
-
-
-
-
-def bindToSelf():
+def bindToSelf(provides=None):
 
     """Weak reference to the 'self' object
 
@@ -498,24 +444,37 @@ def bindToSelf():
     you'd expect.  It's handy for objects that provide default support for
     various interfaces in the absence of an object to delegate to.  The object
     can refer to 'self.delegateForInterfaceX.someMethod()', and have
-    'delegateForInterfaceX' be a 'bindToSelf()' by default.
-    """
+    'delegateForInterfaceX' be a 'bindToSelf()' by default."""
 
-    return bindToParent(0)
+    return bindToParent(0,provides)
 
 
 class requireBinding(Once):
 
     """Placeholder for a binding that should be (re)defined by a subclass"""
 
-    def __init__(self,description=""):
+    def __init__(self,description="",provides=None):
         self.description = description
+        self._provides = provides
     
     def computeValue(self, obj, instanceDict, attrName):
     
         raise NameError("Class %s must define %s; %s"
             % (obj.__class__.__name__, attrName, self.description)
         )
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -590,7 +549,7 @@ class Component(object):
 
                 utility = getattr(self,attr)
 
-                if utility is not _ACQUIRED:
+                if utility is not NOT_FOUND:
                     return utility
 
         parent = self.getParentComponent()

@@ -1,11 +1,13 @@
 """'Once' objects and classes"""
 
 from meta import ActiveDescriptor
+from weakref import ref
+from peak.api import NOT_FOUND
 
-__all__ = ['Once', 'New', 'Copy', 'OnceClass']
+__all__ = ['Once', 'New', 'Copy', 'WeakBinding', 'OnceClass']
 
 
-def New(obtype, name=None):
+def New(obtype, name=None, provides=None):
 
     """One-time binding of a new instance of 'obtype'
 
@@ -28,7 +30,7 @@ def New(obtype, name=None):
     such as when you're not deriving from a standard PEAK base class.)
     """
 
-    return Once( (lambda s,d,a: obtype()), name)
+    return Once( (lambda s,d,a: obtype()), name, provides)
 
 
 
@@ -37,9 +39,7 @@ def New(obtype, name=None):
 
 
 
-
-
-def Copy(obj, name=None):
+def Copy(obj, name=None, provides=None):
 
     """One-time binding of a copy of 'obj'
 
@@ -65,7 +65,7 @@ def Copy(obj, name=None):
     
 
     from copy import copy
-    return Once( (lambda s,d,a: copy(obj)), name)
+    return Once( (lambda s,d,a: copy(obj)), name, provides)
 
 
 
@@ -114,12 +114,12 @@ class Once(ActiveDescriptor):
     """
 
     attrName = None
-
-    def __init__(self, func, name=None):
+    provides = None
+    
+    def __init__(self, func, name=None, provides=None):
         self.computeValue = func
         self.attrName = name or getattr(func,'__name__',None)
-
-
+        self._provides = provides
 
     def __get__(self, obj, typ=None):
     
@@ -135,9 +135,17 @@ class Once(ActiveDescriptor):
 
         if not n or getattr(obj.__class__,n) is not self:
             self.usageError()
+
+        d[n] = NOT_FOUND    # recursion guard
+
+        try:
+            d[n] = value = self.computeValue(obj, d, n)
+        except:
+            del d[n]
+            raise
             
-        d[n] = value = self.computeValue(obj, d, n)
         return value
+
 
     def usageError(self):            
         raise TypeError(
@@ -146,8 +154,12 @@ class Once(ActiveDescriptor):
             % self
         )
 
+
     def computeValue(self, obj, instanceDict, attrName):
         raise NotImplementedError
+
+
+
 
 
     def activate(self,klass,attrName):
@@ -161,6 +173,117 @@ class Once(ActiveDescriptor):
             setattr(klass, attrName, newOb)
 
         klass.__volatile_attrs__.add(attrName)
+        
+        if self._provides is not None:
+
+            if not klass.__dict__.has_key('__class_provides__'):
+                cp = EigenRegistry()
+                for c in klass.__mro__:
+                    if c.__dict__.has_key('__class_provides__'):
+                        cp.update(c.__class_provides__)
+                klass.__class_provides__ = cp
+
+            klass.__class_provides__.register(self._provides,attrName)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class WeakBinding(Once):
+
+    """Like Once, but keeps a weak reference only
+    
+       This binding descriptor saves a weak reference to its target in
+       the object's instance dictionary, and dereferences it on each access.
+       It therefore supports '__set__' and '__delete__' as well as '__get__'
+       methods, and retrieval is slower than for other 'Once' attributes.  But
+       it can prevent the creation of circular reference garbage."""
+
+    def __get__(self, obj, typ=None):
+    
+        if obj is None: return self
+
+        d = obj.__dict__
+        n = self.attrName
+
+        if not n or getattr(obj.__class__,n) is not self:
+            self.usageError()
+
+        r = d.get(n)
+
+        if r is None:
+            d[n] = NOT_FOUND    # recursion guard
+            try:
+                d[n] = r = ref(self.computeValue(obj, d, n))
+            except:
+                del d[n]; raise
+
+        return r()
+
+    def __set__(self, obj, val):
+
+        n = self.attrName
+
+        if not n or getattr(obj.__class__,n) is not self:
+            self.usageError()
+
+        obj.__dict__[n] = ref(val)
+
+
+    def __delete__(self, obj):
+
+        n = self.attrName
+
+        if not n or getattr(obj.__class__,n) is not self:
+            self.usageError()
+
+        del obj.__dict__[n]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 class OnceClass(Once, type):
 
