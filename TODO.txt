@@ -1,8 +1,57 @@
  Targeted for 0.5 Alpha 4
 
-    * peak.config
+    * peak.binding
 
-      - "service zones" or "service groups" to do smarter service groupings
+      - Metaclass-free activation mechanism
+
+      - Cleanup/document attribute binding interface
+
+    * peak.security
+
+      - Refactor to use dispatch system, add docs w/examples
+
+      - Define a framework for authentication
+
+    * peak.running.logs
+
+      - Separate formatters from publishers
+
+      - Refactor to use 'dispatch' package to manage event distribution
+        (i.e., use generic-function rules)
+
+    * peak.util
+
+      - Better documentation for SOX
+
+    * peak.web
+
+      - Rethink context objects
+
+      - Conditional views
+
+      - Menus
+
+
+
+
+
+
+
+
+
+ Targeted for 0.5 Final Release (or sooner)
+
+    * peak.naming
+
+        - useful example "flat" naming context (e.g. like AppUtils.URLkeys)
+
+        - useful example hierarchical naming context (e.g. like JNDI's LDAP
+          context or a filesystem context)
+
+        - rework smtp: to return a factory object that supports open().
+          Also think about whether smtp should move to peak.net?
+
+    * peak.config
 
       - Replace IMainLoop activity monitoring with a plugin-based mechanism?
 
@@ -11,33 +60,9 @@
       - ZConfig factory support to allow "smart" interpretation of strings,
         section names, etc.
 
-      - Writable and subscribable config sources, including editable .ini's
-
-    * peak.running.logs
-
-      - Separate formatters from publishers
-
-      - ZConfig schema for logging plugins, allowing multiple handlers/category
-
     * peak.running.commands
 
        - Add "error formatting" and "error reporting" services
-
-       - Add option parsing framework based on optparse (backported to 2.2)
-
-    * peak.binding
-
-      - Cleanup/document attribute binding interface
-
-
-
-
-
-
-
-
-
-
 
     * Transaction/storage refactorings
 
@@ -47,12 +72,17 @@
 
       - transactable persistent queues
 
-      - DM.find()/DM.get() queries
+      - ws.ElementClass.find()/ws.ElementClass.get() queries
+
+
+
+
+
+
 
     * peak.web
 
-       - clean up DOMlet parse/build framework (e.g. add line number info, make
-         'define' clauses allow multiple names)
+       - Allow DOMlets access to parse location info (file and line number)
 
        - default error templates, w/useful info
 
@@ -60,52 +90,22 @@
          (form metadata, validation, etc. will be handled by peak.web.forms in
          a later release)
 
-       - try/catch DOMlet (and related error rendering interface/framework)
-
-       - allow use of // in DOMlets' data paths, to access resource space
-
-       - DOMlets for layout/region, as defined in "A layout framework":http://www.eby-sarna.com/pipermail/transwarp/2003-August/000684.html
-
        - conditional GET support (last modified/ETag) for static resources
 
        - image resources
-
-       - the return of the Specialist
-
-    * Have a way to easily in-line custom component usage (e.g. automatically
-      create a subclass component with specified 'Obtain' or 'Make' bindings to
-      get its configuration).
 
     * Drop 'persistence' package, since ZODB 4 has been derailed.  Change to
       "state-delegation" model, which will integrate better with 'peak.query'.
 
 
- Targeted for 0.5 Beta 1
-
-    * Up-to-date reference docstrings for all packages
-
-    * Finish tutorial chapter 2 (?)
-
-    * Web publishing framework sufficient to deploy page-based or object-
-      published apps
 
 
 
- Targeted for 0.5 Final Release (or sooner)
 
-    peak.storage
 
-        - unit tests for more complex object scenarios: references, thunks..?
 
-    peak.naming
 
-        - useful example "flat" naming context (e.g. like AppUtils.URLkeys)
 
-        - useful example hierarchical naming context (e.g. like JNDI's LDAP
-          context or a filesystem context)
-
-        - rework smtp: to return a factory object that supports open().
-          Also think about whether smtp should move to peak.net?
 
 
 
@@ -131,12 +131,12 @@
      'setup.py' package lists.
 
    * On-the-fly class combination (think "runtime module inheritance",
-     but possibly without the modules) for DMs.
+     but possibly without the modules) for workspaces.
 
    * Lock management interfaces/API for peak.storage
 
    * Support for sending and receiving remote cache invalidation
-     messages between DataManagers.
+     messages between workspaces.
 
    * Make 'cluster' parser complain about things that would cause
      the clusterit tools to choke or barf on the file, or which would
