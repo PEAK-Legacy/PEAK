@@ -12,32 +12,18 @@ class structType(type):
         cdict = cdict.copy()
         cdict['__slots__']=[]
 
-        fields = cdict.get('__fields__', ())
+        return super(structType,klass).__new__(klass, name, bases, cdict)
+
+
+    def __init__(klass, name, bases, cdict):
+
+        fields = getattr(klass,'__fields__', ())
+        baseMap = getattr(super(klass,klass), '__fieldmap__', {})
         fzip = zip(fields, range(len(fields)))
+        fieldMap = klass.__fieldmap__ = dict(fzip)
 
-        baseMap = {}
-
-        for b in bases:
-            # this isn't true __mro__ order, but we shouldn't need it...
-            baseMap = getattr(b,'__fieldmap__',baseMap)
-            if baseMap: break      
-        
-        if fields:
-            cdict['__fieldmap__'] = fieldMap = dict(fzip)
-
-        elif baseMap:
-            # If __fields__ isn't specified, we want to inherit the map
-            fieldMap = baseMap
-
-
-
-
-
-
-
-
-
-
+        # No change in schema? leave properties alone
+        if baseMap==fieldMap: return
 
         for fieldName, fieldNum in fzip:
 
@@ -46,34 +32,7 @@ class structType(type):
                 # or inherited ones based on the same field number
                 continue
                 
-            def get(self,fieldNum=fieldNum):
-                try:
-                    return tuple.__getitem__(self,fieldNum)
-                except IndexError:
-                    pass
-
-            cdict[fieldName] = property(get)
-
-        return super(structType,klass).__new__(klass, name, bases, cdict)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+            setattr(klass, fieldName, makeFieldProperty(fieldName, fieldNum))
 
 
 
@@ -82,7 +41,7 @@ class structType(type):
 
 class struct(tuple):
 
-    """Record-like data structure
+    """Typed, immutable, multi-field object w/sequence and mapping interfaces
 
     Usage::
 
@@ -99,7 +58,8 @@ class struct(tuple):
         r = myRecord.extractFromMapping(
             {'first':1, 'second':2, 'third':3, 'blue':'lagoon'}
         )
-
+        r = myRecord.fromMapping( myRecord([1,2,3]) )
+        
         # the following will all print the same thing for any 'r' above:
         
         print r
@@ -114,12 +74,11 @@ class struct(tuple):
     the inherited property will be overridden by a generated one, unless the
     subclass supplies a replacement as part of the class dictionary.
 
-    Note: if you define custom properties, they only determine the attributes
+    Note: if you define custom properties, they only determine the *attributes*
     of the instance.  All other behaviors including string representation,
     iteration, item retrieval, etc., will be unaffected.  It's probably best
-    to define a 'fromMisc' classmethod to manage the initial construction
-    of the fields instead.
-    """
+    to define a 'defaultCreate' classmethod to manage the initial construction
+    of the fields instead."""
 
     __metaclass__ = structType
 
@@ -140,11 +99,19 @@ class struct(tuple):
 
 
     def defaultCreate(klass, *args, **kw):
-        """You can define a classmethod here, to be used in place of
+        """Create from sequence/other objects
+        
+            You can define a classmethod here, to be used in place of
             'tuple.__new__' when the struct is being created from something
             other than a dict, keywords, or a string.  This is also a good
             place to do any calculations or manipulations on the field values
             before they're cast in stone.
+
+            The default version of this method will accept input sequences
+            with more items than there are fields to fill.  The extra data
+            isn't lost, it's just unavailable except via sequence methods.
+            If you want different behavior, such as truncating the sequence
+            or raising an exception, you'll need to override this method.
         """
         # this is just a dummy so HappyDoc will document the method,
         # we'll replace it with tuple.__new__ below for performance
@@ -152,14 +119,13 @@ class struct(tuple):
     defaultCreate = classmethod(tuple.__new__, __doc__= defaultCreate.__doc__)
 
 
+
+
     def fromString(klass, arg):
         """Override this classmethod to enable parsing from a string"""
         raise NotImplementedError
 
     fromString = classmethod(fromString)
-
-
-
 
 
     def fromMapping(klass, arg):
@@ -187,7 +153,6 @@ class struct(tuple):
 
         return tuple.__new__(klass, map(arg.get, klass.__fields__))
 
-
     fromMapping = classmethod(fromMapping)
 
 
@@ -196,12 +161,6 @@ class struct(tuple):
         return tuple.__new__(klass, map(arg.get, klass.__fields__))
 
     extractFromMapping = classmethod(extractFromMapping)
-
-
-
-
-
-
 
     def __getitem__(self, key):
 
@@ -243,6 +202,16 @@ class struct(tuple):
         return self.__fieldmap__.get(key,myLen) < myLen
     
     has_key = __contains__
+
+def makeFieldProperty(klass, fieldName, fieldNum):
+
+    def get(self):
+        try:
+            return tuple.__getitem__(self,fieldNum)
+        except IndexError:
+            pass
+
+    return property(get)
 
 def makeStructType(name, fields, baseType=struct, **kw):
     bases = bases or (struct,)

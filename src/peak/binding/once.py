@@ -44,6 +44,7 @@ def Copy(obj, name=None):
     """One-time binding of a copy of 'obj'
 
     Usage::
+
         class someClass(binding.Component):
 
             myDictAttr = binding.Copy( {'foo': 2} )
@@ -65,7 +66,6 @@ def Copy(obj, name=None):
 
     from copy import copy
     return Once( (lambda s,d,a: copy(obj)), name)
-
 
 
 
