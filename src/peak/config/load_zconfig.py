@@ -97,7 +97,7 @@ command-line arguments.
 
     def interpret(self, filename):
         factory = config.IStreamSource(filename).getFactory(self)
-        ob, handler = self.loadFile(factory.open('t'), str(url))
+        ob, handler = self.loadFile(factory.open('t'), factory.address)
         binding.suggestParentComponent(self.getCommandParent(),None,ob)
         return self.getSubcommand(ob)
 
