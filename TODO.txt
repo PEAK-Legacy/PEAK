@@ -30,17 +30,22 @@ Open Issues/To-Do Items
 
     SEF
 
+      * Move binding tools to a seperate module (e.g. 'TW.CIS' for "Component
+        Integration Services").
+
       * Persistent SEF module, with Base.__getstate__ supporting omission
         of Once attributes, and DynamicBinding setting _p_changed on
         instantiation.
 
       * A way to generate Z3 Interfaces from Feature-based specifications?
 
-
     Database
 
       * Rack-like object to do persistent storage of Elements?
 
+      * Support for field transformations and default values at RecordType
+        level, e.g marshalling and type conversion.  This would be
+        especially useful for LDAP.
 
     General
 
@@ -67,11 +72,6 @@ Open Issues/To-Do Items
     * Create tutorials/examples based on actual uses
 
     * Include dependencies in packaging?  Need to ask copyright owners first.
-
-
-
-
-
 
 
 

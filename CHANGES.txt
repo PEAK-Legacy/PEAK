@@ -1,5 +1,13 @@
 New Features and Bug Fixes since v0.2, preview 1
 
+ * Added 'SEF.bindToParent()', 'SEF.bindToNames()', and 'SEF.bindToSelf()'
+   descriptors, to allow more flexible component parameter bindings.
+
+ * Improved key integrity checks in DataModel: Record objects now disallow
+   modification of key fields unless the old value is None, and cache
+   collisions between records with supposedly unique keys will result in an
+   AssertionError.
+
  * Added 'SET' method (ala WarpCORE's set_X procedures) to
    TW.Utils.MiniTable.
 
@@ -29,9 +37,6 @@ New Features and Bug Fixes since v0.2, preview 1
    convention for documenting methods.
 
  * Dropped obsolete 'TW.Database.Records' module.
-
- * Added 'SEF.bindToParent()' and 'SEF.bindToNames()' specifiers to allow
-   more flexible component parameter bindings.
 
  * Fixed the base class "rebind by name" bugs in module inheritance, and
    updated the documentation to more clearly reflect what it is that
