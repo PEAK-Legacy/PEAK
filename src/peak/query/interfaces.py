@@ -116,7 +116,7 @@ class IRelationVariable(Interface):
         implement conceptual queries."""
 
     def attributes():
-        """Return a sequence of names of the relvar's columns (attributes)"""
+        """Return a kjGraph mapping names->relation attributes"""
 
     def getDB():
         """Return an object indicating the responsible DB, or None if mixed"""

@@ -207,10 +207,10 @@ class SimplificationAndEquality(TestCase):
         x,y,z = self.condX, self.condY, self.condZ
         A,B,C,D = self.rvA, self.rvB, self.rvC, self.rvD
 
-        self.assertEqual( tuple(A.attributes()), self.A_Columns )
-        self.assertEqual( tuple(B.attributes()), self.B_Columns )
-        self.assertEqual( tuple(C.attributes()), self.C_Columns )
-        self.assertEqual( tuple(D.attributes()), self.D_Columns )
+        self.assertEqual( kjSet(A.attributes()), kjSet(self.A_Columns) )
+        self.assertEqual( kjSet(B.attributes()), kjSet(self.B_Columns) )
+        self.assertEqual( kjSet(C.attributes()), kjSet(self.C_Columns) )
+        self.assertEqual( kjSet(D.attributes()), kjSet(self.D_Columns) )
 
         self._verifyJoinedColumns(A,x,B)
         self._verifyJoinedColumns(C,y,D)
@@ -219,10 +219,10 @@ class SimplificationAndEquality(TestCase):
 
     def _verifyJoinedColumns(self,base,cond,*relvars):
         AB = base.thetaJoin(cond,*relvars)
-        AB_cols = kjSet(AB.attributes())
-        AplusB  = kjSet(base.attributes())
+        AB_cols = AB.attributes()
+        AplusB  = base.attributes()
         for rv in relvars:
-            AplusB += kjSet(rv.attributes())
+            AplusB += rv.attributes()
         self.assertEqual(AB_cols, AplusB)
 
 
@@ -274,7 +274,7 @@ class SimplificationAndEquality(TestCase):
         for tbl in 'Branch','Employee','Speaks','Drives','Car','LangUse':
             tbl = db.table(tbl)
             self.failUnless(tbl.getDB() is db)
-            self.failUnless(tbl.project(tbl.attributes()[:-1]).getDB() is db)
+            self.failUnless(tbl.project(tbl.attributes().keys()[:-1]).getDB() is db)
 
         self.failUnless(Branch.thetaJoin(x,Employee).getDB() is db)
 
@@ -295,8 +295,8 @@ class SimplificationAndEquality(TestCase):
         # columns in A.thetaJoin(x,B).project(B.attributes()) == B.attributes()
         AB = A.thetaJoin(x,B)
         self.assertEqual(
-            tuple(AB.project(self.B_Columns).attributes()),
-            tuple(B.attributes())
+            AB.project(self.B_Columns).attributes(),
+            B.attributes()
         )
 
         # A.proj(a).thetaJoin(x,B.proj(b)) == A.thetaJoin(x,B).proj(a+b)
