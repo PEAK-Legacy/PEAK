@@ -214,14 +214,6 @@ class Once(OnceDescriptor):
             self.activateUponAssembly = True
 
 
-    def usageError(self):
-        raise TypeError(
-            "%s was used in a type which does not support active bindings,"
-            " but a valid attribute name was not supplied"
-            % self
-        )
-
-
     def computeValue(self, obj, instanceDict, attrName):
         raise NotImplementedError
 
@@ -242,6 +234,55 @@ class Once(OnceDescriptor):
 
 
 
+
+
+
+
+
+
+
+
+
+
+    # The following methods only get called when an instance of this class is
+    # used as a descriptor in a classic class or other class that doesn't
+    # support active descriptors.  So, we will use the invocation of these
+    # methods to bootstrap our activation.  Once activated, these methods won't
+    # be called any more.
+
+    def __get__(self, ob, typ=None):
+        if ob is None:
+            return self
+        return self._installedDescr(ob.__class__).__get__(ob,typ)
+
+
+    def __set__(self,ob,value):
+        self._installedDescr(ob.__class__).__set__(ob,value)
+
+
+    def __delete__(self,ob,value):
+        self._installedDescr(ob.__class__).__delete__(ob)
+
+
+    def _installedDescr(self, klass):
+        # Return a newly installed descriptor proxy to use, or raise a usage
+        # error if self doesn't know its own right name.
+
+        from protocols.advice import getMRO
+        name = self.attrName
+
+        for cls in getMRO(klass):
+            if name in cls.__dict__:
+                if cls.__dict__[name] is self:
+                    # Install a proxy, so we don't have to do this again!
+                    descr = self._copyWithName(name)
+                    setattr(cls, name, descr)
+                    return descr
+                else:
+                    break
+
+        # If we get here, we were not found under the name we were given
+        self.usageError()
 
 
 class classAttr(object):

@@ -118,6 +118,47 @@ cdef class OnceDescriptor:
 
         return value
 
+
+
+
+    def usageError(self):
+        raise TypeError(
+            "%s was used in a type which does not support active bindings,"
+            " but a valid attribute name was not supplied"
+            % self
+        )
+
+
+
 __all__ = ['OnceDescriptor']
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
