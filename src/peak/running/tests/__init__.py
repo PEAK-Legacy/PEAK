@@ -2,7 +2,7 @@
 
 from unittest import TestCase, makeSuite, TestSuite
 from peak.api import *
-
+from peak.tests import testRoot
 from peak.running.clusters import loadCluster
 from peak.running.daemons import AdaptiveTask, TaskQueue
 from peak.running.scheduler import UntwistedReactor, MainLoop
@@ -167,7 +167,7 @@ class ReactiveTests(TestCase):
     verbose = False
 
     def setUp(self):
-        self.app = TestApp(None)
+        self.app = TestApp(testRoot())
         self.log = self.app.log
         self.append = self.app.append
 

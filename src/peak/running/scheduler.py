@@ -47,10 +47,10 @@ class MainLoop(binding.Component):
         instancesProvide=[IMainLoop]
     )
 
-    reactor      = binding.bindTo(IBasicReactor)
-    time         = binding.bindTo('import:time.time')
-
-    lastActivity = None
+    reactor       = binding.bindTo(IBasicReactor)
+    time          = binding.bindTo('import:time.time')
+    signalManager = binding.bindTo(PropertyName('peak.running.signalManager'))
+    lastActivity  = None
 
     def activityOccurred(self):
         self.lastActivity = self.time()
@@ -61,8 +61,9 @@ class MainLoop(binding.Component):
         """Loop polling for IO or GUI events and calling scheduled funcs"""
 
         self.lastActivity = self.time()
-
         reactor = self.reactor
+        from peak.util.signal_stack import pushSignals, popSignals
+        pushSignals(self.signalManager)
 
         try:
             if stopAfter:
@@ -75,10 +76,9 @@ class MainLoop(binding.Component):
 
         finally:
             del self.lastActivity
-
+            popSignals()
 
         # XXX we should probably log start/stop events
-
 
     def _checkIdle(self, timeout):
 
