@@ -9,6 +9,20 @@ from interfaces import *
 from tempfile import mktemp
 import sys, os
 
+
+def bufname(s):
+    """comvert buffer name to canonical form
+    ignoring leading ! on user-defined buffers"""
+    
+    if s in ('!.', '!!'):
+        return s
+    elif s.startswith('!'):
+        return s[1:]
+    
+    return s
+            
+
+
 class SQLInteractor(binding.Component):
     
     editor = binding.bindToProperty('__main__.EDITOR', default='vi')
@@ -18,6 +32,7 @@ class SQLInteractor(binding.Component):
 
     state = ''
     pushbuf = binding.New(list)
+    bufs = binding.New(dict)
     buf = ''
     line = 1
     semi = -1
@@ -52,14 +67,34 @@ class SQLInteractor(binding.Component):
             semi = self.semi
             
             if semi >= 0:
-                self.buf, cmd = self.buf[:semi] + '\n', self.buf[semi+1:]
+                b = self.getBuf()
+                b, cmd = b[:semi] + '\n', b[semi+1:]
+                self.setBuf(b)
                 
                 self.handleCommand('go', 'go ' + cmd)
 
 
 
+    def getBuf(self, name='!.'):
+        name = bufname(name)
+
+        return self.bufs.get(name, '')
+
+
+
+    def setBuf(self, val, name='!.', append=False):
+        name = bufname(name)
+
+        if append:
+            self.bufs[name] = self.bufs.get(name, '') + val
+        else:
+            self.bufs[name] = val
+
+
+    
     def resetBuf(self):
-        self.state = self.buf = ''; self.line = 1; self.semi = - 1
+        self.state = ''; self.line = 1; self.semi = - 1
+        self.setBuf('')
 
     
         
@@ -215,22 +250,27 @@ class SQLInteractor(binding.Component):
         args = ('d:f:h', 0, 0)
         
         def cmd(self, cmd, opts, stdout, **kw):
-            i = self.interactor.buf
+            i = self.interactor.getBuf()
             if not i.strip():
-                self.interactor.resetBuf()
-                return
+                i = self.interactor.getBuf('!!')
+                if not i.strip():
+                    self.interactor.resetBuf()
+                    return
 
             try:
-                c.joinTxn()
-                c = self.interactor.con(i)
+                con = self.interactor.con
+                con.joinTxn()
+                c = con(i)
             except:
                 # currently the error is logged
-                #sys.excepthook(*sys.exc_info()) # XXX
+                # sys.excepthook(*sys.exc_info()) # XXX
                 self.interactor.resetBuf()
                 return
 
             shower = opts.get('-f', 'horiz')
             self.interactor.showResults(c, shower, opts, stdout)
+
+            self.interactor.setBuf(i, name='!!')
 
             self.interactor.resetBuf()
 
@@ -265,7 +305,7 @@ rollback -- abort current transaction"""
         args = ('', 0, 0)
         
         def cmd(self, cmd, stderr, **kw):
-            if self.interactor.buf.strip():
+            if self.interactor.getBuf().strip():
                 print >>stderr, "Use GO or semicolon to finish outstanding input first"
             else:
                 storage.commitTransaction(self)
@@ -278,7 +318,7 @@ rollback -- abort current transaction"""
 
    
     class cmd_reset(ShellCommand):
-        """reset -- empty input buffer"""
+        """\\reset -- empty input buffer"""
             
         args = ('', 0, 0)
         
@@ -290,8 +330,8 @@ rollback -- abort current transaction"""
 
 
     class cmd_exit(ShellCommand):
-        """exit -- exit SQL interactor
-quit -- exit SQL interactor"""
+        """\\exit -- exit SQL interactor
+\\quit -- exit SQL interactor"""
             
         args = ('', 0, 0)
         
@@ -304,7 +344,7 @@ quit -- exit SQL interactor"""
 
 
     class cmd_python(ShellCommand):
-        """python -- enter python interactor"""
+        """\\python -- enter python interactor"""
             
         args = ('', 0, 0)
         
@@ -315,63 +355,82 @@ quit -- exit SQL interactor"""
 
 
 
-    class cmd_buf_show(ShellCommand):
-        """buf-show -- show current input buffer"""
+    class cmd_buf_copy(ShellCommand):
+        """\\buf-copy dest [src] -- copy buffer src to dest
+
+default for src is '!.', the current input buffer"""
             
-        args = ('', 0, 0)
+        args = ('', 1, 2)
         
-        def cmd(self, cmd, stdout, **kw):
-            stdout.write(self.interactor.buf)
-            stdout.flush()
-
-    cmd_buf_show = binding.New(cmd_buf_show)
-
-
-
-    class cmd_buf_edit(ShellCommand):
-        """buf-edit -- use external editor on current input buffer"""
-            
-        args = ('', 0, 0)
-        
-        def cmd(self, cmd, stderr, **kw):
-            t = mktemp()
-            f = open(t, 'w')
-            f.write(self.interactor.buf)
-            f.close()
-            r = os.system('%s "%s"' % (self.interactor.editor, t))
-            if r:
-                print >>stderr, '[edit file unchanged]'
-            else:
-                f = open(t, 'r')
-                l = f.read()
-                f.close()
-                self.interactor.buf = l
-                if self.interactor.buf and self.interactor.buf[-1] != '\n':
-                    self.interactor.buf += '\n'
-
-            os.unlink(t)
+        def cmd(self, cmd, args, stdout, **kw):
+            src = '!.'
+            if len(args) == 2:
+                src = args[1]
                 
+            self.interactor.setBuf(self.interactor.getBuf(src), name=args[0])
+            
+            if args[0] == '!.':
+                return True
+
+    cmd_buf_copy = binding.New(cmd_buf_copy)
+
+
+
+    class cmd_buf_get(ShellCommand):
+        """\\buf-get src -- like \buf-append !. src"""
+            
+        args = ('', 1, 1)
+        
+        def cmd(self, cmd, args, stdout, **kw):
+            self.interactor.setBuf(self.interactor.getBuf(args[0]), append=True)
+
             return True
 
-    cmd_buf_edit = binding.New(cmd_buf_edit)
+    cmd_buf_get = binding.New(cmd_buf_get)
+
+
+
+    class cmd_buf_append(ShellCommand):
+        """\\buf-append dest [src] -- append buffer src to dest
+
+default for src is '!.', the current input buffer"""
+            
+        args = ('', 1, 2)
+        
+        def cmd(self, cmd, args, stdout, **kw):
+            src = '!.'
+            if len(args) == 2:
+                src = args[1]
+                
+            self.interactor.setBuf(self.interactor.getBuf(src), name=args[0],
+                append=True)
+            
+            if args[0] == '!.':
+                return True
+
+    cmd_buf_append = binding.New(cmd_buf_append)
 
 
 
     class cmd_buf_save(ShellCommand):
-        """buf-save [-a] filename -- save input buffer in a file
+        """\\buf-save [-a] filename [src] -- save buffer src in a file
 
 -a\tappend to file instead of overwriting"""
             
-        args = ('a', 1, 1)
+        args = ('a', 1, 2)
         
         def cmd(self, cmd, opts, args, stderr, **kw):
             mode = 'w'
             if opts.has_key('-a'):
                 mode = 'a'
+                
+            src = '!.'
+            if len(args) == 2:
+                src = args[1]
 
             try:
                 f = open(args[0], mode)
-                f.write(self.interactor.buf)
+                f.write(self.interactor.getBuf(src))
                 f.close()
             except:
                 sys.excepthook(*sys.exc_info()) # XXX
@@ -381,38 +440,91 @@ quit -- exit SQL interactor"""
 
 
     class cmd_buf_load(ShellCommand):
-        """buf-load [-a] filename -- load input buffer from file
+        """\\buf-load [-a] filename [dest] -- load buffer dest from file
 
 -a\tappend to buffer instead of overwriting"""
             
-        args = ('a', 1, 1)
+        args = ('a', 1, 2)
         
         def cmd(self, cmd, opts, args, stderr, **kw):
             try:
+                dest = '!.'
+                if len(args) == 2:
+                    dest = args[1]
+
                 f = open(args[0], 'r')
                 l = f.read()
-                if opts.has_key('-a'):
-                    self.interactor.buf += l
-                else:
-                    self.interactor.buf = l
+                self.interactor.setBuf(l, append=opts.has_key('-a'), name=dest)
 
                 f.close()
                 
-                if self.interactor.buf and self.interactor.buf[-1] != '\n':
-                    self.interactor.buf += '\n'
+                l = self.interactor.getBuf(dest)
+                if l and not l.endswith('\n'):
+                    self.interactor.setBuf('\n', append=True, name=dest)
 
             except:
                 sys.excepthook(*sys.exc_info()) # XXX
-                
-            return True
-            
 
+            if dest == '!.':                
+                return True
+            
     cmd_buf_load = binding.New(cmd_buf_load)
 
 
 
+    class cmd_buf_show(ShellCommand):
+        """\\buf-show -- show buffer list
+\\buf-show [buf] -- show named buffer"""
+            
+        args = ('', 0, 1)
+        
+        def cmd(self, cmd, args, stdout, **kw):
+            if len(args) == 1:
+                stdout.write(self.interactor.getBuf(args[0]))
+            else:
+                l = self.interactor.bufs.keys()
+                l.sort()
+                stdout.write('\n'.join(l))
+                stdout.write('\n')
+
+            stdout.flush()
+
+    cmd_buf_show = binding.New(cmd_buf_show)
+
+
+
+    class cmd_buf_edit(ShellCommand):
+        """\\buf-edit -- use external editor on current input buffer"""
+            
+        args = ('r:w:', 0, 0)
+        
+        def cmd(self, cmd, opts, stderr, **kw):
+            t = mktemp()
+            f = open(t, 'w')
+            f.write(self.interactor.getBuf(opts.get('-r', '!.')))
+            f.close()
+            r = os.system('%s "%s"' % (self.interactor.editor, t))
+            if r:
+                print >>stderr, '[edit file unchanged]'
+            else:
+                f = open(t, 'r')
+                l = f.read()
+                f.close()
+                wr = opts.get('-w', '!.')
+                self.interactor.setBuf(l, name=wr)
+                if l and not l.endswith('\n'):
+                    self.interactor.setBuf('\n', append=True, name=wr)
+
+            os.unlink(t)
+                
+            return True
+
+    cmd_buf_edit = binding.New(cmd_buf_edit)
+
+
+
     class cmd_source(ShellCommand):
-        """source [-r] filename -- interpret input from file
+        """\\source [-r] filename -- interpret input from file
 
 -r\treset input buffer before sourcing file"""
             
@@ -438,7 +550,7 @@ quit -- exit SQL interactor"""
 
 
     class cmd_help(ShellCommand):
-        """help [cmd] -- help on commands"""
+        """\\help [cmd] -- help on commands"""
 
         noBackslash = True
 
@@ -461,7 +573,7 @@ quit -- exit SQL interactor"""
 
 
     class cmd_reconnect(ShellCommand):
-        """reconnect -- abort current transaction and reconnect to database"""
+        """\\reconnect -- abort current transaction and reconnect to database"""
 
         args = ('', 0, 0)
         
@@ -486,12 +598,12 @@ quit -- exit SQL interactor"""
                 if c in '\'"/':
                     state = c
                 elif c == ';' and self.semi < 0:
-                    self.semi = len(self.buf) + i
+                    self.semi = len(self.getBuf()) + i
             elif state == '/':
                 if c == '*':
                     state = 'C'
                 elif c == ';' and self.semi < 0:
-                    self.semi = len(self.buf) + i
+                    self.semi = len(self.getBuf()) + i
                 else:
                     state = ''
             elif state == 'C':
@@ -511,13 +623,13 @@ quit -- exit SQL interactor"""
                 elif c == '/':
                     state = c
                 elif c == ';' and self.semi < 0:
-                    self.semi = len(self.buf) + i
+                    self.semi = len(self.getBuf()) + i
                 else:
                     state = ''
             i += 1
 
         self.state = state
-        self.buf += s
+        self.setBuf(s, append=True)
 
     
     def readline(self, prompt):
