@@ -60,6 +60,14 @@ class AbstractContext(Component):
         pass
 
 
+    def _resolveComposite(self, name, iface):
+        return self, name
+
+    def _resolveLocal(self, name, iface):
+        return self, name
+
+    def _resolveURL(self, name, iface):
+        return self, name
 
 
 
@@ -72,54 +80,46 @@ class AbstractContext(Component):
 
 
 
-
-
-
-
-
-
-
-
-    def _getTargetCtx(self, name, iface=IBasicContext):
+    def resolve(self, name, iface=IBasicContext):
 
         parser = self.schemeParser
         name = toName(name, self.nameClass, self._acceptStringURLs)
 
         if name.isComposite:        
             if self._allowCompositeNames:
-                return self, name
+                return self._resolveComposite(name,iface)
             else:
                 name=ParsedURL('+',str(name))   # convert to URL
-
 
         if name.isURL:
 
             if parser:
                 if isinstance(name,parser):
-                    return self, name
+                    return self._resolveURL(name,iface)
                 elif parser.supportsScheme(name.scheme):
-                    return self, parser(name.scheme, name.body)
+                    return self._resolveURL(
+                        parser(name.scheme, name.body), iface
+                    )
 
             ctx = spi.getURLContext(name.scheme, self, iface)
-
             if ctx is None:
                 raise exceptions.InvalidName(
                     "Unknown scheme %s in %r" % (name.scheme,name)
                 )
 
-            return ctx, name
+            return ctx.resolve(name,iface)
 
         if self.nameClass:
-            return self, name
+            return self._resolveLocal(name,iface)
 
         elif parser:
-            return self, parser(self.defaultScheme, str(name))
+            return self._resolveURL(
+                parser(self.defaultScheme, str(name)),iface
+            )
 
         raise exceptions.InvalidName(
             "This context only supports URLs", name
         )
-
-
 
     def lookup_nns(self, name=None):
 
@@ -207,7 +207,7 @@ class AbstractContext(Component):
 
         """Return terminal link for 'name'"""
 
-        ctx, name = self._getTargetCtx(name)
+        ctx, name = self.resolve(name)
         if ctx is not self: return ctx.lookupLink(name)
 
         info = self._get(name)
@@ -226,7 +226,7 @@ class AbstractContext(Component):
 
         """Lookup 'name' and return an object"""
         
-        ctx, name = self._getTargetCtx(name)
+        ctx, name = self.resolve(name)
         if ctx is not self: return ctx[name]
         
         obj = self._getOb(name)
@@ -248,7 +248,7 @@ class AbstractContext(Component):
     
         """Lookup 'name' and return an object, or 'default' if not found"""
         
-        ctx, name = self._getTargetCtx(name)
+        ctx, name = self.resolve(name)
         if ctx is not self: return ctx.get(name,default)
 
         return self._getOb(name, default)
@@ -267,7 +267,7 @@ class AbstractContext(Component):
     def __contains__(self, name):
         """Return a true value if 'name' has a binding in context"""
 
-        ctx, name = self._getTargetCtx(name)
+        ctx, name = self.resolve(name)
         
         if ctx is not self:
             return name in ctx
@@ -316,13 +316,13 @@ class AbstractContext(Component):
 
         """Rename 'oldName' to 'newName'"""
 
-        ctx, name = self._getTargetCtx(oldName,IWriteContext)
+        ctx, name = self.resolve(oldName,IWriteContext)
         
         if ctx is not self:
             ctx.rename(oldName,newName)
             return
             
-        ctx, newName = self._getTargetCtx(newName)
+        ctx, newName = self.resolve(newName)
        
         self._rename(name,newName)
 
@@ -330,7 +330,7 @@ class AbstractContext(Component):
 
         """Bind 'object' under 'name'"""
 
-        ctx, name = self._getTargetCtx(name,IWriteContext)
+        ctx, name = self.resolve(name,IWriteContext)
         
         if ctx is not self:
             ctx[name]=object
@@ -343,7 +343,7 @@ class AbstractContext(Component):
     def __delitem__(self, name):
         """Remove any binding associated with 'name'"""
 
-        ctx, name = self._getTargetCtx(name,IWriteContext)
+        ctx, name = self.resolve(name,IWriteContext)
         
         if ctx is not self:
             del ctx[name]

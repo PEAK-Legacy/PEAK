@@ -42,7 +42,18 @@ class IAddress(IName):
 class IBasicContext(Interface):
 
     """Basic naming context; supports only configuration and name handling"""
-    
+
+    def resolve(name,iface):
+        """Find nearest ctx to 'name' supporting 'iface', return rest of name
+        
+            Return a tuple of the form '(ctx,remainingName)', where 'ctx' is
+            the context nearest to 'name' that supports interface 'iface', and
+            'remainingName' is the portion of 'name' that is relative to
+            'ctx'.  That is, 'remainingName' interpreted relative to 'ctx'
+            should be the same name as 'name' relative to the context this
+            method is called on.
+        """
+
     def lookup(name):
         """Lookup 'name' --> object; synonym for __getitem__"""
 
@@ -66,17 +77,6 @@ class IBasicContext(Interface):
 
     def lookupLink(name):
         """Return terminal LinkRef of 'name', if it's a link"""
-
-
-
-
-
-
-
-
-
-
-
 
 
 
