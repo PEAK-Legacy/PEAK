@@ -22,6 +22,9 @@ class DynamicBinding(object):
     # there's nothing to change
     pass
 
+class Base(object):
+    # ditto for this...
+    pass
 
 
 
@@ -36,10 +39,7 @@ class DynamicBinding(object):
 
 
 
-
-
-
-class StructuralFeature(DynamicBinding):
+class StructuralFeature(DynamicBinding,Base):
 
     __metaclasses__ = ()    # prevents us from being a 'FeatureMC' instance
 

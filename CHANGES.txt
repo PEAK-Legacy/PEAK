@@ -1,9 +1,16 @@
 New Features and Bug Fixes since v0.2, preview 1
 
- * Fixed misc. bugs in DataModel, LDAPModel, Connections, and
-   TW.Caching found by Ulrich Eck.  Thanks Ulrich!  Also, added a fix to
-   ensure that non-existent records are invalidated by
-   RecordType.getItem().
+ * Rewrote SEF "features" to use 'element.verbFeature()' style methods
+   instead of 'element.feature.verb()' style.  UML/XMI/Querying code
+   still uses the old-style SEF framework, which is still available from
+   'TW.SEF.FeatureObjects'.  See the docs of 'TW.SEF.Basic.FeatureMC'
+   and 'TW.API.Meta.MethodExporter' for details on how new-style methods
+   work.
+
+ * Fixed misc. bugs in 'DataModel', 'LDAPModel', 'Connections', and
+   'TW.Caching' found by Ulrich Eck.  Thanks Ulrich!  Also, added a fix
+   to ensure that non-existent records are invalidated by
+   'RecordType.getItem()'.
 
  * Added basic Specialist implementation to 'TW.SEF.Basic', and reverted
    naming from 'TypeService' and 'ITypeService' to 'Specialist' and

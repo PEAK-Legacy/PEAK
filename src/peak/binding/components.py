@@ -5,8 +5,8 @@ from TW.SEF.Interfaces import *
 from TW.SEF.Interfaces import __all__ as allInterfaces
 
 from types import FunctionType
-from Interface import Standard
-from TW.Utils.Code import Function
+
+
 
 __all__ = [
     'Base','App','Service','Specialist','DynamicBinding','StaticBinding',
@@ -572,171 +572,48 @@ class Specialist(Service):
 
 
 
-class FeatureMC(Meta.ActiveDescriptor, type):
+class FeatureMC(Meta.MethodExporter):
 
-    """Metaclass for Features that export methods to their Element
+    """Method-exporting Property
+    
+        This metaclass adds property support to Meta.MethodExporter by adding
+        '__get__', '__set__', and '__delete__' methods, which are delegated
+        to the method templates for the 'get', 'set' and 'delattr' verbs.
 
-        Example usage::
+        In other words, if you define a feature 'foo', following standard
+        'namingConvention' settings for its 'set', 'get' and 'delattr' verbs,
+         and 'bar' is an Element whose class includes the 'foo' feature, then
+        'bar.foo = 1' is equivalent to 'bar.setFoo(1)'.  Similarly,
+        referencing 'bar.foo' by itself is equivalent to 'bar.getFoo()',
+        and 'del bar.foo' is equivalent to 'bar.delattrFoo()'.
 
-            class aFeatureBase(SEF.Feature):
+        (Note: this is true even if the Element class supplies its own 'setFoo'
+        or 'getFoo' implementations, since the 'getMethod()' API is used.)
 
-                hasFoo = 0
-
-                def foo(self, anArg, someParam):
-                    feature = type(self).__feature__
-                    print feature.hasFoo
-
-                # 'namingConvention' makes foo a method template
-                foo.namingConvention = 'foo%(initcap)s'
-
-                # 'installIf' determines whether template will be installed,
-                #   based on subclass metadata
-                foo.installIf = lambda feature,method: feature.hasFoo
-
-                def bar(klass, something):
-                    # This will be a class method of the feature,
-                    # because it has no 'namingConvention'.
-                    ...
-
-            class anEl(SEF.Element):
-
-                class myFeature(aFeatureBase):
-                    hasFoo = 1
-
-
-            el=anEl()
-            el.fooMyFeature(1,2)
-            el.__class__.myFeature.bar('spam')
-            
-        In the above example, class 'anEl' receives a 'fooMyFeature()'
-        method from the 'myFeature' feature.  The feature and its class
-        methods/attributes are available via 'element.__class__.myFeature'.
-
-        
-        The Basics
-
-            Features are immutable, singleton classes.  They are never
-            instantiated, and should never be modified after their creation.
-            Any methods defined in a feature are either class methods of the
-            feature class, or method templates for export to any Element class
-            which the feature is installed in.
-
-            Method templates automate the process of creating getters, setters,
-            and similarly patterned methods.  That is, instead of writing
-            'setFoo()' and 'getFoo()' methods for each feature of an element,
-            one need only define a 'foo' feature which inherits from a base
-            feature class with 'set()' and 'get()' templates.
-
-        Accessing Inner Methods
-
-            ...
-
-        Dynamic Method Access
-        
-            ...
-
-        Defining Method Templates
-
-            ...
-    """
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+        Please see the 'TW.API.Meta.MethodExporter' class documentation for
+        more detail on how method templates are defined, the use of naming
+        conventions, verbs, template variants, etc."""
 
     def __get__(self, ob, typ=None):
 
         """Get the feature's value by delegating to 'ob.getX()'"""
 
-        if ob is None:
-            return self
-
+        if ob is None: return self
         return self.getMethod(ob,'get')()
 
-
     def __set__(self, ob, val):
+
         """Set the feature's value by delegating to 'ob.setX()'"""
+
         return self.getMethod(ob,'set')(val)
 
-
     def __delete__(self, ob):
+
         """Delete the feature's value by delegating to 'ob.delattrX()'"""
+
         return self.getMethod(ob,'delattr')()
 
-
-    def getMethod(self, ob, verb):
-        """Look up a method dynamically"""
-        return getattr(ob,self.methodNames[verb])
-
-
-    def activate(self,klass,attrName):
-        """Install the feature's getX/setX/etc. methods upon use in a class"""
-
-        if attrName != self.__name__:
-            raise TypeError(
-                "Feature %s installed in %s as %s; must be named %s" %
-                (self.__name__,klass,attrName,self.__name__)
-            )
-
-        for verb,methodName in self.methodNames.items():
-            old = getattr(klass, methodName, None)
-            if old is None or hasattr(
-                getattr(old,'im_func',None),'namingConvention'
-            ):
-                setattr(klass, methodName, getattr(self,verb))
-
-    def __init__(self, className, bases, classDict):
-
-        """Set up method templates, name mapping, etc."""
-
-        super(FeatureMC,self).__init__(className, bases, classDict)
-
-        items = []; d={}
-
-        for b in bases:
-            items.extend(getattr(b,'methodTemplates',d).items())
-
-        items.reverse()
-        mt = self.methodTemplates = dict(items)
-
-        for methodName, method in classDict.items():
-            if not isinstance(method,FunctionType): continue
-
-            nc = getattr(method,'namingConvention',None)
-            if nc:
-                mt[methodName]=method
-                setattr(self,methodName,staticmethod(method))
-            else:
-                setattr(self,methodName,classmethod(method))
-
-        names = {
-            'name': className, 'upper': className.upper(),
-            'lower': className.lower(), 'capital': className.capitalize(),
-            'initCap': className[:1].upper()+className[1:]
-        }
-
-        mn = self.methodNames = {}
-        for methodName,method in mt.items():
-            verb       = getattr(method,'verb',methodName)
-            installIf  = getattr(method,'installIf',None)
-
-            if installIf is None or installIf(self,method):
-                mn[verb] = method.namingConvention % names
-                f=Function(method)
-                f.co_names[f.co_names.index('__feature__')] = className
-                setattr(self,verb,staticmethod(f.func()))
-
-class StructuralFeature(Base):
+class StructuralFeature(object):
 
     __metaclasses__ = FeatureMC,
 

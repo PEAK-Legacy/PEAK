@@ -1,17 +1,12 @@
 """TransWarp Service-Element-Feature Interfaces
 
-  Note that these interfaces do not comprise the entire Service-Element-Feature
-  pattern, but only its *structural* aspect.  Other interfaces can and should
-  be implemented to represent other aspects in the appropiate horizontal
-  frameworks.  For example, a Zope/ZPublisher framework would probably want
-  to have its own ISpecialist, IElement, and IFeature interfaces that included
-  an 'index_html' method with the appropriate meaning for each type of object.
-  (i.e., a "Find/add objects of type foo", "View this instance of type foo",
-  and "a management screen of instances of type foo", respectively.)
-
-  (Note: the above was obviously written pre-Zope 3 component architecture, but
-  I'm going to leave it alone for this documentation pass, which is to clean up
-  the major atrocities, not to pick nits with the examples. ;-)
+  Some of these interfaces are applicable only to the older form of the SEF
+  framework which uses the 'element.feature.verb()' style, instead of the
+  newer 'element.verbFeature()' style.  Specifically, 'IFeature' and its
+  derivative interfaces are not correctly defined relative to the new-style
+  API.  I can't get rid of these in the 0.2 release cycle, however, because
+  all the UML model stuff still uses the old-style API, and I won't be
+  refactoring them for 0.2.
 """
 
 import Interface
@@ -21,6 +16,11 @@ __all__ = [
     'IClassifier','IDataType','IPrimitiveType', 'IEnumeration',
     'IValue','ICollection','IReference','ISequence',
 ]
+
+
+
+
+
 
 
 
