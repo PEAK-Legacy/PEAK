@@ -1,4 +1,13 @@
-"""Base classes for Main Programs (i.e. processes invoked from the OS)"""
+"""Base classes for Main Programs (i.e. processes invoked from the OS)
+
+TODO:
+
+    * "Usage" mechanism; i.e. we need a way to trap usage errors (e.g.
+      bad/missing arguments) and report them along with a help message.
+      Currently, supplying bad arguments to an interpreter will just
+      barf up a traceback.
+
+"""
 
 from peak.api import *
 from interfaces import *
@@ -6,20 +15,11 @@ from peak.util.imports import importObject
 
 __all__ = [
     'AbstractCommand', 'AbstractInterpreter', 'IniInterpreter',
-    'ZConfigInterpreter', 'EventDriven', 'CGICommand', 'CGIPublisher',
+    'ZConfigInterpreter', 'Bootstrap', 'rerunnableAsFactory',
+
+    'EventDriven', 'CGICommand', 'CGIPublisher',
     'FastCGIAcceptor',
 ]
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -202,6 +202,129 @@ class ZConfigInterpreter(AbstractInterpreter):
 
 
 
+
+class _runner(AbstractCommand):
+
+    """Adapts 'IRerunnable' to 'ICmdLineApp'"""
+
+    runnable = binding.requireBinding("An IRerunnable")
+
+    def run(self):
+        return self.runnable.run(
+            self.stdin, self.stdout, self.stderr, self.environ, self.argv
+        )
+
+
+def rerunnableAsFactory(runnable):
+
+    """Convert an 'IRerunnable' to an 'ICmdLineAppFactory'"""
+
+    def factory(**kw):
+        kw.setdefault('runnable',runnable)
+        return _runner(**kw)
+
+    factory.__implements__ = ICmdLineAppFactory
+    return factory
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class Bootstrap(AbstractInterpreter):
+
+    """Invoke and use an arbitrary object
+
+    This class is designed to allow specification of an arbitrary
+    component name or URL on the command line to serve as an application
+    instance.
+
+    The name is looked up as a component name; that is, first relative
+    to the 'Bootstrap' instance, and then in the default naming service,
+    unless it is a scheme-prefixed URL, in which case 'naming.lookup()'
+    will be used.  The relative lookup takes place so that 'Bootstrap'
+    classes can offer shortcuts to commonly used classes or URLs.  For
+    example, the 'Bootstrap' class offers a shortcut, '"runIni"', for
+    referring to the 'IniInterpreter' class.  This is easier to type than
+    the full URL, '"import:peak.running.commands:IniInterpreter"'.  You
+    can easily implement additional shortcuts in a subclass using
+    'shortcutName = binding.bindTo("fullURL")' in the class body.
+
+    The object designated by the name or URL in 'argv[1]' must implement
+    either 'ICmdLineAppFactory' (e.g. an 'AbstractCommand' subclass),
+    'ICmdLineApp' (an actual command instance), or 'IRerunnable'.  It will
+    then be invoked with the 'Bootstrap' instance's command parameters
+    (unless it is an 'ICmdLineApp' instance, in which case it will
+    simply be 'run()').
+
+    Here's an example bootstrap script (that will probably become part
+    of the PEAK distribution)::
+
+        #!/usr/bin/env python2.2
+        import sys; from peak.running.commands import Bootstrap
+        sys.exit(Bootstrap().run())
+
+    The script above will look up its first supplied command line argument,
+    and then invoke the found object as a command, supplying the remaining
+    command line arguments.
+    """
+
+    runIni = IniInterpreter
+
+
+    def interpret(self, name):
+
+        factory = binding.lookupComponent(name, self)
+
+        if IRerunnable.isImplementedBy(factory):
+            # Invoke via adapter
+            return self.getSubcommand(rerunnableAsFactory(factory))
+
+        elif ICmdLineAppFactory.isImplementedBy(factory):
+            # It's a factory, make an instance
+            return self.getSubcommand(factory)
+                
+        elif ICmdLineApp.isImplementedBy(factory):
+            # It's an app in its own right, just run it
+            return factory
+
+        raise TypeError("Invalid command object", factory)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        
 
 class EventDriven(AbstractCommand):
 
