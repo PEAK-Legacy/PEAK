@@ -18,9 +18,9 @@ from peak.util.hashcmp import HashAndCompare
 __all__ = [
     'StructuralFeature',  'Collection', 'Sequence',
     'DerivedFeature', 'structField', 'Attribute',
-
-    'DerivedAssociation', 'Field', 'Reference', # deprecated names
 ]
+
+
 
 
 
@@ -688,9 +688,9 @@ class Sequence(StructuralFeature):
 
 
 
-Reference = Attribute               # XXX backward compatibility...  deprecated
-Field = Attribute                   # XXX backward compatibility...  deprecated
-DerivedAssociation = DerivedFeature # XXX backward compatibility...  deprecated
+
+
+
 
 
 

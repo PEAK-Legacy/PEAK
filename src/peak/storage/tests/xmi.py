@@ -39,41 +39,41 @@ from cStringIO import StringIO
 
 
 
-class MailModel(model.Model):
+# Metamodel for our sample
 
-    class Letter(model.Element):
+class Letter(model.Element):
 
-        class envelope(model.Attribute):
-            referencedType = 'Envelope'
-            referencedEnd  = 'letter'
+    class envelope(model.Attribute):
+        referencedType = 'Envelope'
+        referencedEnd  = 'letter'
 
-    class Envelope(model.Element):
+class Envelope(model.Element):
 
-        class toAddress(model.Attribute):   referencedType = 'Address'
-        class fromAddress(model.Attribute): referencedType = 'Address'
+    class toAddress(model.Attribute):   referencedType = 'Address'
+    class fromAddress(model.Attribute): referencedType = 'Address'
 
-        class letters(model.Collection):
-            _XMINames = 'letter',
-            referencedType = 'Letter'
-            referencedEnd  = 'envelope'
+    class letters(model.Collection):
+        _XMINames = 'letter',
+        referencedType = 'Letter'
+        referencedEnd  = 'envelope'
 
 
-    class Address(model.Struct):
-    
-        class name(model.structField):
-            referencedType = model.String
+class Address(model.Struct):
 
-        class streetNumber(name):   pass
-        class street(name):         pass
-        class city(name):           pass
-        class state(name):          pass
-        class zip(name):            pass
+    class name(model.structField):
+        referencedType = model.String
 
-        def __str__(self):
-            return ", ".join(
-                [self.name, '%s %s' % (self.streetNumber,self.street),
-                    self.city, '%s %s' % (self.state, self.zip) ]
-            )
+    class streetNumber(name):   pass
+    class street(name):         pass
+    class city(name):           pass
+    class state(name):          pass
+    class zip(name):            pass
+
+    def __str__(self):
+        return ", ".join(
+            [self.name, '%s %s' % (self.streetNumber,self.street),
+                self.city, '%s %s' % (self.state, self.zip) ]
+        )
 
 
 
@@ -95,13 +95,13 @@ MailText="""<?xml version="1.0"?>
 
     <XMI.header>
         <XMI.model xmi.name="myMail" href="myMail.xml"/>
-        <XMI.metamodel xmi.name="Mail" href="mail.xml"/>
+        <XMI.metamodel xmi.name="peak.tests.MailModel" href="mail.xml"/>
     </XMI.header>
 
     <XMI.content>
 
         <Envelope xmi.id="myEnvelope" letter="myLetter">
-        
+
             <Envelope.toAddress>
                 <Address name="Sridhar" streetNumber="25725"
                     street="Jeronimo" city="Mission Viejo" state="CA" zip="92691"
@@ -112,11 +112,11 @@ MailText="""<?xml version="1.0"?>
                     street="Bailey" city="San Jose" state="CA" zip="95141"
                 />
             </Envelope.fromAddress>
-                
+
         </Envelope>
-        
+
         <Letter xmi.id="myLetter" envelope="myEnvelope"/>
-        
+
     </XMI.content>
 
 </XMI>"""
@@ -125,12 +125,12 @@ class XMIModelTests(TestCase):
 
     def setUp(self):
         self.envelope, self.letter = storage.xmi.fromFile(
-            StringIO(MailText), metamodel=MailModel
+            StringIO(MailText)
         )
 
     def checkTypes(self):
-        assert isinstance(self.envelope,MailModel.Envelope)
-        assert isinstance(self.letter,MailModel.Letter)
+        assert isinstance(self.envelope,Envelope)
+        assert isinstance(self.letter,Letter)
 
     def checkLinks(self):
         assert self.envelope.letters == [self.letter]

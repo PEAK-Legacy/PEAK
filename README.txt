@@ -70,7 +70,7 @@ PEAK Release 0.5 alpha 1
           a given object type and storage approach, you can create your own
           "DM" components.  You can think of a DM as an advanced form of
           Python "shelve", that supports references to other objects,
-          transactions, arbitrary back-end storages, and
+          transactions, arbitrary back-end storages, and caching.
 
         - "Stackable" data managers: one DM might serialize a set of objects
           to XML, which could then be stored in a database record by another
@@ -78,16 +78,16 @@ PEAK Release 0.5 alpha 1
           that writes to disk files!  Each DM only needs to know how to
           manipulate objects offered by the next-level DM, not the details
           of the next DM's implementation, so all the DM's are potentially
-          replacable with alternate storage mechanisms.
+          replaceable with alternate storage mechanisms.
 
         - RDBMS and LDAP connection framework based on the Python DBAPI,
           that handles data type conversions (via the configuration
           framework) and seamlessly integrates with the transaction system
-          and naming  services framework.  DB Connections can be accessed
+          and naming services framework.  DB Connections can be accessed
           by name or URL, and bound as default collaborators or utilities
           for access by other application components.
 
-    * CASE/modelling tools: PEAK includes APIs to read and write object
+    * CASE/modelling tools: PEAK includes APIs to read object
       models created in the XML-based XMI format.  Many open-source and
       commercial modelling tools support XMI, inlcuding Argo/Poseidon and
       MagicDraw UML.  PEAK includes pre-built support for UML versions 1.3
@@ -128,10 +128,10 @@ PEAK Release 0.5 alpha 1
    in areas not covered by the test suites.  Also, many system interfaces
    are still subject to change.
 
-   PEAK includes early copies of Zope 3's 'Interface' and 'Persistence'
+   PEAK includes early copies of Zope X3's 'Interface' and 'Persistence'
    packages, which have since changed names in their official releases,
    and have had - and will continue to have - significant implementation
-   changes.  Complete interoperability with Zope 3 is therefore currently
+   changes.  Complete interoperability with Zope X3 is therefore currently
    at risk.  We are waiting until the pending refactoring of Zope 3's
    interface package is complete before upgrading from 'Interface' to
    'zope.interface'.  Also, the ZODB persistence package is undergoing

@@ -22,9 +22,9 @@ from peak.storage.lazy_loader import LazyLoader
 
 __all__ = [
     'Type', 'PrimitiveType', 'Immutable', 'Struct', 'Element',
-    
-    'DataType', 'Package', 'Model', # deprecated items
 ]
+
+
 
 
 
@@ -68,18 +68,18 @@ class Namespace(binding.Base):
     _XMIMap = binding.classAttr(binding.Once(_XMIMap))
 
 
-class Package(Namespace):
 
-    """Package of Element Classes -- DEPRECATED"""
-
-
-class Model(Package):
-
-    """Model or Metamodel containing Packages/classes -- DEPRECATED"""
-
-
-
-
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
 class TypeClass(Namespace.__class__):
 
     """Basis for all flavors"""
@@ -430,7 +430,7 @@ class Struct(Immutable):
     mdl_typeCode = binding.classAttr( binding.Once(mdl_typeCode) )
 
 
-DataType = Struct   # XXX backward compatibility...  deprecated
+
 
 
 
