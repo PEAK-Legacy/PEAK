@@ -137,24 +137,24 @@ class featureBase(object):
     )
 
     def get_single(feature, self):
-        return self.__dict__[feature.__name__][0]
+        return self.__dict__[feature.attrName][0]
 
     get_single.verb = 'get'
     get_single.installIf = lambda feature,method: feature.singular
 
 
     def get_multi(feature, self):
-        return self.__dict__[feature.__name__]
+        return self.__dict__[feature.attrName]
 
     get_multi.verb = 'get'
     get_multi.installIf = lambda feature,method: not feature.singular
 
 
     def set(feature,self,val):
-        self.__dict__[feature.__name__]=[val]
+        self.__dict__[feature.attrName]=[val]
 
     def delattr(feature,self):
-        del self.__dict__[feature.__name__]
+        del self.__dict__[feature.attrName]
 
     def doubled(feature,self):
         return feature.getMethod(self,'get')() * 2

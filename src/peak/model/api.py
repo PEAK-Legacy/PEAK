@@ -251,7 +251,7 @@ class Base(object):
     __metaclasses__  = (
         Meta.AssertInterfaces, Meta.ActiveDescriptors
     )
-    
+
     __implements__ = ISEF
     _sefParent     = None
 
@@ -281,7 +281,7 @@ class Base(object):
 
     def getSEFparent(self): return None
 
-    def _componentName(self): return self.__class__.__name__
+    def _componentName(self): return self.__class__.__name__.split('.')[-1]
 
     _componentName = property(_componentName)
 
@@ -695,7 +695,7 @@ class FeatureMC(Meta.MethodExporter):
 
         return self.getMethod(ob,'delattr')()
 
-class StructuralFeature(object):
+class StructuralFeature(Base):
 
     __metaclasses__ = FeatureMC,
 
@@ -717,15 +717,15 @@ class StructuralFeature(object):
     )
     
     def get(feature, self):
-        return self.__dict__.get(feature.__name__, feature.defaultValue)
+        return self.__dict__.get(feature.attrName, feature.defaultValue)
 
 
     def set(feature, self,val):
-        self.__dict__[feature.__name__]=val
+        self.__dict__[feature.attrName]=val
         feature._changed(self)
 
     def delete(feature, self):
-        del self.__dict__[feature.__name__]
+        del self.__dict__[feature.attrName]
         feature._changed(self)
 
     configure(delete, verb='delattr')
@@ -753,14 +753,14 @@ class Collection(StructuralFeature):
     )
 
     def _getList(feature, element):
-        return element.__dict__.setdefault(feature.__name__, [])
+        return element.__dict__.setdefault(feature.attrName, [])
         
     def get(feature, self):
         return feature._getList(self)
 
     def set(feature, self,val):
         feature.__delete__(self)
-        self.__dict__[feature.__name__]=val
+        self.__dict__[feature.attrName]=val
         feature._changed(self)
 
     def add(feature, self,item):
@@ -812,7 +812,7 @@ class Collection(StructuralFeature):
                 otherEnd = getattr(item.__class__,referencedEnd)
                 otherEnd._unlink(item,self)
 
-        del self.__dict__[feature.__name__]
+        del self.__dict__[feature.attrName]
         feature._changed(self)
 
     configure(delete, verb='delattr')

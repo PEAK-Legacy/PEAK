@@ -80,6 +80,29 @@
         class combination rules of module inheritance, not because of anything
         to do with metaclasses.)
 
+    Pickling Instances of Nested Classes and the '__name__' Attribute
+
+        One more bonus of using 'setupModule()' is that instances of nested
+        classes defined in modules using 'setupModule()' will be pickleable.
+        Ordinarily, nested class instances aren't pickleable because Python
+        doesn't know how to find them, using only 'someClass.__name__' and
+        'someClass.__module__'.
+
+        TransWarp overcomes this problem by renaming nested classes so that
+        they are defined with their full dotted name (e.g. 'Foo.Bar' for
+        class 'Bar' nested in class 'Foo'), and saving a reference to the class
+        under its dotted name in the module dictionary.  This means that
+        'someClass.__name__' may not be what you'd normally expect, and that
+        doing 'del someClass' may not delete all references to a class.  But
+        pickling and unpickling should work normally.
+
+        Note that some TransWarp classes and metaclasses provide a "short
+        form" of the class name for use when appropriate.  For example,
+        Feature classes have an 'attrName' class attribute, and instances
+        of most SEF types have a '_componentName' instance attribute.  In
+        a pinch, you can also use '__name__.split(".")[-1]' to get the undotted
+        form of a class' name.
+
     Special Considerations for Mutables and Dynamic Initialization
 
         Both inheritance and advice are implemented by running hacked,
@@ -154,14 +177,6 @@
 """
 
 
-
-
-
-
-
-
-
-
 import sys
 from types import ModuleType
 
@@ -182,21 +197,6 @@ def configure(obj, **attrs):
     for k,v in attrs.items():
         if not hasattr(obj,k):
             setattr(obj,k,v)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -568,17 +568,16 @@ class Simulator:
             for k,v in oldDPaths:
                 cdict[k] = classes[v][0]
 
-        newClass = makeClass(name,bases,cdict)
+        newClass = makeClass(qname,bases,cdict)
 
 
 
         classes[qname] = newClass, bases, basePaths, cdict.items(), \
             dict(dictPaths+oldDPaths).items()
 
-        try:
-            newClass.__module__ = self.dict['__name__']
-        except:
-            pass
+        # Make sure that module and name are correct for pickling
+
+        newClass.__module__ = self.dict['__name__']
 
         self.classPath[id(newClass)] = qname
 
@@ -586,10 +585,11 @@ class Simulator:
         if locked.has_key(qname):
             return locked[qname]
 
+        # Save the class where pickle can find it
+        self.dict[qname] = newClass
+
         return newClass
         
-
-
 
 
 

@@ -232,7 +232,7 @@ class MethodExporter(ActiveDescriptor, type):
                 # This will be a method of the feature, because it is not
                 # defined in 'newVerbs' of this class or a superclass
                 print 'Y%sow!  My %s hurts!" % (
-                    'e'*(20-feature.thickness), feature.__name__
+                    'e'*(20-feature.thickness), feature.attrName
                 )
 
             def slap(feature, self):
@@ -432,10 +432,10 @@ class MethodExporter(ActiveDescriptor, type):
 
         """Install the feature's "verbSubject()" methods upon use in a class"""
 
-        if attrName != self.__name__:
+        if attrName != self.attrName:
             raise TypeError(
                 "Feature %s installed in %s as %s; must be named %s" %
-                (self.__name__,klass,attrName,self.__name__)
+                (self.attrName, klass, attrName, self.attrName)
             )
 
         from TW.Utils.Method import MethodWrapper
@@ -453,6 +453,7 @@ class MethodExporter(ActiveDescriptor, type):
 
         """Set up method templates, name mapping, etc."""
 
+        self.attrName = className.split('.')[-1]
         super(MethodExporter,self).__init__(className, bases, classDict)
 
         templateItems = []; d={}
@@ -489,13 +490,12 @@ class MethodExporter(ActiveDescriptor, type):
                 setattr(self,verb,classmethod(func))
 
 
-
     def subjectNames(self):
 
         """Return a dictionary for formatting outer method names"""
 
         names = self.__dict__.copy()
-        className = self.__name__
+        className = self.attrName
 
         names.update(
             {
@@ -547,3 +547,6 @@ class Singleton(type):
 
     def __call__(klass, *args, **kw):
         raise TypeError("Singletons cannot be instantiated")
+
+
+        

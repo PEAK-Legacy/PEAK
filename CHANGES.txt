@@ -1,5 +1,10 @@
 New Features and Bug Fixes since v0.2, preview 1
 
+ * Added support for pickling instances of nested classes; this required
+   changing all uses of '__name__' which needed an unqualified class name.
+   Notably, one should use 'feature.attrName' instead of 'feature.__name__'
+   in verb definitions.
+
  * SEF.DynamicBinding is now SEF.AutoCreated, and all AutoCreatable
    classes like SEF.App and SEF.Service must now have an '__init__' method
    that accepts their SEF parent component.  This lets such objects have
