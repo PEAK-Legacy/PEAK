@@ -326,7 +326,14 @@ class NamingStateAsSmartProperty(protocols.Adapter):
 
 
 
+SECTION_PARSERS = PropertyName('peak.config.iniFile.sectionParsers')
+CONFIG_LOADERS  = PropertyName('peak.config.loaders')
+
 class ConfigReader(AbstractConfigParser):
+
+    protocols.advise(
+        instancesProvide=[IIniParser]
+    )
 
     def __init__(self, propertyMap, prefix='*'):
         self.pMap = propertyMap
@@ -355,33 +362,9 @@ class ConfigReader(AbstractConfigParser):
         self.pMap.registerProvider(_ruleName,f)
 
 
-    def do_include(self, section, name, value, lineInfo):
-        from api_impl import getProperty
-        propertyMap = self.pMap
-        loader = getProperty(propertyMap, "peak.config.loaders."+name)
-        loader = importObject(loader)
-        eval("loader(propertyMap,%s,includedFrom=self)" % value)
 
 
-    def provide_utility(self, section, name, value, lineInfo):
-        self.pMap.registerProvider(importString(name), eval(value))
 
-
-    def on_demand(self, section, name, value, lineInfo):
-        self.pMap.registerProvider(
-            PropertyName(name),
-            LazyRule(
-                lambda propertyMap, ruleName, propertyName: eval(value),
-                prefix = name
-            )
-        )
-
-
-    section_handlers = {
-        'load settings from': 'do_include',
-        'provide utilities':  'provide_utility',
-        'load on demand':     'on_demand',
-    }
 
 
     def add_section(self, section, lines, lineInfo):
@@ -389,15 +372,16 @@ class ConfigReader(AbstractConfigParser):
         if section is None:
             section='*'
 
-        s = ' '.join(section.strip().lower().split())
+        section = section.strip()
+        s = ' '.join(section.lower().split())
 
         if ' ' in s:
-            handler = self.section_handlers.get(s)
+            pn = PropertyName(s.replace(' ','.'),force=True)
+            func = importObject(SECTION_PARSERS.of(self.pMap).get(pn))
+            if func is None:
+                raise SyntaxError(("Invalid section type", section, lineInfo))
 
-            if handler:
-                handler = getattr(self,handler)
-            else:
-                raise SyntaxError("Invalid section type", section, lineInfo)
+            handler = lambda *args: func(self, *args)
 
         else:
             section = self.prefix + PropertyName(section).asPrefix()
@@ -406,6 +390,22 @@ class ConfigReader(AbstractConfigParser):
         self.process_settings(section, lines, handler)
 
 
+def do_include(parser, section, name, value, lineInfo):
+    propertyMap = parser.pMap
+    loader = importObject(CONFIG_LOADERS.of(propertyMap)[name])
+    eval("loader(propertyMap,%s,includedFrom=parser)" % value)
+
+def provide_utility(parser, section, name, value, lineInfo):
+    parser.pMap.registerProvider(importString(name), eval(value))
+
+def on_demand(parser, section, name, value, lineInfo):
+    parser.pMap.registerProvider(
+        PropertyName(name),
+        LazyRule(
+            lambda propertyMap, ruleName, propertyName: eval(value),
+            prefix = name
+        )
+    )
 
 
 class ConfigurationRoot(Component):

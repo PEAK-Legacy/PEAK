@@ -2,6 +2,14 @@ Fixes and Enhancements since Version 0.5 alpha 2
 
  Changed, Enhanced, or Newly Deprecated Features
 
+ - It's now possible to extend .ini file parsing with custom section types,
+   and PEAK defines its own built-in section types using this extension
+   mechanism.  Custom section types must include at least one space, (e.g.
+   '[My Section]') or they will be treated as a plain property name.
+   See the 'peak.config.iniFile.sectionParsers' section in 'peak.ini' for
+   more details, along with the 'config.ISettingParser' and 'config.IIniParser'
+   interfaces.
+
  - When creating a 'PropertyName()', it's now possible to force conversion of
    invalid characters to '_', by supplying 'force=True'.  This doesn't address
    syntactic issues (like having a non-terminating '*'), or character sets

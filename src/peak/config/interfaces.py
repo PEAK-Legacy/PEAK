@@ -1,10 +1,10 @@
 from peak.api import protocols, exceptions, PropertyName, NOT_GIVEN
-from protocols import Interface
+from protocols import Interface, Attribute
 
 __all__ = [
     'IConfigKey', 'IConfigurable', 'IConfigSource', 'IConfigurationRoot',
     'ISmartProperty', 'IRule', 'IPropertyMap', 'ISettingLoader',
-    'NullConfigRoot',
+    'IIniParser', 'ISettingParser', 'NullConfigRoot',
 ]
 
 
@@ -119,6 +119,47 @@ NullConfigRoot = _NullConfigRoot()
 
 
 
+
+
+class IIniParser(Interface):
+
+    """Parser object passed to 'ISettingParser' instances"""
+
+    def add_setting(section, name, value, lineInfo):
+        """Define a configuration rule for 'section'+'name' = value
+        Note that when this method is called by the IIniParser itself,
+        'section' already has the 'prefix' attribute added to it, and it
+        is already formatted as a property prefix.  So, for a section like::
+
+            [foo]
+            bar = baz
+
+        and a parser 'prefix' of '"some.prefix."', this method gets called
+        with '("some.prefix.foo.", "bar", "baz", ...)'.
+        """
+
+    prefix = Attribute("""Prefix that should be added to all property names""")
+
+    pMap = Attribute("""IPropertyMap that the parser is loading""")
+
+
+class ISettingParser(Interface):
+
+    """Handler for name=value settings in an .ini file section"""
+
+    def __call__(parser, section, name, value, lineInfo):
+        """Act on 'name' = 'value' in section 'section'
+
+        'parser' is an 'IIniParser' for the file being parsed, and 'lineInfo'
+        is a tuple of '(filename, lineNumber, lineContents)'.  Typically,
+        a setting parser will perform some operation(s) on 'parser.pMap' in
+        response to each setting it receives.
+
+        If you want to use the standard parser's interpretation of the name
+        and value, you can call 'parser.add_setting()', but be sure to
+        provide compatible arguments, as 'add_setting()' expects its 'section'
+        argument to be a valid, ready-to-use prefix for its 'name' argument.
+        """
 
 
 class IRule(Interface):
