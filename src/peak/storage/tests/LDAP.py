@@ -2,7 +2,7 @@
 
 from unittest import TestCase, makeSuite, TestSuite
 from peak.api import *
-from peak.tests import testApp
+from peak.tests import testRoot
 
 from peak.storage.LDAP import LDAPCursor, LDAPConnection
 
@@ -42,7 +42,7 @@ class TestCursor(LDAPCursor):
 class LDAPSchemaTest(TestCase):
 
     def checkConversions(self):
-        ob = TestCursor(LDAPConnection(testApp()), None)
+        ob = TestCursor(LDAPConnection(testRoot()), None)
         assert list(ob)==[
             ('uid=thing1', None, ['a','b']),
             ('uid=thing2', 'spam', None, 999),

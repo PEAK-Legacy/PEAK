@@ -4,7 +4,7 @@ from unittest import TestCase, makeSuite, TestSuite
 from peak.api import *
 from peak.interface import Interface
 from peak.config.interfaces import *
-from peak.tests import testApp
+from peak.tests import testRoot
 
 
 
@@ -12,7 +12,7 @@ from peak.tests import testApp
 class PropertyTest(TestCase):
 
     def checkSetProp(self):
-        app = testApp()
+        app = testRoot()
         config.setPropertyFor(app,'peak.config.tests.foo',1)
         assert config.getProperty('peak.config.tests.foo',app)==1
 
@@ -21,7 +21,7 @@ class PropertyTest(TestCase):
         from os import environ
 
         # retry multiple times to verify re-get is safe...
-        app = testApp()
+        app = testRoot()
         ps = config.PropertySet('environ.*', app)
 
         for r in range(3):
@@ -84,7 +84,7 @@ class UtilityTest(TestCase):
 
     def setUp(self):
 
-        self.data = UtilityData(testApp(), 'data')
+        self.data = UtilityData(testRoot(), 'data')
 
         self.data.aService.registerProvider(
             ISampleUtility1,

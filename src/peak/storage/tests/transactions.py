@@ -4,7 +4,7 @@ from unittest import TestCase, makeSuite, TestSuite
 from peak.api import *
 from peak.util.MiniTable import Table
 from peak.persistence import Persistent
-from peak.tests import testApp
+from peak.tests import testRoot
 
 class TxnStateTest(TestCase):
 
@@ -288,7 +288,7 @@ class Harness(binding.Component):
 class TableTest(TestCase):
 
     def setUp(self):
-        self.harness = Harness(testApp())
+        self.harness = Harness(testRoot())
         self.table = self.harness.sampleTable
 
     def tearDown(self):
@@ -329,7 +329,7 @@ class TableTest(TestCase):
 class DMTest(TestCase):
 
     def setUp(self):
-        self.harness = Harness(testApp())
+        self.harness = Harness(testRoot())
         self.table = self.harness.sampleTable
         self.dm  = self.harness.testDM
 

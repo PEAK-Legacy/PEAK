@@ -1,7 +1,7 @@
 from peak.api import *
 from unittest import TestCase, makeSuite, TestSuite
 from cStringIO import StringIO
-from peak.tests import testApp
+from peak.tests import testRoot
 
 
 
@@ -125,7 +125,7 @@ class XMIModelTests(TestCase):
 
     def setUp(self):
         self.envelope, self.letter = storage.xmi.fromFile(
-            StringIO(MailText), testApp()
+            StringIO(MailText), testRoot()
         )
 
     def checkTypes(self):

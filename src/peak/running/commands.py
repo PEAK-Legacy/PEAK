@@ -367,7 +367,7 @@ def executableAsFactory(executable):
 
 
 
-class Bootstrap(AbstractInterpreter, config.Application):
+class Bootstrap(AbstractInterpreter):
 
     """Invoke and use an arbitrary 'IExecutable' object
 
@@ -392,21 +392,21 @@ class Bootstrap(AbstractInterpreter, config.Application):
     script by the PEAK distribution on 'posix' operating systems)::
 
         #!/usr/bin/env python2.2
-        import sys; from peak.running.commands import Bootstrap
-        sys.exit(Bootstrap().run())
+        
+        from peak.running.commands import Bootstrap
+        from peak.api import config
+        import sys
+        
+        sys.exit(
+            Bootstrap(
+                config.makeRoot()
+            ).run()
+        )
 
     The script above will look up its first supplied command line argument,
     and then invoke the found object as a command, supplying the remaining
     command line arguments.
     """
-
-
-
-
-
-
-
-
 
     def interpret(self, name):
 

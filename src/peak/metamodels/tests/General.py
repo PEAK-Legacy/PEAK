@@ -4,7 +4,7 @@ from unittest import TestCase, makeSuite, TestSuite
 from peak.api import *
 from peak.model.queries import *
 from peak.util.imports import lazyModule
-from peak.tests import testApp
+from peak.tests import testRoot
 
 UML13 = lazyModule('peak.metamodels.UML13')
 
@@ -42,7 +42,7 @@ class UML_DM(storage.xmi.DM):
 class UMLTest(TestCase):
 
     def setUp(self):
-        self.m = m = UML_DM(testApp())
+        self.m = m = UML_DM(testRoot())
         self.pkg = m.Package()
 
     def checkNameSet(self):
@@ -83,7 +83,7 @@ class UMLTest(TestCase):
 class QueryTests(TestCase):
 
     def setUp(self):
-        self.m = m = UML_DM(testApp())
+        self.m = m = UML_DM(testRoot())
         self.pkg = pkg = m.Package()
         pkg.name = 'SomePackage'
         self.klass = klass = self.m.Class()
@@ -126,10 +126,10 @@ LoadedUML = None
 class XMILoad(TestCase):
     def checkLoad(self):
         global LoadedUML
-        self.m = m = LoadedUML = UML_DM(testApp())
+        self.m = m = LoadedUML = UML_DM(testRoot())
         from os import path
         m.roots = storage.xmi.fromFile(
-            config.fileNearModule(__name__,'MetaMeta.xml'), testApp()
+            config.fileNearModule(__name__,'MetaMeta.xml'), testRoot()
         )
         
 class XMITests(TestCase):

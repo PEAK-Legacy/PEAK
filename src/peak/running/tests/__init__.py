@@ -167,7 +167,7 @@ class ReactiveTests(TestCase):
     verbose = False
 
     def setUp(self):
-        self.app = TestApp() #config.Application())
+        self.app = TestApp()
         self.app.getParentComponent()
         self.log = self.app.log
         self.append = self.app.append

@@ -15,7 +15,7 @@ __all__ = [
     'PropertyMap', 'LazyLoader', 'ConfigReader',
     'loadConfigFile', 'loadMapping', 'PropertySet', 'fileNearModule',
     'iterParents','findUtilities','findUtility',
-    'provideInstance', 'instancePerComponent', 'Application',
+    'provideInstance', 'instancePerComponent', 'ConfigurationRoot',
 ]
 
 
@@ -367,7 +367,7 @@ class ConfigReader(AbstractConfigParser):
 
 
 
-class Application(Component):
+class ConfigurationRoot(Component):
 
     implements(IConfigurationRoot, Component.__implements__)
 
@@ -383,7 +383,7 @@ class Application(Component):
 
     def _getConfigData(self, configKey, forObj):
         self.__instance_provides__  # ensure existence & setup
-        return super(Application,self)._getConfigData(configKey,forObj)
+        return super(ConfigurationRoot,self)._getConfigData(configKey,forObj)
 
 
     def setup(self, propertyMap):

@@ -2,7 +2,7 @@
 
 from unittest import TestCase, makeSuite, TestSuite
 from peak.api import *
-from peak.tests import testApp
+from peak.tests import testRoot
 
 class baseWithClassAttr(binding.Component):
 
@@ -206,7 +206,7 @@ class DescriptorData(binding.Component):
 class DescriptorTest(TestCase):
 
     def setUp(self):
-        self.data = DescriptorData(testApp(), 'data')
+        self.data = DescriptorData(testRoot(), 'data')
 
 
     def checkNaming(self):

@@ -2,7 +2,7 @@
 
 from unittest import TestCase, makeSuite, TestSuite
 from peak.api import *
-from peak.tests import testApp
+from peak.tests import testRoot
 
 validNames = {
 
@@ -59,7 +59,7 @@ validNames = {
 
 
 def parse(url):
-    return naming.parseURL(url,testApp())
+    return naming.parseURL(url,testRoot())
 
 
 class NameParseTest(TestCase):

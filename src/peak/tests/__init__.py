@@ -16,15 +16,15 @@ def test_suite():
     return importSuite(allSuites)
 
 
-# config.Application for testing
-_app = None
+# shared, default config root for testing
+_root = None
 
-def testApp():
+def testRoot():
 
-    global _app
+    global _root
 
-    if _app is None:
+    if _root is None:
         from peak.api import config
-        _app = config.Application()
+        _root = config.makeRoot()
 
-    return _app
+    return _root

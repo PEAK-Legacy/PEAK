@@ -2,11 +2,12 @@
 
 from peak.api import exceptions, NOT_FOUND, NOT_GIVEN, PropertyName
 from interfaces import *
-from config_components import *
+from config_components import findUtility, iterParents, ConfigurationRoot
 from peak.interface import adapt
 
 __all__ = [
     'getProperty', 'setPropertyFor', 'setRuleFor', 'setDefaultFor',
+    'makeRoot',
 ]
 
 
@@ -27,6 +28,46 @@ def setDefaultFor(obj, propName, defaultObj):
 
     pm = findUtility(IPropertyMap, obj)
     pm.setDefault(propName, defaultObj)
+
+
+
+
+
+
+
+
+
+
+
+def makeRoot(**options):
+
+    """Create a configuration root, suitable for use as a parent component
+
+    This creates and returns a new 'IConfigurationRoot' with its default
+    configuration loading from 'peak.ini'.  The returned root component
+    will "know" it is a root, so any components that use it as a parent
+    will get their 'uponAssembly()' events invoked immediately.
+
+    Normally, this function is called without any parameters, but it will
+    accept keyword arguments that it will pass along when it calls the
+    'peak.config.config_components.ConfigurationRoot' constructor.
+    See that class for acceptable options.
+    """
+
+    root = ConfigurationRoot(**options)
+    root.setParentComponent(None)   # make it a root
+    return root
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -77,31 +118,6 @@ def getProperty(propName, obj, default=NOT_GIVEN):
     ).propertyNotFound(
         component, propName, forObj, default
     )
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
