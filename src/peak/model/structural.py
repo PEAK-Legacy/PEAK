@@ -698,22 +698,22 @@ class Classifier(Namespace):
 class ImmutableClass(ClassifierClass):
 
     def __init__(klass,name,bases,dict):
+
         for f in klass.mdl_features:
+
             if f.isChangeable:
                 raise TypeError(
                     "Immutable class with changeable feature",
                     klass, f
                 )
+
+            if f.referencedEnd:
+                raise TypeError(
+                    "Immutable class with bidirectional association",
+                    klass, f
+                )
+
         super(ImmutableClass,klass).__init__(name,bases,dict)
-
-
-
-
-
-
-
-
-
 
 
 

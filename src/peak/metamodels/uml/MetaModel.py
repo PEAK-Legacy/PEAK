@@ -152,11 +152,12 @@ class UMLClass(model.Model, storage.xmi.Loader):
 
     class Multiplicity(model.DataType):
 
-        class ranges(model.Sequence):
+        class ranges(model.structField):
+
             _XMINames = ('Foundation.Data_Types.Multiplicity.range',)
+
+            upperBound = None
             referencedType = 'MultiplicityRange'
-            referencedEnd = 'multiplicity'
-            isChangeable = False
 
         _XMINames = ('Foundation.Data_Types.Multiplicity',)
 
@@ -164,23 +165,15 @@ class UMLClass(model.Model, storage.xmi.Loader):
 
     class MultiplicityRange(model.DataType):
 
-        class upper(model.Field):
+        class upper(model.structField):
             _XMINames = ('Foundation.Data_Types.MultiplicityRange.upper',)
             referencedType = 'UnlimitedInteger'
-            isChangeable = False
 
-        class lower(model.Field):
+        class lower(model.structField):
             _XMINames = ('Foundation.Data_Types.MultiplicityRange.lower',)
             referencedType = 'Integer'
-            isChangeable = False
 
         _XMINames = ('Foundation.Data_Types.MultiplicityRange',)
-
-        class multiplicity(model.Reference):
-            _XMINames = ('Foundation.Data_Types.MultiplicityRange.multiplicity',)
-            referencedType = 'Multiplicity'
-            referencedEnd = 'ranges'
-            isChangeable = False
 
 
 
@@ -198,17 +191,15 @@ class UMLClass(model.Model, storage.xmi.Loader):
 
     class Expression(model.DataType):
 
-        class body(model.Field):
+        class body(model.structField):
             _XMINames = ('Foundation.Data_Types.Expression.body',)
             referencedType = 'String'
-            isChangeable = False
 
         _XMINames = ('Foundation.Data_Types.Expression',)
 
-        class language(model.Field):
+        class language(model.structField):
             _XMINames = ('Foundation.Data_Types.Expression.language',)
             referencedType = 'Name'
-            isChangeable = False
 
     class TimeExpression(Expression):
         _XMINames = ('Foundation.Data_Types.TimeExpression',)
