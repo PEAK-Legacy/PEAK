@@ -11,7 +11,7 @@ from protocols.advice import metamethod, getMRO
 from warnings import warn
 from types import ClassType
 from attributes import activateClass, classAttr, Activator, supertype
-from attributes import declareAttribute
+from attributes import declareAttribute, initAttrs
 
 __all__ = [
     'Make', 'ActiveClass',
@@ -144,13 +144,13 @@ class Descriptor(BaseDescriptor):
         this constructor is used by the subclass)."""
 
         _warnIfPermission(kw)
-        klass = self.__class__
+        initAttrs(self,kw.iteritems())
 
-        for k,v in kw.items():
-            if hasattr(klass,k):
-                setattr(self,k,v)
-            else:
-                raise TypeError("%r has no keyword argument %r" % (klass,k))
+
+
+
+
+
 
 
 

@@ -5,7 +5,7 @@ import dispatch,protocols
 
 __all__ = [
     'activateClass','classAttr','Activator','declareAttribute','metadata',
-    'declareAttributes',
+    'declareAttributes', 'initAttrs',
 ]
 
 
@@ -67,6 +67,47 @@ def declareAttributes(classobj,**__kw):
     """
     for k,v in sorted(__kw.iteritems()):
         declareAttribute(classobj,k,v)
+
+
+
+
+
+
+
+
+
+
+
+
+
+def initAttrs(ob, attrItems):
+    """Initialize 'ob' using 'attrItems'
+
+    'ob' can be any object with a '__class__' attribute.  'attrItems' must be
+    an iterable of name/value pairs (such as a dictionary's 'items()' or
+    'iteritems()').  For each name, if it is a valid attribute of the object's
+    class, then the attribute will be set with  'setattr(ob,name,value)'.  If
+    the name does not exist as an attribute of the object's class, a 'TypeError'
+    will be raised, identifying the incorrect name/constructor keyword.
+    """
+    klass = ob.__class__
+    for k,v in attrItems:
+        if hasattr(klass,k):
+            setattr(ob,k,v)
+        else:
+            raise TypeError(
+                "%s constructor has no keyword argument %s" % (klass, k)
+            )
+
+
+
+
+
+
+
+
+
+
 
 
 

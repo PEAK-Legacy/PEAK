@@ -1,5 +1,9 @@
 Fixes and Enhancements since Version 0.5 alpha 3
 
+ - There is now a 'binding.initAttrs()' function that can be used to initialize
+   an object's attributes from e.g. constructor keyword arguments, similar to
+   how 'binding.Component' and 'binding.Attribute' constructors work.
+
  - Security permissions can now be declared as attribute metadata.
 
    That is, instead of doing declarations like this::

@@ -791,17 +791,7 @@ class Component(_Base):
 
         # Set up keywords first, so state is sensible
         if kw:
-
-            klass = self.__class__
-
-            for k,v in kw.iteritems():
-                if hasattr(klass,k):
-                    setattr(self,k,v)
-                else:
-                    raise TypeError(
-                        "%s constructor has no keyword argument %s" %
-                        (klass, k)
-                    )
+            initAttrs(self,kw.iteritems())
 
         # set our parent component and possibly invoke assembly events
         if parentComponent is not NOT_GIVEN or componentName is not None:
@@ -810,14 +800,7 @@ class Component(_Base):
     lookupComponent = lookupComponent
 
 
-
-
-
-
-
-
-
-
+    [dispatch.as(classmethod)]
     def fromZConfig(klass, section):
 
         """Classmethod: Create an instance from a ZConfig 'section'"""
@@ -833,8 +816,6 @@ class Component(_Base):
             del data['_matcher']
 
         return klass(**data)
-
-    fromZConfig = classmethod(fromZConfig)
 
 
     def setParentComponent(self, parentComponent, componentName=None,
@@ -877,6 +858,7 @@ class Component(_Base):
     __parentComponent = Make(__parentComponent, suggestParent=False)
 
 
+
     def getParentComponent(self):
         return self.__parentComponent
 
@@ -884,24 +866,7 @@ class Component(_Base):
         return self.__componentName
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     def _configKeysMatching(self, configKey):
-
         """Iterable over defined keys that match 'configKey'
 
         A key 'k' in the map is considered to "match" 'configKey' if any of
@@ -933,12 +898,6 @@ class Component(_Base):
             return getattr(self, attr, NOT_FOUND)
 
         return NOT_FOUND
-
-
-
-
-
-
 
 
     def __class_offers__(klass,d,a):
