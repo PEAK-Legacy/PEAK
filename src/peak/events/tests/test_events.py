@@ -94,10 +94,10 @@ class BasicTests(TestCase,object):
         self.assertEqual(self.log,[(self.source,1),(self.source,1)])
 
 
+class BroadcastTests(BasicTests):
 
-
-
-
+    sourceType = events.Broadcaster
+    kind = "broadcast"
 
 
 
@@ -698,7 +698,7 @@ class AdviceTests(TestCase):
 TestClasses = (
     BasicTests, ValueTests, ConditionTests, SemaphoreTests, AnyOfTests,
     TestThreads, ScheduledThreadsTest, SchedulerTests, AdviceTests,
-    DerivedValueTests, DerivedConditionTests
+    DerivedValueTests, DerivedConditionTests, BroadcastTests,
 )
 
 def test_suite():

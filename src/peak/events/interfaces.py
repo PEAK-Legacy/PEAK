@@ -4,6 +4,7 @@ __all__ = [
     'ITask', 'ITaskSwitch', 'IEventSource', 'IEventSink', 'IReadableSource',
     'IWritableSource', 'IConditional', 'ISemaphore', 'IThread',
     'IScheduledThread', 'IThreadState', 'IScheduler', 'ISelector',
+    'IEventLoop',
 ]
 
 
@@ -16,7 +17,6 @@ class ITask(protocols.Interface):
 
     def next():
         """Return an 'ITaskSwitch', or value to be yielded to previous task"""
-
 
 
 
@@ -326,7 +326,6 @@ class IScheduler(protocols.Interface):
 
 
 
-
 class ISelector(protocols.Interface):
 
     """Like a reactor, but supplying 'IEventSources' instead of callbacks
@@ -347,22 +346,22 @@ class ISelector(protocols.Interface):
     def resolve(name, timeout=10):
         """'ITask' that yields IP for 'name', or raises a timeout error"""
 
-    def signal(signame):
-        """Get 'IEventSource' that triggers whenever named signal occurs"""
+    def signal(*signames):
+        """'IEventSource' that triggers whenever any of named signals occur"""
+
+    def haveSignal(signame):
+        """Return true if signal named 'signame' exists"""
 
 
+class IEventLoop(IScheduler, ISelector):
 
+    def runUntil(eventSource,suppressErrors=False):
+        """'tick()' repeatedly until 'eventSource' fires, returning event
 
-
-
-
-
-
-
-
-
-
-
+        If 'suppressErrors' is true, this method will trap and log
+        all errors without allowing them to reach the caller.  Note
+        that event loop implementations based on Twisted *require*
+        that 'suppressErrors' be used."""
 
 
 

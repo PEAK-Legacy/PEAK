@@ -6,7 +6,7 @@ from weakref import ref
 __all__ = [
     'AnyOf', 'Distributor', 'Value', 'Condition', 'Semaphore',
     'DerivedValue', 'DerivedCondition', 'Observable', 'Readable', 'Writable',
-    'Conditional',
+    'Conditional', 'Broadcaster',
 ]
 
 
@@ -223,17 +223,17 @@ class Distributor(Observable):
         self._fire(event)
 
 
+class Broadcaster(Observable):
 
+    """Like a distributor, but broadcasting events to all callbacks"""
 
+    __slots__ = ()
 
+    singleFire   = False
 
-
-
-
-
-
-
-
+    def send(self,event):
+        """Send 'event' to all callbacks"""
+        self._fire(event)
 
 
 
