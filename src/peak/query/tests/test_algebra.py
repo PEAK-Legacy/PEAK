@@ -100,9 +100,9 @@ class SimplificationAndEquality(TestCase):
         x,y,z = self.condX, self.condY, self.condZ
         A,B,C,D = self.rvA, self.rvB, self.rvC, self.rvD
 
-        self.assertEqual(A.thetaJoin(x,B), B.thetaJoin(x,A))
-        self.assertEqual(A.thetaJoin(x,B,C), B.thetaJoin(x,A,C))
-        self.assertEqual(A.thetaJoin(x,B,C), C.thetaJoin(x,B,A))
+        self.assertEqual(A(join=[B],where=x), B(join=[A],where=x))
+        self.assertEqual(A(join=[B,C],where=x), B(join=[A,C],where=x))
+        self.assertEqual(A(join=[B,C],where=x), C(join=[B,A],where=x))
 
 
     def testJoinAssociativity(self):
@@ -111,13 +111,13 @@ class SimplificationAndEquality(TestCase):
         A,B,C,D = self.rvA, self.rvB, self.rvC, self.rvD
 
         self.assertEqual(
-            A.thetaJoin(x,B).thetaJoin(y,C),
-            A.thetaJoin(x&y,B,C)
+            A(join=[B],where=x)(join=[C],where=y),
+            A(join=[B,C],where=x&y)
         )
 
         self.assertEqual(
-            A.thetaJoin(x,B).thetaJoin(y,C.thetaJoin(z,D)),
-            A.thetaJoin(x&y&z,B,C,D)
+            A(join=[B],where=x)(join=[C(join=[D],where=z)],where=y),
+            A(join=[B,C,D],where=x&y&z)
         )
 
 
@@ -137,28 +137,28 @@ class SimplificationAndEquality(TestCase):
         A,B,C,D = self.rvA, self.rvB, self.rvC, self.rvD
 
         self.assertEquals(
-            A.thetaJoin(x,B).select(y),
-            A.thetaJoin(x&y,B)
+            A(join=[B],where=x)(where=y),
+            A(join=[B],where=x&y)
         )
 
         self.assertEquals(
-            A.select(y).select(z),
-            A.select(y&z)
+            A(where=y)(where=z),
+            A(where=y&z)
         )
 
         self.assertEquals(
-            A.select(z).select(y),
-            A.select(y&z)
+            A(where=z)(where=y),
+            A(where=y&z)
         )
 
         self.assertEquals(
-            A.thetaJoin(x,B).select(y).select(z),
-            A.thetaJoin(x&y&z,B)
+            A(join=[B],where=x)(where=y)(where=z),
+            A(join=[B],where=x&y&z)
         )
 
         self.assertEquals(
-            A.select(y).thetaJoin(x,B),
-            A.thetaJoin(x&y,B)
+            A(where=y)(join=[B],where=x),
+            A(join=[B],where=x&y)
         )
 
 
@@ -167,8 +167,8 @@ class SimplificationAndEquality(TestCase):
         x,y,z = self.condX, self.condY, self.condZ
         A,B,C,D = self.rvA, self.rvB, self.rvC, self.rvD
 
-        self.assertNotEquals(A.thetaJoin(x,A), A.thetaJoin(x,A,A))
-        self.assertNotEquals(A.starJoin(x,A), A.starJoin(x,A,A))
+        self.assertNotEquals(A(join=[A],where=x), A(join=[A,A],where=x))
+        self.assertNotEquals(A(outer=[A],where=x), A(outer=[A,A],where=x))
 
 
     def testOuterJoinInequalities(self):
@@ -176,23 +176,23 @@ class SimplificationAndEquality(TestCase):
         x,y,z = self.condX, self.condY, self.condZ
         A,B,C,D = self.rvA, self.rvB, self.rvC, self.rvD
 
-        self.assertNotEqual( A.starJoin(x,B), B.starJoin(x,A)  )
-        self.assertNotEqual( A.starJoin(x,A), A.starJoin(x,B)  )
-        self.assertNotEqual( A.starJoin(x,B), A.thetaJoin(x,B)  )
+        self.assertNotEqual( A(outer=[B],where=x), B(outer=[A],where=x) )
+        self.assertNotEqual( A(outer=[A],where=x), A(outer=[B],where=x) )
+        self.assertNotEqual( A(outer=[B],where=x), A(join=[B],where=x) )
 
         self.assertEqual(
-            A.starJoin(x,B).starJoin(y,C),
-            A.starJoin(y,C).starJoin(x,B)
+            A(outer=[B],where=x)(outer=[C],where=y),
+            A(outer=[C],where=y)(outer=[B],where=x)
         )
 
         self.assertEqual(
-            A.thetaJoin(x,B).starJoin(y,C),
-            B.thetaJoin(x,A).starJoin(y,C)
+            A(join=[B],where=x)(outer=[C],where=y),
+            B(join=[A],where=x)(outer=[C],where=y)
         )
 
         self.assertEqual(
-            A.starJoin(y,C).thetaJoin(x,B),
-            A.thetaJoin(x,B).starJoin(y,C)
+            A(outer=[C],where=y)(join=[B],where=x),
+            A(join=[B],where=x)(outer=[C],where=y)
         )
 
 
@@ -215,10 +215,10 @@ class SimplificationAndEquality(TestCase):
         self._verifyJoinedColumns(A,x,B)
         self._verifyJoinedColumns(C,y,D)
         self._verifyJoinedColumns(B,z,C)
-        self._verifyJoinedColumns(A.thetaJoin(x,B),y,C.thetaJoin(z,D))
+        self._verifyJoinedColumns(A(join=[B],where=x),y,C(join=[D],where=z))
 
     def _verifyJoinedColumns(self,base,cond,*relvars):
-        AB = base.thetaJoin(cond,*relvars)
+        AB = base(join=relvars, where=cond)
         AB_cols = AB.attributes()
         AplusB  = base.attributes()
         for rv in relvars:
@@ -268,18 +268,18 @@ class SimplificationAndEquality(TestCase):
         x,y,z = self.condX, self.condY, self.condZ
 
         self.assertEqual(
-            Branch.thetaJoin(x,Employee), Employee.thetaJoin(x,Branch)
+            Branch(join=[Employee],where=x), Employee(join=[Branch],where=x)
         )
 
         for tbl in 'Branch','Employee','Speaks','Drives','Car','LangUse':
             tbl = db.table(tbl)
             self.failUnless(tbl.getDB() is db)
-            self.failUnless(tbl.project(tbl.attributes().keys()[:-1]).getDB() is db)
+            self.failUnless(tbl(keep=tbl.attributes().keys()[:-1]).getDB() is db)
 
-        self.failUnless(Branch.thetaJoin(x,Employee).getDB() is db)
+        self.failUnless(Branch(join=[Employee],where=x).getDB() is db)
 
         # Mixed-db joins should have a DB of None (for now)
-        self.failUnless(Branch.thetaJoin(x,self.rvA).getDB() is None)
+        self.failUnless(Branch(join=[self.rvA],where=x).getDB() is None)
 
 
 
@@ -290,19 +290,19 @@ class SimplificationAndEquality(TestCase):
         A,B,C,D = self.rvA, self.rvB, self.rvC, self.rvD
 
         # B and A have no common attrs
-        self.failIf( A.project(self.B_Columns).attributes() )
+        self.failIf( A(keep=self.B_Columns).attributes() )
 
-        # columns in A.thetaJoin(x,B).project(B.attributes()) == B.attributes()
-        AB = A.thetaJoin(x,B)
+        # columns in A(join=[B],where=x)(keep=B.attributes()) == B.attributes()
+        AB = A(join=[B],where=x)
         self.assertEqual(
-            AB.project(self.B_Columns).attributes(),
+            AB(keep=self.B_Columns).attributes(),
             B.attributes()
         )
 
-        # A.proj(a).thetaJoin(x,B.proj(b)) == A.thetaJoin(x,B).proj(a+b)
+        # A.proj(a)(join=[B.proj(b)],where=x) == A(join=[B],where=x).proj(a+b)
         self.assertEqual(
-            A.thetaJoin(x,B).project(self.A_Columns[:2]+self.B_Columns[:2]),
-            A.project(self.A_Columns[:2]).thetaJoin(x,B.project(self.B_Columns[:2]))
+            A(join=[B],where=x)(keep=self.A_Columns[:2]+self.B_Columns[:2]),
+            A(keep=self.A_Columns[:2])(join=[B(keep=self.B_Columns[:2])],where=x)
         )
 
 

@@ -24,12 +24,12 @@ class _expr:
         return Not(self)
 
     def __and__(self,other):
-        if self==other or other is None:
+        if self==other or other is EMPTY:
             return self
         return And(self,other)
 
     def __or__(self,other):
-        if self==other or other is None:
+        if self==other or other is EMPTY:
             return self
         return Or(self,other)
 
@@ -37,6 +37,30 @@ class _expr:
 
 
 
+
+
+class _empty:
+
+    protocols.advise(
+        instancesProvide = [IBooleanExpression],
+    )
+
+    def conjuncts(self):
+        return ()
+
+    def disjuncts(self):
+        return ()
+
+    def __invert__(self):
+        return self
+
+    def __and__(self,other):
+        return other
+
+    def __or__(self,other):
+        return other
+
+EMPTY = _empty()
 
 
 class PhysicalDB(binding.Component):
@@ -53,39 +77,14 @@ class PhysicalDB(binding.Component):
         return self.tableMap[name]
 
 
-def getColumns(base,relvars):
-    cols = kjGraph(base)
-    for rv in relvars:
-        cols += rv.attributes()
-    return cols #tuple(cols)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
 class Table:
-
     protocols.advise(
         instancesProvide = [IRelationVariable],
     )
-    condition = None
+    condition = EMPTY
     outers = ()
 
     def __init__(self,name,columns,db=None):
@@ -96,48 +95,46 @@ class Table:
     def attributes(self):
         return self.columns
 
-    def thetaJoin(self,condition,*relvars):
+    def __call__(self,where=EMPTY,join=(),outer=(),keep=None):
+        cols = kjGraph(self.columns)
+        for rv in tuple(join)+tuple(outer):
+            cols = cols + rv.attributes()
+        if keep:
+            cols = kjSet(keep)*cols
         return BasicJoin(
-            condition & self.condition, (self,)+relvars, (),
-            getColumns(self.columns,relvars)
+            self.condition & where, (self,)+tuple(join), tuple(outer), cols
         )
-
-    def starJoin(self,condition,*relvars):
-        return BasicJoin(
-            condition & self.condition, (self,), relvars,
-            getColumns(self.columns,relvars)
-        )
-
-    select = thetaJoin      # XXX
 
     def __repr__(self):
         return self.name
 
-    def project(self,columns):
-        return BasicJoin(self.condition, (self,), (), kjSet(columns)*self.columns)
-
     def getDB(self):
         return self.db
 
+    def getInnerRVs(self):
+        return (self,)
+
+    def getOuterRVs(self):
+        return self.outers
+
+    def getCondition(self):
+        return self.condition
 
 
 class BasicJoin(Table, HashAndCompare):
 
     def __init__(self,condition,relvars,outers=(),columns=()):
         myrels = []; outers=list(outers)
+
         for rv in relvars:
-            if isinstance(rv,self.__class__):   # XXX
-                myrels.extend(rv.relvars)
-                outers.extend(rv.outers)
-                condition = condition & rv.condition
-            else:
-                myrels.append(rv)
+            myrels.extend(rv.getInnerRVs())
+            outers.extend(rv.getOuterRVs())
+            condition = condition & rv.getCondition()
+
         myrels.sort()
         if len(myrels)<1:
-            raise TypeError(
-                "%s requires at least %s relvar(s)" %
-                (self.__class__.__name__, self.minRV)
-            )
+            raise TypeError("BasicJoin requires at least 1 relvar(s)")
+
         self.relvars = tuple(myrels)
         outers.sort()
         self.outers = tuple(outers)
@@ -153,6 +150,9 @@ class BasicJoin(Table, HashAndCompare):
             list(self.columns.items())
         )
         return '%s%r' % (self._hashAndCompare[0], parms)
+
+    def getInnerRVs(self):
+        return self.relvars
 
     def getDB(self):
         db = self.relvars[0].getDB()

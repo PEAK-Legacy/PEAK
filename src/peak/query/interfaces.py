@@ -83,14 +83,22 @@ class IRelationComparison(IRelationCondition):
 class IRelationVariable(Interface):
     """A relation variable (RV) in relational algebra"""
 
-    def select(condition):
-        """Return RV representing this RV filtered by 'condition'"""
+    def __call__(where=None,join=(),outer=(),keep=()):
+        """Return a new RV based on select/project/join operations as follows:
 
-    def project(attrNames):
-        """Return RV representing the 'attrNames' subset of columns of this RV
+        'where' -- specify a condition that all rows of the new RV must meet
+        (equivalent to the relational algebra 'select' operation).
 
-        This is shorthand for 'remap(name1="name1", name2="name2",...)' for
-        the named attributes."""
+        'join' -- an iterable of RV's that will be inner-joined with this RV
+        (if no 'where' is supplied, this is a cartesian product.)
+
+        'outer' -- an iterable of RV's that will be outer-joined with this RV's
+        inner-joined portions.
+
+        'keep' -- a sequence of the names of the columns that should be kept in
+        the new RV.  Supplying a non-empty value here is equivalent to the
+        relational algebra 'project' operation.
+        """
 
     def remap(__keep__=False, **newFromOld):
         """Return RV with name changes
@@ -104,34 +112,26 @@ class IRelationVariable(Interface):
         columns not mentioned in the keyword arguments should be kept.
         Otherwise, unmentioned columns should be dropped."""
 
-    def thetaJoin(condition,*relvars):
-        """Return the theta-join of this RV with 'relvars' on 'condition'"""
-
-    def starJoin(condition,relvar):
-        """Outer join of this RV's "base" with 'relvar' on 'condition'
-
-        An RV's "base" is defined as the portion of the RV that does *not*
-        include any existing star joins.  Note: "star join" is a made-up term
-        here, intended to apply to the subset of outer joins that's needed to
-        implement conceptual queries."""
-
     def attributes():
         """Return a kjGraph mapping names->relation attributes"""
 
     def getDB():
         """Return an object indicating the responsible DB, or None if mixed"""
 
+    def getInnerRVs():
+        """Return sequence of inner-join RV's, or (self,) if not a join"""
+
+    def getOuterRVs():
+        """Return sequence of outer-join RV's, or () if not outer join"""
+
+    def getCondition():
+        """Return any select() or join condition applying to this RV"""
+
     def __cmp__(other):
         """Relation variables must be comparable to each other"""
 
     def __hash__(other):
         """Relation variables must be hashable"""
-
-
-
-
-
-
 
 
 
