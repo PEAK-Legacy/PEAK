@@ -2,6 +2,7 @@ from __future__ import generators
 from peak.api import *
 from connections import ManagedConnection, AbstractCursor
 from urllib import quote, unquote
+from interfaces import *
 from peak.util.Struct import makeStructType
 
 __all__ = [
@@ -16,7 +17,6 @@ try:
 except:
     ldap = None
     SCOPE_BASE, SCOPE_ONELEVEL, SCOPE_SUBTREE = range(3)
-
 
 
 
