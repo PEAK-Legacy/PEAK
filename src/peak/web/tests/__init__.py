@@ -6,6 +6,7 @@ an individual module to get just those tests."""
 
 allSuites = [
     'test_templates:test_suite',
+    'test_resources:test_suite',
 ]
 
 

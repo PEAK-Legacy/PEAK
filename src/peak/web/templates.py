@@ -120,6 +120,7 @@ class DOMletAsWebPage(binding.Component):
 
 
 
+
 class DOMletParser(binding.Component):
 
     """Parser that assembles a Document"""
@@ -638,7 +639,7 @@ class Text(ContentReplacer):
         write(self._openTag)
 
         if not isNull(data):
-            write(unicode(data.getObject()))
+            write(unicode(data.getObject(state.interaction)))
 
         write(self._closeTag)
 
@@ -670,7 +671,7 @@ class List(ContentReplacer):
 
         if not isNull(data):
 
-            for item in data.getObject():
+            for item in data.getObject(interaction):
                 if not interaction.allows(item):
                     continue
 

@@ -55,8 +55,8 @@ class BasicTest(TestCase):
 
     def setUp(self):
         r = testRoot()
-        self.app = TestApp(r, show = self.mkTemplate())
-        self.interaction = web.Interaction(r, policy = self.app)
+        app = TestApp(r, show = self.mkTemplate())
+        self.interaction = web.TestInteraction(app)
 
     def mkTemplate(self):
         d = web.TemplateDocument(testRoot())
@@ -64,14 +64,14 @@ class BasicTest(TestCase):
         return d
 
     def render(self):
-        meth = web.TraversalPath('show').traverse(
-            self.interaction.skin, self.interaction
-        )
-        return self.interaction.callObject(None, meth)
-
+        return self.interaction.simpleTraverse('show')
 
     def checkRendering(self):
-        assert self.render() == self.rendered #, (self.render(), self.rendered)
+        assert self.render() == self.rendered, (self.render(), self.rendered)
+
+
+
+
 
 
 

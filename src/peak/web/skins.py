@@ -46,6 +46,7 @@ class Skin(Traversable):
     )
 
     traverser = binding.New(SkinTraverser)
+    cache     = binding.New(dict)
 
     root   = binding.requireBinding("Underlying traversal root")
     policy = binding.requireBinding("Interaction Policy")
@@ -63,14 +64,6 @@ class Skin(Traversable):
 
     dummyInteraction = binding.Once(dummyInteraction)
 
-    def getResource(self, path):
-        traverser = self.traverser
-        interaction = self.dummyInteraction
-        path = adapt(path,TraversalPath)
-        return path.traverse(
-            traverser, interaction, getRoot = lambda o,i: traverser
-        )
-
     def traverseTo(self, name, interaction):
 
         if name == interaction.resourcePrefix:
@@ -78,9 +71,34 @@ class Skin(Traversable):
 
         return self.root.traverseTo(name, interaction)
 
-
-
     localPath = ''  # skin is at root
+
+
+
+
+
+
+
+
+    def getResource(self, path):
+
+        path = adapt(path,TraversalPath)
+
+        if path in self.cache:
+            return self.cache[path]
+
+        traverser = self.traverser
+        interaction = self.dummyInteraction
+
+        resource = path.traverse(
+            traverser, interaction, getRoot = lambda o,i: traverser
+        )
+
+        if resource is not NOT_FOUND and resource is not NOT_ALLOWED:
+            resource = resource.getObject(interaction)
+
+        self.cache[path] = resource
+        return resource
 
 
     def getResourceURL(self, path, interaction):
@@ -94,24 +112,6 @@ class Skin(Traversable):
             return '%s/%s' % (base, path)
         else:
             return base
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

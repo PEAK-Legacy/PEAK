@@ -194,10 +194,10 @@ class Interaction(security.Interaction):
         storage.beginTransaction(self.app)
 
     def getApplication(self,request):
-        return self.skin
+        return [self.skin]
 
     def callTraversalHooks(self, request, ob):
-        ob.preTraverse(self)
+        ob[-1].preTraverse(self)
 
 
 
@@ -205,7 +205,7 @@ class Interaction(security.Interaction):
 
     def traverseName(self, request, ob, name, check_auth=1):
 
-        nextOb = TraversalPath([name]).traverse(ob,self)
+        nextOb = TraversalPath([name]).traverse(ob[-1],self)
 
         if nextOb is NOT_FOUND:
             return self.notFound(ob, name)
@@ -213,12 +213,12 @@ class Interaction(security.Interaction):
         if nextOb is NOT_ALLOWED:
             return self.notAllowed(ob, name)
 
-        return nextOb
+        return ob + [nextOb]
 
 
     def afterTraversal(self, request, ob):
         # Let the found object know it's being traversed
-        ob.preTraverse(self)
+        ob[-1].preTraverse(self)
 
 
     def getDefaultTraversal(self, request, ob):
@@ -227,14 +227,15 @@ class Interaction(security.Interaction):
 
         default = self.policy.defaultMethod
 
-        if default and adapt(ob.getObject(), self.pageProtocol, None) is None:
+        if default:
+            if adapt(ob[-1].getObject(self),self.pageProtocol,None) is None:
 
-            # Not renderable, try for default method
-            newOb = ob.traverseTo(default, self)
+                # Not renderable, try for default method
+                newOb = ob[-1].traverseTo(default, self)
 
-            if newOb is not NOT_FOUND:
-                # The traversal will succeed, so tell the request to proceed
-                return ob, (default,)
+                if newOb is not NOT_FOUND:
+                    # Traversal will succeed, so tell the request to proceed
+                    return ob, (default,)
 
         # object is renderable, default traversal will fail, or no default
         # is in use: just render the object directly
@@ -243,16 +244,16 @@ class Interaction(security.Interaction):
 
 
 
-
     def callObject(self, request, ob):
 
-        page = adapt(ob.getObject(), self.pageProtocol, None)
+        page = adapt(ob[-1].getObject(self), self.pageProtocol, None)
 
         if page is None:
             # Render the found object directly
-            return ob.getObject()
+            return ob[-1].getObject(self)
 
-        binding.suggestParentComponent(ob.getParentComponent(),None,page)
+        if len(ob)>1:
+            binding.suggestParentComponent(ob[-2],None,page)
         return page.render(self)
 
 
@@ -266,7 +267,6 @@ class Interaction(security.Interaction):
             # XXX a different response class for HEAD; Zope 3 should
             # XXX probably do it that way too.
             request.response.setBody('')
-
 
     def handleException(self, object, request, exc_info, retry_allowed=1):
 
@@ -336,18 +336,18 @@ class TestInteraction(Interaction):
 
     baseURL = 'http://127.0.0.1'    # prevent use of request unless necessary
 
+    def simpleTraverse(self, path, run=True):
 
+        path = adapt(path, TraversalPath)
+        ob = self.getApplication(None)
 
+        for part in path:
+            ob = self.traverseName(None, ob, part)
 
+        if run:
+            return self.callObject(None, ob)
 
-
-
-
-
-
-
-
-
+        return ob
 
 
 

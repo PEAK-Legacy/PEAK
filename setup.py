@@ -59,8 +59,8 @@ if include_tests:
     data_files += [
         ('peak/running/tests', ['src/peak/running/tests/test_cluster.txt']),
         ('peak/config/tests',  ['src/peak/config/tests/test_links.ini']),
+        ('peak/web/tests',     ['src/peak/config/tests/template1.pwt']),
     ]
-
 
 if include_metamodels:
 

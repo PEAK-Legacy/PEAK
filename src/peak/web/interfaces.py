@@ -85,15 +85,40 @@ class IWebTraversable(Interface):
     """A component that supports path traversal"""
 
     def preTraverse(interaction):
-        """Invoked before traverse by web requests"""
+
+        """Invoked before traverse by web requests
+
+        This can be used to enforce any preconditions for interacting with this
+        object via the web.  For example, an e-commerce "checkout" traversable
+        might want to ensure that there is an active session and there are
+        items in the user's cart, or that the connection is secure.
+
+        This method is only invoked when the traversable is about to be
+        traversed or rendered via a web request.  It is not invoked when
+        app-server code traverses a location (e.g. by paths in page templates).
+        Traversables can take advantage of this to have different security
+        restrictions for app-server code and via-the-web URL traversal.
+        Resources, for example, do not do security checks in 'traverseTo()',
+        only in 'preTraverse()', thus ensuring that app-server code can access
+        all available resources, whether they are available to the user or not.
+        """
 
     def traverseTo(name, interaction):
         """Return named 'IWebTraversable', or 'NOT_ALLOWED'/'NOT_FOUND'"""
 
-    def getObject():
+    def getObject(interaction):
         """Return the underlying object that would be traversed"""
 
     localPath = Attribute("Relative URL (no leading '/') from skin/app root")
+
+
+
+
+
+
+
+
+
 
 
 class IWebPage(Interface):
@@ -119,6 +144,22 @@ class ISkin(IWebTraversable):
 
     def getResourceURL(path, interaction):
         """Return the URL for the named resource"""
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 class IDOMletState(IComponent):

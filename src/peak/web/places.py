@@ -47,12 +47,12 @@ class Traversable(binding.Component):
         instancesProvide = [IWebTraversable]
     )
 
-    def getObject(self):
+    def getObject(self, interaction):
         return self
 
     def traverseTo(self, name, interaction):
 
-        ob = self.getObject()
+        ob = self.getObject(interaction)
         loc = getattr(ob, name, NOT_FOUND)
 
         if loc is not NOT_FOUND:
@@ -98,7 +98,7 @@ class Decorator(Traversable):
     asTraversableFor = classmethod(asTraversableFor)
 
 
-    def getObject(self):
+    def getObject(self, interaction):
         return self.ob
 
     def traverseTo(self, name, interaction):
@@ -168,10 +168,10 @@ class MultiTraverser(Traversable):
 
     items = binding.requireBinding("traversables to traversed")
 
-    def getObject(self):
+    def getObject(self, interaction):
         # Return the first item
         for item in self.items:
-            return item.getObject()
+            return item.getObject(interaction)
 
     def preTraverse(self, interaction):
         for item in self.items:

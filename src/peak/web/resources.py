@@ -1,15 +1,17 @@
 from peak.api import *
 from interfaces import *
 from places import Traversable
+from publish import TraversalPath
+from templates import DOMletAsWebPage, TemplateDocument
 from peak.naming.factories.openable import FileURL
 from peak.util.imports import importString
 import os.path
+import sys
 
 __all__ = [
     'Resource', 'FSResource', 'ResourceDirectory', 'FileResource',
-    'ImageResource', 'DefaultLayer'
+    'ImageResource', 'DefaultLayer', 'bindResource', 'TemplateResource',
 ]
-
 
 RESOURCE_BASE     = 'peak.web.file_resource.'
 RESOURCE_DEFAULTS = PropertyName('peak.web.resourceDefaultsIni')
@@ -35,8 +37,6 @@ def parseFileResource(parser, section, name, value, lineInfo):
     prefix = PropertyName('peak.web.file_resources.'+name).asPrefix()
     for pattern in section.split()[1:]:
         parser.add_setting(prefix,filenameAsProperty(pattern),value,lineInfo)
-
-
 
 
 class Resource(Traversable):
@@ -84,6 +84,7 @@ class ResourceDirectory(FSResource):
 
     isRoot = False      # Are we the topmost FSResource here?
     includeURL = False  # Include our name in URL even if we're a root
+    cache = binding.New(dict)
 
     def __onSetup(self,d,a):
 
@@ -120,7 +121,6 @@ class ResourceDirectory(FSResource):
 
 
 
-
     def traverseTo(self, name, interaction):
 
         targets = self.filenames.get(name,())
@@ -128,10 +128,12 @@ class ResourceDirectory(FSResource):
         if len(targets)<1:
             # <1 means no match
             return NOT_FOUND
-
         elif len(targets)>1 and name not in targets:
             # >1 and name isn't in there, it's ambiguous
             return NOT_FOUND
+
+        if name in self.cache:
+            return self.cache[name]
 
         if name in targets:
             filename = name
@@ -139,11 +141,11 @@ class ResourceDirectory(FSResource):
             filename, = targets
 
         # XXX warn if name is overspecified
-
         prop = filenameAsProperty(filename)
 
         # check if name is visible; if false, drop it
         if not RESOURCE_VISIBLE.of(self)[prop]:
+            self.cache[name] = NOT_FOUND
             return NOT_FOUND
 
         # look up factory for name
@@ -157,10 +159,8 @@ class ResourceDirectory(FSResource):
         ref = naming.Reference(factory, addresses=[FileURL.fromFilename(path)])
         obj = ref.restore(self,None)
         obj.setParentComponent(self, filename)
-
-        return adapt(obj,interaction.pathProtocol)
-
-
+        self.cache[name] = obj = adapt(obj,interaction.pathProtocol)
+        return obj
 
     def localPath(self,d,a):
 
@@ -203,6 +203,88 @@ class ResourceDirectory(FSResource):
 
 
 
+def findPackage(pkg):
+
+    """Find containing package (module w/'__path__') for module named 'pkg'"""
+
+    mod = importString(pkg)
+
+    while not hasattr(mod,'__path__') and '.' in pkg:
+        pkg = '.'.join(pkg.split('.')[:-1])
+        mod = importString(pkg)
+
+    return pkg, mod
+
+
+class ResourceProxy(object):
+
+    __slots__ = 'path', 'localPath'
+
+    protocols.advise(
+        instancesProvide = [IWebTraversable]
+    )
+
+    def __init__(self, path, localPath):
+        self.path = path
+        self.localPath = localPath
+
+    def getObject(self, interaction):
+        return interaction.skin.getResource(self.path)
+
+    def preTraverse(self, interaction):
+        self.getObject(interaction).preTraverse(interaction)
+
+    def traverseTo(self, name, interaction):
+        ob = adapt(self.getObject(interaction),interaction.pathProtocol)
+        return ob.traverseTo(name, interaction)
+
+
+
+
+
+
+
+def bindResource(path, pkg=None, **kw):
+
+    """Attribute binding to look up a resource"""
+
+    path = adapt(path, TraversalPath)
+
+    if not str(path).startswith('/'):
+
+        if pkg is None:
+            pkg = sys._getframe(1).f_globals['__name__']
+            pkg, module = findPackage(pkg)
+
+        # /package/whatever
+        path = TraversalPath('/'+pkg) + path
+
+    def getResource(self, d, a):
+        return ResourceProxy(path, RESOURCE_PREFIX(self)+'/'+str(path))
+
+    kw.setdefault('suggestParent',False)
+    return binding.Once(getResource, **kw)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 class DefaultLayer(Traversable):
 
     cache = fileCache = binding.New(dict)
@@ -222,11 +304,7 @@ class DefaultLayer(Traversable):
             return NOT_FOUND
 
         try:
-            pkg = name
-            mod = importString(pkg)
-            while not hasattr(mod,'__path__') and '.' in pkg:
-                pkg = '.'.join(pkg.split('.')[:-1])
-                mod = importString(pkg)
+            pkg, mod = findPackage(name)
         except ImportError:
             d = NOT_FOUND
         else:
@@ -248,32 +326,40 @@ class DefaultLayer(Traversable):
     localPath = binding.bindTo('../localPath')
 
 
+class TemplateResource(FSResource):
+
+    """Template used as a method (via 'bindResource()')"""
+
+    def preTraverse(self, interaction):
+        # Templates may not be accessed directly via URL!
+        interaction.notFound(self, self.getComponentName())
+
+
+    def theTemplate(self,d,a):
+
+        """Load and parse the template on demand"""
+
+        doc = TemplateDocument(self,None)
+        stream = open(self.filename, 'rt')
+
+        try:
+            doc.parseFile(stream)
+        finally:
+            stream.close()
+        return doc
+
+    theTemplate = binding.Once(theTemplate)
+
+
+    def getObject(self, interaction):
+        return self.theTemplate
+
+
 class FileResource(FSResource):
     pass
 
 class ImageResource(FileResource):
     pass
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

@@ -1,0 +1,6 @@
+<body>
+<h1 domlet="text:foo">Title Goes Here</h1>
+<ul domlet="list:bar">
+    <li define="listItem" domlet="text"></li>
+</ul>
+</body>
