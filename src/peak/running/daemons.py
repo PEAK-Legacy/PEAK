@@ -51,7 +51,7 @@ class TaskQueue(binding.Component):
 
     activeTasks = binding.Make(list)
 
-    _enabled   = binding.Make(lambda: events.Value(True))
+    _enabled   = binding.Make(lambda: events.Condition(True))
     _taskCount = binding.Make(lambda: events.Semaphore(0))
 
 
@@ -83,15 +83,12 @@ class TaskQueue(binding.Component):
     def _processNextTask(self):
 
         while True:
-
             # Wait until we have tasks and are enabled
+            yield self._enabled & self._taskCount; events.resume()
 
-            while not self._taskCount() or not self._enabled():
-                yield self._taskCount; events.resume()
-                if not self._enabled():
-                    yield self._enabled; events.resume()
-
+            # But don't run from within 'addTask' call, wait till next moment
             yield self.eventLoop.sleep(); events.resume()
+
 
             didWork = cancelled = False
 
@@ -117,9 +114,12 @@ class TaskQueue(binding.Component):
                     lambda src,evt,task=task: self.addTask(task)
                 )
 
+
     _processNextTask = binding.Make(
         events.threaded(_processNextTask), uponAssembly=True
     )
+
+
 
 class AdaptiveTask(binding.Component):
 
