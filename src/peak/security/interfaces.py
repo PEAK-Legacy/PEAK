@@ -172,22 +172,22 @@ whenImported(
         )
 )
 
+whenImported(
+    'peak.model.features',
+    lambda features:
+        protocols.declareAdapter(
+            protocols.NO_ADAPTER_NEEDED,
+            provides = [IGuardedDescriptor],
+            forTypes = [features.FeatureClass]
+        )
+)
+
 protocols.declareAdapter(
     # Functions can be guarded descriptors if they define 'permissionsNeeded'
     lambda o,p: (getattr(o,'permissionsNeeded',None) is not None) and o or None,
     provides = [IGuardedDescriptor],
     forTypes = [FunctionType]
 )
-
-
-
-
-
-
-
-
-
-
 
 
 

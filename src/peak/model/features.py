@@ -239,7 +239,7 @@ class StructuralFeature(object):
 
     offerAs = ()
     activateUponAssembly = False
-
+    permissionsNeeded = None    # IGuardedDescriptor, declared in peak.security
 
 
 
