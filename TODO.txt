@@ -23,21 +23,6 @@ Open Issues/To-Do Items
 
     * Get XMI writing in place, w/transaction support
 
-    * 'peak.running' refactorings: use standard 'logging' module's log levels,
-       add 'logging' distro to 'peak.util' for 2.2 backward compatibility,
-       and possibly adjust cluster stuff to work off ZConfig primary and
-       generate clustertools file(s).
-
-
-
-
-
-
-
-
-
-
-
 
  Targeted for 0.5 Beta 1
 
@@ -51,32 +36,6 @@ Open Issues/To-Do Items
 
     * On-the-fly class combination (think "runtime module inheritance",
       without the modules) for DMs.
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
