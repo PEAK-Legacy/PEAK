@@ -2,7 +2,7 @@ from __future__ import generators
 from peak.api import *
 from peak.util.imports import importString, importObject, whenImported
 from peak.binding.components import Component, Make, getParentComponent
-from peak.binding.components import iterParents, Configurable, Require
+from peak.binding.components import iterParents,Configurable,Require,Delegate
 from peak.binding.interfaces import IAttachable, IRecipe
 from peak.naming.interfaces import IStreamFactory
 from peak.util.EigenData import EigenCell,AlreadyRead
@@ -16,7 +16,7 @@ __all__ = [
     'ConfigMap', 'LazyRule', 'fileNearModule', 'packageFile', 'IniLoader',
     'Value', 'iterKeys', 'Namespace', 'iterValues',
     'CreateViaFactory', 'parentsProviding', 'parentProviding', 'lookup',
-    'ServiceArea', 'XMLKey', 'processXML',
+    'ServiceArea', 'XMLKey', 'processXML', 'XMLParser',
 ]
 
 
@@ -120,7 +120,7 @@ class XMLKey:
 
     def registrationKeys(self,depth=0):
         return [(self,0)]
-    
+
     def parentKeys(self):
         return ()
 
@@ -135,7 +135,7 @@ class XMLKey:
 
         elif self.xmlns<>'*':
             yield XMLKey(self.kind,'*',self.name)
-            
+
 
     def __hash__(self):
         return self.hashCode
@@ -162,46 +162,41 @@ class XMLKey:
 
 
 
-def processXML(context,source,**kw):
-    """Return the result of parsing 'source' using 'context' to control parsing
+class XMLParser(Component):
+    """Wrap a SOX.NegotiatingParser for configuration-driven XML parsing
 
-    'context' should be an 'IConfigSource' (e.g. almost any component) with
-    configuration data for the XML attributes and elements to be parsed.
-    'source' should be an 'IStreamSource' containing the XML to be parsed.
+    'XMLParser' instances use their configuration context to obtain XML element
+    and attribute defintions, as well as default XML namespaces from
+    properties in 'peak.config.xml_namespaces', and parsing functions from
+    properties in 'peak.config.xml_functions' (as well as from any keyword
+    arguments supplied to the constructor).
 
-    In addition to XML attribute and element definitions, the context can
-    also provide properties in 'peak.config.xml_namespaces' and
-    'peak.config.xml_functions' to exert additional control over the parsing.
-    
-    For example, this::
+    Default namespaces allow an XML document to optionally omit XML namespace
+    declarations.  For example, this::
 
         [peak.config.xml_namespaces]
         pwt = "http://peak.telecommunity.com/DOMlets/"
 
     establishes that the namespace URI for the 'pwt' prefix will be the DOMlets
-    namespace URI, unless the document explicitly defines otherwise.  And
-    this::
+    namespace URI, unless the document explicitly defines otherwise. And this::
 
         [peak.config.xml_functions]
         text = some_module.handleTopLevelText
         child = some_module.handleRootElement
         finish = some_module.getResult
 
-    sets up the top-level parsing functions used by the
-    'SOX.NegotiatingParser'.  (See 'peak.util.SOX.INegotiationData' for info
-    on what each parsing function does.)  Note that these functions are used
-    only for parsing the top-level document nodes, and not for any contained
-    XML elements.
+    sets up the top-level parsing functions used by the 'SOX.NegotiatingParser'
+    that this class uses to do the actual parsing.  You can also override or
+    supplement these top-level functions by passing keyword arguments to the
+    'XMLParser()' constructor.  (See 'peak.util.SOX.INegotiationData' for info
+    on what each parsing function is for.)  Note that these functions are used
+    only to parse the top-level document nodes, not any contained XML elements.
 
-    You can also override or supplement these top-level functions by passing
-    keyword arguments to this function.  Note that this function will only
-    return a value if there is a 'finish' function defined (but you can use a
-    'start' function to set one up).
-
-    The behavior for contained XML elements is determined by the XML element
-    and attribute definitions provided by 'context'.  These must be
-    'IElementNegotiator' and 'IAttributeNegotiator' functions, as defined in
-    'peak.util.SOX'.  So, in::
+    The behavior for the contained XML elements and attributes is determined by
+    the XML element and attribute definitions available in the XMLParser's
+    configuration context.  These definitions must be 'IElementNegotiator' and
+    'IAttributeNegotiator' functions, as defined in 'peak.util.SOX'.  So, for
+    example, in::
 
         [XML Attributes for http://peak.telecommunity.com/DOMlets/]
         domlet = pwt.negotiateDomlet
@@ -211,37 +206,94 @@ def processXML(context,source,**kw):
     'peak.util.sox.IAttributeNegotiator' interface.
     """
 
-    from peak.util.SOX import NegotiatingParser
-    p = NegotiatingParser()
+    def __init__(self, parentComponent=NOT_GIVEN, componentName=None, **kw):
+        Component.__init__(self,parentComponent,componentName,kwargs=kw)
 
-    nspre = 'peak.config.xml_namespaces.'
-    for key in iterKeys(context,nspre[:-1]):
-        if '*' not in key:
-            prefix = key[len(nspre):]
-            p.addNamespace(prefix,lookup(context,key))
+    kwargs = binding.Make(dict)
+    parserClass = binding.Obtain('import:peak.util.SOX.NegotiatingParser')
 
-    nspre = 'peak.config.xml_functions.'
-    for key in iterKeys(context,nspre[:-1]):
-        if '*' not in key:
-            kw.setdefault(key[len(nspre):],lookup(context,key))
+    def makeParser(self):
+        """Return a configured NegotiatingParser"""
+        p = self.parserClass()
+        nspre = 'peak.config.xml_namespaces.'
+        for key in iterKeys(self,nspre[:-1]):
+            if '*' not in key:
+                prefix = key[len(nspre):]
+                p.addNamespace(prefix,lookup(self,key))
+       
+        def lookupElement(ns,nm):
+            if ns is None:
+                nm=nm.split(':',1)[1]
+            return lookup(self,XMLKey('element',ns or '*',nm),None)
+    
+        def lookupAttribute(ns,nm):
+            if ns is None:
+                nm = nm.split(':',1)[1]
+            return lookup(self,XMLKey('attribute',ns or '*',nm),None)
+    
+        p.setLookups(lookupElement,lookupAttribute)
+        return p
+        
+    def parseFunctions(self):
+        """Return top-level parse function map based on kwargs and props"""
+        kw = self.kwargs.copy()
+        nspre = 'peak.config.xml_functions.'
+        for key in iterKeys(self,nspre[:-1]):
+            if '*' not in key:
+                kw.setdefault(key[len(nspre):],lookup(self,key))
+        return kw
 
-    def lookupElement(ns,nm):
-        if ns is None:
-            nm=nm.split(':',1)[1]
-        return lookup(context,XMLKey('element',ns or '*',nm),None)
 
-    def lookupAttribute(ns,nm):
-        if ns is None:
-            nm = nm.split(':',1)[1]
-        return lookup(context,XMLKey('attribute',ns or '*',nm),None)
+    def parse(self,source):
+        """Parse an 'IStreamSource' using the configured parser
 
-    p.setLookups(lookupElement,lookupAttribute)
-    factory = IStreamSource(source).getFactory(context)
-    stream = factory.open('t')
-    try:
-        return p.parseStream(stream,kw,factory.address)
-    finally:
-        stream.close()
+        'source' should be a 'config.IStreamSource' containing the XML to be
+        parsed.  Note that this method will only return a value if a 'finish'
+        function is defined for the top-level document.  The 'finish' function
+        can be set as a 'peak.config.xml_functions' property, passed in via a
+        keyword argument to the constructor, or it can be set by a 'start'
+        function.
+        """
+        
+        factory = IStreamSource(source).getFactory(self)
+        stream = factory.open('t')
+        try:
+            return self.makeParser().parseStream(
+                stream, self.parseFunctions(), factory.address
+            )
+        finally:
+            stream.close()
+        
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+def processXML(context,source,**kw):
+    """Return the result of parsing 'source' using 'context' to control parsing
+
+    This is basically a shortcut for 'XMLParser(context,**kw).parse(source)'.
+    See 'config.XMLParser' for full documentation.  Also note that this
+    function will only return a value if the parser has a 'finish' function
+    defined.  See the 'parse' method of 'XMLParser' for more details.
+    """
+    return XMLParser(context,**kw).parse(source)
 
 
 class StreamSource(protocols.Adapter):
@@ -260,7 +312,7 @@ class StreamSource(protocols.Adapter):
         if isinstance(url,FileURL):
             return FileFactory(filename=url.getFilename())
         return naming.lookup(context,url)
-        
+
 
 class FactorySource(protocols.Adapter):
 
@@ -271,17 +323,6 @@ class FactorySource(protocols.Adapter):
 
     def getFactory(self, context):
         return self.subject
-        
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -764,7 +805,7 @@ class Namespace(object):
         """Return property 'key' within this namespace, or 'default'"""
 
         if self._target is not NOT_GIVEN:
-            if key in self._data:                
+            if key in self._data:
                 return self._data[key]
 
             result = lookup(
