@@ -113,10 +113,10 @@ validNames = {
     'dcoracle2://usr@srv/': Items(user='usr',server='srv'),
     'tcp://localhost:http': Items(host='localhost',port='http'),
     'udp://127.0.0.1:80': Items(host='127.0.0.1',port='80'),  # ugh
-    'fd:0,type=inet/stream/ip': Items(fileno=0, proto=0),
-    'fd:stderr': Items(fileno=2),
-    'fd:27,type=inet/dgram': Items(fileno=27),
-    'fd:27,type=/dgram': Items(fileno=27),
+    'fd.socket:0/inet/stream/ip': Items(fileno=0, protocol=0),
+    'fd.socket:stderr': Items(fileno=2),
+    'fd.socket:27/inet/dgram': Items(fileno=27),
+    'fd.socket:27//dgram': Items(fileno=27),
 
 
 
@@ -156,8 +156,8 @@ canonical = {
     'sybase://user:p%40ss@server': 'sybase:user:p%40ss@server',
     'gadfly://drinkers@c:\\temp': 'gadfly:drinkers@c:\\temp',
     'dcoracle2://usr@srv/': 'dcoracle2:usr@srv',
-    'fd:0,type=inet/stream/ip': 'fd:stdin',
-    'fd:27,type=inet/dgram': 'fd:27,type=/dgram',
+    'fd.socket:0/inet/stream/ip': 'fd.socket:stdin',
+    'fd.socket:27/inet/dgram': 'fd.socket:27//dgram',
 
 }
 

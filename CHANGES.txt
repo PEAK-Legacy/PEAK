@@ -68,7 +68,7 @@ Fixes and Enhancements since Version 0.5 alpha 2
             naming.Indirect('socketURL'), adaptTo=[IListeningSocket]
         )
 
- - Added 'peak.running.supervisor', a mini-framework for pre-forking,
+ - Added 'peak.tools.supervisor', a mini-framework for pre-forking,
    multiprocess servers, such as for FastCGI.  The framework includes a ZConfig
    schema for process supervisors, and support for automatically forking new
    children (up to a predefined maximum, with a minimum interval between

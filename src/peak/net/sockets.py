@@ -245,11 +245,12 @@ protocols.declareAdapter(
 
 
 class fdURL(naming.URL.Base):
-    """fd:fileno[,type=af[/kind[/protocol]]]
+
+    """fd.socket:fileno[/family[/kind[/protocol]]]
 
     'fileno' can be an integer, or one of 'stdin', 'stdout', 'stderr'
 
-    'af' can be the lowercase form of any 'socket.AF_*' constant, e.g.
+    'family' can be the lowercase form of any 'socket.AF_*' constant, e.g.
     'unix', 'inet', 'inet6', etc.  ('inet' is the default if unspecified.)
 
     'kind' can be the lowercase form of any 'socket.SOCK_*' constant, e.g.
@@ -258,39 +259,43 @@ class fdURL(naming.URL.Base):
     'protocol' can be an integer, or the lowercase form of any
     'socket.IPPROTO_*' constant, e.g. 'ip', 'icmp', 'udp', etc.  It can also
     be the name of a protocol that will be looked up using
-    'socket.getprotobyname()'.  ('ip' is the default if unspecified.)
+    'socket.getprotobyname()'.  (If unspecified, it defaults to the
+    system-defined default protocol for the family and kind; effectively this
+    is the same as 'SocketProtocol.ip'.)
 
     Example::
 
-        fd:stdin,type=inet6/dgram/udp
+        fd.socket:stdin/inet6/dgram/udp
     """
 
-    supportedSchemes = 'fd',
+    supportedSchemes = 'fd','fd.socket'
 
     class fileno(naming.URL.Field):
         referencedType = FileDescriptor
 
-    class af(naming.URL.Field):
+    class family(naming.URL.Field):
         referencedType = SocketFamily
         defaultValue   = SocketFamily.inet
         canBeEmpty     = True
 
-    class stype(naming.URL.Field):
+    class kind(naming.URL.Field):
         referencedType = SocketType
         defaultValue   = SocketType.stream
         canBeEmpty     = True
 
-    class proto(naming.URL.Field):
+
+
+    class protocol(naming.URL.Field):
         referencedType = SocketProtocol
         defaultValue   = SocketProtocol.ip
         canBeEmpty     = True
 
     syntax = naming.URL.Sequence(
-        fileno, (',type=', af, ('/', stype, ('/', proto)))
+        fileno, ( '/', family, ('/', kind, ('/', protocol)))
     )
 
     def asSocket(self):
-        return socket.fromfd(self.fileno, self.af, self.stype, self.proto)
+        return socket.fromfd(self.fileno, self.family, self.kind, self.protocol)
 
 
 protocols.declareAdapter(
@@ -298,11 +303,6 @@ protocols.declareAdapter(
     provides=[IClientSocket,IListeningSocket],
     forTypes=[fdURL]
 )
-
-
-
-
-
 
 
 
