@@ -4,18 +4,88 @@ Open Issues/To-Do Items
 
     General
 
-      * Update tutorial documentation
+        * Update tutorial documentation
 
-    Database
+        * Up-to-date and complete Persistence package
 
-      * Create test suite to check proper transactional functioning, cache
-        consistency, queueing behavior, and typemap management.
+    peak.binding
 
-      * Update Interfaces to reflect current API, and document internals
+        - add binding.Acquire
 
+        - docstrings for reference
+
+        - move out 'imports' module (to util? naming?)
+
+    peak.config
+
+        - Config files:
+
+            - add "Include Files" section (?=filename)
+
+            - add "Utility Providers" section (interface=provider)
+
+            - delay eval() until rule is accessed
+
+        - Change GlobalConfig to load environ and peak.ini directly,
+          rather than as load-on-demand rules
+
+        - docstrings for reference
+
+    peak.model
+
+        - make Element Persistent; add support for lazy-loaded attributes
+
+        - review XMI/Querying extensions for forward compatibility planning
+
+        - clean up TW docstrings & interfaces
+
+    peak.naming
+
+        - move LDAP URL support to peak.storage.ldap
+
+        - move lockfile URL support to peak.running.lockfiles
+
+        - move factories.__init__ stuff to peak.naming.spi, loaded via peak.ini
+
+        - docstrings for reference
+
+    peak.running
+
+        - create a basic LogFile logging provider
+
+        - unit tests for daemons?
+
+        - simple daemons comparable to those in MetaDaemon?
+
+        - docstrings for reference
+
+    peak.storage
+
+        - URLs and drivers for LDAP, gadfly, Sybase, and postgres
+
+        - "alternate key" rack base class(es)
+
+        - "query" rack base class(es)
+
+        - add logging to transaction error handlers
+
+        - unit tests for more complex object scenarios: references, thunks..?
+
+        - docstrings for reference
+
+    peak.util
+
+        - docstrings for reference
+
+        - more unit tests?
 
 
  Future Releases
+
+  (Note: some of the below is held-over from TransWarp and may no longer be
+  relevant as written, they are being kept on this list as placeholders for
+  ideas or problem areas that may need to be re-considered in future.)
+
 
   Simulator/Module Inheritance
 
@@ -28,15 +98,27 @@ Open Issues/To-Do Items
       pass of importing a module (prior to running 'setupModule()')
 
 
-  Documentation/Tests/General
-
-    * Create tutorials/examples based on actual uses
-
-
   Messaging/ObjectSpaces
 
     * Support for sending and receiving remote cache invalidation
       messages between RecordManagers.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
   peak.model
@@ -48,10 +130,6 @@ Open Issues/To-Do Items
 
     * More S-E-F metadata: features, subclasses, svc.<->class, nested services
 
-    * Persistent SEF module, with Base.__getstate__ supporting omission
-      of Once attributes, and DynamicBinding setting _p_changed on
-      instantiation.
-
     * A way to generate Z3 Interfaces from Feature-based specifications?
 
     * Implement WarpCORE-oriented structural model, w/Querying support
@@ -59,6 +137,7 @@ Open Issues/To-Do Items
     * "Indexed" version of in-memory model?
 
     * "Persistent" StructuralModel (indexes w/BTrees?  Catalog?)
+
 
     Queries
 
@@ -78,6 +157,9 @@ Open Issues/To-Do Items
        * How much of framework needs extensibility?  Should the predicate
          classes be placed in the StructuralModel's namespace so that predicates
          have their meaning assigned by the StructuralModel implementation?
+
+
+
 
 
   peak.metamodels.uml
