@@ -12,6 +12,9 @@ __all__ = [
 ]
 
 
+def sqlsafestr(s):
+    return s.replace("'", "''")
+    
 def _nothing():
     pass
 
@@ -335,14 +338,15 @@ class SybaseConnection(ValueBasedTypeConn):
     textsize  = binding.Obtain(PropertyName('Sybase.client.textsize'), default=None, noCache=True)
 
     otmap = {
-        'systable' : 'S',
-        'fkey' : 'RI',
-        'defaults' : 'D',
-        'proc' : 'P',
-        'table' : 'U',
-        'view' : 'V',
-        'trigger' : 'TR',
-        'rule' : 'R',
+        'systable'  : 'S',
+        'fkey'      : 'RI',
+        'function'  : 'F',
+        'defaults'  : 'D',
+        'proc'      : 'P',
+        'table'     : 'U',
+        'view'      : 'V',
+        'trigger'   : 'TR',
+        'rule'      : 'R',
     }
 
     def _open(self):
@@ -398,11 +402,109 @@ class SybaseConnection(ValueBasedTypeConn):
             for (k, v) in self.otmap.items()
         ])
 
-        return self('''select name as obname, obtype = CASE %s END, crdate%s
-            from sysobjects%s''' % (typecase, addsel, addwhere), outsideTxn=None)
+        return self('''select name as obname, obtype = CASE %s ELSE type END, crdate%s
+            from sysobjects%s ORDER BY name''' % (typecase, addsel, addwhere), outsideTxn=None)
 
+
+    def _helptext(self, name, l):
+        '''Append sp_helptext lines to list l'''
+        
+        rs = self("sp_helptext '%s'" % name, multiOK=True)
+        more = True
+        while more:
+            for r in rs:
+                if r.has_key('text'):   # Sybase
+                    l.append(r['text'].replace('\r\n', '\n'))
+                elif r.has_key('Text'): # MS-SQL
+                    l.append(r['Text'].replace('\r\n', '\n'))
+            more = rs.nextset()
+
+        
+    def _get_permissions(self, name, l, sybase):
+        '''Append permissions rules to list l'''
+        
+        if sybase:
+            sybkludge = ' + 204'
+        else:
+            sybkludge = ''
+        
+        rs = self("""
+            SELECT upper(k.name) as k, upper(a.name) as a,
+                user_name(p.uid) as g
+            FROM sysprotects p
+            JOIN master.dbo.spt_values a
+            ON p.action = a.number AND a.type = 'T'
+            JOIN master.dbo.spt_values k
+            ON p.protecttype%s = k.number AND k.type = 'T'
+            WHERE p.id = OBJECT_ID('%s')
+            ORDER BY k.name, a.name, user_name(p.uid)
+            """ % (sybkludge, name))
+            
+        for r in rs:
+            l.append('%s %s ON %s TO %s\ngo\n' % (
+                r.k, r.a, name, r.g)
+            )
+
+            
+    def getDDLForObject(self, name):
+        name = sqlsafestr(name)
+
+        r = ~ self("""select * from sysobjects where id = OBJECT_ID('%s')""" % name)
+        kind = r.type.strip() 
+
+        sybase = r.has_key('sysstat2')
+        
+        if kind == 'P' and sybase:
+            mode = (r.sysstat2 >> 4 & 0x3)
+            mode = {0 : 'unchained', 1 : 'chained', 2 : 'anymode'}.get(mode)
+        else:
+            mode = None
+        
+        if kind in ('P', 'TR', 'V'):
+            kind = {'P':'PROCEDURE', 'TR':'TRIGGER', 'V':'VIEW'}[kind] 
+    
+            d = []
+
+            if not sybase:
+                qi = r.status & 0x40000000 and 'ON' or 'OFF'
+                an = r.status & 0x20000000 and 'ON' or 'OFF'
+
+                d.append('SET QUOTED_IDENTIFIER %s\ngo\n' % qi)
+                d.append('SET ANSI_NULLS %s\ngo\n' % an)
+
+            d.extend([
+                "IF OBJECT_ID('%s') IS NOT NULL\nBEGIN\n" % name,
+                "    DROP %s %s\n" % (kind, name),
+                "    IF OBJECT_ID('%s') IS NOT NULL\n" % name,
+                "        PRINT '<<< FAILED DROPPING %s %s >>>'\n" % (kind, name),
+                "    ELSE\n",
+                "        PRINT '<<< DROPPED %s %s >>>'\n" % (kind, name),
+                "END\ngo\n"
+            ])
+            
+            self._helptext(name, d)
+            
+            d.extend([
+                "\ngo\nIF OBJECT_ID('%s') IS NOT NULL\n" % name,
+                "    PRINT '<<< CREATED %s %s >>>'\n" % (kind, name),
+                "ELSE\n",
+                "    PRINT '<<< FAILED CREATING %s %s >>>'\ngo\n" % (kind, name),
+            ])
+            
+            if mode is not None:
+                d.append("EXEC sp_procxmode '%s','%s'\ngo\n" % (name, mode))
+            
+            self._get_permissions(name, d, sybase)
+            
+            if not sybase:
+                d.append('SET ANSI_NULLS OFF\ngo\n')
+                d.append('SET QUOTED_IDENTIFIER OFF\ngo\n')
+
+            return ''.join(d)
+        
+       
     protocols.advise(
-        instancesProvide=[ISQLObjectLister]
+        instancesProvide=[ISQLObjectLister, ISQLDDLExtractor]
     )
 
 
@@ -511,7 +613,7 @@ class SqliteConnection(ValueBasedTypeConn):
 
         if obtypes is not NOT_GIVEN:
             addwhere = ' where type in (%s)' % \
-                ', '.join(["'%s'" % s for s in obtypes])
+                ', '.join(["'%s'" % sqlsafestr(s) for s in obtypes])
 
         return self('''select name as obname, type as obtype%s
             from SQLITE_MASTER%s''' % (addsel, addwhere))
@@ -722,7 +824,7 @@ class OracleBase(SQLConnection):
         if obtypes is not NOT_GIVEN:
             addwhere = ' where object_type in (%s)' % \
                 ', '.join(["'%s'" %
-                    {'proc':'FUNCTION'}.get(s, s.upper()) for s in obtypes])
+                    {'proc':'FUNCTION'}.get(s, sqlsafestr(s.upper())) for s in obtypes])
 
         return self('''select lower(object_name) as "obname",
         DECODE(object_type, 'FUNCTION', 'proc', lower(object_type))

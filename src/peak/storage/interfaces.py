@@ -11,7 +11,7 @@ __all__ = [
     'IDataManager', 'IDataManager_SPI', 'IWritableDM', 'IWritableDM_SPI',
     'IManagedConnection', 'IManagedConn_SPI', 'IKeyableDM',
     'ISQLConnection', 'ILDAPConnection', 'IDDEConnection',
-    'ISQLObjectLister'
+    'ISQLObjectLister', 'ISQLDDLExtractor'
 ]
 
 
