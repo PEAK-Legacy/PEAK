@@ -213,7 +213,7 @@ class ProcessSupervisor(EventDriven):
                 self.log.warning(
                     "Child process %d exited due to signal %d (%s)",
                     proxy.pid, proxy.exitedBecause,
-                    signal_names.getdefault(proxy.exitedBecause,('?',))[0]
+                    signal_names.setdefault(proxy.exitedBecause,('?',))[0]
                 )
             elif proxy.exitStatus:
                 self.log.warning(
@@ -306,11 +306,11 @@ class BusyProxy(ChildProcess):
             return
 
         if byte=='+':
-            self.log.debug("Child process %d is now busy", self.pid)
+            self.log.log(logs.TRACE,"Child process %d is now busy", self.pid)
             self.isBusy = True
             self._notify()
         elif byte=='-':
-            self.log.debug("Child process %d is now free", self.pid)
+            self.log.log(logs.TRACE,"Child process %d is now free", self.pid)
             self.isBusy = False
             self._notify()
 
