@@ -17,7 +17,6 @@ HAPPYDOC_IGNORE = [
     '-i', 'kjbuckets', '-i', 'ZConfig', '-i', 'persistence',
 ]
 
-
 # Base packages for installation
 scripts = ['scripts/peak']
 
@@ -37,6 +36,7 @@ extensions = [
     ),
     Extension("peak.util.buffer_gap", ["src/peak/util/buffer_gap" + EXT]),
     Extension("peak.util._Code", ["src/peak/util/_Code" + EXT]),
+    Extension("protocols._speedups", ["src/protocols/_speedups" + EXT]),
 ]
 
 # Base data files
@@ -77,7 +77,7 @@ if include_metamodels:
 
 
 
-        
+
 
 
 try:
