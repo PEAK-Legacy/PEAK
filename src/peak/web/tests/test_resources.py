@@ -63,6 +63,23 @@ http://127.0.0.1/++resources++/peak.running/EventDriven.xml
 </body>
 """
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 class ResourceTests(TestCase):
 
     def testSubObjectRejection(self):
@@ -76,6 +93,30 @@ class ResourceTests(TestCase):
                 self.assertEqual(v.args[0], "subitem")
             else:
                 raise AssertionError("Should have raised NotFound:", path)
+
+    def testURLcalculations(self):
+
+        # Simple paths: direct children of a non-IPlace parent
+        r=web.Resource(testRoot())
+        self.assertEqual(r.place_url,'')
+        r=web.Resource(testRoot(),'foo')
+        self.assertEqual(r.place_url,'foo')
+
+        # Skin path is resource prefix
+        policy = web.TestPolicy(ResourceApp1(testRoot()))
+        ctx = policy.simpleTraverse('/++resources++', False)
+        self.assertEqual(ctx.current.place_url, '++resources++')
+
+        # Skin children should include resource prefix
+        ctx2 = ctx.traverseName('peak.web')
+        self.assertEqual(ctx2.current.place_url, '++resources++/peak.web')
+
+        # check absolute ("mount point") URL
+        r=web.Resource(testRoot(),'foo',place_url="http://example.com/foo")
+        ctx = policy.newContext()
+        ctx = ctx.childContext('foo',r)
+        self.assertEqual(ctx.absoluteURL, ctx.current.place_url)
+
 
 
 

@@ -9,6 +9,7 @@ from peak.util.imports import importString
 import os.path, posixpath, sys
 from errors import UnsupportedMethod, NotFound, NotAllowed
 from environ import clientHas, traverseItem
+from urlparse import urljoin
 
 __all__ = [
     'Resource', 'FSResource', 'ResourceDirectory', 'FileResource',
@@ -21,11 +22,10 @@ RESOURCE_CONFIG   = PropertyName('peak.web.resourceConfigFile')
 FILE_FACTORY      = PropertyName('peak.web.file_resources.file_factory')
 DIR_FACTORY       = PropertyName('peak.web.file_resources.dir_factory')
 RESOURCE_VISIBLE  = PropertyName('peak.web.file_resources.visible')
-
-ALLOWED_PACKAGES = PropertyName('peak.web.resource_packages')
-PACKAGE_FACTORY  = PropertyName('peak.web.packageResourceFactory')
-PERMISSION_NS    = PropertyName(RESOURCE_BASE+'permission')
-MIMETYPE_NS      = PropertyName(RESOURCE_BASE+'mime_type')
+ALLOWED_PACKAGES  = PropertyName('peak.web.resource_packages')
+PACKAGE_FACTORY   = PropertyName('peak.web.packageResourceFactory')
+PERMISSION_NS     = PropertyName(RESOURCE_BASE+'permission')
+MIMETYPE_NS       = PropertyName(RESOURCE_BASE+'mime_type')
 
 def filenameAsProperty(name):
     """Convert a filename (base, no path) into a usable property name"""
@@ -42,42 +42,42 @@ def parseFileResource(parser, section, name, value, lineInfo):
 class Resource(Traversable):
 
     protocols.advise(
-        instancesProvide = [IResource]
+        instancesProvide = [IPlace]
     )
 
     permissionNeeded = binding.Require("Permission needed for access")
-    includeURL = True
+
 
     def preTraverse(self, ctx):
         perm = self.permissionNeeded
         ctx.requireAccess('', self, permissionNeeded=perm)
         return ctx
 
+
     def getURL(self, ctx):
-        # We want an absolute URL
-        return ctx.rootURL+'/'[ctx.rootURL.endswith('/'):]+self.resourcePath
+        # Root-relative URL
+        base = ctx.rootURL+'/'[ctx.rootURL.endswith('/'):]
+        return urljoin(base,self.place_url)
 
 
     def _getResourcePath(self):
-        if self.includeURL:
-            name = self.getComponentName()
-            if not name:
-                raise ValueError("Traversable was not assigned a name", self)
-        else:
-            name = None
+        name = self.getComponentName()
+        if name is None:
+            # We must be the root, unless it's an error
+            return ''
 
-        base = IResource(self.getParentComponent(),None)
+        base = IPlace(self.getParentComponent(),None)
         if base is not None:
-            base = base.resourcePath
-        else:
-            base = config.lookup(self,RESOURCE_PREFIX)
+            if name:
+                return posixpath.join(base.place_url, name)
+            else:
+                return base.place_url
 
-        if name:
-            return posixpath.join(base, name)   # handles empty parts OK
-        else:
-            return base
+        return name
 
-    resourcePath = binding.Make(_getResourcePath)
+    place_url = binding.Make(_getResourcePath)
+
+
 
 
 class FSResource(Resource):
@@ -125,10 +125,6 @@ class ResourceDirectory(FSResource, binding.Configurable):
 
     isRoot = False      # Are we the topmost FSResource here?
 
-    includeURL = binding.Make(
-        lambda self: not self.isRoot
-    )  # Don't include our name in URL if we're a root
-
     cache = binding.Make(dict)
 
     def __onSetup(self,d,a):
@@ -160,6 +156,10 @@ class ResourceDirectory(FSResource, binding.Configurable):
         return nms
 
     filenames = binding.Make(filenames)
+
+
+    def getURL(self, ctx):
+        return Resource.getURL(self,ctx)+'/'   # avoid unnecessary redirects
 
 
     def __getitem__(self,name):
@@ -203,10 +203,6 @@ class ResourceDirectory(FSResource, binding.Configurable):
         self.cache[name] = obj
         return obj
 
-    def getURL(self, ctx):
-        return Resource.getURL(self,ctx)+'/'   # avoid unnecessary redirects
-
-
 def findPackage(pkg):
 
     """Find containing package (module w/'__path__') for module named 'pkg'"""
@@ -240,6 +236,10 @@ class ResourceProxy(object):
 
     def getURL(self,ctx):
         return IWebTraversable(ctx.getResource(self.path)).getURL(ctx)
+
+
+
+
 
 
 
@@ -285,10 +285,10 @@ def bindResource(path, pkg=None, **kw):
 
 
 
-class DefaultLayer(Traversable):
+class DefaultLayer(Resource):
 
     cache = fileCache = binding.Make(dict)
-    includeURL = False # Our name never counts in the URL
+    permissionNeeded = security.Anybody
 
     def traverseTo(self, name, ctx):
         if name in self.cache:
@@ -317,7 +317,7 @@ class DefaultLayer(Traversable):
                 d = self.fileCache[filename]
             else:
                 d = PACKAGE_FACTORY(self)(
-                    self, pkg, filename=filename, isRoot=True, includeURL=True
+                    self, pkg, filename=filename, isRoot=True
                 )
                 self.fileCache[filename] = d
 

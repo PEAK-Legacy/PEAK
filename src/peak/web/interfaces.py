@@ -8,7 +8,7 @@ __all__ = [
     'IWebTraversable', 'IInteractionPolicy', 'IAuthService', 'IWebException',
     'RESOURCE_PREFIX', 'DEFAULT_METHOD', 'APPLICATION_LOG', 'NAMESPACE_NAMES',
     'IDOMletState', 'IHTTPHandler', 'IHTTPApplication', 'INamespaceHandler',
-    'IDOMletNode',    'IDOMletNodeFactory', 'IResource', 'ITraversalContext',
+    'IDOMletNode',    'IDOMletNodeFactory', 'IPlace', 'ITraversalContext',
     'IDOMletElement', 'IDOMletElementFactory', 'ISkin', 'IPolicyInfo',
     'VIEW_NAMES',
 ]
@@ -244,10 +244,10 @@ class IWebTraversable(Interface):
 
 
 
-class IResource(IWebTraversable):
-    """Traversable with a fixed location"""
+class IPlace(IWebTraversable):
+    """Traversable component with a fixed location"""
 
-    resourcePath = Attribute("Relative URL (no leading '/') from skin")
+    place_url = Attribute("Relative URL (no leading '/') from skin")
 
 
 class IHTTPHandler(Interface):
@@ -278,7 +278,7 @@ class IResourceService(Interface):
         """Return the named resource"""
 
 
-class ISkin(IResource, IResourceService):
+class ISkin(IResourceService):
     """A resource container, and the root resource for its contents"""
 
 

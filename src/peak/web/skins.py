@@ -39,7 +39,7 @@ __all__ = [
 
 
 
-class Skin(MultiTraverser):
+class Skin(MultiTraverser,Resource):
 
     """Skins provide a branch-point between the app root and resources"""
 
@@ -47,16 +47,38 @@ class Skin(MultiTraverser):
         instancesProvide = [ISkin]
     )
 
-    resources  = binding.Make(lambda self: MultiTraverser(items=self.layers))
     cache      = binding.Make(dict)
     policy     = binding.Obtain('..')
     root       = binding.Delegate("policy")
 
     layerNames = binding.Require("Sequence of layer names")
-    
-    items     = binding.Make(
-        lambda self: map(self.policy.getLayer, self.layerNames)
-    )
+
+    place_url  = binding.Obtain('policy/resourcePrefix')
+
+    def items(self):
+        getLayer = self.policy.getLayer
+        prefix = self.place_url
+        layers = []
+        for name in self.layerNames:
+            layer = getLayer(name)
+            # Kludge: don't include layer in path to child resources, by
+            #    setting its component name to an empty string
+            binding.suggestParentComponent(self,'',layer)
+            if __debug__:
+                # Make sure the kludge worked, by asserting that the layer's
+                # place_url (if any) is either an absolute URL, or the same
+                # as our place_url.
+                if IPlace(layer,None) is not None:
+                    url = IPlace(layer).place_url
+                    assert naming.URLMatch(url) or url==prefix, ("Bad url", url,prefix)
+            layers.append(layer)
+        return layers
+
+    items = binding.Make(items)
+
+
+
+
 
     dummyInteraction = binding.Make(
         lambda self: self.policy.newInteraction(user=None)
@@ -64,20 +86,6 @@ class Skin(MultiTraverser):
 
     dummyEnviron = {}
     setup_testing_defaults(dummyEnviron)
-
-    def getURL(self, ctx):
-        # We want an absolute URL
-        return ctx.rootURL+'/'[ctx.rootURL.endswith('/'):]+self.resourcePath
-
-    resourcePath = binding.Obtain('policy/resourcePrefix')
-
-
-
-
-
-
-
-
 
 
     def getResource(self, path):
@@ -94,14 +102,6 @@ class Skin(MultiTraverser):
         resourceCtx = path.traverse(start, getRoot = lambda ctx: start)
         self.cache[path] = subject = resourceCtx.current
         return subject
-
-
-
-
-
-
-
-
 
 
 

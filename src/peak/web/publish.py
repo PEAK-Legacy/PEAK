@@ -179,7 +179,6 @@ class InteractionPolicy(binding.Configurable, protocols.StickyAdapter):
 
     def getLayer(self,layerName,default=None):
         ob = self.layerMap.get(layerName,default)
-        binding.suggestParentComponent(self,layerName,ob)
         return ob
 
 
@@ -189,6 +188,7 @@ class InteractionPolicy(binding.Configurable, protocols.StickyAdapter):
         ob = self.skinMap.get(name,default)
         binding.suggestParentComponent(self,name,ob)
         return ob
+
 
 
 

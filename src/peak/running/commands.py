@@ -957,7 +957,6 @@ to invoke it.
     def interpret(self,filename):
 
         name = filename
-
         ob = lookupCommand(
             self, name, default=NOT_FOUND, acceptURLs=self.acceptURLs
         )
@@ -969,16 +968,17 @@ to invoke it.
         factory = adapt(ob, binding.IComponentFactory, None)
 
         if factory is ob:   # XXX ???
-            ob = factory(self, 'cgi')
+            # Always suggest empty name, in case it's an IPlace
+            ob = factory(self, None)    
+        else:
+            binding.suggestParentComponent(self,None,ob)
 
         cgi = IWSGIApplication(ob, None)
-
         if cgi is not None:
             return self.cgiWrapper(self, cgiCommand = cgi, argv=self.argv[:1])
 
         raise InvocationError(
             "Can't convert", ob, "to CGI; found at", name
         )
-
 
 

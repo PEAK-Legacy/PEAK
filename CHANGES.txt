@@ -1,5 +1,9 @@
 Fixes and Enhancements since Version 0.5 alpha 3
 
+ - 'web.IResource' is gone, replaced by 'web.IPlace'.  The notion of a place is
+   broader than the notion of a resource, and we will soon need to have
+   other "location" objects that implement 'IPlace'.
+   
  - In order to support obtaining the line and column locations of problems in
    XML files, we are now using Python 2.4's version of the 'pyexpat' module,
    built as 'peak.util.pyexpat'.
