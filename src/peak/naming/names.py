@@ -453,10 +453,13 @@ class ParsedURL(object):
         raise AttributeError, "Immutable object"
 
     def __state(self,d,a):
-        is_descr = self.__class__.__all_descriptors__.has_key
-        s = [(k,v) for (k,v) in d.iteritems() if not is_descr(k) and k!='body']
-        s.sort()
-        return tuple(s)
+        is_descr = self.__class__.__all_descriptors__.__contains__
+        keys = [k for k in d if not is_descr(k)]
+        keys.sort()
+        if 'body' in d and keys<>['body','scheme']:
+            keys.remove('body')
+
+        return tuple([(k,d[k]) for k in keys])
 
     __state = Once(__state)
     __hash  = Once( lambda s,d,a: hash(s.__state) )
