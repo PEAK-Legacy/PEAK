@@ -246,7 +246,8 @@ class ProcessSupervisor(EventDriven, config.ServiceArea):
 
     def _monitorChild(self,proxy):
 
-        yield proxy.isFinished | proxy.isStopped; src, evt = events.resume()
+        yield events.AnyOf(proxy.isFinished,proxy.isStopped)
+        src, evt = events.resume()
         self.mainLoop.activityOccurred()
 
         if src is proxy.isFinished:
@@ -280,7 +281,6 @@ class ProcessSupervisor(EventDriven, config.ServiceArea):
             self._monitorChild(proxy)   # continue monitoring
 
     _monitorChild = events.taskFactory(_monitorChild)
-
 
 
 
