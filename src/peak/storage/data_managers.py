@@ -58,7 +58,7 @@ class FacadeDM(binding.Component):
             # Oops, key no longer valid, drop it
             del self.cache[oid]
 
-        ob = self.retrieve(oid, state)
+        ob = self._retrieve(oid, state)
         
         if ob is not None:
             self.cache[oid] = ob
@@ -71,7 +71,7 @@ class FacadeDM(binding.Component):
 
     cache = binding.New('peak.storage.caches:WeakCache')
 
-    def retrieve(self, oid, state=None):
+    def _retrieve(self, oid, state=None):
         """Look up 'oid' in underlying storage and return it, or 'None'"""
         raise NotImplementedError
 
@@ -220,7 +220,7 @@ class QueryDM(TransactionComponent):
         if ob is not self:
             return ob
 
-        ob = self.ghost(oid,state)
+        ob = self._ghost(oid,state)
 
         if isinstance(ob,Persistent):
 
@@ -250,7 +250,7 @@ class QueryDM(TransactionComponent):
 
     defaultClass = PersistentQuery
 
-    def ghost(self, oid, state=None):
+    def _ghost(self, oid, state=None):
 
         klass = self.defaultClass
 
@@ -260,7 +260,7 @@ class QueryDM(TransactionComponent):
         return klass()
 
 
-    def load(self, oid, ob):
+    def _load(self, oid, ob):
         raise NotImplementedError
 
 
@@ -274,7 +274,7 @@ class QueryDM(TransactionComponent):
 
         oid = ob._p_oid
         assert oid is not None
-        ob.__setstate__(self.load(oid,ob))
+        ob.__setstate__(self._load(oid,ob))
 
 
     def mtime(self, ob):
@@ -347,7 +347,7 @@ class EntityDM(QueryDM):
                 return oid
 
         else:
-            return self.thunk(ob)
+            return self._thunk(ob)
 
 
     def newItem(self,klass=None):
@@ -359,7 +359,7 @@ class EntityDM(QueryDM):
             raise NotImplementedError
 
         ob=klass()
-        ob.__setstate__(self.defaultState(ob))
+        ob.__setstate__(self._defaultState(ob))
         ob._p_jar = self
 
         self.register(ob)
@@ -378,19 +378,22 @@ class EntityDM(QueryDM):
         markSaved = self.saved.setdefault
         dirty = self.dirty
 
-        obs = ob is None and self.dirty.values() or [ob]
+        if ob is None:
+            obs = dirty.values()
+        else:
+            obs = [ob]
 
         for ob in obs:
 
             if ob._p_oid is None:
 
                 # No oid, it's a new object that needs saving
-                oid = ob._p_oid = self.new(ob)
+                oid = ob._p_oid = self._new(ob)
                 self.cache[oid]=ob
 
             else:
                 # just save it the ordinary way
-                self.save(ob)
+                self._save(ob)
 
             # Update status flags and object sets
             key = id(ob)
@@ -405,23 +408,20 @@ class EntityDM(QueryDM):
 
 
 
-
-
-
     # Private abstract methods/attrs
 
     defaultClass = None
 
-    def save(self, ob):
+    def _save(self, ob):
         raise NotImplementedError
 
-    def new(self, ob):
+    def _new(self, ob):
         raise NotImplementedError
 
-    def defaultState(self, ob):
+    def _defaultState(self, ob):
         raise NotImplementedError
 
-    def thunk(self, ob):
+    def _thunk(self, ob):
         raise NotImplementedError
 
 
@@ -475,7 +475,6 @@ class EntityDM(QueryDM):
         for set in self.dirty, self.saved:
             for ob in set.values():
                 del ob._p_changed
-                ob._p_deactivate()
 
             set.clear()
 

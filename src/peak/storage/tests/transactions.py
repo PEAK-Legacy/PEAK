@@ -259,7 +259,7 @@ class Harness(binding.Component):
         class defaultClass(Persistent):
             pass
 
-        def load(self, oid, ob):
+        def _load(self, oid, ob):
 
             rows = self.table.SELECT(Items(a=oid))
 
@@ -269,15 +269,15 @@ class Harness(binding.Component):
                 raise KeyError, oid
 
 
-        def save(self, ob):
+        def _save(self, ob):
             self.table.SET(Items(a=ob._p_oid),Items(b=ob.b))
 
 
-        def new(self,ob):
+        def _new(self,ob):
             self.table.INSERT(Items(a=ob.a,b=ob.b))
             return ob.a
 
-        def defaultState(self,ob):
+        def _defaultState(self,ob):
             return {}
 
     testDM = binding.New(testDM)

@@ -457,7 +457,7 @@ class XMI_DM(storage.EntityDM):
     metamodel = binding.requireBinding("Metamodel with _XMIMap")
     document  = binding.requireBinding("XMIDocument with data to use")
 
-    def ghost(self, oid, state=None):
+    def _ghost(self, oid, state=None):
         if oid==():
             return storage.PersistentQuery()
         target = self.index[oid]
@@ -490,7 +490,7 @@ class XMI_DM(storage.EntityDM):
 
 
 
-    def load(self, oid, ob):
+    def _load(self, oid, ob):
         
         target = self.index[oid]
 

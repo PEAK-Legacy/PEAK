@@ -13,7 +13,6 @@ __all__ = [
 ]
 
 class ITransactionService(Interface):
-
     """Manages transaction lifecycle, participants, and metadata.
 
     There is no predefined number of transactions that may exist, or
@@ -253,7 +252,7 @@ class IDataManager_SPI(Interface):
 
     defaultClass = Attribute("Default class used for 'newItem()' method")
 
-    def ghost(oid, state=None):
+    def _ghost(oid, state=None):
         """Return a ghost of appropriate class, based on 'oid' and 'state'
 
         Note that 'state' will be loaded into the returned object via its
@@ -261,7 +260,7 @@ class IDataManager_SPI(Interface):
         '_p_deactivate()' method will be called instead."""
 
 
-    def load(oid, ob):
+    def _load(oid, ob):
         """Load & return the state for 'oid', suitable for '__setstate__()'"""
 
 
@@ -269,16 +268,16 @@ class IWritableDM_SPI(IDataManager_SPI):
 
     """Additional methods needed for writing objects in an EntityDM"""
 
-    def save(ob):
+    def _save(ob):
         """Save 'ob' to underlying storage"""
 
-    def new(ob):
+    def _new(ob):
         """Create 'ob' in underlying storage and return its new 'oid'"""
 
-    def defaultState(ob):
+    def _defaultState(ob):
         """Return a default '__setstate__()' state for a new 'ob'"""
 
-    def thunk(ob):
+    def _thunk(ob):
         """Hook for implementing cross-database "thunk" references"""
 
 
