@@ -1,0 +1,6 @@
+#!invoke peak runIni
+
+[Load Settings From]
+# This loads the general program settings
+file = config.fileNearModule('bulletins', 'bulletins.ini')
+
