@@ -1,6 +1,6 @@
 from __future__ import generators
 
-from peak.binding.components import Component, New, Base, Provider
+from peak.binding.components import Component, New, Base, Provider, Once
 
 from peak.api import NOT_FOUND, NOT_GIVEN
 from peak.util.EigenData import EigenCell, AlreadyRead
@@ -11,7 +11,7 @@ from interfaces import *
 from Interface import Interface
 
 __all__ = [
-    'GlobalConfig', 'LocalConfig', 'PropertyMap', 'LoadingRule',
+    'GlobalConfig', 'LocalConfig', 'PropertyMap', 'LoadingRule', 'ConfigFile',
 ]
 
 
@@ -162,15 +162,67 @@ def loadEnviron(factory, pMap, prefix, name):
 
     return NOT_FOUND
 
+class ConfigFile(object):
+
+    def __init__(self, filenames):
+        self.filenames = filenames
+
+    def __call__(self, factory, pMap, prefix, name):
+
+        # load from config file
+        from ConfigParser import ConfigParser
+        cp = self.cp = ConfigParser()
+        cp.optionxform = str
+        cp.read(self.filenames)
+        options, get = cp.options, cp.get
+
+        for section in cp.sections():
+
+            section = section.strip()
+
+            if section and not section.endswith('.'):
+                sp = prefix + section + '.'
+            else:
+                sp = prefix + section
+
+            for opt in options(section):
+                pMap.setValue(sp+opt, eval(get(section,opt,1)))
+
+        return NOT_FOUND
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 class GlobalConfig(Component):
 
     def __init__(self):
         self.setup(self.__instance_provides__)
 
+    def config_filenames(self,d,a):
+        import os; from peak import __file__ as filebase
+        return [os.path.join(os.path.dirname(filebase), 'peak.ini')]
+
+    config_filenames = Once(config_filenames)
+
+        
     def setup(self, propertyMap):
         
         propertyMap.setRule(
             'environ.*', LoadingRule(loadEnviron)
+        )
+
+        propertyMap.setRule(
+            '*', LoadingRule(ConfigFile(self.config_filenames))
         )
 
         from peak.naming import factories
@@ -179,10 +231,16 @@ class GlobalConfig(Component):
             factories.__implements__, Provider(lambda *x: factories)
         )
 
-        factories.register(propertyMap)
 
     def setParentComponent(self,parent):
         raise TypeError("Global config can't have a parent")
+
+
+
+
+
+
+
 
 
 

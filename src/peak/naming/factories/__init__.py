@@ -7,24 +7,6 @@ from peak.naming.properties import SCHEMES_PREFIX
 __implements__ = IObjectFactory
 
 
-schemeParsers = {
-    'import':       'peak_imports:importURL',
-    'ldap':         'ldap:ldapURL',
-    'smtp':         'smtp:smtpURL',
-    'uuid':         'uuid:uuidURL',
-    'lockfile':     'lockfiles:lockfileURL',
-    'nulllockfile': 'lockfiles:lockfileURL',
-    'shlockfile':   'lockfiles:lockfileURL',
-    'flockfile':    'lockfiles:lockfileURL',
-    'winflockfile': 'lockfiles:lockfileURL',
-}
-
-
-def register(propertyMap):
-    for k,v in schemeParsers.items():
-        propertyMap.setValue(SCHEMES_PREFIX+k, 'peak.naming.factories.'+v)
-    
-
 def getObjectInstance(refInfo, name, context, attrs=None):
 
     if IAddress.isImplementedBy(refInfo):

@@ -205,7 +205,7 @@ class ParsedURL(OpaqueURL):
 
     def fromURL(klass, url):
 
-        if self.supportsScheme(url.scheme):
+        if klass.supportsScheme(url.scheme):
 
             m = klass.pattern.match(url.body)
 

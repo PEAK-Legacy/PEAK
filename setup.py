@@ -157,6 +157,7 @@ setup(
         'test': test, 'sdist_nodoc': old_sdist,
     },
     data_files = [
+        ('peak', ['src/peak/peak.ini']),
         ('peak/metamodels/tests', ['src/peak/metamodels/tests/MetaMeta.xml']),
     ],
 )
