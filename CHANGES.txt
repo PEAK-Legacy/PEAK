@@ -2,6 +2,10 @@ Fixes and Enhancements since Version 0.5 alpha 2
 
  Changed, Enhanced, or Newly Deprecated Features
 
+ - Added 'peak.events' package, supporting a simple event-driven programming
+   microkernel, including event-driven "ultralight" threads powered by
+   generators.
+
  - "Global" services defined by '[Component Factories]' sections now live in
    the closest "service area" to the component that requests them.  A "service
    area" is a parent component that implements 'config.IServiceArea', such as

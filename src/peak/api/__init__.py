@@ -31,7 +31,7 @@ from peak.core import *
 from peak.core import __all__
 
 __all__ = __all__[:] + [
-    'commands', 'logs', #'net', 'query',
+    'commands', 'events', 'logs', #'net', 'query',
     'running', 'security', 'storage', 'web',
 ]
 
@@ -51,7 +51,6 @@ running     = lazyModule('peak.running.api')
 security    = lazyModule('peak.security.api')
 storage     = lazyModule('peak.storage.api')
 web         = lazyModule('peak.web.api')
-
 
 
 

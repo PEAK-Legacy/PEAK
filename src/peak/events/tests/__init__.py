@@ -5,6 +5,7 @@ an individual module to get just those tests."""
 
 
 allSuites = [
+    'test_events:test_suite',
 ]
 
 
