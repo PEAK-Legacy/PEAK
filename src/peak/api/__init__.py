@@ -33,7 +33,7 @@ from protocols import adapt
 __all__ = [
     'NOT_GIVEN', 'NOT_FOUND', 'Items', 'PropertyName',
     'binding', 'naming', 'model', 'config', 'running', 'logs', 'storage',
-    'exceptions', 'adapt', 'protocols',
+    'exceptions', 'adapt', 'protocols', 'security',
 ]
 
 
@@ -50,6 +50,7 @@ naming      = lazyModule('peak.naming.api')
 running     = lazyModule('peak.running.api')
 storage     = lazyModule('peak.storage.api')
 logs        = lazyModule('peak.running.logs')
+security    = lazyModule('peak.security.api')
 
 class _Symbol(object):
 
@@ -78,7 +79,6 @@ class _Symbol(object):
 
 NOT_GIVEN = _Symbol("NOT_GIVEN", __name__)
 NOT_FOUND = _Symbol("NOT_FOUND", __name__)
-
 
 def Items(mapping=None, **kwargs):
 

@@ -22,7 +22,7 @@ scripts = ['scripts/peak']
 
 packages = [
     'peak', 'peak.api', 'peak.binding', 'peak.config', 'peak.model',
-    'peak.naming', 'peak.naming.factories', 'peak.running',
+    'peak.naming', 'peak.naming.factories', 'peak.running', 'peak.security',
     'peak.storage', 'peak.util', 'protocols',
 ]
 
@@ -51,6 +51,7 @@ if include_tests:
     packages += [
         'peak.tests', 'peak.binding.tests', 'peak.config.tests',
         'peak.model.tests', 'peak.naming.tests', 'peak.running.tests',
+        'peak.security.tests',
         'peak.storage.tests', 'peak.util.tests', 'protocols.tests',
     ]
 
@@ -74,7 +75,6 @@ if include_metamodels:
         packages += [ 'peak.metamodels.tests' ]
 
         data_files += findDataFiles('src/peak/metamodels/tests', 1, '*.xml')
-
 
 
 
