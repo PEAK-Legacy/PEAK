@@ -31,7 +31,7 @@ eigenstate.  'SchrodingDict' and 'SchrodingCell', however, are much more
 awkward to say and type!"""
 
 __all__ = [
-    'AlreadyRead', 'EigenCell', 'CollapsedCell', 'EigenDict', 'EigenRegistry'
+    'AlreadyRead', 'EigenCell', 'CollapsedCell', 'EigenDict',
 ]
 
 from protocols import Interface
@@ -284,47 +284,6 @@ class EigenDict(object):
 
 
 
-
-class EigenRegistry(EigenDict):
-
-    """EigenDict that takes Interface objects as keys, handling inheritance"""
-
-    def __init__(self):
-        self.depth = {}
-        super(EigenRegistry,self).__init__()
-
-    def register(self, configKey, item, depth=0):
-        """Register 'item' under 'configKey'"""
-        if self.depth.get(configKey,depth)>=depth:
-            self[configKey]=item
-            self.depth[configKey] = depth
-            for i in configKey.getBases():
-                self.register(i, item, depth+1)
-
-
-    def setdefault(self,key,failobj=None):
-        raise NotImplementedError
-
-    def update(self,other):
-        """Conservatively merge in another EigenRegistry"""
-
-        if not isinstance(other,EigenRegistry):
-            raise TypeError("Not an EigenRegistry", other)
-
-        mydepth = self.depth
-        get = mydepth.get
-        sc = self._setCell
-        for iface, depth in other.depth.items():
-            old = get(iface,depth)
-            if old>=depth:
-                sc(iface).set(other[iface])
-                mydepth[iface] = depth
-
-    def __delitem__(self,key):
-        raise NotImplementedError
-
-    def clear(self):
-        raise NotImplementedError
 
 # CollapsedCell is an empty (but read and locked) EigenCell
 

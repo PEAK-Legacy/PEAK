@@ -2,6 +2,17 @@ Fixes and Enhancements since Version 0.5 alpha 2
 
  Changed, Enhanced, or Newly Deprecated Features
 
+ - It's now possible to declare an attribute as offering a wildcard property;
+   such lookups now follow the same rules as other wildcard property lookups.
+   The 'config.IConfigKey' interface has been changed to cleanly support
+   implied keys at both registration and lookup time, so you can implement
+   your own key types that work the way interfaces or property names do for
+   configuration lookups.
+
+ - The 'EigenRegistry' class has been moved from 'peak.util.EigenData' to
+   'peak.config.registries', as it hasn't really been useful outside PEAK for
+   a while now.
+
  - .ini files now support "smart property" objects ('config.ISmartProperty').
    If a property rule defined in an .ini file evaluates at runtime to an object
    that implements 'ISmartProperty', the object will be given a chance to

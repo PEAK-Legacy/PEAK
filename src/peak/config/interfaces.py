@@ -17,27 +17,27 @@ class IConfigKey(Interface):
     'Interface.IInterface' that's needed by property maps and EigenRegistry
     instances to use as dictionary keys.
 
-    This module automatically marks both 'PropertyName' and 'Interface' as
-    supporting this interface."""
+    Configuration keys may be polymorphic at registration or lookup time.
+    IOW, when looking up a configuration key, you can search multiple values
+    that would imply the key being looked for.  And, when registering a value
+    for a configuration key, the key can supply alternate keys that it should
+    be registered under.  Thus, an 'IConfigKey' is never itself directly used
+    as a key, only the values supplied by its 'registrationKeys()' and
+    'lookupKeys()' methods are used.
+    """
 
-    def getBases():
-        """Return a sequence of the base interfaces, or empty sequence
-           if object is a property name"""
+    def registrationKeys(depth=0):
+        """Iterate over (key,depth) pairs to be used when registering"""
+
+    def lookupKeys():
+        """Iterate over keys that should be used for lookup"""
 
 
-protocols.declareImplementation(
-    Interface.__class__, instancesProvide=[IConfigKey]
-)
 
-protocols.declareImplementation(
-    PropertyName, instancesProvide=[IConfigKey]
-)
 
-protocols.declareAdapter(
-    PropertyName,
-    provides=[IConfigKey],
-    forTypes=[str]
-)
+
+
+
 
 class IConfigSource(Interface):
 
@@ -63,19 +63,19 @@ class IConfigurable(IConfigSource):
 
         """Register 'IRule' 'ruleObj' as a provider for 'configKey'
 
-            'configKeys' must be an object that implements 'IConfigKey' (it
-            will *not* be adapted).  'ruleObj' will be registered as a provider
-            of the specified key.
+        'configKey' must be adaptable to 'IConfigKey'.  'ruleObj' will be
+        registered as a provider of the specified key.
 
-            If a provider has already been registered for the given key, the
-            new provider will replace it, provided that it has not yet been
-            used.  (If it has, 'AlreadyRead' should be raised.)
+        If a provider has already been registered for the given key, the
+        new provider will replace it, provided that it has not yet been
+        used.  (If it has, 'AlreadyRead' should be raised.)
 
-            If the key is an 'Interface' with bases, the provider will also
-            be registered for any base interfaces of the supplied key(s),
-            unless a provider was previously registered under a base of
-            the supplied key.
+        If the key is an 'Interface' with bases (or any other type of
+        configuration key that supports registering implied keys), the provider
+        will also be registered for any keys implied by the supplied key,
+        unless a provider was previously registered under the implied key.
         """
+
 
 
 

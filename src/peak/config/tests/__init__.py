@@ -5,6 +5,7 @@ from peak.api import *
 from protocols import Interface
 from peak.config.interfaces import *
 from peak.tests import testRoot
+from peak.config.registries import EigenRegistry
 
 
 class TestRule(object):
@@ -15,7 +16,6 @@ class TestRule(object):
 
     def computeProperty(self, propertyMap, name, prefix, suffix, targetObject):
         return propertyMap, name, prefix, suffix, targetObject
-
 
 
 
@@ -203,6 +203,88 @@ class UtilityTest(TestCase):
 
 
 
+from peak.interface import Interface
+
+#   IA
+#    |
+#   IB
+#   /\
+# IC  ID
+
+
+class IA(Interface): pass
+class IB(IA): pass
+class IC(IB): pass
+class ID(IB): pass
+
+
+class PA(object): __implements__ = IA,
+class PB(object): __implements__ = IB,
+class PC(object): __implements__ = IC,
+class PD(object): __implements__ = ID,
+class PE(object): __implements__ = IC, ID
+
+
+pA = PA()
+pB = PB()
+pC = PC()
+pD = PD()
+pE = PE()
+
+
+class RegistryBase(TestCase):
+
+    obs = pA, pB, pC, pD, pE
+
+    def setUp(self):
+
+        reg = self.reg = EigenRegistry()
+
+        for ob in self.obs:
+            for i in ob.__implements__:
+                reg.register(i, ob)
+
+class RegForward(RegistryBase):
+
+    def checkSimple(self):
+
+        reg = self.reg
+
+        assert reg[IA] is pA
+        assert reg[IB] is pB
+        assert reg[IC] is pE    # Note changed behavior; now the latest wins
+        assert reg[ID] is pE    # ...same here
+
+
+class RegBackward(RegForward):
+    obs = pD, pC, pE, pB, pA
+
+
+class RegMixed(RegForward):
+    obs = pD, pB, pA, pC, pE
+
+
+class RegUpdate(TestCase):
+
+    def checkUpdate(self):
+
+        reg1 = EigenRegistry()
+        reg2 = EigenRegistry()
+
+        reg1.register(IA,pA)
+        reg2.register(IB,pB)
+
+        assert reg1[IA] is pA
+        assert reg2[IA] is pB
+
+        reg1.update(reg2)
+
+        assert reg1[IA] is pA
+        assert reg1[IB] is pB
+
+
+
+
 class ModuleTest(TestCase):
 
     def setUp(self):
@@ -263,6 +345,7 @@ class AdviceTest(ModuleTest):
 
 TestClasses = (
     PropertyTest, ModuleTest, AdviceTest, UtilityTest,
+    RegForward, RegBackward, RegUpdate,
 )
 
 
@@ -272,7 +355,6 @@ def test_suite():
         s.append(makeSuite(t,'check'))
 
     return TestSuite(s)
-
 
 
 

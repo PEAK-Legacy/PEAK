@@ -57,6 +57,7 @@ def findUtilities(component, iface):
     """Return iterator over all utilities providing 'iface' for 'component'"""
 
     forObj = component
+    iface = adapt(iface,IConfigKey)
 
     for component in iterParents(component):
 
@@ -73,7 +74,6 @@ def findUtilities(component, iface):
     adapt(
         component,IConfigurationRoot,NullConfigRoot
     ).noMoreUtilities(component, iface, forObj)
-
 
 
 
@@ -140,16 +140,16 @@ class PropertyMap(Component):
         _setCellInDict(self.rules, PropertyName(propName), lambda *args: value)
 
 
-    def registerProvider(self, configKey, provider, depth=0):
+    def registerProvider(self, configKey, provider):
+
         """Register 'provider' under 'configKey'"""
 
-        if self.depth.get(configKey,depth)>=depth:
-            # The registered provider is at least as good as the one we have
-            _setCellInDict(self.rules, configKey, provider)
-            self.depth[configKey]=depth
-            for i in configKey.getBases():
-                self.registerProvider(i, provider, depth+1)
+        for key,depth in adapt(configKey, IConfigKey).registrationKeys():
 
+            if self.depth.get(key,depth)>=depth:
+                # The new provider is at least as good as the one we have
+                _setCellInDict(self.rules, key, provider)
+                self.depth[key]=depth
 
 
 
@@ -172,13 +172,7 @@ class PropertyMap(Component):
 
         xRules     = []
 
-        if isinstance(configKey,PropertyName):
-            lookups = configKey.matchPatterns()
-        else:
-            lookups = configKey,
-
-
-        for name in lookups:
+        for name in configKey.lookupKeys():
 
             rule = rules.get(name)
 
@@ -202,6 +196,12 @@ class PropertyMap(Component):
         return value
 
     _getConfigData = getValueFor
+
+
+
+
+
+
 
 class LazyRule(object):
 
@@ -253,7 +253,7 @@ def loadMapping(pMap, mapping, prefix='*', includedFrom=None):
     prefix = PropertyName(prefix).asPrefix()
 
     for k,v in mapping.items():
-        pMap.registerProvider(PropertyName(prefix+k), _value(v))
+        pMap.setValue(PropertyName(prefix+k), v)
 
 protocols.adviseObject(loadMapping, provides=[ISettingLoader])
 

@@ -8,9 +8,10 @@ from interfaces import *
 from types import ModuleType
 from peak.naming.names import toName, AbstractName, COMPOUND_KIND, IName
 from peak.naming.syntax import PathSyntax
-from peak.util.EigenData import AlreadyRead, EigenRegistry
+from peak.util.EigenData import AlreadyRead
 from peak.config.interfaces import IConfigKey, IPropertyMap, \
     IConfigurationRoot, NullConfigRoot
+from peak.config.registries import EigenRegistry
 from peak.util.imports import importString
 
 
@@ -34,7 +35,6 @@ class _proxy(BaseDescriptor):
         raise AttributeError, self.attrName
 
     def computeValue(self,ob,d,a): raise AttributeError, a
-
 
 
 
@@ -869,7 +869,7 @@ class Component(_Base):
             if value is not NOT_FOUND:
                 return value
 
-        attr = self.__class__.__class_offers__.get(configKey)
+        attr = self.__class__.__class_offers__.lookup(configKey)
 
         if attr:
             return getattr(self, attr, NOT_FOUND)
@@ -877,8 +877,8 @@ class Component(_Base):
         return NOT_FOUND
 
 
-    def registerProvider(self, configKeys, provider):
-        self.__instance_offers__.registerProvider(configKeys, provider)
+    def registerProvider(self, configKey, provider):
+        self.__instance_offers__.registerProvider(configKey, provider)
 
 
     def notifyUponAssembly(self,child):

@@ -40,7 +40,7 @@ __all__ = [
 
 
 # Convenience features
-from peak.util.imports import lazyModule
+from peak.util.imports import lazyModule, whenImported
 
 binding     = lazyModule('peak.binding.api')
 config      = lazyModule('peak.config.api')
@@ -194,10 +194,10 @@ class PropertyName(str):
         yield self
         yield self+'?'
 
+    lookupKeys = matchPatterns
 
-    def getBases(self):
-        return ()
-
+    def registrationKeys(self,depth=0):
+        return (self,depth),
 
 
 
@@ -226,21 +226,21 @@ class PropertyName(str):
         return PropertySet(forObj, self)
 
 
+# If/when we use 'peak.config', declare that PropertyName supports IConfigKey
+# and that it adapts strings to IConfigKey
 
+whenImported('peak.config.interfaces',
 
+    lambda interfaces:  (
+        protocols.declareImplementation(
+            PropertyName, instancesProvide=[interfaces.IConfigKey]
+        ),
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+        protocols.declareAdapter(
+            PropertyName,
+            provides=[interfaces.IConfigKey],
+            forTypes=[str]
+        )
+    )
+)
 
