@@ -1,0 +1,18 @@
+New Features and Bug Fixes since v0.2, preview 1
+
+ * Added 'SEF.bindToParent()' and 'SEF.bindToNames()' specifiers to allow
+   more flexible component parameter bindings.
+
+ * Fixed the base class "rebind by name" bugs in module inheritance, and
+   updated the documentation to more clearly reflect what it is that
+   metaclass generation and module inheritance does and does not do.  Added
+   test cases to prevent regression of the rebind-by-name problem.
+
+ * The 'setup.py' script features a new command, 'happy', which can be used
+   to generate the API reference docs, and this command runs as part of the
+   'sdist' command to build source distributions.
+
+ * The API reference docs in the source distribution has been moved from
+   the 'doc' directory to 'docs/html/reference'.
+
+ * Added 'CHANGES.txt' file.

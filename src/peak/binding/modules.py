@@ -1,6 +1,6 @@
 """Module Inheritance and Module Advice
 
-    The APIs defined here let you create modules which "subclass" other
+    The APIs defined here let you create modules which derive from other
     modules, by defining a module-level '__bases__' attribute which lists
     the modules you wish to inherit from.  For example::
 
@@ -21,8 +21,8 @@
     them (in "method-resolution order") rewriting the calling module's
     dictionary in the process.  The result is rather like normal class
     inheritance, except that classes (even nested classes) are merged by name,
-    and metaclass constraints are inherited.  So a "subclassing module" need
-    not list all the classes from its "base module" in order to change them
+    and metaclass constraints are inherited.  So an inheriting module need
+    not list all the classes from its base module in order to change them
     by altering a base class in that module.
 
     Note: All the modules listed in '__bases__' must call 'setupModule()', even
@@ -36,11 +36,12 @@
 
         All functions inherited via "module inheritance" using 'setupModule()'
         (including those which are instance or class methods) have their
-        globals rebound to point to the destination module.  This means that if
-        a function or method references a global in the module you're
-        inheriting from, you can override that global in the "subclass module",
+        globals rebound to point to the inheriting module.  This means that if
+        a function or method references a global in the base module you're
+        inheriting from, you can override that global in the inheriting module,
         without having to recode the function that referenced it.  (This is
-        especially useful for 'super()' calls!)
+        especially useful for 'super()' calls, which usually use global
+        references to class names!)
 
         In addition to rebinding general globals, functions which reference
         the global name '__proceed__' are also specially rebound so that
@@ -69,20 +70,15 @@
 
         So, using 'setupModule()' gives you an additional bonus: TransWarp
         will automatically generate the necessary metaclasses for you, so long
-        as within any single module you don't break Python's metaclass checks.
-        That is, if you define class 'A' in modules 'M1' and 'M2', then as
-        long as each definition is valid in standard Python, you can use
-        different metaclasses for each, and TransWarp will automatically
-        generate a new metaclass (via inheritance from the old metaclasses)
-        if the definitions ever need to be merged.  (And, of course, if you
-        called 'setupModule()' in both 'M1' and 'M2'.)
+        as you use TransWarp's alternate API for specifying metaclasses.
+        Please see the documentation of the 'makeClass' function in the
+        'TW.Utils.Meta' module for more information about how this works.
 
-        In addition, there is an extra metaclass hook that TransWarp provides.
-        If you define a '__metaclasses__' attribute in a class definition,
-        'setupModule()' will use it as a list of additional metaclasses which
-        should be used in metaclass generation.  For more information on how
-        this and other TransWarp metaclass generation features work, please
-        see the documentation of the 'TW.Utils.Meta' module.
+        Please note that metaclasses are not combined *across* modules, unless
+        they are specified with same-named 'class' statements in both modules.
+        (In which case, they are combined because they are following the normal
+        class combination rules of module inheritance, not because of anything
+        to do with metaclasses.)
 
     Special Considerations for Mutables and Dynamic Initialization
 
@@ -96,18 +92,16 @@
         Mutable values, however, may require special considerations.  For
         example, if a module sets up some kind of registry as a module-level
         variable, and an inheriting module overrides the definition, things
-        can get tricky.  If the "superclass module" writes values into
-        that registry as part of module initialization, those values will also
-        be written into the registry defined by the "subclass module".
+        can get tricky.  If the base module writes values into that registry as
+        part of module initialization, those values will also be written into
+        the registry defined by the derived module.
 
-        Another possible issue is if the "superclass module" performs other
-        externally visible, non-idempotent operations, such as registering
-        classes or functions in another module's registry, printing things to
-        the console, etc.
-
-        The simple workaround for all these considerations, however, is to move
-        your dynamic initialization code to a module-level '__init__' function.
-
+        Another possible issue is if the base module performs other externally
+        visible, non-idempotent operations, such as registering classes or
+        functions in another module's registry, printing things to the console,
+        etc.  The simple workaround for all these considerations, however, is
+        to move your dynamic initialization code to a module-level '__init__'
+        function.
 
     Module-level '__init__()' Functions
 
@@ -116,7 +110,7 @@
         it exists.  This allows you to do any dynamic initialization operations
         (such as modifying or resetting global mutables) *after* inheritance
         has taken effect.  As with any other function defined in the module,
-        '__proceed__' refers to the previous (i.e. "superclass module")
+        '__proceed__' refers to the previous (i.e. preceding base module)
         definition of the function or 'None'.  This lets you can chain to your
         predecessors' initialization code, if needed/desired.
 
@@ -134,6 +128,28 @@
           this thing is working right, because a *lot* of things are going to
           depend on it in future.
 
+        * The simulator should issue warnings for a variety of questionable
+          situations, such as...
+
+          - Code matching the following pattern, which doesn't do what it looks
+            like it does, and should probably be considered a "serious order
+            disagreement"::
+
+            BaseModule:
+
+                class Foo: ...
+                    
+                class Bar: ...
+
+            DerivedModule:
+
+                class Bar: ...
+
+                class Foo(Bar): ...
+
+          - Module level 'del' of globals, mixing of 'def', 'class' and
+            assignments to the same logical object...
+                    
         * This docstring is woefully inadequate to describe all the interesting
           subtleties of module inheritance; a tutorial is really needed.  But
           there *does* need to be a reference-style explanation as well, that
@@ -162,6 +178,31 @@ adviceMap = {}
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 def getCodeListForModule(module, code=None):
 
     if hasattr(module,'__codeList__'):
@@ -176,7 +217,7 @@ def getCodeListForModule(module, code=None):
     bases = getattr(module,'__bases__',())
     if isinstance(bases,ModuleType):
         bases = bases,
-        
+
     for baseModule in bases:
         if type(baseModule) is not ModuleType:
             raise TypeError (
@@ -204,6 +245,7 @@ def getCodeListForModule(module, code=None):
 
 
 def setupModule():
+
     """setupModule() - Build module, w/advice and inheritance
 
         'setupModule()' should be called only at the very end of a module's
@@ -240,7 +282,6 @@ def setupModule():
     
     if dict.has_key('__init__'):
         dict['__init__']()
-
 
 
 
@@ -416,14 +457,14 @@ class Simulator:
         
         if classes.has_key(qname):
             
-            oldBases, oldPaths, oldDict = classes[qname]
+            oldClass, oldBases, oldPaths, oldDict = classes[qname]
             addBases = []; addBase = addBases.append
             addPaths = []; addPath = addPaths.append
             
-            for i in range(len(oldBases)):
-                if oldPaths[i] not in basePaths:
-                    addBase(oldBases[i])
-                    addPath(oldPaths[i])
+            for b,p in zip(oldBases, oldPaths):
+                if p is None or p not in basePaths:
+                    addBase(classes.get(p,(b,))[0])
+                    addPath(p)
             
             bases = tuple(addBases) + bases
             basePaths = tuple(addPaths) + basePaths
@@ -432,8 +473,8 @@ class Simulator:
             for k,v in oldDict.items():
                 if not have(k): dict[k]=v
 
-        classes[qname] = bases, basePaths, dict.copy()
         newClass = makeClass(name,bases,dict)
+        classes[qname] = newClass, bases, basePaths, dict.copy()
 
         try:
             newClass.__module__ = self.dict['__name__']

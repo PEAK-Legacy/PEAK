@@ -12,7 +12,7 @@ __all__ = [
     'Base','App','Service','TypeService','DynamicBinding','StaticBinding',
     'StructuralFeature', 'Field', 'Collection', 'Reference', 'Sequence',
     'Classifier','PrimitiveType','Enumeration','DataType','Element',
-    'bindTo', 'requireBinding',
+    'bindTo', 'requireBinding', 'bindToNames', 'bindToParent'
 ]
 
 
@@ -52,25 +52,107 @@ class bindTo(Once):
         'someClass' can then refer to 'self.thingINeed' instead of
         calling 'self.getService("path.to.service")' repeatedly.
     """
-    
+
+    singleValue = 1
+
     def __init__(self,targetName):
-        self.targetName = targetName
+        self.targetNames = (targetName,)
 
     def computeValue(self, obj, instanceDict, attrName):
 
         instanceDict[attrName] = None   # recursion guard
 
-        newOb = obj.getSEFparent()
-        if newOb is None: newOb = obj
-        newOb = newOb.getService(self.targetName)
+        parent = obj.getSEFparent()
+        if parent is None: parent = obj
 
-        if newOb is None:
-            del instanceDict[attrName]
-            raise NameError(
-                "%s not found binding %s" % (self.targetName, attrName)
-            )
+        obs = map(parent.getService, self.targetNames)
 
-        return newOb
+        for newOb in obs:
+            if newOb is None:
+                del instanceDict[attrName]
+                raise NameError(
+                    "%s not found binding %s" % (self.targetName, attrName)
+                )
+            elif self.singleValue:
+                return newOb
+
+        return tuple(obs)
+
+
+
+class bindToNames(bindTo):
+
+    """Automatically look up and cache a sequence of services by name
+
+        Usage::
+
+            class someClass(SEF.Service):
+
+                thingINeed = SEF.bindToNames(
+                    "path.to.service1", "another.path", ...
+                )
+
+        'someClass' can then refer to 'self.thingINeed' to get a tuple of
+        services instead of calling 'self.getService()' on a series of names.
+    """
+
+    singleValue = 0
+
+    def __init__(self,*targetNames):
+        self.targetNames = targetNames
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class bindToParent(Once):
+
+    """Look up and cache a reference to the nth-level parent service
+
+        Usage::
+
+            class someClass(SEF.Service):
+
+                grandPa = SEF.bindToParent(2)
+
+       'someClass' can then refer to 'self.grandPa' instead of calling
+       'self.getSEFparent().getSEFparent()'.
+
+       Note that this binding creates a circular reference as soon as it
+       is retrieved from an instance.  The circular reference can be
+       broken by deleting the attribute (e.g. 'del self.grandPa'), but of
+       course it will come back the next time you use the attribute.
+    """
+
+    def __init__(self,level=1):
+        self.level = level
+
+    def computeValue(self, obj, instDict, attrName):
+
+        for step in range(self.level):
+            newObj = obj.getSEFparent()
+            if newObj is None: break
+            obj = newObj
+
+        return obj
+
+
 
 
 

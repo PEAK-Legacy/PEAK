@@ -39,6 +39,15 @@ class ModuleTest(TestCase):
         assert F21('x')=='M1(x)'
         assert F22('x')=='after(M1(before(x)))'
 
+    def checkBaseBinding(self):
+        import testM2, UserList
+        assert testM2.RebindSub.M1=='M1'
+        assert testM2.RebindSub.M2=='M2'
+        assert testM2.RebindSub.__bases__ == (
+            testM2.UnusedBase, UserList.UserList, object  
+        ), testM2.RebindSub.__bases__
+
+
 class DescriptorData(SEF.App):
 
     thing1 = "this is my thing"
@@ -46,6 +55,29 @@ class DescriptorData(SEF.App):
     thing2 = SEF.bindTo('thing1')
 
     thing3 = SEF.requireBinding('This is required')
+
+    thing4 = SEF.bindToNames('thing1','thing2')
+
+    underflow = SEF.bindToParent(50)
+
+    class aService(SEF.Service):
+
+        thing5 = SEF.bindToParent()
+
+        class nestedService(SEF.Service):
+
+            thing6 = SEF.bindToParent(2)
+
+
+
+
+
+
+
+
+
+
+
 
 
 class DescriptorTest(TestCase):
@@ -58,6 +90,29 @@ class DescriptorTest(TestCase):
         assert (thing2 is self.data.thing1), thing2
         assert self.data.__dict__['thing2'] is thing2
 
+    def checkMulti(self):
+
+        thing4 = self.data.thing4
+        assert len(thing4)==2
+        assert type(thing4) is tuple
+        assert thing4[0] is self.data.thing1
+        assert thing4[1] is self.data.thing2
+
+    def checkParents(self):
+
+        p1 = self.data.aService.thing5
+        p2 = self.data.aService.nestedService.thing6
+        p3 = self.data.underflow
+
+        try:
+            assert p1 is p2
+            assert p1 is self.data
+            assert p3 is p2
+        finally:
+            del self.data.aService.thing5
+            del self.data.aService.nestedService.thing6
+            del self.data.underflow
+
     def checkForError(self):
         try:
             self.data.thing3
@@ -65,7 +120,6 @@ class DescriptorTest(TestCase):
             pass
         else:
             raise AssertionError("Didn't get an error retrieving 'thing3'")
-
 
 TestClasses = (
     ModuleTest, DescriptorTest

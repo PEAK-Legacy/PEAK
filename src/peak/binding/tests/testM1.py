@@ -9,6 +9,12 @@ StringType
 # End special test
 
 
+class UnusedBase:
+    M1 = 'M1'
+
+class RebindSub(object):
+    pass
+
 class BaseClass:
     foo = 1
     
