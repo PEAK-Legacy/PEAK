@@ -48,7 +48,36 @@ class DOMletState(binding.Component):
     )
 
     interaction = binding.requireBinding("Current 'IWebInteraction'")
+
     write = binding.requireBinding("Unicode output stream write() method")
+
+
+    def findState(self, iface):
+
+        """Find nearest DOMletState implementing 'iface'"""
+
+        for c in config.iterParents(self):
+            state = adapt(c,iface,None)
+            if state is not None:
+                return state
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 class DOMletAsMethod(binding.Component):
@@ -79,6 +108,18 @@ class DOMletAsMethod(binding.Component):
             )
         )
         return unicodeJoin(data)
+
+
+
+
+
+
+
+
+
+
+
+
 
 class DOMletParser(binding.Component):
 
