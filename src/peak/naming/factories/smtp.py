@@ -5,19 +5,18 @@ import re, smtplib
 
 
 class smtpURL(ParsedURL):
+
     _supportedSchemes = ('smtp', )
-    
+
+    __fields__     = 'port','host','scheme','body','user','auth'
+    __converters__ = int,
+    __defaults__   = smtplib.SMTP_PORT,
+
     pattern = re.compile(
         '//((?P<user>[^;]+)(;AUTH=(?P<auth>.+))?@)?(?P<host>[^:]*)(:(?P<port>[0-9]+))?',
         re.IGNORECASE
     )
 
-    def _fromURL(self, url):
-        super(smtpURL, self)._fromURL(url)
-        if self.port:
-            self.port = int(self.port)
-        else:
-            self.port = smtplib.SMTP_PORT
 
 
 
@@ -27,7 +26,7 @@ class smtpContext(AbstractContext):
     
     def _get(self, name, default=None, retrieve=1):
         if retrieve:
-            return (RefAddr('smtp', name), None)
+            return (RefAddr('smtp',name), None)
         else:
             return name
 

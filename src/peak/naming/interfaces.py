@@ -84,11 +84,11 @@ class NamingException(Exception):
 
         """Format the exception"""
 
-        txt = super(NamingException,self).__str__(self)
+        txt = Exception.__str__(self)
         
         extras = [
             '%s=%s' % (k,getattr(self,k))
-            for k in self.formattables if getattr(self,k) is not None
+            for k in self.formattables if getattr(self,k,None) is not None
         ]
 
         if extras:

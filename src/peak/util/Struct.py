@@ -81,7 +81,7 @@ class struct(tuple):
     of the fields instead."""
 
     __metaclass__ = structType
-
+    __fields__ = __converters__ = __defaults__ = ()
 
     def __new__(klass, *__args, **__kw):
 
@@ -203,13 +203,30 @@ class struct(tuple):
     
     has_key = __contains__
 
-def makeFieldProperty(klass, fieldName, fieldNum):
+def makeFieldProperty(fieldName, fieldNum):
 
     def get(self):
         try:
-            return tuple.__getitem__(self,fieldNum)
+            val =  tuple.__getitem__(self,fieldNum)
         except IndexError:
             pass
+        else:
+            if val is not None:
+                try:
+                    cvt = self.__converters__[fieldNum]
+                except IndexError:
+                    return val
+                else:
+                    return cvt(val)
+                
+        # return a default value
+       
+        try:
+            return self.__defaults__[fieldNum]
+        except IndexError:
+            pass
+
+
 
     return property(get)
 

@@ -9,19 +9,28 @@ class uuidURL(ParsedURL):
     Attributes provided:
 
     uuid            a peak.util.uuid object
-    quals           a list of (key, value) pairs of qualifiers
+    quals           a tuple of (key, value) pairs of qualifiers
                     note that the meaning, syntax, and use of
                     qualifiers is not well defined.
     """
+
+    __fields__ = 'scheme','body','uuid','quals'
     
     _supportedSchemes = ('uuid', )
     
-    def _fromURL(self, url):
-        l = self.body.split(';')
+    def fromURL(klass, url):
+
+        scheme, body = url.scheme, url.body
+        
+        l = url.body.split(';')
         
         try:
-            self.uuid = UUID(l[0])
+            uuid = UUID(l[0])
         except:
             raise InvalidNameException(url)
 
-        self.quals = [tuple(x.split('=', 1)) for x in l[1:]]
+        quals = tuple( [tuple(x.split('=', 1)) for x in l[1:]] )
+
+        return klass.extractFromMapping(locals())
+
+    fromURL = classmethod(fromURL)

@@ -3,6 +3,7 @@
 import re
 from interfaces import *
 from types import StringTypes
+from peak.util.Struct import struct
 
 __all__ = [
     'Name', 'toName', 'CompositeName', 'CompoundName', 'OpaqueURL',
@@ -19,7 +20,6 @@ class UnspecifiedSyntax(object):
 
     def format(self,name):
         return "%s(%r)" % (name.__class__.__name__, list(name))
-
 
 
 
@@ -124,22 +124,17 @@ class Name(tuple):
 _URLMatch = re.compile('([-+.a-z0-9]+):',re.I).match
 
 
-class OpaqueURL(Name):
+class OpaqueURL(struct):
 
-    isURL = 1
+    __implements__ = IName
 
-    def scheme(self):
-        return self[0]
-
-    scheme = property(scheme)
+    __fields__ = 'scheme', 'body'
     
-    def body(self):
-        return self[1]
+    isComposite = 0
+    isCompound  = 0
+    isURL       = 1
 
-    body = property(body)
-    
-
-    def parse(klass, name):
+    def fromString(klass, name):
 
         m = _URLMatch(name)
 
@@ -150,10 +145,15 @@ class OpaqueURL(Name):
         raise InvalidNameException(name)
         
 
-    parse = classmethod(parse)
+    fromString = classmethod(fromString)
+
 
     def __str__(self):
-        return '%s:%s' % tuple(self)
+        return '%s:%s' % (self.scheme, self.body)
+
+    def __repr__(self):
+        return "%s(%r)" % (self.__class__.__name__, str(self))
+
 
 
 
@@ -168,40 +168,40 @@ class ParsedURL(OpaqueURL):
     
     _supportedSchemes = ()
 
-    def __new__(klass, name):
+    def fromString(klass, name):
 
-        obj = super(ParsedURL,klass).__new__(klass,name)
-        obj._fromURL(obj)
-        return obj
+        m = _URLMatch(name)
 
+        if m:
+            return klass.fromURL(OpaqueURL(name))
 
-    def _fromURL(self, url):
+        raise InvalidNameException(name)
 
-        if url.scheme.lower() in self._supportedSchemes:
-        
-            m = self.pattern.match(url.body)
+    fromString = classmethod(fromString)
+
+    def defaultCreate(klass, url):
+        if IName.isImplementedBy(url) and url.isURL:
+            return klass.fromURL(url)
+        raise InvalidNameException(name)
+
+    defaultCreate = classmethod(defaultCreate)
+    
+    def fromURL(klass, url):
+
+        if url.scheme in klass._supportedSchemes:
+
+            m = klass.pattern.match(url.body)
 
             if m:
-                self.__dict__.update(m.groupdict())
-                return
+                d=m.groupdict()
+                d['scheme'] = url.scheme
+                d['body']   = url.body
+                
+                return klass(**d)
                 
         raise InvalidNameException(url)
         
-
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
+    fromURL = classmethod(fromURL)
 
 class Syntax(object):
 
@@ -506,7 +506,7 @@ def toName(aName, nameClass=CompoundName, acceptURL=1):
     if isinstance(aName,StringTypes):
     
         if acceptURL and _URLMatch(aName):
-            return OpaqueURL.parse(aName)
+            return OpaqueURL.fromString(aName)
 
         return nameClass(aName)
 
