@@ -80,7 +80,7 @@ class BasePublication(binding.Base, DefaultPublication):
             # an error
             exc_info = None
 
-class HTTP(BasePublication):
+class HTTPPublication(BasePublication):
 
     def afterCall(self,request):
 
@@ -95,7 +95,7 @@ class HTTP(BasePublication):
             request.response.setBody('')
 
 
-class XMLRPC(HTTP):
+class XMLRPCPublication(HTTP):
 
     """XMLRPC support"""
 
@@ -104,7 +104,7 @@ class XMLRPC(HTTP):
         return super(XMLRPC,self).traverseName(request,ob,name)
 
 
-class Browser(HTTP):
+class BrowserPublication(HTTP):
 
     """DWIM features for human viewers"""
 
