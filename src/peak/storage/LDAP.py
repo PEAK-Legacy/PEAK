@@ -296,7 +296,10 @@ class ldapURL(URL.Base):
         referencedType = distinguishedName.asCompositeType()
 
     class attrs(URL.Field):
-        syntax = URL.Repeat(URL.ExtractQuoted(),separator = ',')  # XXX
+        syntax = URL.Repeat(
+            URL.ExtractQuoted(URL.MatchString(pattern='[^?,]+')),
+            separator = ','
+        )
 
     class scope(URL.IntField):
         defaultValue = SCOPE_BASE
@@ -307,7 +310,21 @@ class ldapURL(URL.Base):
         )
 
     class filter(URL.Field):
-        pass
+        canBeEmpty = True
+        defaultValue = None
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     class extensions(URL.Field):
         referencedType=model.Any    # XXX
@@ -344,6 +361,12 @@ class ldapURL(URL.Base):
     )
 
 
+
+
+
+
+
+
     def parse(self, scheme, body):
 
         data = URL.parse(body, self.syntax)
@@ -372,29 +395,6 @@ protocols.declareAdapter(
     provides = [ILDAPConnection],
     forTypes = [ldapURL],
 )
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
