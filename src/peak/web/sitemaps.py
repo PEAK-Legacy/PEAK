@@ -3,6 +3,7 @@ from interfaces import *
 from places import Location
 from peak.util.imports import lazyModule
 from peak.util import SOX
+from peak.util.ConflictManager import ConflictManager
 
 def isRoot(data):
     return 'previous' not in data
@@ -18,6 +19,9 @@ def acquire(data,key,default=None):
 
 def finishComponent(parser,data):
     if 'sm.component' in data:
+        if not isRoot(data) and 'no_resolve' not in data:
+            cm = data['sm_conflict_manager']
+            for setting in cm.values(): setting()
         return data['sm.component']
 
 def getGlobals(data):
@@ -34,10 +38,6 @@ def assertNotTop(parser,data):
         parser.err(
             "%(name)r element cannot be top-level in the document" % data
         )
-
-def evalObject(data,expr):
-    g = getGlobals(data['previous'])
-    return eval(expr,g,g)
 
 def acquirePermission(data,attrs):
     if 'permission' in attrs:
@@ -121,7 +121,7 @@ def locationView(spec):
         return ctx.childContext(qname,base+'/'[:not base.endswith('/')]+path)
     return handler
 
-def registerView(name,handler,data,attrs):
+def registerView(parser,data,attrs,name,handler):
     perm = acquirePermission(data,attrs)
     helper = acquireHelper(data,attrs)
     loc = acquire(data,'sm.component')
@@ -133,24 +133,65 @@ def registerView(name,handler,data,attrs):
     if perm is not security.Anybody:
         handler = addPermission(handler,perm)
 
-    #if typ is None:
-    #    pass # XXX register direct w/location?
-    loc.registerView(typ,str(name),handler)
+    addSetting(parser, data, (loc,typ,name),
+        lambda: loc.registerView(typ,str(name),handler))
+
+
+def addSetting(parser,data,key,setting):
+    cm = acquire(data,'sm_conflict_manager')
+    try:
+        cm[key] = acquire(data,'sm_include_path',()), setting
+    except KeyError:
+        parser.err("Conflicting settings for %r" % (key,))
+
+
+def evalObject(data,expr):
+    g = getGlobals(data['previous'])
+    return eval(expr,g,g)
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 def doAllow(parser,data):
     attrs = SOX.validatedAttributes(
         parser,data,('attributes',),('permission','helper')
     )
-
     for attr in attrs['attributes'].split(','):
-        registerView(attr,attributeView(attr.strip()),data,attrs)
+        registerView(parser,data,attrs,attr,attributeView(attr.strip()))
 
 
 def defineAllow(parser,data):
     assertNotTop(parser,data)    #assertInsideContent(parser,data)?
     data['start'] = doAllow
     data['empty'] = True
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -175,6 +216,8 @@ def makeLocation(parser,data,attrs,parent,name):
             web.SITEMAP_SCHEMA(parent),
             relativeResource(parser,attrs['extends'],parent),
             parent=parent, sm_included_from=attrs, sm_globals=globals(), #XXX
+            sm_include_path=acquire(data,'sm_include_path',())+(parser._url,),
+            sm_conflict_manager=data['sm_conflict_manager'],
         )
     elif 'class' in attrs:
         loc = evalObject(data,attrs['class'])(parent,name)
@@ -195,21 +238,21 @@ def makeLocation(parser,data,attrs,parent,name):
 
     return loc
 
-
 def relativeResource(parser, attr, parent):
     return naming.lookup(parent,
         # Might be a relative URL, so parse w/parser URL as base
         naming.parseURL(parent, attr, parser._url)
     )
 
-
 def startLocation(parser,data):
-
     attrs = SOX.validatedAttributes(parser,data,locRequired,locOptional)
     acquirePermission(data,attrs)
     prev = findComponentData(data)
     parent = prev['sm.component']
     name = attrs.get('name')
+
+    if data['previous'] is not prev:
+        parser.err("Locations must be directly inside other locations")
 
     if isRoot(prev):
         if name is not None:
@@ -220,13 +263,14 @@ def startLocation(parser,data):
             name = inclattrs.get('name')
             if 'class' in inclattrs:
                 attrs['class'] = inclattrs['class']
+            if 'sm_conflict_manager' in prev:
+                data['sm_conflict_manager'] = prev['sm_conflict_manager']
+                data['no_resolve'] = True   # let the including file do it
 
     elif not name:
         parser.err("Non-root locations must have a 'name'")
 
-    elif data['previous'] is not prev:
-        parser.err("Locations must be directly inside other locations")
-
+    data.setdefault('sm_conflict_manager',ConflictManager())
     loc = makeLocation(parser,data,attrs,parent,name)
     data['sm.component'] = loc
     data['sm.sublocations'] = subloc = {}
@@ -237,12 +281,9 @@ def defineLocation(parser,data):
     data['finish'] = finishComponent
     data['start'] = startLocation
     prev = findComponentData(data)
-
     def addLocation(loc):
         data['sm.sublocations'][loc.getComponentName()] = loc
     data['child'] = addLocation
-
-
 
 content_req = ('type',)
 content_opt = ('permission','helper','location')
@@ -254,7 +295,7 @@ def doContent(parser,data):
     data['sm.content_type'] = evalObject(data,attrs['type'])
     if 'location' in attrs:
         registerView(
-            'peak.web.url',locationView(attrs['location']),data,attrs
+            parser,data,attrs,'peak.web.url',locationView(attrs['location'])
         )
 
 def defineContent(parser,data):
@@ -306,7 +347,7 @@ def doView(parser,data):
     elif mode=='resource':
         handler = resourceView(expr)
 
-    registerView(attrs['name'],handler,data,attrs)
+    registerView(parser,data,attrs,attrs['name'],handler)
 
 
 def defineView(parser,data):
@@ -349,13 +390,13 @@ def defineRequire(parser,data):
 
 
 def setupDocument(parser,data):
-
     def setRoot(ob):
         data['sm.component'] = ob
 
     data['child'] = setRoot
     data['finish'] = finishComponent
     data['sm.component'] = data['parent']
+
 
 class SiteMap(binding.Singleton):
     protocols.advise(classProvides=[naming.IObjectFactory])

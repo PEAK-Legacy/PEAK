@@ -245,19 +245,28 @@ class ParserTests(TestCase):
         self.failUnless(isinstance(loc,TestLocation))
 
     def testLocationExtends(self):
-        self.startElement('location', ['extends','data:,'+quote("""
+        start, end = self.startElement, self.endElement
+        start('location', ['extends','data:,'+quote("""
                 <location id="nested.root">
+                <content type="object"><view name="bar" object="123"/>
+                </content>
                 <import module="peak.web.tests.test_sitemap" as="tsm"/>
                 <location name="foo" class="tsm.TestLocation"/>
                 </location>"""), 'id','root'
             ]
         )
+        start('container',['object','{"123":123}']); end()
+        start('content', ['type','object'])
+        start('view',['name','bar','object','"xyz"']); end(); end('content')
         loc = self.endElement('location')
         self.failUnless(
             isinstance(self.traverse(loc,'foo').current,TestLocation)
         )
         self.failUnless(self.traverse(loc,'++id++root').current is loc)
         self.failUnless(self.traverse(loc,'++id++nested.root').current is loc)
+
+        ctx = self.policy.newContext(start=loc).traverseName('123')
+        self.assertEqual(ctx.traverseName('@@bar').current, "xyz")
 
 
     def testAllow(self):
@@ -273,6 +282,9 @@ class ParserTests(TestCase):
         self.assertEqual(ctx.traverseName("__doc__").current,(123).__doc__)
         self.assertEqual(ctx.traverseName("__class__").current,(123).__class__)
 
+
+
+
     def testLocationConfigure(self):
         self.startElement('location',
             ['config','pkgfile:peak.web.tests/configure-test.ini'])
@@ -283,9 +295,17 @@ class ParserTests(TestCase):
         )
 
 
+    def testConflictingViews(self):
+        end=self.endElement
+        self.startElement('location',[])
+        self.startElement('content', ['type','object'])
+        self.startElement('view',['name','foo','object','"xyz"']); end()
+        end('content')
+        self.startElement('content', ['type','int'])
+        self.startElement('view',['name','foo','object','"xyz"']); end()
+        self.assertRaises(SyntaxError, self.startElement,
+            'view',['name','foo','object','123'])
 
-
-    # Extending location's views should override extendee's
 
     # XXX Containers in extending are *after* those in extendee!
 
@@ -299,12 +319,26 @@ def nullHandler(ctx, ob, namespace, name, qname, default=NOT_GIVEN):
     return ctx.childContext(qname,ob)
 
 
+
+
+
+
+
+
+
 TestClasses = (
     ParserTests,
 )
 
 def test_suite():
     return TestSuite([makeSuite(t,'test') for t in TestClasses])
+
+
+
+
+
+
+
 
 
 
