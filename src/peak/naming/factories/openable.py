@@ -82,29 +82,29 @@ class FileURL(OpenableURL):
 
 class PkgFileURL(URL.Base):
 
+    protocols.advise(
+        classProvides=[naming.IObjectFactory],
+    )
+
     nameAttr = 'body'
     supportedSchemes = 'pkgfile',
-    defaultFactory = 'peak.naming.factories.openable.FileFactory'
+    defaultFactory = 'peak.naming.factories.openable.PkgFileURL'
 
     class body(URL.NameField):
         referencedType = naming.CompositeName
         canBeEmpty = True
 
-    def getFilename(self):
-        if len(self.body)<2 or not self.body[0]:
+    def getObjectInstance(klass, context, refInfo, name, attrs=None):
+        url, = refInfo.addresses
+        try:
+            module,path = str(url.body).split('/',1)
+        except ValueError:
             raise exceptions.InvalidName(
-                "Missing package name in %s" % self
+                "Missing package name in %s" % url
             )
-        from os.path import join, dirname
-        from peak.util.imports import importString
-        path = dirname(importString(self.body[0]).__file__)
-        for p in self.body[1:]:
-            path = join(path,p)
-        return path
+        return config.packageFile(module,path)
 
-
-
-
+    getObjectInstance = classmethod(getObjectInstance)
 
 
 
@@ -210,7 +210,7 @@ class ImportLoaderFactory(object):
     )
 
     def __init__(self,loader,moduleName,path):
-        self.address = PkgFileURL("pkgfile:%s/%s" % (moduleName,path))
+        self.address = str(PkgFileURL("pkgfile","%s/%s" % (moduleName,path)))
         self.loader = loader
         self.path = path
     

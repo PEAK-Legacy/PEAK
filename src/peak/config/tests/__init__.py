@@ -25,6 +25,47 @@ class TestRule(object):
         return propertyMap, name, prefix, suffix, targetObject
 
 
+class DummyLoader:
+    def get_data(self, path):        
+        return "loaded: "+path
+
+
+
+
+
+
+
+
+
+
+
+class LoaderTest(TestCase):
+
+    def setUp(self):
+        global __loader__
+        __loader__ = DummyLoader()
+
+    def tearDown(self):
+        global __loader__
+        del __loader__
+
+    def checkLoadPkgFile(self):
+        for path in "y", "z.foo", "baz/spam":
+
+            address = "pkgfile:%s/%s" % (__name__,path)
+            for pkgfile in [
+                config.packageFile(__name__,path),
+                testRoot().lookupComponent(address)
+            ]:
+                self.assertEqual(pkgfile.address, address)
+                self.assertEqual(pkgfile.open('t').read(), "loaded: "+path)
+
+
+
+
+
+
+
 
 
 
@@ -368,7 +409,7 @@ class ZConfigTests(TestCase):
 
 
 TestClasses = (
-    PropertyTest, ModuleTest, AdviceTest, UtilityTest,
+    LoaderTest, PropertyTest, ModuleTest, AdviceTest, UtilityTest,
     RegForward, RegBackward, RegUpdate, ZConfigTests,
 )
 
