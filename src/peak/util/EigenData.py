@@ -12,7 +12,7 @@ may use immutables.  Zope 3X has a configuration conflict detection algorithm.
 But all of these approaches depend on either a write-once approach or an
 atomic configuration phase.
 
-TransWarp takes a "quantum physics" approach to immutability instead: treat
+PEAK takes a "quantum physics" approach to immutability instead: treat
 configuration data as an opaque box, whose contents you can change at will.
 However, once somebody looks in the box, the result is fixed and can no
 longer be changed.  You can think of it as a kind of "lazy immutability".
@@ -28,16 +28,16 @@ FYI: the module and classes are named after eigenstates in quantum physics;
 famous "Schrodinger's Cat" thought experiment is an analogy for eigenstates:
 once the box is opened, its contents are forced to collapse to a single
 eigenstate.  'SchrodingDict' and 'SchrodingCell', however, are much more
-awkward to say and type!
-"""
+awkward to say and type!"""
 
-__all__ = ['AlreadyRead', 'EigenCell', 'CollapsedCell', 'EigenDict']
+__all__ = [
+    'AlreadyRead', 'EigenCell', 'CollapsedCell', 'EigenDict', 'EigenRegistry'
+]
 
+from Interface import Interface
 
 class AlreadyRead(Exception):
     """Key or value has already been read"""
-
-
 
 class EigenCell(object):
 
@@ -78,47 +78,6 @@ class EigenCell(object):
         if hasattr(self,'value'):
             if self.locked: raise AlreadyRead
             del self.value
-
-
-# CollapsedCell is an empty (but read and locked) EigenCell
-
-CollapsedCell = EigenCell()
-CollapsedCell.exists()  # force locking
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 class EigenDict(object):
@@ -285,3 +244,49 @@ class EigenDict(object):
 
 
 
+class EigenRegistry(EigenDict):
+
+    """EigenDict that takes Interface objects as keys, handling inheritance"""
+
+    def __init__(self, *args,**kw):
+        self.provided = {}
+        super(EigenRegistry,self).__init__(*args,**kw)
+
+
+    def __setitem__(self, iface, item):
+        self._register(iface,item,iface)
+
+
+    def register(self,implements,item):
+
+        """Register 'item' under 'implements' (an Interface or nested tuple)"""
+
+        if isinstance(implements,tuple):
+            for iface in implements:
+                self.register(iface,item)
+        else:
+            self[implements]=item
+
+
+    def _register(self,iface,item,primary_iface):
+
+        self._setCell(iface).set(item)
+        self.provided[iface]=primary_iface
+
+        for base in iface.__bases__:
+        
+            if base is Interface:
+                continue
+
+            old = self.provided.get(base,primary_iface):
+
+            if not old.extends(primary_iface):
+                # We want to keep most-specific registrants
+                self._register(base,item,primary_iface)
+
+
+# CollapsedCell is an empty (but read and locked) EigenCell
+
+CollapsedCell = EigenCell()
+CollapsedCell.exists()  # force locking
+            
