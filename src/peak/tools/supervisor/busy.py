@@ -1,5 +1,5 @@
 """Start-on-busy-children plugin for ProcessSupervisor"""
-
+from __future__ import generators
 from peak.api import *
 from interfaces import *
 from peak.running.process import ChildProcess
@@ -42,7 +42,7 @@ __all__ = ['BusyProxy', 'BusyStarter']
 class BusyProxy(ChildProcess):
 
     """Proxy for process that communicates its "busy" status"""
-    log        = binding.Obtain('logging.logger:supervisor.busy-monitor')
+    log        = binding.Obtain('logger:supervisor.busy-monitor')
     reactor    = binding.Obtain(running.IBasicReactor)
     busyStream = binding.Require("readable pipe from child")
     fileno     = binding.Obtain('busyStream/fileno')
@@ -60,11 +60,11 @@ class BusyProxy(ChildProcess):
             return
 
         if byte=='+':
-            self.log.log(logs.TRACE,"Child process %d is now busy", self.pid)
+            self.log.trace("Child process %d is now busy", self.pid)
             self.isBusy = True
             self._notify()
         elif byte=='-':
-            self.log.log(logs.TRACE,"Child process %d is now free", self.pid)
+            self.log.trace("Child process %d is now free", self.pid)
             self.isBusy = False
             self._notify()
 
@@ -89,13 +89,43 @@ class BusyStarter(binding.Component):
     stream   = binding.Obtain('./template/stdin')
     fileno   = binding.Obtain('./stream/fileno')
     reactor  = binding.Obtain(running.IBasicReactor)
+    log      = binding.Obtain('logger:supervisor.busy-stats')
+    allBusy  = binding.Make(lambda: events.Value(False))
 
     supervisor = binding.Obtain('..')
+
+    def _monitorUsage(self):
+
+        from time import time
+        trace = self.log.trace
+
+        while True:
+
+            yield self.allBusy; events.resume()
+            start = time()
+
+            yield self.allBusy; events.resume()
+            duration = time()-start
+
+            if len(self.children)==self.supervisor.maxChildren:
+                trace("All children were busy for: %s seconds", duration)
+
+    monitorUsage = binding.Make(
+        # XXX this should be replaced with 'events.threaded()' advice wrapper
+        lambda self: events.Thread(self._monitorUsage()),
+        uponAssembly = True
+    )
+
+    def _setBusy(self):
+        # not one is available
+        self.allBusy.set(False not in self.children.values())
+
 
     def processStarted(self, proxy):
         proxy.addListener(self.statusChanged)
         self.children[proxy.pid] = proxy.isBusy
-        self._delBinding('allBusy')
+        self._setBusy()
+
 
     def statusChanged(self, proxy):
         if not proxy.isRunning:
@@ -103,21 +133,32 @@ class BusyStarter(binding.Component):
                 del self.children[proxy.pid]
         else:
             self.children[proxy.pid] = proxy.isBusy
+        self._setBusy()
 
-        self._delBinding('allBusy')
-
-    allBusy = binding.Make(
-        # not one is available
-        lambda self: False not in self.children.values()
-    )
 
     def doRead(self):
-        if self.allBusy:
+        if self.allBusy():
             self.supervisor.requestStart()
+
 
     __onStart = binding.Make(
         lambda self: self.reactor.addReader(self),
         uponAssembly = True
     )
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
