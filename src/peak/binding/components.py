@@ -14,7 +14,7 @@ from peak.util.imports import importString
 
 
 __all__ = [
-    'Base', 'Component','AutoCreated', 'AutoCreatable',
+    'Base', 'Component',
     'bindTo', 'requireBinding', 'bindSequence', 'bindToParent', 'bindToSelf',
     'getRootComponent', 'getParentComponent', 'lookupComponent',
     'acquireComponent', 'globalLookup', 
@@ -570,24 +570,6 @@ class Component(Base):
 
 
 
-
-
-class AutoCreatable(OnceClass, ActiveClass):
-
-    """DEPRECATED Metaclass for components which auto-create when used"""
-
-    def computeValue(self,owner,_d,_a):
-        return self(owner,_a)
-
-
-
-class AutoCreated(Component):
-
-    """DEPRECATED Component that auto-creates itself in instances of its
-        containing class
-    """
-
-    __metaclass__ = AutoCreatable
 
 
 

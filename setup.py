@@ -153,25 +153,34 @@ setup(
 
     package_dir = {'':'src'},
 
-    ext_modules = [
-        Extension("kjbuckets", ["src/kjbuckets/kjbucketsmodule.c"]),
-        Extension("Persistence.cPersistence",
-            ["src/Persistence/cPersistence.c"]
-        ),
-        Extension("peak.binding.data_desc", ["src/peak/binding/data_desc" + EXT]),
-        Extension("peak.util.buffer_gap", ["src/peak/util/buffer_gap" + EXT]),
-        Extension("peak.util._Code", ["src/peak/util/_Code" + EXT]),
-    ],
-
     cmdclass = {
         'install_data': install_data, 'sdist': sdist, 'happy': happy,
         'test': test, 'sdist_nodoc': old_sdist, 'build_ext': build_ext,
     },
 
+
+
+
+
     data_files = [
         ('peak', ['src/peak/peak.ini']),
         ('peak/running/tests', ['src/peak/running/tests/test_cluster.txt']),
         ('peak/metamodels/tests', ['src/peak/metamodels/tests/MetaMeta.xml']),
+    ],
+
+    ext_modules = [
+        Extension("kjbuckets", ["src/kjbuckets/kjbucketsmodule.c"]),
+        Extension("Persistence.cPersistence",
+            ["src/Persistence/cPersistence.c"]
+        ),
+        Extension(
+            "peak.binding._once", [
+                "src/peak/binding/_once" + EXT,
+                "src/peak/binding/getdict.c"
+            ]
+        ),
+        Extension("peak.util.buffer_gap", ["src/peak/util/buffer_gap" + EXT]),
+        Extension("peak.util._Code", ["src/peak/util/_Code" + EXT]),
     ],
 
 )

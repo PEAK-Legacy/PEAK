@@ -5,38 +5,12 @@ from peak.api import NOT_FOUND
 from peak.util.EigenData import EigenRegistry
 from peak.util.imports import importObject, importString
 from interfaces import IBindingFactory, IBindingSPI
-from data_desc import data_descr
+from _once import *
 
 __all__ = [
-    'Once', 'New', 'Copy', 'OnceClass', 'ActiveClass', 'ActiveClasses',
-    'ActiveDescriptor', 'getInheritedRegistries', 'Activator',
+    'Once', 'New', 'Copy', 'Activator', 'ActiveClass', 'ActiveClasses',
+    'getInheritedRegistries',
 ]
-
-
-
-class ActiveDescriptor(object):
-
-    """This is just a (simpler sort of) interface assertion class""" 
-
-    def activate(self,klass,attrName):
-        """Informs the descriptor that it is in 'klass' with name 'attrName'"""
-        return self
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 def getInheritedRegistries(klass, registryName):
@@ -58,21 +32,6 @@ def getInheritedRegistries(klass, registryName):
             reg = getattr(b,registryName,NOT_FOUND)
             if reg is not NOT_FOUND:
                 yield reg
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -162,7 +121,7 @@ def Copy(obj, name=None, provides=None, doc=None):
 
 
 
-class Once(ActiveDescriptor,data_descr):
+class Once(OnceDescriptor):
 
     """One-time Properties
     
@@ -195,7 +154,7 @@ class Once(ActiveDescriptor,data_descr):
         supply a valid name, attribute access will fail with a 'TypeError'.
     """
 
-    attrName = None
+    attrName = OnceDescriptor_attrName
     _provides = None
 
     def __init__(self, func, name=None, provides=None, doc=None):
@@ -241,47 +200,6 @@ class Once(ActiveDescriptor,data_descr):
         newOb.attrName = newOb.__name__ = attrName
         return newOb
         
-
-
-
-class OnceClass(Once, type):
-
-    """DEPRECATED: A variation on Once that can be used as a metaclass
-
-        Usage::
-
-            class outer(object):
-
-                class inner(object):
-                    __metaclass__ = OnceClass
-
-                    def __init__(self, obj, instDict, attrName):
-                        ...
-
-        When 'anOuterInstance.inner' is accessed, an instance of
-        'inner' will be created and cached in the instance dictionary,
-        as per 'Once'.  See 'Once' for more details on the mechanics.
-        The class name will serve as a default attribute name.
-    """
-
-    def __init__(klass, name, bases, dict):
-        # Hack to bypass Once.__init__, which is the wrong signature!
-        super(Once,klass).__init__(name,bases,dict)
-        klass.attrName = name
-
-
-    def computeValue(self, *args):
-        return self(*args)
-
-
-    def _copyWithName(self,attrName):
-        return Once(self.computeValue, attrName)
-
-
-
-
-
-
 
 
 
@@ -373,5 +291,5 @@ class ActiveClass(Activator):
     __cname__ = Once(__cname__)
 
 
-ActiveClasses = (ActiveDescriptor, ActiveClass)
+ActiveClasses = (Once, ActiveClass)
 

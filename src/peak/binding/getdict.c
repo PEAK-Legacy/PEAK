@@ -1,3 +1,6 @@
+#include "Python.h"
+#include "object.h"
+
 PyObject * 
 GET_DICTIONARY(PyObject *ob) {
 
