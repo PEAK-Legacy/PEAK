@@ -1,5 +1,10 @@
 New Features and Bug Fixes since v0.2, preview 1
 
+ * Fixed misc. bugs in DataModel, LDAPModel, Connections, and
+   TW.Caching found by Ulrich Eck.  Thanks Ulrich!  Also, added a fix to
+   ensure that non-existent records are invalidated by
+   RecordType.getItem().
+
  * Added basic Specialist implementation to 'TW.SEF.Basic', and reverted
    naming from 'TypeService' and 'ITypeService' to 'Specialist' and
    'ISpecialist'.  Updated 'TW.SEF.Interfaces' to reflect "self"-less
