@@ -460,7 +460,10 @@ class Base(object):
     def __init__(self, parentComponent=None, componentName=None, **kw):
         self.setParentComponent(parentComponent,componentName)
         if kw:
-            self.__dict__.update(kw)
+            klass = self.__class__
+            for k,v in kw.iteritems():
+                if hasattr(klass,k):
+                    setattr(self,k,v)
 
     lookupComponent = _lookupComponent
 
@@ -499,9 +502,6 @@ class Base(object):
     def _delBinding(self,attr):
         if attr in self.__dict__:
             del self.__dict__[attr]
-
-
-
 
 
 
