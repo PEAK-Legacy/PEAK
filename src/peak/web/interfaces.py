@@ -2,12 +2,13 @@ from protocols import Interface, Attribute
 from peak.security.interfaces import IAuthorizedPrincipal, IInteraction
 import protocols
 from peak.api import PropertyName
+from peak.binding.interfaces import IComponent
 
 __all__ = [
     'IWebInteraction', 'IWebLocation', 'IWebMethod', 'IInteractionPolicy',
     'LOCATION_PROTOCOL', 'BEHAVIOR_PROTOCOL', 'INTERACTION_CLASS',
     'DEFAULT_METHOD', 'APPLICATION_LOG', 'AUTHENTICATION_SERVICE',
-    'ERROR_PROTOCOL', 'SKIN_SERVICE', 'IWebException',
+    'ERROR_PROTOCOL', 'SKIN_SERVICE', 'IWebException', 'IDOMletState',
     'IDOMletNode',    'IDOMletNodeFactory',
     'IDOMletElement', 'IDOMletElementFactory',
 ]
@@ -37,7 +38,6 @@ else:
     zopePublicationInterfaces = (
         IPublication, IBrowserPublication, IXMLRPCPublication
     )
-
 
 class IWebInteraction(IInteraction):
 
@@ -121,24 +121,66 @@ class IWebException(Interface):
 
 
 
+class IDOMletState(IComponent):
+
+    """A component representing a DOMlet's current execution state"""
+
+    interaction = Attribute(
+        """The 'IWebInteraction' for this rendering"""
+    )
+
+    def write(unicodeData):
+        """Call this to write data to the output stream"""
+
+    def findState(interface):
+        """Return the nearest object supporting 'interface', or 'None'
+
+        If the state supports the interface, the state is returned, otherwise
+        the state's parent components are searched and the first parent
+        supporting the interface is returned.  'None' is returned if no parent
+        supports the requested interface."""
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 class IDOMletNode(Interface):
 
     """A component of a page template"""
 
-    def renderTo(interaction, writeFunc, currentModel, executionContext):
-        """Write template's output by calling 'writeFunc()' 0 or more times
+    def renderFor(data, state):
+        """Write template's output by calling 'state.write()' 0 or more times
 
-        'interaction' is the current 'IWebInteraction'.  'currentModel' is
-        the current "model" object being rendered (e.g. the object the template
-        is a method of).  'executionContext' is a component used to supply
-        arbitrary properties/utilities during template execution.  All of these
+        'data' is an 'IWebTraversable' for the object being rendered  (e.g. the
+        object the template is a method of).  'state' is an 'IDOMletState'
+        component used to supply arbitrary properties/utilities to child
+        DOMlets during template execution, and to provide access to the
+        current output stream and 'IWebInteraction'.  Both of these
         parameters should be supplied to executed child nodes as-is, unless
         the current DOMlet wishes to change them.
 
-        For example, if a node wishes to add properties to the
-        'executionContext' for its children, it should create a new Component
-        with the old 'executionContext' as the new component's parent, then
-        supply the new component to child nodes as their 'executionContext'.
+        For example, if a node wishes to add properties to the 'state' for its
+        children, it should create a new 'IDOMletState' with the old 'state' as
+        its parent, then supply the new state to child nodes's 'renderFor()'
+        method.
         """
 
     staticText = Attribute(
@@ -147,7 +189,6 @@ class IDOMletNode(Interface):
     )
 
     # XXX should be some kind of parseInfo w/source file/line/column
-
 
 
 

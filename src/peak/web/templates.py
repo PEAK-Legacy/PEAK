@@ -39,6 +39,18 @@ def isNull(ob):
     return ob is NOT_FOUND or ob is NOT_ALLOWED
 
 
+class DOMletState(binding.Component):
+
+    """Execution state for a DOMlet"""
+
+    protocols.advise(
+        instancesProvide = [IDOMletState],
+    )
+
+    interaction = binding.requireBinding("Current 'IWebInteraction'")
+    write = binding.requireBinding("Unicode output stream write() method")
+
+
 class DOMletAsMethod(binding.Component):
 
     """Render a template component"""
@@ -60,25 +72,13 @@ class DOMletAsMethod(binding.Component):
         myLocation = self.getParentComponent()
         myOwner = myLocation.getParentComponent()
         data = []
-        self.templateNode.renderTo(
-            interaction, data.append, myOwner, interaction
+        self.templateNode.renderFor(
+            myOwner,
+            DOMletState(
+                myOwner, interaction=interaction, write=data.append
+            )
         )
         return unicodeJoin(data)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 class DOMletParser(binding.Component):
 
@@ -339,8 +339,8 @@ class Literal(binding.Component):
 
     staticText = binding.bindTo('xml')
 
-    def renderTo(self, interaction, writeFunc, currentModel, executionContext):
-        writeFunc(self.xml)
+    def renderFor(self, data, state):
+        state.write(self.xml)
 
 
 
@@ -436,41 +436,39 @@ class Element(binding.Component):
     optimizedChildren = binding.Once(optimizedChildren)
 
 
-    def _getSubModel(self, interaction, currentModel):
+    def _traverse(self, data, state):
 
-        if isNull(currentModel):
-            return currentModel
+        if isNull(data):
+            return data, state
 
         return self.dataSpec.traverse(
-            currentModel, interaction, lambda o,i: self._wrapInteraction(i)
-        )
+            data, state.interaction, lambda o,i: self._wrapInteraction(i)
+        ), state
 
 
 
 
 
-    def renderTo(self, interaction, writeFunc, currentModel, executionContext):
+    def renderFor(self, data, state):
 
         text = self.staticText
         if text is not None:
-            writeFunc(text)
+            state.write(text)
+            return
+
+        if not self.optimizedChildren and not self.nonEmpty:
+            state.write(self._emptyTag)
             return
 
         if self.dataSpec:
-            currentModel = self._getSubModel(interaction, currentModel)
+            data, state = self._traverse(data, state)
 
-        if not self.optimizedChildren and not self.nonEmpty:
-            self._renderEmpty(
-                interaction, writeFunc, currentModel, executionContext
-            )
-            return
+        state.write(self._openTag)
 
-        self._open(interaction, writeFunc, currentModel, executionContext)
         for child in self.optimizedChildren:
-            child.renderTo(
-                interaction, writeFunc, currentModel, executionContext
-            )
-        writeFunc(self._closeTag)
+            child.renderFor(data,state)
+
+        state.write(self._closeTag)
 
 
     def addChild(self, node):
@@ -490,16 +488,9 @@ class Element(binding.Component):
 
 
 
+
+
     # Override in subclasses
-
-    def _open(self, interaction, writeFunc, currentModel, executionContext):
-        writeFunc(self._openTag)
-
-    def _renderEmpty(self,
-        interaction, writeFunc, currentModel, executionContext
-    ):
-        writeFunc(self._emptyTag)
-
 
     def _wrapInteraction(self,interaction):
         # XXX This should wrap the interaction in an IWebLocation simulator,
@@ -529,6 +520,15 @@ class Element(binding.Component):
     literalFactory = Literal
 
 Element.tagFactory = Element
+
+
+
+
+
+
+
+
+
 
 
 class TemplateDocument(Element):
@@ -588,19 +588,19 @@ class Text(ContentReplacer):
 
     """Replace element contents w/data"""
 
-    def renderTo(self, interaction, writeFunc, currentModel, executionContext):
+    def renderFor(self, data, state):
 
         if self.dataSpec:
-            currentModel = self._getSubModel(interaction, currentModel)
+            data, state = self._traverse(data, state)
 
-        writeFunc(self._openTag)
+        write = state.write
 
-        if not isNull(currentModel):
-            writeFunc(unicode(currentModel.getObject()))
+        write(self._openTag)
 
-        writeFunc(self._closeTag)
+        if not isNull(data):
+            write(unicode(data.getObject()))
 
-
+        write(self._closeTag)
 
 
 
@@ -615,20 +615,21 @@ class Text(ContentReplacer):
 
 class List(ContentReplacer):
 
-    def renderTo(self, interaction, writeFunc, currentModel, executionContext):
+    def renderFor(self, data, state):
 
         if self.dataSpec:
-            currentModel = self._getSubModel(interaction, currentModel)
+            data, state = self._traverse(data, state)
 
-        writeFunc(self._openTag)
+        state.write(self._openTag)
 
         i = infiniter(self.params['listItem'])
+        interaction = state.interaction
         locationProtocol = interaction.locationProtocol
         ct = 0
 
-        if not isNull(currentModel):
+        if not isNull(data):
 
-            for item in currentModel.getObject():
+            for item in data.getObject():
                 if not interaction.allows(item):
                     continue
 
@@ -639,18 +640,17 @@ class List(ContentReplacer):
                 # XXX this should probably use an iteration location, or maybe
                 # XXX put some properties in execution context for loop vars?
 
-                i.next().renderTo(
-                    interaction, writeFunc, loc, executionContext
-                )
+                i.next().renderFor(loc, state)
                 ct += 1
 
         if not ct:
             # Handle list being empty
             for child in self.params.get('emptyList',()):
-                child.renderTo(
-                    interaction, writeFunc, currentModel, executionContext
-                )
+                child.renderFor(data, state)
 
-        writeFunc(self._closeTag)
+        state.write(self._closeTag)
+
+
+
 
 
