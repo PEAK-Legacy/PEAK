@@ -572,7 +572,21 @@ class Classifier(Namespace):
 
 
 
+class ImmutableClass(Classifier.__class__):
+
+    def __init__(klass,name,bases,dict):
+        for f in klass.mdl_features:
+            if f.isChangeable:
+                raise TypeError(
+                    "Immutable class with changeable feature",
+                    klass, f
+                )
+        super(ImmutableClass,klass).__init__(name,bases,dict)
+
+
 class Immutable(Classifier, HashAndCompare):
+
+    __metaclass__ = ImmutableClass
 
     def _hashAndCompare(s,d,a):
         return tuple([
@@ -596,20 +610,6 @@ class Immutable(Classifier, HashAndCompare):
 
     def __setattr__(self,attr,value):
         raise TypeError("Immutable object", self)
-
-    def __init__(klass,name,bases,dict):
-        for f in klass.mdl_features:
-            if f.isChangeable:
-                raise TypeError(
-                    "Immutable class with changeable feature",
-                    klass, f
-                )
-
-    __init__ = binding.classAttr(__init__)
-
-
-
-
 
 
 
