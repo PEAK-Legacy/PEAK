@@ -78,26 +78,21 @@
  first '"."', if any. 
 """
 
+
+
 from peak.api import *
 import os
-
 from kjbuckets import *
 
-
-
-
-
 def parseCluster(prefix, fn):
-
-    props = {}
 
     try:
         import socket
         hn = socket.gethostname()
-
     except:
         hn = 'NO_NAME'
 
+    props = {}
     props[prefix + 'hostname'] = hn
     props[prefix + 'shortname'] = hn.split('.', 1)[0]
 
@@ -109,19 +104,20 @@ def parseCluster(prefix, fn):
     all    = kjGraph()
     groups = kjSet()
     hosts  = kjSet()
-
+    order  = kjDict()
     gname  = '__orphans__'
     inLump = False
-
-
+    lineno = 0
+    
     for l in file:
 
-        l = l.strip()
+        lineno += 1; l = l.strip()
+        lumpline = l.startswith('LUMP:')
 
         if not l or l.startswith('#'):
             continue
 
-        lumpline = l.startswith('LUMP:')
+
 
 
 
@@ -129,8 +125,10 @@ def parseCluster(prefix, fn):
 
             inLump  = lumpline
             gname = l.split(':', 1)[1] 
-
             groups.add(gname)
+
+            if not order.has_key(gname):
+                order[gname] = lineno, gname
 
         else:
             all.add(l, gname)
@@ -140,27 +138,33 @@ def parseCluster(prefix, fn):
             else:
                 hosts.add(l)
 
+            if not order.has_key(l):
+                order[l] = lineno, l
+
+        def ordered_tuple(set):
+            values = (set * order).values()
+            values.sort()
+            return tuple([v for (k,v) in values])
 
     host_pre  = prefix+'hosts.'
     group_pre = prefix+'groups.'
 
     for host in hosts.values():
-        props[host_pre + host]   = tuple(all.reachable(host).values())
-
+        props[host_pre + host] = ordered_tuple(all.reachable(host))
 
     g = ~all    # get reverse mappping from groups to hosts
 
     for group in groups.values() + ['__orphans__']:
-
-        props[group_pre + group] = tuple(
+        props[group_pre + group] = ordered_tuple(
             # don't include groups in groups' membership
-            (g.reachable(group) - groups).values()
+            (g.reachable(group) - groups)
         )
 
 
-    props[prefix + 'groups']           = tuple(groups.values())
-    props[prefix + 'hosts']            = tuple(hosts.values())
-    props[prefix + 'groups.__all__']   = tuple(hosts.values())
+
+    props[prefix + 'groups']           = ordered_tuple(groups)
+    props[prefix + 'hosts']            = ordered_tuple(hosts)
+    props[prefix + 'groups.__all__']   = ordered_tuple(hosts)
 
     return props
 
