@@ -3,8 +3,8 @@ from __future__ import generators
 from peak.api import *
 from peak.util.imports import importString, importObject
 from peak.binding.components import Component, Make, getParentComponent
-
-from peak.util.EigenData import EigenCell
+from peak.binding.interfaces import IAttachable
+from peak.util.EigenData import EigenCell,AlreadyRead
 from peak.util.FileParsing import AbstractConfigParser
 
 from interfaces import *
@@ -15,7 +15,7 @@ __all__ = [
     'PropertyMap', 'LazyRule', 'ConfigReader', 'loadConfigFiles',
     'loadConfigFile', 'loadMapping', 'PropertySet', 'fileNearModule',
     'iterParents','findUtilities','findUtility', 'ProviderOf',
-    'provideInstance', 'instancePerComponent', 'Fallback'
+    'provideInstance', 'instancePerComponent', 'Namespace'
 ]
 
 
@@ -93,27 +93,27 @@ def findUtility(component, iface, default=NOT_GIVEN):
     return default
 
 
-class Fallback:
-
-    """Fall back to another property namespace
-
-    Use this in .ini files (e.g. '__main__.* = Fallback("environ.*")') to
-    create a rule that looks up undefined properties in another property
-    namespace.
-    """
-
-    protocols.advise(
-        instancesProvide = [ISmartProperty]
-    )
-
-    def __init__(self, namespace):
-        self.prefix = PropertyName(namespace).asPrefix()
 
 
-    def computeProperty(self, propertyMap, name, prefix, suffix, targetObject):
-        return config.getProperty(
-            propertyMap, self.prefix+suffix, default=NOT_FOUND
-        )
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -490,7 +490,132 @@ class ConfigurationRoot(Component):
 
 
 
+class Namespace(object):
+
+    """Traverse to another property namespace
+
+    Use this in .ini files (e.g. '__main__.* = config.Namespace("environ.*")')
+    to create a rule that looks up undefined properties in another property
+    namespace.
+
+    Or, use this as a way to treat a property namespace as a mapping object::
+
+        myNS = config.Namespace("some.prefix", aComponent)
+        myNS['spam.bayes']              # property 'some.prefix.spam.bayes'
+        myNS.get('something',default)   # property 'some.prefix.something'
+
+    Or use this in a component class to allow traversing to a property space::
+
+        class MyClass(binding.Component):
+
+            appConfig = binding.Make(
+                lambda self: config.Namespace('MyClass.conf')
+            )
+
+            something = binding.Obtain('appConfig/foo.bar.baz')
+
+    In the example above, 'something' will be the component's value for the
+    property 'MyClass.conf.foo.bar.baz'.  Note that you may not traverse to
+    names beginning with an '_', and traversing to the name 'get' will give you
+    the namespace's 'get' method, not the 'get' property in the namespace.  To
+    obtain the 'get' property, or properties beginning with '_', you must use
+    the mapping style of access, as shown above."""
+
+    def __init__(self, prefix, target=NOT_GIVEN):
+        self._prefix = PropertyName(prefix).asPrefix()
+        self._target = target
+
+    def __call__(self, suffix):
+        """Return a sub-namespace for 'suffix'"""
+        return self.__class__(
+            PropertyName.fromString(self._prefix+suffix),self._target
+        )
+
+    def __getattr__(self, attr):
+        if not attr.startswith('_'):
+            ob = self.get(attr, NOT_FOUND)
+            if ob is not NOT_FOUND:
+                return ob
+        raise AttributeError,attr
+
+    def __getitem__(self, key):
+        """Return the value of property 'key' within this namespace"""
+        ob = self.get(key,NOT_FOUND)
+        if ob is not NOT_FOUND:
+            return ob
+        raise KeyError,key
+
+    def get(self,key,default=None):
+        """Return property 'key' within this namespace, or 'default'"""
+        if self._target is not NOT_GIVEN:
+            return config.getProperty(
+                self._target,PropertyName.fromString(self._prefix+key),default
+            )
+        return default
+
+    def __repr__(self):
+        return "config.Namespace(%r,%r)" % (self._prefix,self._target)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class __NamespaceExtensions(protocols.Adapter):
+
+    protocols.advise(
+        instancesProvide = [ISmartProperty, IAttachable],
+        asAdapterForTypes = [Namespace]
+    )
+
+    def computeProperty(self, propertyMap, name, prefix, suffix, targetObject):
+        return config.getProperty(
+            propertyMap, self.subject._prefix+suffix, default=NOT_FOUND
+        )
+
+    def setParentComponent(self, parentComponent, componentName=None,
+        suggest=False
+    ):
+
+        pc = self.subject._target
+
+        if pc is NOT_GIVEN:
+            self.subject._target = parentComponent
+            return
+
+        elif suggest:
+            return
+
+        raise AlreadyRead(
+            "%r already has target %r; tried to set %r"
+                % (self.subject,pc,parentComponent)
+        )
+
+
+
+
+
+
+
+
+
+
+
+
 class PropertySet(object):
+
+    """DEPRECATED"""
 
     def __init__(self, targetObj, prefix):
         self.prefix = PropertyName(prefix).asPrefix()
@@ -514,8 +639,6 @@ class PropertySet(object):
             forObj = self.target
 
         return config.getProperty(forObj, self.prefix[:-1], default)
-
-
 
 
 

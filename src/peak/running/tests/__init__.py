@@ -42,14 +42,15 @@ groupToHosts = Items(
 class ClusterTests(TestCase):
 
     def checkHosts(self):
-        assert pm.hosts()==pm.groups['__all__']
+        assert pm.hosts==pm['groups.__all__']
 
     def checkGroups(self):
-        assert pm.groups()==('odd','even','prime','qux','weird')
+        assert pm.groups==('odd','even','prime','qux','weird')
 
     def checkMembers(self):
+        groups = pm('groups')
         for group, members in groupToHosts:
-            assert pm.groups[group] == members, (group,members,pm.groups[group])
+            assert groups[group] == members, (group,members,groups[group])
 
     # XXX need host->group tests, plus ???
 

@@ -2,8 +2,13 @@ Fixes and Enhancements since Version 0.5 alpha 2
 
  Changed, Enhanced, or Newly Deprecated Features
 
- - Added 'config.Fallback()' convenience class for redirecting property lookups
-   from one namespace to another.  See 'peak.ini' for usage examples.
+ - Added 'config.Namespace()' convenience class for redirecting property
+   lookups from one namespace to another.  See the docstring and 'peak.ini' for
+   usage examples.  'PropertyName.of()' now returns 'Namespace' instances
+   instead of 'PropertySet' instances.
+
+ - DEPRECATED the 'config.PropertySet' class; please convert to using
+   'config.Namespace', as it will disappear in the 0.5alpha4 release cycle.
 
  - SQL connection objects now get their type converters from a distinct
    property namespace for each DBAPI driver.  For example a driver using the

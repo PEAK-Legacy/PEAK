@@ -222,8 +222,8 @@ class PropertyName(str):
 
 
     def of(self, forObj):
-        from peak.config.config_components import PropertySet
-        return PropertySet(forObj, self)
+        from peak.config.config_components import Namespace
+        return Namespace(self, forObj)
 
 
 
