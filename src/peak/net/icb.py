@@ -47,7 +47,6 @@ class ICB_URL(naming.URL.Base):
 
 
 
-<<<<<<< icb.py
 class IICBListener(Interface):
     connection = Attribute("Connection we're listening to")
     
@@ -244,8 +243,6 @@ class ICBConnection(StreamProto):
 
 
 
-<<<<<<< icb.py
-=======
 class IICBListener(Interface):
     connection = Attribute("Connection we're listening to")
 
