@@ -133,17 +133,17 @@ actually a ``real" disk file.
 A specific set of services that a component provides is called an
 \strong{interface}.  Interfaces can denote a component's requirements, as well
 as the guarantees that it provides when those requirements are met.  In PEAK,
-interfaces are defined and declared using the \module{peak.interface} package,
+interfaces are defined and declared using the \module{protocols} package,
 which also supports the use of Zope X3 interfaces.  This means that components
 you create with PEAK's component architecture can also work in Zope X3's
 component architecture.  (Which may be useful if you plan to build Zope
 X3-based applications and web services with PEAK.)
 
 Interfaces in PEAK are used primarily as documentation and as a way of finding
-compatible components and services.  When used with the Zope X3 component
-architecture, interfaces can also be used to register adapters (which convert
-a component from one interface to another), declare web views of application
-components, and even define security restrictions based on interfaces.
+compatible components and services.  They can also be used to register adapters
+(which convert a component from one interface to another), declare web views of
+application components, and even define security restrictions based on
+interfaces.
 
 \vfill
 \begin{seealso}\begin{itemize}
@@ -152,7 +152,7 @@ components, and even define security restrictions based on interfaces.
 \url{http://www.zope.org/Wikis/Interfaces/InterfaceUserDocumentation}.
 
 \item And, if you're interested in developing Zope X3 applications and want to
-learn more about what you can do with interfaces in the XZope 3 component
+learn more about what you can do with interfaces in the Zope X3 component
 architecture, see \citetitle{Programming with the Zope 3 Component
 Architecture} at \url{http://dev.zope.org/Wikis/DevSite/Projects/ComponentArchitecture/Zope3PythonProgrammerTutorialChapter1/
 }.
@@ -991,13 +991,15 @@ IConfigSource}!  It simply means that a class which promises to implement the
 \class{config.IConfigSource} interface as well.
 
 Did our example \class{myGUIControl} class promise to implement \class{%
-binding.IBindingNode}?  No.  It doesn't have an \samp{__implements__} attribute
-or inherit one, so it's not promising to implement the full \class{IBindingNode}
-interface.  This is acceptable because \module{peak.binding} verifies the
-presence of needed methods automatically, and it isn't required that a
-component implement all of the \class{IBindingNode} methods.  Many other
-interfaces however, \emph{must} be explicitly promised by a class in order
-for the functionality to work.
+binding.IBindingNode}?  No.  We didn't declare that it does, nor did it inherit
+from a class that declares support for the interface.  So, it's not promising
+to implement the full \class{IBindingNode} interface.  This is acceptable
+because \module{peak.binding} verifies the presence of needed methods
+automatically, and it isn't required that a component implement all of the
+\class{IBindingNode} methods.  Most other interfaces however, \emph{must} be
+explicitly promised by a class in order for the functionality to work.
+(See the \module{protocols} package documentation for more information about
+declaring support for an interface.)
 
 The \class{binding.IComponentFactory} interface is a good example of this.
 \class{IComponentFactory} is the interface which defines how component
@@ -1011,16 +1013,14 @@ with parents even though we never supplied any arguments to their constructors.
 Well, we're about to see how that works.
 
 When a \function{binding.New} binding is activated, it checks to see if
-its \var{obtype} parameter implements \class{IComponentFactory}.  If so,
+its \var{obtype} parameter provides \class{IComponentFactory}.  If so,
 it knows that the constructor accepts the appropriate parameters, and supplies
 them when constructing the new instance.  If the \var{obtype} parameter
-doesn't implement \class{IComponentFactory}, it's simply called without any
-parameters.  (If you should need to, you can always override this behavior
-of \function{binding.New} using the \var{bindToOwner} flag.)
+doesn't provide \class{IComponentFactory}, it's simply called without any
+parameters.
 
 Let's take a look at the \class{binding.IComponentFactory} interface in more
 detail.
-
 
 
 \begin{verbatim%
@@ -1028,22 +1028,29 @@ detail.
 
     """Class interface for creating bindable components"""
 
-    def __call__(parentComponent=None, componentName=None, **attrVals):
+    def __call__(parentComponent, componentName=None, **attrVals):
         """Create a new component
 
         The default constructor signature of a binding component is
-        to receive an optional parent to be bound to, an optional name
+        to receive an parent component to be bound to, an optional name
         relative to the parent, and keyword arguments which will be
         placed in the new object's dictionary, to override the specified
-        bindings."""
+        bindings.
+
+        Note that some component factories (such as 'binding.Component')
+        may be more lenient than this interface requires, by allowing you to
+        omit the 'parentComponent' argument.  But if you do not know this is
+        true for the object you are calling, you should assume the parent
+        component is required."""
+
 \end{verbatim}
 
 Notice that this interface describes a \function{__call__} method.  This
 doesn't mean that you'll need a \function{__call__} method on your object
-instances or in your class.  It simply means that an object that implements
+instances or in your class.  It simply means that an object that provides
 the interface should be callable.  Because \class{IComponentFactory} is an
 interface for functions or classes, the \function{__call__} method simply
-documents what behavior the function or class constructor should have.
+documents what behavior the function (or class constructor) should have.
 
 XXX show how to implement in a class, __init__, __class_implements__, etc.
 
@@ -1057,7 +1064,6 @@ XXX lookupComponent
 
 XXX Component, bindToParent, ...
 
-
 \section{Connecting Components by Name or Interface}
 
 XXX bindSequence, bindTo, bindToProperty, bindToUtilities, Constant, Acquire,
@@ -1066,3 +1072,36 @@ ComponentName, ...
 
 XXX Stuff that needs to go to config chapter: iterParents, findUtility,
 findUtilities
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
