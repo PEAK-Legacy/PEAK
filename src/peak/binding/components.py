@@ -12,7 +12,8 @@ __all__ = [
     'Base','App','Service','Specialist','DynamicBinding','StaticBinding',
     'StructuralFeature', 'Field', 'Collection', 'Reference', 'Sequence',
     'Classifier','PrimitiveType','Enumeration','DataType','Element',
-    'bindTo', 'requireBinding', 'bindToNames', 'bindToParent', 'Specialist'
+    'bindTo', 'requireBinding', 'bindToNames', 'bindToParent', 'bindToSelf',
+    'Specialist'
 ]
 
 
@@ -35,7 +36,6 @@ class DynamicBindingMC(Meta.AssertInterfaces):
 class DynamicBinding(object):
 
     __metaclass__ = DynamicBindingMC
-
 
 
 
@@ -134,14 +134,54 @@ class bindToParent(Once):
        'someClass' can then refer to 'self.grandPa' instead of calling
        'self.getSEFparent().getSEFparent()'.
 
-       Note that this binding creates a circular reference as soon as it
-       is retrieved from an instance.  The circular reference can be
-       broken by deleting the attribute (e.g. 'del self.grandPa'), but of
-       course it will come back the next time you use the attribute.
+       This binding descriptor saves a weak reference to its target in
+       the object's instance dictionary, and dereferences it on each access.
+       It therefore supports '__set__' and '__delete__' as well as '__get__'
+       methods, and retrieval is slower than for other 'Once' attributes.  But
+       it avoids creating circular reference garbage.
     """
 
     def __init__(self,level=1):
         self.level = level
+
+    def __get__(self, obj, typ=None):
+    
+        if obj is None: return self
+
+        d = obj.__dict__
+        n = self.attrName
+
+        if not n or getattr(obj.__class__,n) is not self:
+            self.usageError()
+
+        ref = d.get(n)
+
+        if ref is None:
+            d[n] = ref = self.computeValue(obj, d, n)
+
+        return ref()
+
+
+    def __set__(self, obj, val):
+
+        n = self.attrName
+
+        if not n or getattr(obj.__class__,n) is not self:
+            self.usageError()
+
+        from weakref import ref
+        obj.__dict__[n] = ref(val)
+
+
+    def __delete__(self, obj):
+
+        n = self.attrName
+
+        if not n or getattr(obj.__class__,n) is not self:
+            self.usageError()
+
+        del obj.__dict__[n]
+
 
     def computeValue(self, obj, instDict, attrName):
 
@@ -150,7 +190,8 @@ class bindToParent(Once):
             if newObj is None: break
             obj = newObj
 
-        return obj
+        from weakref import ref
+        return ref(obj)
 
 
 
@@ -160,6 +201,20 @@ class bindToParent(Once):
 
 
 
+
+
+def bindToSelf():
+
+    """Weak reference to the 'self' object
+
+    This is just a shortcut for 'bindToParent(0)', and does pretty much what
+    you'd expect.  It's handy for objects that provide default support for
+    various interfaces in the absence of an object to delegate to.  The object
+    can refer to 'self.delegateForInterfaceX.someMethod()', and have
+    'delegateForInterfaceX' be a 'bindToSelf()' by default.
+    """
+
+    return bindToParent(0)
 
 
 class requireBinding(Once):
@@ -174,20 +229,6 @@ class requireBinding(Once):
         raise NameError("Class %s must define %s; %s"
             % (obj.__class__.__name__, attrName, self.description)
         )
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
