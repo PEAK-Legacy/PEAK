@@ -291,7 +291,9 @@ class Type(Namespace):
 
     def __str__(self):
         if self.__class__.mdl_syntax is not None:
-            return fmtparse.format(value._mdl_toDict(value), klass.mdl_syntax)
+            return fmtparse.format(
+                self._mdl_toDict(), self.__class__.mdl_syntax
+            )
         else:
             return super(Type,self).__str__()
 
@@ -304,8 +306,6 @@ class Type(Namespace):
             except AttributeError:
                 continue
         return d
-
-
 
 
 
