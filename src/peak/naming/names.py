@@ -490,7 +490,7 @@ class CompoundName(Name):
 
 
 
-def toName(aName, nameClass=CompositeName, acceptURL=0):
+def toName(aName, nameClass=CompoundName, acceptURL=1):
 
     """Convert 'aName' to a Name object
 
@@ -517,5 +517,5 @@ def toName(aName, nameClass=CompositeName, acceptURL=0):
         raise InvalidNameException(aName)
 
 
-NNS_NAME = toName('/')
+NNS_NAME = CompositeName('/')
 
