@@ -276,7 +276,7 @@ class SQLInteractor(storage.TransactionComponent):
 
 
     class cmd_go(ShellCommand):
-        """go [-N null] [-d delim] [-m style] [-x code] [-r code] [-p] [-h] [-f] [-n] [-s n] [xacts] -- submit current input
+        """go [-N null] [-d delim] [-m style] [-x code] [-r code] [-p] [-h] [-f] [-n] -- submit current input
 
 -N null\tuse given string to represent NULL
 -d delim\tuse specified delimiter
@@ -289,11 +289,7 @@ class SQLInteractor(storage.TransactionComponent):
 -r\t\texecute python code per row with "row" bound, instead of
 \t\tprinting
 -p\t\tdrop into python interactor with "cursor" bound, instead of
-\t\tprinting
--s n\t\tsleep 'n' seconds between batches, if xacts is greater than 1
-
-xacts\t\tnumber of times to repeat execution of the input. Only results
-\t\tfrom the last time are displayed."""
+\t\tprinting"""
 
         noBackslash = True
 
