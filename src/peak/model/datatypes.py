@@ -1,5 +1,6 @@
 from structural import *
 from enumerations import *
+from peak.api import binding
 
 __all__ = [
     'TCKind', 'TypeCode', 'Short', 'Long', 'UShort', 'ULong', 'Float', 'Double',
@@ -27,7 +28,6 @@ class PrimitiveTC(Enumeration):
     tk_longlong = enum()
     tk_ulonglong = enum()
     tk_longdouble = enum()
-
 
 class SimpleTC(PrimitiveTC):
 
