@@ -46,7 +46,7 @@ class NamingInteractor(binding.Component):
 
     
     def command_names(self):
-        return [k[4:] for k in self.__class__.__dict__ if k.startswith('cmd_')]
+        return [k[4:] for k in dir(self) if k.startswith('cmd_')]
 
 
     def command(self, cmdname):
