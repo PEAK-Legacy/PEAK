@@ -56,7 +56,7 @@ class AbstractCommand(binding.Component):
     def run(self):
         raise NotImplementedError
 
-    def presetFactory(self, cmdFactory, **kw)
+    def presetFactory(self, cmdFactory, **kw):
 
         """Return a 'ICmdLineAppFactory' with our environment as its defaults"""
 
