@@ -2,6 +2,19 @@ Fixes and Enhancements since Version 0.5 alpha 2
 
  Changed, Enhanced, or Newly Deprecated Features
 
+ - Added limited support for two-phase commit of database connections to Sybase
+   and Oracle.  Changed Oracle "outside transaction" semantics to allow read
+   operations only, and added a property to set Oracle transactions to
+   "serializable" (which effectively requires two-phase commits).  Note that
+   the current version of DCOracle2 doesn't properly support two-phase commit
+   except for empty (no-op) transactions, which isn't very useful.  However, if
+   a later release of DCOracle2 works correctly and doesn't change its API, the
+   current PEAK driver should then work correctly.  In the meantime, the
+   cx_Oracle driver apparently *does* provide working support for two-phase
+   commits.  The controlling properties are of the form 'DRIVER.twoPhaseCommit'
+   and 'DRIVER.serializable', where 'DRIVER' is the name of the DBAPI driver
+   module, e.g. 'Sybase.twoPhaseCommit' or 'cx_Oracle.serializable'.
+   
  - Added properties to the command-line applications framework, allowing
    non-command objects access to 'stdin', 'stdout', 'argv' etc. from their
    context.

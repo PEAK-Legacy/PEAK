@@ -244,6 +244,25 @@ class SQLConnection(ManagedConnection):
         lambda self: config.Namespace('%s.appConfig' % self.DRIVER)
     )
 
+    twoPhaseProp = binding.Make(
+        lambda self: PropertyName(self.DRIVER+'.twoPhaseCommit')
+    )
+
+    serialProp = binding.Make(
+        lambda self: PropertyName(self.DRIVER+'.serializable')
+    )
+
+    twoPhase     = binding.Obtain(naming.Indirect('twoPhaseProp'))
+
+    serializable = binding.Obtain(naming.Indirect('serialProp'))
+
+
+    def voteForCommit(self, txnService):
+        super(SQLConnection,self).voteForCommit(txnService)
+        if self.twoPhase:
+            self._prepare()
+
+    
     def typeMap(self):
         tm = {}
         ps = self.TYPES_NS
@@ -255,6 +274,15 @@ class SQLConnection(ManagedConnection):
         return tm
 
     typeMap = binding.Make(typeMap)
+
+
+    def _prepare(self):
+        raise NotImplementedError("Two-phase commit not implemented", self)
+
+
+
+
+
 
 
     def getRowConverter(self,description,post=None):
@@ -281,6 +309,19 @@ class SQLConnection(ManagedConnection):
                     )
         else:
             return post     # No conversions other than postprocessor
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -373,11 +414,7 @@ class SybaseConnection(ValueBasedTypeConn):
 
 
     def txnTime(self):
-
-        # First, ensure that we're in a transaction
-        self.joinedTxn
-
-        # Then retrieve the server's idea of the current time
+        # Retrieve the server's idea of the current time
         r = ~ self('SELECT getdate()')
         return r[0]
 
@@ -407,6 +444,10 @@ class SybaseConnection(ValueBasedTypeConn):
     )
 
 
+    def _prepare(self):
+        self('PREPARE TRAN')
+
+
 
 class PGSQLConnection(ValueBasedTypeConn):
 
@@ -426,7 +467,6 @@ class PGSQLConnection(ValueBasedTypeConn):
 
 
     def txnTime(self):
-        self.joinedTxn              # Ensure that we're in a transaction,
         r = ~ self('SELECT now()')  # retrieve the server's idea of the time
         return r[0]
 
@@ -436,6 +476,7 @@ class PGSQLConnection(ValueBasedTypeConn):
         'BINARY','BOOL','DATETIME','FLOAT','INTEGER',
         'LONG','MONEY','ROWID','STRING',
     )
+
 
 
 
@@ -654,11 +695,64 @@ class OracleURL(naming.URL.Base):
 
 
 
-class OracleIntrospection(object):
+class OracleBase(SQLConnection):
 
-    """Mixin for Oracle ISQLObjectLister support"""
+    """Base class for Oracle connection drivers"""
+
+    protocols.advise(
+        instancesProvide=[ISQLObjectLister]
+    )
+
+    def onJoinTxn(self, txnService):
+
+        self.connection.rollback()  # throw away the read-only txn
+
+        if self.twoPhase:
+            self._begin()
+
+        if self.serializable:
+            self('SET TRANSACTION ISOLATION SERIALIZABLE')
+
+
+    def commitTransaction(self, txnService):
+        try:
+            self._doCommit()
+        except self.Error,v:
+            # Oracle raises this error on a two-phase commit if no rows were
+            # actually changed in the DB.
+            if self._errCode(v)<>'ORA-24576':
+                raise
+
+
+    def finishTransaction(self, txnService, committed):
+
+        super(OracleBase,self).finishTransaction(txnService,committed)
+
+        if self._hasBinding('connection'):
+            # Since we set read-only on new connections, we only need to do
+            # this if the connection is still open (and super() might close it)
+            self._readOnly()
+
+
+
+
+    def _prepare(self):
+        self.connection.prepare()
+
+
+    def _readOnly():
+        self('SET TRANSACTION READ ONLY', outsideTxn=True)
+
+
+    def txnTime(self):
+        r = ~ self('SELECT SYSDATE FROM DUAL')  # retrieve the server's time
+        return r[0]
+
+    txnTime = binding.Make(txnTime)
+
 
     def listObjects(self, full=False, obtypes=NOT_GIVEN):
+
         addsel = addwhere = ''
 
         if full:
@@ -683,44 +777,30 @@ class OracleIntrospection(object):
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-class CXOracleConnection(SQLConnection,OracleIntrospection):
-
-    protocols.advise(
-        instancesProvide=[ISQLObjectLister]
-    )
+class CXOracleConnection(OracleBase):
 
     DRIVER = "cx_Oracle"
 
     def _open(self):
         a = self.address
+        self.connection = self.API.connect(a.user, a.passwd, a.server)
+        self._readOnly()
+        return self.connection
 
-        return self.API.connect(a.user, a.passwd, a.server)
-
-
-    def txnTime(self):
-        self.joinedTxn              # Ensure that we're in a transaction,
-        r = ~ self('SELECT SYSDATE FROM DUAL')  # retrieve the server's idea of the time
-        return r[0]
-
-    txnTime = binding.Make(txnTime)
 
     supportedTypes = (
         'BINARY','CURSOR','DATETIME','FIXED_CHAR','LONG_BINARY',
         'LONG_STRING','NUMBER','ROWID','STRING',
     )
 
+    def _begin(self):
+        self.connection.begin(0,self.txnId,self.txnBranch)
+
+    def _doCommit(self):
+        self.connection.commit()
+
+    def _errCode(self,v):
+        return str(v).split(':',1)[0]
 
 
 
@@ -736,46 +816,30 @@ class CXOracleConnection(SQLConnection,OracleIntrospection):
 
 
 
-class DCOracle2Connection(ValueBasedTypeConn,OracleIntrospection):
 
-    protocols.advise(
-        instancesProvide=[ISQLObjectLister]
-    )
+
+class DCOracle2Connection(OracleBase):
 
     DRIVER = "DCOracle2"
 
     def _open(self):
         a = self.address
-        return self.API.connect(
+        self.connection = self.API.connect(
             user=a.user, password=a.passwd, database=a.server,
         )
+        self._readOnly()
+        return self.connection
 
-    def txnTime(self):
-        self.joinedTxn              # Ensure that we're in a transaction,
-        r = ~ self('SELECT SYSDATE FROM DUAL')  # retrieve the server's idea of the time
-        return r[0]
+    supportedTypes = ('BINARY','DATETIME','NUMBER','ROWID','STRING')
 
-    txnTime = binding.Make(txnTime)
+    def _begin(self):
+        self.connection.setTransactionXID((0,self.txnId,self.txnBranch))
 
-    supportedTypes = (
-        'BINARY','DATETIME','NUMBER','ROWID','STRING',
-    )
+    def _doCommit(self):
+        self.connection.commit(not not self.twoPhase)
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    def _errCode(self,v):
+        return str(v.args[1]).split(':',1)[0]
 
     def typeMap(self):
 
@@ -794,27 +858,4 @@ class DCOracle2Connection(ValueBasedTypeConn,OracleIntrospection):
         return tm
 
     typeMap = binding.Make(typeMap)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
