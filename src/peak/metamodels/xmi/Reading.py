@@ -123,10 +123,10 @@ class XMIFactory:
 
 XMIMapMaker = RegistryBuilder(
                 keyFunc = lambda attName,attVal: getattr(attVal,'_XMINames',()),
-                valFunc = lambda oldEnt,newItem: newItem.__name__.split('.')[-1]
+                valFunc = lambda oldEnt,newItem:
+                    type(newItem)==type('') and newItem or
+                    newItem.__name__.split('.')[-1]
               )
-
-
 
 
 
