@@ -490,3 +490,12 @@ class ILogger(Interface):
 
 
 
+class ICheckableResource(Interface):
+
+    """Interface for objects that can be checked for availability
+    or proper functioning."""
+
+    def checkResource():
+        """Check wether a resource is up/functioning correctly and
+        return either None or a string indicating the nature of the
+        problem"""

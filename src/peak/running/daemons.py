@@ -244,3 +244,111 @@ class AdaptiveTask(binding.Component):
 
 
 
+from glob import glob
+import os, time
+
+
+class FileCleaner(AdaptiveTask):
+
+    """Periodically remove stale files from a directory"""
+    
+    pattern = binding.requireBinding("Python glob pattern for files to check")
+    olderThan = binding.requireBinding("Age in seconds after which files are stale")
+    log = binding.requireBinding("logger object")
+
+    def getWork(self):
+        t = time.time() - self.olderThan
+        self.log.info('Scanning for files matching %s older than %d minutes' % (d,self.older_than/60))
+        return [f for f in glob(self.pattern) if os.stat(f).st_mtime < t]
+
+    def doWork(self, job):
+        self.loginfo('Deleting %d old files' % len(job))
+        for f in job:
+            os.unlink(f)
+
+
+import traceback
+
+
+class URLChecker(AdaptiveTask):
+
+    """Checks if a resource specified by a URL is up and running
+    and tries to restart it if not"""
+    
+    url = binding.requireBinding("name (usually URL) for resource to check")    
+    restarter = binding.requireBinding("command to execute to restart")
+
+        return lookupComponent(self, self.url)
+        
+    resource = binding.Once(resource)
+
+    def getWork(self):
+        try:
+            rsrc = lookupComponent(self, self.url)
+        except:
+            # XXX log error
+            return True
+            
+        err = adapt(rsrc, ICheckableResource).checkResource()
+        if err:
+            # XXX log error
+            return True
+        
+        return False
+        
+
+
+    def doWork(self, job):
+        # XXX self.log(self.log.LOG_WARNING, 'Service not responding, restarting', self.name)
+        ret = adapt(self.restarter, ICmdLineAppFactory)(self).run()
+        # XXX logging of command output?
+        if ret:
+            pass
+            # XXX self.log(self.log.LOG_WARNING, "service restart returned %d" % ret, self.name)
+        
+        if self.getWork():
+            pass
+            # XXX self.log(self.log.LOG_CRIT, 'service still not responding', self.name)
+        else:
+            # XXX self.log(self.log.LOG_NOTICE, 'service now responding', self.name)
+
+        return True
+
+
+
+class StreamFactoryAsCheckableResource(object):
+
+    protocols.advise(
+        instancesProvide = [ICheckableResource],
+        asAdapterForProtocols = [IStreamFactory]
+    )
+
+    def __init__(self, ob, proto):
+        self.sf = ob
+
+    def checkResource(self):
+        if self.sf.exists():
+            return None
+
+        return "check failed"
+
+
+
+class ManagedConnectionAsCheckableResource(object):
+
+    protocols.advise(
+        instancesProvide = [ICheckableResource],
+        asAdapterForProtocols = [IManagedConnection]
+    )
+
+    def __init__(self, ob, proto):
+        self.mc = ob
+
+    def checkResource(self):
+        try:
+            self.mc.connection # reference it to ensure it's opened
+            return None
+        except:
+            return ''.join(traceback.format_exception(*sys.exc_info())
+
+        return "check failed"
