@@ -58,19 +58,8 @@ class TraversalContext(binding.Component):
         lambda s,d,a: adapt(s.subject, s.interaction.pageProtocol, None)
     )
 
-    def isNull(self,d,a):
-        ob = self.subject
-        return ob is NOT_FOUND or ob is NOT_ALLOWED
-
-    isNull = binding.Once(isNull)
-
     def checkPreconditions(self):
         """Invoked before traverse by web requests"""
-        if self.isNull:
-            if self.subject is NOT_FOUND:
-                raise NotFound(self)
-            else:
-                raise NotAllowed(self)
         self.traversable.preTraverse(self)
 
     def subcontext(self, name, ob):
@@ -78,10 +67,18 @@ class TraversalContext(binding.Component):
         binding.suggestParentComponent(self.traversable, name, ob)
         return self.__class__.newCtx(self, name, traversable = ob)
 
-
-
     # newCtx = "this class"
     newCtx = binding.classAttr(binding.bindTo('.'))
+
+
+
+
+
+
+
+
+
+
 
     def contextFor(self, name):
         """Return a new traversal context for 'name'"""
@@ -94,32 +91,40 @@ class TraversalContext(binding.Component):
         elif name=='.' or not name:
             return self
 
-        ob = self.traversable.traverseTo(name, self.interaction)
+        try:
+            ob = self.traversable.traverseTo(name, self)
+        except WebException,v:
+            v.traversedName = name
+            raise
         return self.subcontext(name, ob)
 
 
     def render(self):
-
         """Return rendered value for context object"""
 
         page = self.renderable
 
         if page is None:
             # Render the found object directly
-            return self.renderable
+            return self.subject
 
         return page.render(self)
+
+
+
+
+
+
+
+
+
+
 
 
     absoluteURL = binding.Once(
         lambda self,d,a: self.traversable.getURL(self),
         doc = "Absolute URL of the current object"
     )
-
-
-
-
-
 
     def traversedURL(self, d, a):
         """Parent context's absolute URL + current context's name"""
@@ -129,7 +134,6 @@ class TraversalContext(binding.Component):
         return posixpath.join(base, name)   # handles empty parts OK
 
     traversedURL = binding.Once(traversedURL)
-
 
 
 class Traversal(TraversalContext):
@@ -158,10 +162,6 @@ class Traversal(TraversalContext):
 
 
 
-
-
-
-
 class Traversable(binding.Component):
 
     """Basic traversable object; uses self as its subject and for security"""
@@ -173,70 +173,29 @@ class Traversable(binding.Component):
     def getObject(self, interaction):
         return self
 
-    def traverseTo(self, name, interaction):
+    def traverseTo(self, name, ctx):
 
+        interaction = ctx.interaction
         ob = self.getObject(interaction)
         loc = getattr(ob, name, NOT_FOUND)
 
         if loc is not NOT_FOUND:
 
-            if not interaction.allows(ob, name):
-                return NOT_ALLOWED
+            result = interaction.allows(ob, name)
 
-        return loc
+            if result:
+                return loc
+
+            raise NotAllowed(ctx, result.message)
+
+        raise NotFound(ctx)
+
 
     def preTraverse(self, ctx):
         pass    # Should do any traversal requirements checks
 
     def getURL(self,ctx):
         return ctx.traversedURL
-
-
-
-
-
-
-
-
-
-
-
-
-
-class SymbolAsTraversable(object):
-
-    protocols.advise(
-        instancesProvide = [IWebTraversable],
-        asAdapterForTypes = [type(NOT_FOUND)],
-    )
-
-    __slots__ = 'ob'
-
-    def __init__(self,ob,protocol=None):
-        self.ob = ob
-
-    def getObject(self, interaction):
-        return self.ob
-
-    def traverseTo(self, name, interaction):
-        # We never go anywhere...
-        return self
-
-    def getURL(self,ctx):
-        return ctx.traversedURL
-
-    def preTraverse(self, ctx):
-        pass
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -265,13 +224,14 @@ class Decorator(Traversable):
     def getObject(self, interaction):
         return self.ob
 
-    def traverseTo(self, name, interaction):
+    def traverseTo(self, name, ctx):
 
         loc = getattr(self, name, NOT_FOUND)
 
         if loc is not NOT_FOUND:
 
-            if interaction.allows(self, name):
+            result = ctx.interaction.allows(self, name)
+            if result:
                 return loc
 
             # Access failed, see if attribute is private
@@ -279,11 +239,10 @@ class Decorator(Traversable):
 
             if guard is not None and guard.getPermissionForName(name):
                 # We have explicit permissions defined, so reject access
-                return NOT_ALLOWED
+                raise NotAllowed(ctx, result.message)
 
         # attribute is absent or private, fall through to underlying object
-        return super(Decorator,self).traverseTo(name, interaction)
-
+        return super(Decorator,self).traverseTo(name, ctx)
 
 class ContainerAsTraversable(Decorator):
 
@@ -296,25 +255,25 @@ class ContainerAsTraversable(Decorator):
         asAdapterForTypes = [dict],
     )
 
-    def traverseTo(self, name, interaction):
+    def traverseTo(self, name, ctx):
 
         if name.startswith('@@'):
             return super(ContainerAsTraversable,self).traverseTo(
-                name[2:], interaction
+                name[2:], ctx
             )
 
         try:
             ob = self.ob[name]
         except KeyError:
             return super(ContainerAsTraversable,self).traverseTo(
-                name,interaction
+                name, ctx
             )
 
-        if interaction.allows(ob):
+        result = ctx.interaction.allows(ob)
+        if result:
             return ob
 
-        return NOT_ALLOWED
-
+        raise NotAllowed(ctx, result.message)
 
 
 
@@ -341,24 +300,23 @@ class MultiTraverser(Traversable):
         for item in self.items:
             item.preTraverse(ctx)
 
-    def traverseTo(self, name, interaction):
+    def traverseTo(self, name, ctx):
 
         newItems = []
 
         for item in self.items:
-
-            loc = item.traverseTo(name, interaction)
-
-            if loc is NOT_ALLOWED:
-                return NOT_ALLOWED
-
-            if loc is not NOT_FOUND:
+            try:
+                loc = item.traverseTo(name, ctx)
+            except NotFound:
+                continue
+            else:
                 # we should suggest the parent, since our caller won't
                 binding.suggestParentComponent(item, name, loc)
                 newItems.append(loc)
 
         if not newItems:
-            return NOT_FOUND
+            raise NotFound(ctx)
+
         if len(newItems)==1:
             loc = newItems[0]
         else:
@@ -366,6 +324,7 @@ class MultiTraverser(Traversable):
         return loc
 
     _subTraverser = lambda self, *args, **kw: self.__class__(*args,**kw)
+
 
 class CallableAsWebPage(protocols.Adapter):
 

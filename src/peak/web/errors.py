@@ -15,10 +15,12 @@ class WebException(Exception):
         args = security.Anybody,
         template = security.Anybody,
         exc_info = security.Anybody,
+        traversedName = security.Anybody,
         # ...?
     )
 
     httpStatus = '500'
+    traversedName = None
 
     def __init__(self, context, *args):
         Exception.__init__(self, *args)
@@ -34,8 +36,6 @@ class WebException(Exception):
         return t
 
     template = binding.Once(template)
-
-
 
 
 

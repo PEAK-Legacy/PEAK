@@ -52,8 +52,8 @@ class Resource(Traversable):
         if not ctx.interaction.allows(self, permissionNeeded = perm):
             ctx.interaction.notAllowed(self, self.getComponentName())
 
-    def traverseTo(self, name, interaction):
-        return NOT_FOUND
+    def traverseTo(self, name, ctx):
+        raise NotFound(ctx)
 
 
     def getURL(self, ctx):
@@ -162,19 +162,26 @@ class ResourceDirectory(FSResource):
 
 
 
-    def traverseTo(self, name, interaction):
+    def traverseTo(self, name, ctx):
 
         targets = self.filenames.get(name,())
 
         if len(targets)<1:
             # <1 means no match
-            return NOT_FOUND
+            raise NotFound(ctx)
+
         elif len(targets)>1 and name not in targets:
             # >1 and name isn't in there, it's ambiguous
-            return NOT_FOUND
+            raise NotFound(ctx)
 
         if name in self.cache:
-            return self.cache[name]
+
+            result = self.cache[name]
+
+            if result is NOT_FOUND:
+                raise NotFound(ctx)
+
+            return result
 
         if name in targets:
             filename = name
@@ -187,7 +194,7 @@ class ResourceDirectory(FSResource):
         # check if name is visible; if false, drop it
         if not RESOURCE_VISIBLE.of(self)[prop]:
             self.cache[name] = NOT_FOUND
-            return NOT_FOUND
+            raise NotFound(ctx)
 
         # look up factory for name
         path = os.path.join(self.filename, filename)
@@ -200,8 +207,9 @@ class ResourceDirectory(FSResource):
         ref = naming.Reference(factory, addresses=[FileURL.fromFilename(path)])
         obj = ref.restore(self,None)
         obj.setParentComponent(self, filename)
-        self.cache[name] = obj = adapt(obj,interaction.pathProtocol)    #XXX
+        self.cache[name] = obj = adapt(obj,ctx.interaction.pathProtocol) #XXX
         return obj
+
 
     def resourcePath(self,d,a):
 
@@ -213,14 +221,6 @@ class ResourceDirectory(FSResource):
         return self._getResourcePath(d,a)
 
     resourcePath = binding.Once(resourcePath)
-
-
-
-
-
-
-
-
 
 
 
@@ -275,13 +275,13 @@ class ResourceProxy(object):
     def preTraverse(self, ctx):
         self.getObject(ctx.interaction).preTraverse(ctx)
 
-    def traverseTo(self, name, interaction):
+    def traverseTo(self, name, ctx):
+        interaction = ctx.interaction
         ob = adapt(self.getObject(interaction),interaction.pathProtocol)
-        return ob.traverseTo(name, interaction)
+        return ob.traverseTo(name, ctx)
 
     def getURL(self,ctx):
         return self.getObject(ctx.interaction).getURL(ctx)
-
 
 
 
@@ -327,13 +327,14 @@ def bindResource(path, pkg=None, **kw):
 
 
 class DefaultLayer(Traversable):
-
     cache = fileCache = binding.New(dict)
 
-    def traverseTo(self, name, interaction):
-
+    def traverseTo(self, name, ctx):
         if name in self.cache:
-            return self.cache[name]
+            result = self.cache[name]
+            if result is NOT_FOUND:
+                raise NotFound(ctx)
+            return result
 
         # convert name to a property name
         name = PropertyName.fromString(name)
@@ -342,16 +343,15 @@ class DefaultLayer(Traversable):
         ok = ALLOWED_PACKAGES.of(self).get(name,None)
         if not ok:
             self.cache[name]=NOT_FOUND
-            return NOT_FOUND
+            raise NotFound(ctx)
 
         try:
             pkg, mod = findPackage(name)
         except ImportError:
-            d = NOT_FOUND
-            pkg = name
+            self.cache[name] = NOT_FOUND
+            raise NotFound(ctx)
         else:
             filename = os.path.dirname(mod.__file__)
-
             if filename in self.fileCache:
                 d = self.fileCache[filename]
             else:

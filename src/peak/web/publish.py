@@ -1,8 +1,9 @@
-"""Support for 'zope.publisher'"""
+"""Use 'zope.publisher' to publish 'peak.web' apps"""
 
 from peak.api import *
 from interfaces import *
 from places import Traversal
+from errors import NotFound, NotAllowed
 
 __all__ = [
     'Interaction', 'NullAuthenticationService', 'InteractionPolicy',
@@ -30,7 +31,6 @@ class DefaultExceptionHandler(binding.Singleton):
             # Don't allow exc_info to leak, even if the above resulted in
             # an error
             exc_info = None
-
 
 
 
@@ -214,22 +214,34 @@ class Interaction(security.Interaction):
 
         default = self.policy.defaultMethod
 
-        if default and ob.asRenderable() is None:
+        if default and ob.renderable is None:
 
             # Not renderable, try for default method
 
-            if ob.contextFor(default).subject is not NOT_FOUND:
-                # Traversal will succeed (or be unauthorized), so tell the
-                # request to proceed
-                return ob, (default,)
+            try:
+                ob.contextFor(default)
+            except NotFound:
+                # Default method doesn't exist, try for direct rendering
+                return ob, ()
+            except NotAllowed:
+                pass
 
-        # object is renderable, default traversal will fail, or no default
-        # is in use: just render the object directly
+            # Traversal will succeed (or be unauthorized), so tell the
+            # request to proceed
+            return ob, (default,)
+
+        # object is renderable or no default is in use: just render
+        # the object directly
         return ob, ()
 
 
     def callObject(self, request, ob):
         return ob.render()
+
+
+
+
+
 
 
     def afterCall(self, request):
@@ -241,7 +253,6 @@ class Interaction(security.Interaction):
             # XXX a different response class for HEAD; Zope 3 should
             # XXX probably do it that way too.
             request.response.setBody('')
-
 
 
     def handleException(self, object, request, exc_info, retry_allowed=1):
@@ -272,17 +283,6 @@ class Interaction(security.Interaction):
 
     def clientHas(self, lastModified=None, ETag=None):
         return False    # XXX
-
-
-
-
-
-
-
-
-
-
-
 
 
 class TestInteraction(Interaction):

@@ -31,7 +31,7 @@ import protocols
 from protocols import adapt
 
 __all__ = [
-    'NOT_GIVEN', 'NOT_FOUND', 'NOT_ALLOWED', 'Items', 'PropertyName',
+    'NOT_GIVEN', 'NOT_FOUND', 'Items', 'PropertyName',
     'binding', 'naming', 'model', 'config', 'running', 'logs', 'storage',
     'exceptions', 'adapt', 'protocols', 'security', 'web'
 ]
@@ -78,7 +78,7 @@ class _Symbol(object):
 
 NOT_GIVEN   = _Symbol("NOT_GIVEN", __name__)
 NOT_FOUND   = _Symbol("NOT_FOUND", __name__)
-NOT_ALLOWED = _Symbol("NOT_ALLOWED", __name__)
+
 
 def Items(mapping=None, **kwargs):
 
@@ -284,6 +284,4 @@ whenImported('peak.config.interfaces',
         )
     )
 )
-
-
 

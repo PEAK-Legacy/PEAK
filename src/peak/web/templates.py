@@ -637,11 +637,11 @@ class Text(ContentReplacer):
         write = state.write
 
         write(self._openTag)
-
-        if not data.isNull:
-            write(unicode(data.subject))
-
+        write(unicode(data.subject))
         write(self._closeTag)
+
+
+
 
 
 
@@ -676,6 +676,7 @@ class URLAttribute(Element):
             child.renderFor(data,state)
         state.write(self._closeTag)
 
+
 class URLText(ContentReplacer):
 
     """Write absolute URL as body text"""
@@ -688,11 +689,10 @@ class URLText(ContentReplacer):
         write = state.write
 
         write(self._openTag)
-
-        if not data.isNull:
-            write(unicode(data.absoluteURL))
-
+        write(unicode(data.absoluteURL))
         write(self._closeTag)
+
+
 
 
 def URLTag(parentComponent, componentName=None, domletProperty=None, **kw):
@@ -750,19 +750,17 @@ class List(ContentReplacer):
         subcontext  = data.subcontext
         ct = 0
 
-        if not data.isNull:
+        # XXX this should probably use an iteration location, or maybe
+        # XXX put some properties in execution context for loop vars?
 
-            # XXX this should probably use an iteration location, or maybe
-            # XXX put some properties in execution context for loop vars?
+        for item in data.subject:
 
-            for item in data.subject:
+            if not allowed(item):
+                continue
 
-                if not allowed(item):
-                    continue
-
-                loc = subcontext(str(ct), item)
-                nextPattern().renderFor(loc, state)
-                ct += 1
+            loc = subcontext(str(ct), item)
+            nextPattern().renderFor(loc, state)
+            ct += 1
 
         if not ct:
             # Handle list being empty
@@ -770,6 +768,8 @@ class List(ContentReplacer):
                 child.renderFor(data, state)
 
         state.write(self._closeTag)
+
+
 
 
 

@@ -151,15 +151,15 @@ class ITraversalContext(Interface):
     def contextFor(name):
         """Return a new traversal context for 'name'"""
 
-    isNull = Attribute(
-        """Return true if context location is not found/not authorized"""
-    )
-
     def render():
         """Return rendered value of underlying object"""
 
     def subcontext(name, ob):
         """Create a new subcontext named 'name', for 'ob'"""
+
+
+
+
 
 
 class IWebTraversable(Interface):
@@ -185,8 +185,8 @@ class IWebTraversable(Interface):
         all available resources, whether they are available to the user or not.
         """
 
-    def traverseTo(name, interaction):
-        """Return named 'IWebTraversable', or 'NOT_ALLOWED'/'NOT_FOUND'"""
+    def traverseTo(name, context):
+        """Return named 'IWebTraversable', or raise 'NotAllowed'/'NotFound'"""
 
     def getObject(interaction):
         """Return the underlying object that would be traversed"""

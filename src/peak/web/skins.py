@@ -64,12 +64,12 @@ class Skin(Traversable):
 
     dummyInteraction = binding.Once(dummyInteraction)
 
-    def traverseTo(self, name, interaction):
+    def traverseTo(self, name, ctx):
 
-        if name == interaction.resourcePrefix:
+        if name == ctx.interaction.resourcePrefix:
             return self.traverser
 
-        return self.root.traverseTo(name, interaction)
+        return self.root.traverseTo(name, ctx)
 
     resourcePath = ''  # skin is at root
 
