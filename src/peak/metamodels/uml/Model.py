@@ -3,6 +3,7 @@ from types import StringType, FunctionType
 from TW.RootModel.Queries import NodeList
 from TW.RootModel._Aspects import ComputedFeature  #, RootModel
 from TW.Features import Transform, FeatureSet
+import MMX
 
 
 class _ComputedFeatures(Transform):
@@ -15,16 +16,15 @@ class _ComputedFeatures(Transform):
 ComputedFeatures = _ComputedFeatures()
 
 
-from TW.RootModel import RMX
 from os.path import join,dirname
 
 DIR = dirname(__file__)
 
-rmx     = join(DIR,'metamodel.xml')
+mmx     = join(DIR,'metamodel.xml')
 plurals = join(DIR,'plurals.txt')
-cache   = rmx+'.pickle'
+cache   = mmx+'.pickle'
 
-MetaModel = RMX.load(rmx,plurals,cache,name='UML_MetaModel')
+MetaModel = MMX.load(mmx,plurals,cache,name='UML_MetaModel')
 
 
 
