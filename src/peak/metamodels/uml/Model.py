@@ -2,7 +2,7 @@ from types import StringType, FunctionType
 
 from TW.RootModel.Queries import NodeList
 from TW.RootModel._Aspects import ComputedFeature  #, RootModel
-from TW.Aspects import Transform, FeatureSet
+from TW.Features import Transform, FeatureSet
 
 
 class _ComputedFeatures(Transform):
