@@ -432,14 +432,15 @@ class FastCGITemplate(AbstractProcessTemplate):
     )
 
     def runCGI(self, *args):
-        self.busyStream.write('+')      # start being busy  (XXX trap errors)
+        self.sendToParent('+')      # start being busy
         try:
             self.command.runCGI(*args)
         finally:
-            self.busyStream.write('-')  # finish being busy  (XXX trap errors)
+            self.sendToParent('-')  # finish being busy
 
     def _redirect(self):
-        self.os.dup2(self.stdin.fileno(),0) # XXX what does this do if 0,0?
+        if self.stdin.fileno():
+            self.os.dup2(self.stdin.fileno(),0)
 
     def _makeStub(self):
         from peak.running.commands import CGICommand
@@ -447,5 +448,45 @@ class FastCGITemplate(AbstractProcessTemplate):
 
     def getSupervisorPlugins(self, supervisor):
         return [BusyStarter(supervisor, template=self, stream=self.stdin)]
+
+    def sendToParent(self,s):
+        """Write to parent; handle errors by stopping writes and reactor"""
+        if self.busyStream is None:
+            return
+        try:
+            self.busyStream.write(s)
+        except IOError,v:
+            import errno
+            if v.errno==errno.EPIPE:    # parent went away, so we should leave
+                self.busyStream = None
+                self.lookupComponent(IBasicReactor).stop()
+            else:
+                raise
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
