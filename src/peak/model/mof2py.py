@@ -27,7 +27,7 @@
       paragraphs, and something seems wrong with linespacing, at least
       in my tests with the CWM metamodel.  This may be purely specific
       to CWM.  At least 'happydoc' seems to make some sense out of the
-      docstrings it sees (non-nested classes only, alas).     
+      docstrings it sees (non-nested classes only, alas).
 """
 
 
@@ -94,7 +94,7 @@ class MOFGenerator(binding.Component):
     NameNotFound = binding.bindTo("metamodel/NameNotFound")
     NameNotResolved = binding.bindTo("metamodel/NameNotResolved")
     StructuralFeature = binding.bindTo("metamodel/StructuralFeature")
-    
+
     Composite = binding.bindTo("metamodel/AggregationKind/composite")
 
     fileObject = binding.New(StringIO)
@@ -129,11 +129,11 @@ class MOFGenerator(binding.Component):
         while doc.endswith('"'):
             tq += 1
             doc=doc[:-1]
-            
+
         if tq:
             # Replace trailing quotes with escaped quotes
             doc += '\\"' * tq
-        
+
         doc = doc.replace('"""','\\"\"\\"')     # """ -> \"\"\"
 
         self.write('\n"""%s"""\n\n' % doc.encode('latin1'))
@@ -145,7 +145,7 @@ class MOFGenerator(binding.Component):
             bases = '(%s)' % (', '.join(baseNames))
         else:
             bases = ''
-            
+
         self.write('\nclass %s%s:\n' % (element.name,bases))
         self.push(1)
 
@@ -210,10 +210,10 @@ class MOFGenerator(binding.Component):
 
         common = [i1 for (i1,i2) in zip(p1,p2) if i1 is i2]
 
-        cc = len(common)       
+        cc = len(common)
         p1 = p1[cc:]
         p2 = p2[cc:]
-        
+
         return common, p1, p2
 
 
@@ -286,11 +286,11 @@ class MOFGenerator(binding.Component):
 
 
     pkgImportMap = binding.New(dict)
-    
+
     def nameInPackage(self, element, package):
 
         pim = self.pkgImportMap
-        
+
         try:
             return pim[package, element]
         except KeyError:
@@ -359,7 +359,7 @@ _config              = _lazy('peak.config.api')
         if target is None: target = package
         nip = self.nameInPackage
         eid = self.exposeImportDeps
-        
+
         for klass in target.findElementsByType(self.Class):
             for k in klass.supertypes:
                 if k.container is not package:
@@ -383,7 +383,7 @@ _config              = _lazy('peak.config.api')
             self.write('%-20s = _lazy(__name__, %r)\n'
                 % (subPkg.name, str(subPkg.name))
             )
-            
+
         self.write('\n%s\n' % self.sepLine)
         self.writeNSContents(package,{})
         self.writeFileFooter(package)
@@ -399,7 +399,7 @@ _config              = _lazy('peak.config.api')
 
         for p in self.getImportName(package).split('.'):
             path = join(path,p)
-        
+
         for ob in package.findElementsByType(self.Package):
             return join(path,'__init__.py')
         else:
@@ -409,7 +409,7 @@ _config              = _lazy('peak.config.api')
 
 
     def writeNSContents(self, ns, contentMap):
-    
+
         for imp in self.findAndUpdate(ns, self.Import, contentMap):
             self.writeImport(imp)
 
@@ -425,7 +425,7 @@ _config              = _lazy('peak.config.api')
         posn = 0
         for feature in self.findAndUpdate(
                 ns, self.StructuralFeature, contentMap
-            ): 
+            ):
             self.writeFeature(feature,posn)
             posn += 1
 
@@ -465,7 +465,7 @@ _config              = _lazy('peak.config.api')
                 self.write('\n')
 
             self.write('mdl_isAbstract = True\n')
-            
+
         contentMap = {}
         self.writeNSContents(klass, contentMap)
 
@@ -499,7 +499,7 @@ _config              = _lazy('peak.config.api')
 
         elif tc.kind == model.TCKind.tk_struct:
             self.writeStruct(dtype, zip(tc.member_names,tc.member_types))
-            
+
         else:
 
             base = model.basicTypes.get(tc.kind)
@@ -539,7 +539,7 @@ _config              = _lazy('peak.config.api')
         for mname, mtype in memberInfo:
             self.writeStructMember(mname, mtype, posn)
             posn += 1
-            
+
         self.push(1)
         self.pop()
 
@@ -556,7 +556,7 @@ _config              = _lazy('peak.config.api')
 
 
     def writeEnum(self,dtype,members):
-    
+
         self.beginObject(dtype,'_model.Enumeration')
 
         for m in members:
@@ -638,7 +638,7 @@ _config              = _lazy('peak.config.api')
             self.write('isDerived = True\n')
 
 
-        m = feature.multiplicity 
+        m = feature.multiplicity
 
         if m.upper <> model.UnlimitedInteger.UNBOUNDED:
             self.write('upperBound = %r\n' % m.upper)
@@ -700,11 +700,11 @@ class MOFFileSet(MOFGenerator):
     def externalize(klass, metamodel, package, format, **options):
 
         def doExt(package, parent):
-        
+
             g = klass(
                 package, metamodel=metamodel, **options
             )
-            
+
             filename = g.pkgFileName(package)
 
             if g.writeFiles:
@@ -713,19 +713,19 @@ class MOFFileSet(MOFGenerator):
                 if not exists(d):
                     makedirs(d)
 
-                g.fileObject = open(filename,'w')               
+                g.fileObject = open(filename,'w')
                 g.writePackage(package)
                 contents = None
 
             else:
                 g.writePackage(package)
                 contents = g.fileObject.getvalue()
-                
+
             outfiles = [ (filename, contents) ]
 
             for pkg in package.findElementsByType(metamodel.Package):
                 outfiles.extend(doExt(pkg, g))
-            
+
 
             return outfiles
 
@@ -801,11 +801,11 @@ def genPkg(modelDescr, modelFile, pkgBase, srcDir, progress=lambda *x:None):
     tree first.
     """
 
-    roots = storage.xmi.fromFile(modelFile)
+    roots = storage.xmi.fromFile(modelFile, config.makeRoot())
 
     from peak.metamodels import MOF131
 
-    init = MOF131.Package(
+    init = MOF131.Package(roots[0].getParentComponent(),
         name='__init__',
         annotation='Structural Model for %s - Generated from %s' % (modelDescr,modelFile),
         contents=[MOF131.Import(name=r.name, importedNamespace=r) for r in roots]
@@ -827,7 +827,7 @@ if __name__=='__main__':
         'peak/metamodels/UML_1.3_01-12-02.xml',
         'peak.metamodels.UML13.model.', '', progress
     )
-    
+
     genPkg(
         'UML 1.4',
         'peak/metamodels/UML_1.4_01-02-15.xml',
@@ -851,5 +851,11 @@ if __name__=='__main__':
         'peak/metamodels/CWM_1.1_02-05-01.xml',
         'peak.metamodels.CWM11.model.', '', progress
     )
+
+
+
+
+
+
 
 
