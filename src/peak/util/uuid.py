@@ -162,10 +162,6 @@ class UUID(str):
 
 
 
-
-
-
-
     def bytes(self):
         x = ''.join(self.split('-'))
         return ''.join([chr(int(x[i:i+2], 16)) for i in range(0, len(x), 2)])

@@ -15,6 +15,8 @@
 
     'model' -- a lazy import of the 'peak.model.api' module
 
+    'config' -- a lazy import of the 'peak.running.config.api' module
+
  and the following objects for convenience in interacting with PEAK:
  
     'NOT_GIVEN' and 'NOT_FOUND' -- Singleton false values used for convenience
@@ -24,20 +26,18 @@
         list from a mapping and/or keyword arguments.
 """
 
-
 __all__ = [
     'NOT_GIVEN', 'NOT_FOUND', 'Items',
-    'binding', 'naming', 'model'
+    'binding', 'naming', 'model', 'config'
 ]
 
 
 from peak.binding.imports import lazyImport
 
 binding = lazyImport('peak.binding.api')
-naming = lazyImport('peak.naming.api')
-model = lazyImport('peak.model.api')
-
-
+naming  = lazyImport('peak.naming.api')
+model   = lazyImport('peak.model.api')
+config  = lazyImport('peak.running.config.api')
 
 # Convenience features
 

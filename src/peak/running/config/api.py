@@ -1,0 +1,48 @@
+"""Configuration API"""
+
+from peak.util.EigenData import *
+from config_components import *
+from weakref import WeakKeyDictionary
+
+__all__ = [
+    'getLocal','getGlobal','setLocal','setGlobal',
+    'registerLocalProvider','registerGlobalProvider',
+    'GlobalConfig', 'LocalConfig',
+]
+
+_globalCfg = EigenCell()
+_localCfgs = EigenDict()
+_localCfgs.data = WeakKeyDictionary()
+
+
+def getGlobal():
+
+    if not _globalCfg.locked:
+        setGlobal(GlobalConfig())
+
+    return _globalCfg.get()
+
+
+def setGlobal(cfg):
+    _globalCfg.set(cfg)
+
+
+def getLocal(forRoot):
+
+    if not _localCfgs.data.has_key(forRoot):
+        setLocal(forRoot, LocalConfig(getGlobal()))
+
+    return _localCfgs[forRoot]
+
+
+def setLocal(forRoot, cfg):
+    _localCfgs[forRoot] = cfg
+
+
+def registerLocalProvider(forRoot, ifaces, provider):
+    getLocal(forRoot).registerProvider(ifaces, provider)
+
+
+def registerGlobalProvider(ifaces, provider):
+    getGlobal().registerProvider(ifaces, provider)
+

@@ -8,6 +8,7 @@ from peak.naming.names import toName, Syntax, CompoundName
 from peak.naming.interfaces import NameNotFoundException
 from peak.util.EigenData import EigenRegistry
 from Interface import Interface
+from peak.api import config
 
 
 __all__ = [
@@ -20,7 +21,6 @@ __all__ = [
 _ACQUIRED = object()
 
 InterfaceClass = Interface.__class__
-
 
 
 
@@ -595,14 +595,14 @@ class Component(object):
 
         parent = self.getParentComponent()
 
-        if parent is not None:
-            return parent.acquireUtility(iface,forObj)
+        if parent is None:
+            parent = config.getLocal(self)
+        
+        return parent.acquireUtility(iface,forObj)
             
 
     def registerProvider(self, ifaces, provider):
         self.__instance_provides__.register(ifaces, provider)
-
-
 
 
 
