@@ -121,6 +121,47 @@ class PkgFileURL(URL.Base):
 
 
 
+class DataURL(URL.Base):
+
+    supportedSchemes = 'data',
+
+    defaultFactory = 'peak.naming.factories.openable.ConstantStream'
+
+    class content_type(URL.Field):
+        pass
+
+    class parameters(URL.Collection):
+        separator = ';'
+        
+    class data(URL.Field):
+        unquote = "all"
+    
+    syntax = URL.Sequence(
+        (content_type, (';', parameters)), ',', data
+    )
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 class URLStreamFactory(object):
 
     """Stream factory for a 'urllib2.urlopen()'
@@ -203,11 +244,53 @@ class URLStreamFactory(object):
 
 
 
-class ImportLoaderFactory(object):
+class ConstantStream(object):
+    """Stream factory for a text constant"""
 
     protocols.advise(
+        classProvides=[naming.IObjectFactory],
         instancesProvide=[naming.IStreamFactory],
     )
+
+    def __init__(self,text):
+        from urllib import quote
+        self.address = "data:,"+quote(text)
+        self.text = text
+
+
+    def open(self,mode,seek=False,writable=False,autocommit=False):
+
+        if writable:
+            raise TypeError("Constant data from 'data:' URL is not writable")
+
+        from cStringIO import StringIO
+        return StringIO(self.text)
+
+    def exists(self):
+        return True
+
+    def create(self,mode,seek=False,readable=False,autocommit=False):
+        raise TypeError("Can't create", self.address)
+
+    def update(self,mode,seek=False,readable=False,append=False,autocommit=False):
+        raise TypeError("Can't update", self.address)
+
+    def delete(self, autocommit=False):
+        raise TypeError("Can't delete", self.address)
+
+    def getObjectInstance(klass, context, refInfo, name, attrs=None):
+        url, = refInfo.addresses
+        return klass(url.data)
+
+    getObjectInstance = classmethod(getObjectInstance)
+
+
+
+
+
+
+class ImportLoaderFactory(ConstantStream):
+    """Stream factory for data loaded by a PEP 302 import loader"""
 
     def __init__(self,loader,moduleName,path):
         self.address = str(PkgFileURL("pkgfile","%s/%s" % (moduleName,path)))
@@ -230,14 +313,17 @@ class ImportLoaderFactory(object):
             return False
       
 
-    def create(self,mode,seek=False,readable=False,autocommit=False):
-        raise TypeError("Can't create import loader data", self.address)
 
-    def update(self,mode,seek=False,readable=False,append=False,autocommit=False):
-        raise TypeError("Can't update import loader data", self.address)
 
-    def delete(self, autocommit=False):
-        raise TypeError("Can't delete import loader data", self.address)
+
+
+
+
+
+
+
+
+
 
 
 

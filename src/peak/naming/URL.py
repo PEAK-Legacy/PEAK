@@ -72,12 +72,12 @@ class ExtractQuoted(Rule):
         return self.rule.getOpening(closing,memo)
 
     def format(self,data,write):
-        if self.unquote:
+        if self.unquote=="all": # XXX kludge!!!
+            from urllib import quote; data=quote(data)
+        elif self.unquote:
             for t in self.terminators:
                 data = data.replace(t, '%'+hex(256+ord(t))[-2:].upper())
         write(data)
-
-
 
 
 class Field(structField):
@@ -91,7 +91,7 @@ class Field(structField):
         syntax = feature.syntax
 
         if syntax is None:
-            syntax = getattr(feature.typeObject, 'mdl_syntax', None)
+            syntax = adapt(feature.typeObject,IRule,None)            
 
         if syntax is None:
             syntax = Conversion(

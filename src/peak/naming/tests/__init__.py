@@ -17,7 +17,7 @@
 from unittest import TestCase, makeSuite, TestSuite
 from peak.api import *
 from peak.tests import testRoot
-
+from peak.naming.factories import openable
 
 
 
@@ -143,7 +143,23 @@ validNames = {
         Items(user='u',passwd=None,host='serv',port=None,fragment=None,
             query='query=whatever&who',path=('some/slashed','thing')
         ),
+
+    'data:text/plain,foo%20bar':
+        Items(content_type="text/plain",data="foo bar"),
+
+    'data:text/plain;x=y,foo%20bar':
+        Items(content_type="text/plain",data="foo bar",
+            parameters=('x=y',)
+        ),
+
+    'data:text/plain;x=y;base64,foo%20bar':
+        Items(content_type="text/plain",data="foo bar",
+            parameters=('x=y','base64')
+        ),
 }
+
+
+
 
 
 def parse(url):
@@ -179,22 +195,6 @@ class ReferenceTests(TestCase):
     def testRefLookup(self):
         url ='ref:peak.naming.tests.TestFactory@xyz'
         self.assertEqual( testRoot().lookupComponent(url), ['xyz'] )
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -244,6 +244,47 @@ class NameParseTest(TestCase):
 
 
 
+class OpenableTests(TestCase):
+
+    def testDataURL(self):
+        from peak.naming.factories.openable import ConstantStream
+        factory = ConstantStream('abcdefg')
+        assert factory.open('b').read() == "abcdefg"
+
+        factory = testRoot().lookupComponent('data:,abcdefg')
+        assert factory.open('b').read() == "abcdefg"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 from peak.naming.api import CompoundName as lname, CompositeName as gname
 from peak.storage.LDAP import ldapURL as LU, distinguishedName as dN
 
@@ -270,7 +311,7 @@ class NameAdditionTest(TestCase):
 
 
 TestClasses = (
-    NameParseTest, NameAdditionTest, ReferenceTests
+    NameParseTest, NameAdditionTest, ReferenceTests, OpenableTests
 )
 
 

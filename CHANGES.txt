@@ -1,5 +1,10 @@
 Fixes and Enhancements since Version 0.5 alpha 3
 
+ - Added a 'data:' URL scheme, implementing RFC 2397 (although it's not as
+   strict in its parsing of the content type and parameters as the RFC calls
+   for).  This is a semi-convenient way to provide configuration data in-line,
+   since a 'data:' URL can be a 'config.IStreamSource'.
+
  - Added 'config.processXML()', a function that provides a high-level,
    configuration-driven interface to 'peak.util.SOX.NegotiatingParser'.  This
    simple front-end lets you supply as little as a configuration context and
