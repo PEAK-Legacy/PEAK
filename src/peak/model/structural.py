@@ -332,7 +332,7 @@ class StructuralFeature(object):
         add = feature._notifyLink
 
         for v in val:
-            add(element,val)
+            add(element,v)
 
     _set_many.installIf = lambda f,m: f.isChangeable and f.isMany
     _set_many.verb      = 'set'
