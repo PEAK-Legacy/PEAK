@@ -121,18 +121,16 @@ class XMIFactory:
 
 
 
-class XMIMapMaker(RegistryMaker):
+class mXMIMapMaker(type):
 
-    def registerItem(self,reg,attName,attVal):
-        for k in getattr(attVal,'_XMINames',()):
-            reg[k] = attName
-        return reg
-        
-XMIMapMaker = XMIMapMaker('_XMIMap')
+    def __init__(klass, name, bases, dict):
+        super(mXMIMapMaker,klass).__init__(name, bases, dict)
+        xm = klass._XMIMap = {}
+        for attName in dir(klass):
+            for k in getattr(getattr(klass,attName),'_XMINames',()):
+                xm[k] = attName
 
-
-
-
+XMIMapMaker = mXMIMapMaker('',(),{})
 
 
 
@@ -162,49 +160,51 @@ XMIMapMaker = XMIMapMaker('_XMIMap')
 
 
 
-class XMIReading(Bundle):
 
-    bundlePrefix = SEF.bundlePrefix
+
+class StructuralFeature:
+
+    def _fromXMI(self,node):
     
-    class StructuralFeature:
-    
-        def _fromXMI(self,node):
-        
-            v = getattr(node,'xmi.value',None)
-            if v is not None:
-                self.set(v)
-            elif node._subNodes:
-                self.set(node._subNodes[0])
-            elif node._allNodes:
-                self.set(''.join(node._allNodes))
-            else:
-                return node
-
-    class Classifier:
-    
-        def _fromXMI(self,node):
-            return self
-
-    Classifier += XMIMapMaker
+        v = getattr(node,'xmi.value',None)
+        if v is not None:
+            self.set(v)
+        elif node._subNodes:
+            self.set(node._subNodes[0])
+        elif node._allNodes:
+            self.set(''.join(node._allNodes))
+        else:
+            return node
 
 
-    class Reference:
-        def _fromXMI(self,node):
-            map(self.set,node._subNodes)
+class Classifier(XMIMapMaker):
+
+    def _fromXMI(self,node):
+        return self
 
 
-    class Collection:
-        def _fromXMI(self,node):
-            add = self.addItem
-            for node in node._subNodes:
-                if not self.isReferenced(node): add(node)
+
+class Reference:
+    def _fromXMI(self,node):
+        map(self.set,node._subNodes)
+
+
+class Collection:
+    def _fromXMI(self,node):
+        add = self.addItem
+        for node in node._subNodes:
+            if not self.isReferenced(node): add(node)
 
 
 
 
 
-    topLevelItems = '_fromXMI', '_XMIroot', 'importFromXMI'
-    
+
+
+
+
+class App(XMIMapMaker):
+
     def _fromXMI(self,node):
         return node
 
@@ -219,5 +219,5 @@ class XMIReading(Bundle):
     def importFromXMI(self,filename_or_stream):
         return load(filename_or_stream, self._XMIroot())
 
-    
-XMIReading += XMIMapMaker
+
+setupModule()

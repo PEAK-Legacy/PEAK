@@ -1,6 +1,8 @@
 from types import StringType, FunctionType
 from TW.StructuralModel.Queries import NodeList, ComputedFeature
 
+
+'''
 from TW.Utils.Pluralizer import Pluralizer
 
 UMLPlurals = Pluralizer(
@@ -21,6 +23,14 @@ cache   = mmx+'.pickle'
 
 from TW.MOF import MMX
 MetaModel = MMX.load(mmx,cache,UMLPlurals,name='UML_MetaModel')
+'''
+
+
+from TW.API import *
+import TW.StructuralModel.SimpleModel as SEF
+import MetaModel
+
+__bases__ = MetaModel,
 
 
 
@@ -28,18 +38,6 @@ MetaModel = MMX.load(mmx,cache,UMLPlurals,name='UML_MetaModel')
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-from TW.API import Catalyst
 
 class _ComputedFeatures(Catalyst):
 
@@ -53,6 +51,8 @@ class _ComputedFeatures(Catalyst):
         return featureDict
         
 ComputedFeatures = _ComputedFeatures('')
+
+
 
 
 
@@ -162,9 +162,9 @@ class _UMLModel:    # stuff that still needs refactoring
 
 
 
-class UMLModel:
+class UMLClass(SEF.App):
 
-    class ModelElement(ComputedFeatures):
+    class ModelElement:
     
         def QualifiedName(self):
             name = self.name()
@@ -176,12 +176,19 @@ class UMLModel:
             
             return NodeList(['.'.join(names)])
 
+        QualifiedName = ComputedFeature(QualifiedName)
 
-    class GeneralizableElement(ComputedFeatures):
+
+    class GeneralizableElement:
     
         def superclasses(self):
             return self.generalizations.Get('parent')
 
+        superclasses = ComputedFeature(superclasses)
+        
         def subclasses(self):
             return self.specializations.Get('child')
 
+        subclasses = ComputedFeature(subclasses)
+
+setupModule()

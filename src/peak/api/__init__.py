@@ -128,5 +128,6 @@ from Interfaces import *
 from Specifications import *
 from Advisors import *
 from Targets import *
-from SEF_hooks import *
-from Modules import *    
+from Modules import *
+import SEF
+
