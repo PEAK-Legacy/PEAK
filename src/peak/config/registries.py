@@ -6,7 +6,6 @@ from peak.util.imports import whenImported
 
 __all__ = [ 'EigenRegistry' ]
 
-
 class InterfaceAsConfigKey(protocols.Adapter):
 
     """Adapt interfaces to configuration keys"""
@@ -28,6 +27,8 @@ class InterfaceAsConfigKey(protocols.Adapter):
         """Iterate over keys that should be used for lookup"""
         return self.subject,
 
+    def __repr__(self):
+        return repr(self.subject)
 
 whenImported('zope.interface',
     lambda interface: (
@@ -37,7 +38,6 @@ whenImported('zope.interface',
         )
     )
 )
-
 
 class EigenRegistry(EigenDict):
 

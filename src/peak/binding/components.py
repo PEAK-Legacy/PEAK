@@ -394,8 +394,8 @@ class ConfigFinder(object):
     def findComponent(self, component, default=NOT_GIVEN):
         return config.findUtility(component, self.ob, default)
 
-
-
+    def __repr__(self):
+        return repr(self.ob)
 
 
 
@@ -409,7 +409,6 @@ class ConfigFinder(object):
 
 
 class Obtain(Attribute):
-
     """'Obtain(componentKey,[default=value])' - finds/caches a needed component
 
     Usage examples::
@@ -430,24 +429,25 @@ class Obtain(Attribute):
     found.
 
     XXX need to document IComponentKey translations somewhere... probably
-        w/IComponentKey
-    """
+        w/IComponentKey"""
 
     default = NOT_GIVEN
     targetName = None
 
     def __init__(self,targetName,**kw):
         self.targetName = adapt(targetName, IComponentKey)
-        kw.setdefault('doc', ("binding.Obtain(%s)" % `self.targetName`))
         super(Obtain,self).__init__(**kw)
-
 
     def computeValue(self, obj, instanceDict, attrName):
         return self.targetName.findComponent(obj, self.default)
 
+    def __repr__(self):
+        if self.__doc__:
+            return "binding.Obtain(%r):\n\n%s" % (self.targetName,self.__doc__)
+        else:
+            return "binding.Obtain(%r)" % self.targetName
 
 bindTo = Obtain     # XXX DEPRECATED
-
 
 def bindSequence(*targetNames, **kw):
     """DEPRECATED: use binding.Obtain([key1,key2,...])"""
@@ -490,7 +490,8 @@ def whenAssembled(func, **kw):
 
 
 
-def Delegate(delegateAttr, **kw):
+class Delegate(Make):
+
     """Delegate attribute to the same attribute of another object
 
     Usage::
@@ -510,11 +511,24 @@ def Delegate(delegateAttr, **kw):
     need to create a separate binding for each attribute that is delegated,
     as you do when using 'Obtain()'."""
 
-    return Make(
-        lambda s,d,a: getattr(getattr(s,delegateAttr),a), **kw
-    )
+    delegateAttr = None
+
+    def __init__(self, delegateAttr, **kw):
+        def delegate(s,d,a):
+            return getattr(getattr(s,delegateAttr),a)
+        super(Delegate,self).__init__(delegate,delegateAttr=delegateAttr,**kw)
+
+    def __repr__(self):
+        if self.__doc__:
+            return "binding.Delegate(%r):\n\n%s" % (
+                self.delegateAttr,self.__doc__
+            )
+        else:
+            return "binding.Delegate(%r)" % self.delegateAttr
+
 
 delegateTo = Delegate   # XXX DEPRECATED; backward compat.
+
 
 
 def Acquire(key, **kw):
@@ -522,14 +536,6 @@ def Acquire(key, **kw):
     key = adapt(key,IConfigKey)
     kw['offerAs'] = [key]   # XXX should check that kwarg wasn't supplied
     return Obtain(key,**kw)
-
-
-
-
-
-
-
-
 
 def bindToParent(level=1, **kw):
     """DEPRECATED: use binding.Obtain('..')"""
@@ -545,6 +551,27 @@ def bindToProperty(propName, default=NOT_GIVEN, **kw):
     return binding.Obtain(PropertyName(propName), **kw)
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 class Require(Attribute):
 
     """Placeholder for a binding that should be (re)defined by a subclass"""
@@ -553,7 +580,6 @@ class Require(Attribute):
 
     def __init__(self, description="", **kw):
         kw['description'] = description
-        kw.setdefault('doc', "Required: %s" % description)
         super(Require,self).__init__(**kw)
 
 
@@ -562,13 +588,28 @@ class Require(Attribute):
             % (obj.__class__.__name__, attrName, self.description)
         )
 
+    def __repr__(self):
+        if self.__doc__:
+            return "binding.Require(%r):\n\n%s" % (
+                self.description,self.__doc__
+            )
+        else:
+            return "binding.Require(%r)" % self.description
+
 requireBinding = Require    # XXX DEPRECATED
+
 
 
 def bindToUtilities(iface, **kw):
     """DEPRECATED: bind list of all 'iface' utilities above the component"""
 
     return Make(lambda self: list(config.findUtilities(self,iface)), **kw)
+
+
+
+
+
+
 
 
 

@@ -226,8 +226,8 @@ class PropertyName(str):
         return Namespace(self, forObj)
 
 
-
-
+    def __repr__(self):
+        return 'PropertyName(%s)' % super(PropertyName,self).__repr__()
 
 
 

@@ -391,7 +391,10 @@ class Attribute(Descriptor):
 
 
     def __repr__(self):
-        return "Binding: %s" % (self.__doc__ or '(undocumented)')
+        if self.__doc__:
+            return "binding.Attribute:\n\n%s" % self.__doc__
+        else:
+            return "binding.Attribute()"
 
 
     def onSet(self, obj, attrName, value):
@@ -402,9 +405,6 @@ class Attribute(Descriptor):
         if self.suggestParent:
             suggestParentComponent(obj, attrName, value)
         return value
-
-
-
 
 
 
@@ -449,7 +449,7 @@ class Attribute(Descriptor):
         self.usageError()
 
 
-class _MultiRecipe(protocols.Adapter):
+class _MultiRecipe:
 
     """ADAPTER: Sequence(IRecipe) --> IRecipe"""
 
@@ -458,11 +458,18 @@ class _MultiRecipe(protocols.Adapter):
         asAdapterForProtocols = [protocols.sequenceOf(IRecipe)]
     )
 
+    def __init__(self,ob,proto):
+        self.subject = ob
+        self.__doc__ = getattr(ob,'__doc__',None)
+
+    def __repr__(self):
+        return repr(self.subject)
+
     def __call__(self, component, instDict, attrName):
         return tuple([ob(component,instDict,attrName) for ob in self.subject])
 
 
-class _TypeAsRecipe(protocols.Adapter):
+class _TypeAsRecipe:
 
     """ADAPTER: type | class --> IRecipe"""
 
@@ -471,8 +478,16 @@ class _TypeAsRecipe(protocols.Adapter):
         asAdapterForTypes = [type, ClassType]
     )
 
+    def __init__(self,ob,proto):
+        self.subject = ob
+        self.__doc__ = None   # Don't use the type's docstring as our docstring
+
     def __call__(self, component, instDict, attrName):
         return self.subject()
+
+    def __repr__(self):
+        return "%s.%s" % (self.subject.__module__, self.subject.__name__)
+
 
 
 def _callableAsRecipe(func, protocol):
@@ -480,9 +495,11 @@ def _callableAsRecipe(func, protocol):
     if len(args)==3:
         return func
     elif len(args)==1:
-        return lambda s,d,a: func(s)
+        f = lambda s,d,a: func(s)
     elif not args:
-        return lambda s,d,a: func()
+        f = lambda s,d,a: func()
+    f.__doc__ = getattr(func,'__doc__',None)
+    return f
 
 protocols.declareAdapter(
     _callableAsRecipe,
@@ -490,7 +507,8 @@ protocols.declareAdapter(
     forProtocols = [ISignature]
 )
 
-class _StringAsRecipe(protocols.Adapter):
+
+class _StringAsRecipe(_TypeAsRecipe):
 
     """ADAPTER: string (import spec) --> IRecipe"""
 
@@ -499,32 +517,14 @@ class _StringAsRecipe(protocols.Adapter):
         asAdapterForTypes = [str]
     )
 
+
     def __call__(self, component, instDict, attrName):
         return adapt(importString(self.subject), IRecipe)(
             component, instDict, attrName
         )
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    def __repr__(self):
+        return self.subject
 
 
 
@@ -562,14 +562,55 @@ class Make(Attribute):
         kw.setdefault('attrName',
             getattr(recipe, '__name__', None)
         )
+        recipe = self.computeValue = adapt(recipe, IRecipe)
         kw.setdefault('doc',
-            getattr(recipe,'__doc__',None) or kw['attrName']
+            getattr(recipe,'__doc__',None)
         )
-        self.computeValue = adapt(recipe, IRecipe)
         super(Make,self).__init__(**kw)
 
 
+
+
+
+    def __repr__(self):
+        if self.__doc__:
+            return "binding.Make(%r):\n\n%s" % (self.computeValue,self.__doc__)
+        else:
+            return "binding.Make(%r)" % self.computeValue
+
 Once = New = Make   # XXX DEPRECATED, backward compatibility
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 class classAttr(object):

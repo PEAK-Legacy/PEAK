@@ -6,8 +6,6 @@ Open Issues/To-Do Items
 
        - Cleanup/document attribute binding interface
 
-       - Ensure default __repr__'s for all bindings are acceptable
-
        - Investigate whether suggestParentComponent() should be suppressed when
          the value is computed by the binding, or if perhaps 'suggestParent'
          should be set to 'False' by default for some kinds of bindings.
@@ -28,6 +26,8 @@ Open Issues/To-Do Items
          a later release)
 
        - try/catch DOMlet (and related error rendering interface/framework)
+
+
 
 
 
