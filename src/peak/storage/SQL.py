@@ -421,6 +421,24 @@ class SqliteConnection(ValueBasedTypeConn):
     def _open(self):
         return self.API.connect(self.address.getFilename())
 
+    def listObjects(self, full=False, obtypes=NOT_GIVEN):
+        addsel = addwhere = ''
+
+        if full:
+            addsel = ', rootpage, sql '
+
+        if obtypes is not NOT_GIVEN:
+            addwhere = 'where type in (%s)' % \
+                ', '.join(["'%s'" % s for s in obtypes])
+            
+        return self('''select name as obname, type as obtype%s
+            from SQLITE_MASTER %s''' % (addsel, addwhere))
+
+    protocols.advise(
+        instancesProvide=[ISQLIntrospector]
+    )
+
+    
 
 class GadflyConnection(SQLConnection):
 

@@ -52,6 +52,18 @@ class SQLInteractor(binding.Component):
     vars = binding.Once(vars)
 
 
+    def obnames(self, d, a):
+        """Object names for completer"""
+
+        si = adapt(self.con, storage.ISQLIntrospector, None)
+        if si is not None:
+            return [x.obname
+                for x in si.listObjects(False, ('table','view','proc'))]
+
+        return []
+
+    obnames = binding.Once(obnames)
+
 
     def prompt(self):
         p = self.getVar('prompt')
@@ -738,6 +750,12 @@ default for src is '!.', the current input buffer"""
         def cmd(self, cmd, **kw):
             self.interactor.con.closeASAP()
             storage.abortTransaction(self)
+
+            try:
+                del self.obnames
+            except:
+                pass
+                
             self.interactor.con.connection
             storage.beginTransaction(self)
             
@@ -845,6 +863,34 @@ default for src is '!.', the current input buffer"""
 
 
 
+    class cmd_describe(ShellCommand):
+        """\\describe [-d delim] [-m style] [-h] [-f] [-v] [name] -- describe objects in database, or named object
+
+-d delim\tuse specified delimiter
+-m style\tuse specified format (one of: horiz, vert, plain, python)
+-h\t\tsuppress header
+-f\t\tsuppress footer
+-v\t\tverbose; give more information
+        """
+
+        args = ('d:m:hfv', 0, 1)
+        
+        def cmd(self, cmd, opts, args, stdout, stderr, **kw):
+            if args:
+                pass # XXX
+            else:
+                si = adapt(self.interactor.con, storage.ISQLIntrospector, None)
+                if si is None:
+                    print >>stderr, "%s: database doesn't support describe" % cmd
+                else:
+                    shower = opts.get('-m', 'horiz')
+                    c = si.listObjects('-v' in opts)
+                    self.interactor.showResults(c, shower, opts, stdout)
+                
+    cmd_describe = binding.New(cmd_describe)
+
+
+
     def redraw(self, stdout, add_hist=False):
         b = self.getBuf()
         self.resetBuf()
@@ -933,7 +979,7 @@ default for src is '!.', the current input buffer"""
             elif s.startswith('$'):
                 self.matches = ['$' + k for k in self.vars.keys()]
             else:
-                self.matches = self.command_names()
+                self.matches = self.command_names() + self.obnames
 
             self.matches = [x for x in self.matches if x.startswith(s)]
 

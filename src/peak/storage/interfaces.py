@@ -2,6 +2,7 @@
 
 from protocols import Interface, Attribute, advise
 from peak.binding.interfaces import IComponent
+from peak.api import NOT_GIVEN
 
 __all__ = [
     'ITransactionService', 'ITransactionParticipant', 'ICache',
@@ -9,6 +10,7 @@ __all__ = [
     'IDataManager', 'IDataManager_SPI', 'IWritableDM', 'IWritableDM_SPI',
     'IManagedConnection', 'IManagedConn_SPI', 'IKeyableDM',
     'ISQLConnection', 'ILDAPConnection', 'IDDEConnection',
+    'ISQLIntrospector'
 ]
 
 
@@ -490,3 +492,23 @@ class IRow(Interface):
 
 
 
+class ISQLIntrospector(Interface):
+    """Adapt a managed connection to this to obtain information on
+       objects in the database"""
+
+    def listObjects(full=False, obtypes=NOT_GIVEN):
+        """Returns an active cursor with information on objects in the DB
+
+            with full=True, includes all available information, otherwise
+            only includes the information likely to be most elevant to the
+            user.
+            
+            The returned cursor shall have a column 'obname' first, with
+            the object name, and a column 'obtype' second, with one of
+            the following values standardized:
+            
+                table, systable, view, proc, index
+
+            if obtypes is given, it shall be a sequence of the above types,
+            and rows shall only be returned for the given types.
+        """
