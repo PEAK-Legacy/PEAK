@@ -1,3 +1,22 @@
+'''TODO:
+
+    * Flesh out ILogSink (__call__), ILogEvent, and docs here and in peak.api
+    
+    * Dump formatted kwargs as part of the standard log format
+
+      issues: currently, we don't know which items in our dict were kwargs.
+      record a list of which were passed? Also, some we wouldn't want to
+      include even if they were passed explicity (for example, priority,
+      which is passed explicitly by the LOG_XXX functions. 
+      
+    * SysLog and LogTee objects/URLs (low priority; we don't seem to use
+      these at the moment)
+      
+    * Syslog (and others) may want the second part of asString without the
+      leading stuff -- maybe refactor into another routine that returns
+      just the second part
+'''
+
 from peak.binding.components import Component, Once, New, findUtilities
 from peak.api import binding, config, naming, NOT_GIVEN, PropertyName
 from time import time, localtime, strftime
@@ -5,6 +24,7 @@ import sys, os, traceback
 from socket import gethostname
 _hostname = gethostname().split('.')[0]
 del gethostname
+
 
 __all__ = [
     'LOG_LEVEL', 'Event', 'PRI_SYSEMERG', 'PRI_SYSALERT', 'PRI_CRITICAL',
@@ -14,18 +34,23 @@ __all__ = [
 
 LOG_LEVEL = PropertyName('peak.log_level')
 
-                        # syslog        PEP 282     zLOG
-                        # ---------     -------     ----
+
+
+
+
+
+                        # syslog        PEP 282         zLOG
+                        # ---------     -------         ----
 PRI_SYSEMERG = 500      # LOG_EMERG
 PRI_SYSALERT = 400      # LOG_ALERT
-PRI_CRITICAL = 300      # LOG_CRIT      CRITICAL    PANIC
-PRI_ERROR    = 200      # LOG_ERR       ERROR       ERROR
-PRI_WARNING  = 100      # LOG_WARNING   WARN        WARNING, PROBLEM
+PRI_CRITICAL = 300      # LOG_CRIT      CRITICAL(50)    PANIC
+PRI_ERROR    = 200      # LOG_ERR       ERROR(40)       ERROR
+PRI_WARNING  = 100      # LOG_WARNING   WARN(30)        WARNING, PROBLEM
 PRI_NOTICE   = 50       # LOG_NOTICE
-PRI_INFO     = 0        # LOG_INFO      INFO        INFO
-PRI_VERBOSE  = -100     #                           BLATHER
-PRI_DEBUG    = -200     # LOG_DEBUG     DEBUG       DEBUG
-PRI_TRACE    = -300     #                           TRACE
+PRI_INFO     = 0        # LOG_INFO      INFO(20)        INFO
+PRI_VERBOSE  = -100     #                               BLATHER
+PRI_DEBUG    = -200     # LOG_DEBUG     DEBUG(10)       DEBUG
+PRI_TRACE    = -300     #               ALL(0)          TRACE
 
 syslog_scale = (
     (PRI_DEBUG,    7, 'LOG_DEBUG'),
@@ -45,6 +70,16 @@ for k, v in globals().items():
         priorities[k] = v
 
 
+
+
+
+
+
+
+
+
+
+
 from Interface import Interface
 
 class ILogSink(Interface):
@@ -58,12 +93,6 @@ class ILogSink(Interface):
 
 class ILogEvent(Interface):
     pass
-
-
-
-
-
-
 
 
 
@@ -173,6 +202,7 @@ class Event(Component):
         
 
 
+
 class logfileURL(naming.ParsedURL):
 
     _supportedSchemes = ('logfile', )
@@ -203,7 +233,19 @@ class logfileURL(naming.ParsedURL):
 
         
 
+
+
+
+
+
+
+
+
+
+
+
 class LogSink:
+
     __implements__ = ILogSink
     
     def sink(self, event):
@@ -237,21 +279,10 @@ class Logfile(LogSink):
         return True
         
 
-'''TODO:
 
-    * Flesh out ILogSink (__call__), ILogEvent, and docs here and in peak.api
-    
-    * Dump formatted kwargs as part of the standard log format
 
-      issues: currently, we don't know which items in our dict were kwargs.
-      record a list of which were passed? Also, some we wouldn't want to
-      include even if they were passed explicity (for example, priority,
-      which is passed explicitly by the LOG_XXX functions. 
-      
-    * SysLog and LogTee objects/URLs (low priority; we don't seem to use
-      these at the moment)
-      
-    * Syslog (and others) may want the second part of asString without the
-      leading stuff -- maybe refactor into another routine that returns
-      just the second part
-'''
+
+
+
+
+
