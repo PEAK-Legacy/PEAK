@@ -2,6 +2,14 @@ Fixes and Enhancements since Version 0.5 alpha 2
 
  Changed, Enhanced, or Newly Deprecated Features
 
+ - The 'referencedType' of a 'model.StructuralFeature' can now be any
+   'binding.IComponentKey', not just a type or a string.  Types are also now
+   implicitly component keys, which means you can use 'binding.Obtain(SomeType)'
+   to look up 'SomeType'.  (Right now, this is no different than using 'SomeType'
+   without the 'binding.Obtain()', but in future releases this will use a
+   "class replacement service" to allow easy replacement of model and other
+   collaborator classes, while implementing AOP-like features.)
+
  - Added 'naming.Indirect(key)', a 'binding.IComponentKey' that can be used to
    do an indirect lookup via another 'IComponentKey' (such as a name).  Using
    'naming.Indirect()', you can replace code like this::

@@ -15,13 +15,13 @@ from method_exporter import MethodExporter
 from peak.util.hashcmp import HashAndCompare
 from peak.util.advice import supermeta
 from peak.util import fmtparse
+from peak.naming.names import Indirect
+from peak.binding.interfaces import IComponentKey
 
 __all__ = [
     'StructuralFeature',  'Collection', 'Sequence',
     'DerivedFeature', 'structField', 'Attribute',
 ]
-
-
 
 
 
@@ -92,16 +92,16 @@ class FeatureClass(HashAndCompare,MethodExporter):
     def typeObject(self):
         """The actual type referred to by 'referencedType'
 
-            Since a feature's 'referencedType' can be either a string or
-            a type, the actual type object is cached in the 'typeObject'
-            attribute.  If you need to get the type of feature 'aFeature',
-            just refer to 'aFeature.typeObject'.  This will of course fail
-            if the 'referencedType' attribute is invalid.
-        """
-        rt = self.referencedType
-        if isinstance(rt,str):
-            return binding.lookupComponent(self,rt)
-        return rt
+        Since a feature's 'referencedType' can be either a string or
+        a type, the actual type object is cached in the 'typeObject'
+        attribute.  If you need to get the type of feature 'aFeature',
+        just refer to 'aFeature.typeObject'.  This will of course fail
+        if the 'referencedType' attribute is invalid."""
+
+        rt = adapt(self.referencedType,IComponentKey,None)
+        if rt is not None:
+            return rt.findComponent(self)
+        return self.referencedType
 
     typeObject = binding.Make(typeObject)
     fromString = binding.Obtain('typeObject/mdl_fromString')

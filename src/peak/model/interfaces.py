@@ -1,7 +1,8 @@
 """peak.model Interfaces"""
 
+import protocols
 from protocols import Interface, Attribute
-
+from peak.binding.interfaces import IComponentKey
 
 __all__ = [
     'IFeature','IFeatureSPI', 'IType', 'ITypeInfo', 'IEnumType', 'IEnumValue',
@@ -38,8 +39,7 @@ __all__ = [
 
 
 
-
-class IType(Interface):
+class IType(IComponentKey):
 
     """Conversion/marshalling info for a model type"""
 

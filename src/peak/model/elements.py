@@ -198,10 +198,16 @@ class TypeClass(Namespace.__class__):
         """Sequence of component keys to find an abstact class' subclasses"""
     )
 
+    def findComponent(self,component,default=NOT_GIVEN):
+        return self
+
+
+
 protocols.declareAdapter(
     lambda o,p: o.mdl_asSyntax(),
     provides=[fmtparse.IRule], forTypes=[TypeClass]
 )
+
 
 class Type(Namespace):
 
@@ -235,12 +241,6 @@ class Type(Namespace):
 
     def mdl_normalize(klass, value):
         return value
-
-
-
-
-
-
 
 
 
@@ -443,12 +443,6 @@ class PrimitiveType(Type):
                 formatter=klass.mdl_toString,
             )
         return Type.mdl_asSyntax.im_func(klass)
-
-
-
-
-
-
 
 
 
