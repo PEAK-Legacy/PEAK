@@ -102,16 +102,17 @@ class IPropertyMap(Interface):
         Note that if a default for the specified property has already been
         accessed, an 'AlreadyRead' exception results.  Also, if a value has
         already been set for the property, the default will be ignored.  The
-        default will also be ignored if a rule exists for the same 'propName',
-        unless the rule returns 'NOT_FOUND'.  Note: unlike rules, defaults
-        can *not* be registered for a wildcard 'propName'."""
+        default will also be ignored if a rule exists for the same 'propName'
+        (or parent wildcard thereof), unless the rule returns 'NOT_FOUND' or
+        'NOT_GIVEN'.  Note: like values and unlike rules, defaults can *not*
+        be registered for a wildcard 'propName'."""
 
 
     def setPropertyFor(obj, propName, value):
         """Set property 'propName' to 'value' for 'obj'
 
         No wildcards allowed.  'AlreadyRead' is raised if the property
-        has already been accessed, for the target object.  If 'obj' is
+        has already been accessed for the target object.  If 'obj' is
         outside the property map's scope or it only manages properties for
         its owner, an 'ObjectOutOfScope' exception will be raised."""
 

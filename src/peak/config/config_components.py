@@ -44,13 +44,16 @@ class PropertyMap(AutoCreated):
     values   = New(dict)
     rules    = New(dict)
     defaults = New(dict)
-
+    used     = New(dict)
 
     _provides = IPropertyMap
 
 
     def setRule(self, propName, ruleObj):
-        if self.values.has_key(propName): raise AlreadyRead
+
+        if propName in self.values or propName in self.used:
+            raise AlreadyRead
+
         _setCellInDict(self.rules, propName, ruleObj)
 
 
@@ -59,19 +62,16 @@ class PropertyMap(AutoCreated):
 
 
     def setPropertyFor(self, obj, propName, value):
+
         if obj is not self.getParentComponent():
             raise ObjectOutOfScope(
                 "PropertyMap only sets properties for its parent"
             )
+
+        if propName in self.used:
+            raise AlreadyRead
+
         _setCellInDict(self.values, propName, value)
-
-
-
-
-
-
-
-
 
 
 
@@ -88,8 +88,7 @@ class PropertyMap(AutoCreated):
 
         if cell is not None:
             return cell.get()
-
-
+            
         # Initialize loop invariants
         
         rules      = self.rules
@@ -121,12 +120,13 @@ class PropertyMap(AutoCreated):
                     break
 
 
+
         # ensure that unspecified rules stay that way, if they
         # haven't been replaced in the meanwhile by a higher-level
         # wildcard rule
 
         for name in xRules:
-            rules.setdefault(name,emptyRuleCell)
+            rules.setdefault(name,_emptyRuleCell)
 
 
         if value is NOT_FOUND:
@@ -139,13 +139,16 @@ class PropertyMap(AutoCreated):
             if cell is not None:
                 return cell.get()
 
-            default = self.defaults.setdefault(propName, emptyRuleCell)
+            default = self.defaults.setdefault(propName, _emptyRuleCell)
             value = default.get()(self, propName)
 
 
+        # prevent setting a value for this property in future
+        self.used.setdefault(propName,1)    
+
+        
         if rulesUsed:
             return value
-
 
         # If no non-null rules were used, then the value we found is
         # independent of the target object: we can cache it in the values map!
@@ -154,9 +157,6 @@ class PropertyMap(AutoCreated):
         cell.set(value)
 
         return cell.get()
-
-
-
 
 
 

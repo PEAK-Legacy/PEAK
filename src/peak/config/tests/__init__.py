@@ -4,6 +4,41 @@ from unittest import TestCase, makeSuite, TestSuite
 from peak.api import *
 
 
+class PropertyTest(TestCase):
+
+    def checkGlobalProp(self):
+        config.setGlobalProperty('peak.config.tests.foo',1)
+        assert config.getProperty(config.getLocal(),'peak.config.tests.foo')==1
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 class ModuleTest(TestCase):
 
     def setUp(self):
@@ -37,8 +72,6 @@ class ModuleTest(TestCase):
     def checkRefBetweenClasses(self):
         assert self.M2.Referencer.containedClass.M1=='M1'
 
-
-
     def checkBaseBinding(self):
         import UserList
         assert self.M2.RebindSub.M1=='M1'
@@ -46,7 +79,6 @@ class ModuleTest(TestCase):
         assert self.M2.RebindSub.__bases__ == (
             self.M2.UnusedBase, UserList.UserList, object  
         ), self.M2.RebindSub.__bases__
-
 
 class AdviceTest(ModuleTest):
     
@@ -56,32 +88,8 @@ class AdviceTest(ModuleTest):
         self.M2 = testM1a
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 TestClasses = (
-    ModuleTest, AdviceTest, 
+    PropertyTest, ModuleTest, AdviceTest, 
 )
 
 
