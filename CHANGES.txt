@@ -3,10 +3,12 @@ Fixes and Enhancements since Version 0.5 alpha 2
  Changed, Enhanced, or Newly Deprecated Features
 
  - Added '[Named Services]' section parser to 'peak.ini'.  This new section
-   type functions almost identically to '[Component Factories]', except that
+   type functions similarly to '[Component Factories]', except that
    the keys are property names rather than references to interfaces or other
-   component keys.  This should be helpful for configuring shared services that
-   all implement the same interface, such as SQL connection objects.
+   component keys, and the values are an expression that creates the actual
+   instance, rather than the name of a factory for the service  This should be
+   helpful for configuring shared services that all implement the same
+   interface, such as SQL connection objects.
 
    Note that to look up a named service, you simply use the appropriate
    property name, as usual.  The difference is that you are guaranteed to

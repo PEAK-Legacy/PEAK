@@ -166,10 +166,9 @@ def add_services(parser, section, name, value, lineInfo):
     name = PropertyName(name)
     pMap = parser.pMap
     globalDict = parser.globalDict
-
+    factory = ruleForExpr(name, value, globalDict)
     pMap.registerProvider(
-        FactoryFor(name),
-        ruleForExpr(name,"importObject(%s)" % value, globalDict)
+        FactoryFor(name), Value(lambda: factory(pMap,name,pMap))
     )
     pMap.registerProvider(name, CreateViaFactory(name))
 
@@ -198,6 +197,7 @@ def load_on_demand(parser, section, name, value, lineInfo):
             prefix = name
         )
     )
+
 
 
 
