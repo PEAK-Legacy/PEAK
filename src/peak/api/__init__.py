@@ -82,8 +82,43 @@ def LOG(message, parent=None, **info):
 
 # Convenience features
 
-NOT_GIVEN = object()
-NOT_FOUND = object()
+class _Symbol(object):
+
+    """Symbolic global constant"""
+
+    __slots__ = ['_name', '_module']
+    __name__   = property(lambda s: s._name)
+    __module__ = property(lambda s: s._module)
+
+    def __init__(self, symbol, moduleName):
+        self.__class__._name.__set__(self,symbol)
+        self.__class__._module.__set__(self,moduleName)
+
+    def __reduce__(self):
+        return self._name
+
+    def __setattr__(self,attr,val):
+        raise TypeError("Symbols are immutable")
+
+    def __repr__(self):
+        return self.__name__
+
+    __str__ = __repr__
+
+
+# XXX we need to wrap these in security proxies if zope.security present
+
+NOT_GIVEN = _Symbol("NOT_GIVEN", __name__)
+NOT_FOUND = _Symbol("NOT_FOUND", __name__)
+
+
+
+
+
+
+
+
+
 
 
 def Items(mapping=None, **kwargs):
@@ -117,6 +152,12 @@ def Items(mapping=None, **kwargs):
 
     else:
         return []
+
+
+
+
+
+
 
 
 
