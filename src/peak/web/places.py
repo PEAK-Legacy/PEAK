@@ -269,7 +269,7 @@ class Location(Place,binding.Configurable):
         if ob is self and name in self.local_views:
             return self.local_views[name]
 
-        p = VIEW_NAMES.of(self).get(name,None)
+        p = self._viewProtocolFor(name,None)
         if p is not None:
             target, handler = adapt(ob,p,(NOT_FOUND,NOT_FOUND))
             if handler is not NOT_FOUND:
@@ -278,7 +278,7 @@ class Location(Place,binding.Configurable):
                 )
         return default
 
-
+    _viewProtocolFor = binding.Make(lambda self:VIEW_NAMES.of(self).get)
 
 
 

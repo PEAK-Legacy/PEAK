@@ -248,6 +248,7 @@ class ParserTests(TestCase):
         start, end = self.startElement, self.endElement
         start('location', ['extends','data:,'+quote("""
                 <location id="nested.root">
+                <view name="x" object="'spot'"/>
                 <content type="object"><view name="bar" object="123"/>
                 </content>
                 <import module="peak.web.tests.test_sitemap" as="tsm"/>
@@ -255,6 +256,7 @@ class ParserTests(TestCase):
                 </location>"""), 'id','root'
             ]
         )
+        start('view',['name','x','object','"marksThe"']); end()
         start('container',['object','{"123":123}']); end()
         start('content', ['type','object'])
         start('view',['name','bar','object','"xyz"']); end(); end('content')
@@ -265,7 +267,9 @@ class ParserTests(TestCase):
         self.failUnless(self.traverse(loc,'++id++root').current is loc)
         self.failUnless(self.traverse(loc,'++id++nested.root').current is loc)
 
-        ctx = self.policy.newContext(start=loc).traverseName('123')
+        ctx = self.policy.newContext(start=loc)
+        self.assertEqual(ctx.traverseName('@@x').current, "marksThe")
+        ctx = ctx.traverseName('123')
         self.assertEqual(ctx.traverseName('@@bar').current, "xyz")
 
 
@@ -278,10 +282,6 @@ class ParserTests(TestCase):
         ctx = self.policy.newContext(start=loc).childContext('test',123)
         self.assertEqual(ctx.traverseName("__doc__").current,(123).__doc__)
         self.assertEqual(ctx.traverseName("__class__").current,(123).__class__)
-
-
-
-
 
 
 
@@ -306,6 +306,32 @@ class ParserTests(TestCase):
         self.assertRaises(SyntaxError, self.startElement,
             'view',['name','foo','object','123'])
 
+
+    def testLocationView(self):
+        self.startElement('location',[])
+        self.startElement('view',['name','foo','object','"xyz"'])
+        self.endElement()
+        loc = self.endElement()
+        ctx = self.policy.newContext(start=loc).traverseName('foo')
+        self.assertEqual(ctx.current,"xyz")
+
+
+    def testLocationAllow(self):
+        self.startElement('location',[])
+        self.startElement('allow',['attributes','__class__'])
+        self.endElement()
+        loc = self.endElement()
+        ctx = self.policy.newContext(start=loc).traverseName('__class__')
+        self.assertEqual(ctx.current,web.Location)
+        
+
+
+    def testLocationConflicts(self):
+        self.startElement('location',[])
+        self.startElement('allow',['attributes','__class__'])
+        self.assertRaises(SyntaxError, self.startElement,
+            'view',['name','__class__','object','123'])
+        
 
     # XXX Containers in extending are *after* those in extendee!
 
