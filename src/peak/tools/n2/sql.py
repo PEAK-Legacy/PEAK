@@ -268,6 +268,10 @@ class SQLInteractor(binding.Component):
             if v is not None:
                 kw['delim'] = v
                 
+            v = opts.get('-N')
+            if v is not None:
+                kw['null'] = v
+                
             c.dumpTo(stdout, format = opts.get('-m'), **kw)
 
 
@@ -284,8 +288,9 @@ class SQLInteractor(binding.Component):
 
 
     class cmd_go(ShellCommand):
-        """go [-d delim] [-m style] [-x code] [-r code] [-p] [-h] [-f] [-n] [-s n] [xacts] -- submit current input
+        """go [-N null] [-d delim] [-m style] [-x code] [-r code] [-p] [-h] [-f] [-n] [-s n] [xacts] -- submit current input
 
+-N null\tuse given string to represent NULL
 -d delim\tuse specified delimiter
 -m style\tuse specified format
 -h\t\tsuppress header
@@ -304,7 +309,7 @@ xacts\t\tnumber of times to repeat execution of the input. Only results
 
         noBackslash = True
 
-        args = ('d:m:hfs:nx:r:p', 0, 1)
+        args = ('N:d:m:hfs:nx:r:p', 0, 1)
 
         def cmd(self, cmd, opts, args, stdout, stderr, **kw):
             secs = opts.get('-s', '0')

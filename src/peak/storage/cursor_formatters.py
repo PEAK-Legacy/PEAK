@@ -39,6 +39,9 @@ class AbstractCursorFormatter(binding.Component):
 
 
     def toStr(self, val, width=None):
+        if type(val) is unicode:
+            val = val.encode('utf8')
+
         if val is None:
             if width is None:
                 return self.null
@@ -50,9 +53,6 @@ class AbstractCursorFormatter(binding.Component):
         elif type(val) is float:
             return "%*g" % (width, val)
         else:
-            if type(val) is unicode:
-                val = val.encode('utf8')
-    
             return str(val).ljust(width)[:width]
         
 
@@ -241,19 +241,29 @@ class cursorToCopy(AbstractCursorFormatter):
 class cursorToCSV(AbstractCursorFormatter):
     csv = binding.Obtain('import:csv')
     dialect = binding.Make(lambda: 'excel')
-    footer = binding.Make(lambda: False)
+    footer  = binding.Make(lambda: False)
+    delim   = binding.Make(lambda: None)
+    null    = binding.Make(lambda: None)
 
     def formatRows(self, c, stdout):
         nr = 0
 
-        wr = self.csv.writer(stdout, dialect=self.dialect, lineterminator='\n')
+        kw = {
+            'dialect' : self.dialect,
+            'lineterminator' : '\n'
+        }
+        
+        if self.delim is not None:
+            kw['delimiter'] = self.delim
+        
+        wr = self.csv.writer(stdout, **kw)
         
         if self.header:
             wr.writerow([x[0] for x in c._cursor.description])
 
         for r in c:
             nr += 1
-            wr.writerow(r)
+            wr.writerow([self.toStr(v) for v in r])
             
         return nr
 
