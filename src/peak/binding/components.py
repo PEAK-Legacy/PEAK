@@ -352,7 +352,7 @@ class bindTo(Once):
     def computeValue(self, obj, instanceDict, attrName):
 
         names = self.targetNames
-        obs   = map(obj.lookupComponent, names)
+        obs   = [_lookupComponent(obj,n) for n in names]
 
         for name,newOb in zip(names, obs):
 
@@ -608,8 +608,6 @@ class Component(Base):
 
     def registerProvider(self, configKeys, provider):
         self.__instance_provides__.registerProvider(configKeys, provider)
-
-
 
 
 

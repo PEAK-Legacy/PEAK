@@ -14,11 +14,11 @@ class IBindingSPI(IConfigSource):
 
     """Minimum requirements to join a component hierarchy"""
 
-    def lookupComponent(name):
-        """Look up a name in context - see 'binding.lookupComponent()'"""
-
     def getParentComponent():
         """Return the parent component of this object, or 'None'"""
+
+
+
 
 
 
@@ -53,6 +53,10 @@ class IBindingAPI(IBindingSPI):
         the specified bindings."""
 
 
+    def lookupComponent(name):
+        """Look up a name in context - see 'binding.lookupComponent()'"""
+
+
     def setParentComponent(parent):
         """Set the object's parent to 'parent'; raises 'AlreadyRead' if
         the parent has already been used by the component for any purpose."""
@@ -69,6 +73,10 @@ class IBindingAPI(IBindingSPI):
 
     def _delBinding(attr):
         """Ensure that no binding for 'attr' is active"""
+
+
+
+
 
 
 
