@@ -37,7 +37,7 @@
 
         XMI 1.1
 
-        - attributes as references/collections
+        - Attribute-encoded datatypes
 
         - XML namespaces (required by spec!)
 
@@ -77,6 +77,8 @@ from peak.util import SOX
 from weakref import WeakValueDictionary
 
 __bases__ = model,
+
+
 
 
 
@@ -162,6 +164,88 @@ class XMINode(object):
 
 
 
+    def stateForClass(self, klass, dm):
+    
+        d = {}
+
+        for attr,val in self.attrs.items():
+
+            if attr.startswith('xmi.'): continue
+            f = dm.getFeature(klass, attr)
+            if f is None: continue
+
+            if model.IValue.isImplementedBy(f):
+                d[f.attrName] = f.fromString(val)
+            else:
+                d.setdefault(f.attrName,[]).extend(
+                    [dm[('xmi.id',n)] for n in val.split()]
+                )
+            
+        for node in self.subNodes:
+
+            if node.isExtension: continue
+            f = dm.getFeature(klass, node._name)
+            if f is None: continue
+
+            if model.IValue.isImplementedBy(f):
+                d[f.attrName] = f.fromString(node.getValue())
+            else:
+                d.setdefault(f.attrName,[]).extend(
+                    [dm[n.getRef()]
+                        for n in node.subNodes if not n.isExtension]
+                )
+
+        coll = self.parent
+        if coll is None: return d
+        owner = coll.parent
+        if owner is None: return d
+
+        owner = dm[owner.getRef()]
+        f = dm.getFeature(owner.__class__, coll._name)
+
+        other = f.referencedEnd
+        
+        if other:
+            d['__xmi_parent_attr__'] = pa = getattr(klass,other).attrName
+            d.setdefault(pa,[owner])
+
+        return d
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 class XMIDocument(binding.AutoCreated, XMINode):
 
     index = binding.New(WeakValueDictionary)
@@ -229,21 +313,6 @@ class XMI_DM(storage.EntityDM):
         return getattr(klass,klass._XMIMap.get(name,''),None)  # XXX
         
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     def load(self, oid, ob):
         
         target = self.index[oid]
@@ -253,37 +322,11 @@ class XMI_DM(storage.EntityDM):
                 self[n.getRef()] for n in target.subNodes if not n.isExtension
             ]
         
-        d = {}; klass = ob.__class__
-        
-        for node in target.subNodes:
+        return target.stateForClass(ob.__class__, self)
 
-            if node.isExtension:
-                continue
 
-            f = self.getFeature(klass, node._name)
-            if f is None: continue
 
-            if model.IValue.isImplementedBy(f):
-                d[f.attrName] = f.fromString(node.getValue())
-            else:
-                d.setdefault(f.attrName,[]).extend(
-                    [self[n.getRef()]
-                        for n in node.subNodes if not n.isExtension]
-                )
 
-        coll = target.parent
-        if coll is None: return d
-        owner = coll.parent
-        if owner is None: return d
-        owner = self[owner.getRef()]
-        f = self.getFeature(owner.__class__, coll._name)
-        other = f.referencedEnd
-
-        if other:
-            d['__xmi_parent_attr__'] = pa = getattr(klass,other).attrName
-            d.setdefault(pa,[owner])
-
-        return d
 
 class XMIMapMaker_Meta(type):
 
