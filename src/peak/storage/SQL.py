@@ -217,7 +217,10 @@ class SQLConnection(ManagedConnection):
         self.connection.rollback()
 
     cursorClass = SQLCursor
-    API = binding.Require("DBAPI module for SQL connection")
+
+    DRIVER = binding.Require("DBAPI module name")  # Replace in subclasses
+
+    API = binding.Make(lambda self: importObject(self.DRIVER))
 
     Error               = \
     Warning             = \
@@ -230,23 +233,20 @@ class SQLConnection(ManagedConnection):
     TimeFromTicks       = \
     TimestampFromTicks  = binding.Delegate("API")
     Exceptions          = binding.Obtain(["Error", "Warning"])
+
     supportedTypes      = 'STRING','BINARY','NUMBER','DATETIME','ROWID'
 
-    TYPES_NS = PropertyName('peak.sql_types')   # Replace in subclasses!
+    TYPES_NS = binding.Make(
+        lambda self: config.Namespace('%s.sql_types' % self.DRIVER)
+    )
 
-
-
-
-
-
-
-
-
-
+    appConfig = binding.Make(
+        lambda self: config.Namespace('%s.appConfig' % self.DRIVER)
+    )
 
     def typeMap(self):
         tm = {}
-        ps = self.TYPES_NS.of(self)
+        ps = self.TYPES_NS
         api = self.API
 
         for k in self.supportedTypes:
@@ -290,7 +290,7 @@ class ValueBasedTypeConn(SQLConnection):
     def typeMap(self):
 
         tm = {}
-        ps = self.TYPES_NS.of(self)
+        ps = self.TYPES_NS
         api = self.API
 
         for k in self.supportedTypes:
@@ -328,7 +328,7 @@ class ValueBasedTypeConn(SQLConnection):
 
 class SybaseConnection(ValueBasedTypeConn):
 
-    API = binding.Obtain("import:Sybase")
+    DRIVER    = "Sybase"
     hostname  = binding.Obtain(PropertyName('Sybase.client.hostname'), default=None)
     appname   = binding.Obtain(PropertyName('Sybase.client.appname'),  default=None)
     textlimit = binding.Obtain(PropertyName('Sybase.client.textlimit'),default=None)
@@ -342,8 +342,6 @@ class SybaseConnection(ValueBasedTypeConn):
         'table' : 'U',
         'view' : 'V',
     }
-
-    TYPES_NS = PropertyName('Sybase.sql_types')
 
     def _open(self):
         a = self.address
@@ -366,6 +364,8 @@ class SybaseConnection(ValueBasedTypeConn):
             db.execute('set textsize %d' % int(self.textsize))
 
         return db
+
+
 
     def onJoinTxn(self, txnService):
         # Sybase doesn't auto-chain transactions...
@@ -410,9 +410,7 @@ class SybaseConnection(ValueBasedTypeConn):
 
 class PGSQLConnection(ValueBasedTypeConn):
 
-    API = binding.Obtain("import:pgdb")
-
-    TYPES_NS = PropertyName('pgdb.sql_types')
+    DRIVER = "pgdb"
 
     def _open(self):
 
@@ -449,11 +447,11 @@ class PGSQLConnection(ValueBasedTypeConn):
 
 
 
+
+
 class SqliteConnection(ValueBasedTypeConn):
 
-    API = binding.Obtain("import:sqlite")
-
-    TYPES_NS = PropertyName('sqlite.sql_types')
+    DRIVER = "sqlite"
 
     supportedTypes = (
         'DATE', 'INT', 'NUMBER', 'ROWID', 'STRING', 'TIME', 'TIMESTAMP',
@@ -490,10 +488,11 @@ class SqliteConnection(ValueBasedTypeConn):
 
 
 
+
+
 class GadflyConnection(SQLConnection):
 
-    API = binding.Obtain("import:gadfly")
-    TYPES_NS = PropertyName('gadfly.sql_types')
+    DRIVER = "gadfly"
 
     Error    = Exception    # Gadfly doesn't really do DBAPI...  Sigh.
     Warning  = Warning
@@ -515,6 +514,7 @@ class GadflyConnection(SQLConnection):
         g.startup(self.address.db, self.address.dir)
         g.commit()
         g.close()
+
 
 class GadflyURL(naming.URL.Base):
 
@@ -615,8 +615,7 @@ class OracleURL(naming.URL.Base):
 
 class CXOracleConnection(SQLConnection):
 
-    API = binding.Obtain("import:cx_Oracle")
-    TYPES_NS = PropertyName('cx_Oracle.sql_types')
+    DRIVER = "cx_Oracle"
 
     def _open(self):
         a = self.address
@@ -654,14 +653,14 @@ class CXOracleConnection(SQLConnection):
 
 
 
+
 class DCOracle2Connection(ValueBasedTypeConn):
 
     protocols.advise(
         instancesProvide=[ISQLIntrospector]
     )
 
-    API = binding.Obtain("import:DCOracle2")
-    TYPES_NS = PropertyName('DCOracle2.sql_types')
+    DRIVER = "DCOracle2"
 
     def _open(self):
         a = self.address
@@ -695,10 +694,11 @@ class DCOracle2Connection(ValueBasedTypeConn):
 
 
 
+
     def typeMap(self):
 
         tm = {}
-        ps = self.TYPES_NS.of(self)
+        ps = self.TYPES_NS
         api = self.API
 
         for k in self.supportedTypes:

@@ -2,6 +2,14 @@ Fixes and Enhancements since Version 0.5 alpha 2
 
  Changed, Enhanced, or Newly Deprecated Features
 
+ - SQL connection objects now provide an 'appConfig' attribute that is a
+   driver-specific 'config.Namespace()'.  This allows you to easily set up
+   configuration properties that are driver-specific.  For example, you could
+   use properties to configure driver-specific SQL snippets, then access them
+   via the connection's 'appConfig' namespace.  The namespaces are of the form
+   'DRIVER.appConfig', where 'DRIVER' is the name of the DBAPI module for that
+   connection type (e.g. 'pgdb', 'cx_Oracle', etc.).
+
  - Added 'config.Namespace()' convenience class for redirecting property
    lookups from one namespace to another.  See the docstring and 'peak.ini' for
    usage examples.  'PropertyName.of()' now returns 'Namespace' instances

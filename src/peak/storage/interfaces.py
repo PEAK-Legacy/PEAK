@@ -434,19 +434,19 @@ class ISQLConnection(IManagedConnection):
         return 'None', indicating that no conversion of any kind is required.
         """
 
+    DRIVER = Attribute(
+        """The name of the DBAPI driver module for this connection"""
+    )
+
+    appConfig = Attribute(
+        """A config.Namespace() pointing to 'DRIVER.appConfig'"""
+    )
 
 class ILDAPConnection(IManagedConnection):
     """A ManagedConnection that talks LDAP"""
 
-
 class IDDEConnection(IManagedConnection):
     """A ManagedConnection that talks DDE"""
-
-
-
-
-
-
 
 
 class IManagedConn_SPI(Interface):
