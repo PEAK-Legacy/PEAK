@@ -5,7 +5,7 @@ from protocols import Interface
 __all__ = [
     'IRelationVariable', 'IRelationCondition', 'IBooleanExpression',
     'IRelationAttribute', 'IRelationComparison', 'ISQLDriver',
-    'IDomainVariable', 'ISQLGenerator',
+    'IDomainVariable', 'ISQLRenderable', 'ISQLWriter',
 ]
 
 class IBooleanExpression(Interface):
@@ -80,20 +80,102 @@ class IRelationComparison(IRelationCondition):
     # XXX Don't know what we need here yet
 
 
-class ISQLGenerator(Interface):
+class ISQLWriter(Interface):
 
-    """Object that can generate SQL for itself"""
+    """A smart stream used to create SQL statements"""
 
-    def sqlCondition(driver):
-        """Return self as a SQL boolean expression"""
+    def write(text):
+        """Write 'text' to the SQL output"""
 
-    def sqlExpression(driver):
-        """Return self as a SQL expression"""
+    def writeCond(ob):
+        """Write 'ob' as an SQL condition"""
 
-    def sqlSelect(driver):
+    def writeExpr(ob):
+        """Write 'ob' as an SQL expression"""
+
+    def writeSelect(ob):
+        """Write 'ob' as an SQL 'SELECT' statement"""
+
+    def writeTable(RV):
+        """Write 'RV' as an SQL table reference (e.g. "Foo AS F1")"""
+
+    def writeAlias(RV):
+        """Write 'RV' as an SQL table alias (e.g. the 'F1' in 'F1.Bar')"""
+
+    def namedParam(param):
+        """Add the parameter object to the statement being written"""
+
+    def getAlias(rv):
+        """XXX"""
+
+    def assignAlias(rv):
+        """XXX"""
+
+    def assignAliasesFor(rvs):
+        """XXX"""
+
+
+
+
+
+
+
+
+    def separator(sep):
+        """Return a callable that writes a separator (except first time)
+
+        This method is used for writing comma-separated lists, or lists of
+        AND/OR expressions, e.g.::
+
+            sep = writer.separator(', ')
+            for item in someExprs:
+                sep()
+                writer.writeExpr(item)
+
+        The callable returned by this method will *not* write the separator
+        the first time it's called, so that the separator will only be written
+        between items.  Note that this means you must call this method to get
+        a new separator callable for each list you want to output.
+        """
+
+    def prepender(prefix):
+        """Return a new 'ISQLWriter' that will write 'prefix' before any output
+
+        This method is used when writing optional WHERE/HAVING clauses, by
+        obtaining a new writer with e.g.::
+
+            writer.prepender(" WHERE ").writeCond(someCondition)
+
+        If the new writer has any text written to it, it will write the prefix
+        once, before any subsequent output.  Note that you should not mix use
+        of the new writer with use of the old writer.  Once you're done with
+        the new writer, throw it away and go back to the previous writer.
+        """
+
+
+
+
+
+
+
+
+
+
+
+class ISQLRenderable(Interface):
+
+    """Object that can render itself as SQL to an 'ISQLWriter'"""
+
+    def sqlCondition(writer):
+        """Render self as a SQL boolean expression to writer.write()"""
+
+    def sqlExpression(writer):
+        """Render self as a SQL expression to writer.write()"""
+
+    def sqlSelect(writer):
         """Return self as an SQL 'SELECT' statement"""
 
-    def sqlTableRef(driver):
+    def sqlTableRef(writer):
         """Return self as an SQL table reference, suitable for aliasing"""
 
 
@@ -196,8 +278,8 @@ class IRelationVariable(Interface):
 class ISQLDriver(Interface):
     """Helper object for SQL generation"""
 
-    def getAlias(RV):
-        """Get an alias name for the specified RV"""
+
+
 
 
 

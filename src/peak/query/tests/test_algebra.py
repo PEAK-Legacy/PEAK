@@ -5,19 +5,19 @@ from peak.api import *
 from peak.tests import testRoot
 from peak.query.api import *
 from peak.query.algebra import BasicJoin, Not, And, Or, Table, PhysicalDB, \
-     function, aggregate, Parameter, SQLContext
+     function, aggregate, Parameter, SQLWriter, Cmp
 from kjbuckets import kjSet
 
 
 def getSQL(rv):
-    return rv.sqlSelect(SQLContext())[0]
+    ctx = SQLWriter()
+    ctx.writeSelect(rv)
+    return ctx.data()[0]
 
-
-
-
-
-
-
+def getSQLParams(rv):
+    ctx = SQLWriter()
+    ctx.writeSelect(rv)
+    return ctx.data()
 
 
 
@@ -613,6 +613,47 @@ class DatabaseTests(SimpleFixtures):
 
 
 
+    def testConditions(self):
+
+        Employee = self.db.Employee
+
+        self.assertEqual(
+            getSQL(
+                Employee(where=Employee.empnr.eq(42) | Employee.empnr.eq(23))
+            ),
+            "SELECT E1.* FROM Employee AS E1"
+            " WHERE (E1.empnr=23 OR E1.empnr=42)"
+        )
+
+        self.assertEqual(
+            getSQL(
+                Employee(where=~(Employee.empnr.eq(42)|Employee.empnr.eq(23)))
+            ),
+            "SELECT E1.* FROM Employee AS E1"
+            " WHERE E1.empnr<>23 AND E1.empnr<>42"
+        )
+
+        self.assertEqual(
+            getSQL(
+                Employee(where=~Cmp(Employee.empname,' LIKE ',"Bob"))
+            ),
+            "SELECT E1.* FROM Employee AS E1"
+            " WHERE NOT (E1.empname LIKE 'Bob')"
+        )
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     def testAggregates(self):
 
         MIN = aggregate('MIN')
@@ -669,13 +710,13 @@ class DatabaseTests(SimpleFixtures):
 
         self.assertEqual(
             getSQL(EmpByBranch),
-            "SELECT COUNT(E1.empnr) AS employees, E1.branchnr"
+            "SELECT E1.branchnr, COUNT(E1.empnr) AS employees"
             " FROM Employee AS E1 GROUP BY E1.branchnr"
         )
 
         self.assertEqual(
             getSQL(EmpByBranch(where=empCount.gt(10))),
-            "SELECT COUNT(E1.empnr) AS employees, E1.branchnr"
+            "SELECT E1.branchnr, COUNT(E1.empnr) AS employees"
             " FROM Employee AS E1 GROUP BY E1.branchnr"
             " HAVING COUNT(E1.empnr)>10"
         )
@@ -687,8 +728,8 @@ class DatabaseTests(SimpleFixtures):
                     where=Branch.branchnr.eq(EmpByBranch.branchnr)
                 )
             ),
-            "SELECT B2.*, x1.*"
-            " FROM (SELECT COUNT(E3.empnr) AS employees, E3.branchnr"
+            "SELECT x1.*, B2.*"
+            " FROM (SELECT E3.branchnr, COUNT(E3.empnr) AS employees"
             " FROM Employee AS E3 GROUP BY E3.branchnr"
             ") AS x1, Branch AS B2 WHERE B2.branchnr=x1.branchnr"
         )
@@ -711,15 +752,15 @@ class DatabaseTests(SimpleFixtures):
         salary = self.db.Employee.salary
 
         self.assertEqual(
-            Employee(where=Employee.empnr.eq(param)).sqlSelect(SQLContext()),
+            getSQLParams( Employee(where=Employee.empnr.eq(param)) ),
             ("SELECT E1.* FROM Employee AS E1 WHERE E1.empnr=?", [param])
         )
 
         self.assertEqual(
-            Employee(
-                calc=Items(crazy=COMPLEX(Employee.empnr,param))
-            ).sqlSelect(SQLContext()),
-            ("SELECT COMPLEX(E1.empnr,?) AS crazy, E1.* FROM Employee AS E1",
+            getSQLParams(
+                Employee(calc=Items(crazy=COMPLEX(Employee.empnr,param)))
+            ),
+            ("SELECT E1.*, COMPLEX(E1.empnr,?) AS crazy FROM Employee AS E1",
                 [param]
             )
         )

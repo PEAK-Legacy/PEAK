@@ -6,7 +6,7 @@ import interfaces
 from interfaces import *
 from kjbuckets import kjSet, kjGraph
 from copy import deepcopy, _deepcopy_dispatch
-
+from cStringIO import StringIO
 __all__ = []
 
 def _dc_kjGraph(x,memo):
@@ -20,51 +20,53 @@ _deepcopy_dispatch[type(kjGraph())] = _dc_kjGraph
 
 
 
-def split(l):
-    strs = []
-    params = []
-    for s,p in l:
-        strs.append(s)
-        params.extend(p)
-    return strs,params
 
-def join(s,l):
-    strs,params = split(l)
-    return s.join(strs), params
 
-def fmt(s,l):
-    strs,params = split(l)
-    return (s % tuple(strs)), params
 
-def ps(s,p=()):
-    return s,p
 
-class AbstractSQLGenerator:
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class AbstractSQLRenderable:
 
     protocols.advise(
-        instancesProvide = [ISQLGenerator],
+        instancesProvide = [ISQLRenderable],
     )
 
-    def sqlCondition(self,ctx):
+    def sqlCondition(self,writer):
         raise TypeError("Not a condition",self)
 
-    def sqlExpression(self,ctx):
-        raise TypeError("Not an condition",self)
+    def sqlExpression(self,writer):
+        raise TypeError("Not an expression",self)
 
-    def sqlSelect(self,ctx):
+    def sqlSelect(self,writer):
         raise TypeError("Not SELECT-able",self)
 
-    def sqlTableRef(self,ctx):
-        return fmt("(%s)", [self.sqlSelect(ctx)])
+    def sqlTableRef(self,writer):
+        writer.write('(')
+        writer.writeSelect(self)
+        writer.write(')')
 
 
-class Parameter(AbstractSQLGenerator):
+class Parameter(AbstractSQLRenderable):
 
     def __init__(self,name):
         self.name = name
 
-    def sqlExpression(self,ctx):
-        return "?", (self,)
+    def sqlExpression(self,writer):
+        writer.namedParam(self)
 
 
 
@@ -78,9 +80,7 @@ class Parameter(AbstractSQLGenerator):
 
 
 
-
-
-class _expr(AbstractSQLGenerator):
+class _expr(AbstractSQLRenderable):
 
     protocols.advise(
         instancesProvide = [IBooleanExpression],
@@ -124,7 +124,7 @@ class _expr(AbstractSQLGenerator):
 class EMPTY(binding.Singleton):
 
     protocols.advise(
-        classProvides = [IBooleanExpression],
+        classProvides = [IBooleanExpression, ISQLRenderable],
     )
 
     def conjuncts(self):
@@ -142,13 +142,13 @@ class EMPTY(binding.Singleton):
     def __or__(self,other):
         return other
 
-    def sqlCondition(self,ctx):
-        return ps('')
+    def sqlCondition(self,writer):
+        pass
 
+    def sqlExpression(self,writer):
+        raise TypeError("Not an expression/SELECT-able",self)
 
-
-
-
+    sqlSelect = sqlTableRef = sqlExpression
 
 
 
@@ -203,10 +203,46 @@ class PhysicalDB(binding.Component):
 
 
 
-class SQLContext(binding.Component):
+class SQLWriter(binding.Component):
+
+    protocols.advise(
+        instancesProvide=[ISQLWriter]
+    )
 
     counter = binding.Make(lambda: [1])
     aliases = binding.Make(dict)
+    stream  = binding.Make(lambda: StringIO())
+    params  = binding.Make(list)
+    write   = getvalue = binding.Delegate('stream')
+
+    renderingProtocol = ISQLRenderable
+
+    def writeExpr(self,ob):
+        v = adapt(ob,self.renderingProtocol,None)
+        if v is None:
+            self.write(`ob`)
+        else:
+            v.sqlExpression(self)
+
+    def writeCond(self,ob):
+        adapt(ob,self.renderingProtocol).sqlCondition(self)
+
+    def writeSelect(self,ob):
+        adapt(ob,self.renderingProtocol).sqlSelect(self)
+
+    def writeTable(self,RV):
+        adapt(RV,self.renderingProtocol).sqlTableRef(self)
+        self.write(" AS ")
+        self.write(self.getAlias(RV))
+
+    def writeAlias(self,RV):
+        self.write(self.getAlias(RV))
+
+
+
+
+
+
 
     def getAlias(self,rv):
         return self.aliases[rv]
@@ -227,14 +263,46 @@ class SQLContext(binding.Component):
         rvs.sort()
         map(self.assignAlias,rvs)
 
-    def getFromDef(self,RV):
-        return fmt("%s AS %s", [RV.sqlTableRef(self),ps(self.getAlias(RV))])
+    def namedParam(self,param):
+        self.write('?')
+        self.params.append(param)
 
-    def sqlize(self,arg):
-        v = adapt(arg,ISQLGenerator,None)
-        if v is not None:
-            return v.sqlExpression(self)
-        return ps(`arg`)
+    def data(self):
+        return self.getvalue(), self.params
+
+    def prepender(self, pre):
+        return ContextProxy(writer=self,prepend=pre)
+
+    def separator(self,s):
+        flag = [1]
+
+        def write():
+            if flag:
+                flag.pop()
+            else:
+                self.write(s)
+
+        return write
+
+
+class ContextProxy(SQLWriter):
+
+    writer = None
+    prepend = None
+
+    getAlias = assignAlias = assignAliasesFor = data = params = \
+        binding.Delegate('writer')
+
+    def write(self,s):
+
+        write = self.writer.write
+
+        if self.prepend:
+            write(self.prepend)
+            del self.prepend
+
+        self.write = write
+        write(s)
 
 
 
@@ -244,7 +312,21 @@ class SQLContext(binding.Component):
 
 
 
-class AbstractRV(AbstractSQLGenerator,object):
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class AbstractRV(AbstractSQLRenderable,object):
 
     protocols.advise(
         instancesProvide = [IRelationVariable]
@@ -342,11 +424,12 @@ class Table(AbstractRV, HashAndCompare):
     def getDB(self):
         return self.db
 
-    def sqlSelect(self,ctx):
-        return ps("SELECT * FROM %s" % self.name)
+    def sqlSelect(self,writer):
+        writer.write("SELECT * FROM %s" % self.name)
+        return writer.data()
 
-    def sqlTableRef(self,ctx):
-        return ps(self.name)
+    def sqlTableRef(self,writer):
+        writer.write(self.name)
 
     def __deepcopy__(self,memo):
         # Avoid deepcopying self.db
@@ -354,7 +437,6 @@ class Table(AbstractRV, HashAndCompare):
         memo[id(newself)] = newself
         newself.columns = deepcopy(self.columns,memo)
         return newself
-
 
 
 
@@ -385,16 +467,18 @@ class GroupBy(AbstractRV, HashAndCompare):
     def getDB(self):
         return self.rv.getDB()
 
-    def sqlSelect(self,ctx):
-        ctx.assignAliasesFor(self.rv)
-        groupBys = [self.rv[col].sqlExpression(ctx) for col in self.groupBy]
-        sql = self.rv.sqlSelect(ctx)
-        sql = fmt("%s GROUP BY %s",[sql, join(", ",groupBys)])
+    def sqlSelect(self,writer):
+        writer.assignAliasesFor(self.rv)
+        writer.writeSelect(self.rv)
+        writer.write(' GROUP BY ')
+        sep = writer.separator(', ')
 
-        condSQL = self.condition.sqlCondition(ctx)
-        if condSQL[0]:
-            sql = fmt("%s HAVING %s", [sql,condSQL])
-        return sql
+        for col in self.groupBy:
+            sep()
+            writer.writeExpr(self.rv[col])
+
+        writer.prepender(' HAVING ').writeCond(self.condition)
+        return writer.data()
 
     def __call__(self, where=None,**kw):
         if kw:
@@ -406,9 +490,7 @@ class GroupBy(AbstractRV, HashAndCompare):
 
 
 
-
-
-class AbstractDV(AbstractSQLGenerator):
+class AbstractDV(AbstractSQLRenderable):
 
     protocols.advise(
         instancesProvide = [IDomainVariable]
@@ -467,8 +549,8 @@ class Column(AbstractDV,HashAndCompare):
     def getDB(self):
         return self.table.getDB()
 
-    def sqlExpression(self,ctx):
-        return ps(ctx.getAlias(self.table)+'.'+self.name)
+    def sqlExpression(self,writer):
+        writer.write(writer.getAlias(self.table)+'.'+self.name)
 
 
 
@@ -491,7 +573,6 @@ class Column(AbstractDV,HashAndCompare):
 
 
 class Func(AbstractDV):
-
     isAggFunc = False
 
     def __init__(self,name,*args):
@@ -516,10 +597,12 @@ class Func(AbstractDV):
         self._agg = agg or self.isAggFunc
 
 
-    def sqlExpression(self,ctx):
-        return fmt("%s(%s)",
-            [ps(self.fname), join(",",[ctx.sqlize(arg) for arg in self.args])]
-        )
+    def sqlExpression(self,writer):
+        writer.write(self.fname); writer.write('(')
+        sep = writer.separator(',')
+        for arg in self.args:
+            sep(); writer.writeExpr(arg)
+        writer.write(')')
 
 class Aggregate(Func):
     isAggFunc = True
@@ -529,7 +612,6 @@ def function(name):
 
 def aggregate(name):
     return lambda *args: Aggregate(name,*args)
-
 
 class BasicJoin(AbstractRV, HashAndCompare):
 
@@ -613,11 +695,10 @@ class BasicJoin(AbstractRV, HashAndCompare):
 
 
 
-    def sqlSelect(self,ctx):
-
-        ctx.assignAliasesFor(self)
-
-        columnNames = []
+    def sqlSelect(self,writer):
+        writer.assignAliasesFor(self)
+        writer.write('SELECT ')
+        sep = writer.separator(', ')
         remainingColumns = self.columns
 
         for tbl in self.relvars:
@@ -628,38 +709,31 @@ class BasicJoin(AbstractRV, HashAndCompare):
 
             if outputSubset==tblCols:
                 # All names in table are kept as-is, so just use '*'
-                columnNames.append(ps(ctx.getAlias(tbl)+".*"))
+                sep(); writer.writeAlias(tbl); writer.write(".*")
                 continue
 
             # For all output columns that are in this table...
             for name,col in outputSubset.items():
-                sql = col.sqlExpression(ctx)
-                if name<>col.name:
-                    sql=fmt('%s AS %s',[sql,ps(name)])
-                columnNames.append(sql)
+                sep()
+                writer.writeExpr(col)
+                if name<>col.name:  # XXX!!!
+                    writer.write(' AS ')
+                    writer.write(name)
 
         for name,col in remainingColumns.items():
-            sql = col.sqlExpression(ctx)
-            columnNames.append(fmt('%s AS %s',[sql,ps(name)]))
+            sep()
+            writer.writeExpr(col); writer.write(' AS '); writer.write(name)
 
-        tablenames = [ctx.getFromDef(tbl) for tbl in self.relvars]
+        writer.write(' FROM ')
+        sep = writer.separator(', ')
+        for tbl in self.relvars:
+            sep(); writer.writeTable(tbl)
 
-        tablenames.sort()
-        columnNames.sort()
-
-        sql = fmt("SELECT %s FROM %s",
-            [join(", ",columnNames),join(", ",tablenames)]
-        )
-
+        writer.prepender(' WHERE ').writeCond(self.condition)
+        return writer.data()
 
 
 
-        condSQL = self.condition.sqlCondition(ctx)
-
-        if condSQL[0]:
-            sql = fmt("%s WHERE %s", [sql,condSQL])
-
-        return sql
 
 
 class _compound(_expr,HashAndCompare):
@@ -695,7 +769,16 @@ class _compound(_expr,HashAndCompare):
 
 
 
+
+
+
+
+
+
+
+
 class And(_compound):
+
     def _getPromotable(self,op):
         return adapt(op,IBooleanExpression).conjuncts()
 
@@ -705,10 +788,15 @@ class And(_compound):
     def __invert__(self):
         return Or(*tuple([~op for op in self.operands]))
 
-    def sqlCondition(self,ctx):
-        return join(' AND ',[op.sqlCondition(ctx) for op in self.operands])
+    def sqlCondition(self,writer):
+        sep = writer.separator(' AND ')
+        for op in self.operands:
+            sep()
+            writer.writeCond(op)
+
 
 class Or(_compound):
+
     def _getPromotable(self,op):
         return adapt(op,IBooleanExpression).disjuncts()
 
@@ -718,12 +806,20 @@ class Or(_compound):
     def __invert__(self):
         return And(*tuple([~op for op in self.operands]))
 
-    def sqlCondition(self,ctx):
-        return fmt( '(%s)',
-            [join(' OR ',[op.sqlCondition(ctx) for op in self.operands])]
-        )
+    def sqlCondition(self,writer):
+        writer.write('(')
+        sep = writer.separator(' OR ')
+        for op in self.operands:
+            sep()
+            writer.writeCond(op)
+        writer.write(')')
+
+
+
+
 
 class Not(_compound):
+
     def __init__(self,operand):
         self.operands = operand,
         self._hashAndCompare = self.__class__.__name__, self.operands
@@ -731,8 +827,35 @@ class Not(_compound):
     def __invert__(self):
         return self.operands[0]
 
-    def sqlCondition(self,ctx):
-        return fmt('NOT (%s)', [self.operands[0].sqlCondition(ctx)])
+    def sqlCondition(self,writer):
+        writer.write('NOT (')
+        writer.writeCond(self.operands[0])
+        writer.write(')')
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -759,10 +882,10 @@ class Cmp(_expr, HashAndCompare):
     def __repr__(self):
         return 'Cmp%r' % ((self.arg1,self.op,self.arg2),)
 
-    def sqlCondition(self,ctx):
-        return fmt('%s%s%s',
-            [ctx.sqlize(self.arg1), ps(self.op), ctx.sqlize(self.arg2)]
-        )
+    def sqlCondition(self,writer):
+        writer.writeExpr(self.arg1)
+        writer.write(self.op)
+        writer.writeExpr(self.arg2)
 
 
 
