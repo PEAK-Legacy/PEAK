@@ -41,7 +41,7 @@ __all__ = [
 
 class NameContext(Component):
 
-    __implements__ = IBasicContext
+    implements(IBasicContext)
 
     parseURLs       = True
     creationName    = Acquire(CREATION_NAME)

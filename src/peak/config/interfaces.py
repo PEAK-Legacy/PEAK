@@ -29,13 +29,13 @@ class IConfigKey(Interface):
 
 # XXX when we can 'adapt()' to protocols, IConfigKey can just know that
 # XXX Interface and PropertyName are valid supporters.
+#from peak.interface import InterfaceClass, NO_ADAPTER_NEEDED
+
+#IConfigKey.registerAdapter(InterfaceClass,NO_ADAPTER_NEEDED)
+#IConfigKey.registerAdapter(PropertyName,NO_ADAPTER_NEEDED)
 
 addDeclarationToType(Interface.__class__, IConfigKey)
 addDeclarationToType(PropertyName, IConfigKey)
-
-
-
-
 
 
 

@@ -125,7 +125,7 @@ class PropertyMap(Component):
 
     rules = New(dict)
 
-    __implements__ = IPropertyMap, Component.__implements__
+    implements(IPropertyMap)
 
     def setRule(self, propName, ruleObj):
         _setCellInDict(self.rules, PropertyName(propName), ruleObj)
@@ -255,7 +255,7 @@ def loadMapping(pMap, mapping, prefix='*', includedFrom=None):
     for k,v in mapping.items():
         pMap.registerProvider(PropertyName(prefix+k), _value(v))
 
-loadMapping.__implements__ = ISettingLoader
+directlyProvides(loadMapping, ISettingLoader)
 
 
 def loadConfigFile(pMap, filename, prefix='*', includedFrom=None):
@@ -263,7 +263,7 @@ def loadConfigFile(pMap, filename, prefix='*', includedFrom=None):
     if filename:
         ConfigReader(pMap,prefix).readFile(filename)
 
-loadConfigFile.__implements__ = ISettingLoader
+directlyProvides(loadConfigFile, ISettingLoader)
 
 
 
@@ -374,7 +374,7 @@ class ConfigurationRoot(Component):
     you can have whatever setup code you want, called automatically from .ini
     files loaded by this class.  We recommend you try that approach first."""
 
-    implements(IConfigurationRoot, Component.__implements__)
+    implements(IConfigurationRoot)
 
     def __instance_provides__(self,d,a):
         pm = d[a] = PropertyMap(self)

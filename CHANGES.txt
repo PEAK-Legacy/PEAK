@@ -2,6 +2,11 @@ Fixes and Enhancements since Version 0.5 alpha 1
 
  Changed, Enhanced, or Newly Deprecated Features
 
+ - DEPRECATED use of '__implements__' and '__class_implements__' to declare
+   support for interfaces.  Use 'implements()', 'classProvides()',
+   'directlyProvides()', 'moduleProvides()', etc. to do this now; they
+   are now available automatically from 'peak.api'.
+
  - The signatures of the 'getObjectInstance()', 'getStateToBind()', and
    'getURLContext()' methods in the 'peak.naming' package have changed, to
    place the context or parent component as the first, non-optional argument.

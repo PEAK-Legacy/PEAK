@@ -207,7 +207,7 @@ class StructuralFeature(object):
 
     __metaclass__ = FeatureClass
 
-    __class_implements__ = IFeature, IFeatureSPI
+    classProvides(IFeature, IFeatureSPI)
 
     isDerived     = False
     isComposite   = False

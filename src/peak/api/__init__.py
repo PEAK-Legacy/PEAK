@@ -31,16 +31,16 @@ from __future__ import generators
 __all__ = [
     'NOT_GIVEN', 'NOT_FOUND', 'Items', 'PropertyName',
     'binding', 'naming', 'model', 'config', 'running', 'logs', 'storage',
-    'exceptions',
+    'exceptions', 'implements', 'classProvides', 'directlyProvides',
+    'moduleProvides',
 ]
 
 
 
 
 
-
 # Convenience features
-
+from peak.interface import *
 from peak.util.imports import lazyModule
 binding     = lazyModule('peak.binding.api')
 config      = lazyModule('peak.config.api')
@@ -130,7 +130,7 @@ class PropertyName(str):
 
     def __new__(klass, *args):
 
-        self = super(PropertyName,klass).__new__(klass,*args)
+        self = super(PropertyName,klass).__new__(klass,args[0])
 
         valid = pnameValidChars(self)
 

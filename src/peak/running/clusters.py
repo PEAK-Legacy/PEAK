@@ -191,7 +191,7 @@ def loadCluster(propertyMap, filename=None, prefix='peak.running.cluster.*',
 
     return NOT_FOUND
 
-loadCluster.__implements__ = config.ISettingLoader
+directlyProvides(loadCluster, config.ISettingLoader)
 
 
 

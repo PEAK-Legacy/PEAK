@@ -618,7 +618,7 @@ class _Base(object):
     """Basic attribute management and "active class" support"""
 
     __metaclass__  = ActiveClass
-    __implements__ = IBindableAttrs
+    implements(IBindableAttrs)
 
     def _setBinding(self, attr, value, useSlot=False):
 
@@ -699,8 +699,8 @@ class Component(_Base):
 
     """Thing that can be composed into a component tree, w/binding & lookups"""
 
-    __class_implements__ = IComponentFactory
-    __implements__       = IComponent
+    classProvides(IComponentFactory)
+    implements(IComponent)
 
 
     def __init__(self, parentComponent=NOT_GIVEN, componentName=None, **kw):
@@ -894,7 +894,6 @@ class Component(_Base):
 
 
 Base = Component    # XXX backward compatibility; deprecated
-
 
 
 

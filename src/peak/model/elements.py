@@ -207,7 +207,7 @@ class Type(Namespace):
 
     __metaclass__ = TypeClass
 
-    __class_implements__ = ITypeInfo
+    classProvides(ITypeInfo)
 
     mdl_defaultValue = NOT_GIVEN
 
@@ -453,7 +453,7 @@ class Struct(Immutable):
 
     """An immutable data structure type"""
 
-    __class_implements__ = ITypeInfo, IStructType
+    classProvides(ITypeInfo, IStructType)
 
     def mdl_typeCode(klass, d, a):
 

@@ -1,6 +1,6 @@
 from __future__ import generators
 from peak.api import *
-from connections import ManagedConnection, AbstractCursor
+from connections import ManagedConnection, AbstractCursor, RowBase
 from urllib import unquote
 from interfaces import *
 from peak.util.Struct import makeStructType
@@ -99,7 +99,7 @@ class LDAPCursor(AbstractCursor):
         conv = [(getConverter(f), f) for f in attrs]
 
         ldapEntry = makeStructType('ldapEntry',
-            attrs, __implements__ = IRow, __module__ = __name__,
+            attrs, RowBase, __module__ = __name__,
         )
 
         mkTuple  = tuple.__new__

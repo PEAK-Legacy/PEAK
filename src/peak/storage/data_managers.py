@@ -1,4 +1,4 @@
-from peak.api import binding, model
+from peak.api import binding, model, implements
 from interfaces import *
 from transactions import TransactionComponent
 from peak.persistence import Persistent, isGhost
@@ -43,7 +43,7 @@ class FacadeDM(binding.Component):
 
     """DM that just returns objects from other DM(s) via a different key"""
 
-    __implements__ = IKeyableDM
+    implements(IKeyableDM)
 
     def __getitem__(self, oid, state=None):
 
@@ -248,7 +248,7 @@ class QueryDM(TransactionComponent):
 
     resetStatesAfterTxn = True
 
-    __implements__ = IDataManager
+    implements(IDataManager)
 
     def __getitem__(self, oid, state=None):
 
@@ -369,7 +369,7 @@ class QueryDM(TransactionComponent):
 
 class EntityDM(QueryDM):
 
-    __implements__ = IWritableDM
+    implements(IWritableDM)
 
 
     def oidFor(self, ob):

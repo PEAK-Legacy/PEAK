@@ -43,7 +43,7 @@ class MainLoop(binding.Component):
 
     """Top-level application event loop, with timeout management"""
 
-    __implements__ = IMainLoop
+    implements(IMainLoop)
 
     reactor      = binding.bindTo(IBasicReactor)
     time         = binding.bindTo('import:time.time')
@@ -166,7 +166,7 @@ class UntwistedReactor(binding.Component):
 
     """Primitive partial replacement for 'twisted.internet.reactor'"""
 
-    __implements__ = IBasicReactor
+    implements(IBasicReactor)
 
     running = False
     writers = binding.New(list)

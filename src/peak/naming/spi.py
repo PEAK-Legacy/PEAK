@@ -15,7 +15,7 @@
 """
 
 from peak.util.imports import importObject
-
+from peak.api import directlyProvides, moduleProvides
 from interfaces import *
 from names import NNS_Reference
 
@@ -26,7 +26,7 @@ __all__ = [
 ]
 
 
-__implements__ = (
+moduleProvides(
     IURLContextFactory, IInitialContextFactory, IObjectFactory
 )
 
@@ -63,7 +63,7 @@ def getInitialContext(parentComponent, componentName=None, **options):
     return factory(parentComponent, componentName, **options)
 
 
-getInitialContext.__implements__ = IComponentFactory
+directlyProvides(getInitialContext, IComponentFactory)
 
 
 

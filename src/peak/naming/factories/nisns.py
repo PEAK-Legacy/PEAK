@@ -11,7 +11,7 @@ class nisURL(naming.URL.Base):
 
 class nisURLContext(naming.NameContext):
 
-    __implements__ = naming.IReadContext
+    implements(naming.IReadContext)
 
     schemeParser = nisURL
 
@@ -41,7 +41,7 @@ class nisURLContext(naming.NameContext):
 
 class nisMapContext(naming.NameContext):
 
-    __implements__ = naming.IReadContext
+    implements(naming.IReadContext)
 
     mapname = binding.Once(lambda s,d,a: str(s.nameInContext))
 

@@ -43,9 +43,9 @@ class AbstractCommand(binding.Component):
 
     """Simple, commandline-driven process"""
 
-    __implements__ = ICmdLineApp
+    implements(ICmdLineApp)
 
-    __class_implements__ = ICmdLineAppFactory
+    classProvides(ICmdLineAppFactory)
 
     argv    = binding.bindTo('import:sys:argv')
     stdin   = binding.bindTo('import:sys:stdin')
@@ -293,7 +293,7 @@ def callableAsFactory(callable):
         kw.setdefault('callable',callable)
         return _caller(**kw)
 
-    factory.__implements__ = ICmdLineAppFactory
+    directlyProvides(factory, ICmdLineAppFactory)
     return factory
 
 
@@ -305,7 +305,7 @@ def appAsFactory(app):
         kw.setdefault('callable',app.run)
         return _caller(**kw)
 
-    factory.__implements__ = ICmdLineAppFactory
+    directlyProvides(factory, ICmdLineAppFactory)
     return factory
 
 
@@ -317,7 +317,7 @@ def rerunnableAsFactory(runnable):
         kw.setdefault('runnable',runnable)
         return _runner(**kw)
 
-    factory.__implements__ = ICmdLineAppFactory
+    directlyProvides(factory, ICmdLineAppFactory)
     return factory
 
 

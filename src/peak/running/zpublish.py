@@ -177,7 +177,7 @@ class CGIPublisher(binding.Component):
     use it to create a 'CGICommand' that behaves the way you want.  See
     'CGICommand' on how to set up and run a CGI publishing application."""
 
-    __implements__ = IRerunnable
+    implements(IRerunnable)
 
     app       = binding.requireBinding("Application root to publish")
     publish   = binding.bindTo("import:zope.publisher.publish:publish")

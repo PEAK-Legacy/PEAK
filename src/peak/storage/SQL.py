@@ -3,7 +3,7 @@ from peak.api import *
 from interfaces import *
 from peak.util.Struct import makeStructType
 from peak.util.imports import importObject
-from connections import ManagedConnection, AbstractCursor
+from connections import ManagedConnection, AbstractCursor, RowBase
 
 __all__ = [
     'SQLCursor', 'GenericSQL_URL', 'SQLConnection', 'SybaseConnection',
@@ -172,8 +172,8 @@ class SQLCursor(AbstractCursor):
             descr = self._cursor.description
 
             rowStruct = makeStructType('rowStruct',
-                [d[0] for d in descr],
-                __implements__ = IRow, __module__ = __name__,
+                [d[0] for d in descr], RowBase,
+                __module__ = __name__,
             )
 
             typeMap = self.typeMap
@@ -205,7 +205,7 @@ class SQLCursor(AbstractCursor):
 
 class SQLConnection(ManagedConnection):
 
-    __implements__ = ISQLConnection
+    implements(ISQLConnection)
 
     def commitTransaction(self, txnService):
         self.connection.commit()

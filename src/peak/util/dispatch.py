@@ -3,7 +3,7 @@
 from __future__ import generators
 from types import ClassType
 from peak.util.EigenData import EigenDict
-from peak.interface import Interface
+from peak.interface import Interface, implements
 
 __all__ = [
     'Dispatch', 'IRule', 'Signature', 'GenericFunction', 'MultiMethod',
@@ -266,7 +266,7 @@ class Signature(tuple):
     with the fixed positional arguments and any additional keyword arguments.
     """
 
-    __implements__ = IRule
+    implements(IRule)
 
     def __new__(klass, *typesOrClasses):
 

@@ -35,7 +35,7 @@ __all__ = ['LockFile', 'NullLockFile']
 
 import os, errno, time
 from peak.util.threads import allocate_lock
-from peak.api import naming
+from peak.api import naming, implements
 from peak.interface import Interface
 
 
@@ -83,7 +83,7 @@ class ILock(Interface):
 class LockFileBase:
     """Common base for lockfiles"""
 
-    __implements__ = ILock
+    implements(ILock)
 
     def __init__(self, fn):
         self.fn = os.path.abspath(fn)

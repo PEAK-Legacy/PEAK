@@ -43,7 +43,7 @@ class BasicTxnErrorHandler(object):
 
     """Simple error handling policy, w/simple logging, no retries"""
 
-    __implements__ = ITransactionErrorHandler
+    implements(ITransactionErrorHandler)
 
 
     def voteFailed(self, txnService, participant):
@@ -137,7 +137,7 @@ class TransactionService(binding.Component):
 
     """Basic transaction service component"""
 
-    __implements__ = ITransactionService
+    implements(ITransactionService)
 
     state          = binding.New(TransactionState)
     errorHandler   = binding.New(BasicTxnErrorHandler)
@@ -328,7 +328,7 @@ class TransactionService(binding.Component):
 
 class AbstractParticipant(object):
 
-    __implements__ = ITransactionParticipant
+    implements(ITransactionParticipant)
 
     def readyToVote(self, txnService):
         return True

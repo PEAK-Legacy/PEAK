@@ -6,10 +6,13 @@ from weakref import WeakValueDictionary
 
 
 __all__ = [
-    'ManagedConnection', 'AbstractCursor',
+    'ManagedConnection', 'AbstractCursor', 'RowBase',
 ]
 
+from peak.util.Struct import struct
 
+class RowBase(struct):
+    implements(IRow)
 
 
 
@@ -41,7 +44,7 @@ __all__ = [
 
 class AbstractCursor(binding.Component):
 
-    __implements__ = ICursor
+    implements(ICursor)
 
     _conn = binding.bindTo('../connection')
 
@@ -123,7 +126,7 @@ class AbstractCursor(binding.Component):
 
 class ManagedConnection(TransactionComponent):
 
-    __implements__ = IManagedConnection
+    implements(IManagedConnection)
 
     connection = binding.Once(lambda s,d,a: s._open())
     _closeASAP = False

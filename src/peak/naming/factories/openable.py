@@ -46,7 +46,7 @@ class URLStreamFactory(binding.Component):
     This is a pretty lame duck right now.  It's mainly here so we have a
     consistent interface across file-like URLs."""
 
-    __implements__ = naming.IStreamFactory
+    implements(naming.IStreamFactory)
 
     target = binding.requireBinding("urllib2 URL or request", "target")
 
@@ -125,7 +125,7 @@ class FileFactory(binding.Component):
 
     """Stream factory for a local file object"""
 
-    __implements__ = naming.IStreamFactory
+    implements(naming.IStreamFactory)
 
 
     filename = binding.requireBinding("Filename to open/modify", "filename")

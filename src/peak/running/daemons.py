@@ -41,7 +41,7 @@ __all__ = [
 
 class TaskQueue(binding.Component):
 
-    __implements__ = ITaskQueue
+    implements(ITaskQueue)
 
     reactor     = binding.bindTo(IBasicReactor)
     loop        = binding.bindTo(IMainLoop)
@@ -125,7 +125,7 @@ class AdaptiveTask(binding.Component):
 
     """Periodic task that adapts its polling interval based on its workload"""
 
-    __implements__ = IAdaptiveTask
+    implements(IAdaptiveTask)
 
     pollInterval = binding.bindTo('minimumIdle')
 

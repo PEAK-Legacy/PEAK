@@ -445,7 +445,7 @@ class IURLContextFactory(Interface):
 
             from peak.api import *
 
-            __implements__ = naming.IURLContextFactory
+            moduleProvides(naming.IURLContextFactory)
 
             def getURLContext(parent,scheme,iface,componentName,**options):
                 # code to pick between 'foo.bar', 'foo.baz', etc. and
