@@ -423,7 +423,12 @@ def declareModule(name, relativePath=None, bases=(), patches=()):
     To use this, you must call it *before* the module has been
     imported, even lazily.  You can call it again as many times
     as you like, as long as the base and patch lists remain the
-    same for a given module.
+    same for a given module.  Also note that the module must *exist*;
+    that is, there must be some Python-findable source or bytecode
+    for the specified module.  It can be "inherited" via package
+    inheritance from its containing package's base package; you just
+    can't make up a phony module name and have it work.  (This limitation
+    might get lifted later, if it turns out to be useful.)
 
     'bases' are placed in the target module's '__bases__', *after*
     any bases declared in the package.  'patches' are applied as
@@ -482,13 +487,11 @@ def declareModule(name, relativePath=None, bases=(), patches=()):
     
         import my_additions
         config.declareModule('third.party.module', patches=(my_additions,))
-
     """
+
 
     if relativePath:
         name = joinPath(name, relativePath)
-
-
 
     if name in declarations:
 
@@ -524,9 +527,6 @@ def declareModule(name, relativePath=None, bases=(), patches=()):
 
 
     return lazyModule(name, reloader=load)
-
-
-
 
 
 
