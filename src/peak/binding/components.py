@@ -712,13 +712,13 @@ class TraversableClass(ActiveDescriptors):
 
         return importString(parent)
         
-    __parent__ = binding.Once(__parent__)
+    __parent__ = Once(__parent__)
 
 
     def __cname__(self,d,a):
         return self.__name__.split('.')[-1]
         
-    __cname__ = binding.Once(__cname__)
+    __cname__ = Once(__cname__)
 
 
     def getParentComponent(self):
