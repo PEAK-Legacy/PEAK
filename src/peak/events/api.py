@@ -21,6 +21,7 @@ def makeTwisted(ob):
     """Try to make service area containing 'ob' a Twisted area"""
 
     from peak.api import config
+    from peak.util.EigenData import AlreadyRead
     sa = config.parentProviding(ob, config.IServiceArea)
 
     try:
@@ -34,6 +35,4 @@ def makeTwisted(ob):
         )
 
     return True
-
-
 

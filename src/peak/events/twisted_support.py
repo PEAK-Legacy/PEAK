@@ -65,7 +65,7 @@ class DeferredAsEventSource(sources.Value,protocols.StickyAdapter):
 
     def addCallback(self,func):
         if self.subject.called:
-            func(self.subject.result)
+            func(self, self.subject.result)
             return
 
         haveCB = len(self._callbacks)
@@ -182,13 +182,13 @@ class EventLoop(io_events.EventLoop):
             lambda s,e: [exit.append(e), self.reactor.crash()]
         )
 
-        self.reactor.run(False)
+        if not exit:
+            self.reactor.run(False)
 
         if exit:
             return exit.pop()
         else:
             raise StopIteration("Unexpected reactor exit")
-
 
 
 

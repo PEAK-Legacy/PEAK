@@ -24,13 +24,54 @@ class TestDeferredAsEvent(ValueTests):
         source.addCallback(self.sink)
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 class TwistedThreadsTest(ScheduledThreadsTest):
 
     def setUp(self):
-        self.scheduler = SA.lookupComponent(events.IScheduler)
+        self.scheduler = SA.lookupComponent(events.IEventLoop)
 
     def testUncaughtError(self):
         pass    # XXX Twisted forces trapping of all errors     :(
+
+    def testRunUntil(self):
+        d = defer.Deferred(); d.callback(42);
+        reactor = self.scheduler.reactor
+        log = []
+        reactor.callLater(1, log.append, "failed")  # failure flag
+        reactor.callLater(1, reactor.crash)         # safety timeout
+        r = self.scheduler.runUntil(d,suppressErrors=True)
+        self.assertEqual(log,[])
+        self.assertEqual(r,42)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
