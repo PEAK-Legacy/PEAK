@@ -14,9 +14,16 @@ allSuites = [
     'test_mockets:test_suite',
     'test_signature:test_suite',
     'test_conflict:test_suite',
+    'peak.util.tests:test_unittrace',
 ]
 
+def test_unittrace():
+    from peak.util import doctest
+    return doctest.DocFileSuite(
+        'unittrace.txt', optionflags=doctest.ELLIPSIS, package='peak.util',
+    )
 
+    
 def test_suite():
     from peak.util.imports import importSuite
     return importSuite(allSuites, globals())
