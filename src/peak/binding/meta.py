@@ -2,9 +2,11 @@
 
 __all__ = [
     'ClassInit', 'AssertInterfaces', 'ActiveDescriptors', 'ActiveDescriptor',
+    'Singleton',
 ]
 
 from kjbuckets import *
+from types import FunctionType
 
 class ActiveDescriptors(type):
 
@@ -34,8 +36,6 @@ class ActiveDescriptor(object):
     def activate(self,klass,attrName):
         """Informs the descriptor that it is in 'klass' with name 'attrName'"""
         raise NotImplementedError
-
-
 
 
 
@@ -162,4 +162,19 @@ class AssertInterfaces(type):
             return self.implements
 
 
+class Singleton(type):
 
+    """Class whose methods are all class methods"""
+
+    def __new__(metaclass, name, bases, dict):
+
+        d = dict.copy()
+
+        for k,v in dict.items():
+            if isinstance(v,FunctionType):
+                d[k]=classmethod(v)
+
+        return super(Singleton,metaclass).__new__(metaclass,name,bases,d)
+
+    def __call__(klass, *args, **kw):
+        raise TypeError("Singletons cannot be instantiated")
