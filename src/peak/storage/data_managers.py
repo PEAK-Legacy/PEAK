@@ -2,13 +2,13 @@ from peak.api import binding, model
 from interfaces import *
 from transactions import TransactionComponent
 from caches import WeakCache
+from Persistence import Persistent
+from peak.util.ListProxy import ListProxy
+from lazy_loader import LazyLoader
 
-__all__ = ['QueryDM', 'EntityDM']
-
-
-
-
-
+__all__ = [
+    'FacadeDM', 'QueryDM', 'EntityDM', 'PersistentQuery', 'QueryLink', 
+]
 
 
 
@@ -80,6 +80,129 @@ class FacadeDM(binding.AutoCreated):
         raise NotImplementedError
         
 
+class PersistentQuery(Persistent, ListProxy):
+
+    """An immutable, persistent ListProxy for query results"""
+
+    __slots__ = 'data', '__weakref__'
+
+    def __getstate__(self):
+        return self.data
+
+    def __setstate__(self,state):
+        self.data = list(state)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class QueryLink(ListProxy):
+
+    """PersistentQuery proxy for use in Collection, Sequence, or Reference"""
+
+    __cacheData = None
+    __localData = None
+
+    def __init__(self, query):
+        self.__query = query
+
+
+    def data(self):
+        # Discard cached form of query data when underlying query reloaded
+        if self.__cacheData is not self.__query.data:
+            self.__cacheData = self.__query.data
+            self.__localData = self.__cacheData[:]
+            
+        return self.__localData
+
+    data = property(data)
+
+
+    def __isActive(self):
+        return self.__query._p_state <> GHOST
+
+
+    def __setitem__(self, i, item):
+        if self.__isActive():
+            self.data[i]=item
+
+    def __delitem__(self, i):
+        if self.__isActive():
+            del self.data[i]
+
+
+    def __setslice__(self, i, j, other):
+        if self.__isActive():
+            i = max(i, 0); j = max(j, 0)
+            self.data[i:j] = self._cast(other)
+
+
+    def __delslice__(self, i, j):
+        if self.__isActive():
+            i = max(i, 0); j = max(j, 0)
+            del self.data[i:j]
+    
+
+    def __iadd__(self, other):
+        if self.__isActive():
+            self.data += self._cast(other)
+        return self
+
+
+    def append(self, item):
+        if self.__isActive():
+            self.data.append(item)
+
+
+    def insert(self, i, item):
+        if self.__isActive():
+            self.data.insert(i, item)
+
+
+    def remove(self, item):
+        if self.__isActive():
+            self.data.remove(item)
+
+
+    def extend(self, other):
+        if self.__isActive():
+            self.data.extend(self._cast(other))
+
+
+
+
+
+
+
+
+
+
+
 class QueryDM(TransactionComponent):
 
     resetStatesAfterTxn = True
@@ -125,7 +248,7 @@ class QueryDM(TransactionComponent):
 
     cache = WeakCache
 
-    defaultClass = model.PersistentQuery
+    defaultClass = PersistentQuery
 
     def ghost(self, oid, state=None):
 

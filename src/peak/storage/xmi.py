@@ -77,8 +77,8 @@
 
         - XMI.any, XMI.CorbaTypeCode, XMI.CorbaTcXXX ...?
 
-        - move to 'peak.storage'?  This module doesn't do much, modelwise!
 """
+
 
 from peak.api import *
 from peak.util import SOX
@@ -339,7 +339,7 @@ class XMI_DM(storage.EntityDM):
 
     def ghost(self, oid, state=None):
         if oid==():
-            return model.PersistentQuery()
+            return storage.PersistentQuery()
         klass = self.getClass(self.index[oid]._name)
         return klass()
 

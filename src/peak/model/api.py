@@ -13,29 +13,29 @@
 from peak.api import *
 from peak.model.interfaces import *
 from peak.model.interfaces import __all__ as allInterfaces
+from peak.storage.lazy_loader import LazyLoader
 
 from Persistence import Persistent
 from Persistence.cPersistence import GHOST
 
 from UserList import UserList
-from peak.util.ListProxy import ListProxy
 
 from peak.model.method_exporter import MethodExporter
-from peak.util.imports import lazyModule
-
-xmi = lazyModule('peak.model.xmi')
 
 __all__ = [
-    'App','Service', 'MethodExporter', 'FeatureMC', 'xmi'
+    'App','Service', 'MethodExporter', 'FeatureMC',
     'StructuralFeature', 'Field', 'Collection', 'Reference', 'Sequence',
     'Classifier','PrimitiveType','Enumeration','DataType','Element',
-    'LazyLoader', 'PersistentQuery', 'QueryLink',
 ]
 
 
 # We export the interfaces too, so people don't have to dig for them...
 
 __all__ += allInterfaces
+
+
+
+
 
 
 
@@ -653,148 +653,6 @@ class Element(DataType, Persistent):
 
     def getComponentName(self):
         return self._p_oid
-
-class PersistentQuery(Persistent,ListProxy):
-
-    """An immutable, persistent ListProxy for query results"""
-
-    __slots__ = 'data', '__weakref__'
-
-    def __getstate__(self):
-        return self.data
-
-    def __setstate__(self,state):
-        self.data = list(state)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-class QueryLink(ListProxy):
-
-    """PersistentQuery proxy for use in Collection, Sequence, or Reference"""
-
-    __cacheData = None
-    __localData = None
-
-    def __init__(self, query):
-        self.__query = query
-
-
-    def data(self):
-        # Discard cached form of query data when underlying query reloaded
-        if self.__cacheData is not self.__query.data:
-            self.__cacheData = self.__query.data
-            self.__localData = self.__cacheData[:]
-            
-        return self.__localData
-
-    data = property(data)
-
-
-    def __isActive(self):
-        return self.__query._p_state <> GHOST
-
-
-    def __setitem__(self, i, item):
-        if self.__isActive():
-            self.data[i]=item
-
-    def __delitem__(self, i):
-        if self.__isActive():
-            del self.data[i]
-
-
-    def __setslice__(self, i, j, other):
-        if self.__isActive():
-            i = max(i, 0); j = max(j, 0)
-            self.data[i:j] = self._cast(other)
-
-
-    def __delslice__(self, i, j):
-        if self.__isActive():
-            i = max(i, 0); j = max(j, 0)
-            del self.data[i:j]
-    
-
-    def __iadd__(self, other):
-        if self.__isActive():
-            self.data += self._cast(other)
-        return self
-
-
-    def append(self, item):
-        if self.__isActive():
-            self.data.append(item)
-
-
-    def insert(self, i, item):
-        if self.__isActive():
-            self.data.insert(i, item)
-
-
-    def remove(self, item):
-        if self.__isActive():
-            self.data.remove(item)
-
-
-    def extend(self, other):
-        if self.__isActive():
-            self.data.extend(self._cast(other))
-
-
-
-
-
-
-
-
-
-
-
-class LazyLoader(object):
-
-    """Abstract base for lazy loaders of persistent features"""
-
-    def load(self, ob, attrName):
-        """Load 'ob' at least with 'attrName'
-
-        Note that a lazy loader is allowed to load all the attributes it
-        knows how to, as long as it only overwrites *itself* in the object's
-        dictionary.  That is, if an attribute to be read has already been
-        written to, it should not reload that attribute.
-
-        This method is not required to return a value, and it can ignore
-        the 'attrName' parameter as long as it is certain that the 'attrName'
-        attribute will be loaded.
-        """
-        raise NotImplementedError
-
 
 config.setupModule()
 
