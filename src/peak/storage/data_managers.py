@@ -444,7 +444,7 @@ class EntityDM(QueryDM):
             if key in dirty:
                 del dirty[key]
 
-            ob._p_deactivate()
+            ob._p_changed = False
 
 
 
@@ -513,16 +513,16 @@ class EntityDM(QueryDM):
 
     def abortTransaction(self, txnService):
 
-        for set in self.dirty, self.saved:
-            for ob in set.values():
-                ob._p_deactivate()
+        for ob in self.dirty.values():
+            ob._p_changed = False
+            ob._p_deactivate()
 
-            set.clear()
+        self.dirty.clear()
 
+        for ob in self.saved.values():
+            ob._p_deactivate()
 
-
-
-
+        self.saved.clear()
 
 
 
