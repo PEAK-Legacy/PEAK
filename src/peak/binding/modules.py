@@ -221,7 +221,7 @@ def getCodeListForModule(module, code=None):
     for baseModule in bases:
         if type(baseModule) is not ModuleType:
             raise TypeError (
-                "%s is not a module in %s __bases__" % (m,name)
+                "%s is not a module in %s __bases__" % (baseModule,name)
             )
         for c in getCodeListForModule(baseModule):
             if c in codeList:
