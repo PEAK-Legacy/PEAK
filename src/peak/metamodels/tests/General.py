@@ -123,7 +123,7 @@ class XMITests(TestCase):
 
 # XXX the below should move to peak.model.tests
 
-from peak.model.basic import FeatureMC
+from peak.model.api import FeatureMC
 
 class featureBase(object):
 

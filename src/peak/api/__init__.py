@@ -51,7 +51,6 @@ __all__ = ['NOT_GIVEN', 'NOT_FOUND']
 
 from modules import *
 from modules import __all__ as ModulesAll
-
 __all__.extend(ModulesAll)
 
 
@@ -62,14 +61,14 @@ from misc import __all__ as MiscAll
 __all__.extend(MiscAll)
 
 
-# Last, but very far from least, Service-Element-Feature support.
+# And last, but not least, subpackage API proxies
 
-from peak.util.Import import lazyImport
+from peak.binding.imports import lazyImport
 
-model = lazyImport('peak.model.basic')
-__all__.append('model')
+binding = lazyImport('peak.binding.api')
+naming = lazyImport('peak.naming.api')
+model = lazyImport('peak.model.api')
 
-binding = lazyImport('peak.binding')
-__all__.append('binding')
+__all__ += ['binding','naming','model']
 
 del lazyImport

@@ -12,9 +12,9 @@
 
     In other words, create a metamodel as you normally would with 'peak.model'
     classes, but using the 'peak.metamodels.xmi.reading' module instead of
-    'peak.model.basic'.  Of course, you can also create your own variant
+    'peak.model.api'.  Of course, you can also create your own variant
     modules that combine other aspects with this one over the base
-    'peak.model.basic' module.  Also, you may choose to define your metamodel
+    'peak.model.api' module.  Also, you may choose to define your metamodel
     in a module that does not import a specific variant of the 'peak.model'
     module, but instead uses the default unless overridden in an inheriting
     module.  (See, for example, 'peak.metamodels.uml.MetaModel', which uses

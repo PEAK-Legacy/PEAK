@@ -391,7 +391,7 @@ class MethodExporter(ActiveDescriptor, type):
             The SEF framework adds '__get__', '__set__', and '__delete__'
             methods to a subclass of MethodExporter, which lets you create
             features that are properties; look at the
-            peak.model.basic.FeatureMC class for more details.
+            peak.model.api.FeatureMC class for more details.
 
         Implementation Notes
         

@@ -5,15 +5,15 @@ those tests.
 """
 
 allSuites = [
-    'peak.util.tests.SOX:test_suite',
+    'SOX:test_suite',
 ]
 
 def test_suite():
 
     from unittest import TestSuite
-    from peak.util.Import import importString
+    from peak.binding.imports import importSequence
 
     return TestSuite(
-        [importString(t)() for t in allSuites]
+        [t() for t in importSequence(allSuites, globals())]
     )
 

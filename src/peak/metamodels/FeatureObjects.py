@@ -12,9 +12,9 @@ from peak.model.interfaces import *
 
 from Interface.Standard import Class as IClass
 
-import peak.model.basic
+import peak.model.api
 
-__bases__ = peak.model.basic,
+__bases__ = peak.model.api,
 
 
 

@@ -1,5 +1,6 @@
-from peak.naming import *
+from peak.naming.api import *
 from peak.naming.contexts import AbstractContext
+
 import re, smtplib
 
 

@@ -13,7 +13,7 @@
     so many levels of indirection here that it can make your head spin!
 """
 
-from peak.util.Import import interpretSpec, interpretSequence
+from peak.binding.imports import importObject, importSequence
 
 
 from interfaces import *
@@ -52,7 +52,7 @@ def getInitialContext(environ={}):
     implementation ('peak.naming.providers.Initial:DefaultInitialContext')
     is used."""
     
-    factory = interpretSpec(
+    factory = importObject(
         environ.get(
             'NAMING_INITIAL_CONTEXT_FACTORY',
             'peak.naming.providers.Initial:DefaultInitialContext'
@@ -85,7 +85,7 @@ def getStateToBind(obj, name, context, environment, attrs=None):
     if IReferenceable.isImplementedBy(obj):
         return (obj.getReference(obj), attrs)
 
-    for factory in interpretSequence(
+    for factory in importSequence(
             environment.get(
                 'NAMING_STATE_FACTORIES', defaultFactories
             ) 
@@ -131,7 +131,7 @@ def getObjectInstance(refInfo, name, context, environment, attrs=None):
         factory = getattr(refInfo,'objectFactory',None)
 
         if factory:
-            factory = interpretSpec(factory)
+            factory = importObject(factory)
             return factory.getObjectInstance(refInfo, name, context, environment, attrs)
         
         else:
@@ -145,7 +145,7 @@ def getObjectInstance(refInfo, name, context, environment, attrs=None):
                         except NameNotFoundException:
                             pass
 
-    for factory in interpretSequence(
+    for factory in importSequence(
             environment.get(
                 'NAMING_OBJECT_FACTORIES', defaultFactories
             ) 
@@ -187,7 +187,7 @@ def getURLContext(scheme, context=None, environ=None, iface=IBasicContext):
         else:
             environ = context.getEnvironment()
 
-    for contextFactory in interpretSequence(
+    for contextFactory in importSequence(
             environ.get(
                 'NAMING_URL_CONTEXT_FACTORIES', defaultFactories
             ) 

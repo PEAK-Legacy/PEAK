@@ -3,7 +3,7 @@
 from peak.naming.interfaces import *
 from peak.naming.references import *
 
-from peak.util.Import import interpretSpec, importString
+from peak.binding.imports import importObject, importString
 
 __implements__ = IObjectFactory, IStateFactory, IURLContextFactory
 
@@ -24,7 +24,7 @@ def getURLContext(scheme, context, environment, iface=IBasicContext):
         schemes[scheme.lower()] = factory
         
     if isinstance(factory,str):
-        factory=interpretSpec(factory, globals())
+        factory=importObject(factory, globals())
         schemes[scheme.lower()] = factory
         
     if IURLContextFactory.isImplementedBy(factory):
@@ -53,7 +53,7 @@ def getObjectInstance(refInfo, name, context, environment, attrs=None):
         if factory is not None:
 
             if isinstance(factory,str):
-                factory = interpretSpec(factory, globals())
+                factory = importObject(factory, globals())
                 addrTypes[refAddr.type] = factory
 
             if IObjectFactory.isImplementedBy(factory):

@@ -39,9 +39,4 @@
 """
 
 
-from interfaces import *
-from names      import *
-from references import *
-from api        import *
-import spi
 

@@ -121,7 +121,7 @@ class lazyImport:
 
 
 
-def interpretSpec(spec, globalDict=None):
+def importObject(spec, globalDict=None):
     """Convert a possible string specifier to an object
 
     If 'spec' is a string or unicode object, import it using 'importString()',
@@ -134,8 +134,8 @@ def interpretSpec(spec, globalDict=None):
     return spec
 
 
-def interpretSequence(specs, globalDict=None):
-    """Convert a possible string specifier to a list of objects.
+def importSequence(specs, globalDict=None):
+    """Convert a string or list specifier to a list of objects.
 
     If 'specs' is a string or unicode object, treat it as a
     comma-separated list of import specifications, and return a
@@ -147,6 +147,6 @@ def interpretSequence(specs, globalDict=None):
     """
     
     if isinstance(specs,StringTypes):
-        return [importString(x.strip()) for x in specs.split(',')]
+        return [importString(x.strip(),globalDict) for x in specs.split(',')]
     else:
-        return [interpretSpec(s,globalDict) for s in specs]
+        return [importObject(s,globalDict) for s in specs]

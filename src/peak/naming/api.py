@@ -1,6 +1,8 @@
-"""Functions directly usable from the peak.naming package"""
+"""API functions and classes for the peak.naming package"""
 
-__all__ = ['InitialContext', 'lookup']
+from interfaces import *
+from names      import *
+from references import *
 
 import spi
 
