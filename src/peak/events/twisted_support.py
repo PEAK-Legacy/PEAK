@@ -50,7 +50,6 @@ class DeferredAsEventSource(sources.Value,protocols.StickyAdapter):
         protocols.StickyAdapter.__init__(self,ob,proto)
         sources.Value.__init__(self)
 
-
     def _fire(self,event):
         super(DeferredAsEventSource,self)._fire(event)
         if not isinstance(event,failure.Failure):
@@ -66,12 +65,13 @@ class DeferredAsEventSource(sources.Value,protocols.StickyAdapter):
     def addCallback(self,func):
         if self.subject.called:
             func(self, self.subject.result)
-            return
+            return lambda:None  # cancel is no-op
 
         haveCB = len(self._callbacks)
-        super(DeferredAsEventSource,self).addCallback(func)
+        canceller = super(DeferredAsEventSource,self).addCallback(func)
         if not haveCB:
             self.subject.addCallbacks(self._fire, self._fire)
+        return canceller
 
     def __call__(self):
         if self.subject.called:
@@ -228,8 +228,9 @@ class TwistedReadEvent(events.Broadcaster):
             self._register()
 
     def addCallback(self,func):
-        super(TwistedReadEvent,self).addCallback(func)
+        canceller = super(TwistedReadEvent,self).addCallback(func)
         self._register()
+        return canceller
 
     def fileno(self):
         return self.fd
@@ -242,7 +243,6 @@ class TwistedReadEvent(events.Broadcaster):
 
     def logPrefix(self):
         return '(peak.events)'
-
 
 class TwistedWriteEvent(TwistedReadEvent):
 

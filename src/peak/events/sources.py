@@ -67,7 +67,7 @@ class NullClass(object):
         return other
 
     def addCallback(self,cb):
-        pass    # we'll never fire, and so can't call back
+        return lambda:None  # we'll never fire, and so can't call back
 
     def nextAction(self, task=None, state=None):
         pass    # always suspend
@@ -192,17 +192,17 @@ class AnyOf(object):
 
     def addCallback(self,func):
         """See 'events.IEventSource.addCallback()'"""
+        
+        cancels = []
 
-        unfired = [True]
         def onceOnly(source,event):
-            if unfired:
-                unfired.pop()
+            if cancels:
+                while cancels: cancels.pop()()
                 return func(self, (source,event))
 
-        for source in self._sources:
-            source.addCallback(onceOnly)
-
-
+        cancels = [source.addCallback(onceOnly) for source in self._sources]
+        return lambda: [(c(),cancels.remove(c)) for c in cancels]
+            
 class Observable(object):
 
     """Base class for a generic event source
@@ -233,7 +233,8 @@ class Observable(object):
 
     def addCallback(self,func):
         """See 'events.IEventSource.addCallback()'"""
-        self._callbacks.append(func)
+        cb = self._callbacks; item=(func,object()); cb.append(item)
+        return lambda: (item in cb) and cb.remove(item)
 
 
     def disable(self):
@@ -241,7 +242,6 @@ class Observable(object):
         if not self._disabled:
             self._savedEvents = []
         self._disabled += 1
-
 
 
     def enable(self):
@@ -266,21 +266,21 @@ class Observable(object):
             self._buffer(event)
             return
 
-        callbacks, self._callbacks = self._callbacks, []
+        callbacks = self._callbacks
         count = len(callbacks)
 
-        try:
-            if self.singleFire:
-                while count:
-                    if callbacks.pop(0)(self,event):
-                        return
-                    count -= 1
-            else:
-                while count:
-                    callbacks.pop(0)(self,event)
-                    count -= 1
-        finally:
-            self._callbacks[0:0] = callbacks      # put back unfired callbacks
+        if self.singleFire:
+            while count:
+                if callbacks.pop(0)[0](self,event):
+                    return
+                count -= 1
+        else:
+            while count:
+                callbacks.pop(0)[0](self,event)
+                count -= 1
+
+
+
 
 
 
@@ -418,9 +418,9 @@ class AbstractConditional(Observable):
         """Add callback, but fire it immediately if value is currently true"""
         value = self()
         if value:
-            func(self,value)
+            func(self,value); return lambda:None
         else:
-            super(AbstractConditional,self).addCallback(func)
+            return super(AbstractConditional,self).addCallback(func)
 
     def nextAction(self, task=None, state=None):
         """Suspend only if current value is false"""

@@ -250,6 +250,7 @@ class Scheduler(object):
     def _callAt(self, what, when):
         self.isEmpty.set(False)
         appts = self._appointments
+        item = (when,what)
         lo = 0
         hi = len(appts)
 
@@ -260,8 +261,8 @@ class Scheduler(object):
             else:
                 lo = mid+1
 
-        appts.insert(lo, (when,what))
-
+        appts.insert(lo, item)
+        return lambda: (item in appts) and appts.remove(item)
 
 class _Sleeper(object):
 
@@ -278,7 +279,7 @@ class _Sleeper(object):
             self.addCallback(task.step)
 
     def addCallback(self,func):
-        self.scheduler._callAt(
+        return self.scheduler._callAt(
             lambda s,e: func(self,e), self.scheduler.now() + self.delay
         )
 

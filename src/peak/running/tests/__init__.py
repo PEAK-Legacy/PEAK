@@ -306,21 +306,20 @@ class ReactiveTests(TestCase):
             sleep(.5), # at 20.5 seconds idle checking begins
             sleep(.5), # but not idle enough yet, so next is pong at 21 seconds
             pong, sleep(4.0), ping, # 25 seconds
-            sleep(0.5), # wake up and make sure we haven't been idle for 5 secs
-            sleep(0.5), # our first timeout set at 20.5 goes off, but no effect
-            sleep(2.0), # false alarms, so finish waiting to 28 secs
+
+            sleep(3.0),
+            #sleep(0.5), # wake up and make sure we haven't been idle for 5 secs
+            #sleep(0.5), # our first timeout set at 20.5 goes off, but no effect
+            #sleep(2.0), # false alarms, so finish waiting to 28 secs
+            
             pong, sleep(2.0), ping,    # 30 seconds now
-            sleep(3.0), # idle checker looking for timeout, false alarm again
-            sleep(2.0), # idle timeout, so stop! 
+
+            sleep(5.0),
+
+            #sleep(3.0), # idle checker looking for timeout, false alarm again
+            #sleep(2.0), # idle timeout, so stop! 
             #pong, ping  # finit at 35 seconds
         ])
-
-
-
-
-
-
-
 
 
 

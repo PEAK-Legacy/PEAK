@@ -1,5 +1,13 @@
 Fixes and Enhancements since Version 0.5 alpha 3
 
+ - The 'events.IEventSource' interface now returns a 'canceller' function from
+   the 'addCallback()' method, allowing you to cancel a previously-scheduled
+   callback.  This fixes a memory leak and performance problem with
+   'events.AnyOf()', which previously could accumulate unneeded callbacks on
+   the sources it was monitoring.  Note that if you have developed any custom
+   event sources with 'addCallback()' methods, you must make sure that they
+   return a canceller from now on.
+
  - Added 'ref:factory@addr' URL scheme that maps to a corresponding
    'naming.Reference("factory",["addr"])'.  'factory' can be either a dotted
    import string referencing a 'naming.IObjectFactory', or you can define

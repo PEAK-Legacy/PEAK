@@ -44,7 +44,6 @@ class BasicTests(TestCase,object):
 
 
     def testMultiCallback(self):
-
         for i in range(10):
             self.source.addCallback(self.sink)
 
@@ -62,23 +61,24 @@ class BasicTests(TestCase,object):
                 [(self.source,42) for i in range(10)]
             )
 
-
     def testNoReentrance(self):
-
         self.source.addCallback(self.reenter)
-
         self.doPut(1,True)
         self.assertEqual(self.log, [])
-
         self.doPut(2,True)
         self.assertEqual(self.log, [(self.source, 2)])
 
+    def testSimpleCancel(self):
+        cancel = self.source.addCallback(self.sink)
+        cancel(); self.doPut(1,True); cancel()
+        self.assertEqual(self.log, [])
 
-
-
-
-
-
+    def testDualCancel(self):
+        sink = self.sink; cancel1 = self.source.addCallback(sink)
+        cancel1(); self.doPut(1,True); cancel1(); self.doPut(0,True)
+        cancel2 = self.source.addCallback(sink);  self.doPut(2,True)
+        cancel1(); cancel2()
+        self.assertEqual(self.log, [(self.source,2)])
 
     def testRejection(self):
 

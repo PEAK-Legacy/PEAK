@@ -95,13 +95,30 @@ class IEventSource(ITaskSwitch):
     def addCallback(func):
         """Call 'func(source,event)' the next time this event occurs
 
+        Usage::
+            canceller = source.addCallback(somefunc)
+
         If this method is called from within a callback, 'func' must *not* be
         invoked until the *next* occurrence of the event.
 
         Note also that callbacks will be called at most once for each time
         they are registered; adding a callback does not result in an ongoing
         "subscription" to the event source.
+
+        This method should return a 'canceller' object that can be called to
+        cancel the callback. Cancelling a callback that has already occurred
+        or been cancelled is a no-op.  (Note that even if the same 'func' is
+        passed to 'addCallback()' more than once, each individual 'canceller'
+        must cancel that specific occurrence, and no other.)
         """
+
+
+
+
+
+
+
+
 
 
 class IEventSink(protocols.Interface):
@@ -118,6 +135,30 @@ class IEventSink(protocols.Interface):
         sources such as distributors and semaphores, and by event sources with
         ongoing listeners/handlers (as opposed to one-time callbacks).
         """
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

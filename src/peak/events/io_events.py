@@ -290,14 +290,14 @@ class _IOEvent(sources.Broadcaster):
     __slots__ = '_activate','_deactivate'
 
     def addCallback(self,func):
-        super(_IOEvent,self).addCallback(func)
+        canceller = super(_IOEvent,self).addCallback(func)
         if self._callbacks:
             self._activate(self)
+        return canceller
 
     def _fire(self,event):
         self._deactivate()
         super(_IOEvent,self)._fire(event)
-
 
 
 

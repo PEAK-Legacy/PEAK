@@ -23,16 +23,16 @@ class TestDeferredAsEvent(ValueTests):
         self.source.subject.called = False
         source.addCallback(self.sink)
 
-
-
-
-
-
-
-
-
-
-
+    def testDualCancel(self):
+        # deferreds only ever fire once, so we have to test this a little
+        # differently
+        sink = self.sink
+        cancel1 = self.source.addCallback(sink)
+        cancel2 = self.source.addCallback(sink)
+        cancel1()
+        self.doPut(2,True)
+        cancel1(); cancel2()
+        self.assertEqual(self.log, [(self.source,2)])
 
 
 
