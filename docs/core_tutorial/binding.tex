@@ -336,7 +336,7 @@ that keeps track of its passengers.
 \begin{verbatim%
 }>>> from peak.api import binding
 >>> class Car:
-        passengers = binding.New(dict, name='passengers')
+        passengers = binding.New(dict, attrName='passengers')
 
 >>> aCar=Car()
 >>> print aCar.passengers
@@ -346,7 +346,8 @@ that keeps track of its passengers.
 Let's go through this sample line by line.  In the first line we import the
 \module{peak.binding} API.  Then, we create a simple class, with one attribute,
 \member{passengers}.  We define the attribute using the \function{binding.New}
-function, which creates an attribute binding from a type and an optional name.
+function, which creates an attribute binding from a type and an optional
+attribute name.
 
 Instances of class \class{Car} will each get their own \member{passengers}
 attribute, which contains a new (hence the name, \function{binding.New})
@@ -362,7 +363,6 @@ The problem is that attributes defined in a Python class body are shared, so
 every car will end up with the same passenger dictionary.  Experienced Python
 programmers solve this problem by placing code in their \method{__init__}
 method to initialize the structure, like so:
-
 
 
 
@@ -421,7 +421,7 @@ As we've already seen, attribute bindings can be made to work with
 ``old-style" or ``classic" Python classes.  There are some drawbacks to that,
 however.  Most visibly, it's necessary to specify an attribute binding's
 name in its definition, as we saw in our example, i.e.
-\samp{passengers = binding.New(dict, 'passengers')}.
+\samp{passengers = binding.New(dict, attrName='passengers')}.
 
 However, if we derive our class from \class{binding.Component}, we no longer
 have to do this:
@@ -628,8 +628,8 @@ supply them as keyword arguments.
 
 \begin{description}
 
-\item[\var{name}] \hfill \\
-The \var{name} parameter specifies the attribute name that the binding will
+\item[\var{attrName}] \hfill \\
+The \var{attrName} parameter specifies the attribute name that the binding will
 have.  As mentioned previously, this is only needed when the binding is being
 used in a class that doesn't support active descriptors.  If you're using
 a class that inherits from \class{binding.Component}, you don't need to supply
@@ -660,15 +660,15 @@ The following functions and classes can be used as-is to create attribute
 bindings, or you can subclass the classes to create custom binding types
 of your own:
 
-\begin{funcdesc}{Once}{func, name=None, offerAs=(), doc=None, activateUponAssembly=False}
+\begin{funcdesc}{Once}{func, attrName=None, offerAs=(), doc=None, activateUponAssembly=False}
 The most basic of all binding types, the \class{binding.Once} class requires
-only a callable object such as a function or lambda.  If you don't supply a
-\var{name}, the \samp{__name__} attribute of the \var{func} parameter is used,
-if available.  Similarly, if you don't supply a \var{doc}, the \samp{__doc__}
-attribute of the \var{func} parameter is used, if available.
+only a callable object such as a function or lambda.  If you don't supply an
+\var{attrName}, the \samp{__name__} attribute of the \var{func} parameter is
+used, if available.  Similarly, if you don't supply a \var{doc}, the
+\samp{__doc__} attribute of the \var{func} parameter is used, if available.
 \end{funcdesc}
 
-\begin{funcdesc}{New}{obtype, name=None, offerAs=(), doc=None,
+\begin{funcdesc}{New}{obtype, attrName=None, offerAs=(), doc=None,
 activateUponAssembly=False}
 As we've already seen, the \function{binding.New} function just needs a class or
 type object as its \var{obtype} parameter, and it creates a new instance of that
@@ -681,7 +681,7 @@ talk more about import specifications in the chapter on the
 \module{peak.config} package.
 \end{funcdesc}
 
-\begin{funcdesc}{Copy}{obj, name=None, offerAs=(), doc=None, activateUponAssembly=False}
+\begin{funcdesc}{Copy}{obj, attrName=None, offerAs=(), doc=None, activateUponAssembly=False}
 The \function{binding.Copy} function does just what it says.  When accessed, it
 will create a copy of its \var{obj} parameter, using the \function{copy}
 function from the Python standard library's \module{copy} module.
@@ -695,7 +695,7 @@ function from the Python standard library's \module{copy} module.
 
 
 
-\begin{funcdesc}{bindToSelf}{name=None, offerAs=(), doc=None}
+\begin{funcdesc}{bindToSelf}{attrName=None, offerAs=(), doc=None}
 This one is pretty self-explanatory, no pun intended.  This class supplies
 the owning object itself as an instance attribute.  What good is that?  Well,
 it's handy for objects that provide default support for various interfaces
@@ -705,7 +705,7 @@ can refer to \samp{self.delegateForInterfaceX.someMethod()}, and have the
 instance by default.
 \end{funcdesc}
 
-\begin{funcdesc}{requireBinding}{description="", name=None, offerAs=(),
+\begin{funcdesc}{requireBinding}{description="", attrName=None, offerAs=(),
 doc=None}
 The \function{binding.requireBinding} class is the odd one out in this group.
 It doesn't compute a value at all!  Instead, it raises an error when the
