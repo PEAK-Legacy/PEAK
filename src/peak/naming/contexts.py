@@ -6,7 +6,7 @@ from properties import *
 from peak.util.imports import importObject
 
 from peak.binding.components import Component, bindToProperty, Once, \
-    bindToUtilities
+    bindToUtilities, Constant
 
 from peak import exceptions
 from peak.api import config
@@ -492,19 +492,11 @@ class GenericURLContext(AbstractContext):
 
 class BasicInitialContext(AbstractContext):
 
-    def creationParent(self, d, a):
+    # Default binding for 'creationParent' is None, if not overridden via
+    # kwarg to 'naming.InitialContext()' or 'naming.lookup()'
+    #
+    creationParent = Constant(CREATION_PARENT, None)
 
-        """Default binding for 'creationParent' is the nearest LocalConfig
-
-        Note that you should normally supply 'creationParent=someObj' as a
-        keyword option to 'naming.InitialContext()' to explicitly set the
-        creation parent.  But if you don't, the default creation parent is
-        'config.getLocal(theNewInitialContext)'."""
-
-        from peak.config.api import getLocal
-        return getLocal(self)
-
-    creationParent = Once(creationParent,            provides=CREATION_PARENT)
     objectFactories= bindToUtilities(IObjectFactory, provides=OBJECT_FACTORIES)
     stateFactories = bindToUtilities(IStateFactory,  provides=STATE_FACTORIES)
 
@@ -515,3 +507,4 @@ class BasicInitialContext(AbstractContext):
         return klass(parentComponent, **options)
 
     getInitialContext = classmethod(getInitialContext)
+
