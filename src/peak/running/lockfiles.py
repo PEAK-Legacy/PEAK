@@ -24,17 +24,17 @@
     isn't supported, not even the 'LockFile' class will be available from this
     module.  For Windows, the 'msvcrt' module must be available (it is in the
     standard Python 2.2.1 binary distribution for Windows).
+
+    This module also exports a 'NullLockFile' class, for use when locking is
+    not needed, but an object with a locking interface is nonetheless required.
+    'NullLockFile' can also be used as a substitute for a thread lock, if you
+    prefer this locking interface over the standard Python one.
 """
 
-__all__ = ['LockFile'] 
+__all__ = ['LockFile', 'NullLockFile'] 
 
-import os, errno, string, time
+import os, errno, time
 from peak.util.threads import allocate_lock
-
-
-
-
-
 
 
 
@@ -129,7 +129,7 @@ def check_lock(fn):
 
     try:
         f = open(fn, 'r')
-        pid = int(string.strip(f.read()))
+        pid = int(f.read().strip())
         f.close()
         return pid_exists(pid)
     except:
@@ -374,6 +374,40 @@ class WinFLockFile(LockFileBase):
 
 
 
+class NullLockFile(LockFileBase):
+
+    """Pseudo-LockFile (locks only for threads in this process)"""
+
+    def __init__(self):
+        self._lock = allocate_lock()
+        self._locked = False
+
+    def do_acquire(self, waitflag=False):
+        return True
+
+    def do_release(self):
+        pass
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 # Default is shlock(1)-style if available
 
 if posix:
@@ -392,5 +426,5 @@ else:
 
     else:
         # Waaaaaaa!, as Jim F. would say...
-        __all__ = []
+        __all__.remove('LockFile')
 
