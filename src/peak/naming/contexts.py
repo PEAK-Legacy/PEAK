@@ -244,8 +244,8 @@ class NameContext(Component):
 
 
 
-    def _contextNNS(self, attrs=None):
-        return NNS_Reference( self ), attrs
+    def _contextNNS(self):
+        return NNS_Reference( self )
 
 
     def _get_nns(self, name, retrieve=1):
@@ -258,23 +258,23 @@ class NameContext(Component):
         if ob is NOT_FOUND or not retrieve:
             return ob
 
-        state, attrs = ob
+        state = ob
 
-        ob = self._deref(state, name, attrs)
+        ob = self._deref(state, name)
 
         if isinstance(ob, self.__class__):
             # Same or subclass, must not be a junction;
             # so delegate the NNS lookup to it
-            return ob._contextNNS(attrs)
+            return ob._contextNNS()
 
         else:
             res = adapt(ob, IResolver, None)    # XXX introspection!
             if res is ob:
                 # it's a context, so let it go as-is
-                return state, attrs
+                return state
 
         # Otherwise, wrap it in an NNS_Reference
-        return NNS_Reference( ob ), attrs
+        return NNS_Reference( ob )
 
 
     def close(self):
@@ -285,22 +285,22 @@ class NameContext(Component):
 
 
 
-    def _deref(self, state, name, attrs=None):
+    def _deref(self, state, name):
 
-        if isinstance(state,LinkRef):
+        if isinstance(state,LinkRef):       # XXX introspection!
             return self[state.linkName]
 
         return state
 
 
-    def _mkref(self, obj, name, attrs):
+    def _mkref(self, obj, name):
+        return adapt(obj, self.serializationProtocol)
 
-        ref = adapt(obj, self.serializationProtocol, None)
 
-        if ref is not None:
-            return ref, attrs
 
-        return obj, attrs
+
+
+
 
 
 
@@ -334,18 +334,17 @@ class NameContext(Component):
         if ctx is not self: return ctx.lookupLink(name)
 
         if isBoundary(name):
-            info = self._get_nns(self.compoundParser(name[0]))
+            state = self._get_nns(self.compoundParser(name[0]))
         else:
-            info = self._get(name)
+            state = self._get(name)
 
-        if info is NOT_FOUND:
+        if state is NOT_FOUND:
             raise exceptions.NameNotFound(name) # XXX exception needs more info
 
-        state, attrs = info
-        if isinstance(state,LinkRef):
+        if isinstance(state,LinkRef):   # XXX introspection!
             return state
 
-        return self._deref(state, name, attrs)
+        return self._deref(state, name)
 
 
     def __getitem__(self, name):
@@ -360,6 +359,7 @@ class NameContext(Component):
             raise exceptions.NameNotFound(name) # XXX exception needs more info
 
         return obj
+
 
 
 
@@ -415,11 +415,11 @@ class NameContext(Component):
         ]
 
 
-    def bind(self, name, object, attrs=None):
+    def bind(self, name, object):
 
         """Synonym for __setitem__, with attribute support"""
 
-        self.__setitem__(name,object,attrs)
+        self.__setitem__(name,object)
 
 
     def unbind(self, name, object):
@@ -432,13 +432,13 @@ class NameContext(Component):
     def _getOb(self, name, default=NOT_FOUND):
 
         if isBoundary(name):
-            info = self._get_nns(self.compoundParser(name[0]))
+            state = self._get_nns(self.compoundParser(name[0]))
         else:
-            info = self._get(name)
+            state = self._get(name)
 
-        if info is NOT_FOUND: return default
-        state, attrs = info
-        return self._deref(state, name, attrs)
+        if state is NOT_FOUND: return default
+        return self._deref(state, name)
+
 
 
 
@@ -490,7 +490,7 @@ class NameContext(Component):
 
         self._rename(base+n1, base+n2)
 
-    def __setitem__(name, object, attrs=None):
+    def __setitem__(name, object):
 
         """Bind 'object' under 'name'"""
 
@@ -501,12 +501,12 @@ class NameContext(Component):
 
         elif isBoundary(name):
             name = name[0]
-            state,bindAttrs = self._mkref(object,name,attrs)
-            self._bind_nns(name, state, bindAttrs)
+            state = self._mkref(object,name)
+            self._bind_nns(name, state)
 
         else:
-            state,bindAttrs = self._mkref(object,name,attrs)
-            self._bind(name, state, bindAttrs)
+            state = self._mkref(object,name)
+            self._bind(name, state)
 
 
     def __delitem__(self, name):
@@ -538,7 +538,7 @@ class NameContext(Component):
         """Lookup 'name', returning 'NOT_FOUND' if not found
 
         If 'name' doesn't exist, always return 'NOT_FOUND'.  Otherwise,
-        if 'retrieve' is true, return a '(state,attrs)' tuple of binding info.
+        if 'retrieve' is true, return the bound state.
 
         If 'retrieve' is false, you may return any value other than
         'NOT_FOUND'.  This is for optimization purposes, to allow you to
@@ -557,10 +557,10 @@ class NameContext(Component):
         """
         raise NotImplementedError
 
-    def _bind(self, name, state, attrs=None):
+    def _bind(self, name, state):
         raise NotImplementedError
 
-    def _bind_nns(self, name, state, attrs=None):
+    def _bind_nns(self, name, state):
         raise NotImplementedError
 
     def _unbind(self, name):
@@ -619,7 +619,8 @@ class AddressContext(NameContext):
 
 
     def _get(self, name, retrieve=True):
-        return (name, None)     # refInfo, attrs
+        # All syntactically valid addresses exist in principle
+        return name
 
 
     def _resolveURL(self, name, iface):
@@ -638,7 +639,6 @@ class AddressContext(NameContext):
         return self.resolveToInterface(
             self.namingAuthority + name, iface
         )
-
 
 
 

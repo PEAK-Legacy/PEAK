@@ -307,7 +307,7 @@ class peakLoggerContext(naming.AddressContext):
         if ob is NOT_FOUND:
             return NOT_FOUND
 
-        return ob, None
+        return ob
 
 
 

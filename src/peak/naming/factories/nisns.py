@@ -26,13 +26,13 @@ class nisURLContext(naming.NameContext):
     def _get(self, name, retrieve=1):
 
         if not name:
-            return self, None
+            return self
 
         elif str(name) in nis.maps():
             return nisMapContext(
                 namingAuthority = self.namingAuthority,
                 nameInContext   = self.nameInContext + name,
-            ), None
+            )
 
         else:
             return NOT_FOUND
@@ -56,7 +56,7 @@ class nisMapContext(naming.NameContext):
     def _get(self, name, retrieve=1):
 
         try:
-            return nis.match(str(name), self.mapname), None
+            return nis.match(str(name), self.mapname)
 
         except nis.error:
             return NOT_FOUND

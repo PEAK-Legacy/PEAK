@@ -217,7 +217,7 @@ class IReadContext(IBasicContext):
         """Return a sequence of (name,boundItem) pairs"""
 
     def info():
-        """Return a sequence of (name,(refInfo,attrs)) pairs"""
+        """Return a sequence of (name,boundState) pairs"""
 
     # XXX search, getAttributes
 
@@ -251,20 +251,20 @@ class IWriteContext(IBasicContext):
     def rename(oldName,newName):
         """Rename 'oldName' to 'newName'"""
 
-    def __setitem__(name,object,attrs=None):
-        """Bind 'object' under 'name'"""
+    def __setitem__(name,ob):
+        """Bind 'ob' under 'name'"""
 
     def __delitem__(name):
         """Remove any binding associated with 'name'"""
 
-    def bind(name,object,attrs=None):
+    def bind(name,ob):
         """Synonym for __setitem__"""
 
-    def unbind(name,object):
+    def unbind(name,ob):
         """Synonym for __delitem__"""
 
-    def mksub(name, attrs=None):
-        """Create a subcontext of the same kind under 'name', with 'attrs'"""
+    def mksub(name):
+        """Create a subcontext of the same kind under 'name'"""
 
     def rmsub(name):
         """Remove sub-context 'name'"""

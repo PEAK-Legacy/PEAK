@@ -4,8 +4,6 @@ Open Issues/To-Do Items
 
     * Refactor binding and naming frameworks to
 
-      - get rid of cruft (such as JNDI 'attrs' hangover) and duplication
-
       - streamline descriptor mechanisms used by binding and model to make them
         uniform and cleanly functional (in both senses of the word functional)
 
@@ -33,6 +31,8 @@ Open Issues/To-Do Items
 
     * Web publishing framework sufficient to deploy page-based or object-
       published apps
+
+
 
 
 

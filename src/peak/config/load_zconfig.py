@@ -107,7 +107,7 @@ class ZConfigSchemaContext(naming.AddressContext):
             schema = SchemaLoader(self.creationParent).loadFile(
                 ob.open('t'), str(url)
             )
-        ), None
+        )
 
 
 

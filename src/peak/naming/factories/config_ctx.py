@@ -50,7 +50,7 @@ class PropertyContext(naming.NameContext):
         return self.__class__(self,
             namingAuthority = self.namingAuthority,
             nameInContext   = self.nameInContext + name,
-        ), None
+        )
 
 
     def _contextNNS(self, attrs=None):
@@ -62,7 +62,7 @@ class PropertyContext(naming.NameContext):
         if ob is NOT_FOUND:
             return ob
 
-        return ob, attrs
+        return ob
 
 
 

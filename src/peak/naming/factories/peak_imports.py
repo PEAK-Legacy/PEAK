@@ -15,7 +15,7 @@ class importContext(naming.AddressContext):
     def _get(self, name, retrieve=1):
 
         try:
-            return importString(name.body), None
+            return importString(name.body)
         except ImportError:
             return NOT_FOUND
 

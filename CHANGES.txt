@@ -20,6 +20,12 @@ Fixes and Enhancements since Version 0.5 alpha 2
    just not available via naming system APIs, and naming contexts no longer
    have to deal with it.
 
+   The naming system base classes no longer use 'attrs' as an input parameter
+   or return value.  If you've subclassed anything from 'peak.naming.contexts',
+   note that your '_get()' methods should now just return the lookup value,
+   rather than a 'state,attrs' tuple.  For most naming contexts, this just
+   means you should change 'return foo, None' statements to just 'return foo'.
+
  - REMOVED 'naming.ParsedURL'; it was deprecated as of 0.5 alpha 2.
 
  - The 'provides' keyword argument to various 'peak.binding' APIs has been
