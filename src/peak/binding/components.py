@@ -113,7 +113,7 @@ def globalLookup(name, component=None):
 
     from peak.naming.api import InitialContext
     
-    return InitialContext(component).lookup(name)
+    return InitialContext(component, creationParent=component).lookup(name)
 
 
 

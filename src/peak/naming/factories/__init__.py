@@ -26,8 +26,8 @@ schemeParsers = {
 
 
 def getInitialContext(parentComponent=None, **options):
-    from peak.naming.contexts import AbstractContext  # XXX temporary hack
-    return AbstractContext(parentComponent, **options)
+    from peak.naming.contexts import BasicInitialContext
+    return BasicInitialContext(parentComponent, **options)
 
 
 

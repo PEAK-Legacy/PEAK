@@ -6,14 +6,14 @@ from references import *
 
 import spi
 
-def InitialContext(parent=None, **kw):
+def InitialContext(parent=None, **options):
 
-    """Get an initial naming context, based on 'parent' and keyword args"""
+    """Get an initial naming context, based on 'parent' and keyword options"""
 
-    return spi.getInitialContext(parent, **kw)
+    return spi.getInitialContext(parent, **options)
 
 
-def lookup(name):
+def lookup(name, parent=None, **options):
     """Look up 'name' in a default context, returning 'requiredInterface'"""
-    return InitialContext().lookup(name)
+    return InitialContext(parent, **options).lookup(name)
 

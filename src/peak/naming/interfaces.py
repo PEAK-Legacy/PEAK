@@ -1,6 +1,7 @@
 """Interfaces and Exceptions for peak.naming package"""
 
-import Interface
+from Interface import Interface
+from Interface.Attribute import Attribute
 
 
 __all__ = [
@@ -8,12 +9,11 @@ __all__ = [
     'IName', 'ISyntax', 'IAddress', 'IInitialContextFactory',
     'IObjectFactory', 'IStateFactory', 'IURLContextFactory',
     'I_NNS_Binding', 'IBasicContext', 'IReadContext', 'IWriteContext',
+    'IParentForRetrievedObject',
 
     'NamingException', 'InvalidNameException', 'NameNotFoundException',
     'NotContextException',
 ]
-
-
 
 
 
@@ -121,16 +121,16 @@ class NotContextException(NamingException):
 
 
 
-class ISyntax(Interface.Base):
+class ISyntax(Interface):
     """Syntax object"""
 
 
-class IName(Interface.Base):
+class IName(Interface):
     """Abstract name object"""
 
-    isComposite = Interface.Attribute("True, if name is composite")
-    isCompound  = Interface.Attribute("True, if name is compound")
-    isURL       = Interface.Attribute("True, if name is URL")
+    isComposite = Attribute("True, if name is composite")
+    isCompound  = Attribute("True, if name is compound")
+    isURL       = Attribute("True, if name is URL")
 
 
 class IAddress(IName):
@@ -141,6 +141,8 @@ class IAddress(IName):
 
 
 
+class IParentForRetrievedObject(Interface):
+    """Marker for component which will be a newly created target's parent"""
 
 
 
@@ -160,9 +162,7 @@ class IAddress(IName):
 
 
 
-
-
-class IBasicContext(Interface.Base):
+class IBasicContext(Interface):
 
     """Basic naming context; supports only configuration and name handling"""
     
@@ -190,18 +190,18 @@ class IBasicContext(Interface.Base):
     def lookupLink(name):
         """Return terminal LinkRef of 'name', if it's a link"""
 
+    creationParent = Attribute(
+        """The object which should be used as the parent of any newly-created
+        components during retrieval from this context.
 
-
-
-
-
-
-
-
-
-
-
-
+        This attribute is for the use of object factories and the like, which
+        must create a new object relative to some context.  It *must* be
+        implemented as a findUtility lookup for 'IParentForRetrievedObject',
+        except in InitialContext objects, where it must be an actual object
+        reference.  (Since all naming lookups begin from an InitialContext,
+        that is where the search must "top out".)"""
+    )
+        
 
 class IReadContext(IBasicContext):
 
@@ -253,25 +253,25 @@ class I_NNS_Binding(IBasicContext):
         """Remove any NNS pointer bound to 'name'"""
 
 
-class IInitialContextFactory(Interface.Base):
+class IInitialContextFactory(Interface):
 
     def getInitialContext(parentComponent, **options):
         """Return a naming context for 'parentComponent' with 'options'"""
 
 
-class IObjectFactory(Interface.Base):
+class IObjectFactory(Interface):
 
     def getObjectInstance(refInfo, name, context, attrs=None):
         """Return the object that should be constructed from 'refInfo'"""
 
 
-class IStateFactory(Interface.Base):
+class IStateFactory(Interface):
 
     def getStateToBind(obj, name, context, attrs=None):
         """Return the '(obj,attrs)' state that should be used to save 'obj'"""
 
 
-class IURLContextFactory(Interface.Base):
+class IURLContextFactory(Interface):
 
     def getURLContext(scheme, context, iface=IBasicContext):
         """Return a context that can provide 'iface' for 'scheme' URLs"""

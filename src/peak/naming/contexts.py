@@ -4,13 +4,13 @@ from interfaces import *
 from names import *
 from references import *
 from peak.binding.imports import importObject
-from peak.binding.components import Component
+from peak.binding.components import Component, bindTo, getRootComponent, Once
 
 import spi
 
 _marker = object()
 
-__all__ = ['AbstractContext', 'GenericURLContext']
+__all__ = ['AbstractContext', 'BasicInitialContext', 'GenericURLContext']
 
 
 
@@ -51,6 +51,7 @@ class AbstractContext(Component):
 
     _allowCompositeNames = 0
 
+    creationParent = bindTo(IParentForRetrievedObject)
 
     def __init__(self, parent=None, **kw):
         if kw:
@@ -63,7 +64,6 @@ class AbstractContext(Component):
 
     def __del__(self):
         self.close()
-
 
 
 
@@ -404,4 +404,22 @@ class GenericURLContext(AbstractContext):
 
     def _get(self, name, default=None, retrieve=1):
         return (name, None)     # refInfo, attrs
-    
+
+
+
+
+class BasicInitialContext(AbstractContext):
+
+    def creationParent(self, d, a):
+
+        """Default binding for 'creationParent' is the nearest LocalConfig
+
+        Note that you should normally supply 'creationParent=someObj' as a
+        keyword option to 'naming.InitialContext()' to explicitly set the
+        creation parent.  But if you don't, the default creation parent is
+        'config.getLocal(binding.getRootComponent(theNewInitialContext))'."""
+
+        from peak.config.api import getLocal
+        return getLocal(getRootComponent(self))
+
+    creationParent = Once(creationParent)
