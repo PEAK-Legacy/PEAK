@@ -40,44 +40,44 @@ def joinPath(modname, relativePath):
     return '.'.join(module)
 
 def importString(name, globalDict=defaultGlobalDict):
+
     """Import an item specified by a string
 
         Example Usage::
 
             attribute1 = importString('some.module.attribute1')
-            attribute2 = importString('other.module:nested.attribute2')
+            attribute2 = importString('other.module.nested.attribute2')
 
         'importString' imports an object from a module, according to an
         import specification string: a dot-delimited path to an object
         in the Python package namespace.  For example, the string
         '"some.module.attribute"' is equivalent to the result of
         'from some.module import attribute'.
-
-        If you need to access a sub-object of an imported object, use
-        use '":"' to seperate the attribute spec from the module name.  In
-        other words, '"other.module:nested.attribute"' is equivalent
-        to 'from other.module import nested; nested.attribute'.
-
-        If you want just the module itself, simply give its full dotted name.
     """
 
     if ':' in name:
-        name = name.split(':',1)
-        module = name[0]
-        path = name[1].split('.')
-    elif '.' in name:
-        name = name.split('.')
-        module = '.'.join(name[:-1])
-        path = name[-1:]
-    else:
-        module, path = name, []
+        name = name.replace(':','.')
 
-    item = __import__(module, globalDict, locals(), path[:1])
+    path  = []
 
-    for name in path:
-        if name: item = getattr(item,name)
+    for part in filter(None,name.split('.')):
+
+        if path:
+
+            try:
+                item = getattr(item, part)
+                path.append(part)
+                continue
+
+            except AttributeError:
+                pass
+
+        path.append(part)
+        item = __import__('.'.join(path), globalDict, globalDict, [part])
 
     return item
+
+
 
 
 def lazyModule(modname, relativePath=None):
