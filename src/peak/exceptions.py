@@ -26,27 +26,27 @@ class NamingException(Exception):
         '__str__' method for formatting.)
     """
 
-    formattables = ('resolvedName', 'remainingName', 'rootException',)
-    otherattrs   = ('resolvedObj', 'rootTraceback', 'args', )
+    formattables = ('resolvedName', 'remainingName', 'resolvedObj',)
+    otherattrs   = ('rootTraceback', 'args', 'rootException',)
 
     __slots__ = list( formattables + otherattrs )
 
 
     def __init__(self, *args, **kw):
 
-        for k in self.otherattrs:
+        for k in self.formattables+self.otherattrs:
             setattr(self,k,kw.get(k))
 
         self.args = args
 
-    def __str__(self):
+    def __repr__(self):
 
         """Format the exception"""
 
         txt = Exception.__str__(self)
         
         extras = [
-            '%s=%s' % (k,getattr(self,k))
+            '%s=%r' % (k,getattr(self,k))
             for k in self.formattables if getattr(self,k,None) is not None
         ]
 
@@ -54,6 +54,11 @@ class NamingException(Exception):
             return "%s [%s]" % (txt, ','.join(extras))
             
         return txt
+
+
+    def __str__(self):
+        return `self`
+
 
 
 class InvalidName(NamingException):
@@ -66,11 +71,6 @@ class NameNotFound(NamingException, LookupError):
 
 class NotAContext(NamingException):
     """Continuation is not a context/does not support required interface"""
-
-
-
-
-
 
 
 
