@@ -96,9 +96,9 @@ PEAK Release 0.5 alpha 4
      backward compatibility in Python 2.2.  See the Python license for license
      details.
 
-     The included 'pyexpat' module comes from Python 2.4, and is included for
-     backward compatibility in Python 2.2 and 2.3.  See the Python license for
-     license details.
+     The included 'pyexpat' and 'doctest' modules in 'peak.util' are from
+     Python 2.4, and are included for backward compatibility in Python 2.2 and
+     2.3.  See the Python license for license details.
 
      The 'expat' XML parser is Copyright (c) 1998, 1999, 2000 Thai Open Source
      Software Center Ltd and Clark Cooper, and Copyright (c) 2001, 2002, 2003
