@@ -3,7 +3,7 @@ Obtain bytes of random data with varying degrees of quality, using
 OS facilities for high-quality entropy if available.
 """
 
-__all__ = ['randbytes']
+__all__ = ['randbytes', 'rand16']
 
 
 import sys, os, time
@@ -135,3 +135,11 @@ def randbytes(nbytes, prng=1, wait=0):
     """
     
     return funcs[prng, wait](nbytes)
+
+
+
+def rand16(prng=1, wait=0):
+    """16 bit unsigned random number"""
+    
+    s = randbytes(2, prng, wait)
+    return (ord(s[0]) << 8) | ord(s[1])
