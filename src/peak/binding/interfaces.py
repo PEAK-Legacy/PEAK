@@ -5,7 +5,7 @@ from peak.config.interfaces import IConfigSource
 from peak.api import NOT_GIVEN
 
 __all__ = [
-    'IComponentFactory', 'IBindingNode', 'IComponent', 'IRecipe',
+    'IComponentFactory', 'IComponent', 'IRecipe',
     'IBindableAttrs', 'IComponentKey', 'IAttachable', 'IActiveDescriptor'
 ]
 
@@ -59,18 +59,18 @@ class IComponentFactory(Interface):
         component is required."""
 
 
-class IBindingNode(IConfigSource):
 
-    """Minimum requirements to join a component hierarchy"""
 
-    def getParentComponent():
-        """Return the parent component of this object, or 'None'"""
 
-    def getComponentName():
-        """Return this component's name relative to its parent, or 'None'"""
 
-    def notifyUponAssembly(child):
-        """Call 'child.uponAssembly()' when component knows its root"""
+
+
+
+
+
+
+
+
 
 
 
@@ -121,7 +121,7 @@ class IAttachable(Interface):
 
 
 
-class IComponent(IAttachable, IBindingNode, IBindableAttrs, IConfigSource):
+class IComponent(IAttachable, IBindableAttrs, IConfigSource):
 
     """API supplied by binding.Component and its subclasses"""
 
@@ -132,6 +132,14 @@ class IComponent(IAttachable, IBindingNode, IBindableAttrs, IConfigSource):
     def uponAssembly():
         """Notify the component that its parents and root are known+fixed"""
 
+    def getParentComponent():
+        """Return the parent component of this object, or 'None'"""
+
+    def getComponentName():
+        """Return this component's name relative to its parent, or 'None'"""
+
+    def notifyUponAssembly(child):
+        """Call 'child.uponAssembly()' when component knows its root"""
 
 
 class IActiveDescriptor(Interface):
@@ -148,14 +156,6 @@ class IActiveDescriptor(Interface):
 
     def activateInClass(klass, attrName):
         """Do any necessary installation in 'klass' under name 'attrName'"""
-
-
-
-
-
-
-
-
 
 
 

@@ -121,81 +121,81 @@ def getComponentPath(component, relativeTo=None):
 
 
 
-class ModuleAsNode(object):
-
-    protocols.advise(
-        instancesProvide=[IBindingNode],
-        asAdapterForTypes=[ModuleType],
-    )
-
-    def __init__(self,ob):
-        self.module = ob
-
-    def getParentComponent(self):
-        m = '.'.join(self.module.__name__.split('.')[:-1])
-        if m: return importString(m)
-        return None
-
-    def getComponentName(self):
-        return self.module.__name__.split('.')[-1]
-
-
-    # XXX it's not clear if we really need the below, since
-    # XXX they are not currently used with an adaptation
-
-    def _getConfigData(self, forObj, configKey):
-        return NOT_FOUND
-
-    def notifyUponAssembly(self,child):
-        child.uponAssembly()
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+[dispatch.on('component')]
 def getParentComponent(component):
+    """Return parent of 'component', or 'None' if root or non-component
 
-    """Return parent of 'component', or 'None' if root or non-component"""
+    This also works for module objects, and 'binding.ActiveClass' objects,
+    for which the containing module or package is returned.
+    
+    This is a generic function, so you can add cases for additional object
+    types using 'binding.getParentComponent.when()' as a decorator.
+    """
 
-    try:
-        gpc = component.getParentComponent
+[getParentComponent.when(IComponent)]
+def get_parent_of_node(component):
+    return component.getParentComponent()
 
-    except AttributeError:
+[getParentComponent.when(ModuleType)]
+def get_parent_of_module(component):
+    m = '.'.join(component.__name__.split('.')[:-1])
+    if m: return importString(m)
+    return None
 
-        component = adapt(component,IBindingNode,None)
+[getParentComponent.when(ActiveClass)]
+def get_parent_of_ActiveClass(component):
+    return component.__parent__[0]
 
-        if component is not None:
-            return component.getParentComponent()
-
-    else:
-        return gpc()
+[getParentComponent.when(object)]
+def get_parent_of_object(component):
+    return None
 
 
+
+
+
+
+
+
+
+
+
+
+
+[dispatch.on('component')]
 def getComponentName(component):
+    """Return name of 'component', or 'None' if root or non-component
 
-    """Return name of 'component', or 'None' if root or non-component"""
+    This also works for module objects, and 'binding.ActiveClass' objects,
+    for which the module or class' '__name__' is returned.
+    
+    This is a generic function, so you can add cases for additional object
+    types using 'binding.getComponentName.when()' as a decorator.
+    """
 
-    try:
-        gcn = component.getComponentName
+[getComponentName.when(IComponent)]
+def get_name_of_node(component):
+    return component.getComponentName()
 
-    except AttributeError:
+[getComponentName.when(ModuleType)]
+def get_name_of_module(component):
+    return component.__name__.split('.')[-1]
 
-        component = adapt(component,IBindingNode,None)
+[getComponentName.when(ActiveClass)]
+def get_name_of_ActiveClass(component):
+    return component.__cname__
 
-        if component is not None:
-            return component.getComponentName()
+[getComponentName.when(object)]
+def get_name_of_object(component):
+    return None
 
-    else:
-        return gcn()
+
+
+
+
+
+
+
 
 
 

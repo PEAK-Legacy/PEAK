@@ -1,5 +1,19 @@
 Fixes and Enhancements since Version 0.5 alpha 3
 
+ - 'binding.IBindingNode' was REMOVED, consolidated into 'binding.IComponent',
+   as its various individual methods have been replaced with generic functions
+   in the existing 'binding' API.  For example, 'binding.getParentComponent(x)'
+   should be used in preference to 'x.getParentComponent()' unless it is
+   a requirement that 'x' implement the full 'binding.IComponent' interface.
+   This makes it easier to define what 'binding.getParentComponent()' and
+   'binding.getComponentName()' will mean for non-component types, as you do
+   not have to define an adapter class with all of the 'IBindingNode' methods.
+   Also, this makes PEAK itself cleaner, as we often weren't bothering to
+   properly implement the full 'IBindingNode' interface anyway.
+
+   In addition, 'binding.suggestParentComponent()' is now also a generic
+   function, dispatching on the target (i.e. child) object.
+   
  - 'naming.IReferenceable' was REMOVED, as it is not in use anywhere in PEAK.
    This will be replaced with a generic function when we do actually need this
    functionality.

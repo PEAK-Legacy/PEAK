@@ -1,7 +1,7 @@
 """'Once' objects and classes"""
 
 from __future__ import generators
-from peak.api import NOT_FOUND, protocols, adapt
+from peak.api import NOT_FOUND, protocols, adapt, dispatch
 from peak.util.imports import importObject, importString
 from peak.util.signature import ISignature, getPositionalArgs
 from interfaces import IAttachable, IActiveDescriptor, IRecipe
@@ -183,6 +183,27 @@ def getInheritedRegistries(klass, registryName):
                 yield reg
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[dispatch.on('child')]
 def suggestParentComponent(parent,name,child):
 
     """Suggest to 'child' that it has 'parent' and 'name'
@@ -192,47 +213,29 @@ def suggestParentComponent(parent,name,child):
     will be given a suggestion to use 'parent' and 'name' as well.  Note that
     this means it would not be a good idea to use this on, say, a 10,000
     element list (especially if the objects in it aren't components), because
-    this function has to check all of them."""
+    this function has to check all of them.
+    """
 
-    ob = adapt(child,IAttachable,None)
-
-    if ob is not None:
-        # Tell it directly
-        ob.setParentComponent(parent,name,suggest=True)
-
+[suggestParentComponent.when(IAttachable)]
+def suggest_attachable(parent,name,child):
+    child.setParentComponent(parent,name,suggest=True)
 
 
+[suggestParentComponent.when(protocols.IBasicSequence)]
+def suggest_sequence(parent,name,child):
+    for ob in child:
+        suggestParentComponent(parent,name,ob)
 
-class _SequenceAsAttachable(protocols.Adapter):
 
-    """Set parent component for all members of a list/tuple"""
+[suggestParentComponent.when(object)]
+def suggest_nothing(parent,name,child):
+    pass
 
-    protocols.advise(
-        instancesProvide = [IAttachable],
-        asAdapterForTypes = [list, tuple],
-    )
 
-    def setParentComponent(self,parentComponent,componentName=None,suggest=False):
 
-        ct = 0
 
-        for ob in self.subject:
 
-            ob = adapt(ob,IAttachable,None)
 
-            if ob is not None:
-                ob.setParentComponent(parentComponent,componentName,suggest)
-            else:
-                ct += 1
-                if ct==100:
-                    warn(
-                        ("Large iterator for %s; if it will never"
-                         " contain components, this is wasteful.  (You may"
-                         " want to set 'suggestParent=False' on the attribute"
-                         " binding or lookupComponent() call, if applicable.)"
-                         % componentName),
-                        ComponentSetupWarning, 3
-                    )
 
 
 
@@ -757,26 +760,6 @@ class ActiveClass(Activator):
         return self
 
 
-    def getParentComponent(self):
-        return self.__parent__[0]
-
-    getParentComponent = metamethod(getParentComponent)
-
-
-    def getComponentName(self):
-        return self.__cname__
-
-    getComponentName = metamethod(getComponentName)
-
-
-    def _getConfigData(self, forObj, configKey):
-        return NOT_FOUND
-
-    _getConfigData = metamethod(_getConfigData)
-
-
-
-
     def __parent__(self,d,a):
 
         parent = self.__module__
@@ -795,27 +778,6 @@ class ActiveClass(Activator):
         return self.__name__.split('.')[-1]
 
     __cname__ = Make(__cname__, suggestParent=False)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 _ignoreNames = {'__name__':1, '__new__':1, '__module__':1, '__return__':1}

@@ -272,11 +272,11 @@ class Type(Namespace):
         if parentComponent is not None or componentName is not None:
             raise TypeError("Data values are not components")
 
-    def getParentComponent(self):
-        return None
 
-    def getComponentName(self):
-        return None
+
+
+
+
 
 
 
@@ -500,11 +500,13 @@ class Element(Type, Persistent):
 
     __metaclass__  = ElementClass
 
+    protocols.advise(instancesProvide=[binding.IAttachable])
+
     def setParentComponent(self, parentComponent, componentName=None,
         suggest=False):
 
         if suggest:
-            return  # don't accept suggestions
+            return  # don't accept direct suggestions
 
         if parentComponent is not None:
             self._p_jar = parentComponent
@@ -512,11 +514,9 @@ class Element(Type, Persistent):
         self._p_oid = componentName
 
 
-    def getParentComponent(self):
-        return self._p_jar
 
-    def getComponentName(self):
-        return self._p_oid
+
+
 
 
 
@@ -595,21 +595,21 @@ class Element(Type, Persistent):
 
 
 
+[binding.getParentComponent.when(Element)]
+def getParentComponent(component):
+    return component._p_jar
 
+[binding.getComponentName.when(Element)]
+def getComponentName(component):
+    return component._p_oid
 
-
-
-
-
-
-
-
-
-
-
-
-
-
+[binding.suggestParentComponent.when(Element)]
+def suggest_nothing(parent,name,child):
+    # don't accept suggestions via suggestParentComponent.
+    # this has the useful side effect of avoiding attempts to load
+    # a "ghost" element, just to suggest a parent component that it
+    # will then ignore anyway.
+    pass    
 
 
 
