@@ -140,19 +140,19 @@ class OpaqueURL(struct):
 
         if m:
             scheme, body = m.group(1), name[m.end():]            
-            return klass( (scheme, body) )
+            return tuple.__new__(klass,(scheme, body))
             
         raise InvalidNameException(name)
         
 
     fromString = classmethod(fromString)
 
-
     def __str__(self):
         return '%s:%s' % (self.scheme, self.body)
 
     def __repr__(self):
         return "%s(%r)" % (self.__class__.__name__, str(self))
+
 
 
 
@@ -171,20 +171,19 @@ class ParsedURL(OpaqueURL):
     def fromString(klass, name):
 
         m = URLMatch(name)
-
-        if m:
-            return klass.fromURL(OpaqueURL(name))
-
+        if m: return klass.fromURL(OpaqueURL(name))
         raise InvalidNameException(name)
 
     fromString = classmethod(fromString)
 
-    def defaultCreate(klass, url):
+
+    def fromOther(klass, url):
         if IName.isImplementedBy(url) and url.isURL:
             return klass.fromURL(url)
+            
         raise InvalidNameException(name)
 
-    defaultCreate = classmethod(defaultCreate)
+    fromOther = classmethod(fromOther)
     
     def fromURL(klass, url):
 
@@ -202,6 +201,7 @@ class ParsedURL(OpaqueURL):
         raise InvalidNameException(url)
         
     fromURL = classmethod(fromURL)
+
 
 class Syntax(object):
 

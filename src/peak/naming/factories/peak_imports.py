@@ -11,6 +11,6 @@ class importURL(OpaqueURL):
         return importString(refInfo.body)
 
     def fromURL(klass, name):
-        return OpaqueURL.__new__(klass, name)
+        return klass.fromArgs(name.scheme, name.body)
 
     fromURL = classmethod(fromURL)

@@ -81,31 +81,57 @@ class struct(tuple):
     of the fields instead."""
 
     __metaclass__ = structType
+
     __fields__ = __converters__ = __defaults__ = ()
+
 
     def __new__(klass, *__args, **__kw):
 
-        if __args:
+        if len(__args)==1 and not __kw:
+
             arg = __args[0]
+
             if isinstance(arg,StringTypes):
-                return klass.fromString(*__args, **__kw)
+                return klass.fromString(arg)
+
             elif isinstance(arg,dict):
-                return klass.fromMapping(*__args, **__kw)
+                return klass.fromMapping(arg)
 
-        elif __kw:
+            return klass.fromOther(arg)
+
+
+        elif __kw and not __args:
             return klass.fromMapping(__kw)
-                    
-        return klass.defaultCreate(*__args, **__kw)
+
+        return klass.fromArgs(*__args, **__kw)
 
 
-    def defaultCreate(klass, *args, **kw):
-        """Create from sequence/other objects
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    def fromArgs(klass, *__args, **__kw):
+    
+        """Create from arguments
         
-            You can define a classmethod here, to be used in place of
-            'tuple.__new__' when the struct is being created from something
-            other than a dict, keywords, or a string.  This is also a good
-            place to do any calculations or manipulations on the field values
-            before they're cast in stone.
+            By default, this classmethod is where all the other creation
+            methods "call down" to, so that you can do any validation or
+            conversions.  The default implementation just calls 
+            'tuple.__new__' on the '*__args' tuple.  You should override
+            this with a classmethod that takes the arguments you want, in
+            the same order as your '__fields__' definition, supplying
+            defaults if desired.
 
             The default version of this method will accept input sequences
             with more items than there are fields to fill.  The extra data
@@ -113,19 +139,68 @@ class struct(tuple):
             If you want different behavior, such as truncating the sequence
             or raising an exception, you'll need to override this method.
         """
-        # this is just a dummy so HappyDoc will document the method,
-        # we'll replace it with tuple.__new__ below for performance
+        
+        if __kw:
+            raise TypeError("Invalid keyword arguments for " + klass.__name__)
+            
+        return tuple.__new__(klass, __args)
 
-    defaultCreate = classmethod(tuple.__new__, __doc__= defaultCreate.__doc__)
+    fromArgs = classmethod(fromArgs)        
 
 
 
+
+
+
+
+
+
+    
+
+
+
+
+
+
+    def fromOther(klass, arg):
+    
+        """Create from a single argument
+        
+            You can define a classmethod here, to be used in place of
+            'tuple.__new__' when the struct is being created from a single
+            argument that is not a dictionary, keywords, or a string.
+            
+            The default simply hands the argument through to the
+            'fromArgs()' method, where it will be treated as being the
+            first field of the struct.
+        """
+        return klass.fromArgs(arg)
+
+    fromOther = classmethod(fromOther)
+    
 
     def fromString(klass, arg):
         """Override this classmethod to enable parsing from a string"""
         raise NotImplementedError
 
     fromString = classmethod(fromString)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
     def fromMapping(klass, arg):
@@ -151,16 +226,23 @@ class struct(tuple):
                  % klass.__name__), arg
             )
 
-        return tuple.__new__(klass, map(arg.get, klass.__fields__))
+        return klass.fromArgs(*tuple(map(arg.get, klass.__fields__)))
 
     fromMapping = classmethod(fromMapping)
 
 
     def extractFromMapping(klass, arg):
         """Fast extraction from a mapping; ignores undefined fields"""    
-        return tuple.__new__(klass, map(arg.get, klass.__fields__))
+        return klass.fromArgs(*tuple(map(arg.get, klass.__fields__)))
 
     extractFromMapping = classmethod(extractFromMapping)
+
+
+
+
+
+
+
 
     def __getitem__(self, key):
 
@@ -207,26 +289,9 @@ def makeFieldProperty(fieldName, fieldNum):
 
     def get(self):
         try:
-            val =  tuple.__getitem__(self,fieldNum)
+            return tuple.__getitem__(self,fieldNum)
         except IndexError:
-            pass
-        else:
-            if val is not None:
-                try:
-                    cvt = self.__converters__[fieldNum]
-                except IndexError:
-                    return val
-                else:
-                    return cvt(val)
-                
-        # return a default value
-       
-        try:
-            return self.__defaults__[fieldNum]
-        except IndexError:
-            pass
-
-
+            return None
 
     return property(get)
 
