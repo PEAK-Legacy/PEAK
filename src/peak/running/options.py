@@ -291,15 +291,22 @@ def make_parser(ob,**kw):
     The parser will be populated with the options registered for the
     object's class.  Any keyword arguments supplied will be passed
     directly to 'optparse.OptionParser', so see its docs for details.
-    By default, this routine sets 'usage' to an empty string, and
-    'add_help_option' to 'False', unless you override them.
+    By default, this routine sets 'usage' to an empty string,
+    'add_help_option' to 'False', and 'allow_interspersed_args' to
+    'False', unless you override them.
     """
 
     kw.setdefault('usage','')
+    intersperse = kw.setdefault('allow_interspersed_args',False)
+    del kw['allow_interspersed_args']
     prog = kw.setdefault('prog','')+':'
     kw.setdefault('add_help_option',False)
+
     from peak.util.optparse import OptionParser
     parser = OptionParser(**kw)
+    if not intersperse:
+        parser.disable_interspersed_args()
+
     def _exit_parser(status=0, msg=None):
         if msg:
             from commands import InvocationError
@@ -314,6 +321,10 @@ def make_parser(ob,**kw):
         optinfo = OptionRegistry[ob,].items()
     except NoApplicableMethods:
         optinfo = []
+
+
+
+
 
     optmap = dict([(k,opt)for k,(a,opt) in optinfo if opt is not None])
     optsused = {}

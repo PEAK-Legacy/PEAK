@@ -207,7 +207,7 @@ attribute, it calls the decorated function when one of the specified options
 is encountered on a command line.  You must specify ``repeatable=True`` if you
 want to allow the option to appear more than once on the command line.
 
-The ``zapify`` function above will be called on a ``Bar`` instance if it
+The ``zapify`` function above will be called on a ``Foo`` instance if it
 parses a ``-z`` option.  `parser` is the ``optparse.OptionParser`` being used
 to do the parsing, `optname` is the option name (e.g. ``-z``) that was
 encountered, `optval` is either the option's argument or the `value`
@@ -292,6 +292,22 @@ in the input arguments.
     ['q']
     >>> foo.verbose
     1
+
+* Stop processing options after first argument::
+
+    >>> foo = Foo(); options.parse(foo, ['xyz', '-v'])
+    ['xyz', '-v']
+    >>> foo.verbose
+    0
+
+* Unless interspersed arguments are allowed (see `Parser Settings`_ below)::
+
+    >>> foo = Foo()
+    >>> options.parse(foo, ['xyz', '-v'], allow_interspersed_args=True)
+    ['xyz']
+    >>> foo.verbose
+    1
+    
 
 * Two options::
 
@@ -404,6 +420,12 @@ generated help messages.  For example::
 blank lines in the real output.  Doctest doesn't allow blank lines to appear
 in sample output.)
 
+Also, one keyword argument is allow that is not actually an ``OptionParser``
+keyword argument: ``allow_interspersed_args``.  If this keyword is not set
+to a true value, option parsing stops at the first non-option argument
+encountered.  (This is the desired default behavior for PEAK commands, to
+prevent them trying to parse subcommands' options.)
+
 
 Option Groups
 -------------
@@ -418,7 +440,9 @@ following properties that can be set:
 
 ``description``
     This sets additional text, if any, that should appear after the group
-    title, but before the options in that group are listed.
+    title, but before the options in that group are listed.  ``optparase``
+    treats this as a single paragraph of text and may rewrap it, so don't
+    bother with any fancy formatting.
     
 ``sortKey``
     The sort key is a value used to arrange groups in a specified order.
@@ -554,8 +578,8 @@ returning the non-option arguments from the command line::
 
 As you can see, the ``bang`` attribute had its default value until we looked
 at ``parsed_args``, at which point it was set according to the supplied
-options.  (Note: the ``"foo"`` in the ``argv`` parameter is the "program name";
-that's why it doesn't appear in ``cmd.parsed_args``.)
+options.  (Note: the ``"foo"`` in the ``argv`` parameter is the "program name",
+which is why it doesn't appear in ``cmd.parsed_args``.)
 
 Finally, you should be aware that both the help generation and option parsing
 are done via the ``option_parser`` attribute of the command, which is
@@ -733,6 +757,5 @@ To Do
 -----
 
 * Help formatter column setting, style setting
-* Allow use of interspersed args+options
 * Allow multi-valued args (``nargs>1``)?
 
