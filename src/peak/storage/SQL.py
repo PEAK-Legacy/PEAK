@@ -178,7 +178,6 @@ class SQLConnection(ManagedConnection):
 
     Error               = binding.bindTo("API/Error")
     Warning             = binding.bindTo("API/Warning")
-    
     Exceptions          = binding.bindSequence("Error", "Warning")
 
     Date                = binding.bindTo("API/Date")
@@ -203,7 +202,6 @@ class SQLConnection(ManagedConnection):
         return tm
 
     typeMap = binding.Once(typeMap)
-
 
 class SybaseConnection(SQLConnection):
 
@@ -412,8 +410,7 @@ class GadflyConnection(SQLConnection):
 
 class GadflyURL(naming.ParsedURL):
 
-    _supportedSchemes = ('gadfly',)
-    _defaultScheme = 'gadfly'
+    supportedSchemes = ('gadfly',)
 
     pattern = "(//)?(?P<db>[^@]+)@(?P<dir>.+)"
 
@@ -451,9 +448,10 @@ class GadflyURL(naming.ParsedURL):
 
 
 
+
 class GenericSQL_URL(naming.ParsedURL):
 
-    _supportedSchemes = ('sybase', 'pgsql')
+    supportedSchemes = ('sybase', 'pgsql')
 
     pattern = """(?x)
     (//)?

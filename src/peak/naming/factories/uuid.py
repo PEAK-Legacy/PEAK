@@ -14,9 +14,7 @@ class uuidURL(ParsedURL):
                     qualifiers is not well defined.
     """
 
-    _defaultScheme = 'uuid'
-
-    _supportedSchemes = ('uuid', )
+    supportedSchemes = 'uuid',
 
 
     def __init__(self, scheme=None, body=None, uuid=None, quals=None):

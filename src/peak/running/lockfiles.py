@@ -36,10 +36,11 @@ __all__ = ['LockFile', 'NullLockFile']
 import os, errno, time
 from peak.util.threads import allocate_lock
 
-
 from Interface import Interface
 
+
 class ILock(Interface):
+
     def attempt():
         """try to obtain the lock, return boolean success"""
         
@@ -55,8 +56,31 @@ class ILock(Interface):
 
     
 
-class LockFileBase:
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class LockFileBase:
     """Common base for lockfiles"""
     
     __implements__ = ILock
@@ -96,7 +120,6 @@ class LockFileBase:
 
     def locked(self):
         return self._locked
-
 
 ### Posix-y lockfiles ###
 
@@ -471,7 +494,7 @@ from peak.naming.names import ParsedURL
 
 class lockfileURL(ParsedURL):
 
-    _supportedSchemes = (
+    supportedSchemes = (
         'lockfile', 'shlockfile', 'flockfile', 'winflockfile',
         'nulllockfile'
     )

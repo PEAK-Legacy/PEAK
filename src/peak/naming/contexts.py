@@ -43,19 +43,18 @@ class NameContext(Component):
 
     __implements__ = IBasicContext
 
+    parseURLs       = True
     creationName    = Acquire(CREATION_NAME)
     creationParent  = Acquire(CREATION_PARENT)
     objectFactories = Acquire(OBJECT_FACTORIES)
     stateFactories  = Acquire(STATE_FACTORIES)
+    schemeParser    = Acquire(SCHEME_PARSER)
 
-    schemeParser  = None
-    nameClass     = CompositeName
-    defaultScheme = None
-    
-    _acceptStringURLs    = True     # XXX
+    compoundParser  = CompoundName
+    compositeParser = CompositeName
 
-    namingAuthority = None
-    # XXX nameInContext = binding.Once( nameClass([]) or CompoundName([]) )
+    namingAuthority = Once( lambda s,d,a: s.schemeParser() )
+    nameInContext   = Once( lambda s,d,a: s.compoundParser(()) )
 
 
     def _resolveComposite(self, name, iface):
@@ -67,16 +66,17 @@ class NameContext(Component):
 
         if not name:
             # convert to compound (local) empty name
-            return self._resolveLocal(CompoundName([]), iface) # XXX .nameClass
-        else:
-            local = name[0]
-            if self.nameClass and self.nameClass.nameKind == COMPOSITE_KIND:
-                local = CompoundName(local) # XXX use URL parser syntax?
+            return self._resolveLocal(self.compoundParser(()), iface)
 
+        else:
+            local = toName(name[0], self.compoundParser, self.parseURLs)
+            
             if len(name)==1:
                 return self.resolveToInterface(local, iface)
 
             return self.lookup_nns(local).resolveToInterface(name[1:], iface)
+
+
 
 
 
@@ -107,56 +107,56 @@ class NameContext(Component):
 
     def _resolveURL(self, name, iface):
 
-        #auth, nic = name.getAuthorityAndName()
+        auth, nic = name.getAuthorityAndName()
+        nic = self.compositeParser(nic)
+        diff = nic - self.nameInContext
 
-        #if self.namingAuthority == auth and nic.startswith(self.nameInContext):
-        
-            self._checkSupported(name, iface)
-            return self, name
+        if self.namingAuthority == auth and diff is not None:
+            return self.resolveToInterface(diff, iface)
 
-        #else:
-        #    ctx = self.__class__(self, namingAuthority=auth)
-        #    return ctx.resolveToInterface(nic, iface)
+        else:
+            ctx = self.__class__(self, namingAuthority=auth)
+            return ctx.resolveToInterface(nic, iface)
 
 
 
 
     def resolveToInterface(self, name, iface=IBasicContext):
 
-        parser = self.schemeParser
-        name = toName(name, self.nameClass, self._acceptStringURLs)
-        kind = name.nameKind
-        
-        if kind == COMPOSITE_KIND:
+        name = toName(name, self.compositeParser, self.parseURLs)
+
+        if name.nameKind == COMPOSITE_KIND:
             return self._resolveComposite(name, iface)
 
-        elif kind == URL_KIND:
+        elif name.nameKind == COMPOUND_KIND:
+            name = self.compoundParser(name)        # ensure syntax is correct
+            return self._resolveLocal(name,iface)   # resolve locally
 
-            if parser:
-                if isinstance(name,parser):
-                    return self._resolveURL(name,iface)
-                elif parser.supportsScheme(name.scheme):
-                    return self._resolveURL(
-                        parser(name.scheme, name.body), iface
-                    )
 
-            ctx = spi.getURLContext(name.scheme, self, iface)
+        # else name.nameKind == URL_KIND
 
-            if ctx is None:
-                raise exceptions.InvalidName(
-                    "Unknown scheme %s in %r" % (name.scheme,name)
+        parser = self.schemeParser
+
+        if parser:
+
+            if isinstance(name, parser):
+                return self._resolveURL(name,iface)
+
+            elif parser.supportsScheme(name.scheme):
+                return self._resolveURL(
+                    parser(name.scheme, name.body), iface
                 )
 
-            return ctx.resolveToInterface(name,iface)
+        # Delegate to the appropriate URL context
 
-        return self._resolveLocal(name,iface)
+        ctx = spi.getURLContext(name.scheme, self, iface)
 
+        if ctx is None:
+            raise exceptions.InvalidName(
+                "Unknown scheme %s in %r" % (name.scheme,name)
+            )
 
-
-
-
-
-
+        return ctx.resolveToInterface(name,iface)
 
 
 
@@ -458,14 +458,23 @@ class AddressContext(NameContext):
         return (name, None)     # refInfo, attrs
 
 
+    def _resolveURL(self, name, iface):
+
+        # Since the URL contains all data needed, there's no need
+        # to extract naming authority; just handle the URL directly
+
+        self._checkSupported(name, iface)
+        return self, name
+
+
     def _resolveLocal(self, name, iface):
 
         # Convert compound names to a URL in this context's scheme
 
-        return self._resolveURL(
-            self.schemeParser(self.defaultScheme, str(name)), iface
-        )   # XXX should pass name, not str(name), but URL's don't unparse
-            # XXX bodies yet
+        return self.resolveToInterface(
+            self.namingAuthority + name, iface
+        )
+
 
 
 

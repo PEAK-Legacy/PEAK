@@ -5,10 +5,7 @@ import smtplib
 
 class smtpURL(ParsedURL):
 
-    _defaultScheme = 'smtp'
-    
-    _supportedSchemes = ('smtp', )
-
+    supportedSchemes = ('smtp', )
 
     pattern = """(?ix)   # ignore case, use verbose formatting
 

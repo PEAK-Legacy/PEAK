@@ -205,7 +205,7 @@ class Event(Component):
 
 class logfileURL(naming.ParsedURL):
 
-    _supportedSchemes = ('logfile', )
+    supportedSchemes = ('logfile', )
     
     def __init__(self, scheme=None, body=None, filename=None, level=None):
         self.setup(locals())
@@ -265,6 +265,7 @@ class LogSink:
 
 
 class Logfile(LogSink):
+
     def __init__(self, filename, level):
         self.filename, self.level = filename, level
         

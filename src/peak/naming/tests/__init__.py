@@ -13,8 +13,19 @@ validNames = {
 
     'ldap://cn=root:somePw@localhost:9912/cn=monitor':
         Items(
-            host='localhost', port=9912, basedn='cn=monitor',
+            host='localhost', port=9912, basedn=(('cn=monitor',),),
             extensions={'bindname':(1,'cn=root'), 'x-bindpw':(1,'somePw')}    
+        ),
+
+    'ldap://localhost/cn=Bar,ou=Foo,o=eby-sarna.com':
+        Items(
+            host='localhost', port=389,
+            basedn=(('o=eby-sarna.com','ou=Foo','cn=Bar'),),
+        ),
+
+    'ldap:///cn="A \\"quoted\\", and obscure thing",ou=Foo\\,Bar':
+        Items(
+            basedn=(('ou=Foo\\,Bar','cn="A \\"quoted\\", and obscure thing"'),),
         ),
 
     'uuid:6ba7b810-9dad-11d1-80b4-00c04fd430c8':
@@ -31,13 +42,10 @@ validNames = {
     'sybase://user:p%40ss@server':
         Items(server='server', db=None, user='user', passwd='p@ss'),
 
-    'gadfly://drinkers@c:\\temp':
-        Items(db='drinkers', dir=r'c:\temp'),
+    'gadfly://drinkers@c:\\temp': Items(db='drinkers', dir=r'c:\temp'),
         
     'import:bada.bing':
         Items(body='bada.bing'),
-
-
 
     'lockfile:c:\\spam.lock':
         Items(body='c:\\spam.lock'),
@@ -72,18 +80,19 @@ class NameParseTest(TestCase):
 
 
 
-
-
-
-
-
-
-
-
 from peak.naming.api import CompoundName as lname, CompositeName as gname
-
+from peak.storage.LDAP import ldapURL as LU, distinguishedName as dN
 
 additions = [
+    ( dN('ou=foo,o=eby-sarna.com'), dN('cn=bar'),
+        dN('cn=bar,ou=foo,o=eby-sarna.com')
+    ),
+    ( LU('ldap','///ou=foo,o=eby-sarna.com'), dN('cn=bar'),
+        LU('ldap','///cn=bar,ou=foo,o=eby-sarna.com')
+    ),
+    ( LU('ldap','///ou=foo,o=eby-sarna.com'), gname([dN('cn=bar')]),
+        LU('ldap','///cn=bar,ou=foo,o=eby-sarna.com')
+    ),
     ( lname(['x','y']), lname(['z']), lname(['x','y','z']) ),
     ( '', lname(['foo']), lname(['foo']) ),
     ( gname(['a','b','']), lname(['x']), gname(['a','b',lname(['x'])]) ),
@@ -94,7 +103,7 @@ additions = [
 class NameAdditionTest(TestCase):
     def checkAdds(self):
         for n1,n2,res in additions:
-            assert n1+n2==res, (n1,n2,res)
+            assert n1+n2==res, (n1,n2,n1+n2,res)
 
 
 TestClasses = (

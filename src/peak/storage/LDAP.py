@@ -203,6 +203,47 @@ class LDAPConnection(ManagedConnection):
 
 
 
+class distinguishedName(naming.CompoundName):
+
+    syntax = naming.Syntax(
+    
+        direction    = -1,      # DN's go right-to-left
+        separator    = ',',     # are comma-separated
+        trimblanks   = True,    # and blanks are ignored
+
+        beginquote   = '"',     # LDAP uses double quotes for quoting, and
+        multi_quotes = True,    #   can have multiple quoted strings per RDN.
+
+        escape       = '\\',    # Escape character is backslash, but
+        decode_parts = False,   #   don't try to unquote/unescape RDNs!
+        
+    )
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 class ldapURL(naming.ParsedURL):
 
     """RFC2255 LDAP URLs, with the following changes:
@@ -240,8 +281,8 @@ class ldapURL(naming.ParsedURL):
                     and throw an error.        
     """
     
-    _supportedSchemes = ('ldap', 'ldaps', 'ldapi')
-
+    supportedSchemes = ('ldap', 'ldaps', 'ldapi')
+    nameAttr = 'basedn'
 
 
     def __init__(self, scheme=None, body=None,
@@ -297,14 +338,16 @@ class ldapURL(naming.ParsedURL):
             extensions['bindname'] = (1, _bindinfo)
         
         if _rest:
-
             if '?' in _rest:
                 basedn, _rest = rest.split('?', 1)
-                basedn = unquote(basedn)
+                basedn = naming.CompositeName.parse(basedn,distinguishedName)
 
             else:
-                basedn = unquote(_rest)
-                rest = ''
+                basedn = naming.CompositeName.parse(_rest,distinguishedName)
+                _rest = ''
+
+        else:
+            basedn = naming.CompositeName('')
 
         _rest = (_rest.split('?') + ['']*3)[:4]
 
@@ -318,8 +361,6 @@ class ldapURL(naming.ParsedURL):
 
         if _rest[2]:
             filter = unquote(_rest[2])
-
-
 
 
 

@@ -137,7 +137,29 @@ class IReadContext(IBasicContext):
     def info():
         """Return a sequence of (name,(refInfo,attrs)) pairs"""
 
-    # search, getAttributes
+    # XXX search, getAttributes
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 class IWriteContext(IBasicContext):
@@ -159,7 +181,26 @@ class IWriteContext(IBasicContext):
     def unbind(name,object):
         """Synonym for __delitem__"""
 
-    # createSubcontext, destroySubcontext, modifyAttributes
+    def mksub(name, attrs=None):
+        """Create a subcontext of the same kind under 'name', with 'attrs'"""
+        
+    def rmsub(name):
+        """Remove sub-context 'name'"""
+        
+    # XXX modifyAttributes
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 class I_NNS_Binding(IBasicContext):

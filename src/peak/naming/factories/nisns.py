@@ -5,8 +5,7 @@ import nis
 
 class nisURL(naming.ParsedURL):
 
-    _defaultScheme = 'nis'
-    _supportedSchemes = ('nis', )
+    supportedSchemes = 'nis',
 
     pattern = "((?P<mapname>[^/]+)(/(?P<key>.+)?)?)?"
 
@@ -39,11 +38,10 @@ class nisURLContext(AbstractContext):
             return mapns, None
 
 
+
 class nisMapContext(AbstractContext):
 
     __implements__ = naming.IReadContext
-
-    nameClass = naming.CompoundName
 
     mapname = binding.requireBinding('NIS mapname to use')
 

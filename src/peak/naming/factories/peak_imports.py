@@ -6,9 +6,7 @@ from types import StringTypes
 
 class importURL(ParsedURL):
 
-    _defaultScheme = 'import'
-
-    _supportedSchemes = 'import',
+    supportedSchemes = 'import',
 
     def retrieve(self, refInfo, name, context, attrs=None):
         return importString(self.body)

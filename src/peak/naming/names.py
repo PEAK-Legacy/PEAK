@@ -6,16 +6,17 @@ from peak.api import *
 
 import re
 from types import StringTypes
-from urllib import unquote
+from urllib import quote,unquote
 
 from interfaces import *
 
 from peak.util.Struct import struct, structType
+from peak.binding.once import Activator, Once
 
 __all__ = [
     'AbstractName', 'toName', 'CompositeName', 'CompoundName',
     'Syntax', 'UnspecifiedSyntax', 'NNS_NAME', 'ParsedURL', 'URLMatch',
-    'LinkRef', 'NNS_Reference'
+    'LinkRef', 'NNS_Reference', 'FlatSyntax',
 ]
 
 
@@ -38,7 +39,6 @@ class UnspecifiedSyntax(object):
 
 
 
-
 def any_plus_url(n1,n2):
     return n2
 
@@ -50,9 +50,14 @@ def compound_plus_compound(n1,n2):
 def composite_plus_composite(n1,n2):
 
     l = list(n1)
-    if not l[-1]: l.pop()   # remove extra '/'
+    last = l.pop()
+    
+    if not last:
+        l.extend(list(n2))
+    else:
+        l.append(last + n2[0])
+        l.extend(list(n2)[1:])
 
-    l.extend(list(n2))
     return CompositeName(l)
 
 
@@ -75,11 +80,6 @@ def composite_plus_compound(n1,n2):
 
 
 
-
-
-
-
-
 def compound_plus_composite(n1,n2):
 
     l = list(n2)
@@ -94,9 +94,7 @@ def compound_plus_composite(n1,n2):
 
 
 def url_plus_other(n1,n2):
-    return n1.__add__(n2)   # XXX URLs don't actually implement __add__ yet
-
-
+    return n1.addName(n2)
 
 _name_addition = {
     (COMPOSITE_KIND,      URL_KIND): any_plus_url,
@@ -111,10 +109,53 @@ _name_addition = {
     (COMPOUND_KIND, COMPOSITE_KIND): compound_plus_composite,
 }
 
+def _name_add(self, other):
+    if self and other:
+        return _name_addition[self.nameKind,other.nameKind](self,other)
+    return self or other
+
+def _name_radd(self, other):
+    if self and other:
+        return _name_addition[other.nameKind,self.nameKind](other,self)
+    return self or other
 
 
 
+def same_minus_same(n1,n2):
+    if n1.startswith(n2):
+        return n1[len(n2):]
 
+
+def compound_minus_composite(n1,n2):
+    if len(n2)==1:
+        return n1-n2[0]
+
+
+def composite_minus_compound(n1,n2):
+    if n1:
+        p = n1[0]-n2
+        if p is not None:
+            return CompositeName([p]+list(n1)[1:])
+
+
+_name_subtraction = {
+    (COMPOSITE_KIND,COMPOSITE_KIND): same_minus_same,
+    (COMPOUND_KIND,  COMPOUND_KIND): same_minus_same,
+    (COMPOSITE_KIND, COMPOUND_KIND): composite_minus_compound,
+    (COMPOUND_KIND, COMPOSITE_KIND): compound_minus_composite,
+}
+
+
+def _name_sub(self, other):
+    if other:
+        return _name_subtraction[self.nameKind,other.nameKind](self,other)
+    return self
+
+
+def _name_rsub(self, other):
+    if self:
+        return _name_subtraction[other.nameKind,self.nameKind](other,self)
+    return other
 
 
 
@@ -147,20 +188,20 @@ class AbstractName(tuple):
     def __repr__(self):
         return "%s(%r)" % (self.__class__.__name__, list(self))
 
-    def __add__(self, other):
-        if self and other:
-            return _name_addition[self.nameKind,other.nameKind](self,other)
-        return self or other
-
-    def __radd__(self, other):
-        if self and other:
-            return _name_addition[other.nameKind,self.nameKind](other,self)
-        return self or other
+    __add__  = _name_add
+    __sub__  = _name_sub
+    __radd__ = _name_radd
+    __rsub__ = _name_rsub
 
     def __getslice__(self, *args):
         return self.__class__(
             super(AbstractName,self).__getslice__(*args)
         )
+
+    def startswith(self, ob):
+        return not ob or self[:len(ob)] == ob
+
+
 
     # syntax-based methods
 
@@ -205,7 +246,7 @@ class AbstractName(tuple):
 
 URLMatch = re.compile('([-+.a-z0-9]+):',re.I).match
 
-class URLMeta(type):
+class URLMeta(Activator):
 
     def __init__(klass, name, bases, classDict):
 
@@ -219,34 +260,113 @@ class URLMeta(type):
         return super(URLMeta,klass).__init__(name, bases, classDict)
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 class ParsedURL(object):
 
-    __metaclass__  = URLMeta
-    __implements__ = IAddress
+    __metaclass__    = URLMeta
+    __implements__   = IAddress
 
-    nameKind = URL_KIND
+    nameKind         = URL_KIND
 
-    _defaultScheme = None
-    _supportedSchemes = ()
-    
-    pattern = ''
+    nameAttr = None
+    supportedSchemes = ()
 
+    pattern      = ''
     dont_unquote = ()
 
     scheme = None
     body   = None
 
 
-
-
-
-
-
-
+    defaultScheme = Once(
+        lambda s,d,a: s.supportedSchemes and s.supportedSchemes[0]
+            or None
+    )
 
     def __init__(self, scheme=None, body=None):
         self.setup(locals())
-    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    __add__  = _name_add
+
+    __radd__ = _name_radd
+
+
+    def addName(self,other):
+
+        if not other:
+            return self
+
+        if not isName(other):
+            raise TypeError(
+                "Only names can be added to URLs", self, other
+            )
+
+        if other.nameKind==URL_KIND:
+            return other
+
+        na = self.nameAttr
+
+        if not na:
+            raise TypeError(
+                "Addition not supported for pure address types", self, other
+            )
+            
+        d = dict(self.__state)
+        d[na] = getattr(self,na,CompoundName(())) + other
+        
+        res = self.__new__(self.__class__)
+        res.__dict__.update(d)
+
+        return res
+
+
+
+
+
+
+
+
+
     def parse(self, scheme, body):
 
         if self.pattern:
@@ -257,7 +377,7 @@ class ParsedURL(object):
                 for k,v in d.items():
                     if v is NOT_GIVEN:
                         del d[k]
-                    elif k not in self.dont_unquote:
+                    elif k not in self.dont_unquote and k!=self.nameAttr:
                         d[k] = unquote(v)
                 d['scheme'] = scheme
                 d['body']   = body
@@ -268,7 +388,6 @@ class ParsedURL(object):
             
         return locals()
 
-
     def retrieve(self, refInfo, name, context, attrs=None):
         pass
 
@@ -276,12 +395,16 @@ class ParsedURL(object):
         return "%s:%s" % (self.scheme, self.body)
 
     def __repr__(self):
-        return "%s(%r)" % (self.__class__.__name__, str(self))
+        return "%s(%r)" % (self.__class__.__name__,
+            ','.join(['%s=%r' % (k,v) for (k,v) in self.__state])
+        )
 
     def supportsScheme(klass, scheme):
-        return scheme in klass._supportedSchemes or not klass._supportedSchemes
+        return scheme in klass.supportedSchemes or not klass.supportedSchemes
         
     supportsScheme = classmethod(supportsScheme)
+
+
 
 
 
@@ -296,8 +419,13 @@ class ParsedURL(object):
 
         update(initargs)
 
-        scheme = initargs.get('scheme') or self._defaultScheme
-        body   = initargs.get('body')
+        d = self.__dict__
+        scheme = d.get('scheme')
+        body   = d.get('body')
+
+        if not scheme:
+            scheme = self.defaultScheme
+            d['scheme'] = scheme
 
         if not self.supportsScheme(scheme):
             raise exceptions.InvalidName(
@@ -308,48 +436,87 @@ class ParsedURL(object):
             update(self.parse(scheme, body))
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
     def __setattr__(self, n, v):
         raise AttributeError, "Immutable object"
 
+    def __state(self,d,a):
+        is_descr = self.__class__.__all_descriptors__.has_key
+        s = [(k,v) for (k,v) in d.iteritems() if not is_descr(k) and k!='body']
+        s.sort()
+        return tuple(s)
 
+    __state = Once(__state)
+    __hash  = Once( lambda s,d,a: hash(s.__state) )
+    
 
+    def __hash__(self):
+        return self.__hash
 
+    def __cmp__(self,other):
+        return cmp(self.__state, other)
 
+    def __split(self,d,a):
 
+        d = dict(self.__state)
+        na = self.nameAttr
 
+        if na:
+            if na in d:
+                nic = d[na]; del d[na]
+            else:
+                nic = getattr(self,na)
+        else:            
+            nic = CompoundName(())
 
+        auth = self.__new__(self.__class__)
+        auth.__dict__.update(d)
+        return auth, nic
 
+    __split = Once(__split)
 
-
-
-
-
-
+    def getAuthorityAndName(self):
+        return self.__split
 
 class Syntax(object):
 
     """Name parser"""
 
     def __init__(self,
-                 
-                 direction=0,
-                 separator='',
-                 escape='',
 
-                 ignorecase=None,
-                 trimblanks=None,
-                 
-                 beginquote='',
-                 endquote='',
-                 beginquote2='',
-                 endquote2='',
-                 
-                 #ava_separator=None,
-                 #typeval_separator=None,
-        ):
+         direction=0,
+         separator='',
+         escape='',
 
-        self.direction = direction
-        self.separator = separator
+         ignorecase=None,
+         trimblanks=None,
+         
+         beginquote='',
+         endquote='',
+         beginquote2='',
+         endquote2='',
+
+         multi_quotes = False,
+         decode_parts = True,
+
+    ):
+
+        self.multi_quotes = multi_quotes
+        self.decode_parts = decode_parts
+        self.direction    = direction
+        self.separator    = separator
 
         if direction not in (-1,0,1):
             raise ValueError, "Direction must be 1, 0 (flat), or -1 (reverse)"
@@ -362,10 +529,10 @@ class Syntax(object):
 
         if endquote and not beginquote:
             raise ValueError, "End quote supplied without begin quote"
-        
+
+
         if endquote2 and not beginquote2:
             raise ValueError, "End quote 2 supplied without begin quote 2"
-
 
         if beginquote2 and not beginquote:
             raise ValueError, "Begin quote 2 supplied without begin quote 1"
@@ -375,6 +542,7 @@ class Syntax(object):
 
         quotes = beginquote,endquote,beginquote2,endquote2
         quotes = dict(zip(quotes,quotes)).keys()    # unique strings only
+
         self.metachars = filter(None,[escape] + quotes)
         
         if escape and quotes:
@@ -404,10 +572,6 @@ class Syntax(object):
             escapedChar = ''
 
 
-
-
-
-
         quotedStrs = ''
         bqchars = ''
         
@@ -417,7 +581,7 @@ class Syntax(object):
             bq = re.escape(bq)
             eq = re.escape(eq)
             quotedStrs += \
-                "%(bq)s(?:%(escapedChar)s[^%(eq_)s])%(eq)s|" % locals()
+                "%(bq)s(?:%(escapedChar)s[^%(eq_)s])*%(eq)s|" % locals()
             bqchars += bq_
 
         if separator:
@@ -432,20 +596,20 @@ class Syntax(object):
         else:
             charpat = '.'
 
-        PS = """
-            # Each path segment begins with an optional separator:
-            %(optionalSep)s
+        if multi_quotes:
+            content = "( (?: %(quotedStrs)s %(escapedChar)s %(charpat)s )* )"
+        else:
+            content = "( %(quotedStrs)s (?:%(escapedChar)s%(charpat)s)*    )"
 
-            # Which is followed by either:
-            (   %(quotedStrs)s                      # a quoted string
-                (?:%(escapedChar)s%(charpat)s)*     # or a string w/no unescaped quotes or slashes
-            )           
-            # And it must be followed by a separator or EOF:
-            (?=%(sepOrEof)s)
+        content = content % locals()        
+        PS = """
+            %(optionalSep)s
+            %(content)s         # Contents in the middle
+            (?=%(sepOrEof)s)    # separator or EOF last
         """ % locals()
 
         self.parseRe = re.compile(PS,re.X)
-        
+
         if escape:
             self.unescape = re.compile(re.escape(escape)+'(.)').sub
 
@@ -453,7 +617,7 @@ class Syntax(object):
     
         """Format a sequence as a string in this syntax"""
         
-        if self.escape:
+        if self.escape and self.decode_parts:
             n = [self.escapeFunc(self.escapeTo,part) for part in seq]
         else:
             n = [part for part in seq]
@@ -521,12 +685,12 @@ class Syntax(object):
         escape = self.escape
         unescape = self.unescape
         tb = self.trimblanks
-        
+        do_unescape = self.decode_parts and escape
+        use_quotes  = self.decode_parts and quotes and not self.multi_quotes
+
         if aStr.startswith(sep):
             n.append('')
             aStr=aStr[len(sep):]
-
-
 
 
 
@@ -537,13 +701,14 @@ class Syntax(object):
             if m:
                 s = m.group(1)  # get the content of the path segment
 
-                for bq,eq in quotes:
-                    if s.startswith(bq):
-                        # strip off surrounding quotes
-                        s=s[len(bq):-len(eq)]
-                        break
+                if use_quotes:
+                    for bq,eq in quotes:
+                        if s.startswith(bq):
+                            # strip off surrounding quotes
+                            s=s[len(bq):-len(eq)]
+                            break
 
-                if escape and escape in s:
+                if do_unescape and escape in s:
                     # unescape escaped characters
                     s = unescape('\\1',s)
 
@@ -571,7 +736,6 @@ class Syntax(object):
 
 
 
-
 class CompositeName(AbstractName):
 
     """A name whose parts may belong to different naming systems
@@ -583,34 +747,44 @@ class CompositeName(AbstractName):
         slashes.
     """
 
-    syntax = Syntax(
-        direction=1,
-        separator='/',
-        beginquote='"',
-        beginquote2="'",
-        escape="\\"
-    )
-
     nameKind = COMPOSITE_KIND
 
+    def format(self):
+
+        n = [s.replace('/','%2F') for s in self]
+
+        if not filter(None,n):
+            n.append('')
+        return '/'.join(n)
+
+
+    def parse(klass, name, firstPartType=None):
+
+        # XXX Should we unescape anything besides '/'?
+
+        parts = [part.replace('%2F','/').replace('%2f','/')
+            for part in name.split('/')
+        ]
+
+        if not filter(None,parts):
+            parts.pop()
+
+        if firstPartType is not None:
+            parts[0] = firstPartType(parts[0])
+
+        return klass(parts)
+
+    parse = classmethod(parse)
+
+
+FlatSyntax = Syntax()
 
 class CompoundName(AbstractName):
 
     """A multi-part name with all parts in the same naming system"""
 
     nameKind = COMPOUND_KIND
-
-    def __new__(klass, name, syntax=Syntax() ):
-
-        if isinstance(name,StringTypes):
-            name = syntax.parse(name)
-            
-        name = super(CompoundName,klass).__new__(klass,name)
-        name.syntax = syntax       
-        return name
-
-
-
+    syntax   = FlatSyntax
 
 
 def toName(aName, nameClass=CompoundName, acceptURL=1):
@@ -643,16 +817,6 @@ def toName(aName, nameClass=CompoundName, acceptURL=1):
 
 
 NNS_NAME = CompositeName('/')
-
-
-
-
-
-
-
-
-
-
 
 class LinkRef(object):
 
