@@ -453,8 +453,8 @@ class Bootstrap(AbstractInterpreter):
 Usage: peak NAME_OR_URL arguments...
 
 The 'peak' script bootstraps and runs a specified command object or command
-class.  The NAME_OR_URL argument may be a shortcut name defined by the
-'peak.running.commands.Bootstrap' class, or a URL of a type
+class.  The NAME_OR_URL argument may be a shortcut name defined in the
+'peak.running.shortcuts' property namespace, or a URL of a type
 supported by 'peak.naming'.  For example, if you have a class 'MyAppClass'
 defined in 'MyPackage', you can use:
 
@@ -466,15 +466,15 @@ so in the example above it will see 'import:MyPackage.MyAppClass' as its
 
 The named object must implement one of the 'peak.running' command interfaces,
 or be callable.  See the 'Bootstrap' class in 'peak.running.commands' for
-more details, and the list of available shortcut names.
-"""
+more details on creating command objects for use with 'peak'.  For the
+list of available shortcut names, see '%s'""" % config.fileNearModule(
+        'peak','peak.ini'
+    )
 
+    if 'PEAK_CONFIG' in os.environ:
+        usage += " and '%s'" % os.environ['PEAK_CONFIG']
 
-
-
-
-
-
+    usage += ".\n"
 
 
 
