@@ -2,17 +2,6 @@
 
  The following schemes are not currently tested:
 
-    * 'icb' -- it depends on 'peak.net.common', which is not in CVS yet.  When
-      it's in, these tests (and perhaps others) should be added::
-
-        'icb://nik:u@localhost/aGroup':
-            Items(nick='nik',user='u',passwd=None,server='localhost',
-                group='aGroup'),
-
-        'icb://n:u:p@localhost':
-            Items(nick='n',user='u',passwd='p',server='localhost',
-                group=None),
-
     * 'nis', 'unix', 'unix.dg', 'logging.logger', 'zconfig.schema', and
       'shellcmd' -- these do not have parsed bodies
 
@@ -28,6 +17,17 @@
 from unittest import TestCase, makeSuite, TestSuite
 from peak.api import *
 from peak.tests import testRoot
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -121,6 +121,14 @@ validNames = {
 
 
 
+    'icb://nik:u@localhost/aGroup':
+        Items(nick='nik',user='u',passwd=None,server='localhost',
+            group='aGroup'),
+
+    'icb://n:u:p@localhost':
+        Items(nick='n',user='u',passwd='p',server='localhost',
+            group=None),
+
     'http://u:pw@serv:8080/some/thing?query=whatever#pos':
         Items(user='u',passwd='pw',host='serv',port=8080,fragment='pos',
             query='query=whatever',path=('some','thing')
@@ -138,7 +146,6 @@ validNames = {
 }
 
 
-
 def parse(url):
     return naming.parseURL(testRoot(),url)
 
@@ -153,13 +160,6 @@ canonical = {
     'fd:27,type=inet/dgram': 'fd:27,type=/dgram',
 
 }
-
-
-
-
-
-
-
 
 
 class NameParseTest(TestCase):
