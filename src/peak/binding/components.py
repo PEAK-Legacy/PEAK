@@ -394,7 +394,7 @@ class bindTo(Once):
     def computeValue(self, obj, instanceDict, attrName):
 
         names = self.targetNames
-        obs   = [lookupComponent(obj,n,attrName) for n in names]
+        obs   = [lookupComponent(obj,n,creationName=attrName) for n in names]
 
         for name,newOb in zip(names, obs):
 
