@@ -126,7 +126,7 @@ class ChildProcess(binding.Component):
         p, s = self.os.waitpid(self.pid, self.os.WNOHANG)
         if p==self.pid:
             self._setStatus(s)
-
+            self._notify()
 
     def _setStatus(self,status):
 
@@ -153,10 +153,10 @@ class ChildProcess(binding.Component):
 
         self.isRunning = not self.isFinished and not self.isStopped
 
+    def _notify(self):
         # Notify listeners of status change
         for listener in self.listeners:
             listener(self)
-
 
     def addListener(self,func):
         self.listeners.append(func)
@@ -164,24 +164,44 @@ class ChildProcess(binding.Component):
 
 class ProcessSupervisor(EventDriven):
 
-    # log     = logger (to where?)
-    # lock    = lock for startup
-    # pidLock = lock for pid file
-    # pidFile = filename where pid is written
+    # log         = logger (to where?)
 
+    pidFile       = binding.Require("Filename where process ID is kept")
     minChildren   = 1
     maxChildren   = 4
     startInterval = 15      # seconds between forks
-    lastStart     = None    # last time a fork occurred
-    nextStart     = None    # next scheduled fork
-
-    processes = binding.Make(dict)
-    plugins   = binding.Make(list)
 
     template = binding.Require(
         "IProcessTemplate for child processes", adaptTo=IProcessTemplate,
         offerAs=[IProcessTemplate], suggestParent=False
     )
+
+    startLockURL = binding.Make(
+        lambda self: "flockfile:%s.start" % self.pidFile
+    )
+
+    pidLockURL = binding.Make(
+        lambda self: "flockfile:%s.lock" % self.pidFile
+    )
+
+    startLock = binding.Make(
+        lambda self: self.lookupComponent(self.startLockURL),
+        adaptTo = ILock
+    )
+
+    pidLock = binding.Make(
+        lambda self: self.lookupComponent(self.pidLockURL),
+        adaptTo = ILock
+    )
+
+    lastStart = None    # last time a fork occurred
+    nextStart = None    # next scheduled fork
+
+    processes = binding.Make(dict)
+    plugins   = binding.Make(list)
+
+
+
 
     reactor = binding.Make(
         'peak.running.scheduler:UntwistedReactor', offerAs=[IBasicReactor]
@@ -196,25 +216,46 @@ class ProcessSupervisor(EventDriven):
         offerAs = [ITwistedReactor]
     )
 
-
     import os
+
     from time import time
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
 
     def _run(self):
 
-        if not self.lock.attempt():
+        if not self.startLock.attempt():
             # self.log.warn("Another process is starting")
-            return 1
+            return 1        # exit with errorlevel 1
 
         try:
             self.template   # ensure template is ready first
             self.killPredecessor()
             self.writePidFile()
         finally:
-            self.lock.release()
+            self.startLock.release()
 
         self.requestStart()
 
@@ -286,7 +327,7 @@ class ProcessSupervisor(EventDriven):
 
 
     def writePidFile(self):
-        self.pidLock.acquire()
+        self.pidLock.obtain()
         try:
             pf = open(self.pidFile,'w')
             pf.write('%d\n', self.os.getpid())
@@ -296,7 +337,7 @@ class ProcessSupervisor(EventDriven):
 
 
     def readPidFile(self, func):
-        self.pidLock.acquire()
+        self.pidLock.obtain()
         try:
             if self.os.path.exists(self.pidFile):
                 pf = open(self.pidFile,'r')
@@ -324,6 +365,88 @@ class ProcessSupervisor(EventDriven):
                 pass # XXX
 
         self.readPidFile(doKill)
+
+
+class BusyProxy(ChildProcess):
+
+    """Proxy for process that communicates its "busy" status"""
+
+    reactor    = binding.Obtain(IBasicReactor)
+    busyStream = binding.Require("readable pipe from child")
+    fileno     = binding.Obtain('busyStream/fileno')
+    isBusy     = False
+
+
+    def doRead(self):
+        byte = self.busyStream.read()[-1]
+        if byte=='+':
+            self.isBusy = True
+            self._notify()
+        elif byte=='-':
+            self.isBusy = False
+            self._notify()
+        else:
+            return
+
+
+    def _setStatus(status):
+        super(BusyProxy,self)._setStatus(status)
+        if self.isFinished:
+            self.reactor.removeReader(self)
+            self.busyStream.close()
+
+
+    __onStart = binding.Make(
+        lambda self: self.reactor.addReader(self),
+        uponAssembly = True
+    )
+
+
+
+
+
+
+
+
+class BusyStarter(binding.Component):
+
+    """Start processes for incoming connections if all children are busy"""
+
+    children = binding.Make(dict)
+    template = binding.Obtain(IProcessTemplate, suggestParent=False)
+    stream   = binding.Obtain('./template/stdin')
+    fileno   = binding.Obtain('./stream/fileno')
+    reactor  = binding.Obtain(IBasicReactor)
+
+    supervisor = binding.Obtain('..')
+
+    def processStarted(self, proxy):
+        proxy.addListener(self.statusChanged)
+        self.children[proxy.pid] = proxy.isBusy
+        self._delBinding('allBusy')
+
+    def statusChanged(self, proxy):
+        if not proxy.isRunning:
+            if proxy.pid in self.allChildren:
+                del self.children[proxy.pid]
+        else:
+            self.children[proxy.pid] = proxy.isBusy
+
+        self._delBinding('allBusy')
+
+    allBusy = binding.Make(
+        # not one is available
+        lambda self: False not in self.children.values()
+    )
+
+    def doRead(self):
+        if self.allBusy:
+            self.supervisor.requestStart()
+
+    __onStart = binding.Make(
+        lambda self: self.reactor.addReader(self),
+        uponAssembly = True
+    )
 
 
 class AbstractProcessTemplate(binding.Component):
