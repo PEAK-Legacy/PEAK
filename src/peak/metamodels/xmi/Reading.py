@@ -193,14 +193,14 @@ class XMIReading:
         def _fromXMI(self,node):
             map(self.set,node._subNodes)
     
-    class _sefSet:    
+    class _sefSet:
         def _fromXMI(self,node):
-            map(self.addItem,node._subNodes)
-
+            add = self.addItem
+            for node in node._subNodes:
+                if not node in self: add(node)
 
     def _fromXMI(self,node):
         return node
-
 
 
     def _XMIroot(self,*args,**kw):
@@ -209,9 +209,6 @@ class XMIReading:
         document.target = self
         return document
 
-    roots = None
-    
     def importFromXMI(self,filename_or_stream):
-        self.roots = self.roots or []
-        self.roots.extend(load(filename_or_stream,self._XMIroot()))
+        return load(filename_or_stream,self._XMIroot())
 
