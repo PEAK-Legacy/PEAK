@@ -61,7 +61,7 @@ def from_random():
 
     s = randbytes(6)
     s = [ord(x) for x in s]
-    s[0] = s[0] | 128
+    s[0] = s[0] | 0x1
     s = ["%02x" % x for x in s]
     s = ''.join(s)
     return s.lower()
