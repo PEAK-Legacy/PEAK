@@ -435,8 +435,8 @@ class FileResource(FSResource):
 
         if interaction.request.method == 'GET':
             write = response.write
-            stream = open(self.filename, 'rb')
             size = self.blocksize
+            stream = open(self.filename, 'rb')
             try:
                 # read/write data in size-N blocks
                 while 1:
