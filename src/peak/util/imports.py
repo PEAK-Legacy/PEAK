@@ -166,8 +166,8 @@ def lazyModule(modname, relativePath=None):
         modname = joinPath(modname, relativePath)
 
     if modname not in modules:
+        getModuleHooks(modname) # force an empty hook list into existence
         modules[modname] = LazyModule(modname)
-
         if '.' in modname:
             # ensure parent module/package is in sys.modules
             # and parent.modname=module, as soon as the parent is imported
