@@ -32,9 +32,9 @@ Fixes and Enhancements since Version 0.5 alpha 2
    away in the alpha 4 development cycle.
 
  - Added 'commands.lookupCommand()' to look up a command shortcut or URL, ala
-   the `peak` script or `commands.Bootstrap` class.  Also added various
-   `commands.ErrorSubcommand` subclasses to make it easier to issue errors
-   from subcommands.
+   the 'peak' script or 'commands.Bootstrap' class.  Also added various
+   'commands.ErrorSubcommand' subclasses to make it easier to issue errors
+   from/for subcommands.
 
  - Added 'peak.core' as a minimal subset of 'peak.api'.  'peak.core' offers
    only "core" API packages and primitives, not the full set of available
@@ -147,11 +147,12 @@ Fixes and Enhancements since Version 0.5 alpha 2
  - Added 'IMainLoop.setExitCode()' and 'IMainLoop.childForked()' methods, to
    allow reactor-driven components to control the mainloop's exit code.
 
- - DEPRECATED 'peak.util.signal_stack'.  Instead, bind to a
-   'running.ISignalManager' and use its 'addHandler()/removeHandler()' methods.
-   This has the same effect as 'pushSignals()' and 'popSignals()', except that
-   you do not have to remove handlers in the same order as you add them, and
-   *all* active handlers are invoked for a given signal that they handle.
+ - Added 'running.ISignalManager' and a default implementation.  Use its
+   'addHandler()/removeHandler()' methods to add or remove signal handlers.
+   Signal handlers define methods like 'def SIGCHLD(self,signum,frame):' that
+   will be called when the associated signal is received.  All active handlers
+   for a given signal are invoked, so you can easily have multiple components
+   listen for 'SIGCHLD', for example.
 
  - Added 'IBasicReactor.crash()', which forces an immediate reactor loop exit,
    ignoring pending scheduled calls.
@@ -193,7 +194,8 @@ Fixes and Enhancements since Version 0.5 alpha 2
    instead of 'PropertySet' instances.
 
  - DEPRECATED the 'config.PropertySet' class; please convert to using
-   'config.Namespace', as it will disappear in the 0.5alpha4 release cycle.
+   'config.Namespace', as 'PropertySet' will disappear in the 0.5alpha4 release
+   cycle.
 
  - SQL connection objects now get their type converters from a distinct
    property namespace for each DBAPI driver.  For example a driver using the
@@ -302,7 +304,7 @@ Fixes and Enhancements since Version 0.5 alpha 2
    'naming.IBasicContext', which does something very different.
 
  - 'binding.Obtain()' (formerly 'binding.bindTo()' and 'binding.bindSequence()')
-   now pre-adapt their arguments to 'IComponentKey', to speed lookups at
+   now pre-adapt their arguments to 'IComponentKey', to speed up lookups at
    runtime, and to ensure that errors due to an unusable parameter type occur
    at class creation time instead of waiting until lookup time.
 
@@ -315,11 +317,11 @@ Fixes and Enhancements since Version 0.5 alpha 2
    property ('peak.running.reactor.checkInterval') to determine how long it
    should run 'select()' calls for, when there are no scheduled tasks.
 
- - 'peak.running.scheduler.UntwistedReactor' now supports using a "signal
-   manager" component (via the 'peak.running.signalManager' property) to
-   process signals while a 'run()' loop is in progress.  Signal managers can
-   also be added or removed at any time via the new 'peak.util.signal_stack'
-   module.
+ - 'peak.running.scheduler.MainLoop' now supports using a "signal
+   handler" component (via the 'peak.running.mainLoop.signalHandler' property)
+   to process signals while a 'run()' loop is in progress.  Signal handlers can
+   also be added or removed at any time via the 'running.ISignalManager'
+   service.
 
  - 'peak.running.commands.AbstractCommand' now offers a '_run()' method that
    can be overridden in subclasses, instead of 'run()'.  If you override the

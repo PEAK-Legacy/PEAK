@@ -3,7 +3,7 @@ from __future__ import generators
 from peak.api import *
 from peak.util.imports import importString, importObject, whenImported
 from peak.binding.components import Component, Make, getParentComponent
-from peak.binding.interfaces import IAttachable
+from peak.binding.interfaces import IAttachable, IRecipe
 from peak.util.EigenData import EigenCell,AlreadyRead
 from peak.util.FileParsing import AbstractConfigParser
 
@@ -450,7 +450,6 @@ class ConfigurationRoot(Component):
 
 
 class Namespace(object):
-
     """Traverse to another property namespace
 
     Use this in .ini files (e.g. '__main__.* = config.Namespace("environ.*")')
@@ -468,7 +467,7 @@ class Namespace(object):
         class MyClass(binding.Component):
 
             appConfig = binding.Make(
-                lambda self: config.Namespace('MyClass.conf')
+                config.Namespace('MyClass.conf')
             )
 
             something = binding.Obtain('appConfig/foo.bar.baz')
@@ -480,9 +479,10 @@ class Namespace(object):
     obtain the 'get' property, or properties beginning with '_', you must use
     the mapping style of access, as shown above."""
 
-    def __init__(self, prefix, target=NOT_GIVEN):
+    def __init__(self, prefix, target=NOT_GIVEN, cacheAttrs=True):
         self._prefix = PropertyName(prefix).asPrefix()
         self._target = target
+        self._cache = cacheAttrs
 
     def __call__(self, suffix):
         """Return a sub-namespace for 'suffix'"""
@@ -494,6 +494,8 @@ class Namespace(object):
         if not attr.startswith('_'):
             ob = self.get(attr, NOT_FOUND)
             if ob is not NOT_FOUND:
+                if self._cache:
+                    setattr(self,attr,ob)   # Cache for future use
                 return ob
         raise AttributeError,attr
 
@@ -529,12 +531,10 @@ class Namespace(object):
 
 
 
-
-
 class __NamespaceExtensions(protocols.Adapter):
 
     protocols.advise(
-        instancesProvide = [ISmartProperty, IAttachable],
+        instancesProvide = [ISmartProperty, IAttachable, IRecipe],
         asAdapterForTypes = [Namespace]
     )
 
@@ -562,9 +562,9 @@ class __NamespaceExtensions(protocols.Adapter):
         )
 
 
-
-
-
+    def __call__(self,client,instDict,attrName):
+        subject = self.subject
+        return subject.__class__(subject._prefix[:-1], client, subject._cache)
 
 
 

@@ -19,7 +19,7 @@ class StopOnStandardSignals(binding.Component):
     reactor = binding.Obtain(IBasicReactor, activateUponAssembly=True)
 
     def SIGINT(self, num, frame):
-        self.reactor.callLater(0, self.reactor.stop)
+        self.reactor.stop()
 
     SIGTERM = SIGBREAK = SIGINT
 
