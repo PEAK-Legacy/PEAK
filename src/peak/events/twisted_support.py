@@ -47,8 +47,8 @@ class DeferredAsEventSource(sources.Value,protocols.StickyAdapter):
         instancesProvide=attachForProtocols, asAdapterForTypes=[defer.Deferred],
     )
 
-    def __init__(self,ob,proto=None):
-        protocols.StickyAdapter.__init__(self,ob,proto)
+    def __init__(self,ob):
+        protocols.StickyAdapter.__init__(self,ob)
         sources.Value.__init__(self)
 
     def _fire(self,event):

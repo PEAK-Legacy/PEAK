@@ -92,7 +92,7 @@ class InteractionPolicy(binding.Configurable, protocols.StickyAdapter):
 
     def fromComponent(klass, ob):
         ip = klass(ob)
-        protocols.StickyAdapter.__init__(ip, ob, IInteractionPolicy)
+        protocols.StickyAdapter.__init__(ip, ob)
         return ip
 
     fromComponent = classmethod(fromComponent)
