@@ -335,8 +335,8 @@ class Base(Struct):
     parse = classmethod(parse)
 
     def getCanonicalBody(self):
-        if self.syntax is not None:
-            return format(dict(self._hashAndCompare),self.syntax)
+        if self.__class__.syntax is not None:
+            return format(dict(self._hashAndCompare),self.__class__.syntax)
         return self.body
 
     defaultScheme = classAttr(
