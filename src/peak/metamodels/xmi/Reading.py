@@ -210,12 +210,12 @@ class XMIMapMaker_Meta(type):
         super(XMIMapMaker_Meta,klass).__init__(name, bases, dict)
 
         xm = {}
+        for b in bases:
+            xm.update(getattr(b,'_XMIMap',{}))
 
-        for attName in dir(klass):
-            # work around Python 2.2 bug #575229 by skipping __weakref__
-            if attName!='__weakref__':
-                for k in getattr(getattr(klass,attName),'_XMINames',()):
-                    xm[k] = attName
+        for attName, obj in dict.items():
+            for k in getattr(obj,'_XMINames',()):
+                xm[k] = attName
 
         klass._XMIMap = xm
 
