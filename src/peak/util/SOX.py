@@ -449,6 +449,47 @@ class IAttributeNegotiator(Interface):
         'name' and 'value' are the name and value of the applicable attribute.
         """
 
+# Helper routines for negotiated schemas
+
+def invalidElement(parser,data):
+    """Use this as an element negotiator for unrecognized elements"""
+    parser.err("Unrecognized element "+`data['name']`)
+
+def invalidAttribute(parser,data,name,value):
+    """Use this as an element negotiator for unrecognized attributes"""
+    parser.err("Unrecognized attribute "+`name`)
+
+def validatedAttributes(parser,data,required=(),optional=()):
+    """Filter an element's attributes, w/errors for invalid/missing attributes
+
+    Return a dictionary of unprefixed attributes (i.e. no attributes with ':'
+    in them).  If any attributes in 'required' are missing, or if there are
+    any attributes present that aren't listed in 'required' or 'optional', a
+    SyntaxError is generated.
+    """
+    attrs = dict([kv for kv in data['attributes'] if ':' not in kv[0]])
+    for attr in required:
+        if attr not in attrs:
+            parser.err("Missing %r attribute" % attr)
+    for attr in attrs:
+        if attr not in required and attr not in optional:
+            parser.err("Unrecognized attribute "+`attr`)
+    return attrs
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 class NegotiatingParser:
 
     """XML processor that lets elements and attributes "negotiate" w/each other
@@ -531,14 +572,19 @@ class NegotiatingParser:
         if start:
             start(self,data)
 
-    def endElement(self,name):
-        data = self.stack.pop(); result = None
+    def endElement(self,name=None):
+
+        data = self.stack.pop()
+        assert name==data['name'] or name is None
+
         finish = data.get('finish')
         if finish:
             result = finish(self,data)
             child = self.stack[-1].get('child')
             if child:
                 child(result)
+        else:
+            result = None
 
         if 'prefixes' in data:
             for prefix in data['prefixes']:
@@ -550,6 +596,7 @@ class NegotiatingParser:
                 self.lookup_element, self.lookup_attribute = data['lookups']
         return result   # for tests
 
+
     def resetCaches(self):
         data = self.stack[-1]
         if 'caches' not in data:
@@ -557,6 +604,14 @@ class NegotiatingParser:
             data['caches'] = self.attribute_map, self.element_map
 
         self.attribute_map, self.element_map = {}, {}
+
+
+
+
+
+
+
+
 
     def err(self,msg,kind=SyntaxError):
         """Generate an error with current parse location"""
@@ -572,10 +627,12 @@ class NegotiatingParser:
         exc.args = msg, (exc.filename,exc.lineno,exc.offset,exc.text)
         raise exc
 
-    def setLookups(self,element=None,attribute=None):
-        self.resetCaches()
 
+    def setLookups(self,element=None,attribute=None):
+
+        self.resetCaches()
         data = self.stack[-1]
+
         if 'lookups' not in data:
             # only save once per stack level
             data['lookups'] = (
@@ -586,6 +643,15 @@ class NegotiatingParser:
             self.lookup_element = element
         if attribute is not None:
             self.lookup_attribute = attribute
+
+
+
+
+
+
+
+
+
 
 
     def text(self,text):
@@ -604,15 +670,6 @@ class NegotiatingParser:
             f(u'<!--%s-->' % text)
 
 
-
-
-
-
-
-
-
-
-
     def makeParser(self):
         from pyexpat import ParserCreate
         p = ParserCreate()
@@ -625,6 +682,18 @@ class NegotiatingParser:
         p.DefaultHandler = self.literal
         p.CharacterDataHandler = self.text
         return p
+
+
+
+
+
+
+
+
+
+
+
+
 
     def _beforeParsing(self,root=None,url=None):
         root = root or {}
@@ -652,6 +721,19 @@ class NegotiatingParser:
     def parseStream(self,stream,root=None,url=None):
         self._beforeParsing(root,url).ParseFile(stream)
         return self._afterParsing()        
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 class ExpatBuilder:
