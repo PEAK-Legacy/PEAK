@@ -17,9 +17,9 @@ __all__ = [
 
     'IBasicReactor', 'ITwistedReactor', 'ILogger', 'ICheckableResource',
 
+    'ISignalManager', 'IProcessProxy',
+
 ]
-
-
 
 
 
@@ -523,6 +523,88 @@ class ILogger(Interface):
 
 
 
+
+
+
+
+
+
+
+
+class ISignalManager(Interface):
+
+    """Global management of signal handlers
+
+    A signal handler is any weakly-referenceable object with 'SIG*()' methods
+    (e.g. 'SIGKILL()', 'SIGCHLD()', etc.).  Handlers are automatically removed
+    if they are no longer referenced outside the signal manager.
+
+    For signals with installed handlers, the default behavior is replaced by
+    calling the appropriately named method on each handler.  So, if there are
+    five handlers registered for e.g. SIGCHLD, then when SIGCHLD occurs, those
+    five handlers' 'SIGCHLD()' methods will be called with the signal number
+    and stack frame, as though they had been directly registered for the
+    signal.
+
+    If a given signal does not have any handlers, it will have its default
+    behavior (SIG_DFL) restored.  Note that due to the global nature of signals
+    in Python programs, direct use of the Python 'signal' module is not
+    recommended and may produce unexpected results.
+
+    Also note that there is no guaranteed order in which handlers for a given
+    signal are called, and the order may not be consistent from one invocation
+    to the next.  Last, but not least, remember that Python calls signal
+    handlers only from the "main thread", so handlers should use locks to
+    protect access to resources that may be modified or used by other threads.
+    """
+
+    def addHandler(handler):
+        """Add 'handler' to handlers called for appropriate signals
+
+        Adding a handler more than once has no effect."""
+
+    def removeHandler(handler):
+        """Remove 'handler' from signal handlers
+
+        Removing a handler that was not added, has no effect."""
+
+
+
+
+
+class IProcessProxy(Interface):
+
+    """Object that represents a child process"""
+
+    def setStatus(waitcode):
+        """Set status flags according to 'waitcode' and invoke listeners"""
+
+    def addListener(func):
+        """'func' will be called with the proxy when process status changes"""
+
+    isFinished = Attribute(
+        """Has the process exited? (WIFSIGNALED or WIFEXITED)"""
+    )
+
+    isStopped  = Attribute(
+        """Is the process currently stopped/suspended? (WIFSTOPPED)"""
+    )
+
+    isRunning  = Attribute(
+        """Is the process running? (not isFinished and not isStopped)"""
+    )
+
+    exitStatus = Attribute(
+        """Returncode of the process, if finished (WEXITSTATUS)"""
+    )
+
+    stoppedBecause = Attribute(
+        """Signal that stopped the process, or None (WSTOPSIG)"""
+    )
+
+    exitedBecause  = Attribute(
+        """Signal that killed the process, or None (WTERMSIG)"""
+    )
 
 
 

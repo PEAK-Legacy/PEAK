@@ -43,7 +43,7 @@ try:
     import signal
 
 except ImportError:
-    signal = None
+    signal = lambda *args: None
     signals = {}
 
 else:
