@@ -265,7 +265,7 @@ class CGIPublisher(binding.Component):
 
     # items to (potentially) replace in subclasses
 
-    publish   = publish.publish
+    publish   = staticmethod(publish.publish)
 
     mkXMLRPC  = XMLRPCRequest   # XXX should these be a property+default?
     mkBrowser = BrowserRequest
