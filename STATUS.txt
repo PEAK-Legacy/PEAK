@@ -1,4 +1,4 @@
-High-level Package Status Information as of 1/24/04
+High-level Package Status Information as of 2/18/04
 
  binding -- very stable now, needs some more docs (what PEAK package doesn't?),
  might need to add some more metadata capabilities later, but really nothing
@@ -11,17 +11,18 @@ High-level Package Status Information as of 1/24/04
  autocreated components are homed at the nearest service area that has services
  of that category.
 
- ddt -- quite a bit more to do, but likely to be finished pretty quickly.  In
- addition to Row and Action bases, I'd like to create some web runners to allow
- you to run tests from a browser, e.g. via a local web server, or via
- CGI/FastCGI in a remote server
-
- events -- Still some refactoring to go, mostly in the area of conditions and
- derived event sources, but also wrt "scheduled threads".  As it's turning out,
- I'm liking "scheduled threads" less and less, apart from their ability to fire
- an event after crashing.  There's also a question of allowing threads' last
- yielded result to be offered as an event source, such that threads themselves
- become "broadcaster" event sources.
+ ddt -- basically done.  Might get some convenience features added, or maybe
+ some refactoring to support any major additions.  But the core of it should
+ be stable now.  More examples would be helpful.
+ 
+ events -- basically done, with some concerns about "scheduled threads", and
+ the total absence of introductory documentation.  As it's turning out,  I'm
+ liking "scheduled threads" less and less, apart from their ability to fire an
+ event after crashing.  At some point I may want to add a couple more event
+ source types.  Mainly I'm thinking of 'Result' (akin to a Twisted 'Deferred'
+ but without the chaining), and maybe a 'Forwarder' that works like a
+ 'Broadcaster' but has a 'forward' method on it that can be subscribed to other
+ (non-conditional) event sources.
 
  exceptions -- I'd actually like to rename this to 'errors', or else move the
  exceptions themselves back to individual packages' 'interface' modules.
