@@ -5,12 +5,15 @@ __all__ = [
     'lazyImport', 'lazyModule',
 ]
 
+import __main__
+defaultGlobalDict = __main__.__dict__
+
 
 from types import StringTypes, ModuleType
 from sys import modules
 
 
-def importSuite(specs, globalDict=None):
+def importSuite(specs, globalDict=defaultGlobalDict):
 
     """Create a test suite from import specs"""
 
@@ -36,10 +39,7 @@ def importSuite(specs, globalDict=None):
 
 
 
-
-
-
-def importString(name, globalDict=None):
+def importString(name, globalDict=defaultGlobalDict):
     """Import an item specified by a string
 
         Example Usage::
@@ -72,7 +72,7 @@ def importString(name, globalDict=None):
     else:
         module, path = name, []
 
-    item = __import__(module, globalDict or globals(), locals(), path[:1])
+    item = __import__(module, globalDict, locals(), path[:1])
 
     for name in path:
         if name: item = getattr(item,name)
@@ -162,7 +162,7 @@ def lazyModule(modname):
         modules[modname] = LazyModule(modname)
     return modules[modname]
 
-def importObject(spec, globalDict=None):
+def importObject(spec, globalDict=defaultGlobalDict):
     """Convert a possible string specifier to an object
 
     If 'spec' is a string or unicode object, import it using 'importString()',
@@ -175,7 +175,7 @@ def importObject(spec, globalDict=None):
     return spec
 
 
-def importSequence(specs, globalDict=None):
+def importSequence(specs, globalDict=defaultGlobalDict):
     """Convert a string or list specifier to a list of objects.
 
     If 'specs' is a string or unicode object, treat it as a
