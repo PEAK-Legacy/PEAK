@@ -275,6 +275,7 @@ class SQLInteractor(binding.Component):
         'vert' : 'showVert',
         'plain' : 'showPlain',
         'python' : 'showPython',
+        'ldif' : 'showLDIF',
     }
 
 
@@ -355,6 +356,57 @@ class SQLInteractor(binding.Component):
 
 
 
+    def showLDIF(self, c, opts, stdout):
+        nr = 0
+        
+        for r in c:
+            nr += 1
+            cols = r.keys()
+
+            # dn must come first, according to RFC2849...
+            try:
+                dnix = cols.index('dn')
+                del cols[dnix]
+                cols.insert(0, 'dn')
+            except ValueError:
+                # ...though we can't be fully compliant if there is no dn!
+                pass
+                 
+            for col in cols:
+                vals = r[col]
+                if type(vals) is not list:
+                    vals = [vals]
+                
+                for val in vals:
+                    if val is None:
+                        continue
+                        
+                    val = str(val)
+                    colname = "%s: " % col
+
+                    ascii = True
+                    for ch in val:
+                        o = ord(ch)
+                        if o < 32 or o > 126:
+                            ascii = False
+
+                    if not ascii:
+                        colname = "%s:: " % col
+                        val = ''.join(val.encode('base64').split())
+                    
+                    fl = 77 - len(colname)
+                    stdout.write(colname + val[:fl] + '\n')
+                    
+                    val = val[fl:]
+                    while val:
+                        stdout.write(' ' + val[:76] + '\n')
+                        val = val[76:]
+                
+            print >>stdout
+
+        return nr
+
+       
     def command_names(self):
         l = [k for k in dir(self) if k.startswith('cmd_')]
         l2 = [k[4:].replace('_','-') for k in l
@@ -370,7 +422,7 @@ class SQLInteractor(binding.Component):
         """go [-d delim] [-m style] [-h] [-f] [-n] [-s n] [xacts] -- submit current input
 
 -d delim\tuse specified delimiter
--m style\tuse specified format (one of: horiz, vert, plain, python)
+-m style\tuse specified format (one of: horiz, vert, plain, python, ldif)
 -h\t\tsuppress header
 -f\t\tsuppress footer
 -n\t\tdon't expand variables in SQL
@@ -870,7 +922,7 @@ default for src is '!.', the current input buffer"""
         """\\describe [-d delim] [-m style] [-h] [-f] [-v] [name] -- describe objects in database, or named object
 
 -d delim\tuse specified delimiter
--m style\tuse specified format (one of: horiz, vert, plain, python)
+-m style\tuse specified format (one of: horiz, vert, plain, python, ldif)
 -h\t\tsuppress header
 -f\t\tsuppress footer
 -v\t\tverbose; give more information
