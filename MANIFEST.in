@@ -1,5 +1,5 @@
-global-include *.txt *.xml
+global-include *.txt *.xml *.html
 global-exclude *.pyc *.pyo
-recursive-include examples *.*
+recursive-exclude examples *.*
 recursive-include docs *.*
 

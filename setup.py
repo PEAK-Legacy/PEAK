@@ -22,7 +22,7 @@ setup(
     author="Phillip J. Eby",
     author_email="transwarp@eby-sarna.com",
     
-    url="http://www.zope.org/Members/pje/Wikis/TransWarp",
+    url="http://www.telecommunity.com/TransWarp/",
     
     packages=[
         'TW', 'TW.API', 'TW.Database', 'TW.MOF', 'TW.SEF', 'TW.UML', 'TW.XMI',
