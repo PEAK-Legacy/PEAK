@@ -289,60 +289,15 @@ class EigenRegistry(EigenDict):
 
     """EigenDict that takes Interface objects as keys, handling inheritance"""
 
-    def __init__(self):
-        self.provided = {}
-        super(EigenRegistry,self).__init__()
-
-
-    def __setitem__(self, iface, item):
-        self._register(iface,item,iface)
-
-
     def register(self,implements,item):
-
         """Register 'item' under 'implements' (an Interface or nested tuple)"""
-
         if isinstance(implements,tuple):
             for iface in implements:
                 self.register(iface,item)
         else:
             self[implements]=item
-
-
-    def _register(self,iface,item,primary_iface):
-
-        old = self.provided.get(iface)
-
-        # We want to keep more-general registrants
-        if old is None or old.extends(primary_iface):
-
-            self._setCell(iface).set(item)
-            self.provided[iface]=primary_iface
-
-            for base in iface.getBases():
-                if base is not Interface:
-                    self._register(base,item,primary_iface)
-
-
-
-
-    def update(self, other):
-
-        """Conservatively merge in another EigenRegistry"""
-
-        if not isinstance(other,EigenRegistry):
-            raise TypeError("Not an EigenRegistry", other)
-
-        iProvide = self.provided
-        get = iProvide.get
-        sc = self._setCell
-
-        for iface, newP in other.provided.items():
-            old = get(iface)
-            if old is None or old.extends(newP):
-                sc(iface).set(other[iface])
-                iProvide[iface] = newP
-
+            for i in implements.getBases():
+                self.register(i, item)
 
     def setdefault(self,key,failobj=None):
         raise NotImplementedError
@@ -360,6 +315,10 @@ class EigenRegistry(EigenDict):
 
 CollapsedCell = EigenCell()
 CollapsedCell.exists()  # force locking
+
+
+
+
 
 
 

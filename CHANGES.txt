@@ -9,6 +9,13 @@ Fixes and Enhancements since Version 0.5 alpha 1
    about this, as they are part of the naming package's extensibility
    framework.)
 
+ - 'EigenRegistry' and 'PropertyMap' no longer attempt to figure out whether
+   implied (i.e. inherited) interfaces are more or less general with respect
+   to a previous registration.  This was behavior that emulated Zope adapter
+   registries, but what we really wanted was more akin to a Zope "type"
+   registry.  The only parts of the test suite that used the old behavior
+   were the tests specifically written to ensure that behavior!
+
  - 'binding.bindTo()' now accepts a 'default=' argument, whose value will be
    used in case of a 'NameNotFound' error.
 

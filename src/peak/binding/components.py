@@ -884,6 +884,7 @@ class Component(_Base):
             if provides is not None:
                 cp.register(provides, attrName)
 
+        cp.lock()   # make it immutable
         return cp
 
     __class_provides__ = classAttr(Once(__class_provides__))

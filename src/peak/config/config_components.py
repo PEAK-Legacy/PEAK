@@ -123,8 +123,7 @@ def findUtility(component, iface, default=NOT_GIVEN):
 
 class PropertyMap(Component):
 
-    rules     = New(dict)
-    provided  = New(dict)
+    rules = New(dict)
 
     __implements__ = IPropertyMap, Component.__implements__
 
@@ -137,29 +136,30 @@ class PropertyMap(Component):
     def setValue(self, propName, value):
         _setCellInDict(self.rules, PropertyName(propName), lambda *args: value)
 
-    def registerProvider(self, ifaces, provider):
 
+    def registerProvider(self, ifaces, provider):
         """Register 'item' under 'implements' (an Interface or nested tuple)"""
 
         if isinstance(ifaces,tuple):
             for iface in ifaces:
-                self.registerProvider(iface,provider)
+                self.register(iface,provider)
         else:
-            self._register(ifaces,provider,ifaces)
+            # ifaces is a configKey
+            _setCellInDict(self.rules, ifaces, provider)
+            for i in ifaces.getBases():
+                self.registerProvider(i, provider)
 
-    def _register(self, iface, item, primary_iface):
 
-        old = self.provided.get(iface)
 
-        # We want to keep more-general registrants
-        if old is None or old.extends(primary_iface, False):
 
-            _setCellInDict(self.rules, iface, item)
-            self.provided[iface]=primary_iface
 
-            for base in iface.getBases():
-                if base is not Interface:
-                    self._register(base,item,primary_iface)
+
+
+
+
+
+
+
 
 
     def getValueFor(self, forObj, configKey):
