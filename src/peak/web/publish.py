@@ -92,7 +92,7 @@ class Interaction(security.Interaction):
     log      = binding.bindTo('policy/log')
 
     def root(self,d,a):
-        root = adapt(s.app, s.locationProtocol)
+        root = adapt(self.app, self.locationProtocol)
         binding.suggestParentComponent(None,None,root)
         return root
         
