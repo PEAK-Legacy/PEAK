@@ -13,7 +13,7 @@ __all__ = [
     'SPECIALIZATION_DEP', 'IMPORT_DEP', 'TYPE_DEFINITION_DEP',
     'REFERENCED_ENDS_DEP', 'TAGGED_ELEMENTS_DEP', 'INDIRECT_DEP', 'ALL_DEP',
     'MultiplicityType', 'VisibilityKind', 'DepthKind', 'DirectionKind',
-    'ScopeKind', 'AggregationKind', 'EvaluationKind', 'LiteralType,
+    'ScopeKind', 'AggregationKind', 'EvaluationKind', 'LiteralType',
     'VerifyResultKind', 'ViolationType', 'NameNotFound', 'NameNotResolved',
     'ObjectNotExternalizable', 'FormatNotSupported',
     'IllformedExternalizedObject', 'MOFModel',
@@ -45,7 +45,7 @@ class MultiplicityType(model.Immutable):
         fieldOrder = 1
         referencedType = Integer
 
-    class upper(model.Field)
+    class upper(model.Field):
         fieldOrder = 2
         referencedType = UnlimitedInteger
 
