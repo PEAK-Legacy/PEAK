@@ -292,8 +292,8 @@ class IDOMletNode(Interface):
     def renderFor(data, state):
         """Write template's output by calling 'state.write()' 0 or more times
 
-        'data' is an 'IWebTraversable' for the object being rendered  (e.g. the
-        object the template is a method of).  'state' is an 'IDOMletState'
+        'data' is an 'ITraversalContext' for the object being rendered  (e.g.
+        the object the template is a method of).  'state' is an 'IDOMletState'
         component used to supply arbitrary properties/utilities to child
         DOMlets during template execution, and to provide access to the
         current output stream and 'IWebInteraction'.  Both of these

@@ -91,7 +91,7 @@ class TraversalContext(binding.Component):
                 return self
             return self.previous
 
-        elif name=='.':
+        elif name=='.' or not name:
             return self
 
         ob = self.traversable.traverseTo(name, self.interaction)
