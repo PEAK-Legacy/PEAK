@@ -2,6 +2,7 @@
 
 from peak.api import *
 from peak.running.commands import AbstractCommand, InvocationError
+from peak.util.imports import importString
 
 class APIHelp(AbstractCommand):
 
@@ -10,7 +11,33 @@ class APIHelp(AbstractCommand):
     def _run(self):
         if len(self.argv)>1:
             for arg in self.argv[1:]:
-                help(eval(arg))
+                help(self.find(arg))
         else:
             raise InvocationError("No expression specified")
+
+    def find(self, name):
+        if naming.URLMatch(name):
+            ob = self.lookupComponent(name, NOT_FOUND)
+            if ob is not NOT_FOUND:
+                return ob
+        try:
+            name = str(PropertyName(name.replace(':','.')))
+        except exceptions.InvalidName:
+            raise InvocationError("Invalid format for argument %r" % name)
+
+        for prefix in ('peak.api.','peak.',''):
+            try:
+                return importString(prefix+name)
+            except ImportError:
+                pass
+
+        for prefix in ('peak.running.shortcuts.','peak.help.'):
+            ob = self.lookupComponent(
+                PropertyName('peak.running.shortcuts.'+name),
+                NOT_FOUND
+            )
+            if ob is not NOT_FOUND:
+                return ob
+
+        raise InvocationError("Can't find help on %r" % name)
 
