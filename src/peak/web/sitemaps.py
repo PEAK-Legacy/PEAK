@@ -306,7 +306,7 @@ def defineContent(parser,data):
 
 def doImport(parser,data):
     attrs = SOX.validatedAttributes(parser,data,('module',),('as',))
-    module = attrs['module']
+    module = str(attrs['module'])
     as_ = attrs.get('as', module.split('.')[-1])
     getGlobals(data['previous'])[as_] = lazyModule(module)
 
