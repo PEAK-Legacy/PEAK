@@ -7,18 +7,18 @@ from kjbuckets import *
 from peak.util import SOX
 
 from peak.api import Template, model
-from peak.util.Misc import upToDate
 from peak.util.Pluralizer import Pluralizer
 
 
+def upToDate(source,dest):
 
-
-
-
-
-
-
-
+    """Is file 'dest' up to date relative to file 'source'?"""
+    
+    from os import path, stat
+    
+    return  source and dest and \
+            path.exists(dest) and path.exists(source) and \
+            stat(source).st_mtime <= stat(dest).st_mtime
 
 
 

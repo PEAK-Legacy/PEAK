@@ -7,6 +7,7 @@ __all__ = [
 
 from kjbuckets import *
 from types import FunctionType
+from new import instancemethod
 
 class ActiveDescriptors(type):
 
@@ -36,7 +37,6 @@ class ActiveDescriptor(object):
     def activate(self,klass,attrName):
         """Informs the descriptor that it is in 'klass' with name 'attrName'"""
         raise NotImplementedError
-
 
 
 class AssertInterfaces(type):
@@ -438,8 +438,6 @@ class MethodExporter(ActiveDescriptor, type):
                 (self.attrName, klass, attrName, self.attrName)
             )
 
-        from peak.util.Method import MethodWrapper
-
         for verb,methodName in self.methodNames.items():
 
             old = getattr(klass, methodName, None)
@@ -447,6 +445,8 @@ class MethodExporter(ActiveDescriptor, type):
             # Safe to export if no method there, or if it is an exported verb
             if old is None or hasattr(old,'verb'):
                 setattr(klass, methodName, MethodWrapper(getattr(self,verb)))
+
+
 
 
     def __init__(self, className, bases, classDict):
@@ -536,6 +536,18 @@ class nameMapping(object):
         for part in key.split('.'):
             name = getattr(self,part,lambda n: self.names[part])(name)
         return name
+
+
+class MethodWrapper(object):
+
+    """MethodWrapper(function) -- create an instance-method descriptor"""
+
+    def __init__(self, im_func):
+        self.im_func = im_func
+        
+    def __get__(self, ob, typ=None):
+        if typ is None: typ = ob.__class__
+        return instancemethod(self.im_func, ob, typ)
 
 
 class Singleton(type):
