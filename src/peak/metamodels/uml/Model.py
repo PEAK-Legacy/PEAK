@@ -3,11 +3,43 @@ from types import StringType, FunctionType
 from TW.StructuralModel.Queries import NodeList
 from TW.StructuralModel.Features import ComputedFeature  #, StructuralModel
 
+
+from TW.Utilities import Pluralizer
+
+UMLPlurals = Pluralizer(
+    stimulus='stimuli',
+    subvertex='subvertices',
+    classifierInState='classifiersInState'
+)
+
+
+from os.path import join,dirname
+
+DIR = dirname(__file__)
+
+mmx     = join(DIR,'metamodel.xml')
+cache   = mmx+'.pickle'
+
 import MMX
+MetaModel = MMX.load(mmx,cache,UMLPlurals,name='UML_MetaModel')
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 from TW.Components import Catalyst
-
 
 class _ComputedFeatures(Catalyst):
 
@@ -23,15 +55,24 @@ class _ComputedFeatures(Catalyst):
 ComputedFeatures = _ComputedFeatures('')
 
 
-from os.path import join,dirname
 
-DIR = dirname(__file__)
 
-mmx     = join(DIR,'metamodel.xml')
-plurals = join(DIR,'plurals.txt')
-cache   = mmx+'.pickle'
 
-MetaModel = MMX.load(mmx,plurals,cache,name='UML_MetaModel')
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
