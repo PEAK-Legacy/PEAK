@@ -221,7 +221,7 @@ class SQLConnection(ManagedConnection):
 
     Error               = binding.bindTo("API/Error")
     Warning             = binding.bindTo("API/Warning")
-    Exceptions          = binding.bindSequence("Error", "Warning")
+    Exceptions          = binding.bindTo(["Error", "Warning"])
     NotSupportedError   = binding.bindTo("API/NotSupportedError")
     Date                = binding.bindTo("API/Date")
     Time                = binding.bindTo("API/Time")

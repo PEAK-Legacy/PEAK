@@ -617,9 +617,9 @@ class Package(GeneralizableElement):
 
     _allowedContents = binding.classAttr(
 
-        binding.bindSequence(
-            'Package','Class','DataType','Association','Exception',
-            'Constraint', 'Constant', 'Import', 'Tag',
+        binding.bindTo(
+            ['Package','Class','DataType','Association','Exception',
+            'Constraint', 'Constant', 'Import', 'Tag',]
         )
 
     )
@@ -667,7 +667,7 @@ class Association(Classifier):
 
 
     _allowedContents = binding.classAttr(
-        binding.bindSequence('AssociationEnd','Constraint','Tag')
+        binding.bindTo(['AssociationEnd','Constraint','Tag'])
     )
 
 
@@ -698,7 +698,7 @@ class Association(Classifier):
 class DataType(Classifier):
 
     _allowedContents = binding.classAttr(
-        binding.bindSequence('Constraint','TypeAlias','Tag')
+        binding.bindTo(['Constraint','TypeAlias','Tag'])
     )
 
 
@@ -725,9 +725,9 @@ class DataType(Classifier):
 class Class(Classifier):
 
     _allowedContents = binding.classAttr(
-        binding.bindSequence(
-            'Class', 'DataType', 'Attribute', 'Reference', 'Operation',
-            'Exception','Constraint','Constant','Tag'
+        binding.bindTo(
+            ['Class', 'DataType', 'Attribute', 'Reference', 'Operation',
+            'Exception','Constraint','Constant','Tag']
         )
     )
 
@@ -794,7 +794,7 @@ class Operation(BehavioralFeature):
 
 
     _allowedContents = binding.classAttr(
-        binding.bindSequence('Parameter','Constraint','Tag')
+        binding.bindTo(['Parameter','Constraint','Tag'])
     )
 
     def _visitDependencies(self,visitor):
@@ -810,7 +810,7 @@ class Operation(BehavioralFeature):
 class Exception(BehavioralFeature):
 
     _allowedContents = binding.classAttr(
-        binding.bindSequence('Parameter','Tag')
+        binding.bindTo(['Parameter','Tag'])
     )
 
 

@@ -169,7 +169,7 @@ class DescriptorData(binding.Component):
     thing1 = binding.Constant("this is my thing")
     thing2 = binding.bindTo('thing1')
     thing3 = binding.requireBinding('This is required')
-    thing4 = binding.bindSequence('thing1','thing2')
+    thing4 = binding.bindTo(['thing1','thing2'])
 
     underflow = binding.bindTo('/'.join(['..']*50)) # 50 parents up
 
