@@ -165,6 +165,7 @@ class SQLInteractor(binding.Component):
         nr = shower(c, opts, stdout)
         if not opts.has_key('-f'):
             print >>stdout, "(%d rows)" % nr
+
         while c.nextset():
             print >>stdout
             nr = shower(r, opts, stdout)
@@ -268,17 +269,39 @@ class SQLInteractor(binding.Component):
 
 
     class cmd_go(ShellCommand):
-        """go [-d delim] [-m style] [-h] [-f] -- submit current input
+        """go [-d delim] [-m style] [-h] [-f] [-s n] [xacts] -- submit current input
+
 -d delim\tuse specified delimiter
 -m style\tuse specified format (one of: horiz, vert, plain, python)
 -h\t\tsuppress header
--f\t\tsuppress footer"""
+-f\t\tsuppress footer
+-s n\t\tsleep 'n' seconds between batches, if xacts is greater than 1
+
+xacts\t\tnumber of times to repeat execution of the input. Only results
+\t\tfrom the last time are displayed."""
 
         noBackslash = True
         
-        args = ('d:m:hf', 0, 0)
+        args = ('d:m:hfs:', 0, 1)
         
-        def cmd(self, cmd, opts, stdout, stderr, **kw):
+        def cmd(self, cmd, opts, args, stdout, stderr, **kw):
+            secs = opts.get('-s', '0')
+            try:
+                secs = float(secs)
+            except:
+                print >>stderr, "Invalid value for -s: '%s'" % secs
+                return
+
+            xacts = 0
+            if len(args) == 1:
+                try:
+                    xacts = int(args[0])
+                    if xacts <= 0:
+                        raise ValueError
+                except:
+                    print >>stderr, "Invalid value for xacts: '%s'" % args[0]
+                    return
+                       
             i = self.interactor.getBuf()
             if i.strip():
                 if self.interactor.state:
@@ -293,6 +316,13 @@ class SQLInteractor(binding.Component):
             try:
                 con = self.interactor.con
                 con.joinTxn()
+                if xacts > 1:
+                    for j in range(xacts - 1):
+                        c = con(i)
+                        c.fetchall()
+                        
+                        time.sleep(secs)
+                        
                 c = con(i)
             except:
                 # currently the error is logged
