@@ -142,7 +142,7 @@ class MOFGenerator(binding.Component):
     def writeClassHeader(self, element, baseNames=[]):
 
         if baseNames:
-            bases = '(%s)' % (','.join(baseNames))
+            bases = '(%s)' % (', '.join(baseNames))
         else:
             bases = ''
             
@@ -339,17 +339,18 @@ class MOFGenerator(binding.Component):
             )
         self.write(self.sepLine)
         self.write("""
-from peak.api          import model as __model
-from peak.api          import config as __config
 from peak.util.imports import lazyModule as __lazy
+
+__model              = __lazy('peak.model.api')
+__config             = __lazy('peak.config.api')
+__datatypes          = __lazy('peak.model.datatypes')
 
 """)
 
 
     def writeFileFooter(self, package):
-        self.write('\n\n__config.setupModule()\n\n')
         self.write(self.sepLine)
-        self.write('\n\n\n')
+        self.write('\n__config.setupModule()\n\n\n')
 
 
     def exposeImportDeps(self, package, target=None):
@@ -366,7 +367,6 @@ from peak.util.imports import lazyModule as __lazy
 
 
 
-
     def writePackage(self, package):
 
         for subPkg in package.findElementsByType(self.Package):
@@ -374,20 +374,18 @@ from peak.util.imports import lazyModule as __lazy
 
         self.writeFileHeader(package)
 
-        self.write(self.sepLine+'\n')
         for imp in package.findElementsByType(self.Import):
             self.writeImport(imp)
 
         self.exposeImportDeps(package)
-        self.write('\n%s\n' % self.sepLine)
-
-        self.writeNSContents(package,{})
 
         for subPkg in package.findElementsByType(self.Package):
             self.write('%-20s = __lazy(__name__ + %r)\n'
                 % (subPkg.name, '.'+str(subPkg.name))
             )
             
+        self.write('\n%s\n' % self.sepLine)
+        self.writeNSContents(package,{})
         self.writeFileFooter(package)
 
 
@@ -406,6 +404,8 @@ from peak.util.imports import lazyModule as __lazy
             return join(path,'__init__.py')
         else:
             return '%s.py' % path
+
+
 
 
     def writeNSContents(self, ns, contentMap):
