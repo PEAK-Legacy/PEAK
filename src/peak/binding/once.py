@@ -180,17 +180,6 @@ class Once(OnceDescriptor):
             self = self._copyWithName(attrName)
             setattr(klass, attrName, self)
 
-        if self._provides is not None:
-
-            try:
-                cp = klass.__dict__['__class_provides__']
-            except KeyError:
-                raise TypeError(
-                    "'provides' used on a class that can't register them",
-                    self, klass
-                )
-            cp.register(self._provides, attrName)
-
         return self
 
 
@@ -201,6 +190,17 @@ class Once(OnceDescriptor):
 
         newOb.attrName = newOb.__name__ = attrName
         return newOb
+
+
+
+
+
+
+
+
+
+
+
 
 
 class classAttr(object):
@@ -285,10 +285,8 @@ class Activator(type):
         klass.__name__ = name
 
 
-        cp = klass.__class_provides__ = EigenRegistry()
-        map(cp.update, getInheritedRegistries(klass, '__class_provides__'))
-
         d = klass.__class_descriptors__ = {}
+
         for k in class_descr:
             v = cdict[k]
             d[k] = v.__class__.activate(v,klass,k)
@@ -300,6 +298,8 @@ class Activator(type):
 
 
         return klass
+
+
 
 
 

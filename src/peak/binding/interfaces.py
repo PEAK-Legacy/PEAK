@@ -4,7 +4,8 @@ from peak.interface import Interface, Attribute
 from peak.config.interfaces import IConfigurable, IConfigSource
 
 __all__ = [
-    'IBindingFactory', 'IBindingSPI', 'IBindingAPI', 'IComponent',
+    'IBindingFactory', 'IBindingSPI', 'IComponent',
+    'IBindingAttrs',
 ]
 
 
@@ -38,12 +39,31 @@ class IBindingSPI(IConfigSource):
 
 
 
+class IBindingAttrs(Interface):
 
-class IBindingAPI(IBindingSPI):
-
-    """API supplied by binding.Base and its subclasses
+    """Support for manipulating bindable attributes
 
     peak.model's 'StructuralFeature' classes rely on this interface."""
+
+    def _getBindingFuncs(attrName, useSlot=False):
+        """XXX"""
+
+    def _hasBinding(attr,useSlot=False):
+        """Return true if binding named 'attr' has been activated"""
+
+    def _getBinding(attr,default=None,useSlot=False):
+        """Return binding named 'attr' if activated, else return 'default'"""
+
+    def _setBinding(attr,value,useSlot=False):
+        """Set binding 'attr' to 'value'"""
+
+    def _delBinding(attr,useSlot=False):
+        """Ensure that no binding for 'attr' is active"""
+
+
+class IComponent(IBindingSPI, IBindingAttrs, IConfigurable):
+
+    """API supplied by binding.Component and its subclasses"""
 
     def lookupComponent(name):
         """Look up a name in context - see 'binding.lookupComponent()'"""
@@ -59,24 +79,4 @@ class IBindingAPI(IBindingSPI):
 
         The component's 'componentName' will only be set if the parent is
         successfully set."""
-
-
-    def _hasBinding(attr,useSlot=False):
-        """Return true if binding named 'attr' has been activated"""
-
-    def _getBinding(attr,default=None,useSlot=False):
-        """Return binding named 'attr' if activated, else return 'default'"""
-
-    def _setBinding(attr,value,useSlot=False):
-        """Set binding 'attr' to 'value'"""
-
-    def _delBinding(attr,useSlot=False):
-        """Ensure that no binding for 'attr' is active"""
-
-
-
-class IComponent(IBindingAPI, IConfigurable):
-
-    """API supplied by binding.Components"""
-
 

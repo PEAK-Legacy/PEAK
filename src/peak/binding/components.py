@@ -9,7 +9,7 @@ from weakref import WeakValueDictionary
 from types import ModuleType
 from peak.naming.names import toName, AbstractName, COMPOUND_KIND
 from peak.naming.syntax import PathSyntax
-from peak.util.EigenData import EigenCell, AlreadyRead
+from peak.util.EigenData import EigenCell, AlreadyRead, EigenRegistry
 from peak.config.interfaces import IConfigKey, IPropertyMap, \
     IConfigurationRoot, NullConfigRoot
 from peak.util.imports import importString
@@ -23,7 +23,7 @@ __all__ = [
     'Base', 'Component', 'ComponentSetupWarning',
     'bindTo', 'requireBinding', 'bindSequence', 'bindToParent', 'bindToSelf',
     'getRootComponent', 'getParentComponent', 'lookupComponent',
-    'acquireComponent', 'globalLookup', 'suggestParentComponent',
+    'acquireComponent', 'suggestParentComponent',
     'bindToUtilities', 'bindToProperty', 'Constant', 'delegateTo',
     'getComponentName', 'getComponentPath', 'Acquire', 'ComponentName',
 ]
@@ -134,13 +134,6 @@ def getRootComponent(component):
     return component
 
 
-def globalLookup(name, component=None, targetName=None):
-
-    """Lookup 'name' in global 'InitialContext', relative to 'component'"""
-
-    return naming.lookup(name, component,
-        creationParent=component, creationName=targetName
-    )
 
 
 
@@ -162,9 +155,23 @@ def globalLookup(name, component=None, targetName=None):
 
 
 
-def acquireComponent(name, component, targetName=None):
 
-    """Acquire 'name' relative to 'component', w/fallback to globalLookup()"""
+
+
+
+
+
+
+def acquireComponent(name, component, creationName=None):
+
+    """Acquire 'name' relative to 'component', w/fallback to naming.lookup()
+
+    'name' is looked for as an attribute of 'component'.  If not found,
+    the component's parent will be searched, and so on until the root component
+    is reached.  If 'name' is still not found, and the root component
+    implements 'config.IConfigurationRoot', the name will be looked up in the
+    default naming context, if any.  Otherwise, a NameNotFound error will be
+    raised."""
 
     prev = target = component
 
@@ -182,15 +189,8 @@ def acquireComponent(name, component, targetName=None):
         return adapt(
             prev, IConfigurationRoot, NullConfigRoot
         ).nameNotFound(
-            prev, name, component, targetName
+            prev, name, component, creationName
         )
-
-
-
-
-
-
-
 
 
 
@@ -244,22 +244,23 @@ class ComponentName(AbstractName):
 
 
 
-def lookupComponent(name, component=None):
+def lookupComponent(name, component=None,default=NOT_GIVEN, creationName=None):
 
     """Lookup 'name' relative to 'component'
 
     'name' can be any name acceptable to the 'peak.naming' package, or an
     Interface object.  Strings and compound names will be interpreted
-    as paths relative to the starting component.  An empty name will return
+    as paths relative to the starting component.  (See the 'ComponentName'
+    class for details of path interpretation.)  An empty name will return
     the starting component.  Interfaces and Properties will be looked up using
     'config.findUtility(name, component)'.  All other kinds of names,
     including URL strings and 'CompositeName' instances, will be looked up
-    using 'binding.globalLookup()'.
+    using 'naming.lookup()'.
 
     Regardless of how the lookup is processed, an 'exceptions.NameNotFound'
     error will be raised if the name cannot be found."""
 
-    return _lookupComponent(component, name)
+    return _lookupComponent(component, name, default, creationName)
 
 
 
@@ -284,17 +285,23 @@ _getNextPathComponent = dict( (
 
 
 
-
-def _lookupComponent(component, name, targetName=None):
+def _lookupComponent(component, name, default=NOT_GIVEN, creationName=None):
 
     if IConfigKey.isImplementedBy(name):
-        return config.findUtility(name, component)
+        return config.findUtility(name, component, default)
 
     parsedName = toName(name, ComponentName, 1)
 
     if not parsedName.nameKind == COMPOUND_KIND:
         # URL's and composite names must be handled globally
-        return globalLookup(name, component, targetName)
+        try:
+            return naming.lookup(name, component,
+                creationParent=component, creationName=creationName
+            )
+        except exceptions.NameNotFound:
+            if default is NOT_GIVEN:
+                raise
+            return default
 
     if not parsedName:  # empty name refers to self
         return component
@@ -304,10 +311,20 @@ def _lookupComponent(component, name, targetName=None):
     pc = _getFirstPathComponent(attr)
 
     if pc:  ob = pc(component)
-    else:   ob = acquireComponent(attr, component, targetName)
+    else:   ob = acquireComponent(attr, component, creationName)
 
     resolved = []
     append = resolved.append
+
+
+
+
+
+
+
+
+
+
 
     try:
         for attr in parts:
@@ -318,6 +335,9 @@ def _lookupComponent(component, name, targetName=None):
 
     except AttributeError:
 
+        if default is not NOT_GIVEN:
+            return default
+
         raise exceptions.NameNotFound(
             resolvedName = ComponentName(resolved),
             remainingName = ComponentName([attr] + [a for a in parts]),
@@ -325,6 +345,27 @@ def _lookupComponent(component, name, targetName=None):
         )
 
     return ob
+
+
+
+# Make help() return something useful
+_lookupComponent.__doc__ = lookupComponent.__doc__
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 class bindTo(Once):
 
@@ -412,14 +453,14 @@ def suggestParentComponent(parent,name,child):
 
     """Suggest to 'child' that it has 'parent' and 'name'
 
-    If 'child' does not support 'IBindingAPI' and is a non-string, reiterable
-    container, all of its elements that support 'IBindingAPI' will be given
+    If 'child' does not support 'IComponent' and is a non-string, reiterable
+    container, all of its elements that support 'IComponent' will be given
     a suggestion to use 'parent' and 'name' as well.  Note that this
     means it would not be a good idea to use this on, say, a 10,000 element
     list or dictionary (especially if the objects in it aren't components),
     because this function has to check all of them."""
 
-    ob = adapt(child,IBindingAPI,None)
+    ob = adapt(child,IComponent,None)
 
     if ob is not None:
         # Tell it directly
@@ -437,7 +478,7 @@ def suggestParentComponent(parent,name,child):
         if i is not child:              # avoid non-reiterables
             ct = 0
             for ob in i:
-                ob = adapt(ob,IBindingAPI,None)
+                ob = adapt(ob,IComponent,None)
                 if ob is not None:
                     ob.setParentComponent(parent,name,suggest=True)
                 else:
@@ -572,13 +613,94 @@ def bindToProperty(propName, default=NOT_GIVEN, provides=None, doc=None):
     )
 
 
-class Base(object):
+class _Base(object):
+
+    """Basic attribute management and "active class" support"""
+
+    __metaclass__  = ActiveClass
+    __implements__ = IBindingAttrs
+
+    def _setBinding(self, attr, value, useSlot=False):
+
+        self._bindingChanging(attr,value,useSlot)
+
+        if useSlot:
+            getattr(self.__class__,attr).__set__(self,value)
+
+        else:
+            self.__dict__[attr] = value
+
+
+    def _getBinding(self, attr, default=None, useSlot=False):
+
+        if useSlot:
+            val = getattr(self,attr,default)
+
+        else:
+            val = self.__dict__.get(attr,default)
+
+        if val is not default:
+
+            val = self._postGet(attr,val,useSlot)
+
+            if val is NOT_FOUND:
+                return default
+
+        return val
+
+
+
+
+
+
+
+    def _getBindingFuncs(klass, attr, useSlot=False):
+        if useSlot:
+            d = getattr(klass,attr)
+        else:
+            d = _proxy(attr)
+        return d.__get__, d.__set__, d.__delete__
+
+    _getBindingFuncs = classmethod(_getBindingFuncs)
+
+
+    def _delBinding(self, attr, useSlot=False):
+
+        self._bindingChanging(attr, NOT_FOUND, useSlot)
+
+        if useSlot:
+            d = getattr(self.__class__,attr).__delete__
+
+            try:
+                d(self)
+            except AttributeError:
+                pass
+
+        elif attr in self.__dict__:
+            del self.__dict__[attr]
+
+    def _hasBinding(self,attr,useSlot=False):
+
+        if useSlot:
+            return hasattr(self,attr)
+        else:
+            return attr in self.__dict__
+
+
+    def _bindingChanging(self,attr,newval,isSlot=False):
+        pass
+
+
+    def _postGet(self,attr,value,isSlot=False):
+        return value
+
+
+class Component(_Base):
 
     """Thing that can be composed into a component tree, w/binding & lookups"""
 
     __class_implements__ = IBindingFactory
-    __implements__       = IBindingAPI
-    __metaclass__        = ActiveClass
+    __implements__       = IComponent
 
 
     def __init__(self, parentComponent=None, componentName=None, **kw):
@@ -610,6 +732,7 @@ class Base(object):
         return klass(**section.__dict__)
 
     fromZConfig = classmethod(fromZConfig)
+
 
 
 
@@ -654,135 +777,6 @@ class Base(object):
 
 
 
-    def _getConfigData(self, configKey, forObj):
-
-        attr = self.__class__.__class_provides__.get(configKey)
-
-        if attr:
-            return getattr(self, attr, NOT_FOUND)
-
-        return NOT_FOUND
-
-
-    def _hasBinding(self,attr,useSlot=False):
-
-        if useSlot:
-            return hasattr(self,attr)
-        else:
-            return attr in self.__dict__
-
-
-    def _bindingChanging(self,attr,newval,isSlot=False):
-        pass
-
-
-    def _postGet(self,attr,value,isSlot=False):
-        return value
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    def _setBinding(self, attr, value, useSlot=False):
-
-        self._bindingChanging(attr,value,useSlot)
-
-        if useSlot:
-            getattr(self.__class__,attr).__set__(self,value)
-
-        else:
-            self.__dict__[attr] = value
-
-
-    def _getBinding(self, attr, default=None, useSlot=False):
-
-        if useSlot:
-            val = getattr(self,attr,default)
-
-        else:
-            val = self.__dict__.get(attr,default)
-
-        if val is not default:
-
-            val = self._postGet(attr,val,useSlot)
-
-            if val is NOT_FOUND:
-                return default
-
-        return val
-
-
-    def _getBindingFuncs(klass, attr, useSlot=False):
-
-        if useSlot:
-            d = getattr(klass,attr)
-        else:
-            d = _proxy(attr)
-
-        return d.__get__, d.__set__, d.__delete__
-
-    _getBindingFuncs = classmethod(_getBindingFuncs)
-
-
-    def _delBinding(self, attr, useSlot=False):
-
-        self._bindingChanging(attr, NOT_FOUND, useSlot)
-
-        if useSlot:
-            d = getattr(self.__class__,attr).__delete__
-
-            try:
-                d(self)
-            except AttributeError:
-                pass
-
-        elif attr in self.__dict__:
-            del self.__dict__[attr]
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-class Component(Base):
-
-    """An configurable implementation (i.e., solution-domain) component"""
-
-    __implements__ = IComponent
-
     __instance_provides__ = New(
         'peak.config.config_components:PropertyMap', provides=IPropertyMap
     )
@@ -808,6 +802,53 @@ class Component(Base):
 
     def registerProvider(self, configKeys, provider):
         self.__instance_provides__.registerProvider(configKeys, provider)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    def __class_provides__(klass,d,a):
+
+        cp = EigenRegistry()
+        map(cp.update, getInheritedRegistries(klass, '__class_provides__'))
+
+        for attrName, descr in klass.__class_descriptors__.items():
+            provides = getattr(descr,'_provides',None)
+            if provides is not None:
+                cp.register(provides, attrName)
+
+        return cp
+
+    __class_provides__ = classAttr(Once(__class_provides__))
+
+
+Base = Component    # XXX backward compatibility; deprecated
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

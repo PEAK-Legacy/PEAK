@@ -17,6 +17,7 @@ from types import FunctionType
 
 from peak.persistence import Persistent
 from peak.storage.lazy_loader import LazyLoader
+from peak.binding.components import _Base
 
 
 __all__ = [
@@ -38,8 +39,7 @@ __all__ = [
 
 
 
-
-class Namespace(binding.Base):
+class Namespace(_Base):
 
     """Abstract base class for packages and types -- DEPRECATED
 
@@ -329,7 +329,6 @@ class ImmutableClass(TypeClass):
 class Immutable(Type, HashAndCompare):
 
     __metaclass__  = ImmutableClass
-    __implements__ = binding.IBindingAPI
 
     mdl_isAbstract = True   # Immutable itself is abstract
 
@@ -356,6 +355,7 @@ class Immutable(Type, HashAndCompare):
 
     def __delattr__(self,attr,value):
         raise TypeError("Immutable object", self)
+
 
 
 
@@ -457,7 +457,6 @@ class Element(Type, Persistent):
 
     """A persistent domain element"""
 
-    __implements__ = binding.IBindingAPI
     __metaclass__  = ElementClass
 
     def setParentComponent(self, parentComponent, componentName=None,
@@ -477,6 +476,7 @@ class Element(Type, Persistent):
 
     def getComponentName(self):
         return self._p_oid
+
 
 
 
