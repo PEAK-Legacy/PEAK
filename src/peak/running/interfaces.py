@@ -422,6 +422,33 @@ class ITwistedReactor(IBasicReactor):
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 class ISignalManager(Interface):
 
     """Global management of signal handlers

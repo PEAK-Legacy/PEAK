@@ -128,11 +128,11 @@ def setReactor(reactor):
     """Set the system reactor to 'reactor', if not already used"""
     _reactor.set(reactor)
 
-def getReactor(appConfig):
+def getReactor():
     """Get system reactor -- default to our "dirt simple" reactor"""
-    return _reactor.get(lambda: UntwistedReactor(appConfig))
+    return _reactor.get(lambda: UntwistedReactor())
 
-def getTwisted(appConfig):
+def getTwisted():
 
     """Get system reactor -- but only if it's twisted!"""
 
