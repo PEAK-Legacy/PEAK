@@ -142,6 +142,7 @@ setup(
 
     package_data = {
         '': ALL_EXTS,
+        'ZConfig': ['doc/schema.dtd'],
         'ZConfig.tests': ['input/*.xml', 'input/*.conf'],
         'ZConfig.tests.library.thing': ['extras/extras.xml'],
         'peak.metamodels': ['*.asdl']
