@@ -2,6 +2,7 @@ from __future__ import generators
 from peak.api import *
 from interfaces import *
 from peak.util.Struct import makeStructType
+from peak.util.imports import importObject
 from connections import ManagedConnection, AbstractCursor
 
 __all__ = [
@@ -13,9 +14,8 @@ __all__ = [
 def _nothing():
     pass
 
-
-
-
+def NullConverter(name,descr,value):
+    return value
 
 
 
@@ -131,13 +131,44 @@ class SQLConnection(ManagedConnection):
 
     cursorClass = SQLCursor
 
+    API = binding.requireBinding("DBAPI module for SQL connection")
+
+    Error               = binding.bindTo("API/Error")
+    Warning             = binding.bindTo("API/Warning")
+
+    Date                = binding.bindTo("API/Date")
+    Time                = binding.bindTo("API/Time")
+    Binary              = binding.bindTo("API/Binary")
+    Timestamp           = binding.bindTo("API/Timestamp")
+    DateFromTicks       = binding.bindTo("API/DateFromTicks")
+    TimeFromTicks       = binding.bindTo("API/TimeFromTicks")
+    TimestampFromTicks  = binding.bindTo("API/TimestampFromTicks")
+
+    supportedTypes      = 'STRING','BINARY','NUMBER','DATETIME','ROWID'
+
+    def typeMap(self, d, a):
+
+        tm = {}
+        ps = naming.PropertyName('peak.sql_types').of(self)
+        api = self.API
+
+        for k in self.supportedTypes:
+            tm[getattr(api,k)] = importObject(ps.get(k,NullConverter))
+
+        return tm
+
+    typeMap = binding.Once(typeMap)
+
+
+
 
 class SybaseConnection(SQLConnection):
 
+    API = binding.bindTo("Sybase")
+
     def _open(self):
         a = self.address
-        from Sybase import Connection
-        return Connection(a.server, a.user, a.passwd, a.db)
+        return self.API.connect(a.server, a.user, a.passwd, a.db)
             
     def onJoinTxn(self, txnService):
         # Sybase doesn't auto-chain transactions...
@@ -162,12 +193,23 @@ class SybaseConnection(SQLConnection):
 
 
 
+
+
+
+
+
+
+
+
+
+
 class GadflyConnection(SQLConnection):
+
+    API = binding.bindTo("gadfly")
 
     def _open(self):
         a = self.address
-        from gadfly import gadfly
-        return gadfly(a.db, a.dir)
+        return self.API.gadfly(a.db, a.dir)
 
     def createDB(self):
 
@@ -200,7 +242,6 @@ class GadflyURL(naming.ParsedURL):
             context.creationParent,
             address = self
         )
-
 
 
 class GenericSQL_URL(naming.ParsedURL):
