@@ -12,7 +12,7 @@
 """
 
 __all__ = [
-    'allocate_lock', 'get_ident', 'LockType'
+    'allocate_lock', 'get_ident', 'DummyLock'
     'allowThreading', 'disableThreading', 'requireThreading',
 ]
 
@@ -80,16 +80,40 @@ def requireThreading():
 
 
     
-class LockType(object):
+class DummyLock(object):
 
     """Dummy lock type used when threads are inactive or unavailable"""
-    
+
+    __slots__ = ['_lockCount']   
+
     def __init__(self):
         self._lockCount = 0
         
-    def acquire(self, waitflag=0):
-        self._lockCount += 1
 
+    def acquire(self, *waitflag):
+
+        lc = self._lockCount = self._lockCount + 1
+
+        if lc==1:
+            if waitflag:
+                # an argument was supplied, return success
+                return 1
+            else:
+                # no argument, just return None
+                return None
+                
+        else:
+            self._lockCount -= 1
+            
+            if waitflag and not waitflag[0]:
+                # no-wait; unlock/return failure
+                return 0
+
+            raise RunTimeError(
+                "Attempt to double-lock a lock in a single-threaded program"
+            )
+
+            
     def release(self):
         self._lockCount -= 1
 
@@ -105,7 +129,7 @@ def allocate_lock():
         return thread.allocate_lock()
 
     else:
-        return LockType()
+        return DummyLock()
 
 
 
