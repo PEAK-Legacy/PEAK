@@ -24,7 +24,10 @@ class IBooleanExpression(Interface):
         For most other operations, this should return a one-element sequence
         containing the expression object itself."""
 
-    def __inv__():
+    def __cmp__(other):
+        """Boolean expressions must be comparable to each other"""
+
+    def __invert__():
         """Return the inverse ("not") of this expression"""
 
     def __and__(expr):
@@ -32,9 +35,6 @@ class IBooleanExpression(Interface):
 
     def __or__(expr):
         """Return the disjunction ("or") of this expression with 'expr'"""
-
-
-
 
 
 
