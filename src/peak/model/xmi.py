@@ -75,7 +75,7 @@ from peak.api import *
 from peak.util import SOX
 from weakref import WeakValueDictionary
 
-__bases__ = model,
+
 
 
 
@@ -326,48 +326,7 @@ class XMI_DM(storage.EntityDM):
 
 
 
-class XMIMapMaker_Meta(type):
-
-    def __init__(klass, name, bases, dict):
-
-        super(XMIMapMaker_Meta,klass).__init__(name, bases, dict)
-
-        xm = {}
-        for b in bases:
-            xm.update(getattr(b,'_XMIMap',{}))
-
-        for attName, obj in dict.items():
-            for k in getattr(obj,'_XMINames',()):
-                xm[k] = attName
-
-        klass._XMIMap = xm
-
-
-class XMIMapMaker:
-
-    __metaclass__ = XMIMapMaker_Meta
-
-
-class Classifier(XMIMapMaker):
-    pass
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-class App(XMIMapMaker):
+class Loader(binding.Component):
 
     class __DM(XMI_DM):
         metamodel = binding.bindToParent()
@@ -378,4 +337,4 @@ class App(XMIMapMaker):
         return self.__DM[()]
 
 
-config.setupModule()
+

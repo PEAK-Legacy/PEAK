@@ -39,7 +39,7 @@ from peak.api import *
 
 
 
-class UMLClass:
+class UMLClass(model.xmi.Loader):
 
     class LocationReference(model.PrimitiveType):
         pass

@@ -30,7 +30,7 @@ class ActiveDescriptor(object):
 
     def activate(self,klass,attrName):
         """Informs the descriptor that it is in 'klass' with name 'attrName'"""
-        raise NotImplementedError
+        return self
 
 
 

@@ -2,12 +2,10 @@
 
 from peak.api import *
 
-import peak.metamodels.xmi.Reading
 import peak.metamodels.querying
 import peak.model.api
 
 __bases__ = (
-    peak.metamodels.xmi.Reading,
     peak.metamodels.querying,
     peak.model.api,
 )

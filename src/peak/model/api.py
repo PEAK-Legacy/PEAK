@@ -2,10 +2,7 @@
 
     TODO:
 
-    * Move XMI metadata support into default metaclasses, using
-      ActiveDescriptor.activate() methods and supplying both _XMIMap and full
-      list of features supplied by an element class.  Then we can stop using
-      xmi.Reading as a mixin module.
+    * Add feature list metadata support into default metaclasses
 
     * Review metaclass names and standardize naming convention
 
@@ -24,10 +21,12 @@ from UserList import UserList
 from peak.util.ListProxy import ListProxy
 
 from peak.model.method_exporter import MethodExporter
+from peak.util.imports import lazyModule
 
+xmi = lazyModule('peak.model.xmi')
 
 __all__ = [
-    'App','Service', 'MethodExporter', 'FeatureMC',
+    'App','Service', 'MethodExporter', 'FeatureMC', 'xmi'
     'StructuralFeature', 'Field', 'Collection', 'Reference', 'Sequence',
     'Classifier','PrimitiveType','Enumeration','DataType','Element',
     'LazyLoader', 'PersistentQuery', 'QueryLink',
@@ -37,6 +36,7 @@ __all__ = [
 # We export the interfaces too, so people don't have to dig for them...
 
 __all__ += allInterfaces
+
 
 
 class ServiceMeta(binding.AutoCreatable, binding.TraversableClass):
@@ -80,7 +80,48 @@ class App(Service):
 
 
 
-class FeatureMC(MethodExporter, binding.TraversableClass):
+class XMIInjector(binding.ActiveDescriptor):
+
+    def activate(self,klass,attrName):
+
+        self = super(XMIInjector,self).activate(klass,attrName)
+        
+        names = getattr(self,'_XMINames',None)
+
+        if names:
+
+            if not klass.__dict__.has_key('_XMIMap'):
+                m = {}
+                for c in klass.__mro__:
+                    if c.__dict__.has_key('_XMIMap'):
+                        m.update(c._XMIMap)
+                klass._XMIMap = m
+            else:
+                m = klass._XMIMap
+
+            for n in names:
+                m[n] = attrName
+
+            
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class FeatureMC(XMIInjector, MethodExporter, binding.TraversableClass):
 
     """Method-exporting Property
     
@@ -449,12 +490,19 @@ class Sequence(Collection):
 
 
 
+class ClassifierMeta(XMIInjector, binding.TraversableClass):
+    pass
+
+
 class Classifier(binding.Base):
+
     """Basis for all flavors"""
-    __metaclass__ = binding.TraversableClass
+
+    __metaclass__ = ClassifierMeta
 
 
 class PrimitiveType(Classifier):
+
     """A primitive type (e.g. Boolean, String, etc.)"""
 
     def fromString(klass, value):
@@ -463,7 +511,27 @@ class PrimitiveType(Classifier):
     fromString = classmethod(fromString)
 
 
-class EnumerationMeta(binding.TraversableClass):
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class EnumerationMeta(ClassifierMeta):
 
     def __init__(klass, name, bases, cdict):
 
@@ -497,6 +565,13 @@ class Enumeration(Classifier):
     __metaclass__ = EnumerationMeta
 
 
+
+
+
+
+
+
+
 class DataType(Classifier):
 
     """A complex datatype"""
@@ -509,6 +584,13 @@ class DataType(Classifier):
 
 class ElementMeta(DataType.__class__, Persistent.__class__):
     pass
+
+
+
+
+
+
+
 
 
 

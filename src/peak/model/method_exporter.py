@@ -345,10 +345,11 @@ class MethodExporter(ActiveDescriptor, type):
 
         return getattr(ob,self.methodNames[verb])
 
-
     def activate(self,klass,attrName):
 
         """Install the feature's "verbSubject()" methods upon use in a class"""
+
+        self = super(MethodExporter,self).activate(self,attrName)
 
         if attrName != self.attrName:
             raise TypeError(
@@ -364,8 +365,7 @@ class MethodExporter(ActiveDescriptor, type):
             if old is None or hasattr(old,'verb'):
                 setattr(klass, methodName, MethodWrapper(getattr(self,verb)))
 
-
-
+        return self
 
     def __init__(self, className, bases, classDict):
 
