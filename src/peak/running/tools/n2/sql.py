@@ -50,11 +50,17 @@ class SQLInteractor(binding.Component):
             semi = self.semi
             
             if semi >= 0:
-                self.buf, cmd = self.buf[:semi], self.buf[semi+1:]
+                self.buf, cmd = self.buf[:semi] + '\n', self.buf[semi+1:]
                 
                 self.handleCommand('go', 'go ' + cmd)
-                
 
+
+
+    def resetBuf(self):
+        self.state = self.buf = ''; self.line = 0; self.semi = - 1
+
+    
+        
     def command(self, cmd):
         return getattr(self, 'cmd_' + cmd.replace('-', '_'), None)
         
@@ -89,7 +95,7 @@ class SQLInteractor(binding.Component):
                 del cmdinfo
 
             if r:
-                self.buf = ""; self.line = 0; self.semi = - 1
+                self.resetBuf()
             elif r is not None:
                 self.line = self.buf.count('\n')
 
@@ -433,7 +439,7 @@ rollback -- abort current transaction"""
 
         def cmd(self, stdout, stderr, args, **kw):
             if args:
-                c = self.interactor.command(args[0]) # XXX
+                c = self.interactor.command(args[0])
                 if c is None:
                     print >>stderr, 'help: no such command: ' + args[0]
                 else:
