@@ -31,7 +31,7 @@ EXPORTED = object() # indicates variable is exported to a python variable
 
 class SQLInteractor(binding.Component):
     
-    editor = binding.bindToProperty('__main__.EDITOR', default='vi')
+    editor = binding.bindTo(PropertyName('__main__.EDITOR'), default='vi')
 
     shell = binding.bindTo('..')
     con = binding.requireBinding('The SQL connection')

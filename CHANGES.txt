@@ -2,6 +2,30 @@ Fixes and Enhancements since Version 0.5 alpha 2
 
  Changed, Enhanced, or Newly Deprecated Features
 
+ - 'naming.IName' is now derived from 'binding.IComponentKey', so names and
+   addresses must now support the 'findComponent()' method.  All PEAK name and
+   address types provide support for this.
+
+ - The 'lookup()' method of 'binding.IComponentKey' is now called
+   'findComponent()', to better distinguish it from 'lookup()' in
+   'naming.IBasicContext', which does something very different.
+
+ - 'binding.bindTo()' and 'binding.bindSequence()' now pre-adapt their
+   arguments to 'IComponentKey', to speed lookups at runtime, and to ensure
+   that errors due to an unusable parameter type occur at class creation time
+   instead of waiting until lookup time.
+
+ - The following 'binding' forms are now deprecated, and will go away before
+   0.5 beta is released:
+
+   'bindToProperty(x,y)' -- use 'bindTo(PropertyName(x),default=y)'
+
+   'bindToParent()' -- use 'bindTo("..")'
+
+   'bindToSelf()'  -- use 'bindTo(".")'
+
+   'bindToUtilities()' -- no replacement; let me know if you're using this.
+
  - There's a new 'peak.storage.files' module, with handy classes like
    'EditableFile'.  'EditableFile' is a class that lets you edit the contents
    of a file "in place", with atomic replacement of the original at transaction

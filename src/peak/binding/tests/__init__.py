@@ -171,15 +171,15 @@ class DescriptorData(binding.Component):
     thing3 = binding.requireBinding('This is required')
     thing4 = binding.bindSequence('thing1','thing2')
 
-    underflow = binding.bindToParent(50)
+    underflow = binding.bindTo('/'.join(['..']*50)) # 50 parents up
 
     class aService(binding.Component):
 
-        thing5 = binding.bindToParent()
+        thing5 = binding.bindTo('..')
 
         class nestedService(binding.Component):
 
-            thing6 = binding.bindToParent(2)
+            thing6 = binding.bindTo('../..')
 
             deep = binding.bindTo('deep')
 
@@ -253,7 +253,7 @@ class DescriptorTest(TestCase):
         try:
             assert p1 is p2
             assert p1 is self.data
-            assert p3 is binding.getParentComponent(self.data)
+            assert p3 is None
         finally:
             del self.data.aService.thing5
             del self.data.aService.nestedService.thing6

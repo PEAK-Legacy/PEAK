@@ -103,7 +103,7 @@ class UtilityData(binding.Component):
 
     class aService(binding.Component):
 
-        thing5 = binding.bindToParent(offerAs=[IS1U, provides(A)])
+        thing5 = binding.bindTo('..', offerAs=[IS1U, provides(A)])
 
         class nestedService(binding.Component):
             pass

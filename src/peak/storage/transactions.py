@@ -143,7 +143,7 @@ class TransactionService(binding.Component):
 
     state          = binding.New(TransactionState)
     errorHandler   = binding.New(BasicTxnErrorHandler)
-    logger         = binding.bindToProperty('peak.logs.transaction')
+    logger         = binding.bindTo(PropertyName('peak.logs.transaction'))
 
     def join(self, participant):
 

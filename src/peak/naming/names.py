@@ -48,7 +48,7 @@ class NameClass(type):
             return klass.mdl_fromString(ob)
 
     __adapt__ = protocols.metamethod(__adapt__)
-    
+
 
 
 
@@ -148,18 +148,18 @@ class AbstractName(tuple):
     mdl_normalize = classmethod(mdl_normalize)
 
 
+    def findComponent(self, component, default=NOT_GIVEN):
 
+        """Look the name up in context of component"""
 
+        try:
+            from api import lookup
+            return lookup(component, self, creationParent=component)
 
-
-
-
-
-
-
-
-
-
+        except exceptions.NameNotFound:
+            if default is NOT_GIVEN:
+                raise
+            return default
 
 
 URLMatch = re.compile('([-+.a-z0-9]+):',re.I).match
@@ -345,7 +345,7 @@ class Reference(object):
 
     def __repr__(self):
         return "Reference(%r,%r)" % (self.factoryName, self.addresses)
-        
+
 
 class LinkRef(object):
 

@@ -92,8 +92,8 @@ class FSResource(Resource):
         lambda self,d,a: filenameAsProperty(os.path.basename(self.filename))
     )
 
-    permissionNeeded = binding.bindToProperty(RESOURCE_BASE+'permission')
-    mime_type        = binding.bindToProperty(RESOURCE_BASE+'mime_type')
+    permissionNeeded = binding.bindTo(PropertyName(RESOURCE_BASE+'permission'))
+    mime_type        = binding.bindTo(PropertyName(RESOURCE_BASE+'mime_type'))
 
     def getObjectInstance(klass, context, refInfo, name, attrs=None):
         url, = refInfo.addresses

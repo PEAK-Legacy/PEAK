@@ -43,7 +43,7 @@ class SQLCursor(AbstractCursor):
 
     """Iterable cursor bridge/proxy"""
 
-    conn = binding.bindToParent()
+    conn = binding.bindTo('..')
     typeMap = binding.bindTo('conn/typeMap')
 
 
@@ -121,7 +121,7 @@ class SQLCursor(AbstractCursor):
 
 
 
-    logger = binding.bindToProperty('peak.logs.sql')
+    logger = binding.bindTo(PropertyName('peak.logs.sql'))
 
     __path = binding.Once(lambda s,d,a: binding.getComponentPath(s))
 
@@ -285,16 +285,13 @@ class ValueBasedTypeConn(SQLConnection):
 
 
 
-
-
 class SybaseConnection(ValueBasedTypeConn):
 
     API = binding.bindTo("import:Sybase")
-
-    hostname  = binding.bindToProperty('Sybase.client.hostname',  default=None)
-    appname   = binding.bindToProperty('Sybase.client.appname',   default=None)
-    textlimit = binding.bindToProperty('Sybase.client.textlimit', default=None)
-    textsize  = binding.bindToProperty('Sybase.client.textsize',  default=None)
+    hostname  = binding.bindTo(PropertyName('Sybase.client.hostname'), default=None)
+    appname   = binding.bindTo(PropertyName('Sybase.client.appname'),  default=None)
+    textlimit = binding.bindTo(PropertyName('Sybase.client.textlimit'),default=None)
+    textsize  = binding.bindTo(PropertyName('Sybase.client.textsize'), default=None)
 
     otmap = {
         'systable' : 'S',
@@ -304,7 +301,6 @@ class SybaseConnection(ValueBasedTypeConn):
         'table' : 'U',
         'view' : 'V',
     }
-
 
     def _open(self):
 
@@ -330,11 +326,9 @@ class SybaseConnection(ValueBasedTypeConn):
 
         return db
 
-
     def onJoinTxn(self, txnService):
         # Sybase doesn't auto-chain transactions...
         self.connection.begin()
-
 
 
     def txnTime(self,d,a):
@@ -370,32 +364,6 @@ class SybaseConnection(ValueBasedTypeConn):
     protocols.advise(
         instancesProvide=[ISQLIntrospector]
     )
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -460,7 +428,7 @@ class SqliteConnection(ValueBasedTypeConn):
         if obtypes is not NOT_GIVEN:
             addwhere = ' where type in (%s)' % \
                 ', '.join(["'%s'" % s for s in obtypes])
-            
+
         return self('''select name as obname, type as obtype%s
             from SQLITE_MASTER%s''' % (addsel, addwhere))
 
@@ -468,7 +436,18 @@ class SqliteConnection(ValueBasedTypeConn):
         instancesProvide=[ISQLIntrospector]
     )
 
-    
+
+
+
+
+
+
+
+
+
+
+
+
 
 class GadflyConnection(SQLConnection):
 
@@ -484,7 +463,6 @@ class GadflyConnection(SQLConnection):
         return self.API.gadfly(a.db, a.dir)
 
     def createDB(self):
-
         """Close, clear, and re-create the database"""
 
         self.close()
@@ -495,8 +473,6 @@ class GadflyConnection(SQLConnection):
         g.startup(self.address.db, self.address.dir)
         g.commit()
         g.close()
-
-
 
 
 class GadflyURL(naming.URL.Base):
@@ -514,30 +490,11 @@ class GadflyURL(naming.URL.Base):
         ('//',), db, '@', dir
     )
 
-
-
-
-
-
-
-
-
-
 from peak.naming.factories.openable import FileURL
 
 class SqliteURL(FileURL):
     supportedSchemes = 'sqlite',
     defaultFactory = 'peak.storage.SQL.SqliteConnection'
-
-
-
-
-
-
-
-
-
-
 
 
 class GenericSQL_URL(naming.URL.Base):
@@ -574,14 +531,6 @@ class GenericSQL_URL(naming.URL.Base):
 
 
 
-
-
-
-
-
-
-
-
 class OracleURL(naming.URL.Base):
 
     supportedSchemes = {
@@ -605,6 +554,21 @@ class OracleURL(naming.URL.Base):
     syntax = naming.URL.Sequence(
         ('//',), (user, (':', passwd), '@'), server, ('/',)
     )
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -632,17 +596,36 @@ class CXOracleConnection(SQLConnection):
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 class DCOracle2Connection(ValueBasedTypeConn):
+
+    protocols.advise(
+        instancesProvide=[ISQLIntrospector]
+    )
 
     API = binding.bindTo("import:DCOracle2")
 
     def _open(self):
         a = self.address
-
         return self.API.connect(
             user=a.user, password=a.passwd, database=a.server,
         )
-
 
     def txnTime(self,d,a):
         self.joinedTxn              # Ensure that we're in a transaction,
@@ -670,8 +653,4 @@ class DCOracle2Connection(ValueBasedTypeConn):
         DECODE(object_type, 'FUNCTION', 'proc', lower(object_type))
         as "obtype", created as "created"%s
             from user_objects%s''' % (addsel, addwhere))
-
-    protocols.advise(
-        instancesProvide=[ISQLIntrospector]
-    )
 

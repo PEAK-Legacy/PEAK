@@ -623,7 +623,7 @@ class XMIDocument(binding.Component, XMINode):
     ns2uri = {}
     uri2ns = kjGraph()
 
-    document = binding.bindToSelf()
+    document = binding.bindTo('.')
     nodeClass = XMINode
 
     def version(self,d,a):

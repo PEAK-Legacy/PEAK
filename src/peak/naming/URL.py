@@ -234,8 +234,8 @@ class Base(Struct):
     def __str__(self):
         return "%s:%s" % (self.scheme, self.body)
 
-
-
+    # "inherit" findComponent() method from names
+    findComponent = CompoundName.findComponent.im_func
 
 
 

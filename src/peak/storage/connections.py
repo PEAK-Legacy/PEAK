@@ -165,8 +165,8 @@ class ManagedConnection(TransactionComponent):
     def _close(self):
         """Actions to take before 'del self.connection', if needed."""
 
-    __txnTimeConverter = binding.bindToProperty(
-        'peak.storage.txnTimeType', default=float
+    __txnTimeConverter = binding.bindTo(
+        PropertyName('peak.storage.txnTimeType'), default=float
     )
 
     def txnTime(self,d,a):

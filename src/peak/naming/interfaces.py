@@ -2,7 +2,7 @@
 
 from protocols import Interface, Attribute
 from peak.api import PropertyName
-
+from peak.binding.interfaces import IComponentKey
 
 __all__ = [
 
@@ -43,7 +43,7 @@ COMPOUND_KIND  = 1
 COMPOSITE_KIND = 2
 URL_KIND       = 3
 
-class IName(Interface):
+class IName(IComponentKey):
 
     """Abstract name object"""
 

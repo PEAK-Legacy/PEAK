@@ -285,7 +285,7 @@ class ComponentName(AbstractName):
 
 
 
-    def lookup(self, component, default=NOT_GIVEN):
+    def findComponent(self, component, default=NOT_GIVEN):
 
         if not self:  # empty name refers to self
             return component
@@ -357,7 +357,7 @@ def lookupComponent(component, name, default=NOT_GIVEN, adaptTo=None,
     Regardless of how the lookup is processed, an 'exceptions.NameNotFound'
     error will be raised if the name cannot be found."""
 
-    result = adapt(name, IComponentKey).lookup( component, default )
+    result = adapt(name, IComponentKey).findComponent( component, default )
 
     if adaptTo is not None:
         result = adapt(result,adaptTo)
@@ -366,6 +366,16 @@ def lookupComponent(component, name, default=NOT_GIVEN, adaptTo=None,
         suggestParentComponent(component,creationName,result)
 
     return result
+
+# Declare that strings should be converted to names (with a default class
+# of ComponentName), in order to use them as component keys
+#
+protocols.declareAdapter(
+    lambda ob, proto: toName(ob, ComponentName, 1),
+    provides = [IComponentKey],
+    forTypes = [str, unicode],
+)
+
 
 class ConfigFinder(object):
 
@@ -381,63 +391,12 @@ class ConfigFinder(object):
     def __init__(self, ob, proto):
         self.ob = ob
 
-    def lookup(self, component, default):
+    def findComponent(self, component, default=NOT_GIVEN):
         return config.findUtility(component, self.ob, default)
 
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-class NameFinder(object):
-
-    """Look up names"""
-
-    __slots__ = 'name'
-
-    protocols.advise(
-        instancesProvide      = [IComponentKey],
-        asAdapterForTypes     = [str, unicode],
-        asAdapterForProtocols = [IName]
-    )
-
-    def __init__(self, ob, proto):
-        self.name = ob
-
-    def lookup(self, component, default=NOT_GIVEN):
-        parsedName = toName(self.name, ComponentName, 1)
-
-        if not parsedName.nameKind == COMPOUND_KIND:
-            # URL's and composite names must be handled globally
-            try:
-                return naming.lookup(component, self.name,
-                    creationParent=component
-                )
-            except exceptions.NameNotFound:
-                if default is NOT_GIVEN:
-                    raise
-                return default
-
-        return ComponentName(parsedName).lookup(component,default)
 
 
 
@@ -466,29 +425,29 @@ class bindTo(Attribute):
     singleValue = True
 
     def __init__(self,targetName,**kw):
-        self.targetNames = (targetName,)
+        self.targetNames = adapt(targetName, IComponentKey),
         kw.setdefault('doc', ("binding.bindTo(%r)" % targetName))
         super(bindTo,self).__init__(**kw)
 
 
     def computeValue(self, obj, instanceDict, attrName):
+
         default = self.default
         names   = self.targetNames
-        obs     = [
-            lookupComponent(obj,n,default,suggestParent=False) for n in names
-        ]
+        obs     = [ key.findComponent( obj, default ) for key in names ]
 
-        for name,newOb in zip(names, obs):
-
-            if newOb is NOT_FOUND:
-
-                del instanceDict[attrName]
-                raise exceptions.NameNotFound(attrName, resolvedName = name)
-
-            if self.singleValue:
-                return newOb
+        if self.singleValue:
+            return obs[0]
 
         return tuple(obs)
+
+
+
+
+
+
+
+
 
 class bindSequence(bindTo):
 
@@ -510,7 +469,7 @@ class bindSequence(bindTo):
     singleValue = False
 
     def __init__(self, *targetNames, **kw):
-        self.targetNames = targetNames
+        self.targetNames = tuple([adapt(n,IComponentKey) for n in targetNames])
         kw.setdefault('doc', ("binding.bindSequence%s" % `targetNames`))
 
         # Note: the following intentionally skips bindTo.__init__, as it
@@ -532,7 +491,6 @@ def whenAssembled(func, **kw):
 
 
 def delegateTo(delegateAttr, **kw):
-
     """Delegate attribute to the same attribute of another object
 
     Usage::
@@ -556,6 +514,7 @@ def delegateTo(delegateAttr, **kw):
         lambda s,d,a: getattr(getattr(s,delegateAttr),a), **kw
     )
 
+
 def Acquire(key, **kw):
     """Provide a utility or property, but look it up if not supplied
 
@@ -573,44 +532,17 @@ def Acquire(key, **kw):
 
 
 def bindToParent(level=1, **kw):
-
-    """Look up and cache a reference to the nth-level parent component
-
-        Usage::
-
-            class someClass(binding.AutoCreated):
-
-                grandPa = binding.bindToParent(2)
-
-       'someClass' can then refer to 'self.grandPa' instead of calling
-       'self.getParentComponent().getParentComponent()'.
-    """
-
-    def computeValue(obj, instDict, attrName):
-
-        for step in range(level):
-            newObj = getParentComponent(obj)
-            if newObj is None: break
-            obj = newObj
-
-        return obj
-
-    return Once(computeValue, **kw)
-
+    """DEPRECATED: use binding.bindTo('..')"""
+    return bindTo('/'.join(['..']*level), **kw)
 
 def bindToSelf(**kw):
+    """DEPRECATED: use binding.bindTo('.')"""
+    return binding.bindTo('.', **kw)
 
-    """Cached reference to the 'self' object
-
-    This is just a shortcut for 'bindToParent(0)', and does pretty much what
-    you'd expect.  It's handy for objects that provide default support for
-    various interfaces in the absence of an object to delegate to.  The object
-    can refer to 'self.delegateForInterfaceX.someMethod()', and have
-    'delegateForInterfaceX' be a 'bindToSelf()' by default."""
-
-    return bindToParent(0, **kw)
-
-
+def bindToProperty(propName, default=NOT_GIVEN, **kw):
+    """DEPRECATED: use binding.bindTo(PropertyName(propName))"""
+    kw['default'] = default
+    return binding.bindTo(PropertyName(propName), **kw)
 
 
 class requireBinding(Attribute):
@@ -632,25 +564,11 @@ class requireBinding(Attribute):
 
 
 def bindToUtilities(iface, **kw):
-
-    """Binding to a list of all 'iface' utilities above the component"""
+    """DEPRECATED: bind list of all 'iface' utilities above the component"""
 
     return Once(lambda s,d,a: list(config.findUtilities(s,iface)), **kw)
 
 
-
-
-def bindToProperty(propName, default=NOT_GIVEN, **kw):
-
-    """Binding to property 'propName', defaulting to 'default' if not found
-
-        If 'default' is not supplied, failure to locate the named property
-        will result in a 'config.PropertyNotFound' exception.
-    """
-
-    propName = PropertyName(propName)
-
-    return Once(lambda s,d,a: config.getProperty(s,propName,default), **kw)
 
 
 

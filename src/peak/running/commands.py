@@ -617,9 +617,15 @@ class EventDriven(AbstractCommand):
 
     """Run an event-driven main loop after setup"""
 
-    stopAfter   = binding.bindToProperty('peak.running.stopAfter',   0)
-    idleTimeout = binding.bindToProperty('peak.running.idleTimeout', 0)
-    runAtLeast  = binding.bindToProperty('peak.running.runAtLeast',  0)
+    stopAfter = binding.bindTo(
+        PropertyName('peak.running.stopAfter'),   default=0
+    )
+    idleTimeout = binding.bindTo(
+        PropertyName('peak.running.idleTimeout'), default=0
+    )
+    runAtLeast = binding.bindTo(
+        PropertyName('peak.running.runAtLeast'),  default=0
+    )
 
     mainLoop = binding.bindTo(IMainLoop)
 
@@ -637,12 +643,6 @@ class EventDriven(AbstractCommand):
         )
 
         # XXX we should probably log start/stop events
-
-
-
-
-
-
 
 
 

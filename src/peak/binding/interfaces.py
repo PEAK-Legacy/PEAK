@@ -13,8 +13,8 @@ __all__ = [
 class IComponentKey(Interface):
     """Key that can be looked up via 'Component.lookupComponent()'"""
 
-    def lookup(context, default=NOT_GIVEN):
-        """Return self up in 'context', 'default' or raise NameNotFound"""
+    def findComponent(context, default=NOT_GIVEN):
+        """Look self up in 'context', return 'default' or raise NameNotFound"""
 
 
 class IComponentFactory(Interface):
