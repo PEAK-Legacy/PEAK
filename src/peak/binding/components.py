@@ -13,7 +13,7 @@ from peak.config.interfaces import IConfigKey, IPropertyMap
 
 
 __all__ = [
-    'Base', 'Component','AutoCreated','Provider','CachingProvider',
+    'Base', 'Component','AutoCreated',
     'bindTo', 'requireBinding', 'bindSequence', 'bindToParent', 'bindToSelf',
     'getRootComponent', 'getParentComponent', 'lookupComponent',
     'acquireComponent', 'globalLookup', 'findUtility', 'findUtilities',
@@ -80,45 +80,9 @@ def getComponentPath(component, relativeTo=None):
 
 
 
-def Provider(callable):
-    return lambda foundIn, configKey, forObj: callable(forObj)
-
-
-def CachingProvider(callable, weak=False, local=False):
-
-    def provider(foundIn, configKey, forObj):
-
-        if local:
-
-            foundIn = config.getLocal(forObj)
-
-            if foundIn is None:
-                foundIn = config.getGlobal()
-
-        else:
-            # get the owner of the property map
-            foundIn = getParentComponent(foundIn)
-
-        utility = provider.cache.get(foundIn)
-
-        if utility is None:
-            utility = provider.cache[foundIn] = callable(foundIn)
-
-        return utility
-
-    if weak:
-        provider.cache = WeakValueDictionary()
-    else:
-        provider.cache = {}
-
-    return provider
-
-
 def Constant(provides, value, doc=None):
     """Supply a constant as a property or utility"""
     return Once(lambda s,d,a: value, provides=provides, doc=doc)
-    
-
 
 
 def getParentComponent(component):
@@ -156,11 +120,6 @@ def getRootComponent(component):
         next = getParentComponent(component)
 
     return component
-
-
-
-
-
 
 def globalLookup(name, component=None, targetName=None):
 

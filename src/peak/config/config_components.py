@@ -14,6 +14,7 @@ from Interface import Interface
 __all__ = [
     'GlobalConfig', 'LocalConfig', 'PropertyMap', 'LazyLoader', 'ConfigReader',
     'loadConfigFile', 'loadMapping', 'PropertySet', 'fileNearModule',
+    'Provider','CachingProvider'
 ]
 
 
@@ -35,7 +36,6 @@ _emptyRuleCell.exists()
 def fileNearModule(moduleName,filename):
     filebase = importString(moduleName+':__file__')
     import os; return os.path.join(os.path.dirname(filebase), filename)
-
 
 
 
@@ -391,3 +391,55 @@ class PropertySet(object):
             forObj = self.target
 
         return config.getProperty(self.prefix[:-1], forObj, default)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+def Provider(callable):
+    return lambda foundIn, configKey, forObj: callable(forObj)
+
+
+def CachingProvider(callable, weak=False, local=False):
+
+    def provider(foundIn, configKey, forObj):
+
+        if local:
+
+            foundIn = config.getLocal(forObj)
+
+            if foundIn is None:
+                foundIn = config.getGlobal()
+
+        else:
+            # get the owner of the property map
+            foundIn = binding.getParentComponent(foundIn)
+
+        utility = provider.cache.get(foundIn)
+
+        if utility is None:
+            utility = provider.cache[foundIn] = callable(foundIn)
+
+        return utility
+
+    if weak:
+        provider.cache = WeakValueDictionary()
+    else:
+        provider.cache = {}
+
+    return provider
+
+
+

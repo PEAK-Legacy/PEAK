@@ -96,12 +96,12 @@ class DescriptorTest(TestCase):
 
         self.data.aService.registerProvider(
             ISampleUtility1,
-            binding.Provider(makeAUtility)
+            config.Provider(makeAUtility)
         )
 
         self.data.aService.registerProvider(
             ISampleUtility2,
-            binding.CachingProvider(makeAUtility)
+            config.CachingProvider(makeAUtility)
         )
 
 
