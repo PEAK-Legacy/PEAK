@@ -61,7 +61,7 @@ class TransactionService(binding.AutoCreated):
     state          = binding.New(TransactionState)
     errorHandler   = binding.New(BasicTxnErrorHandler)
     
-    def subscribe(self, participant):
+    def join(self, participant):
 
         if self.state.cantCommit:
             raise BrokenTransaction
@@ -291,13 +291,16 @@ class TransactionComponent(binding.AutoCreated, AbstractParticipant):
 
     # XXX add binding.AutoCreated.__implements__ once binding.interfaces exist
 
+    inTransaction = False
+    
     def txnSvc(self,d,a):
 
         """Join transaction when 'txnSvc' attribute is accessed"""
 
         ts = binding.findUtility(ITransactionService)
-        ts.subscribe(self)
-
+        ts.join(self)
+        self.inTransaction = True
+        
         return ts
 
     txnSvc = binding.Once(ITransactionService)
@@ -307,7 +310,7 @@ class TransactionComponent(binding.AutoCreated, AbstractParticipant):
 
         """Ensure that subsequent transactions will require re-registering"""
         
-        del self.txnSvc
+        del self.txnSvc, self.inTransaction
 
 
 

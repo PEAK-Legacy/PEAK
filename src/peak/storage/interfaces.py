@@ -44,7 +44,7 @@ class ITransactionService(Interface):
 
     # Managing participants
 
-    def subscribe(participant):
+    def join(participant):
         """Add 'participant' to the set of objects that will receive
         transaction messages.  Note that no particular ordering of
         participants should be assumed.  If the transaction is already
@@ -87,10 +87,10 @@ class ITransactionParticipant(Interface):
 
     Event sequence is approximately as follows:
 
-        subscribe(participant)
+        join(participant)
             ( readyToVote voteForCommit commitTransaction ) | abortTransaction
 
-    An abortTransaction may occur at *any* point following subscribe(), and
+    An abortTransaction may occur at *any* point following join(), and
     aborts the transaction.
 
     Generally speaking, participants fall into a few broad categories:
