@@ -207,12 +207,9 @@ class IBasicContext(Interface.Base):
 
     """Basic naming context; supports only configuration and name handling"""
     
-    def lookup(name, requiredInterface=None):
-        """Lookup 'name' --> object that supports 'requiredInterface'"""
-        
-    def parseName(name):
-        """Parse 'name' string and return a name object"""
-        
+    def lookup(name):
+        """Lookup 'name' --> object"""
+
     def getEnvironment():
         """Return a mapping representing the context's configuration"""
 
@@ -225,6 +222,8 @@ class IBasicContext(Interface.Base):
     def close():
         """Close the context"""
 
+    def copy():
+        """Return a copy of the context"""
 
     # lookupLink, composeName, getNameParser, getNameInNamespace
 
@@ -233,7 +232,7 @@ class IReadContext(IBasicContext):
 
     """Context that supports iteration/inspection of contents"""
 
-    # list, listBindings,
+    # list, listBindings, search, getAttributes
 
 
 class IWriteContext(IBasicContext):
@@ -241,4 +240,4 @@ class IWriteContext(IBasicContext):
     """Context that supports adding/changing its contents"""
 
     # bind, rebind, unbind, rename,
-    # createSubcontext, destroySubcontext, 
+    # createSubcontext, destroySubcontext, modifyAttributes

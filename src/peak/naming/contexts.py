@@ -39,6 +39,211 @@ _marker = object()
 
 
 
+class Operation(object):
+
+    remainingNewName = None
+
+    def __init__(self, ctx, name, requiredInterface=IBasicContext):
+
+        self.ctx, self.requiredInterface = ctx, requiredInterface
+        
+        name = self.name = toName(name, acceptURL=ctx._acceptURLs)
+
+        if name.isURL:
+
+            self.localName, self.remainingName = name.scheme, name.body
+            
+            if not ctx._supportsScheme(name.scheme):
+            
+                schemeCtx = SPI.getURLContext(name.scheme,ctx.getEnvironment())
+    
+                if schemeCtx is None:
+                    raise InvalidNameException(
+                        "Unknown scheme %s in %r" % (name.scheme,name)
+                    )
+
+                self.ctx = schemeCtx
+                self.resType = 'resolve_passthru'
+                
+            else:
+                self.resType = 'resolve_url'
+
+
+        else:
+            mine, rest = ctx._splitName(name)
+            self.localName, self.remainingName = mine, rest
+
+            self.resType = self.getResolutionType(mine, rest)
+
+
+
+
+
+
+    def getResolutionType(self, mine, rest):
+
+        if not rest:
+            # (mine=?, rest=[])
+            return 'resolve_local'  # It's all local
+
+        if mine:
+            # (mine=[...], rest=[...])
+            return 'resolve_intermediate'          
+
+        elif not rest[0] and len(rest)==1:
+            # (mine=[], rest=[''])
+            return 'resolve_nns_ptr'
+
+        else:
+            # (mine=[], rest=[...])
+            return 'resolve_intermediate'
+            
+
+    def forceNNSboundary(self):
+        if not self.remainingName or self.remainingName[0]:
+            self.remainingName = NNS_NAME + self.remainingName
+
+
+    def skipNNSboundary(self):
+
+        if self.remainingName and not self.remainingName[0]:
+            self.remainingName = CompositeName(self.remainingName[1:])
+            
+        operation.localName += NNS_NAME
+
+
+
+
+
+
+
+
+
+
+
+    def resolve_url(self):
+        raise NotImplementedError
+
+    resolve_local = resolve_nns_ptr = resolve_passthru = resolve_url
+
+
+    def resolve_intermediate(self):
+                
+        # We have both local and non-local parts, so work it out
+
+        self.resolvedObj = self.ctx._getNextContext(self)
+        self.ctx = SPI.getContinuationContext(self.makeCPE())
+        return self.resolve_passthru()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    def __call__(self, *args, **kw):
+
+        self.args, self.kw = args, kw
+
+        try:            
+            return getattr(self, self.resType)()
+
+        except CannotProceedException, cpe:
+            return self.resolve_cpe(cpe)
+
+
+    def resolve_cpe(self, cpe):
+
+        self.ctx = SPI.getContinuationContext(cpe)
+        
+        self.remainingName    = cpe.remainingName
+        self.remainingNewName = cpe.remainingNewName
+
+        return self.resolve_passthru()
+
+
+    def makeCPE(self):
+        return CannotProceedException(
+            resolvedObj      = self.resolvedObj,
+            altName          = self.localName,
+            remainingName    = self.remainingName,
+            remainingNewName = self.remainingNewName,
+            altNameCtx       = self.ctx,
+            environment      = self.ctx.getEnvironment(),
+            requiredInterface= self.requiredInterface
+        )
+
+
+
+
+
+
+
+
+
+
+class NonbindingOperation(Operation):
+
+    def resolve_nns_ptr(self):
+        return self.resolve_intermediate()
+
+
+class RenameOperation(NonbindingOperation):
+
+    def __init__(self, ctx, name, newName, requiredInterface=IWriteContext):
+
+        super(RenameOperation,self).__init__(self,ctx,name,requiredInterface)
+
+        target = Operation(ctx, newName, requiredInterface)
+        self.targetResType    = target.resType
+        self.newName          = target.name
+        self.newLocal         = target.localName
+        self.remainingNewName = target.remainingName
+        
+        if self.targetResType<>self.resType \
+           or self.resType not in ('resolve_url','resolve_local') \
+           and self.newLocal<>self.localName:
+           
+                raise InvalidNameException(
+                    "Incompatible names for rename", name, newName
+                )
+
+
+    def forceNNSboundary(self):
+        super(RenameOperation,self).forceNNSboundary()
+        if not self.remainingNewName or self.remainingNewName[0]:
+            self.remainingNewName = NNS_NAME + self.remainingNewName
+
+
+    def skipNNSboundary(self):
+        super(RenameOperation,self).skipNNSboundary()
+        if self.remainingNewName and not self.remainingNewName[0]:
+            self.remainingNewName = CompositeName(self.remainingNewName[1:])
+
+
+
+
 class AbstractContext(object):
 
     __implements__ = IBasicContext
@@ -77,169 +282,46 @@ class AbstractContext(object):
         if hasattr(self,'_environ'):
             del self._environ
 
-    def clone(self):
+    def copy(self):
         return self.__class__(self.getEnvironment())
 
-    def _performOp(self, name,
-                    handleLocal, passThru,
-                    handleURL=URLsNotAccepted, handleNNS=None,
-                    opInterface=IBasicContext):
-    
-        """Perform a naming operation"""
+    def _getNextContext(self, operation):
 
-        name = toName(acceptURL = self._acceptURLs)
+        """Find the next naming system after resolving local part"""
 
-        if name.isURL:
-            scheme = name.scheme
+        if not operation.localName:
+        
+            # It's on the NNS itself...
             
-            if name.scheme != self._scheme:
-                schemeCtx = SPI.getURLContext(scheme, self.getEnvironment())
-    
-                if schemeCtx is None:
-                    raise InvalidNameException(
-                        "Unknown scheme %s in %r" % (scheme,name)
-                    )
-
-                return passThru(schemeCtx, name)
-
-            return handleURL(name)
+            operation.skipNNSboundary()
+            return RefAddr("nns", self)  # XXX???
 
 
+        obj = self._lookup(operation)
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-        try:
-            mine, rest = self._splitName(name)
+        if isinstance(obj,self.__class__):
+          
+            # Same or subclass, must not be a junction;
+            # so delegate the NNS lookup to it
             
-            if not rest:
-                return handleLocal(mine)    # It's all local
-
-
-            elif len(rest)==1 and not rest[0]:
-
-                # Empty name for next name part (single trailing /)
-                # So operation is on the NNS pointer *itself*
-
-                return (handleNNS or self._processJunction)(mine)
-
-
-            elif not mine or not filter(None,rest):
-
-                # Name starts with "/" or ends with multiple slashes;
-                # It crosses namespaces, but the operation target is
-                # on the far side.  So look it up and point the CPE there.
-                # We also drop the first element of 'rest' from the
-                # 'remainingName' if it's empty.  This is needed because
-                # we end up here if '_resolveIntermediateNNS()' finds a
-                # non-junction on a non-empty 'mine'.  (Ugh!  But this
-                # is how the JNDI tutorial example does it.)
+            operation.forceNNSboundary()
+            return obj
                 
-                obj = self._lookup_nns(mine)
-                if not rest[0]: rest = CompositeName(rest[1:])
-                raise self._fillInCPE(obj, mine, rest)
 
-            else:
-                # We have both local and non-local parts, so work it out
-                obj = self._resolveIntermediateNNS(mine,rest)
-                raise self._fillInCPE(obj, mine, rest)
+        elif not IBasicContext.isImplementedBy(obj):
+            
+            # Not a context?  make it an NNS reference
 
-
-        except CannotProceedException, e:
-            cctx = SPI.getContinuationContext(e, opInterface)    # XXX
-            return passThru(cctx, e.remainingName)
-
-
-    def _fillInCPE(self, resolvedObj, altName, remainingName):
-
-        """Return an appropriate CannotProceedException"""
-
-        return CannotProceedException(
-            resolvedObj   = resolvedObj,
-            altName       = altName,
-            remainingName = remainingName,
-            altNameCtx    = self,
-            environment   = self.getEnvironment(),
-        )
-
-
-    def _processJunction(self,name):
-
-        """Raise a CannotProceedException targeting the appropriate junction"""
-
-        if not name:
-            ref = RefAddr("nns", self)  # XXX???
-            raise self._fillInCPE(ref, NNS_NAME, None)
+            operation.skipNNSboundary()
+            return RefAddr("nns", obj)  # XXX???
 
         else:
-            try:
-                target = self._lookup_internal(name)
-
-            except NamingException, e:
-                e.remainingName += NNS_NAME
-                raise e
-
-            raise self._fillInCPE(target, name, NNS_NAME)
+            # It's a context, so just return it
+            return obj
 
 
-
-
-
-
-
-
-
-
-
-    def _resolveIntermediateNNS(self, mine, rest, newName=None):
-
-        """Find the next naming system after resolving 'mine'"""
-
-        try:
-            obj = self._lookup_internal(mine)
-
-            if isinstance(obj,self.__class__):
-              
-                # Same or subclass, must not be a junction
-
-                cpe = self._fillInCPE(obj, mine, NNS_NAME+rest)
-                cpe.remainingNewName = newName
-
-
-            elif not IBasicContext.isImplementedBy(obj):
-                
-                # Not a context, make it an NNS reference
-                
-                ref = RefAddr("nns", obj)  # XXX???
-                cpe = self._fillInCPE(ref, mine + NNS_NAME, rest)
-
-
-            else:
-                # It's a context, so just return it
-                return obj
-
-
-        except NamingException, e:
-            # Make sure the remaining name portion includes the 'rest'
-            e.remainingName += rest
-            raise e
-
-
-        # Throw the error we worked out
-        raise cpe
-
+    def _supportsScheme(self, scheme):
+        return scheme==self._scheme
 
 
 
@@ -287,22 +369,19 @@ class AbstractContext(object):
 
     # The real implementation stuff!
 
-    def _lookup_internal(self, name, requiredInterface=None):
-        """'name' is always a composite name of compound names"""
+    def _lookup(self, operation):
+        """'mine' is always a composite name of compound names"""
 
-        if name:
+        if mine:
             raise NotImplementedError
         else:
-            return self.clone()
-
-
-    def _lookup_nns(self, name):
-        """Return next naming system for 'name'"""
-        self._processJunction(name) # raises a CPE
+            return self.copy()
 
 
 
 
+
+        
 
 
 
@@ -326,24 +405,7 @@ class AbstractContext(object):
 
 
 
-class InitialContext(AbstractContext):
-    
-    def lookup(self, name, requiredInterface=None):
-
-        def lookupName(name):
-
-            if not name:
-                # Return a copy of self
-                return self.__class__(self.getEnvironment())
-
-            else:
-                pass    # XXX return self._lookup_internal(name,requiredInterface)
-                
-        def passThru(ctx, name):
-            return ctx.lookup(name,requiredInterface)
-
-        return self._performOp(name, lookupName, passThru)
 
 
-    def asReference(self, name):
-        pass # XXX
+
+

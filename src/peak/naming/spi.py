@@ -80,7 +80,9 @@ def getInitialContext(environ={}):
 
 
 
-def getContinuationContext(cpe, opInterface=IBasicContext):
+def getContinuationContext(cpe):
+
+    opInterface = cpe.requiredInterface or IBasicContext
 
     if opInterface.isImplementedBy(cpe.resolvedObj):
         return cpe.resolvedObj
@@ -115,8 +117,6 @@ def getStateToBind(obj, name, context, environment, attrs=None):
 
 def getObjectInstance(refInfo, name, context, environment, attrs=None):
     pass    # XXX
-
-
 
 
 
