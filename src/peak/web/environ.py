@@ -22,9 +22,9 @@ import protocols, posixpath, os, re
 from cStringIO import StringIO
 from peak.api import binding, adapt, NOT_GIVEN, NOT_FOUND, PropertyName
 import errors
-from peak.security.interfaces import IInteraction
+from peak.security.interfaces import IInteraction, IGuardedObject
 from wsgiref.util import shift_path_info, setup_testing_defaults
-
+from peak.security.api import Anybody
 
 
 
@@ -84,16 +84,20 @@ class Context:
     """Keep track of current traversal state"""
 
     __metaclass__ = binding.Activator
-
     protocols.advise(instancesProvide=[ITraversalContext])
 
-    previous = binding.Require("Parent context")
+    # Public attributes
+    current = binding.Require("Current object",permissionNeeded=Anybody)
+    previous = binding.Require("Parent context",permissionNeeded=Anybody)
 
-    view_protocol = interaction = policy = skin = rootURL = \
-        binding.Delegate('previous')
+    environ = interaction = policy = skin = rootURL = \
+        binding.Delegate('previous', permissionNeeded=Anybody)
 
-    allows = user = permissionNeeded = binding.Delegate('interaction')
+    user = binding.Delegate('interaction', permissionNeeded=Anybody)
 
+    # Private attrs    
+    view_protocol =  binding.Delegate('previous')
+    allows = permissionNeeded = binding.Delegate('interaction')
     getResource = binding.Delegate('skin')
 
     _clone_attrs = (
@@ -120,20 +124,18 @@ class Context:
     def parentContext(self):
         return self.previous
 
-
     absoluteURL = binding.Make(
-        lambda self: IWebTraversable(self.current).getURL(self)
+        lambda self: IWebTraversable(self.current).getURL(self),
+        permissionNeeded=Anybody
     )
 
     traversedURL = binding.Make(
-        lambda self: posixpath.join(    # handles empty parts OK
-            self.previous.absoluteURL, self.name
-        )
+        lambda self: posixpath.join(self.previous.absoluteURL, self.name),
+        permissionNeeded=Anybody
     )
 
     def renderHTTP(self):
         return IHTTPHandler(self.current).handle_http(self)
-
 
     def clone(self,**kw):
         for attr in 'name','current','environ':
@@ -141,7 +143,6 @@ class Context:
                 kw[attr] = getattr(self,attr)
         kw.setdefault('clone_from',self)
         return self.__class__(**kw)
-
 
     def _setup(self,kw):
         if 'clone_from' in kw:
@@ -160,7 +161,6 @@ class Context:
                     "%s constructor has no keyword argument %s" %
                     (klass, k)
                 )
-
 
     def shift(self):
         environ = self.environ
@@ -245,10 +245,17 @@ def clientHas(environ, lastModified=None, ETag=None):
 
 
 def traverseAttr(ctx, ob, ns, name, qname, default=NOT_GIVEN):
-    loc = getattr(ob, name, NOT_FOUND)
-    if loc is not NOT_FOUND:
-        ctx.requireAccess(qname, ob, name)
-        return ctx.childContext(qname,loc)
+    guard = IGuardedObject(ob, None)
+
+    if guard is not None:
+        perm = guard.getPermissionForName(name)
+
+        if perm:
+            # We have explicit permissions defined, so allow access after check
+            loc = getattr(ob, name, NOT_FOUND)
+            if loc is not NOT_FOUND:
+                ctx.requireAccess(qname, ob, name, perm)
+                return ctx.childContext(qname,loc)
 
     if default is NOT_GIVEN:
         raise errors.NotFound(ctx,qname,ob)
@@ -269,6 +276,13 @@ def traverseItem(ctx, ob, ns, name, qname, default=NOT_GIVEN):
     if default is NOT_GIVEN:
         raise errors.NotFound(ctx,qname,ob)
     return default
+
+
+
+
+
+
+
 
 
 def traverseView(ctx, ob, ns, name, qname, default=NOT_GIVEN):
@@ -296,6 +310,20 @@ def traverseDefault(ctx, ob, ns, name, qname, default=NOT_GIVEN):
             return traverseView(ctx,ob,ns,name,qname,default)
 
     return loc
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 def traverseLocationId(ctx, ob, ns, name, qname, default=NOT_GIVEN):
@@ -326,6 +354,19 @@ def traverseLocationId(ctx, ob, ns, name, qname, default=NOT_GIVEN):
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 class TraversableAsHandler(protocols.Adapter):
 
     protocols.advise(
@@ -335,7 +376,7 @@ class TraversableAsHandler(protocols.Adapter):
 
     def handle_http(self,ctx):
 
-        ctx = self.subject.preTraverse(ctx)
+        ctx = self.subject.beforeHTTP(ctx)
         name = ctx.shift()
 
         if name is None:

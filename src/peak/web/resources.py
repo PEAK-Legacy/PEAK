@@ -42,7 +42,7 @@ def parseFileResource(parser, section, name, value, lineInfo):
 class Resource(Place):
     permissionNeeded = binding.Require("Permission needed for access")
 
-    def preTraverse(self, ctx):
+    def beforeHTTP(self, ctx):
         perm = self.permissionNeeded
         ctx.requireAccess('', self, permissionNeeded=perm)
         return ctx
@@ -187,8 +187,8 @@ class ResourceProxy(object):
     def handle_http(self, ctx):
         return IHTTPHandler(ctx.getResource(self.path)).handle_http(ctx)
 
-    def preTraverse(self, ctx):
-        return IWebTraversable(ctx.getResource(self.path)).preTraverse(ctx)
+    def beforeHTTP(self, ctx):
+        return IWebTraversable(ctx.getResource(self.path)).beforeHTTP(ctx)
 
     def traverseTo(self, name, ctx, default=NOT_GIVEN):
         return IWebTraversable(
@@ -301,7 +301,7 @@ class TemplateResource(FSResource):
         # XXX replace content-type header w/self.mime_type
         return s,h,b
 
-    def preTraverse(self, ctx):
+    def beforeHTTP(self, ctx):
         # Templates may not be accessed directly via URL!
         raise NotFound(ctx,name)
 

@@ -49,7 +49,6 @@ class Skin(MultiTraverser,Place):
 
     cache      = binding.Make(dict)
     policy     = binding.Obtain('..')
-    root       = binding.Delegate("policy")
 
     layerNames = binding.Require("Sequence of layer names")
 
@@ -77,6 +76,7 @@ class Skin(MultiTraverser,Place):
         return layers
 
     items = binding.Make(items, suggestParent=False)
+
 
 
 

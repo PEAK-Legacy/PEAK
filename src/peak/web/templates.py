@@ -355,10 +355,10 @@ class Element(binding.Component):
 
 
     def _traverse(self, data, state):
+        return self.dataSpec.traverse(data), state
 
-        return self.dataSpec.traverse(
-            data, lambda ctx: self._wrapInteraction(ctx)
-        ), state
+
+
 
 
 
@@ -410,13 +410,6 @@ class Element(binding.Component):
 
     # Override in subclasses
 
-    def _wrapInteraction(self,interaction):
-        # XXX This should wrap the interaction in an IWebTraversable simulator,
-        # XXX which should include access to this element's parameters as well
-        # XXX as interaction variables.
-        raise NotImplementedError
-
-
     _emptyTag = binding.Make(
         lambda self: self.tagName and self._openTag[:-1]+u' />' or ''
     )
@@ -438,6 +431,13 @@ class Element(binding.Component):
     literalFactory = Literal
 
 Element.tagFactory = Element
+
+
+
+
+
+
+
 
 
 

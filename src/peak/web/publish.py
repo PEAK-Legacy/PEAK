@@ -6,6 +6,7 @@ from errors import NotFound, NotAllowed
 from environ import StartContext
 from wsgiref.util import application_uri, setup_testing_defaults
 from cStringIO import StringIO
+from peak.security.api import Anybody
 import os,sys
 
 __all__ = [
@@ -38,20 +39,16 @@ class DefaultExceptionHandler(binding.Singleton):
 
 
 
-
 class TraversalPath(naming.CompoundName):
 
-    """Name that knows how to do 'IWebTraversable' traversal
-
-    NOTE: 'preTraverse()' checks are not performed!
-    """
+    """Name that knows how to do 'IWebTraversable' traversal"""
 
     syntax = naming.PathSyntax(
         direction=1,
         separator='/'
     )
 
-    def traverse(self, ctx, getRoot = lambda environ: environ):
+    def traverse(self, ctx, getRoot = lambda ctx: ctx.clone(current=ctx)):
 
         path = iter(self)
         part = path.next()
@@ -80,6 +77,9 @@ class NullAuthenticationService:
 
 
 
+
+
+
 class InteractionPolicy(binding.Configurable, protocols.StickyAdapter):
 
     protocols.advise(
@@ -97,16 +97,15 @@ class InteractionPolicy(binding.Configurable, protocols.StickyAdapter):
 
     fromComponent = classmethod(fromComponent)
 
-    app            = binding.Obtain('./subject')
+    app            = binding.Obtain('./subject', permissionNeeded=Anybody)
     log            = binding.Obtain(APPLICATION_LOG)
 
-    defaultMethod  = binding.Obtain(DEFAULT_METHOD)
-    resourcePrefix = binding.Obtain(RESOURCE_PREFIX)
+    defaultMethod  = binding.Obtain(DEFAULT_METHOD, permissionNeeded=Anybody)
+    resourcePrefix = binding.Obtain(RESOURCE_PREFIX, permissionNeeded=Anybody)
 
     _authSvc       = binding.Make(IAuthService, adaptTo=IAuthService)
     _mkInteraction = binding.Obtain(config.FactoryFor(security.IInteraction))
 
-    root = binding.Obtain('app', adaptTo=IWebTraversable)
 
     getUser = binding.Delegate('_authSvc')
 
@@ -116,6 +115,7 @@ class InteractionPolicy(binding.Configurable, protocols.StickyAdapter):
     ns_handler    = binding.Make(lambda self: NAMESPACE_NAMES.of(self).get)
     view_protocol = binding.Make(lambda self: VIEW_NAMES.of(self).get)
     _getSkinName  = binding.Obtain(PropertyName('peak.web.getSkinName'))
+
 
 
 

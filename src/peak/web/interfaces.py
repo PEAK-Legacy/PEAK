@@ -27,7 +27,6 @@ class IPolicyInfo(Interface):
 
     app = Attribute("""The underlying application object""")
     log = Attribute("""Default 'logs.ILogger' for interactions""")
-    root = Attribute("""Start point for non-resource traversals""")
 
     resourcePrefix = Attribute("""Name that starts path to resources""")
     defaultMethod  = Attribute("""Default method name (e.g. 'index_html')""")
@@ -37,6 +36,7 @@ class IAuthService(Interface):
 
     def getUser(environ):
         """Return a user object for the given WSGI 'environ'"""
+
 
 
 class IInteractionPolicy(IAuthService, IPolicyInfo):
@@ -207,9 +207,9 @@ class IWebTraversable(Interface):
 
     """A component that supports path traversal"""
 
-    def preTraverse(context):
+    def beforeHTTP(context):
 
-        """Invoked before traverse by web requests
+        """Invoked before publication by 'IHTTPHandler' adapter
 
         This can be used to enforce any preconditions for interacting with this
         object via the web.  For example, an e-commerce "checkout" traversable
@@ -217,15 +217,17 @@ class IWebTraversable(Interface):
         items in the user's cart, or that the connection is secure.
 
         This method is only invoked when the traversable is about to be
-        traversed or rendered via a web request, AND the target object does
+        traversed into via a web request, AND the target object does
         not have any other adaptation to 'IHTTPHandler'.  It is not invoked
         when app-server code traverses a location (e.g. by paths in page
-        templates).  Traversables can take advantage of this to have different
-        security restrictions for app-server code and via-the-web URL
-        traversal.  Resources, for example, do not do security checks in
-        'traverseTo()', only in 'preTraverse()', thus ensuring that app-server
-        code can access all available resources, whether they are available to
-        the user or not.
+        templates, including '++id++' paths that pass through a location but
+        don't "stop" there).
+
+        Traversables can take advantage of this to have different security
+        restrictions for app-server code and via-the-web URL traversal.
+        Resources, for example, do not do security checks in 'traverseTo()',
+        only in 'beforeHTTP()', thus ensuring that app-server code can access
+        all available resources, whether they are available to the user or not.
 
         This method must return either the passed-in context, or a new
         traversal context to be used in its place.  Note also that if your
@@ -240,8 +242,6 @@ class IWebTraversable(Interface):
 
     def getURL(context):
         """Return this object's URL in traversal context 'context'"""
-
-
 
 
 class IPlace(Interface):

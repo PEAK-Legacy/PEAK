@@ -291,8 +291,9 @@ class TestNamespaces(TestCase):
             res = self.invokeHandler(ctx, handler, '++attr++foo')
             self.failUnless(res.current is self.app.foo)
             self.invokeHandler(ctx, handler, "++attr++"+NO_SUCH_NAME,fail=1)
+            self.invokeHandler(ctx, handler, "++attr++__class__",fail=1)
             self.assertRaises(web.NotAllowed,
-                self.invokeHandler, ctx, handler, "++attr++__class__"
+                self.invokeHandler, ctx, handler, "++attr++baz"
             )
 
     def testTraverseItem(self):
@@ -321,7 +322,6 @@ class TestNamespaces(TestCase):
         self.failUnless(ctx.traverseName('++attr++foo').current is foo)
         ctx = self.policy.newContext(start={'foo':'bar'})
         self.assertEqual(ctx.traverseName('++item++foo').current, 'bar')
-
 
 
 

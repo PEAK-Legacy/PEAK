@@ -24,10 +24,11 @@ class TestApp(web.Traversable):
         foo = security.Anybody,
         bar = security.Anybody,
         someXML = security.Anybody,
+        baz = security.Nobody,
     )
 
     foo = "The title (with <xml/> & such in it)"
-
+    baz = "can't touch this!"
     bar = 1,2,3
 
     someXML = "<li>This has &lt;xml/&gt; in it</li>"
@@ -36,7 +37,6 @@ class TestApp(web.Traversable):
         "Template to dump this out with",
         permissionNeeded = security.Anybody
     )
-
 
 
 class BasicTest(TestCase):

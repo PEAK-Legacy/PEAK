@@ -50,7 +50,7 @@ class Traversable(binding.Component):
     def traverseTo(self, name, ctx, default=NOT_GIVEN):
         return traverseDefault(ctx, self, 'attr', name, name, default)
 
-    def preTraverse(self, ctx):
+    def beforeHTTP(self, ctx):
         return ctx    # Should do any traversal requirements checks
 
     def getURL(self,ctx):
@@ -214,7 +214,7 @@ class Location(Place,binding.Configurable):
     have_views = False
 
 
-    def preTraverse(self,ctx):
+    def beforeHTTP(self,ctx):
         if self.have_views:
             ctx = ctx.clone(view_protocol=VIEW_NAMES.of(self).get)
         return ctx
@@ -304,21 +304,21 @@ class Decorator(Traversable):
 
 
     def traverseTo(self, name, ctx, default=NOT_GIVEN):
-        try:
-            loc = traverseAttr(ctx, self, 'attr', name, name, NOT_FOUND)
-            if loc is not NOT_FOUND:
-                return loc
-
-        except NotAllowed:
-            # Access failed, see if attribute is private
-            guard = adapt(self, security.IGuardedObject, None)
-
-            if guard is not None and guard.getPermissionForName(name):
-                # We have explicit permissions defined, so reject access
-                raise
+        loc = traverseAttr(ctx, self, 'attr', name, name, NOT_FOUND)
+        if loc is not NOT_FOUND:
+            return loc
 
         # attribute is absent or private, fall through to underlying object
         return traverseDefault(ctx, self.ob, 'attr', name, name, default)
+
+
+
+
+
+
+
+
+
 
 
 
@@ -332,9 +332,9 @@ class MultiTraverser(Traversable):
 
     items = binding.Require("items to be traversed")
 
-    def preTraverse(self, ctx):
+    def beforeHTTP(self, ctx):
         for item in self.items:
-            ctx = IWebTraversable(item).preTraverse(ctx)
+            ctx = IWebTraversable(item).beforeHTTP(ctx)
         return ctx
 
     def traverseTo(self, name, ctx, default=NOT_GIVEN):
