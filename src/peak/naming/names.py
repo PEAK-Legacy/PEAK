@@ -650,3 +650,18 @@ class PropertyName(str):
     def extends(self, other, strict=1):
         return not strict and self==other
 
+
+
+
+
+    def asPrefix(self):
+
+        p = self
+
+        if p.endswith('*'):
+            p=p[:-1]
+
+        if p and not p.endswith('.'):
+            p=p+'.'
+
+        return p

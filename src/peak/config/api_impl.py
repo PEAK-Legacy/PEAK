@@ -131,16 +131,16 @@ def setGlobalProperty(propName, value):
     pm.setValue(propName, value)
 
 
-def setGlobalRule(propName, ruleFactory):
+def setGlobalRule(propName, ruleObj):
 
     pm = binding.findUtility(IPropertyMap, getGlobal())
-    pm.setRule(propName, ruleFactory)
+    pm.setRule(propName, ruleObj)
 
 
 def setGlobalDefault(propName, defaultObj):
 
     pm = binding.findUtility(IPropertyMap, getGlobal())
-    pm.setDefault(propName, ruleObj)
+    pm.setDefault(propName, defaultObj)
 
 
 
@@ -172,10 +172,10 @@ def setPropertyFor(obj, propName, value):
     pm.setValue(propName, value)
 
 
-def setRuleFor(obj, propName, ruleFactory):
+def setRuleFor(obj, propName, ruleObj):
 
     pm = binding.findUtility(IPropertyMap, obj)
-    pm.setRule(propName, ruleFactory)
+    pm.setRule(propName, ruleObj)
 
 
 def setDefaultFor(obj, propName, defaultObj):

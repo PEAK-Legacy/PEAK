@@ -3,7 +3,7 @@ from Interface.Attribute import Attribute
 from peak.api import exceptions
 
 __all__ = [
-    'IRuleFactory', 'IRule', 'IPropertyMap', 'IConfigKey',
+    'IRule', 'IPropertyMap', 'IConfigKey',
 ]
 
 
@@ -39,14 +39,6 @@ __all__ = [
 
 
 
-class IRuleFactory(Interface):
-
-    """Thing that instantiates a rule for a propertyMap and name"""
-
-    def __call__(propertyMap, propName):
-        """Return an IRule instance suitable for the given IPropertyMap"""
-
-
 class IRule(Interface):
 
     """Rule to compute a property value for a target object"""
@@ -65,6 +57,14 @@ class IRule(Interface):
         algorithmically, it must cache its results keyed by the parameters it
         used, and not compute the results a second time.
         """
+
+
+
+
+
+
+
+
 
 
 

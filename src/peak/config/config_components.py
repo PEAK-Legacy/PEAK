@@ -46,8 +46,7 @@ class PropertyMap(Base):
     _provides = IPropertyMap
 
 
-    def setRule(self, propName, ruleFactory):
-        ruleObj = ruleFactory(self, propName)
+    def setRule(self, propName, ruleObj):
         _setCellInDict(self.rules, PropertyName(propName), ruleObj)
 
     def setDefault(self, propName, defaultRule):
@@ -79,6 +78,7 @@ class PropertyMap(Base):
             for base in iface.getBases():
                 if base is not Interface:
                     self._register(base,item,primary_iface)
+
 
     def getValueFor(self, configKey, forObj=None):
 
@@ -123,51 +123,51 @@ class PropertyMap(Base):
 
 class LoadingRule(object):
 
-    def __init__(self, loadFunc, **kw):
+    loadNeeded = True
+
+    def __init__(self, loadFunc, prefix='*', **kw):
         self.load = loadFunc
+        self.prefix = PropertyName(prefix).asPrefix()
         self.__dict__.update(kw)
 
-    def __call__(self, propertyMap, propName):
 
-        mask = propName
+    def __call__(self, propertyMap, propName, targetObj):
 
-        assert mask.endswith('*'), "LoadingRules are for wildcard rules only"
-        prefix = mask[:-1]
+        if self.loadNeeded:
 
-        if prefix and not prefix.endswith('.'):
-            prefix+='.'
-        
-        def compute(propertyMap, propName, targetObj):
+            try:
+                self.loadNeeded = False
+                return self.load(propertyMap, self.prefix, propName)
 
-            if compute.loadNeeded:
+            except:
+                del self.loadNeeded
+                raise
 
-                try:
-                    compute.loadNeeded = False
-                    return self.load(self, propertyMap, prefix, propName)
-                except:
-                    compute.loadNeeded = True
-                    raise
-
-            return NOT_FOUND
-
-        compute.loadNeeded = True
-        return compute
+        return NOT_FOUND
 
 
-def loadEnviron(factory, pMap, prefix, name):
-    from os import environ
 
-    for k,v in environ.items():
+def loadMapping(pMap, (prefix, mapping) ):
+
+    prefix = PropertyName(prefix).asPrefix()
+
+    for k,v in mapping.items():
         pMap.setValue(prefix+k, v)
 
-    return NOT_FOUND
+
+
+
+
+
+
+
 
 class ConfigFile(object):
 
     def __init__(self, filenames):
         self.filenames = filenames
 
-    def __call__(self, factory, pMap, prefix, name):
+    def __call__(self, pMap, prefix, name):
 
         # load from config file
         from ConfigParser import ConfigParser
@@ -217,9 +217,8 @@ class GlobalConfig(Component):
         
     def setup(self, propertyMap):
         
-        propertyMap.setRule(
-            'environ.*', LoadingRule(loadEnviron)
-        )
+        from os import environ
+        loadMapping(propertyMap,('environ.*',environ))
 
         propertyMap.setRule(
             '*', LoadingRule(ConfigFile(self.config_filenames))
@@ -234,6 +233,7 @@ class GlobalConfig(Component):
 
     def setParentComponent(self,parent):
         raise TypeError("Global config can't have a parent")
+
 
 
 
