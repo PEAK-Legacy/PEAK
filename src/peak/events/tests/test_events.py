@@ -170,8 +170,12 @@ class DerivedValueTests(BasicTests):
     requiredInterface = events.IReadableSource
 
     def setUp(self):
-        self.base = events.Value(False)
-        self.source = self.sourceType(lambda: self.base() * 2, self.base)
+        # we use a condition instead of a value in order to verify that derived
+        # values use IValue to bypass the conditionality of their arguments.
+        self.base = events.Condition(False)
+        self.source = self.sourceType(
+            lambda: self.base()*2, events.Value(), self.base  # ensure multi
+        )
         self.log = []
 
     def doPut(self,value,force=False):
@@ -189,10 +193,6 @@ class DerivedConditionTests(DerivedValueTests):
 
     reenter = ConditionTests.reenter.im_func
     testSuspend = ConditionTests.testSuspend.im_func
-
-
-
-
 
 
 
@@ -736,6 +736,129 @@ class SchedulerTests(TestCase):
 
 
 
+class BaseSubscriber(object):
+    __slots__ = 'log'
+
+    def __init__(self,log):
+        self.log = log
+
+    def method(self,src,evt):
+        self.log.append(evt)
+
+    def __call__(self,src,evt):
+        self.log.append(evt)
+
+
+class WeakableSubscriber(BaseSubscriber):
+    __slots__ = '__weakref__'
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class SubscriptionTests(TestCase):
+
+    _testSet1 = 1,3,5,9,27,42
+    _testSet2 = -15,46,51
+
+    def setUp(self):
+        self.log = []
+        self.v = events.Value()
+
+    def step1(self,sink):
+        canceller = events.subscribe(self.v,sink)
+        sink = None # make sure we're not holding a reference
+        map(self.v.set, self._testSet1)
+        return canceller
+
+    def sink(self,s,e):
+        self.log.append(e)
+
+    def step2(self):
+        map(self.v.set, self._testSet2)
+        self.assertEqual(self.log, list(self._testSet1))
+
+    def testSubscribe(self):
+        def sink(s,e):
+            self.log.append(e)
+
+        canceller = self.step1(sink)
+        canceller()
+        self.step2()
+
+    def testWeakFunc(self):
+        def sink(s,e):
+            self.log.append(e)
+
+        canceller = self.step1(sink)
+        del sink    # should go away
+        self.step2()
+
+
+
+
+    def testWeakOb(self):
+        ob = WeakableSubscriber(self.log)
+        canceller = self.step1(ob)
+        del ob    # should go away
+        self.step2()
+
+    def testWeakObMethod(self):
+        ob = WeakableSubscriber(self.log)
+        canceller = events.subscribe(self.v,ob.method)
+        map(self.v.set, self._testSet1)
+        del ob    # should go away
+        self.step2()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 class AdviceTests(TestCase):
 
     def testAdvice(self):
@@ -781,6 +904,7 @@ TestClasses = (
     BasicTests, ValueTests, ConditionTests, SemaphoreTests, AnyOfTests,
     TestThreads, ScheduledThreadsTest, SchedulerTests, AdviceTests,
     DerivedValueTests, DerivedConditionTests, BroadcastTests,
+    SubscriptionTests,
 )
 
 def test_suite():

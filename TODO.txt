@@ -9,8 +9,8 @@ Open Issues/To-Do Items
 
       - Add tests for Twisted support
 
-      - Make it possible to adapt from condition->value, so deriving from conds
-        can still work, and implement events.AllOf() as a condition
+      - Implement boolean operations on conditions (i.e. &, |, ~), and
+        isTrue/isFalse properties on values.
 
     * peak.ddt
 

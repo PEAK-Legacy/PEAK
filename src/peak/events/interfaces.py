@@ -3,9 +3,9 @@ from time import sleep
 
 __all__ = [
     'ITask', 'ITaskSwitch', 'IEventSource', 'IEventSink', 'IReadableSource',
-    'IWritableSource', 'IConditional', 'ISemaphore', 'IThread',
+    'IWritableSource', 'IValue', 'IConditional', 'ISemaphore', 'IThread',
     'IScheduledThread', 'IThreadState', 'IScheduler', 'ISignalSource',
-    'ISelector', 'IEventLoop', 'Interruption', 'TimeoutError',
+    'ISelector', 'IEventLoop', 'Interruption', 'TimeoutError', 'IWritableValue',
 ]
 
 
@@ -123,7 +123,10 @@ class IEventSink(protocols.Interface):
 
 class IReadableSource(IEventSource):
 
-    """An event source whose current value or state is readable"""
+    """An event source whose current value or state is readable
+
+    Note that the firing behavior of an 'IReadableSource' is undefined.  See
+    'IValue' and 'IConditional' for two possible kinds of firing behavior."""
 
     def __call__():
         """Return the current value, condition, or event"""
@@ -143,6 +146,22 @@ class IWritableSource(IReadableSource):
         or 'ISemaphore'.)"""
 
 
+class IValue(IReadableSource):
+    """A readable event source that fires when changed"""
+
+
+class IWritableValue(IWritableSource,IValue):
+    """A writable event source that fires when changed"""
+
+
+
+
+
+
+
+
+
+
 class IConditional(IReadableSource):
 
     """An event source that fires when (or resumes while) its value is true
@@ -150,16 +169,38 @@ class IConditional(IReadableSource):
     Note that callbacks added to an 'IConditional' with a true value should be
     called immediately."""
 
+    value = protocols.Attribute(
+        """'IValue' for the value the conditional is based on
+
+        If you want to wait for the condition to become false, you need to
+        wait on this, instead of on the conditional itself.  Conditionals fire
+        when true, but values fire when changed.
+        """
+    )
+
+protocols.declareAdapter(
+    lambda o,p: o.value, provides=[IValue], forProtocols=[IConditional]
+)
+
 
 class ISemaphore(IWritableSource,IConditional):
 
-    """An event source that allows 'n' threads to proceed at once"""
+    """An event source that allows 'n' threads to proceed at once
+
+    Unlike a conditional or value, a semaphore distributes its events to at
+    most one accepting callback.  This ensures that threads waiting for the
+    semaphore are not awakened if other threads remove all available tokens
+    first."""
 
     def put():
         """Increase the number of runnable threads by 1"""
 
     def take():
         """Decrease the number of runnable threads by 1"""
+
+
+
+
 
 
 class IThread(protocols.Interface):

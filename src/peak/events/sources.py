@@ -1,12 +1,12 @@
 from peak.core import protocols, adapt, NOT_GIVEN
 from interfaces import *
 from peak.util.EigenData import AlreadyRead
-
-
+from weakref import ref
+from types import MethodType
 __all__ = [
     'AnyOf', 'Distributor', 'Value', 'Condition', 'Semaphore',
     'DerivedValue', 'DerivedCondition', 'Observable', 'Readable', 'Writable',
-    'Conditional', 'Broadcaster',
+    'AbstractConditional', 'Broadcaster', 'subscribe',
 ]
 
 
@@ -34,6 +34,47 @@ __all__ = [
 
 
 
+
+
+
+
+
+def subscribe(source,callback):
+
+    """Subscribe 'callback' to an 'IEventSource', using a weak reference
+
+    Usage::
+        canceller = events.subscribe(source,callback)
+
+    This function returns a callable that can be used to cancel the
+    subscription: just invoke 'canceller()' and no subsequent callbacks will be
+    received.  The 'callback' will be wrapped in a weak reference, so if the
+    callback goes away, the subscription automatically halts.  (Note that if
+    'callback' is a method, then the subscription ends when the object that
+    owns the method goes away."""
+
+    canceller = lambda r=None: go and go.pop()
+
+    if isinstance(callback,MethodType):
+        cbr = ref(callback.im_self, canceller)
+        f = callback.im_func
+
+        def cb(src,evt):
+            if go:
+                source.addCallback(go[0])
+            if go:
+                return f(cbr(),src,evt)
+    else:
+        cbr = ref(callback, canceller)
+        def cb(src,evt):
+            if go:
+                source.addCallback(go[0])
+            if go:
+                return cbr()(src,evt)
+
+    go = [cb]
+    source.addCallback(cb)
+    return canceller
 
 
 
@@ -285,6 +326,88 @@ class Writable(Readable):
 
 
 
+class AbstractConditional(Observable):
+
+    """Base class for an 'IConditional': fires if and only if value is true"""
+
+    __slots__ = ()
+
+    def addCallback(self, func):
+        """Add callback, but fire it immediately if value is currently true"""
+        value = self()
+        if value:
+            func(self,value)
+        else:
+            super(AbstractConditional,self).addCallback(func)
+
+    def nextAction(self, thread=None, state=None):
+        """Suspend only if current value is false"""
+        value = self()
+        if value:
+            if state is not None:
+                state.YIELD(value)
+            return True
+
+        if thread is not None:
+            self.addCallback(thread.step)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class ReadableAsCondition(AbstractConditional):
+
+    """Wrap an 'IReadableSource' as an 'IConditional'"""
+
+    __slots__ = 'value'
+
+    protocols.advise( instancesProvide=[IConditional],
+        asAdapterForProtocols=[IValue]
+    )
+
+    singleFire   = False
+
+    def __init__(self,subject,protocol=None):
+        self.value = subject
+        super(ReadableAsCondition,self).__init__()
+        subscribe(subject, self._set)
+
+    def __call__(self):
+        return self.value()
+
+    def _set(self,src,evt):
+        if evt:
+            self._fire(evt)
+
+
+class WritableAsCondition(ReadableAsCondition):
+
+    """Wrap an 'IWritableValue' as an 'IConditional'"""
+
+    protocols.advise(
+        instancesProvide=[IWritableSource,IConditional],
+        asAdapterForProtocols=[IWritableValue]
+    )
+
+    def set(self,value,force=False):
+        self.value.set(value,force)
+
+
+
+
+
 class Value(Writable):
 
     """Broadcast changes in a variable to all observers
@@ -308,6 +431,10 @@ class Value(Writable):
 
     __slots__ = ()
 
+    protocols.advise(
+        instancesProvide=[IValue]
+    )
+
     defaultValue = NOT_GIVEN
 
     def __init__(self,value=NOT_GIVEN):
@@ -315,10 +442,6 @@ class Value(Writable):
             value = self.defaultValue
         self._value = value
         super(Value,self).__init__()
-
-
-
-
 
 
 
@@ -340,14 +463,14 @@ class DerivedValue(Readable):
     last known value (if any).
     """
 
-    __slots__ = '_source', '_formula', '_registered'
+    __slots__ = '_formula'
+
+    protocols.advise( instancesProvide=[IValue] )
 
     def __init__(self,formula,*values):
-        self._source = AnyOf(*values)
         self._formula = formula
-        self._registered = False
         super(DerivedValue,self).__init__()
-
+        subscribe(AnyOf(*[adapt(v,IValue) for v in values]),self._set) #
 
     def __call__(self):
         """Get current or cached value of 'formula()'"""
@@ -355,101 +478,19 @@ class DerivedValue(Readable):
             return self._value
         except AttributeError:
             value = self._value = self._formula()
-            self._register()
             return value
 
-
-    def _register(self):
-        if not self._registered and self._callbacks or hasattr(self,'_value'):
-            self._registered = True
-            self._source.addCallback(self._set)
-
-
-
-
     def _set(self,source,event):
-
-        self._registered = False
-
         if self._callbacks:
             value = self._formula()
-            self._register()
-
             if not hasattr(self,'_value') or self._value<>value:
                 self._value = value
                 self._fire(value)
-
         else:
+            # just change
             del self._value
-            # no need to register, since we have neither callback nor caching
 
-
-    def addCallback(self,func):
-        """See 'events.IEventSource.addCallback()'"""
-        super(DerivedValue,self).addCallback(func)
-        self._register()
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-class Conditional(Readable):
-
-    """Base class for an 'IConditional': fires if and only if value is true"""
-
-    protocols.advise( instancesProvide=[IConditional] )
-
-    __slots__ = ()
-
-    def nextAction(self, thread=None, state=None):
-        """Suspend only if current value is false"""
-        value = self()
-        if value:
-            if state is not None:
-                state.YIELD(value)
-            return True
-
-        if thread is not None:
-            self.addCallback(thread.step)
-
-
-    def addCallback(self, func):
-        """Add callback, but fire it immediately if value is currently true"""
-
-        value = self()
-
-        if value:
-            func(self,value)
-        else:
-            super(Conditional,self).addCallback(func)
-
-
-    def _fire(self, event):
-        """Only transmit true events"""
-        if event:
-            super(Conditional,self)._fire(event)
-
-
-
-
-
-
-class Condition(Conditional,Value):
+class Condition(WritableAsCondition):
 
     """Send callbacks/allow threads to proceed when condition is true
 
@@ -468,8 +509,13 @@ class Condition(Conditional,Value):
     """
 
     __slots__ = ()
+
     defaultValue = False
 
+    def __init__(self,value=NOT_GIVEN):
+        if value is NOT_GIVEN:
+            value = self.defaultValue
+        super(Condition,self).__init__(Value(value),IConditional)
 
 
 
@@ -485,12 +531,7 @@ class Condition(Conditional,Value):
 
 
 
-
-
-
-
-
-class DerivedCondition(Conditional,DerivedValue):
+class DerivedCondition(ReadableAsCondition):
 
     """'DerivedCondition(formula, *values)' - derive condition from value(s)
 
@@ -512,6 +553,10 @@ class DerivedCondition(Conditional,DerivedValue):
 
     __slots__ = ()
 
+    def __init__(self,formula,*values):
+        super(DerivedCondition,self).__init__(
+            DerivedValue(formula,*values),IConditional
+        )
 
 
 
@@ -527,11 +572,7 @@ class DerivedCondition(Conditional,DerivedValue):
 
 
 
-
-
-
-
-class Semaphore(Conditional,Value):
+class Semaphore(Condition):
 
     """Allow up to 'n' threads to proceed simultaneously
 
@@ -556,11 +597,11 @@ class Semaphore(Conditional,Value):
 
     def put(self):
         """See 'events.ICondition.put()'"""
-        self.set(self._value+1)
+        self.set(self()+1)
 
     def take(self):
         """See 'events.ICondition.take()'"""
-        self.set(self._value-1)
+        self.set(self()-1)
 
 
 
