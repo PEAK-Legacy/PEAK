@@ -1,4 +1,4 @@
-"""Module inheritance tests"""
+"""Module inheritance and metaclass tests"""
 
 from unittest import TestCase, makeSuite, TestSuite
 from TW.API import *
@@ -39,8 +39,36 @@ class ModuleTest(TestCase):
         assert F21('x')=='M1(x)'
         assert F22('x')=='after(M1(before(x)))'
 
+class DescriptorData(SEF.App):
+
+    thing1 = "this is my thing"
+
+    thing2 = SEF.bindTo('thing1')
+
+    thing3 = SEF.requireBinding('This is required')
+
+
+class DescriptorTest(TestCase):
+
+    def setUp(self):
+        self.data = DescriptorData()
+
+    def checkBinding(self):
+        thing2 = self.data.thing2 
+        assert (thing2 is self.data.thing1), thing2
+        assert self.data.__dict__['thing2'] is thing2
+
+    def checkForError(self):
+        try:
+            self.data.thing3
+        except NameError:
+            pass
+        else:
+            raise AssertionError("Didn't get an error retrieving 'thing3'")
+
+
 TestClasses = (
-    ModuleTest,
+    ModuleTest, DescriptorTest
 )
 
 def test_suite():

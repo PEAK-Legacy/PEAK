@@ -99,4 +99,59 @@ class AssertInterfaces(type):
             return self.implements
 
 
+class NamedDescriptors(type):
+
+    def __init__(klass, name, bases, dict):
+
+        for k,v in dict.items():
+            if isinstance(v,NamedDescriptor):
+                setattr(klass, k, v.copyWithName(k))
+
+        super(NamedDescriptors,klass).__init__(name,bases,dict)
+
+
+
+
+
+
+
+
+
+
+
+
+
+class NamedDescriptor(object):
+
+    """This can be used as a class, or a metaclass if combined w/type"""
+
+    attrName = None
+
+    def __get__(self, obj, typ=None):
+
+        if obj is None: return self
+
+        d = obj.__dict__
+        n = self.attrName
+
+        if not n:
+            raise TypeError(
+                "%s used in type which does not support NamedDescriptor"
+                % self
+            )
+            
+        d[n] = value = self.computeValue(obj, d, n)
+        return value
+
+
+    def computeValue(self, obj, instanceDict, attrName):
+        raise NotImplementedError
+
+
+    def copyWithName(self,newName):
+        from copy import copy
+        newOb = copy(self)
+        newOb.attrName = newName
+        return newOb
+
 setupModule()

@@ -39,7 +39,7 @@ class DynamicBinding(object):
 
 
 
-class bindTo(object):
+class bindTo(Meta.NamedDescriptor):
 
     """Automatically look up and cache a relevant service
 
@@ -53,57 +53,23 @@ class bindTo(object):
         calling 'self.getService("path.to.service")' repeatedly.
     """
     
-    __implements__ = INamedDescriptor
-
-
     def __init__(self,targetName):
         self.targetName = targetName
 
+    def computeValue(self, obj, instanceDict, attrName):
 
-    def copyWithName(self,newName):
-        from copy import copy
-        newOb = copy(self)
-        newOb._componentName = newName
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    def __get__(self, obj, typ=None):
-
-        if obj is None: return self
-
-        d = obj.__dict__
-        n = self._componentName
-        t = self.targetName
-
-        if not n:
-            raise TypeError(
-                "%s used in type which does not support NamedDescriptors"
-                % self
-            )
-        d[n] = None
+        instanceDict[attrName] = None   # recursion guard
 
         newOb = obj.getSEFparent()
         if newOb is None: newOb = obj
-        newOb = newOb.getService(t)
+        newOb = newOb.getService(self.targetName)
 
         if newOb is None:
-            del d[n]
-            raise NameError("%s not found binding %s" % (t, n))
+            del instanceDict[attrName]
+            raise NameError(
+                "%s not found binding %s" % (self.targetName, attrName)
+            )
 
-        d[n] = newOb
         return newOb
 
 
@@ -114,27 +80,20 @@ class bindTo(object):
 
 
 
-
-
-
-
-
-
-
-class requireBinding(bindTo):
+class requireBinding(Meta.NamedDescriptor):
 
     """Placeholder for a binding that should be (re)defined by a subclass"""
 
     def __init__(self,description=""):
         self.description = description
     
-    def __get__(self, obj, typ=None):
+    def computeValue(self, obj, instanceDict, attrName):
     
-        if obj is None: return self
-
         raise NameError("Class %s must define %s; %s"
-            % (obj.__class__.__name__, self._componentName, self.description)
+            % (obj.__class__.__name__, attrName, self.description)
         )
+
+
 
 
 
@@ -166,7 +125,10 @@ class Base(object):
 
     """Base for all S-E-F classes"""
 
-    __metaclasses__  = Meta.AssertInterfaces, Meta.ClassInit
+    __metaclasses__  = (
+        Meta.AssertInterfaces, Meta.ClassInit, Meta.NamedDescriptors
+    )
+    
     __implements__ = ISEF
     _sefParent     = None
 
@@ -194,55 +156,11 @@ class Base(object):
         from weakref import ref
         self.getSEFparent = ref(parent)
 
-    def getSEFparent(self):
-        return None
+    def getSEFparent(self): return None
 
-    def _componentName(self):
-        return self.__class__.__name__
+    def _componentName(self): return self.__class__.__name__
 
     _componentName = property(_componentName)
-
-
-    def __class_init__(thisClass, newClass, next):
-        
-        if __proceed__ is not None:
-            __proceed__(thisClass, newClass, next)
-        else:
-            next().__class_init__(newClass,next)
-
-        for k,v in newClass.__dict__.items():
-            if hasattr(v,'copyWithName') and isNamedDescriptor(v):
-                setattr(newClass, k, v.copyWithName(k))
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 class App(Base):
 

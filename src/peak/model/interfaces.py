@@ -19,18 +19,18 @@ import Interface
 __all__ = [
     'ISEF','IService','ITypeService','IElement','IFeature','IQuerying',
     'IClassifier','IDataType','IPrimitiveType', 'IEnumeration',
-    'IValue','ICollection','IReference','ISequence','INamedDescriptor',
-    'isNamedDescriptor'
+    'IValue','ICollection','IReference','ISequence',
 ]
 
 
-class INamedDescriptor(Interface.Base):
-    """Rebindable attribute descriptor which will be given its name"""
 
-    def copyWithName(name):
-        """Return a new descriptor, which knows its attribute name"""
 
-isNamedDescriptor = INamedDescriptor.isImplementedBy
+
+
+
+
+
+
 
 
 
