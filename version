@@ -1,5 +1,4 @@
 #!invoke peak version-config
-
 <Scheme default>
     DefaultFormat full
     part major
@@ -28,9 +27,13 @@
     File README.txt
     File INSTALL.txt
     Match "PEAK Release %(full)s"
-    Match Optional 'As of version %(short)s,'
     </Edit>
 
+    <Edit>
+    File FEATURES.txt
+    Match 'As of version %(short)s,'
+    </Edit>
+    
     <Edit>
     File docs/core_tutorial/tut.tex
     Match "\release{%(short)s}"

@@ -1,12 +1,12 @@
 <?xml version = '1.0' encoding = 'ISO-8859-1' ?>
-<!DOCTYPE schema SYSTEM '../../../../ZConfig/doc/schema.dtd' >
+<!DOCTYPE schema SYSTEM '../../../ZConfig/doc/schema.dtd' >
 
 <schema
     datatype=".app.VersionConfig.fromZConfig"
-    prefix="peak.running.tools.version"
+    prefix="peak.tools.version"
 >
 
-<import package="peak.running.tools.version"/>
+<import package="peak.tools.version"/>
 
 <key name="DataFile" attribute="datafile" datatype="existing-file">
     <description>

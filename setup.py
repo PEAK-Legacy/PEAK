@@ -136,6 +136,32 @@ if sys.version_info < (2,3):
 
 import os
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 if os.name=='posix':
 
     # install 'fcgiapp' module on posix systems
@@ -173,11 +199,6 @@ if os.name=='posix':
         extensions += [
             Extension("peak.util._uuidgen", ["src/peak/util/_uuidgen" + EXT]),
         ]
-
-
-
-
-
 
 
 
