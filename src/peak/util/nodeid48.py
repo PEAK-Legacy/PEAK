@@ -53,7 +53,16 @@ def from_random():
 
 
 def from_win32():
-    return None # XXX
+    try:
+        from pywintypes import CreateGuid
+    except ImportError:
+        try:
+            from pythoncom import CreateGuid
+        except ImportError:
+            return None
+
+    # take last 12 chars before closing '}'
+    return CreateGuid()[-13:-1]
 
 
 methods = [from_random]

@@ -1,4 +1,4 @@
-from nodeid48 import getnodeid48; id48 = getnodeid48()
+from nodeid48 import getnodeid48
 from peak.util.random import rand16, randbytes
 from time import time
 from md5 import md5
@@ -9,6 +9,14 @@ __all__ = [
     'UUID',
     'DNS_NS', 'URL_NS', 'OID_NS', 'X500_NS'
 ]
+
+try:
+    from pywintypes import CreateGuid
+except ImportError:
+    try:
+        from pythoncom import CreateGuid
+    except ImportError:
+        CreateGuid = None
 
 
 def getClockSeq():
@@ -27,7 +35,11 @@ class UUID(str):
             and (version is None) and (nodeid is None)
         
         global lasttime
-        
+
+        if CreateGuid and other_all_none and not from_string:
+            # just want a new id and can use win32
+            from_string = CreateGuid()[1:-1]    # strip off {}'s
+            
         if from_string:
             # Validate
             
@@ -48,8 +60,7 @@ class UUID(str):
                
             if not ok:
                 raise ValueError, "Illegal syntax for UUID: " + from_string
-        elif other_all_none and 0: # just want a new id and can use win32
-            pass # use win32
+
         else:
             if version is None:
                 if name or ns:
@@ -59,10 +70,9 @@ class UUID(str):
 
             if version == 1:
                 if nodeid is None:
-                    nodeid = id48
+                    nodeid = getnodeid48()
                 else:
-                    nodeid = nodeid.lower()
-                    nodeid = ''.join(nodeid.split(':'))
+                    nodeid = nodeid.lower().replace(':','')
                     ok = 0
                     if len(nodeid) == 12:
                         try:
