@@ -15,7 +15,7 @@ Open Issues/To-Do Items
 
     * Additional content for the tutorial's chapter on binding
 
- Targeted for 0.5 Final Release
+ Targeted for 0.5 Final Release (or sooner)
 
     General
 
@@ -25,9 +25,13 @@ Open Issues/To-Do Items
 
     peak.storage
 
-        - URL+driver for postgres
+        - SQL cursor(joinTxn=flag) shortcut for .joinTxn()
 
-        - LDAP schema properties, SQL type mapping utilities
+        - SQL cursor error logging and error rewrap w/SQL in error object
+
+        - SQL field type conversion
+
+        - LDAP field type conversion
 
         - Rack -> DM
 
@@ -39,6 +43,8 @@ Open Issues/To-Do Items
 
         - docstrings for reference
 
+        - URL+driver for postgres
+
     peak.model
 
         - add support for lazy-loaded attributes
@@ -49,11 +55,15 @@ Open Issues/To-Do Items
 
         - more docs for new 'cluster' tools
 
-        - create a basic LogFile logging provider
+        - make 'cluster' parser complain about things that would cause
+          the clusterit tools to choke or barf on the file, or which would
+          produce ambiguous or unintended results.
 
-        - unit tests for daemons?
+        - create a basic LogFile logging provider w/URL comparable to AppUtils
 
-        - simple daemons comparable to those in MetaDaemon?
+        - simple daemons comparable to those in MetaDaemon
+
+        - unit tests for daemons
 
         - docstrings for reference
 
@@ -62,16 +72,6 @@ Open Issues/To-Do Items
         - docstrings for reference
 
         - more unit tests?
-
-
-
-
-
-
-
-
-
-
 
 
 
