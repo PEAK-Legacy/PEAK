@@ -9,7 +9,9 @@ from TW.Utilities import Pluralizer
 UMLPlurals = Pluralizer(
     stimulus='stimuli',
     subvertex='subvertices',
-    classifierInState='classifiersInState'
+    classifierinstate='classifiersInState',
+    contents='contents',
+    availablecontents='availableContents',
 )
 
 
@@ -22,8 +24,6 @@ cache   = mmx+'.pickle'
 
 import MMX
 MetaModel = MMX.load(mmx,cache,UMLPlurals,name='UML_MetaModel')
-
-
 
 
 
