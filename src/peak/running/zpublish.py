@@ -5,6 +5,9 @@ from interfaces import *
 from zope.publisher.base import DefaultPublication
 from commands import EventDriven
 
+# Ensure that we can work with Zope interfaces
+import protocols.zope_support
+
 __all__ = [
 
     'BasePublication',
@@ -12,9 +15,6 @@ __all__ = [
 
     'CGICommand', 'CGIPublisher', 'FastCGIAcceptor',
 ]
-
-
-
 
 
 

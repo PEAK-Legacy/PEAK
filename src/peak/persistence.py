@@ -29,8 +29,11 @@ except ImportError:
     # 'zope.interface' isn't around.
     from protocols import declareImplementation
     declareImplementation(Persistent, instancesProvide=[IPersistent])
-
-# XX It's not clear that we should be using GHOST
+else:
+    # Ensure we have support for Zope interfaces
+    import protocols.zope_support
+    
+# XXX It's not clear that we should be using GHOST
 # XXX do we need simple_new()?  What is it for, anyway?
 
 
