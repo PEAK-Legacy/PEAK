@@ -9,32 +9,12 @@ The current kernel modules are 'TW.Interfaces', 'TW.Components', and
 """
 
 
-# Version-independent support for '__all__' in modules
-
-import sys
-
-if sys.version<'2.1':
-
-    def importAllFrom(name,g=None):
-
-        g = g or globals()
-        exec "import %s; __all__=getattr(%s,'__all__',['*'])" % (name,name)
-
-        import string
-        exec "from %s import %s" % (name,string.join(__all__,",")) in g
-
-else:
-    def importAllFrom(name,g=None):
-        g = g or globals()
-        exec "from %s import *" % name in g
-
-
-importAllFrom('TW.Interfaces')
-importAllFrom('TW.Components')
-importAllFrom('TW.Builders')
+from TW.Interfaces import *
+from TW.Specifications import *
+from TW.Components import *
+from TW.Builders import *
 import SEF
 
 NOT_GIVEN = []
 NOT_FOUND = []
 
-del sys
