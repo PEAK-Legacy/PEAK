@@ -17,11 +17,11 @@
         setupModule()
 
     The 'setupModule()' call will convert the calling module, 'BaseModule1',
-    and 'BaseModule2' into TransWarp component specifications, add them
-    together (in reverse order), and then build the resulting recipe, rewriting
-    the calling module's dictionary.  The result is rather like normal class
-    inheritance, except that classes (even nested classes) are merged by name
-    following TransWarp's normal build rules.  So a "subclassing module" need
+    and 'BaseModule2' into specially altered bytecode objects and execute
+    them (in "method-resolution order") rewriting the calling module's
+    dictionary in the process.  The result is rather like normal class
+    inheritance, except that classes (even nested classes) are merged by name,
+    and metaclass constraints are inherited.  So a "subclassing module" need
     not list all the classes from its "base module" in order to change them
     by altering a base class in that module.
 
@@ -44,152 +44,105 @@
         either a function or 'None', so you must include 'self' as a parameter
         when calling it from a method.
 
-        Another important thing to note is that function rebinding is only
-        applied to *functions*.  This means that if you are using 'property'
-        (in 2.2) or 'ComputedAttribute' (from 'ExtensionClass'), you must
-        define the 'ComputedAttribute' or 'property' using 'Eval()' in order
-        to ensure that it is created from the rebound function.  Examples::
 
-            # 2.2 non-shadowing property example
-            
-            class aClass(object):
+    Special Considerations for Mutables and Dynamic Initialization
 
-                def _get_x(self):
-                    return __proceed__(self) * 10
+        Both inheritance and advice are implemented by running hacked,
+        module-level code under a "simulator" that intercepts the setting of
+        variables.  This works great for static definitions like 'class'
+        and 'def' statements, constant assignments, 'import', etc.  It also
+        works reasonably well for many other kinds of static initialization
+        of immutable objects
+        
+        Mutable values, however, may require special considerations.  For
+        example, if a module sets up some kind of registry as a module-level
+        variable, and an inheriting module doesn't want to share that registry,
+        things can get tricky.  If the "superclass module" writes values into
+        that registry as part of module initialization, those values will also
+        be written into the registry defined by the "subclass module".
 
-                def _set_x(self, x):
-                    __proceed__(self, x/10)
-
-                x = Eval("property(_get_x,_set_x)", globals())
-
-
-            # ComputedAttribute shadowing example
-
-            class Class2(ExtensionClass.Base):
-
-                def x(self):
-                    return self.foo + 50
-
-                x += Eval("ComputedAttribute(__previous__)", globals())
+        The simple workaround for these considerations, however, is to move
+        your dynamic initialization code to a module-level '__init__' function.
 
 
-            # 2.2 get-property shadowing example
+    Module-level '__init__()' Functions
 
-            class Class3(object):
+        The last thing 'setupModule()' does before returning is check for a
+        module-level '__init__()' function, and calls it with no arguments, if
+        it exists.  This allows you to do any dynamic initialization operations
+        (such as modifying or resetting global mutables) *after* inheritance
+        has taken effect.  As with any other function defined in the module,
+        '__proceed__' refers to the previous (i.e. "superclass module")
+        definition of the function or 'None'.  This lets you can chain to your
+        predecessors' initialization code, if needed/desired.
 
-                def x(self):
-                    return self.foo + 50
+        Note, by the way, that if you have an 'if __name__=="__main__"' block
+        in your module, it should move inside the '__init__()' function for
+        best results.
+        
+    Where to Find More Information on...
 
-                x += Eval("property(__previous__)", globals())
+        Inheritance of Metaclass Constraints -- the Python 2.2 metaclass
+            tutorial explains the concept of metaclass constraints, and notes
+            that Python 2.2 checks that metaclasses conform, but does not
+            automatically generate a metaclass if none is present.  TransWarp,
+            however, *does* do this when you use 'setupModule()'.  See
+            'TW.Utils.Meta' for the implementation, and the book "Putting
+            Metaclasses To Work" for the theory.
 
-
-            # 2.2 staticmethod shadowing example
-
-            class Class4(object):
-
-                def aMethod(foo, bar, baz):
-                    return foo+bar*baz
-
-                aMethod += Eval("staticmethod(__previous__)", globals())
-
-
-        In the second and following examples, we add the 'Eval()' to the
-        function, and use '__previous__' to access it.  This is because we
-        want the function to be overwritten by the attribute descriptor in the
-        output class.  Note that you can still use this technique with a
-        property that has more than just a getter method; you would then
-        use something like 'Eval("property(__previous__,setter)",globals())'
-        instead.
+        How Module Inheritance Works -- See 'TW.Utils.Simulator' for all the
+            low-down dirty details of how the bytecode is hacked and how the
+            "simulator" actually implements the various namespace alterations.
 
 
     To-do Items
 
-        * The 'adviseModule()' API is as-yet untested, and setupModule() is
-          only lightly tested so far.
+        * The 'adviseModule()' API is as-yet untested, and 'setupModule()' is
+          only lightly tested so far.  We need lots of test cases to make sure
+          this thing is working right, because a *lot* of things are going to
+          depend on it in future.
 
-        * Function rebinding perhaps belongs in the core API, since the
-          '__proceed__' rebinding would allow functions to be "around advice"
-          by default.  But since this is very new code, and since it would
-          also impose an extra 'isinstance()' check on *every* build target,
-          perhaps it's best to wait awhile.  Of course, right now you could
-          force function rebinding against a particular target by importing
-          'TW.API.Modules.DefaultFunctionInterpreter' and adding it to the
-          crosscut of the function(s) you desired rebound.
+        * This docstring is woefully inadequate to describe all the interesting
+          subtleties of module inheritance; a tutorial is really needed.  But
+          there *does* need to be a reference-style explanation as well.
 
-        * The 'x += Eval("whatever(__previous__)")' syntax sucks.  When we
-          go to full 2.2 support, there should be some sugar for this, e.g.
-          'x += MakeProperty' or 'x += MakeStatic'.  Or maybe the whole thing
-          will be moot due to metaclasses.  We'll have to see how it goes.
-
-        * TW is a little too eager to build anything that you happen to import,
-          intentionally or otherwise.  It would be nice to be able to exclude
-          imports, declare them for building, etc.  Right now the default is
-          to not build bundles (since that would make it impossible to export
-          the bundle) or classes which were defined in another module.  It's
-          possible, however, that you'd *want* to build a class from another
-          module, in which case you should be able to specify it.
-
-        * Vertical inheritance from outside modules is only detected when the
-          module defining the inherited class is present as a global; it
-          doesn't work for dotted access from a package.  E.g::
-
-            from TW.API import SEF
-
-            class foo(SEF.Service):
-                pass
-
-          works, but::
-
-            import TW.API.SEF
-
-            class foo(TW.API.SEF.Service):
-                pass
-                
-          does not.  This is only a problem for inheriting from legacy code,
-          since code written specifically for TransWarp can easily work around
-          it, but it's still a nit to pick.
-
-        * Less easy to work around, is the fact that module-based vertical
-          inheritance is not detected when the inheriting class is nested,
-          as in::
-
-            class Foo:
-
-                class Bar(SEF.Service):
-
-          The above will fail unless SEF is defined in Foo as well as at the
-          module level.  :(
+        * Add 'LegacyModule("name")' and 'loadLegacyModule("name")' APIs to
+          allow inheriting from and/or giving advice to modules which do not
+          call 'setupModule()'.
 """
 
 
-from TW.API import *
-from TW.Utils.ClassTypes import isClass
-
+from TW.Utils.Simulator import Simulator, prepForSimulation
 import sys
-from types import ModuleType, FunctionType
+from types import ModuleType
 
 __all__ = ['adviseModule', 'setupModule']
 
 adviceMap = {}
 
-emptyRecipe = Recipe()
 
+def getCodeListForModule(module, code=None):
 
-def getSpecForModule(module):
+    if hasattr(module,'__codeList__'):
+        return module.__codeList__
 
-    if hasattr(module,'__specification__'):
-        return module.__specification__
+    assert code is not None, ("Can't get codelist for %s" % module)
 
-    # build an empty template, using module dict, w/no name
-    # __globals__ = module dict
-
-    md = module.__dict__
     name = module.__name__
-
-    d = md.copy()
-    d['__globals__'] = md       # XXX still needs function-rebuild support
+    code = prepForSimulation(code)
+    codeList = module.__codeList__ = adviceMap.get(name,[])+[code]
     
-    return Template('', (), d)
+    for baseModule in getattr(module,'__bases__',()):
+        if type(baseModule) is not ModuleType:
+            raise TypeError (
+                "%s is not a module in %s __bases__" % (m,name)
+            )
+        for c in getCodeListForModule(baseModule):
+            if c in codeList:
+                codeList.remove(c)
+            codeList.append(c)
+
+    return codeList
 
 
 
@@ -203,60 +156,62 @@ def getSpecForModule(module):
 
 
 
-def setupModule(dict=None, noBuild=None):
 
-    """setupModule(globals()) - Build module, w/advice and inheritance
 
-        The 'setupModule()' call is usually made towards the end of a module's
-        code, after all the necessary classes and functions are defined, but
-        before any 'if __name__=="__main__"' standalone code.  About the only
-        time one should have definitions after 'setupModule()' is when a module
-        wants to be "abstract", but provide a default implementation if no
-        advice generates an actual implementation.  In these cases, the module
-        will call 'setupModule()' first, then check to see if the desired
-        globals are present.  If not, it can then implement default ones, and
-        run 'setupModule()' again.
+
+
+
+
+def setupModule():
+    """setupModule() - Build module, w/advice and inheritance
+
+        'setupModule()' should be called only at the very end of a module's
+        code.  This is because any code which follows 'setupModule()' will be
+        executed twice.  (Actually, the code before 'setupModule()' gets
+        executed twice, also, but the module dictionary is reset in between,
+        so its execution is cleaner.)
     """
 
-    if dict is None:
-        from TW.Utils.Misc import getCallerInfo
-        name,line_no = getCallerInfo()
-        module = sys.modules[name]
-        dict = module.__dict__
+    frame = sys._getframe(1)
+    dict = frame.f_globals
 
-    else:
-        name = dict['__name__']
-        module = sys.modules[name]
+    if dict.has_key('__TW_Simulator__'):
+        return
 
-    bases = []
-    inputBases = dict.get('__bases__', ())
-    if isinstance(inputBases,ModuleType):
-        inputBases = (inputBases,)
+    code = frame.f_code
+    name = dict['__name__']
+    module = sys.modules[name]
 
-    for m in (module,) + tuple(inputBases):
-        if not isinstance(m,ModuleType):
-            raise TypeError, ("%s is not a module in %s __bases__" % (m,name))
-        bases.append(getSpecForModule(m))
-        bases.append(adviceForModule(m.__name__))
-
-    bases.reverse(); spec = Recipe(ModuleDictInterpreter, *tuple(bases))
-    if not noBuild:
-        new = spec(FunctionRebindingBuildTarget, globals=dict); dict.clear(); dict.update(new)
-    dict['__specification__'] = spec    # save module spec
+    codelist = getCodeListForModule(module, code)
     
-def adviseModule(moduleName, withDict=None):
+    saved = {}
+    for name in '__file__', '__path__', '__name__', '__codeList__':
+        try:
+            saved[name] = dict[name]
+        except KeyError:
+            pass
 
-    if withDict is None:
-        from TW.Utils.Misc import getCallerInfo
-        name,line_no = getCallerInfo()
-        module = sys.modules[name]
-        withDict = module.__dict__
+    dict.clear(); dict.update(saved)    
+    sim = Simulator(dict)   # Must happen after!
 
-    else:
-        name = withDict['__name__']
-        module = sys.modules[name]
+    # XXX Should we *not* do this if len(codelist)==1???
+    map(sim.execute, codelist); sim.finish()
+    
+    if dict.has_key('__init__'):
+        dict['__init__']()
 
-    if withDict.has_key('__bases__'):
+
+
+
+def adviseModule(moduleName):
+
+    frame = sys._getframe(1)
+    dict = frame.f_globals
+
+    if dict.has_key('__TW_Simulator__'):
+        return
+
+    if dict.has_key('__bases__'):
         raise SpecificationError(
             "Advice modules cannot use '__bases__'"
         )
@@ -266,14 +221,13 @@ def adviseModule(moduleName, withDict=None):
             "%s is already imported and cannot be advised" % moduleName
         )
 
-    a = adviceForModule(moduleName)
-    adviceMap[moduleName] = adviceForModule(moduleName) + \
-                            getSpecForModule(module) + \
-                            adviceForModule(name)
+    code = frame.f_code
+    name = dict['__name__']
+    module = sys.modules[name]
 
+    codelist = getCodeListForModule(module, code)
+    adviceMap.setdefault(moduleName, [])[0:0] = codelist
 
-def adviceForModule(moduleName):
-    return adviceMap.get(moduleName,emptyRecipe)
 
 
 
@@ -285,126 +239,8 @@ def adviceForModule(moduleName):
 
 
 
-from Targets import BuildTarget
 
-class FunctionRebindingBuildTarget(BuildTarget):
 
-    def DEFAULT(self, spec, peerContext):
 
-        if self.defaultInterpreter:
 
-            if isClass(spec):
-                self.interpreter = DefaultComponentInterpreter
-
-            elif isinstance(spec,FunctionType):
-                self.interpreter = DefaultFunctionInterpreter
-
-            else:
-                self.interpreter = DefaultInterpreter
-
-        self.specs.append((spec,peerContext))
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-from Interpreters import *
-from TW.Utils.Code import Function, FunctionBinder
-
-class FunctionInterpreter(AbstractInterpreter):
-
-    """Rebinds function globals and '__proceed__' to call next function"""
-
-    def __call__(self, buildTarget, specList):
-
-        if not specList:
-            return UNDEFINED
-
-        spec, pC = specList[-1]
-
-        f_globals = spec.func_globals
-        code = spec.func_code
-
-        if pC.get(id(f_globals),'')=='__globals__':
-            spec = Function(spec)
-            spec.func_globals = buildTarget.getEnvironment('globals',f_globals)
-            code = spec
-
-        if '__proceed__' in code.co_names:
-
-            if len(specList)>1:
-                prevFunc = self(buildTarget, specList[:-1])
-            else:
-                prevFunc = None  # so function can detect end-of-chain
-
-            spec = FunctionBinder(spec).boundFunc(__proceed__ = prevFunc)
-
-        if type(spec) is Function: # XXX 2.1 backport hack; (isinstance)
-            spec = spec.func()
-
-        return spec
-
-DefaultFunctionInterpreter = FunctionInterpreter()
-
-
-
-
-class _ModuleDictInterpreter(AbstractInterpreter):
-
-    def __call__(self, buildTarget, specList):
-    
-        for (spec,pC) in specList:
-
-            if isSpecification(spec):
-                name, bases, dict = spec.getTypeConstructorInfo()
-                
-            elif isinstance(spec,ModuleType):
-                dict  = spec.__dict__.copy()
-
-            else:
-                raise SpecificationError(
-                    "Invalid module specification for %s: %s" % (buildTarget,`spec`)
-                )
-
-            items = dict.items(); peerContext = {}
-            for (name,spec) in items:
-                peerContext[id(spec)] = name
-                
-            implementFeature = buildTarget.implementFeature
-            moduleName = dict['__name__']
-
-            for name,spec in items:
-                if isBundle(spec) or isClass(spec) and spec.__module__<>moduleName:
-                    # Don't interpret bundles and external classes!
-                    spec = Overwrite(spec)  # XXX might not work right :(
-
-                implementFeature(name, spec, peerContext)
-
-        dict  = {}
-        for name, target in buildTarget.items():
-            item = target.getOutput()
-            if item is not UNDEFINED:
-                dict[name] = item
-
-        return dict
-        
-ModuleDictInterpreter = _ModuleDictInterpreter()
 
