@@ -121,7 +121,7 @@ class PkgFileURL(URL.Base):
 
 
 
-class URLStreamFactory(binding.Component):
+class URLStreamFactory(object):
 
     """Stream factory for a 'urllib2.urlopen()'
 
@@ -133,32 +133,32 @@ class URLStreamFactory(binding.Component):
         instancesProvide=[naming.IStreamFactory],
     )
 
-    target = binding.Require("urllib2 URL or request")
+    address = binding.Require("urllib2 URL or request")
 
 
     def open(self,mode,seek=False,writable=False,autocommit=False):
 
         if writable:
-            raise TypeError("URL not writable", self.target)
+            raise TypeError("URL not writable", self.address)
 
         if mode<>'b':
-            raise TypeError("URL requires binary read mode", self.target)
+            raise TypeError("URL requires binary read mode", self.address)
 
         if seek:
-            raise TypeError("URL not seekable", self.target)
+            raise TypeError("URL not seekable", self.address)
 
         from urllib2 import urlopen
-        return urlopen(str(self.target))
+        return urlopen(str(self.address))
 
 
     def create(self,mode,seek=False,readable=False,autocommit=False):
-        raise TypeError("Can't create URL", self.target)
+        raise TypeError("Can't create URL", self.address)
 
     def update(self,mode,seek=False,readable=False,append=False,autocommit=False):
-        raise TypeError("Can't update URL", self.target)
+        raise TypeError("Can't update URL", self.address)
 
     def delete(self, autocommit=False):
-        raise TypeError("Can't delete URL", self.target)
+        raise TypeError("Can't delete URL", self.address)
 
 
 
@@ -167,7 +167,7 @@ class URLStreamFactory(binding.Component):
         from urllib2 import urlopen, HTTPError
 
         try:
-            urlopen(self.target).close()
+            urlopen(self.address).close()
         except (HTTPError,IOError):
             return False
         else:
@@ -176,7 +176,9 @@ class URLStreamFactory(binding.Component):
 
     def getObjectInstance(klass, context, refInfo, name, attrs=None):
         url, = refInfo.addresses
-        return klass(target = str(url))
+        self = klass()
+        self.address = str(url)
+        return self
 
     getObjectInstance = classmethod(getObjectInstance)
 
@@ -201,6 +203,45 @@ class URLStreamFactory(binding.Component):
 
 
 
+class ImportLoaderFactory(object):
+
+    protocols.advise(
+        instancesProvide=[naming.IStreamFactory],
+    )
+
+    def __init__(self,loader,moduleName,path):
+        self.address = PkgFileURL("pkgfile:%s/%s" % (moduleName,path))
+        self.loader = loader
+        self.path = path
+    
+    def open(self,mode,seek=False,writable=False,autocommit=False):
+
+        if writable:
+            raise TypeError("Importer data not writable", self.address)
+
+        from cStringIO import StringIO
+        return StringIO(self.loader.get_data(self.path))
+
+    def exists(self):
+        try:
+            self.loader.get_data(self.path)
+            return True
+        except (IOError,OSError,ImportError):
+            return False
+      
+
+    def create(self,mode,seek=False,readable=False,autocommit=False):
+        raise TypeError("Can't create import loader data", self.address)
+
+    def update(self,mode,seek=False,readable=False,append=False,autocommit=False):
+        raise TypeError("Can't update import loader data", self.address)
+
+    def delete(self, autocommit=False):
+        raise TypeError("Can't delete import loader data", self.address)
+
+
+
+
 
 
 class FileFactory(binding.Component):
@@ -213,6 +254,7 @@ class FileFactory(binding.Component):
     )
 
     filename = binding.Require("Filename to open/modify")
+    address = binding.Make(lambda s: str(FileURL.fromFilename(s.filename)))
 
     def open(self,mode,seek=False,writable=False,autocommit=False):
         return self._open(mode, 'r'+(writable and '+' or ''), autocommit)
@@ -240,7 +282,6 @@ class FileFactory(binding.Component):
             self._acRequired()
 
         return open(self.filename, flags+mode)
-
 
 
 
@@ -337,6 +378,7 @@ class FDFactory(FileFactory):
 
     fd = binding.Require("File descriptor to open/modify")
     filename = binding.Require("Operation not possible for file descriptors")
+    address = binding.Require("original fdURL")
 
     def _open(self, mode, flags, ac):
 
@@ -351,10 +393,9 @@ class FDFactory(FileFactory):
 
     def getObjectInstance(klass, context, refInfo, name, attrs=None):
         url, = refInfo.addresses
-        return klass(fd = url.fileno)
+        return klass(fd = url.fileno, address=str(url))
 
     getObjectInstance = classmethod(getObjectInstance)
-
 
 
 

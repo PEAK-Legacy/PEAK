@@ -315,6 +315,7 @@ class IStreamFactory(Interface):
     will be raised.  Ommitting 'autocommit' when a particular stream
     factory requires autocommitting, will also result in an exception."""
 
+    address = Attribute("""String form of stream's canonical address (URL)""")
 
     def open(mode,seek=False,writable=False,autocommit=False):
 
@@ -322,7 +323,6 @@ class IStreamFactory(Interface):
 
         The resource must exist and be readable.  It is not created if
         it does not exist."""
-
 
 
 
