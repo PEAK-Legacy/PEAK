@@ -3,7 +3,7 @@ from peak.util.imports import importString, importObject, whenImported
 from peak.util.FileParsing import AbstractConfigParser
 from interfaces import *
 from config_components import FactoryFor, CreateViaFactory, LazyRule, Value
-import re
+import re; from peak.api import iif
 
 __all__ = [
     'ConfigReader', 'loadConfigFiles', 'loadConfigFile', 'loadMapping',

@@ -6,7 +6,7 @@ from peak.util.EigenData import EigenCell, AlreadyRead
 from errno import EINTR
 
 __all__ = [
-    'setReactor', 'getReactor', 'getTwisted',
+    #'setReactor', 'getReactor', 'getTwisted',
     'MainLoop', 'UntwistedReactor', 'StopOnStandardSignals'
 ]
 
@@ -36,6 +36,47 @@ class ReactorCrash(Exception):
 
 
 
+
+
+
+def ifTwisted(ob,twistedValue,untwistedValue):
+    """Return 'twistedValue' if 'ob' is in a Twisted service area"""
+
+    sa = config.parentProviding(ob, config.IServiceArea)
+
+    if config.lookup(sa,'peak.running.isTwisted',None):
+        return twistedValue
+    return untwistedValue
+
+
+def makeTwisted(ob):
+    """Try to make service area containing 'ob' a Twisted area"""
+
+    sa = config.parentProviding(ob, config.IServiceArea)
+
+    try:
+        sa.registerProvider('peak.running.isTwisted', config.Value(True))
+    except AlreadyRead:
+        pass
+    if not config.lookup(sa,'peak.running.isTwisted',None):
+        raise AlreadyRead(
+            "Another reactor is already in use for this service area"
+        )
+
+    return True
+
+
+def getTwisted():
+    """Get Twisted reactor, or die trying"""
+
+    try:
+        from twisted.internet import reactor
+    except ImportError:
+        raise exceptions.NameNotFound(
+            """twisted.internet.reactor could not be imported"""
+        )
+    else:
+        return reactor
 
 
 
@@ -119,47 +160,6 @@ class MainLoop(binding.Component):
 
 
 
-
-
-_reactor = EigenCell()
-_twisted = False
-
-def setReactor(reactor):
-    """Set the system reactor to 'reactor', if not already used"""
-    _reactor.set(reactor)
-
-def getReactor():
-    """Get system reactor -- default to our "dirt simple" reactor"""
-    return _reactor.get(lambda: UntwistedReactor())
-
-def getTwisted():
-
-    """Get system reactor -- but only if it's twisted!"""
-
-    global _twisted
-
-    if _twisted:
-        return _reactor.get()
-
-    try:
-        from twisted.internet import reactor
-    except ImportError:
-        raise exceptions.NameNotFound(
-            """twisted.internet.reactor could not be imported"""
-        )
-
-    def _getTwisted():
-        # XXX do twisted setups like threadable.init, wxSupport.install, etc.
-        return reactor
-
-    peak_reactor = _reactor.get(_getTwisted)
-
-    if peak_reactor is not reactor:
-        # I guess we're just not twisted enough!
-        raise AlreadyRead("Another reactor is already in use")
-
-    _twisted = True
-    return peak_reactor
 
 
 class TwistedScheduler(binding.Component,events.Scheduler):

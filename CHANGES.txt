@@ -1,7 +1,19 @@
 Fixes and Enhancements since Version 0.5 alpha 2
 
  Changed, Enhanced, or Newly Deprecated Features
+ 
+ - Simplified configuration for using Twisted, roughly as proposed in
+   "this message.":http://www.eby-sarna.com/pipermail/peak/2004-January/001125.html
 
+   You can now configure a service area as using Twisted by setting its
+   'peak.running.isTwisted' property, or by depending upon the
+   'running.ITwistedReactor' interface, as long as it happens early enough.
+
+   If you need to make choices based on whether a Twisted reactor is being
+   used, you should use the 'peak.running.scheduler.ifTwisted()' function.
+   If you would like to try to force a service area to use a Twisted reactor,
+   you may use 'peak.running.scheduler.makeTwisted()'.
+ 
  - Added automatic installation of 'csv' module for Python < 2.3.
 
  - Added 'peak.events' package, supporting a simple event-driven programming

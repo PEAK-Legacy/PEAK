@@ -4,8 +4,6 @@ Open Issues/To-Do Items
 
     * peak.events migration
 
-      - Implement "Twisted-compatibility plan":http://www.eby-sarna.com/pipermail/peak/2004-January/001125.html
-
       - 'running.IProcessProxy' should use conditions/values instead of
         listeners, and drop 'checkStatus()' method
 
@@ -22,28 +20,24 @@ Open Issues/To-Do Items
       - Add 'events.twisted_support', with 'TwistedScheduler',
        'TwistedSelector', and 'DeferredAsTaskSwitch'
 
-
     * peak.naming
 
       - 'ILoadingService', 'IObjectLoader' and 'load:kind@URL' scheme
 
     * peak.config
 
-      - 'iif()' function for use in .ini files
-
       - plugin keys ordered by definition sequence, rather than randomly
 
       - ZConfig factory support to allow "smart" interpretation of strings,
         section names, etc.
-
-
-
 
     * peak.running.logs
 
       - Separate formatters from publishers
 
       - ZConfig schema for logging plugins, allowing multiple handlers/category
+
+
 
     * peak.binding
 
@@ -71,6 +65,12 @@ Open Issues/To-Do Items
     * Misc.
 
       - 'csv' output format for cursor dumps
+
+
+
+
+
+
 
 
 

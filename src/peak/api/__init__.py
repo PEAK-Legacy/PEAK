@@ -53,15 +53,15 @@ storage     = lazyModule('peak.storage.api')
 web         = lazyModule('peak.web.api')
 
 
+# This is here so that 'peak help iif' will return something useful.
+# It is not actually exported from here!  'config.ini_files' imports it
+# directly, so it'll be available from .ini files.
 
-
-
-
-
-
-
-
-
+def iif(cond,Then,Else):
+    """iif(cond,then,else) -- return 'then' if 'cond' is true, else 'else'"""
+    if cond:
+        return Then
+    return Else
 
 
 
