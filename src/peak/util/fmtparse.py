@@ -75,10 +75,10 @@ class MissingData(Exception):
     pass
 
 
+from peak.binding.once import Once
 
-
-
-
+def uniquechars(s):
+    return ''.join(dict([(c,c) for c in s]))
 
 class Rule(object):
 
@@ -96,7 +96,7 @@ class Rule(object):
         """Pass formatted 'data' to 'write()'"""
         raise NotImplementedError
 
-    def withTerminators(self, terminators):
+    def withTerminators(self, terminators, memo):
         """Return a version of this syntax using the specified terminators"""
         raise NotImplementedError
 
@@ -172,7 +172,7 @@ class Epsilon(Rule):
     def format(self,data,write):
         pass
 
-    def withTerminators(self,terminators):
+    def withTerminators(self,terminators,memo):
         return self
 
     def getOpening(self,closing):
@@ -208,9 +208,8 @@ class Sequence(Rule):
     closingChars = ''
 
     def __init__(self, *__args, **__kw):
-        self.initArgs = __args
         self.__dict__.update(__kw)
-        self.rules = self._computeRules()
+        self.initArgs = __args
 
     def parse(self, input, produce, startState):
 
@@ -225,65 +224,66 @@ class Sequence(Rule):
         map(produce, data)
         return state
 
-
     def format(self, data, write):
         for rule in self.rules:
             rule.format(data,write)
 
 
-    def withTerminators(self, terminators):
-        return self.__class__(*self.initArgs, **{'closingChars':terminators})
+    def withTerminators(self, terminators, memo):
+        key = id(self), terminators
+        if key in memo:
+            return memo[id(self),terminators]
 
+        r = self.__class__(*self.initArgs, **{'closingChars':terminators})
+        memo[key] = r
+        r._computeRules(memo)
+        return r
 
-    def getOpening(self,closing):
+    def getOpening(self,closing,memo):
+        if 'rules' not in self.__dict__:
+            self._computeRules(memo)
         return self.openingChars
 
-
-
-
-
-
-
-    def _computeRules(self):
+    def _computeRules(self, memo=None):
 
         obs = [adapt(ob,Rule) for ob in self.initArgs]
+
         obs.reverse()
 
         closeAll = self.closingChars
         closeCtx = ''
 
         syn = []
+        self.__dict__.setdefault('rules',syn)
+
+        if not memo:
+            memo = { (id(self),closeAll): self }
+
+        if obs:
+            self.openingChars = obs[-1].getOpening('',memo)
+
         for ob in obs:
-            ob = ob.withTerminators(closeAll+closeCtx)
-            closeCtx = ob.getOpening(closeCtx)
+            terms = uniquechars(closeAll+closeCtx)
+            key = id(ob), terms
+            if key in memo:
+                ob = memo[key]
+            else:
+                ob = memo[key] = ob.withTerminators(terms, memo)
+
+            closeCtx = ob.getOpening(closeCtx,memo)
             syn.append(ob)
 
         self.openingChars = closeCtx
         syn.reverse()
+        self.rules = syn
         return syn
 
+    def rules(self,d,a):
+        return self._computeRules()
 
+    rules = Once(rules)
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    openingChars = ''
 
 class Optional(Sequence):
 
@@ -316,10 +316,10 @@ class Optional(Sequence):
             # output if there are any "variable" contents
             map(write,out)
 
-    def getOpening(self,closing):
+    def getOpening(self,closing,memo):
+        if 'rules' not in self.__dict__:
+            self._computeRules(memo)
         return self.openingChars+closing
-
-
 
 
 
@@ -352,11 +352,11 @@ class StringConstant(Rule, str):
         write(self)
 
 
-    def withTerminators(self,terminators):
+    def withTerminators(self,terminators,memo):
         return self
 
 
-    def getOpening(self,closing):
+    def getOpening(self,closing,memo):
         if self:
             if self.caseSensitive:
                 return self[0]
@@ -368,7 +368,6 @@ class StringConstant(Rule, str):
 
 
 class Repeat(Sequence):
-
     minCt = 0
     maxCt = None
     sepMayTerm = False  # is separator allowed as terminator?
@@ -381,32 +380,33 @@ class Repeat(Sequence):
         state = startState
         data = []
 
-        state = input.parse(rule, data.append, state)
+        newState = input.parse(rule, data.append, state)
 
-        if isinstance(state,ParseError):
+        if isinstance(newState,ParseError):
             if self.minCt>0:
-                return state  # it's an error
+                return newState  # it's an error
             else:
-                return startState  # non-error empty match
+                return state  # non-error empty match
 
-        ct = 1; maxCt = self.maxCt
+        ct = 1; maxCt = self.maxCt; state = newState
         while not input.finished(state) and (maxCt is None or ct<maxCt):
 
-            state = input.parse(self.sep, data.append, state)
-            if isinstance(state,ParseError):
+            newState = input.parse(self.sep, data.append, state)
+            if isinstance(newState,ParseError):
                 break   # no more items
 
-            state = input.parse(rule, data.append, state)
-            if isinstance(state,ParseError):
+            state = newState
+            newState = input.parse(rule, data.append, state)
+            if isinstance(newState,ParseError):
                 if self.sepMayTerm:
                     break   # if sep can be term, it's okay to end here
-                return state  # otherwise pass the error up
+                return newState  # otherwise pass the error up
 
             ct += 1
+            state = newState
 
         produce(data)   # treat repeat as a list
         return state
-
 
     def format(self, data, write):
 
@@ -422,29 +422,29 @@ class Repeat(Sequence):
         rule.format(data[-1],write)
 
 
-    def withTerminators(self,terminators):
+    def withTerminators(self,terminators,memo):
+
+        key = id(self), terminators
+        if key in memo:
+            return memo[key]
 
         kw = self.__dict__.copy()
         if 'rules' in kw:
             del kw['rules']
 
-        kw['closingChars'] = terminators + self.sep.getOpening('')
+        kw['closingChars'] = terminators + self.sep.getOpening('',memo)
 
         del kw['initArgs']
-        return self.__class__(*self.initArgs, **kw)
+
+        r = self.__class__(*self.initArgs, **kw)
+        memo[key] = r
+        r._computeRules(memo)
+        return r
 
 
     def __init__(self,*__args,**_kw):
         super(Repeat,self).__init__(*__args,**_kw)
         self.sep = adapt(self.separator, Rule)
-
-
-
-
-
-
-
-
 
 
 
@@ -521,14 +521,14 @@ class MatchString(Rule):
         self.pattern = pattern
 
 
-    def withTerminators(self,terminators):
+    def withTerminators(self,terminators,memo):
+        if terminators==self.terminators:
+            return self
         d = self.__dict__.copy()
         if not self.explicit_pattern:
             del d['pattern']
         d['terminators'] = terminators
         return self.__class__(**d)
-
-
 
 
     def parse(self, inputStr, produce, startAt):
@@ -542,7 +542,7 @@ class MatchString(Rule):
         return state
 
 
-    def getOpening(self,closing):
+    def getOpening(self,closing,memo):
         return self.openingChars
 
 
@@ -592,18 +592,18 @@ class ExtractString(Rule):
         return state
 
 
-    def withTerminators(self,terminators):
+    def withTerminators(self,terminators,memo):
+        if self.terminators==terminators:
+            return self
         return self.__class__(
-            self.rule.withTerminators(terminators), terminators
+            self.rule.withTerminators(terminators,memo), terminators
         )
 
-    def getOpening(self,closing):
-        return self.rule.getOpening(closing)
+    def getOpening(self,closing,memo):
+        return self.rule.getOpening(closing,memo)
 
     def format(self,data,write):
         write(data)
-
-
 
 
 
@@ -623,13 +623,13 @@ class Named(Rule):
         self.name = name
         self.rule = adapt(rule,Rule)
 
-    def withTerminators(self,terminators):
+    def withTerminators(self,terminators,memo):
         return self.__class__(
-            self.name, self.rule.withTerminators(terminators)
+            self.name, self.rule.withTerminators(terminators,memo)
         )
 
-    def getOpening(self,closing):
-        return self.rule.getOpening(closing)
+    def getOpening(self,closing,memo):
+        return self.rule.getOpening(closing,memo)
 
 
     def parse(self, input, produce, startState):
@@ -681,15 +681,15 @@ class Conversion(Rule):
         return state
 
 
-    def withTerminators(self, terminators):
+    def withTerminators(self, terminators,memo):
 
         kw = self.__dict__.copy()
-        kw['rule'] = self.rule.withTerminators(terminators)
+        kw['rule'] = self.rule.withTerminators(terminators,memo)
         return self.__class__(**kw)
 
 
-    def getOpening(self,closing):
-        return self.rule.getOpening(closing)
+    def getOpening(self,closing,memo):
+        return self.rule.getOpening(closing,memo)
 
 
 
@@ -745,13 +745,13 @@ class Alternatives(Rule):
     def __init__(self, *alternatives):
         self.alternatives = [adapt(a,Rule) for a in alternatives]
 
-    def withTerminators(self,terminators):
+    def withTerminators(self,terminators,memo):
         return self.__class__(
-            *tuple([a.withTerminators(terminators) for a in self.alternatives])
+            *tuple([a.withTerminators(terminators,memo) for a in self.alternatives])
         )
 
-    def getOpening(self,closing):
-        return ''.join([a.getOpening('') for a in self.alternatives])
+    def getOpening(self,closing,memo):
+        return ''.join([a.getOpening('',memo) for a in self.alternatives])
 
     def parse(self, input, produce, startState):
         for rule in self.alternatives:
@@ -781,7 +781,7 @@ class Set(Alternatives):
 
     def parse(self, input, produce, startState):
 
-        rules = list(self.alternatives)
+        rules = self.alternatives[:]
         state = startState
 
         while rules and not input.finished(state):
@@ -811,11 +811,52 @@ class Set(Alternatives):
             if out:
                 map(write,out)
 
-    def withTerminators(self,terminators):
+
+
+
+
+
+
+
+    def withTerminators(self,terminators,memo):
         # make sure alternatives consider each other as possible terminators
         return super(Set,self).withTerminators(
-            terminators+''.join([a.getOpening('') for a in self.alternatives])
+            uniquechars(
+                terminators+''.join(
+                    [a.getOpening('',memo) for a in self.alternatives]
+                )
+            ), memo
         )
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 class StringInput(Input, str):

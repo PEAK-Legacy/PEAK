@@ -63,13 +63,13 @@ class ExtractQuoted(Rule):
         return pos
 
 
-    def withTerminators(self,terminators):
+    def withTerminators(self,terminators,memo):
         return self.__class__(
-            self.rule.withTerminators(terminators), self.unquote, terminators
+            self.rule.withTerminators(terminators,memo), self.unquote, terminators
         )
 
-    def getOpening(self,closing):
-        return self.rule.getOpening(closing)
+    def getOpening(self,closing,memo):
+        return self.rule.getOpening(closing,memo)
 
     def format(self,data,write):
         if self.unquote:

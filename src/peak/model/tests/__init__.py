@@ -3,6 +3,82 @@
 from unittest import TestCase, makeSuite, TestSuite
 from peak.api import *
 from peak.model.features import FeatureClass
+from peak.util import fmtparse
+
+
+class Thing(model.Element):
+
+    class subexpr(model.Collection):
+        referencedType = 'Thing'
+        separator = ','
+        lowerBound = 1
+
+    mdl_syntax = fmtparse.Alternatives(
+        'X',
+        fmtparse.Sequence('(', subexpr, ')')
+    )
+
+
+class Expression(model.Element):
+
+    class terms(model.Collection):
+        lowerBound = 1
+        referencedType = 'Term'
+        separator = '+'
+
+    mdl_syntax = fmtparse.Sequence(terms)
+
+
+class Term(model.Element):
+
+    class factors(model.Collection):
+        lowerBound = 1
+        referencedType = 'Factor'
+        separator = '*'
+
+    mdl_syntax = fmtparse.Sequence(factors)
+
+
+class Factor(model.Element):
+
+    class constant(model.Attribute):
+        referencedType = model.Integer
+
+    class subexpr(model.Attribute):
+        referencedType = Expression
+
+    mdl_syntax = fmtparse.Alternatives(
+        constant, fmtparse.Sequence('(',subexpr,')')
+    )
+
+
+class parseFmtTest(TestCase):
+
+    def checkSimpleParse(self):
+        e = Expression.mdl_fromString('1+2+3')
+        assert len(e.terms) == 3
+        Thing.mdl_fromString('(X,((X)),(X,X,(X)))')
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 class featureBase(object):
 
@@ -38,6 +114,12 @@ class featureBase(object):
 
     def doubled(feature,self):
         return feature.getMethod(self,'get')() * 2
+
+
+
+
+
+
 
 class X(model.Element):
 
@@ -310,7 +392,7 @@ class exerciseFeatures(TestCase):
 
 
 TestClasses = (
-    checkExport, checkMetaData, exerciseFeatures, EnumerationTests
+    parseFmtTest, checkExport, checkMetaData, exerciseFeatures, EnumerationTests
 )
 
 
