@@ -7,7 +7,7 @@ from weakref import ref, WeakValueDictionary
 from peak.naming.names import toName, Syntax, CompoundName
 from peak.naming.interfaces import NameNotFoundException
 from peak.util.EigenData import EigenRegistry
-from Interface import Interface    
+from Interface import Interface
 
 
 __all__ = [
@@ -19,7 +19,7 @@ __all__ = [
 
 _ACQUIRED = object()
 
-
+InterfaceClass = Interface.__class__
 
 
 
@@ -237,7 +237,7 @@ def lookupComponent(component, name):
         path segment.  '.' and '..' are interpreted the same as for the first
         path segment."""
 
-    if isinstance(name, Interface):
+    if isinstance(name, InterfaceClass):
         utility = component.acquireUtility(name)
         if utility is None:
             raise NameNotFoundException(name, resolvedObj = component)

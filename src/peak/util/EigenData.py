@@ -56,16 +56,16 @@ class EigenCell(object):
 
     def __init__(self):
         """Create an (empty and unread) EigenCell"""
-        self.locked = 0 
+        self.locked = False
 
     def get(self):
         """Return the cell's value, or raise AttributeError if empty"""
-        self.locked = 1
+        self.locked = True
         return self.value
 
     def exists(self):
         """Return true if the cell contains a value."""
-        self.locked = 1
+        self.locked = True
         return hasattr(self,'value')
 
     def set(self,value):
@@ -98,9 +98,8 @@ class EigenDict(object):
 
      * '__len__()' and 'popitem()' methods are not available.
 
-     * '__hash__()' is available, so EigenDict objects can be used as keys
-       to other dictionaries...  but doing so immediately locks their entire
-       contents.
+     * '.copy()' returns a standard Python dictionary, not an EigenDict
+
     """
 
     def __init__(self, dict=None):
@@ -118,6 +117,7 @@ class EigenDict(object):
         
     def copy(self):
         return dict(self.items())
+
 
 
 
@@ -144,11 +144,8 @@ class EigenDict(object):
     def __repr__(self):
         return `self.copy()`
 
-    def __hash__(self):
-        return hash(tuple(self.items()))
-
     def __cmp__(self, dict):
-        return cmp(self.items(), dict.items())
+        return cmp(self.copy(), dict.copy())
 
     def __iter__(self):       
         return self.iterkeys()
@@ -162,7 +159,10 @@ class EigenDict(object):
 
 
 
-    locked = 0
+
+
+
+    locked = False
 
     def lock(self):
         """Lock the dictionary, ensuring that its contents cannot change
@@ -173,7 +173,10 @@ class EigenDict(object):
             the dictionary as a whole, like 'keys()' and 'values()'.
         """
         
-        self.locked = 1
+        if self.locked:
+            return
+
+        self.locked = True
         data = self.data
 
         for k,v in data.items():
@@ -187,21 +190,18 @@ class EigenDict(object):
             If there is no EigenCell stored under 'key', return a new
             EigenCell and store it.  If the dictionary is locked, return
             an empty, locked EigenCell instead of creating a new one.  This
-            ensures that no new entries can be created if locked.
-        """
-            
-        if not self.data.has_key(key):
+            ensures that no new entries can be created if locked."""
+
+        cell = self.data.get(key)
+
+        if cell is None:
 
             if self.locked:
                 return CollapsedCell
               
             cell = self.data[key] = EigenCell()
 
-        else:
-            cell = self.data[key]
-
         return cell
-
 
     def __getitem__(self, key):
     
@@ -248,9 +248,9 @@ class EigenRegistry(EigenDict):
 
     """EigenDict that takes Interface objects as keys, handling inheritance"""
 
-    def __init__(self, *args,**kw):
+    def __init__(self):
         self.provided = {}
-        super(EigenRegistry,self).__init__(*args,**kw)
+        super(EigenRegistry,self).__init__()
 
 
     def __setitem__(self, iface, item):
@@ -270,7 +270,7 @@ class EigenRegistry(EigenDict):
 
     def _register(self,iface,item,primary_iface):
 
-        old = self.provided.get(base)
+        old = self.provided.get(iface)
 
         # We want to keep more-general registrants
         if old is None or old.extends(primary_iface):
@@ -302,6 +302,17 @@ class EigenRegistry(EigenDict):
                 sc(iface).set(other[iface])
                 iProvide[iface] = newP
 
+
+    def setdefault(self,key,failobj=None):
+        raise NotImplementedError
+
+
+    def __delitem__(self,key):
+        raise NotImplementedError
+
+
+    def clear(self):
+        raise NotImplementedError
 
 
 # CollapsedCell is an empty (but read and locked) EigenCell
