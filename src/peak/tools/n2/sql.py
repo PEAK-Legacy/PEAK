@@ -35,7 +35,6 @@ class SQLInteractor(storage.TransactionComponent):
 
     shell = binding.Obtain('..')
     con = binding.Require('The SQL connection')
-    txnSvc = binding.Obtain(storage.ITransactionService)
 
     state = ''
     pushbuf = binding.Make(list)
@@ -76,6 +75,7 @@ class SQLInteractor(storage.TransactionComponent):
     def interact(self, object, shell):
         binding.suggestParentComponent(shell, None, object)
 
+        self.joinedTxn      # ensure we're in the current PEAK transaction
         self.con.connection # ensure it's opened immediately
 
         self.quit = False
@@ -413,6 +413,7 @@ rollback -- abort current transaction"""
             else:
                 storage.abortTransaction(self)
                 storage.beginTransaction(self)
+                self.joinedTxn  # ensure we're in the current PEAK transaction
 
                 self.interactor.resetBuf()
 
@@ -436,6 +437,7 @@ rollback -- abort current transaction"""
             else:
                 storage.commitTransaction(self)
                 storage.beginTransaction(self)
+                self.joinedTxn  # ensure we're in the current PEAK transaction
 
                 self.interactor.resetBuf()
 
@@ -737,6 +739,7 @@ default for src is '!.', the current input buffer"""
 
             self.interactor.con.connection
             storage.beginTransaction(self)
+            self.joinedTxn      # ensure we're in the current PEAK transaction
 
             self.interactor.resetBuf()
 
