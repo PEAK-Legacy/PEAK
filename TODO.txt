@@ -62,10 +62,6 @@ Open Issues/To-Do Items
 
        - try/catch DOMlet (and related error rendering interface/framework)
 
-    * Misc.
-
-      - 'csv' output format for cursor dumps
-
 
 
 

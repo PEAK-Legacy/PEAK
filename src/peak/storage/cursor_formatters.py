@@ -7,7 +7,7 @@ class AbstractCursorFormatter(binding.Component):
     header = binding.Make(lambda: True)
     footer = binding.Make(lambda: True)
     delim  = binding.Make(lambda: '|')
-    
+    null   = binding.Make(lambda: 'NULL')
 
     def __call__(self, stdout):
         c = self.cursor
@@ -41,8 +41,8 @@ class AbstractCursorFormatter(binding.Component):
     def toStr(self, val, width=None):
         if val is None:
             if width is None:
-                return "NULL"
-            return "NULL".ljust(width)[:width]
+                return self.null
+            return self.null.ljust(width)[:width]
         elif width is None:
             return str(val)
         elif type(val) in (int, long):
@@ -236,3 +236,24 @@ class cursorToCopy(AbstractCursorFormatter):
                 nv.append(ch)
 
         return ''.join(nv)
+
+
+class cursorToCSV(AbstractCursorFormatter):
+    csv = binding.Obtain('import:csv')
+    dialect = binding.Make(lambda: 'excel')
+    footer = binding.Make(lambda: False)
+
+    def formatRows(self, c, stdout):
+        nr = 0
+
+        wr = self.csv.writer(stdout, dialect=self.dialect, lineterminator='\n')
+        
+        if self.header:
+            wr.writerow([x[0] for x in c._cursor.description])
+
+        for r in c:
+            nr += 1
+            wr.writerow(r)
+            
+        return nr
+
