@@ -154,9 +154,9 @@ class EquipmentRules(security.RuleSet):
         ).isAllowed()
 
     def checkPermissionsInPlace(klass, permType, attempt):
-        return attempt.new(attempt.subject.location).isAllowed()
-
-
+        return attempt.new(
+            attempt.subject.location, permissionsNeeded=[permType]
+        ).isAllowed()
 
 
 

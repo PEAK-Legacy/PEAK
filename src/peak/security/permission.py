@@ -231,10 +231,10 @@ class Interaction(binding.Component):
         return False
 
     def allows(self, subject,
-        attrName=NOT_GIVEN, permissionsNeeded=NOT_GIVEN, user=NOT_GIVEN
+        name=NOT_GIVEN, permissionsNeeded=NOT_GIVEN, user=NOT_GIVEN
     ):
         return self.checkAccess(
-            self.accessType(subject, self, user, permissionsNeeded, attrName)
+            self.accessType(subject, self, user, permissionsNeeded, name)
         )
 
 
@@ -246,15 +246,20 @@ class Interaction(binding.Component):
 
 class PermissionType(binding.ActiveClass):
 
-    """A permission type"""
+    """A permission type (abstract and/or concrete)"""
 
     protocols.advise(
-        instancesProvide = [IPermissionType]
+        instancesProvide = [IAbstractPermission]
     )
+
+    abstractBase = None
 
     __cache = binding.New(WeakKeyDictionary, attrName='_PermissionType__cache')
 
     def of(self,protectedObjectType):
+        if self.abstractBase is not None:
+            return self.abstractBase.of(protectedObjectType)
+
         try:
             return self.__cache[protectedObjectType]
         except KeyError:
@@ -268,21 +273,57 @@ class PermissionType(binding.ActiveClass):
 
         subtype = self.__class__(
             '%s_of_%s' % (self.__name__,protectedObjectType.__name__),
-            bases, {'__module__': self.__module__}
+            bases, {'__module__': self.__module__, 'abstractBase': self}
         )
 
         self.__cache[protectedObjectType] = subtype
         return subtype
+
 
     def addRule(self, rule, protocol=IPermissionChecker):
         protocols.declareAdapter(
             rule, provides=[protocol], forObjects=[self]
         )
 
+    def getAbstract(self):
+        if self.abstractBase is None:
+            return self
+        else:
+            return self.abstractBase
+
+
 
 class Permission:
     """Base class for permissions"""
     __metaclass__ = PermissionType
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 class RuleSet(binding.Singleton):

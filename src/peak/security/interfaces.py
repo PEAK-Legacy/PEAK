@@ -3,8 +3,8 @@ from protocols import Interface, Attribute
 
 __all__ = [
     'IAuthorizedPrincipal', 'IInteraction', 'IAccessAttempt',
-    'IPermissionType', 'IPermissionChecker', 'IGuardedObject',
-    'INamePermissions',
+    'IAbstractPermission', 'IAbstractPermission', 'IPermissionChecker',
+    'IGuardedObject', 'INamePermissions',
 ]
 
 class IAccessAttempt(Interface):
@@ -88,10 +88,10 @@ class IPermissionChecker(Interface):
         """Does the principal for 'attempt' have permission 'permType'?"""
 
 
-class IPermissionType(Interface):
+class IConcretePermission(Interface):
 
-    def of(protectedObjectType):
-        """Return a subclass IPermissionType for 'protectedObjectType'"""
+    def getAbstract():
+        """Return an IAbstractPermission for this permission"""
 
     def addRule(rule,protocol=IPermissionChecker):
         """Declare 'rule' an adapter factory from permission to 'protocol'"""
@@ -99,6 +99,11 @@ class IPermissionType(Interface):
     __mro__ = Attribute(
         """Sequence of this type's supertypes, itself included, in MRO order"""
     )
+
+class IAbstractPermission(IConcretePermission):
+
+    def of(protectedObjectType):
+        """Return a subclass IConcretePermission for 'protectedObjectType'"""
 
 
 class IGuardedObject(Interface):
@@ -114,10 +119,5 @@ class INamePermissions(Interface):
 
     def getPermissionsForName(name):
         """Return (abstract) permission types needed to access 'name'"""
-
-
-
-
-
 
 
