@@ -285,23 +285,26 @@ class ldapURL(URL.Base):
     nameAttr = 'basedn'
 
 
-    class host(URL.Field): pass
+    class host(URL.Field):
+        pass
 
     class port(URL.IntField):
         defaultValue=389
 
-    class basedn(URL.Field):
+    class basedn(URL.NameField):
         defaultValue=''
         syntax = URL.Conversion(
-            canBeEmpty = True,
+            URL.Extract(unquote=False), canBeEmpty = True,
             converter = lambda x:
-                naming.CompositeName.parse(x,distinguishedName)
+                naming.CompositeName.parse(x,distinguishedName),
+            formatter = lambda x:
+                isinstance(x,distinguishedName) and
+                    str(naming.CompositeName([x]))
+                or str(x)
         )
 
     class attrs(URL.Field):
         syntax = URL.Repeat(URL.Extract(),separator = ',')  # XXX
-
-    class filter(URL.Field): pass
 
     class scope(URL.IntField):
         defaultValue=SCOPE_BASE
@@ -310,6 +313,18 @@ class ldapURL(URL.Base):
             converter = lambda x: scope_map[x.lower()],
             formatter = lambda x: scope_fmt[x],
         )
+
+    class filter(URL.Field):
+        pass
+
+
+
+
+
+
+
+
+
 
     class extensions(URL.Field):
         referencedType=model.Any    # XXX
@@ -325,6 +340,7 @@ class ldapURL(URL.Base):
             converter=lambda x: dict([(k,(c and 1 or 0, v)) for (c,k,v) in x]),
             formatter=lambda d: [('!'[:c], k, v) for (k,(c,v)) in d.items()]
         )
+
 
     class critical(naming.URL.Field):
         referencedType=model.Any    # XXX
@@ -342,6 +358,13 @@ class ldapURL(URL.Base):
                     ('?', filter,
                         ('?',extensions))))),
     )
+
+
+
+
+
+
+
 
 
     def parse(self, scheme, body):
@@ -365,35 +388,12 @@ class ldapURL(URL.Base):
 
 
 
-
-
     def retrieve(self, refInfo, name, context, attrs=None):
 
         return LDAPConnection(
             context.creationParent, context.creationName,
             address = self
         )
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

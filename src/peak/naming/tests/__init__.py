@@ -19,10 +19,16 @@ validNames = {
             critical=('bindname','x-bindpw'),
         ),
 
-    'ldap://localhost/cn=Bar,ou=Foo,o=eby-sarna.com':
+    'ldap://localhost/cn=Bar,ou=Foo,o=eby-sarna.com/x':
         Items(
             host='localhost', port=389,
-            basedn=('o=eby-sarna.com','ou=Foo','cn=Bar'),
+            basedn=(('o=eby-sarna.com','ou=Foo','cn=Bar'),'x'),
+        ),
+
+    'ldap://localhost/cn=Bar,ou=Foo,o=eby-sarna.com%2Fx':
+        Items(
+            host='localhost', port=389,
+            basedn=('o=eby-sarna.com/x','ou=Foo','cn=Bar'),
         ),
 
     'ldap:///cn="A \\"quoted\\", and obscure thing",ou=Foo\\,Bar':
@@ -69,16 +75,17 @@ def parse(url):
     return naming.parseURL(testRoot(),url)
 
 
+
+
+
+
+
 canonical = {
     'ldap://cn=root:somePw@localhost:9912/cn=monitor':
     'ldap://localhost:9912/cn=monitor????!bindname=cn=root,!x-bindpw=somePw',
     'sybase://user:p%40ss@server': 'sybase:user:p%40ss@server',
     'gadfly://drinkers@c:\\temp': 'gadfly:drinkers@c:\\temp',
 }
-
-
-
-
 
 class NameParseTest(TestCase):
 
@@ -114,7 +121,6 @@ additions = [
     ( gname(['a','b','']), gname(['','c']), gname(['a','b','','c']) ),
 ]
 
-
 class NameAdditionTest(TestCase):
     def checkAdds(self):
         for n1,n2,res in additions:
@@ -132,12 +138,6 @@ def test_suite():
         s.append(makeSuite(t,'check'))
 
     return TestSuite(s)
-
-
-
-
-
-
 
 
 
