@@ -44,7 +44,6 @@ validNames = {
               quals=(('ext1','1'), ('ext2','2'))
         ),
 
-
     'sybase:foo:bar@baz/spam':
         Items(server='baz', db='spam', user='foo', passwd='bar'),
 
@@ -56,18 +55,24 @@ validNames = {
     'import:bada.bing':
         Items(body='bada.bing'),
 
-    'lockfile:c:\\spam.lock':
-        Items(body='c:\\spam.lock'),
+    'lockfile:/c:\\spam.lock':
+        Items(path=('','c:\\spam.lock',)),
 
     'config:environ.TMP/':
         Items(scheme='config', body=(('environ','TMP'),'') ),
 
     'logfile:/foo/bar?level=WARNING':
-        Items(scheme='logfile', filename='/foo/bar', level=30),
+        Items(scheme='logfile', path=('','foo','bar'), level=30),
 
     'win32.dde:foo::bar;file=c:\\baz;retries=24;sleep=42':
         Items(scheme='win32.dde', service='foo', topic='bar', file='c:\\baz',
               retries=24, sleep=42),
+
+    'file://localhost/D|/autoexec.old':
+        Items(scheme='file', hostname='localhost',
+                path=('','D|','autoexec.old'), query=None,),
+
+    'pkgfile:peak/peak.ini': Items(scheme='pkgfile',body=('peak','peak.ini')),
 }
 
 
@@ -75,16 +80,13 @@ def parse(url):
     return naming.parseURL(testRoot(),url)
 
 
-
-
-
-
-
 canonical = {
     'ldap://cn=root:somePw@localhost:9912/cn=monitor':
     'ldap://localhost:9912/cn=monitor????!bindname=cn=root,!x-bindpw=somePw',
     'sybase://user:p%40ss@server': 'sybase:user:p%40ss@server',
     'gadfly://drinkers@c:\\temp': 'gadfly:drinkers@c:\\temp',
+    'logfile:/foo/bar?level=WARNING': 'logfile:///foo/bar?level=WARNING',
+    'lockfile:/c:\\spam.lock': 'lockfile:///c:\\spam.lock',
 }
 
 class NameParseTest(TestCase):
@@ -100,6 +102,23 @@ class NameParseTest(TestCase):
             obj = parse(name)
             for (k,v) in values:
                 assert getattr(obj,k)==v, (k,getattr(obj,k),v)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 from peak.naming.api import CompoundName as lname, CompositeName as gname
@@ -138,25 +157,6 @@ def test_suite():
         s.append(makeSuite(t,'check'))
 
     return TestSuite(s)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

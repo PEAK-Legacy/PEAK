@@ -9,7 +9,7 @@
 from peak.binding.components import Component, Once, New, requireBinding
 from peak.naming import URL
 from peak.api import NOT_GIVEN, protocols
-
+from peak.naming.factories.openable import FileURL
 from interfaces import ILogger
 
 from time import time, localtime, strftime
@@ -244,12 +244,9 @@ class Event(Component):
 
 
 
-class logfileURL(URL.Base):
+class logfileURL(FileURL):
 
     supportedSchemes = ('logfile', )
-
-    class filename(URL.RequiredField):
-        pass
 
     class level(URL.IntField):
         defaultValue = ALL
@@ -263,13 +260,16 @@ class logfileURL(URL.Base):
             formatter = lambda x: getLevelName(x,str(x)),
         )
 
-    syntax = URL.Sequence( filename, ('?level=', level) )
+    querySyntax = URL.Sequence('level=', level)
 
     def retrieve(self, refInfo, name, context, attrs=None):
         return LogFile(
             context.creationParent, context.creationName,
-            filename=self.filename, level=self.level
+            filename=self.getFilename(), level=self.level
         )
+
+
+
 
 
 

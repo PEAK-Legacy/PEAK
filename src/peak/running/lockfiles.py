@@ -490,7 +490,9 @@ else:
 
 
 
-class lockfileURL(naming.URL.Base):
+from peak.naming.factories.openable import FileURL
+
+class lockfileURL(FileURL):
 
     supportedSchemes = (
         'lockfile', 'shlockfile', 'flockfile', 'winflockfile',
@@ -499,24 +501,22 @@ class lockfileURL(naming.URL.Base):
 
     def retrieve(self, refInfo, name, context, attrs=None):
 
+        filename = self.getFilename()
+
         if self.scheme == 'lockfile':
-            return LockFile(self.body)
+            return LockFile(filename)
 
         elif self.scheme == 'nulllockfile':
             return NullLockFile()
 
         elif self.scheme == 'shlockfile':
-            return SHLockFile(self.body)
+            return SHLockFile(filename)
 
         elif self.scheme == 'flockfile':
-            return FLockFile(self.body)
+            return FLockFile(filename)
 
         elif self.scheme == 'winflockfile':
-            return WinFLockFile(self.body)
-
-
-
-
+            return WinFLockFile(filename)
 
 
 

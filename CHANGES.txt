@@ -2,6 +2,12 @@ Fixes and Enhancements since Version 0.5 alpha 1
 
  Changed, Enhanced, or Newly Deprecated Features
 
+ - Standardized file-based URL syntaxes (e.g logfiles and lockfiles) to
+   follow RFC 1738/2396, and Python 'urllib'.  This shouldn't affect much
+   besides the canonical forms of the URLs.  Added 'pkgfile:some.pkg/filepath'
+   URL syntax for ease of referring to files near modules.  (A convenience
+   intended mainly for referencing ZConfig schemas.)
+
  - Added the UML 1.4 metamodel, and thus the ability to load UML 1.4
    models encoded in XMI 1.1.
 
