@@ -17,8 +17,6 @@ Open Issues/To-Do Items
 
         * Tutorial complete through chapter 4
 
-        * Up-to-date and complete Persistence package
-
 
     peak.storage
 
@@ -33,8 +31,8 @@ Open Issues/To-Do Items
         - unit tests for more complex object scenarios: references, thunks..?
 
         - SQL field type conversion for txnTime? Should already happen
-	  for Sybase and Postgres which select the time. So, what to do
-	  about ManagedConnection's txnTime?
+          for Sybase and Postgres which select the time. So, what to do
+          about ManagedConnection's txnTime?
 
         - lock management interfaces/API
 
@@ -52,9 +50,9 @@ Open Issues/To-Do Items
         - useful example "flat" naming context (e.g. like AppUtils.URLkeys)
 
         - useful example hierarchical naming context (e.g. like JNDI's LDAP
-	  context or filesystem context)
+          context or filesystem context)
 
-	- rework smtp: to return a facory object that supports open().
+        - rework smtp: to return a facory object that supports open().
           Also think about wether smtp should move elsewhere. Maybe
           there should be peak.network or peak.internet for things like
           smtp, ftp, etc contexts?
@@ -81,11 +79,47 @@ Open Issues/To-Do Items
           rather than property name prefix), so that daemons and other simple
           apps can be fully configured and run via a config file.
 
+
     peak.util
 
         - docstrings for reference
 
         - more unit tests?
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
  Future Releases
 
