@@ -18,7 +18,7 @@
 static char PyPersist_doc_string[] =
 "Defines Persistent mixin class for persistent objects.\n"
 "\n"
-"$Id: cPersistence.c,v 1.2 2002/11/03 23:22:40 pje Exp $\n";
+"$Id: cPersistence.c,v 1.3 2002/11/04 01:21:34 pje Exp $\n";
 
 /* A custom metaclass is only needed to support Python 2.2. */
 #if PY_MAJOR_VERSION == 2 && PY_MINOR_VERSION == 2
@@ -919,6 +919,13 @@ initcPersistence(void)
     PyPersist_MetaType.tp_clear = PyType_Type.tp_clear;
     if (PyType_Ready(&PyPersist_MetaType) < 0)
 	return;
+
+    /* Cheap hack to force us to be used instead of 'type' as '__base__';
+       this ensures that we are always used for C-level layout, and can
+       therefore interoperate with other (pure Python) metaclasses.
+    */
+    PyPersist_MetaType.tp_basicsize += sizeof(PyObject *);
+
     Py_INCREF(&PyPersist_MetaType);
     if (PyDict_SetItemString(d, "PersistentMetaClass", 
 			     (PyObject *)&PyPersist_MetaType) < 0)

@@ -420,13 +420,8 @@ class Enumeration(Classifier):
 class DataType(Classifier):
     """A complex datatype"""
 
-class ElementMeta(Persistent.__class__, DataType.__class__):
-    """XXX
-    The order of the bases here should be reversed, but this currently
-    breaks w/Python 2.2 and the current Persistent implementation.
-    Luckily, this has no adverse effects for binding.Base.__class__,
-    but mixing in other metaclasses might do strange things here.  :(
-    """
+class ElementMeta(DataType.__class__, Persistent.__class__):
+    pass
 
 class Element(DataType, Persistent):
     """An element in its own right"""
