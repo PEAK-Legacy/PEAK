@@ -246,7 +246,7 @@ class InvalidSubcommandName(ErrorSubcommand):
 
 class AbstractInterpreter(AbstractCommand):
 
-    """Creates and runs a subcommand by interpreting the file in 'argv[1]'"""
+    """Creates and runs a subcommand by interpreting 'argv[1]'"""
 
     def _run(self):
         """Interpret argv[1] and run it as a subcommand"""
@@ -257,8 +257,8 @@ class AbstractInterpreter(AbstractCommand):
         return self.interpret(self.argv[1]).run()
 
 
-    def interpret(self, filename):
-        """Interpret the file and return an application object"""
+    def interpret(self, argument):
+        """Interpret the argument and return a subcommand object"""
         raise NotImplementedError
 
 
@@ -272,7 +272,7 @@ class AbstractInterpreter(AbstractCommand):
 
 
     def commandName(self):
-        """Basename of the file being interpreted"""
+        """Basename of the file being interpreted"""    # XXX ???
         from os.path import basename
         return basename(self.argv[1])
 
