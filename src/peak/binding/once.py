@@ -349,7 +349,7 @@ class ActiveClass(Activator):
     def getComponentName(self):
         return self.__cname__
 
-    def _getConfigData(self, configKey, forObj):
+    def _getConfigData(self, forObj, configKey):
         return NOT_FOUND
 
 

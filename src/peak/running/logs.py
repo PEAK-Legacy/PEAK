@@ -1,17 +1,17 @@
 '''TODO:
 
     * Flesh out ILogSink (__call__), ILogEvent, and docs here and in peak.api
-    
+
     * Dump formatted kwargs as part of the standard log format
 
       issues: currently, we don't know which items in our dict were kwargs.
       record a list of which were passed? Also, some we wouldn't want to
       include even if they were passed explicity (for example, priority,
-      which is passed explicitly by the LOG_XXX functions. 
-      
+      which is passed explicitly by the LOG_XXX functions.
+
     * SysLog and LogTee objects/URLs (low priority; we don't seem to use
       these at the moment)
-      
+
     * Syslog (and others) may want the second part of asString without the
       leading stuff -- maybe refactor into another routine that returns
       just the second part
@@ -132,7 +132,7 @@ class Event(Component):
     uuid       = New('peak.util.uuid:UUID')
     process_id = Once(lambda *x: os.getpid())
     exc_info   = ()
-    
+
     def traceback(self,d,a):
         if self.exc_info:
             return ''.join(traceback.format_exception(*self.exc_info))
@@ -167,10 +167,10 @@ class Event(Component):
         if publishTo is NOT_GIVEN:
             publishTo=self.getParentComponent()
 
-        if self.priority<config.getProperty(LOG_LEVEL, publishTo, PRI_WARNING):
+        if self.priority<config.getProperty(publishTo, LOG_LEVEL, PRI_WARNING):
             return
-            
-        for sink in config.findUtilities(ILogSink, publishTo):
+
+        for sink in config.findUtilities(publishTo, ILogSink):
             if sink.sink(self):
                 return  # if absorbed, we're done
 
@@ -199,39 +199,39 @@ class Event(Component):
 
     hostname = _hostname
 
-        
+
 
 
 
 class logfileURL(naming.ParsedURL):
 
     supportedSchemes = ('logfile', )
-    
+
     def __init__(self, scheme=None, body=None, filename=None, level=None):
         self.setup(locals())
 
     def parse(self, scheme, body):
-        
+
         filename, _qs = body, {}
-        
+
         if '?' in filename:
             filename, _qs = filename.split('?', 1)
 
             _qs = dict([x.split('=', 1) for x in _qs.split('&')])
-            
+
         level = _qs.get('level', 'PRI_TRACE').upper()
         if not level.startswith('PRI_') and not level.startswith('LOG_'):
             level = 'PRI_' + level
 
         level = priorities[level] # XXX handle KeyError somehow?
-        
+
         return locals()
 
 
     def retrieve(self, refInfo, name, context, attrs=None):
         return Logfile(self.filename, self.level)
 
-        
+
 
 
 
@@ -247,10 +247,10 @@ class logfileURL(naming.ParsedURL):
 class LogSink:
 
     __implements__ = ILogSink
-    
+
     def sink(self, event):
         return True
-        
+
     def __call__(self, priority, msg, ident=None):
         if isinstance(msg,tuple):
             e = Event('ERROR', exc_info = msg)
@@ -259,7 +259,7 @@ class LogSink:
 
         if ident is not None:
             e.ident = ident
-            
+
         self.sink(e)
 
 
@@ -268,8 +268,8 @@ class Logfile(LogSink):
 
     def __init__(self, filename, level):
         self.filename, self.level = filename, level
-        
-        return 
+
+        return
 
     def sink(self, event):
         if event.priority >= self.level:
@@ -278,8 +278,6 @@ class Logfile(LogSink):
             fp.close()
 
         return True
-        
-
 
 
 

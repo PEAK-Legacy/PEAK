@@ -218,12 +218,12 @@ class PropertyName(str):
 
     def __call__(self, forObj=None, default=NOT_GIVEN):
         from peak.config.api import getProperty
-        return getProperty(self, forObj, default)
+        return getProperty(forObj, self, default)
 
 
     def of(self, forObj):
         from peak.config.config_components import PropertySet
-        return PropertySet(self, forObj)
+        return PropertySet(forObj, self)
 
 
 

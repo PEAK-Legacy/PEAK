@@ -855,7 +855,7 @@ wheel
 >>> print binding.getParentComponent(t.cargo.wheel)
 <__main__.Car object at 0x00FABB70>
 
->>> binding.lookupComponent('/cargo/wheel',t)
+>>> binding.lookupComponent(t,'/cargo/wheel')
 <__main__.Wheel object at 0x00FAB900>
 \end{verbatim}
 
@@ -896,7 +896,7 @@ None
 [1, 2, 3]
 >>> print binding.getComponentPath("a string")
 /
->>> print binding.lookupComponent("upper", "another string")
+>>> print binding.lookupComponent("some string", "upper")
 <built-in method upper of str object at 0x00F26100>
 \end{verbatim}
 
@@ -973,7 +973,7 @@ methods are described from the \emph{caller's} perspective, so \samp{self}
 arguments are not included in method definitions.
 
 So, the \class{binding.IBindingNode} interface tells us that to implement the
-Binding Node interface, we need a \function{getParentComponent} method and a 
+Binding Node interface, we need a \function{getParentComponent} method and a
 \function{getComponentName} method, neither of which takes any parameters, and
 whose return values are as documented.
 

@@ -12,7 +12,7 @@ from peak.interface import Interface, adapt, implements
 
 
 __all__ = [
-    'PropertyMap', 'LazyLoader', 'ConfigReader',
+    'PropertyMap', 'LazyRule', 'ConfigReader',
     'loadConfigFile', 'loadMapping', 'PropertySet', 'fileNearModule',
     'iterParents','findUtilities','findUtility',
     'provideInstance', 'instancePerComponent',
@@ -52,7 +52,7 @@ def iterParents(component):
         component = getParentComponent(component)
 
 
-def findUtilities(iface, component):
+def findUtilities(component, iface):
 
     """Return iterator over all utilities providing 'iface' for 'component'"""
 
@@ -65,7 +65,7 @@ def findUtilities(iface, component):
         except AttributeError:
             continue
 
-        utility = utility(component, iface, forObj)
+        utility = utility(component, forObj, iface)
 
         if utility is not NOT_FOUND:
             yield utility
@@ -80,11 +80,11 @@ def findUtilities(iface, component):
 
 
 
-def findUtility(iface, component, default=NOT_GIVEN):
+def findUtility(component, iface, default=NOT_GIVEN):
 
     """Return first utility supporting 'iface' for 'component', or 'default'"""
 
-    for u in findUtilities(iface, component):
+    for u in findUtilities(component, iface):
         return u
 
     if default is NOT_GIVEN:
@@ -162,7 +162,7 @@ class PropertyMap(Component):
                     self._register(base,item,primary_iface)
 
 
-    def getValueFor(self, configKey, forObj=None):
+    def getValueFor(self, forObj, configKey):
 
         rules      = self._getBinding('rules')
         value      = NOT_FOUND
@@ -203,7 +203,7 @@ class PropertyMap(Component):
 
     _getConfigData = getValueFor
 
-class LazyLoader(object):
+class LazyRule(object):
 
     loadNeeded = True
 
@@ -303,7 +303,7 @@ class ConfigReader(AbstractConfigParser):
     def do_include(self, section, name, value, lineInfo):
         from api_impl import getProperty
         propertyMap = self.pMap
-        loader = getProperty("peak.config.loaders."+name, propertyMap)
+        loader = getProperty(propertyMap, "peak.config.loaders."+name)
         loader = importObject(loader)
         eval("loader(propertyMap,%s,includedFrom=self)" % value)
 
@@ -311,7 +311,7 @@ class ConfigReader(AbstractConfigParser):
     def on_demand(self, section, name, value, lineInfo):
         self.pMap.registerProvider(
             PropertyName(name),
-            LazyLoader(
+            LazyRule(
                 lambda propertyMap, ruleName, propertyName: eval(value),
                 prefix = name
             )
@@ -403,35 +403,35 @@ class ConfigurationRoot(Component):
     def noMoreUtilities(self,root,configKey,forObj): pass
 
     def nameNotFound(self,root,name,forObj,bindName):
-        return naming.lookup(name, component,
+        return naming.lookup(component, name,
             creationParent=forObj, creationName=bindName
         )
 
 
 class PropertySet(object):
 
-    def __init__(self, prefix, targetObj):
+    def __init__(self, targetObj, prefix):
         self.prefix = PropertyName(prefix).asPrefix()
         self.target = targetObj
 
     def __getitem__(self, key, default=NOT_GIVEN):
-        return config.getProperty(self.prefix+key,self.target,default)
+        return config.getProperty(self.target,self.prefix+key,default)
 
     def get(self, key, default=None):
-        return config.getProperty(self.prefix+key,self.target,default)
+        return config.getProperty(self.target,self.prefix+key,default)
 
     def __getattr__(self,attr):
-        return self.__class__(self.prefix+attr, self.target)
+        return self.__class__(self.target, self.prefix+attr)
 
     def of(self, target):
-        return self.__class__(self.prefix[:-1], target)
+        return self.__class__(target, self.prefix[:-1])
 
     def __call__(self, default=None, forObj=NOT_GIVEN):
 
         if forObj is NOT_GIVEN:
             forObj = self.target
 
-        return config.getProperty(self.prefix[:-1], forObj, default)
+        return config.getProperty(forObj, self.prefix[:-1], default)
 
 
 

@@ -14,19 +14,19 @@ __all__ = [
 
 def setPropertyFor(obj, propName, value):
 
-    pm = findUtility(IPropertyMap, obj)
+    pm = findUtility(obj, IPropertyMap)
     pm.setValue(propName, value)
 
 
 def setRuleFor(obj, propName, ruleObj):
 
-    pm = findUtility(IPropertyMap, obj)
+    pm = findUtility(obj, IPropertyMap)
     pm.setRule(propName, ruleObj)
 
 
 def setDefaultFor(obj, propName, defaultObj):
 
-    pm = findUtility(IPropertyMap, obj)
+    pm = findUtility(obj, IPropertyMap)
     pm.setDefault(propName, defaultObj)
 
 
@@ -80,7 +80,7 @@ def makeRoot(**options):
 
 
 
-def getProperty(propName, obj, default=NOT_GIVEN):
+def getProperty(obj, propName, default=NOT_GIVEN):
 
     """Find property 'propName' for 'obj'
 
@@ -108,7 +108,7 @@ def getProperty(propName, obj, default=NOT_GIVEN):
         except AttributeError:
             continue
 
-        prop = prop(component, propName, forObj)
+        prop = prop(component, forObj, propName)
 
         if prop is not NOT_FOUND:
             return prop

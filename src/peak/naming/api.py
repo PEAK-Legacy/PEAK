@@ -39,12 +39,12 @@ del IComponentFactory
 
 
 
-def lookup(name, parent, **options):
+def lookup(parent, name, **options):
 
     """Look up 'name' in the default initial context for 'parent', w/'options'
 
     This is just a shortcut for calling::
-    
+
         naming.InitialContext(parent,**options)[name]
     """
 
@@ -53,7 +53,7 @@ def lookup(name, parent, **options):
 
 
 
-def parseURL(name, parent):
+def parseURL(parent, name):
 
     """Return a parsed URL for 'name', based on schemes available to 'parent'
 
@@ -79,4 +79,4 @@ def parseURL(name, parent):
 
     return ctx.schemeParser(scheme, body)
 
-    
+

@@ -43,7 +43,7 @@ class IConfigSource(Interface):
 
     """Something that can be queried for configuration data"""
 
-    def _getConfigData(configKey, forObj):
+    def _getConfigData(forObj, configKey):
 
         """Return a value of 'configKey' for 'forObj' or 'NOT_FOUND'
 
@@ -235,7 +235,7 @@ class IPropertyMap(IConfigurable):
         No wildcards allowed.  'AlreadyRead' is raised if the property
         has already been accessed for the target object."""
 
-    def getValueFor(propName, forObj=None):
+    def getValueFor(forObj, propName):
         """Return value of property for 'forObj' or return 'NOT_FOUND'"""
 
 

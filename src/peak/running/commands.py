@@ -66,7 +66,7 @@ define a usage message for their subclass.
         """Display usage message on stderr"""
         print >>self.stderr, self.usage
         return 0
-    
+
 
     def isInteractive(self, d, a):
         """True if 'stdin' is a terminal"""
@@ -102,13 +102,13 @@ define a usage message for their subclass.
 
 
     def invocationError(self, msg):
-    
+
         """Write msg and usage to stderr if interactive, otherwise re-raise"""
 
         if self.isInteractive:
             self.showHelp()
             print >>self.stderr, '\n%s: %s\n' % (self.argv[0], msg)
-            # XXX output last traceback frame?  
+            # XXX output last traceback frame?
             return 1    # exit errorlevel
         else:
             raise
@@ -148,7 +148,7 @@ class AbstractInterpreter(AbstractCommand):
             kw['argv'] = self.argv[1:]
 
         return super(AbstractInterpreter,self).getSubcommand(executable, **kw)
-        
+
 
     def commandName(self,d,a):
         """Basename of the file being interpreted"""
@@ -184,7 +184,7 @@ class IniInterpreter(AbstractInterpreter):
         # Set up a command factory based on the configuration setting
 
         executable = importObject(
-            config.getProperty('peak.running.app', parent, None)
+            config.getProperty(parent, 'peak.running.app', None)
         )
 
         if executable is None:
@@ -220,14 +220,14 @@ class ZConfigInterpreter(AbstractInterpreter):
     """Interpret a ZConfig file and run it as a subcommand"""
 
     appSchema = binding.requireBinding("Schema for the config file")
-    
+
     def interpret(self, filename):
         # XXX this should probably use "PEAK-aware" subclasses of ZConfig
         # XXX preferably that act as child components of this one...
-        import ZConfig        
+        import ZConfig
         config, handler = ZConfig.loadConfig(
             self.appSchema, 'file://localhost/%s' % filename
-        )    
+        )
         return config   # XXX Assume the configured object is a suitable app...
 
 
@@ -260,7 +260,7 @@ class _caller(AbstractCommand):
                 setattr(sys,v,getattr(self,v))
 
             os.environ = self.environ
-            
+
             return self.callable()
 
         finally:
@@ -340,7 +340,7 @@ def executableAsFactory(executable):
 
     elif ICmdLineApp.isImplementedBy(executable):
         return appAsFactory(executable)
-        
+
     elif IRerunnable.isImplementedBy(executable):
         return rerunnableAsFactory(executable)
 
@@ -382,7 +382,7 @@ class Bootstrap(AbstractInterpreter):
     use a sitewide PEAK_CONFIG file, you can add your own shortcuts to
     the 'peak.running.shortcuts' namespace.  (See the 'peak.ini' file for
     current shortcuts, and examples of how to define them.)
-    
+
     The object designated by the name or URL in 'argv[1]' must be an
     'IExecutable'; that is to say it must implement one of the 'IExecutable'
     sub-interfaces, or else be callable without arguments.  (See the
@@ -392,11 +392,11 @@ class Bootstrap(AbstractInterpreter):
     script by the PEAK distribution on 'posix' operating systems)::
 
         #!/usr/bin/env python2.2
-        
+
         from peak.running.commands import Bootstrap
         from peak.api import config
         import sys
-        
+
         sys.exit(
             Bootstrap(
                 config.makeRoot()
@@ -411,10 +411,10 @@ class Bootstrap(AbstractInterpreter):
     def interpret(self, name):
 
         if not naming.URLMatch(name):
-            name = "config:peak.running.shortcuts.%s/" % name
-            
+            name = PropertyName("peak.running.shortcuts." + name)
+
         try:
-            factory = naming.lookup(name, self)
+            factory = self.lookupComponent(name)
         except exceptions.NameNotFound, v:
             raise InvocationError(v)
 
@@ -529,5 +529,5 @@ class EventDriven(AbstractCommand):
 
 
 
-        
-        
+
+

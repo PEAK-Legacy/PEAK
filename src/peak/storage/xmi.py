@@ -720,7 +720,7 @@ class DM(storage.StorableDM):
         try:
             return getattr(self.metamodel, name.split('/')[-1])
         except AttributeError:
-            return binding.lookupComponent('./'+name,self.metamodel)
+            return binding.lookupComponent(self.metamodel, './'+name)
 
     def getFeature(self,klass,name):    # XXX
 

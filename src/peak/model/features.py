@@ -42,7 +42,7 @@ __all__ = [
 class FeatureClass(HashAndCompare,MethodExporter):
 
     """Method-exporting Property (metaclass for StructuralFeature)
-    
+
         This metaclass adds property support to 'MethodExporter' by adding
         '__get__', '__set__', and '__delete__' methods, which are delegated
         to the method templates for the 'get', 'set' and 'unset' verbs.
@@ -100,7 +100,7 @@ class FeatureClass(HashAndCompare,MethodExporter):
         """
         rt = self.referencedType
         if isinstance(rt,str):
-            return binding.lookupComponent(rt,self)
+            return binding.lookupComponent(self,rt)
         return rt
 
     typeObject = binding.Once(typeObject)
@@ -118,7 +118,7 @@ class FeatureClass(HashAndCompare,MethodExporter):
         a tuple of its 'sortPosn', '__name__', and 'id()'."""
 
         return self.sortPosn, self.__name__, id(self)
-        
+
     _hashAndCompare = binding.Once(_hashAndCompare)
 
     isMany     = binding.Once(lambda s,d,a: s.upperBound<>1)
@@ -258,7 +258,7 @@ class StructuralFeature(object):
                     return feature._doGet(element)
                 except AttributeError:
                     return []
-            
+
         else:
 
             def get(feature,element):
@@ -269,7 +269,7 @@ class StructuralFeature(object):
                     if value is NOT_GIVEN:
                         raise AttributeError,feature.attrName
                     return value
-            
+
         return get
 
 
@@ -291,7 +291,7 @@ class StructuralFeature(object):
             set = None
 
         elif f.isMany:
-        
+
             def set(feature, element, val):
 
                 feature.unset(element)
@@ -301,7 +301,7 @@ class StructuralFeature(object):
                     add(element,v)
 
         else:
-        
+
             def set(feature, element, val):
                 feature.unset(element)
                 feature._notifyLink(element,val)
@@ -345,10 +345,10 @@ class StructuralFeature(object):
                 # remove items in reverse order, to simplify deletion and
                 # to preserve any invariant that was relevant for addition
                 # order...
-        
+
                 for posn,item in items:
                     remove(element,item,posn)
-            
+
                 feature._doDel(element)
 
         else:
@@ -579,7 +579,7 @@ class StructuralFeature(object):
 
         doLink = feature._onLink
         normalize = feature.normalize
-        
+
         if feature.isMany:
             p = 0
             value = tuple(map(normalize,value))
@@ -684,7 +684,6 @@ class DerivedFeature(StructuralFeature):
 class Sequence(StructuralFeature):
 
     isOrdered = True
-
 
 
 

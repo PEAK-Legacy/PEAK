@@ -59,7 +59,7 @@ validNames = {
 
 
 def parse(url):
-    return naming.parseURL(url,testRoot())
+    return naming.parseURL(testRoot(),url)
 
 
 class NameParseTest(TestCase):

@@ -14,7 +14,7 @@ class PropertyTest(TestCase):
     def checkSetProp(self):
         app = testRoot()
         config.setPropertyFor(app,'peak.config.tests.foo',1)
-        assert config.getProperty('peak.config.tests.foo',app)==1
+        assert config.getProperty(app,'peak.config.tests.foo')==1
 
 
     def checkEnviron(self):
@@ -22,7 +22,7 @@ class PropertyTest(TestCase):
 
         # retry multiple times to verify re-get is safe...
         app = testRoot()
-        ps = config.PropertySet('environ.*', app)
+        ps = config.PropertySet(app,'environ.*')
 
         for r in range(3):
             for k,v in environ.items():
@@ -101,16 +101,16 @@ class UtilityTest(TestCase):
 
         data = self.data
         ns   = data.aService.nestedService
-        assert config.findUtility(IS1U,ns) is data
-        assert config.findUtility(IS2U,ns) is ns
+        assert config.findUtility(ns,IS1U) is data
+        assert config.findUtility(ns,IS2U) is ns
 
 
     def checkAcquireInst(self):
 
         data = self.data
-        ob1 = config.findUtility(ISampleUtility1,data,None)
-        ob2 = config.findUtility(ISampleUtility1,data.aService,None)
-        ob3 = config.findUtility(ISampleUtility1,data.aService.nestedService,
+        ob1 = config.findUtility(data,ISampleUtility1,None)
+        ob2 = config.findUtility(data.aService,ISampleUtility1,None)
+        ob3 = config.findUtility(data.aService.nestedService,ISampleUtility1,
         None)
         assert ob1 is None
         assert ob2 is not None
@@ -125,11 +125,11 @@ class UtilityTest(TestCase):
 
         data = self.data
         root = data.getParentComponent()
-        ob1 = config.findUtility(ISampleUtility2,data,None)
-        ob2 = config.findUtility(ISampleUtility2,data.aService,None)
-        ob3 = config.findUtility(ISampleUtility2,data.aService.nestedService,
+        ob1 = config.findUtility(data,ISampleUtility2,None)
+        ob2 = config.findUtility(data.aService,ISampleUtility2,None)
+        ob3 = config.findUtility(data.aService.nestedService,ISampleUtility2,
         None)
-        ob4 = config.findUtility(ISampleUtility2,data.aService.nestedService,
+        ob4 = config.findUtility(data.aService.nestedService,ISampleUtility2,
         None)
 
         assert ob1 is None
@@ -227,21 +227,6 @@ def test_suite():
         s.append(makeSuite(t,'check'))
 
     return TestSuite(s)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

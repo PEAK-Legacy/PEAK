@@ -11,7 +11,7 @@ __all__ = [
 
 
 def getTransaction(subject):
-    return config.findUtility(ITransactionService, subject)
+    return config.findUtility(subject,ITransactionService)
 
 def beginTransaction(subject, **info):
     getTransaction(subject).begin(**info)

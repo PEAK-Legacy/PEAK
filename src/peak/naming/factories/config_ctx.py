@@ -56,12 +56,27 @@ class PropertyContext(naming.NameContext):
     def _contextNNS(self, attrs=None):
 
         ob = config.getProperty(
-            str(self.nameInContext), self.creationParent, NOT_FOUND
+            self.creationParent, str(self.nameInContext), NOT_FOUND
         )
 
         if ob is NOT_FOUND:
             return ob
 
         return ob, attrs
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 

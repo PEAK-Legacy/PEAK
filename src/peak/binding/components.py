@@ -162,7 +162,7 @@ def notifyUponAssembly(parent,child):
 
 
 
-def acquireComponent(name, component, creationName=None):
+def acquireComponent(component, name, creationName=None):
 
     """Acquire 'name' relative to 'component', w/fallback to naming.lookup()
 
@@ -244,26 +244,6 @@ class ComponentName(AbstractName):
 
 
 
-def lookupComponent(name, component=None,default=NOT_GIVEN, creationName=None):
-
-    """Lookup 'name' relative to 'component'
-
-    'name' can be any name acceptable to the 'peak.naming' package, or an
-    Interface object.  Strings and compound names will be interpreted
-    as paths relative to the starting component.  (See the 'ComponentName'
-    class for details of path interpretation.)  An empty name will return
-    the starting component.  Interfaces and Properties will be looked up using
-    'config.findUtility(name, component)'.  All other kinds of names,
-    including URL strings and 'CompositeName' instances, will be looked up
-    using 'naming.lookup()'.
-
-    Regardless of how the lookup is processed, an 'exceptions.NameNotFound'
-    error will be raised if the name cannot be found."""
-
-    return _lookupComponent(component, name, default, creationName)
-
-
-
 _getFirstPathComponent = dict( (
     ('',   getRootComponent),
     ('.',  lambda x:x),
@@ -285,17 +265,52 @@ _getNextPathComponent = dict( (
 
 
 
-def _lookupComponent(component, name, default=NOT_GIVEN, creationName=None):
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+def lookupComponent(component, name, default=NOT_GIVEN, creationName=None):
+
+    """Lookup 'name' relative to 'component'
+
+    'name' can be any name acceptable to the 'peak.naming' package, or an
+    Interface object.  Strings and compound names will be interpreted
+    as paths relative to the starting component.  (See the 'ComponentName'
+    class for details of path interpretation.)  An empty name will return
+    the starting component.  Interfaces and Properties will be looked up using
+    'config.findUtility(component, name)'.  All other kinds of names,
+    including URL strings and 'CompositeName' instances, will be looked up
+    using 'naming.lookup()'.
+
+    Regardless of how the lookup is processed, an 'exceptions.NameNotFound'
+    error will be raised if the name cannot be found."""
+
 
     if IConfigKey.isImplementedBy(name):
-        return config.findUtility(name, component, default)
+        return config.findUtility(component, name, default)
 
     parsedName = toName(name, ComponentName, 1)
 
     if not parsedName.nameKind == COMPOUND_KIND:
         # URL's and composite names must be handled globally
         try:
-            return naming.lookup(name, component,
+            return naming.lookup(component, name,
                 creationParent=component, creationName=creationName
             )
         except exceptions.NameNotFound:
@@ -310,21 +325,12 @@ def _lookupComponent(component, name, default=NOT_GIVEN, creationName=None):
     attr = parts.next()                 # first part
     pc = _getFirstPathComponent(attr)
 
+
     if pc:  ob = pc(component)
-    else:   ob = acquireComponent(attr, component, creationName)
+    else:   ob = acquireComponent(component, attr, creationName)
 
     resolved = []
     append = resolved.append
-
-
-
-
-
-
-
-
-
-
 
     try:
         for attr in parts:
@@ -345,12 +351,6 @@ def _lookupComponent(component, name, default=NOT_GIVEN, creationName=None):
         )
 
     return ob
-
-
-
-# Make help() return something useful
-_lookupComponent.__doc__ = lookupComponent.__doc__
-
 
 
 
@@ -394,7 +394,7 @@ class bindTo(Once):
     def computeValue(self, obj, instanceDict, attrName):
 
         names = self.targetNames
-        obs   = [_lookupComponent(obj,n,attrName) for n in names]
+        obs   = [lookupComponent(obj,n,attrName) for n in names]
 
         for name,newOb in zip(names, obs):
 
@@ -593,7 +593,7 @@ def bindToUtilities(iface,provides=None,doc=None,activateUponAssembly=False):
 
     """Binding to a list of all 'iface' utilities above the component"""
 
-    return Once(lambda s,d,a: list(config.findUtilities(iface,s)),
+    return Once(lambda s,d,a: list(config.findUtilities(s,iface)),
         provides=provides, doc=doc, activateUponAssembly=activateUponAssembly
     )
 
@@ -609,7 +609,7 @@ def bindToProperty(propName, default=NOT_GIVEN, provides=None, doc=None,
 
     propName = PropertyName(propName)
 
-    return Once(lambda s,d,a: config.getProperty(propName,s,default),
+    return Once(lambda s,d,a: config.getProperty(s,propName,default),
         provides=provides, doc=doc, activateUponAssembly = activateUponAssembly
     )
 
@@ -727,7 +727,7 @@ class Component(_Base):
         if parentComponent is not NOT_GIVEN or componentName is not None:
             self.setParentComponent(parentComponent,componentName)
 
-    lookupComponent = _lookupComponent
+    lookupComponent = lookupComponent
 
 
     def fromZConfig(klass, section):
@@ -788,12 +788,12 @@ class Component(_Base):
     )
 
 
-    def _getConfigData(self, configKey, forObj):
+    def _getConfigData(self, forObj, configKey):
 
         attr = self._getBinding('__instance_provides__')
 
         if attr:
-            value = attr.getValueFor(configKey, forObj)
+            value = attr.getValueFor(forObj, configKey)
 
             if value is not NOT_FOUND:
                 return value
