@@ -24,9 +24,6 @@ class IConfigKey(Interface):
         """Return a sequence of the base interfaces, or empty sequence
            if object is a property name"""
 
-    def extends(other, strict=1):
-        """Test whether the interface extends another interface
-            (Meaningless for property names)"""
 
 
 
@@ -35,6 +32,9 @@ class IConfigKey(Interface):
 
 addDeclarationToType(Interface.__class__, IConfigKey)
 addDeclarationToType(PropertyName, IConfigKey)
+
+
+
 
 
 

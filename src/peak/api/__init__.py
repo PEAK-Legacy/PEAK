@@ -199,8 +199,8 @@ class PropertyName(str):
         return ()
 
 
-    def extends(self, other, strict=1):
-        return not strict and self==other
+
+
 
 
     def asPrefix(self):
