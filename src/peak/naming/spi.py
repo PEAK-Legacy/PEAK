@@ -39,7 +39,6 @@ defaultFactories = factories,
 
 
 
-
 def getInitialContext(environ={}):
 
     """Return an initial context using the specified environment properties
