@@ -91,7 +91,6 @@ MailText="""<?xml version="1.0"?>
     for standards.
 -->
 
-
 <XMI version="1.1">
 
     <XMI.header>
@@ -103,11 +102,16 @@ MailText="""<?xml version="1.0"?>
 
         <Envelope xmi.id="myEnvelope" letter="myLetter">
         
-            <Envelope.toAddress name="Sridhar" streetNumber="25725"
-                street="Jeronimo" city="Mission Viejo" state="CA" zip="92691"/>
-                
-            <Envelope.fromAddress name="Steve" streetNumber="555"
-                street="Bailey" city="San Jose" state="CA" zip="95141"/>
+            <Envelope.toAddress>
+                <Address name="Sridhar" streetNumber="25725"
+                    street="Jeronimo" city="Mission Viejo" state="CA" zip="92691"
+                />
+            </Envelope.toAddress>
+            <Envelope.fromAddress>
+                <Address name="Steve" streetNumber="555"
+                    street="Bailey" city="San Jose" state="CA" zip="95141"
+                />
+            </Envelope.fromAddress>
                 
         </Envelope>
         
@@ -116,10 +120,6 @@ MailText="""<?xml version="1.0"?>
     </XMI.content>
 
 </XMI>"""
-
-
-
-
 
 class XMIModelTests(TestCase):
 

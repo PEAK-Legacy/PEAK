@@ -169,21 +169,6 @@ class XMINode(object):
         if 'xmi.value' in atts:
             return feature.fromString(atts['xmi.value'])
 
-        for k in atts:
-
-            if not k.startswith('xmi.'):
-
-                klass = feature.typeObject
-
-                if issubclass(klass,Persistent):
-                    raise TypeError(
-                        "Can't handle persistent type as field!" #XXX
-                    )
-
-                value = klass()
-                value.__dict__.update(self.stateForClass(klass, dm))
-                return value
-
         sub = [node for node in self.subNodes if not node.isExtension]
 
         if not sub:
@@ -200,6 +185,21 @@ class XMINode(object):
 
         return feature.fromFields(tuple(fields))
         
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
