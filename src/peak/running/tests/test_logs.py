@@ -189,14 +189,14 @@ class ServiceTests(TestCase):
         self.doMessages('test1',0,interp=False,useLog=True)
         self.doMessages('test2',30,interp=True,useLog=True)
 
+    def testException(self):
+        logger = self.getLogger('test1')
+        try:
+            raise ValueError
+        except:
+            logger.exception("error occurred")
 
-
-
-
-
-
-
-
+        self.assertEqual(len(logger.events), 1)
 
 
 

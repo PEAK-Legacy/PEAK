@@ -526,7 +526,7 @@ class AbstractLogger(binding.Component):
         if self.level <= self.ERROR:
             self.publish(
                 self.EventClass(
-                    self, msg=msg, args=args, priority=ERROR,
+                    self, msg=msg, args=args, priority=self.ERROR,
                     exc_info=True, ident=self.logName, **kwargs
                 )
             )
