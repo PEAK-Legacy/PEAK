@@ -11,6 +11,7 @@ except ImportError:
     signals = {}
     signal_names = {}
     signal = lambda *args: None
+    original_signal_handlers = {}
 
 else:
     SIG_DFL = signal.SIG_DFL
@@ -26,12 +27,11 @@ else:
     for signame,signum in signals.items():
         signal_names.setdefault(signum,[]).append(signame)
 
+    original_signal_handlers = dict(
+        [(signum,signal.getsignal(signum)) for signum in signal_names.keys()]
+    )
+
     signal = signal.signal
-
-
-
-
-
 
 
 
@@ -68,8 +68,8 @@ class SignalManager(binding.Singleton):
         for signum, handlers in self.signal_handlers.items():
             if hid in handlers:
                 del handlers[hid]
-            if not handlers:
-                signal(signum, SIG_DFL)
+                if not handlers:
+                    signal(signum, original_signal_handlers[signum])
 
     def _handle(self, signum, frame):
         for hid, handler in self.signal_handlers[signum].items():
