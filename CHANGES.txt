@@ -1,5 +1,9 @@
 New Features and Bug Fixes since v0.2, preview 1
 
+ * Added a 'test' command to 'setup.py' that installs and then tests all of
+   TransWarp.  (It saves me time running the unit tests while I'm writing
+   new code.)
+
  * Added warnings for detectable module-level modifications of mutables
    in modules which are used for inheritances or advice.  Added an API
    function, 'configure(object, attr1=val, attr2=val,...)' to safely

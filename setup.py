@@ -1,9 +1,11 @@
 #!/usr/bin/env python
+
 """Distutils setup file"""
 
 from distutils.core import setup, Command
 from distutils.command.install_data import install_data
 from distutils.command.sdist import sdist as old_sdist
+import sys
 
 class install_data(install_data):
 
@@ -27,6 +29,45 @@ class sdist(old_sdist):
 
         # Run the standard sdist command
         old_sdist.run(self)
+
+
+
+
+
+
+
+
+
+
+class test(Command):
+
+    """Command to run unit tests after installation"""
+
+    description = "Run unit tests after installation"
+
+    user_options = []
+
+    def initialize_options(self):
+        self.test_names = None
+
+    def finalize_options(self):
+
+        if self.test_names is None:
+            self.test_names = ['TW.tests.test_suite']
+
+        if self.verbose:
+            self.test_names.insert(0,'--verbose')
+
+    def run(self):
+
+        # Install before testing
+        self.run_command('install')
+
+        if not self.dry_run:
+            from unittest import main
+            main(None, None, sys.argv[:1]+self.test_names)
+
+
 
 
 
@@ -99,7 +140,10 @@ setup(
     
     package_dir = {'':'src'},
 
-    cmdclass = {'install_data': install_data, 'sdist': sdist, 'happy': happy},
+    cmdclass = {
+        'install_data': install_data, 'sdist': sdist, 'happy': happy,
+        'test': test,
+    },
     
     data_files = [
         ('TW/SEF/tests', ['src/TW/SEF/tests/MetaMeta.xml']),
