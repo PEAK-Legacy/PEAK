@@ -388,18 +388,18 @@ class Immutable(Type, HashAndCompare):
         raise TypeError("Immutable object", self)
 
 
+    def __repr__(self):
 
+        klass = self.__class__
 
-
-
-
-
-
-
-
-
-
-
+        return "%s(%s)" % (klass.__name__,
+            ','.join(
+                ['%s=%r' % (f.attrName,f.get(self))
+                    for f in klass.mdl_features
+                        if f.includeInRepr and hasattr(self,f.attrName)
+                ]
+            )
+        )
 
 
 

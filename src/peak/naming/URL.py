@@ -195,7 +195,7 @@ class Base(Struct):
         for f in self.__class__.mdl_features:
             if f.isRequired and not f.attrName in __kw:
                 raise exceptions.InvalidName(
-                    "Missing %s field in %r" % f.attrName, __kw
+                    "Missing %s field in %r" % (f.attrName, __kw)
                 )
 
         super(Base,self).__init__(**__kw)

@@ -225,6 +225,7 @@ class StructuralFeature(object):
     separator      = ''     # parsing separator between multivalues
     sepMayTerm     = False  # Can separator occur after last value?
     canBeEmpty     = False  # XXX
+    includeInRepr  = True   # Include feature in default Immutable.__repr__?
 
     newVerbs = Items(
         get     = 'get%(initCap)s',
@@ -235,7 +236,6 @@ class StructuralFeature(object):
         replace = 'replace%(singularName.initCap)s',
         insertBefore = 'insert%(singularName.initCap)sBefore',
     )
-
 
 
 
