@@ -290,12 +290,12 @@ class NameContext(Component):
         if isinstance(state,LinkRef):
             return self[state.linkName]
 
-        for factory in self.objectFactories:
+        '''for factory in self.objectFactories:
 
             result = factory.getObjectInstance(self, state, name, attrs)
 
             if result is not None:
-                return result
+                return result'''
 
         return state
 

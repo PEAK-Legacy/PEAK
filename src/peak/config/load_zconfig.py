@@ -8,7 +8,7 @@ class BaseLoader(binding.Component, ZConfig.loader.BaseLoader):
     def openResource(self, url):
         url = str(url)
         try:
-            factory = naming.lookup(self, url)
+            factory = adapt(naming.lookup(self, url), naming.IStreamFactory)
             file = factory.open('t')
         except (IOError, OSError), e:
             # Python 2.1 raises a different error from Python 2.2+,
@@ -49,44 +49,11 @@ class SchemaLoader(BaseLoader, ZConfig.loader.SchemaLoader):
     _cache   = binding.New(dict)
     __init__ = binding.Component.__init__.im_func
 
-    def getObjectInstance(self, context, refInfo, name, attrs=None):
-        ob = adapt(refInfo, naming.IStreamAddress, None)
-        if ob is not None:
-            ob = ob.getObjectInstance(context, refInfo, name, attrs=None)
-            return ConfigLoader(
-                context.creationParent, context.creationName,
-                schema = self.loadFile(ob.open('t'), str(refInfo))
-            )
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 class ConfigLoader(AbstractInterpreter,BaseLoader,ZConfig.loader.ConfigLoader):
 
     """Combination config-file loader and interpreter"""
-
-    protocols.advise(
-        instancesProvide = [naming.IObjectFactory]
-    )
 
     usage="""
 Usage: peak SCHEMA_URL ZCONFIG_FILE arguments...
@@ -101,21 +68,13 @@ command-line arguments.
 
     schema = binding.requireBinding("ZConfig schema to use")
 
-    def getObjectInstance(self, context, refInfo, name, attrs=None):
-        ob = adapt(refInfo, naming.IStreamAddress, None)
-        if ob is not None:
-            ob = ob.getObjectInstance(context, refInfo, name, attrs=None)
-            component = self.loadFile(ob.open('t'), str(refInfo))
-            binding.suggestParentComponent(
-                context.creationParent, context.creationName,
-                component
-            )
-            return component
-
     def interpret(self, filename):
         url = naming.toName(filename, FileURL.fromFilename)
-        ob, handler = naming.lookup(self, url, objectFactories=[self])
+        factory = adapt(self.lookupComponent(url), naming.IStreamFactory)
+        ob, handler = self.loadFile(factory.open('t'), str(url))
+        binding.suggestParentComponent(self.getCommandParent(),None,ob)
         return self.getSubcommand(ob)
+
 
 
 
@@ -132,22 +91,23 @@ class ZConfigSchemaURL(naming.URL.Base):
 
     supportedSchemes = 'zconfig.schema',
 
-    def getObjectInstance(self, context, refInfo, name, attrs=None):
 
-        url = naming.toName(self.body, FileURL.fromFilename)
+class ZConfigSchemaContext(naming.AddressContext):
 
-        return naming.lookup(context, url,
-            creationParent = context.creationParent,
-            creationName = context.creationName,
-            objectFactories = [SchemaLoader(context.creationParent)]
-        )
+    schemeParser = ZConfigSchemaURL
 
+    def _get(self, name, retrieve=1):
 
+        url = naming.toName(name.body, FileURL.fromFilename)
 
+        ob = adapt(naming.lookup(self,url), naming.IStreamFactory)
 
-
-
-
+        return ConfigLoader(
+            self.creationParent, self.creationName,
+            schema = SchemaLoader(self.creationParent).loadFile(
+                ob.open('t'), str(url)
+            )
+        ), None
 
 
 

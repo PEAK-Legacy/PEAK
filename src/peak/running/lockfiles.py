@@ -520,11 +520,11 @@ class lockfileURL(FileURL):
 
 
 
-
-
-
-
-
+protocols.declareAdapter(
+    lambda url, proto: url.retrieve(None,None,None), # XXX cheap hack
+    provides = [ILock],
+    forTypes = [lockfileURL],
+)
 
 
 

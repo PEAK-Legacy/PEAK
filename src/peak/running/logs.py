@@ -8,7 +8,7 @@
 
 from peak.binding.components import Component, Once, New, requireBinding
 from peak.naming import URL
-from peak.api import NOT_GIVEN, protocols
+from peak.api import NOT_GIVEN, protocols, naming
 from peak.naming.factories.openable import FileURL
 from interfaces import ILogger
 
@@ -22,9 +22,9 @@ del gethostname
 
 __all__ = [
     'getLevelName', 'getLevelFor', 'addLevelName', 'Event', 'logfileURL',
-    'AbstractLogger', 'LogFile', 'LogStream', 'loggerURL', 'peakLoggerURL',
+    'AbstractLogger', 'LogFile', 'LogStream', 'peakLoggerURL',
+    'peakLoggerContext',
 ]
-
 
 
 
@@ -268,11 +268,11 @@ class logfileURL(FileURL):
             filename=self.getFilename(), level=self.level
         )
 
-
-
-
-
-
+protocols.declareAdapter(
+    lambda url, proto: LogFile(filename=url.getFilename(), level=url.level),
+    provides = [ILogger],
+    forTypes = [logfileURL],
+)
 
 
 
@@ -291,28 +291,39 @@ class peakLoggerURL(URL.Base):
 
     supportedSchemes = ('logging.logger', )
 
-    def retrieve(self, refInfo, name, context, attrs=None):
+
+class peakLoggerContext(naming.AddressContext):
+
+    schemeParser = peakLoggerURL
+
+    def _get(self, name, retrieve=1):
 
         prop = 'peak.logs'
 
-        if self.body:
-            prop = '%s.%s' % prop, self.body
+        if name.body:
+            prop = '%s.%s' % prop, name.body
 
-        return config.getProperty(
-            context.creationParent, prop
-        )
+        ob = config.getProperty(self.creationParent, prop, default=NOT_FOUND)
+        if ob is NOT_FOUND:
+            return NOT_FOUND
+
+        return ob, None
 
 
-class loggerURL(peakLoggerURL):
 
-    """URL that retrieves a PEP 282 logger, or a PEAK substitute"""
 
-    def retrieve(self, refInfo, name, context, attrs=None):
 
-        if logging:
-            return logging.getLogger(self.body)
 
-        return super(loggerURL,self).retrieve(refInfo, name, context, attrs)
+
+
+
+
+
+
+
+
+
+
 
 
 def _levelledMessage(lvl,exc_info=()):

@@ -240,7 +240,7 @@ class AdaptiveTask(binding.Component):
     )
 
     log = binding.Once(
-        lambda s,d,a: s.lookupComponent(s.logName)
+        lambda s,d,a: s.lookupComponent(s.logName), adaptTo = ILogger
     )
 
 

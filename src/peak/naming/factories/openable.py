@@ -211,7 +211,9 @@ class URLStreamFactory(binding.Component):
     consistent interface across file-like URLs."""
 
     protocols.advise(
-        instancesProvide=[naming.IStreamFactory]
+        instancesProvide=[naming.IStreamFactory],
+        asAdapterForTypes=[OpenableURL],
+        factoryMethod = 'adaptFromURL',
     )
 
     target = binding.requireBinding("urllib2 URL or request")
@@ -242,8 +244,6 @@ class URLStreamFactory(binding.Component):
     def delete(self, autocommit=False):
         raise TypeError("Can't delete URL", self.target)
 
-
-
     def exists(self):
 
         from urllib2 import urlopen, HTTPError
@@ -256,10 +256,10 @@ class URLStreamFactory(binding.Component):
             return True
 
 
+    def adaptFromURL(klass, url, protocol):
+        return klass(target = str(url))
 
-
-
-
+    adaptFromURL = classmethod(adaptFromURL)
 
 
 
@@ -290,7 +290,9 @@ class FileFactory(binding.Component):
     """Stream factory for a local file object"""
 
     protocols.advise(
-        instancesProvide=[naming.IStreamFactory]
+        instancesProvide=[naming.IStreamFactory],
+        asAdapterForTypes=[FileURL, PkgFileURL],
+        factoryMethod = 'adaptFromURL',
     )
 
     filename = binding.requireBinding("Filename to open/modify")
@@ -323,6 +325,45 @@ class FileFactory(binding.Component):
 
     # XXX def delete(self,autocommit=False):
     # XXX def move(self, other, overwrite=True, autocommit=False):
+
+    def adaptFromURL(klass, url, protocol):
+        return klass(filename = url.getFilename())
+
+    adaptFromURL = classmethod(adaptFromURL)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
