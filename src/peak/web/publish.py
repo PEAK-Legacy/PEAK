@@ -55,7 +55,7 @@ class BaseInteraction(security.Interaction):
         storage.beginTransaction(self.app)
 
     def getApplication(self,request):
-        app = adapt(self, self.locationProtocol)
+        app = adapt(self.app, self.locationProtocol)
         binding.suggestParentComponent(None,None,app)
         return app
 
@@ -85,7 +85,7 @@ class BaseInteraction(security.Interaction):
 
 
     def getDefaultTraversal(self, request, ob):
-        # XXX do we need this?
+        # XXX this probably needs to delegate to the location
         return ob, ()
 
 
@@ -107,13 +107,13 @@ class BaseInteraction(security.Interaction):
         """Abort transaction and delegate error handling to response"""
         try:
             storage.abort(self.app)
+            # XXX we should log the error here...
             self.response.reset()
             self.response.handleException(exc_info)
         finally:
             # Don't allow exc_info to leak, even if the above resulted in
             # an error
             exc_info = None
-
 
 
 

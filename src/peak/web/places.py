@@ -41,12 +41,12 @@ class SimpleLocation(binding.Component):
 
 class ComponentAsLocation(SimpleLocation):
 
-    """Location adapter for simple components; uses subject's security"""
+    """Location adapter for simple objects; uses subject's security"""
 
     protocols.advise(
         instancesProvide = [IWebLocation],
         factoryMethod = 'asLocationFor',
-        asAdapterForProtocols = [binding.IComponent],
+        asAdapterForTypes = [object],
     )
 
     ob = None
