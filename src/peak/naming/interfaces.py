@@ -6,8 +6,8 @@ from peak.api import PropertyName
 
 __all__ = [
 
-    'IName', 'IAddress', 'IInitialContextFactory', 'IResolver',
-    'IObjectFactory', 'IStateFactory', 'IURLContextFactory',
+    'IName', 'IAddress', 'IInitialContextFactory', 'IResolver', 'IPath',
+    'IObjectFactory', 'IStateFactory', 'IURLContextFactory', 'IAddressFactory',
     'IBasicContext', 'IReadContext', 'IWriteContext',
     'COMPOUND_KIND', 'COMPOSITE_KIND', 'URL_KIND', 'isName', 'isAddress',
     'isAddressClass', 'isResolver', 'IStreamFactory',
@@ -43,7 +43,6 @@ COMPOUND_KIND  = 1
 COMPOSITE_KIND = 2
 URL_KIND       = 3
 
-
 class IName(Interface):
 
     """Abstract name object"""
@@ -56,27 +55,83 @@ class IName(Interface):
     def __radd__(other):
         """Add name to 'other', using this name as a relative name to it"""
 
+    def __sub__(other):
+        """Subtract 'other' from name, returning 'None' if not a prefix"""
+
+    def __rsub__(other):
+        """Subtract name from 'other', returning 'None' if not a prefix"""
+
+    def __hash__():
+        """Should be usable as a dictionary key"""
+
+    def __eq__():
+        """Should be usable as a dictionary key"""
+
 
 isName = IName.isImplementedBy
 
 
 
+
+
+
+
+
+
+
+
+class IPath(IName):
+
+    """A path-like name (COMPOUND_KIND or COMPOSITE_KIND)"""
+
+    def __iter__():
+        """Iterate over path segments"""
+        
+    def __getitem__(pos):
+        """Return a designated segment"""
+
+    def __len__():
+        """Return path length"""
+
+    def __getslice__(start,end):
+        """Return a slice of the path as a path of the same type"""
+
+
 class IAddress(IName):
 
-    """Name that supports in-context self-retrieval"""
+    """URL/Name that supports in-context self-retrieval (URL_KIND)"""
 
     def retrieve(refInfo, name, context, attrs=None):
         """Retrieve the address"""
 
+    def getAuthorityAndName():
+        """Return an 'authority,name' tuple"""
 
 isAddress = IAddress.isImplementedBy
 
-isAddressClass = IAddress.isImplementedByInstancesOf
 
 
 
 
 
+
+
+
+
+
+
+
+class IAddressFactory(Interface):
+
+    """Class for creating parsed URLs from scheme and body"""
+
+    def __call__(scheme,body):
+        """Return a new address object for scheme and body"""
+
+    def supportsScheme(scheme):
+        """Is URL scheme 'scheme' supported by this factory?"""
+    
+isAddressClass = IAddressFactory.isImplementedBy
 
 
 
@@ -96,20 +151,6 @@ class IResolver(Interface):
         """
 
 isResolver = IResolver.isImplementedBy
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

@@ -14,6 +14,7 @@ from arithmetic import *
 
 from peak.util.Struct import struct, structType
 from peak.binding.once import Activator, Once
+from peak.interface import implements, classProvides
 
 __all__ = [
     'AbstractName', 'toName', 'CompositeName', 'CompoundName',
@@ -38,10 +39,9 @@ def crossesBoundaries(name):
 
 
 
-
 class AbstractName(tuple):
 
-    __implements__ = IName
+    implements(IPath)
 
     nameKind    = None
 
@@ -165,7 +165,9 @@ class URLMeta(Activator):
 class ParsedURL(object):
 
     __metaclass__    = URLMeta
-    __implements__   = IAddress
+
+    implements(IAddress)
+    classProvides(IAddressFactory)
 
     nameKind         = URL_KIND
 
@@ -186,8 +188,6 @@ class ParsedURL(object):
 
     def __init__(self, scheme=None, body=None):
         self.setup(locals())
-
-
 
 
 
