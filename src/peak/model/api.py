@@ -1,4 +1,4 @@
-"""Basic, in-memory implementation of the Service-Element-Feature pattern"""
+"""Basic implementation of a domain metamodel"""
 
 from peak.api import *
 from peak.model.interfaces import *
@@ -142,22 +142,22 @@ class StructuralFeature(binding.Component):
         delattr = 'delattr%(initCap)s',
     )
     
-    def get(feature, self):
-        return self.__dict__.get(feature.attrName, feature.defaultValue)
+    def get(feature, element):
+        return element._getBinding(feature.attrName, feature.defaultValue)
 
 
-    def set(feature, self,val):
-        self.__dict__[feature.attrName]=val
-        feature._changed(self)
+    def set(feature, element, val):
+        element._setBinding(feature.attrName,val)
 
-    def delete(feature, self):
-        del self.__dict__[feature.attrName]
-        feature._changed(self)
+    def delete(feature, element):
+        element._delBinding(feature.attrName)
 
     config.setupObject(delete, verb='delattr')
 
-    def _changed(feature, element):
-        pass
+
+
+
+
 
 
 
@@ -214,65 +214,65 @@ class Collection(StructuralFeature):
     )
 
     def _getList(feature, element):
-        return element.__dict__.setdefault(feature.attrName, [])
+        return element._getBinding(feature.attrName, ())
         
-    def get(feature, self):
-        return feature._getList(self)
+    def get(feature, element):
+        return feature._getList(element)
 
-    def set(feature, self,val):
-        feature.__delete__(self)
-        self.__dict__[feature.attrName]=val
-        feature._changed(self)
+    def set(feature, element, val):
+        feature.__delete__(element)
+        element._setBinding(feature.attrName, val)
 
-    def add(feature, self,item):
+    def add(feature, element, item):
 
         """Add the item to the collection/relationship"""      
 
         ub = feature.upperBound
 
-        if not ub or len(feature._getList(self))<ub:
-            feature._notifyLink(self,item)
-            feature._link(self,item)
-            feature._changed(self)
+        if not ub or len(feature._getList(element))<ub:
+            feature._notifyLink(element,item)
+            feature._link(element,item)
         else:
             raise ValueError("Too many items")
 
 
-    def remove(feature, self,item):
+    def remove(feature, element, item):
         """Remove the item from the collection/relationship, if present"""
-        feature._unlink(self,item)
-        feature._notifyUnlink(self,item)
-        feature._changed(self)
+        feature._unlink(element,item)
+        feature._notifyUnlink(element,item)
 
-    def replace(feature, self,oldItem,newItem):
 
-        d = feature._getList(self)
+
+
+    def replace(feature, element, oldItem, newItem):
+
+        d = feature._getList(element) or []
         p = d.index(oldItem)
 
         if p!=-1:
             d[p]=newItem
-            feature._notifyUnlink(self,oldItem)
-            feature._notifyLink(self,newItem)
-            feature._changed(self)
+            feature._notifyUnlink(element,oldItem)
+            feature._notifyLink(element,newItem)
+            element._setBinding(feature.attrName, d)
         else:
             raise ValueError(oldItem,"not found")
 
 
-    def delete(feature, self):
+    def delete(feature, element):
         """Unset the value of the feature (like __delattr__)"""
 
         referencedEnd = feature.referencedEnd
 
-        d = feature._getList(self)  # forces existence of feature
+        d = feature._getList(element)
 
         if referencedEnd:
             
             for item in d:
                 otherEnd = getattr(item.__class__,referencedEnd)
-                otherEnd._unlink(item,self)
+                otherEnd._unlink(item,element)
 
-        del self.__dict__[feature.attrName]
-        feature._changed(self)
+        element._delBinding(feature.attrName)
+
 
     config.setupObject(delete, verb='delattr')
 
@@ -295,15 +295,15 @@ class Collection(StructuralFeature):
 
 
     def _link(feature,element,item):
-        d=feature._getList(element)
+        d=feature._getList(element) or []
         d.append(item)
-        feature._changed(element)
-
+        element._setBinding(feature.attrName, d)
+        
 
     def _unlink(feature,element,item):
-        d=feature._getList(element)
+        d=feature._getList(element) or []
         d.remove(item)
-        feature._changed(element)
+        element._setBinding(feature.attrName, d)
 
 
 
@@ -333,14 +333,14 @@ class Reference(Collection):
     upperBound = 1
 
 
-    def get(feature, self):
-        vals = feature._getList(self)
+    def get(feature, element):
+        vals = feature._getList(element)
         if vals: return vals[0]
 
 
-    def set(feature, self,val):
-        feature.__delete__(self)
-        feature.getMethod(self,'add')(val)
+    def set(feature, element, val):
+        feature.__delete__(element)
+        feature.getMethod(element,'add')(val)
 
 
 
@@ -377,9 +377,9 @@ class Sequence(Collection):
         insertBefore = 'insert%(initCap)sBefore',
     )
 
-    def insertBefore(feature, self,oldItem,newItem):
+    def insertBefore(feature, element, oldItem, newItem):
 
-        d = feature._getList(self)
+        d = feature._getList(element)
         
         ub = feature.upperBound
         if ub and len(d)>=ub:
@@ -390,8 +390,8 @@ class Sequence(Collection):
 
         if i!=-1:
             d.insert(i,newItem)
-            feature._changed(self)
-            feature._notifyLink(self,newItem)
+            element._setBinding(feature.attrName, d)
+            feature._notifyLink(element,newItem)
         else:
             raise ValueError(oldItem,"not found")
 
@@ -423,10 +423,21 @@ class DataType(Classifier):
 class ElementMeta(DataType.__class__, Persistent.__class__):
     pass
 
+
 class Element(DataType, Persistent):
-    """An element in its own right"""
+    """A (potentially persistent) domain element"""
+
     __implements__ = IElement
     __metaclass__  = ElementMeta
+
+    def _setBinding(self,attr,value):
+        self._p_changed = True
+        self.__dict__[attr]=value
+
+    def _delBinding(self,attr):
+        if attr in self.__dict__:
+            self._p_changed = True
+            del self.__dict__[attr]
 
 
 config.setupModule()

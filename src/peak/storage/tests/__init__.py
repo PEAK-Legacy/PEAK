@@ -221,7 +221,7 @@ class TxnTable(storage.TransactionComponent):
         self.stableState = self.dump()            
 
     def abortTransaction(self, txnService):
-        if self.hasBinding('table'): del self.table
+        self._delBinding('table')
 
     def DELETE(self, whereItems):
         self.txnSvc

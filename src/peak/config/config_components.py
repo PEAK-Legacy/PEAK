@@ -82,7 +82,7 @@ class PropertyMap(Base):
 
     def getValueFor(self, configKey, forObj=None):
 
-        rules      = self.getBindingIfPresent('rules')
+        rules      = self._getBinding('rules')
         value      = NOT_FOUND
 
         if not rules:

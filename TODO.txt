@@ -24,13 +24,25 @@ Open Issues/To-Do Items
 
         - docstrings for reference
 
+    peak.binding
+
+        - object names/paths
+
+        - docstrings for reference
+
     peak.model
 
         - add support for lazy-loaded attributes
 
-        - review XMI/Querying extensions for forward compatibility planning
-
         - clean up TW docstrings & interfaces
+
+    peak.config
+
+        - docstrings for reference
+
+    peak.naming
+
+        - docstrings for reference
 
     peak.running
 
@@ -39,20 +51,6 @@ Open Issues/To-Do Items
         - unit tests for daemons?
 
         - simple daemons comparable to those in MetaDaemon?
-
-        - docstrings for reference
-
-    peak.binding
-
-        - object names/paths
-
-        - docstrings for reference
-
-    peak.config
-
-        - docstrings for reference
-
-    peak.naming
 
         - docstrings for reference
 

@@ -52,7 +52,7 @@ class SQLCursor(AbstractCursor):
 
     def close(self):
 
-        if self.hasBinding('_cursor'):
+        if self._hasBinding('_cursor'):
             self._cursor.close()
             del self._cursor
 
@@ -60,8 +60,8 @@ class SQLCursor(AbstractCursor):
 
             
     def __setattr__(self,attr,val):
-        if self.hasBinding(attr) or hasattr(self.__class__,attr):
-            self.__dict__[attr]=val
+        if self._hasBinding(attr) or hasattr(self.__class__,attr):
+            self._setBinding(attr,val)
         else:
             setattr(self._cursor,attr,val)
 

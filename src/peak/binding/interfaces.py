@@ -82,7 +82,10 @@ class IBindingSPI(Interface):
 
 class IBindingAPI(IBindingSPI):
 
-    """API supplied by binding.Base and its subclasses"""
+    """API supplied by binding.Base and its subclasses
+
+    peak.model's 'StructuralFeature' classes rely on this interface."""
+
 
     def __init__(parent=None, **kw):
         """The default constructor signature of a binding component is
@@ -96,13 +99,17 @@ class IBindingAPI(IBindingSPI):
         the parent has already been used by the component for any purpose."""
         
 
-    def hasBinding(attr):
+    def _hasBinding(attr):
         """Return true if binding named 'attr' has been activated"""
 
-    def getBindingIfPresent(attr,default=None):
+    def _getBinding(attr,default=None):
         """Return binding named 'attr' if activated, else return 'default'"""
 
+    def _setBinding(attr,value):
+        """Set binding 'attr' to 'value'"""
 
+    def _delBinding(attr):
+        """Ensure that no binding for 'attr' is active"""
 
 
 

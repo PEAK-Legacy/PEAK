@@ -523,11 +523,52 @@ class Base(object):
 
     __parentCell = Once(__parentCell)
 
-    def hasBinding(self,attr):
+
+
+
+
+
+
+
+
+    def _hasBinding(self,attr):
         return attr in self.__dict__
 
-    def getBindingIfPresent(self,attr,default=None):
+    def _getBinding(self,attr,default=None):
         return self.__dict__.get(attr,default)
+
+    def _setBinding(self,attr,value):
+        self.__dict__[attr]=value
+
+    def _delBinding(self,attr):
+        if attr in self.__dict__:
+            del self.__dict__[attr]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -547,7 +588,7 @@ class Component(Base):
 
     def _getConfigData(self, configKey, forObj):
     
-        attr = self.getBindingIfPresent('__instance_provides__')
+        attr = self._getBinding('__instance_provides__')
 
         if attr:
             value = attr.getValueFor(configKey, forObj)

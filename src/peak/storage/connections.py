@@ -57,9 +57,7 @@ class AbstractCursor(binding.Component):
 
 
     def close(self):
-
-        if self.hasBinding('_conn'):
-            del self._conn
+        self._delBinding('_conn')
 
 
     def execute(self, *args, **kw):
@@ -72,6 +70,8 @@ class AbstractCursor(binding.Component):
 
     def nextset(self):
         raise NotImplementedError
+
+
 
 
 
@@ -138,20 +138,15 @@ class ManagedConnection(TransactionComponent):
         else:
             self.close()
 
-
     def close(self):
         """Close the connection immediately"""
 
-        have = self.hasBinding
-
-        if have('connection'):
+        if self._hasBinding('connection'):
             self.closeCursors()
             self._close()
             del self.connection
 
-        if have('_closeASAP'):
-            del self._closeASAP
-
+        self._delBinding('_closeASAP')
 
 
     def finishTransaction(self, txnService, committed):
@@ -203,6 +198,11 @@ class ManagedConnection(TransactionComponent):
 
 
 
+
+
+
+
+
     _cursors = binding.New(WeakValueDictionary)
 
 
@@ -227,8 +227,6 @@ class ManagedConnection(TransactionComponent):
 
 
     cursorClass = AbstractCursor
-
-
 
 
 
