@@ -745,7 +745,7 @@ default for src is '!.', the current input buffer"""
 
 
     class cmd_echo(ShellCommand):
-        """\\echo secs -- echo for 'secs' seconds"""
+        """\\echo msg -- print message"""
 
         args = ('-n', 0, sys.maxint)
 
