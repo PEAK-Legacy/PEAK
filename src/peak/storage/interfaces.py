@@ -4,11 +4,10 @@ from Interface import Interface
 from Interface.Attribute import Attribute
 
 __all__ = [
-    'ITransactionService', 'ITransactionParticipant', 'ISavepoint',
-    'NotReadyError', 'CannotRevertException', 'TransactionInProgress',
-    'OutsideTransaction'
+    'ITransactionService', 'ITransactionParticipant',
+    'ITransactionErrorHandler', 'BrokenTransaction',
+    'NotReadyError', 'TransactionInProgress', 'OutsideTransaction'
 ]
-
 
 class ITransactionService(Interface):
 
@@ -39,6 +38,10 @@ class ITransactionService(Interface):
         progress."""
 
 
+
+    def fail():
+        """Force transaction to fail (i.e. no commits allowed, only aborts)"""
+
     # Managing participants
 
     def subscribe(participant):
@@ -50,12 +53,10 @@ class ITransactionService(Interface):
         receive other messages to "catch it up" to the other
         participants.  However, if the commit or savepoint has already
         progressed too far for the new participant to join in, a
-        TransactionInProgress error will be raised.
-
-        Note: this is not ZODB!  Participants remain subscribed until
-        they unsubscribe, or until the transaction object is
-        de-allocated!"""
+        TransactionInProgress error will be raised."""
         
+    def removeParticipant(participant):
+        """Force participant to be removed; for error handler use only"""
 
     # Getting/setting information about a transaction
 
@@ -79,66 +80,18 @@ class ITransactionService(Interface):
         """Return a copy of the transaction's metadata dictionary"""
         
 
-
-    # "Sub-transaction" support
-    
-    def savepoint():
-        """Request a write to stable storage, and return an ISavepoint
-        instance for possible partial rollback via 'rollback()'.  This
-        will most often be used simply to suggest a good time for in-memory
-        data to be written out.  But it can also be used in conjunction
-        with 'rollback()' to provide a 'nested transactions',
-        if all participants support reverting to savepoints."""
-
-
-class ISavepoint(Interface):
-
-    """A point to which the transaction can be rolled back;
-
-    (Can be used to implement nested transactions.)"""
-    
-    def rollback():
-        """Roll state back to this savepoint, or raise CannotRevertException.
-
-        Note that a given savepoint can only be rolled back once!  If you wish
-        to retry a nested transaction, you'll need to re-issue a 'savepoint()'
-        request following the rollback, and use the new savepoint object.
-
-        Resource managers that write data to other participants, should
-        simply roll back state for all objects changed since the savepoint,
-        whether written through to the underlying storage or not.
-        Transactional caches may want to reset on this message, also, depending
-        on their precise semantics."""
-
-
-try:
-    from Transaction.IRollback import IRollback as ISavepoint
-
-except ImportError:
-    # No ZODB transactions?  just use our own Savepoint interface
-    pass
-
-
-
-
 class ITransactionParticipant(Interface):
 
-    """Participant in a transaction; may be a resource manager, a
-    transactional cache, or just a logging/monitoring object.
+    """Participant in a transaction; may be a resource manager, a transactional
+    cache, or just a logging/monitoring object.
 
     Event sequence is approximately as follows:
 
-        begin_txn
-        ( ( begin_savepoint end_savepoint ) | revert ) *
-        ( begin_commit vote_commit commit_txn ) | abort_txn 
+        subscribe(participant)
+            ( readyToVote voteForCommit commitTransaction ) | abortTransaction
 
-    In other words, every transaction begins with begin_txn, and ends
-    with either commit_txn or abort_txn.  A commit_txn will always be
-    preceded by begin_commit and vote_commit.  An abort_txn may occur
-    at *any* point following begin_txn, and aborts the transaction.
-    begin/end_savepoint pairs and revert() messages may occur any time
-    between begin_txn and begin_commit, as long as abort_txn hasn't
-    happened.
+    An abortTransaction may occur at *any* point following subscribe(), and
+    aborts the transaction.
 
     Generally speaking, participants fall into a few broad categories:
 
@@ -156,18 +109,17 @@ class ITransactionParticipant(Interface):
     Each kind of participant will typically use different messages to
     achieve their goals.  Resource managers that use other
     participants for storage, for example, won't care much about
-    begin_txn() and vote_commit(), while a resource manager that
-    manages direct storage will care about vote_commit() very deeply!
+    'voteForCommit()', while a resource manager that manages direct storage
+    will care about 'voteForCommit()' very deeply!
 
     Resource managers that use other participants for storage, but
     buffer writes to the other participant, will need to pay close
-    attention to the begin_savepoint() and begin_commit() messages.
-    Specifically, they must flush all pending writes to the
-    participant that handles their storage, and enter a
-    "write-through" mode, where any further writes are flushed
-    immediately to the underlying participant.  This is to ensure that
-    all writes are written to the "root participant" for those writes,
-    by the time end_savepoint() or vote_commit() is issued.
+    attention to the 'readyToVote()' message.  Specifically, they must
+    flush all pending writes to the participant that handles their
+    storage, and return 'False' if there was anything to flush.
+    'readyToVote()' will be called repeatedly on *all* participants until
+    they *all* return 'True', at which point the transaction will initiate
+    the 'voteForCommit()' phase.
 
     By following this algorithm, any number of participants may be
     chained together, such as a persistence manager that writes to an
@@ -175,64 +127,66 @@ class ITransactionParticipant(Interface):
     persisted in a disk file.  The persistence manager, the XML
     document, the database table, and the disk file would all be
     participants, but only the disk file would actually use
-    vote_commit() and commit_txn() to handle a commit.  All of the
-    other participants would flush pending updates and enter
-    write-through mode at the begin_commit() message, guaranteeing that
-    the disk file participant would know about all the updates by the
-    time vote_comit() was issued, regardless of the order in which the
-    participants received the messages."""
-        
-
-    def beginTransaction(txnService):
-        """Transaction is beginning; nothing special to be done in
-        most cases. A transactional cache might use this message to
-        reset itself.  A database connection might issue BEGIN TRAN
-        here."""
-        
-
-    def readyForSavepoint(txnService):
-        """Savepoint is beginning; flush dirty objects and enter
-        write-through mode, if applicable.  Note: this is not ZODB!
-        You will not get savepoint messages before a regular commit,
-        just because another savepoint has already occurred!"""
-        
-
-    def getSavepoint(txnService):
-        """Savepoint is finished, it's safe to return to buffering
-        writes; a database connection would probably issue a
-        savepoint/checkpoint command here."""
-
+    'voteForCommit()' and 'commitTransaction()' to handle a commit.
+    All of the other participants would flush pending updates during the
+    'readyToVote()' loop, guaranteeing that the disk file participant
+    would know about all the updates by the time 'voteForCommit()' was
+    issued, regardless of the order in which the participants received
+    the messages."""       
 
     def readyToVote(txnService):
         """Transaction commit is beginning; flush dirty objects and
-        enter write-through mode, if applicable.  DB connections will
-        probably do nothing here.  Note: participants *must* continue
-        to accept writes until vote_commit() occurs, and *must*
-        accept repeated writes of the same objects!"""
+        enter write-through mode, if applicable.  Return a true
+        value if nothing needed to be done, or a false value if
+        work needed to be done.  DB connections will probably never
+        do anything here, and thus will just return a true value.
+        Object managers like Racks will write their objects and
+        return false, or return true if they have nothing to write.
+        Note: participants *must* continue to accept writes until
+        'voteForCommit()' occurs, and *must* accept repeated writes
+        of the same objects!"""
 
     def voteForCommit(txnService):
         """Raise an exception if commit isn't possible.  This will
         mostly be used by resource managers that handle their own
         storage, or the few DB connections that are capable of
         multi-phase commit."""
-        
+
     def commitTransaction(txnService):
         """This message follows vote_commit, if no participants vetoed
         the commit.  DB connections will probably issue COMMIT TRAN
         here. Transactional caches might use this message to reset
         themselves."""
-        
+
+
+
+
+
     def abortTransaction(txnService):
         """This message can be received at any time, and means the
         entire transaction must be rolled back.  Transactional caches
         might use this message to reset themselves."""
 
-    def finishTransaction(txnService):
+    def finishTransaction(txnService, committed):
         """The transaction is over, whether it aborted or committed."""
 
 
-class CannotRevertException(Exception):
-    """A data manager does not support reverting to a savepoint"""
+class ITransactionErrorHandler(Interface):
+
+    """Policy object to handle exceptions issued by participants"""
+    
+    def voteFailed(txnService, participant):
+        """'participant' raised exception during 'voteForCommit()'"""
+
+    def abortFailed(txnService, participant):
+        """'participant' raised exception during 'abortTransaction'"""
+        
+    def finishFailed(txnService, participant):
+        """'participant' raised exception during 'finishTransaction()'"""
+        
+    def commitFailed(txnService, participant):
+        """'participant' raised exception during 'commitTransaction()'"""
+        
 
 class NotReadyError(Exception):
     """One or more transaction participants were unready too many times"""
@@ -243,3 +197,6 @@ class TransactionInProgress(Exception):
 class OutsideTransaction(Exception):
     """Action not permitted while transaction is not in progress"""
 
+class BrokenTransaction(Exception):
+    """Transaction can't commit, due to participants breaking contracts
+       (E.g. by throwing an exception during the commit phase)"""

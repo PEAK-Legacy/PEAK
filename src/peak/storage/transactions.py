@@ -1,82 +1,82 @@
 from peak.api import binding
 from interfaces import *
 from time import time
+import sys
 
 __all__ = [
-    'NullSavepoint', 'FailureSavepoint', 'MultiSavepoint',
-    'TransactionService', 'ZODBTransactionService',
-    'AbstractParticipant', 'TransactionComponent',
+    'TransactionService', 'AbstractParticipant', 'TransactionComponent',
+    'BasicTxnErrorHandler'
 ]
 
 
-class TransactionService(binding.AutoCreated):
+class BasicTxnErrorHandler(object):
 
-    """Basic implementation for stuff needed by pretty much any txn service"""
+    """Simple error handling policy: no logging, retries, etc."""
     
-    __implements__ = ITransactionService
-    _provides      = __implements__
+    __implements__ = ITransactionErrorHandler
+
+    def voteFailed(self, txnService, participant):
+        txnService.fail()
+        raise
+
+    def commitFailed(self, txnService, participant):
+        # XXX Hosed!!!
+        txnService.fail()
+        raise
+
+    def abortFailed(self, txnService, participant):
+        # remove and retry after fail
+        txnService.removeParticipant(participant)
+        raise
+        
+    def finishFailed(self, txnService, participant, committed):
+        # ignore error
+        txnService.removeParticipant(participant)
+
+
+
+
+
+
+
+class TransactionState(binding.Base):
+
+    """Helper object representing a single transaction's state"""
 
     participants = binding.New(list)
     info         = binding.New(dict)
     timestamp    = None
     safeToJoin   = True
+    cantCommit   = False
 
+
+
+class TransactionService(binding.AutoCreated):
+
+    """Basic transaction service component"""
+    
+    __implements__ = ITransactionService
+    _provides      = __implements__
+
+    state          = binding.New(TransactionState)
+    errorHandler   = binding.New(BasicTxnErrorHandler)
+    
     def subscribe(self, participant):
 
-        if self.safeToJoin:
-            if participant not in self.participants:
-                self.participants.append(participant)
+        if self.state.cantCommit:
+            raise BrokenTransaction
+
+        elif not self.isActive():
+            raise OutsideTransaction
+
+        elif self.state.safeToJoin:
+
+            if participant not in self.state.participants:
+                self.state.participants.append(participant)
 
         else:
             raise TransactionInProgress
 
-
-
-
-
-
-
-
-
-
-    def _savepoint(self):
-
-        """Create a savepoint
-
-        Ask all participants if they're ready to save, up to N+1 times (where
-        N is the number of participants), until all agree they are ready, or
-        an exception occurs.  N+1 iterations is sufficient for any acyclic
-        structure of cascading data managers.  Any more than that, and either
-        there's a cascade cycle or a broken participant is always returning a
-        false value from its readyForSavepoint() method.
-
-        Once all participants are ready, assemble and return a savepoint.
-        """
-    
-        if not self.isActive():
-            raise OutsideTransaction
-
-        tries = 0
-        unready = True
-        
-        while unready and tries <= len(self.participants):
-            unready = [
-                p for p in self.participants if not p.readyForSavepoint(self)
-            ]
-            tries += 1
-
-        if unready:
-            raise NotReadyError(unready)
-
-        self.safeToJoin = False
-
-        try:
-            spl = [p.getSavepoint(self) for p in self.participants]
-        finally:
-            self.safeToJoin = True
-        
-        return MultiSavepoint(spl)
-        
 
 
 
@@ -95,25 +95,25 @@ class TransactionService(binding.AutoCreated):
     
         tries = 0
         unready = True
-        
-        while unready and tries <= len(self.participants):
-            unready = [p for p in self.participants if not p.readyToVote(self)]
+        state = self.state
+
+        while unready and tries <= len(state.participants):
+            unready = [p for p in state.participants if not p.readyToVote(self)]
             tries += 1
 
         if unready:
             raise NotReadyError(unready)
 
 
-        self.safeToJoin = False
+        self.state.safeToJoin = False
         
-        for p in self.participants:
-            p.voteForCommit(self)
+        for p in state.participants:
+            try:
+                p.voteForCommit(self)
+            except:
+                self.errorHandler.voteFailed(self,p)
 
         return True
-
-
-
-
 
 
 
@@ -126,12 +126,8 @@ class TransactionService(binding.AutoCreated):
         if self.isActive():
             raise TransactionInProgress
             
-        self.timestamp = time()
-        self._begin()
+        self.state.timestamp = time()
         self.addInfo(**info)
-
-        for p in self.participants:
-            p.beginTransaction(self)
 
 
     def commit(self):
@@ -139,14 +135,31 @@ class TransactionService(binding.AutoCreated):
         if not self.isActive():
             raise OutsideTransaction
 
+        if self.state.cantCommit:
+            raise BrokenTransaction
+
         self._prepare()
-        self._commit()
+
+        for p in self.state.participants:
+            try:
+                p.commitTransaction(self)
+            except:
+                self.errorHandler.commitFailed(self,p)
+
+        self._cleanup(True)
 
 
-    def _commit(self):
-        for p in self.participants:
-            p.commitTransaction(self)
-        self._cleanup()
+    def fail(self):
+
+        if not self.isActive():
+            raise OutsideTransaction
+
+        self.state.cantCommit = True
+        self.state.safeToJoin = False
+
+
+    def removeParticipant(self,participant):
+        self.state.participants.remove(participant)
 
 
     def abort(self):
@@ -154,20 +167,15 @@ class TransactionService(binding.AutoCreated):
         if not self.isActive():
             raise OutsideTransaction
 
-        try:
-            self._abort()
-        finally:
-            self._cleanup()
+        self.fail()
+        
+        for p in self.state.participants[:]:
+            try:
+                p.abortTransaction(self)
+            except:
+                self.errorHandler.abortFailed(self,p)
 
-
-
-
-    def _abort(self):
-
-        self.safeToJoin = False
-
-        for p in self.participants:
-            p.abortTransaction(self)
+        self._cleanup(False)
 
 
     def getTimestamp(self):
@@ -175,44 +183,68 @@ class TransactionService(binding.AutoCreated):
         """Return the time that the transaction began, in time.time()
         format, or None if no transaction in progress."""
 
-        if self.isActive():
-            return self.timestamp
-            
+        return self.state.timestamp
 
 
     def addInfo(self, **info):
-        self.info.update(info)
+    
+        if self.state.cantCommit:
+            raise BrokenTransaction
+
+        elif self.state.safeToJoin:
+            self.state.info.update(info)
+
+        else:
+            raise TransactionInProgress
     
 
+
     def getInfo(self):
-        return self.info
+        return self.state.info
 
 
-    def _begin(self):        
-        pass
+    def _cleanup(self, committed):
 
-    def _cleanup(self):
-        try:
-            for p in self.participants:
-                p.finishTransaction(self)
-        finally:
-            del self.info, self.timestamp, self.participants, self.safeToJoin
+        for p in self.state.participants[:]:
+            try:
+                p.finishTransaction(self,committed)
+            except:
+                self.errorHandler.finishFailed(self,p,committed)
+
+        del self.state
 
 
     def isActive(self):
-        return self.timestamp is not None
+        return self.state.timestamp is not None
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 class AbstractParticipant(object):
-
-    def beginTransaction(self, txnService):
-        pass
-
-    def readyForSavepoint(self, txnService):
-        return True
-
-    def getSavepoint(self, txnService):
-        return NullSavepoint
 
     def readyToVote(self, txnService):
         return True
@@ -226,8 +258,17 @@ class AbstractParticipant(object):
     def abortTransaction(self, txnService):
         pass
 
-    def finishTransaction(self, txnService):
+    def finishTransaction(self, txnService, committed):
         pass
+
+
+
+
+
+
+
+
+
 
 
 
@@ -246,201 +287,42 @@ class AbstractParticipant(object):
 
 class TransactionComponent(binding.Component, AbstractParticipant):
 
-    txnSvc    = binding.bindTo(ITransactionService)
-    txnActive = False
+    """Object that has a 'txnSvc' and auto-joins transactions"""
 
 
-    def setParentComponent(self, parent):
+    def txnSvc(self,d,a):
 
-        super(TransactionComponent,self).setParentComponent(parent)
-        ts = self.txnSvc
+        """Join transaction when 'txnSvc' attribute is accessed"""
+
+        ts = binding.findUtility(ITransactionService)
         ts.subscribe(self)
 
-        if ts.isActive():
-            self.beginTransaction(ts)
+        return ts
 
+    txnSvc = binding.Once(ITransactionService)
 
-    def beginTransaction(self, txnService):
-        self.txnActive = True
 
+    def finishTransaction(self, txnService, committed):
 
-    def finishTransaction(self, txnService):
-        self.txnActive = False
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-class _ZODBTxnProxy(object):
-
-    def __init__(self, txnService):
-        self.txnService = txnService
-
-    def prepare(self,txn):
-        return self.txnService._prepare()
-
-    def abort(self,txn):
-        self.txnService._abort()
-
-    def commit(self,txn):
-        self.txnService._commit()
-
-    def savepoint(self,txn):
-        return self.txnService._savepoint()
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-class ZODBTransactionService(TransactionService):
-
-    ztxn = None
-    
-    def _begin(self):
-        from Transaction import get_transaction
-        txn = self.ztxn = get_transaction()
-        txn.join(_ZODB4TxnProxy(self))
-
-
-    def abort(self):
-    
-        try:
-            if not self.isActive():
-                raise OutsideTransaction
-
-            self.ztxn.abort()
-
-        finally:
-            self._cleanup()
-
-
-    def commit(self):
-
-        if not self.isActive():
-            raise OutsideTransaction
-
-        self.ztxn.commit()
-        self._cleanup()
-
-
-    def savepoint(self):
-
-        if not self.isActive():
-            raise OutsideTransaction
-
-        return self.ztxn.savepoint()
-
-
-
-
-    def addInfo(self, **info):
-
-        super(ZODBTransactionService,self).addInfo(**info)
-
-        if 'note' in info or 'user_name' in info:
-            info = info.copy()
-            
-            if 'note' in info:
-                self.ztxn.note(info['note'])
-                del info['note']
-
-            if 'user_name' in info:
-                self.ztxn.setUser(info['user_name'],info.get('user_path','/'))
-                    
-                del info['user_name']
-
-                if 'user_path' in info:
-                    del info['user_path']
-
-        for k,v in info.items():
-            self.ztxn.setExtendedInfo(k,v)
-
-
-    def _cleanup(self):
-        super(ZODBTransactionService,self)._cleanup()
-        self.ztxn = None
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-class _NullSavepoint(object):
-
-    __implements__ = ISavepoint
-    __slots__ = []
-
-    def rollback(self):
-        pass
-
-NullSavepoint = _NullSavepoint()
-
-
-
-class FailureSavepoint(object):
-
-    __implements__ = ISavepoint
-    __slots__ = 'dm'
-
-    def __init__(self,dm):
-        self.dm = dm
-
-    def rollback(self):
-        raise CannotRevertException(dm)
+        """Ensure that subsequent transactions will require re-registering"""
         
+        del self.txnSvc
 
 
-class MultiSavepoint(object):
 
-    __implements__ = ISavepoint
-    __slots__ = 'savepoints'
 
-    def __init__(self,savepoints):
-        self.savepoints = savepoints
 
-    def rollback(self):
-        for sp in self.savepoints:
-            sp.rollback()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
