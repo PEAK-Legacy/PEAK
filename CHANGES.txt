@@ -2,7 +2,9 @@ Fixes and Enhancements since Version 0.5 alpha 2
 
  Changed, Enhanced, or Newly Deprecated Features
 
- - 'peak.running.tools' was promoted to 'peak.tools'.
+ - 'peak.running.tools' was promoted to 'peak.tools'.  'peak.running.supervisor'
+   was also moved to 'peak.tools.supervisor', and a new 'peak help' command was
+   added in 'peak.tools.api_help'.
 
  - Replaced the "[Provide Utilities]" section of .ini files with "[Component
    Factories]".  The new section type is easier to use, much more versatile,

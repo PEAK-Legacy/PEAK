@@ -2,9 +2,8 @@
 
 from peak.api import *
 from interfaces import *
-from peak.net.interfaces import IListeningSocket
-from commands import EventDriven, Bootstrap, AbstractInterpreter
-from process import signals, signal_names, ChildProcess, AbstractProcessTemplate
+from peak.running.commands import EventDriven, Bootstrap
+from peak.running.process import signals, signal_names
 from shlex import shlex
 from cStringIO import StringIO
 
@@ -15,6 +14,7 @@ def unquote(s):
     if s.startswith('"') or s.startswith("'"):
         s = s[1:-1]
     return s
+
 
 
 
@@ -63,8 +63,8 @@ class ProcessSupervisor(EventDriven):
             argv = ['supervise'] + self.cmdLine,
             parentComponent = config.makeRoot(),
         ),
-        adaptTo=IProcessTemplate,
-        offerAs=[IProcessTemplate],
+        adaptTo=running.IProcessTemplate,
+        offerAs=[running.IProcessTemplate],
         suggestParent=False
     )
 
@@ -82,12 +82,12 @@ class ProcessSupervisor(EventDriven):
 
     startLock = binding.Make(
         lambda self: self.lookupComponent(self.startLockURL),
-        adaptTo = ILock
+        adaptTo = running.ILock
     )
 
     pidLock = binding.Make(
         lambda self: self.lookupComponent(self.pidLockURL),
-        adaptTo = ILock
+        adaptTo = running.ILock
     )
 
     lastStart = None    # last time a fork occurred
@@ -98,16 +98,17 @@ class ProcessSupervisor(EventDriven):
 
     reactor = binding.Make(
         # Can't use Make(IBasicReactor), because 'getReactor()' is a singleton
-        'peak.running.scheduler:UntwistedReactor', offerAs=[IBasicReactor]
+        'peak.running.scheduler:UntwistedReactor',
+        offerAs=[running.IBasicReactor]
     )
 
-    mainLoop = binding.Make(IMainLoop, offerAs=[IMainLoop])
+    mainLoop = binding.Make(running.IMainLoop, offerAs=[running.IMainLoop])
 
-    taskQueue = binding.Make(ITaskQueue, offerAs=[ITaskQueue])
+    taskQueue = binding.Make(running.ITaskQueue, offerAs=[running.ITaskQueue])
 
     _no_twisted = binding.Require(
         "ProcessSupervisor subcomponents may not depend on Twisted",
-        offerAs = [ITwistedReactor]
+        offerAs = [running.ITwistedReactor]
     )
 
     import os
@@ -119,7 +120,6 @@ class ProcessSupervisor(EventDriven):
         template = adapt(self.template, ISupervisorPluginProvider, None)
         if template is not None:
             self.plugins.extend(template.getSupervisorPlugins(self))
-
 
     def _run(self):
 
@@ -138,7 +138,7 @@ class ProcessSupervisor(EventDriven):
 
         retcode = super(ProcessSupervisor,self)._run()
 
-        if adapt(retcode,IExecutable,None) is not None:
+        if adapt(retcode,running.IExecutable,None) is not None:
             # child process, drop out to the trampoline
             return retcode
 
@@ -284,209 +284,4 @@ class ProcessSupervisor(EventDriven):
                 pass # XXX
 
         self.readPidFile(doKill)
-
-class BusyProxy(ChildProcess):
-
-    """Proxy for process that communicates its "busy" status"""
-    log        = binding.Obtain('logging.logger:supervisor.busy-monitor')
-    reactor    = binding.Obtain(IBasicReactor)
-    busyStream = binding.Require("readable pipe from child")
-    fileno     = binding.Obtain('busyStream/fileno')
-    isBusy     = False
-
-    def doRead(self):
-        if self.isFinished:
-            return
-
-        try:
-            # We need this try block because the pipe could close at any time
-            byte = self.busyStream.read(1)
-        except ValueError:
-            # already closed
-            return
-
-        if byte=='+':
-            self.log.log(logs.TRACE,"Child process %d is now busy", self.pid)
-            self.isBusy = True
-            self._notify()
-        elif byte=='-':
-            self.log.log(logs.TRACE,"Child process %d is now free", self.pid)
-            self.isBusy = False
-            self._notify()
-
-    def _setStatus(self,status):
-        super(BusyProxy,self)._setStatus(status)
-        if self.isFinished:
-            self.reactor.removeReader(self)
-            self.busyStream.close()
-
-    __onStart = binding.Make(
-        lambda self: self.reactor.addReader(self),
-        uponAssembly = True
-    )
-
-
-class BusyStarter(binding.Component):
-
-    """Start processes for incoming connections if all children are busy"""
-
-    children = binding.Make(dict)
-    template = binding.Obtain(IProcessTemplate, suggestParent=False)
-    stream   = binding.Obtain('./template/stdin')
-    fileno   = binding.Obtain('./stream/fileno')
-    reactor  = binding.Obtain(IBasicReactor)
-
-    supervisor = binding.Obtain('..')
-
-    def processStarted(self, proxy):
-        proxy.addListener(self.statusChanged)
-        self.children[proxy.pid] = proxy.isBusy
-        self._delBinding('allBusy')
-
-    def statusChanged(self, proxy):
-        if not proxy.isRunning:
-            if proxy.pid in self.children:
-                del self.children[proxy.pid]
-        else:
-            self.children[proxy.pid] = proxy.isBusy
-
-        self._delBinding('allBusy')
-
-    allBusy = binding.Make(
-        # not one is available
-        lambda self: False not in self.children.values()
-    )
-
-    def doRead(self):
-        if self.allBusy:
-            self.supervisor.requestStart()
-
-    __onStart = binding.Make(
-        lambda self: self.reactor.addReader(self),
-        uponAssembly = True
-    )
-
-
-class FCGITemplateCommand(AbstractInterpreter):
-
-    """Command to process a socket URL + a FastCGI command to run on it"""
-
-    def interpret(self, filename):
-
-        stdin = self.lookupComponent(filename, adaptTo=IListeningSocket)
-        parent = self.getCommandParent()
-
-        return FastCGITemplate(
-            stdin=stdin,
-            command = self.getSubcommand(
-                Bootstrap,
-                parentComponent=parent,
-                componentName  =self.commandName,
-                stdin = stdin
-            )
-        )
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-class FastCGITemplate(AbstractProcessTemplate):
-
-    """Process template for FastCGI subprocess w/busy monitoring"""
-
-    protocols.advise(
-        instancesProvide=[IRerunnableCGI, ISupervisorPluginProvider]
-    )
-
-    proxyClass = BusyProxy
-    readPipes  = ('busyStream',)
-
-    socketURL = binding.Require("URL of TCP or Unix socket to listen on")
-
-    command   = binding.Require(
-        "IRerunnableCGI command to run in subprocess", adaptTo=IRerunnableCGI,
-        uponAssembly=True   # force creation to occur in parent process
-    )
-
-    stdin = binding.Make(
-        lambda self: self.lookupComponent(self.socketURL),
-        adaptTo = IListeningSocket
-    )
-
-    def runCGI(self, *args):
-        self.sendToParent('+')      # start being busy
-        try:
-            self.command.runCGI(*args)
-        finally:
-            self.sendToParent('-')  # finish being busy
-
-    def _redirect(self):
-        if self.stdin.fileno():
-            self.os.dup2(self.stdin.fileno(),0)
-
-    def _makeStub(self):
-        from peak.running.commands import CGICommand
-        return CGICommand(self, cgiCommand=self, stdin=self.stdin)
-
-    def getSupervisorPlugins(self, supervisor):
-        return [BusyStarter(supervisor, template=self, stream=self.stdin)]
-
-    def sendToParent(self,s):
-        """Write to parent; handle errors by stopping writes and reactor"""
-        if self.busyStream is None:
-            return
-        try:
-            self.busyStream.write(s)
-        except IOError,v:
-            import errno
-            if v.errno==errno.EPIPE:    # parent went away, so we should leave
-                self.busyStream = None
-                self.lookupComponent(IBasicReactor).stop()
-            else:
-                raise
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
