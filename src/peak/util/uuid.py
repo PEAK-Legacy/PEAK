@@ -54,7 +54,7 @@ class UUID(str):
         global lasttime, offset
 
         if CreateGuid and other_all_none and not from_string:
-            # just want a new id and can use win32
+            # just want any new id and can use win32
             from_string = CreateGuid()[1:-1]    # strip off {}'s
             
         if from_string:
