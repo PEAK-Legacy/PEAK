@@ -80,7 +80,7 @@ def getInitialContext_default(environ={}):
 
 
 
-_initialContextHook.set(getDefaultInitialContext)
+_initialContextHook.set(getInitialContext_default)
 
 
 def getInitialContext(environ={}):
