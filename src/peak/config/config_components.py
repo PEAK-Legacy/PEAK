@@ -15,7 +15,7 @@ __all__ = [
     'PropertyMap', 'LazyRule', 'ConfigReader', 'loadConfigFiles',
     'loadConfigFile', 'loadMapping', 'PropertySet', 'fileNearModule',
     'iterParents','findUtilities','findUtility', 'ProviderOf',
-    'provideInstance', 'instancePerComponent',
+    'provideInstance', 'instancePerComponent', 'Fallback'
 ]
 
 
@@ -93,27 +93,27 @@ def findUtility(component, iface, default=NOT_GIVEN):
     return default
 
 
+class Fallback:
+
+    """Fall back to another property namespace
+
+    Use this in .ini files (e.g. '__main__.* = Fallback("environ.*")') to
+    create a rule that looks up undefined properties in another property
+    namespace.
+    """
+
+    protocols.advise(
+        instancesProvide = [ISmartProperty]
+    )
+
+    def __init__(self, namespace):
+        self.prefix = PropertyName(namespace).asPrefix()
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    def computeProperty(self, propertyMap, name, prefix, suffix, targetObject):
+        return config.getProperty(
+            propertyMap, self.prefix+suffix, default=NOT_FOUND
+        )
 
 
 

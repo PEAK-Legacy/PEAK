@@ -2,6 +2,9 @@ Fixes and Enhancements since Version 0.5 alpha 2
 
  Changed, Enhanced, or Newly Deprecated Features
 
+ - Added 'config.Fallback()' convenience class for redirecting property lookups
+   from one namespace to another.  See 'peak.ini' for usage examples.
+
  - SQL connection objects now get their type converters from a distinct
    property namespace for each DBAPI driver.  For example a driver using the
    'cx_Oracle' module will get its type converters from the
