@@ -1,0 +1,100 @@
+\chapter{Defining and Assembling Components: The PEAK Binding Framework}
+
+\section{Component-Based Applications}
+
+What's in a component, anyway?  Why use them to develop software?  Software
+developers have dreamed for decades of a future where applications could be
+built by simply plugging together off-the-shelf components.  In some
+development environments, this is at least partly reality today.  Many GUI
+programming tools let you construct at least the visual parts of an 
+application by assembling components.
+
+The promised benefits of component-based development architectures include
+reusability (and therefore less repetitive work), reliability (if each part
+works separately, and they are assembled correctly, the whole should work),
+and ease of understanding/maintenance (because parts can be understood
+separately.
+
+To be effective, a component architecture must include ways of:
+
+\begin{itemize}
+
+\item connecting components to form an application,
+
+\item packaging and distributing the components, and
+
+\item separating the work of an application into components.
+
+\end{itemize}
+
+Let's look at how PEAK addresses these issues.
+
+
+\subsection{Composing and Connecting}
+
+Imagine a car.  It's composed from a variety of parts: the wheels, engine, 
+battery, frame, and so on.  Some of these parts are also composed of parts:
+the engine has a block, cylinders, pistons, spark plugs, and so on.
+
+Each part in this "component assembly" can be a part of only one larger part:
+its "parent component", so to speak.  The hubcaps are part of the wheels,
+and so they can't also be part of the engine.  (They wouldn't fit there in 
+any case, but that's beside the point.)  Consider that screws or bolts may
+be used in many parts of the car: each is part of only one other part of
+the car, although more than one of the same \emph{kind} of part may be used
+in other places.  In the UML (Unified Modelling Language) and in PEAK, this
+kind of parent-child "assembly" relationship  is called "composition": a
+component is being "composed" by assembling other components.
+
+But in the UML and in real life, this isn't the only way of building things
+with components.  It would be very inefficient if every light and accessory
+in your car had to have its own, independent electrical system.  Ways of
+\emph{sharing} components are needed.  In the car, wires, pipes, hoses, and
+shafts serve to \emph{connect} the services provided by shared components to
+the places where they are needed.  Note that such connections may be between
+components at any level: wires carry electricity to every electrical part, no
+matter how big or small.  In some cases, wires go to a major subsystem, which
+then has internal wires to carry electricity inward to its parts, or to carry
+signals between its parts.  In  the UML, these kind of "shared", "peer-to-peer"
+connections are called "associations".
+
+In the Python language, components are Python objects, and composition and
+association relationships are represented using objects' attributes.  Using
+the \module{peak.binding} package, you'll create "attribute bindings" that 
+define what sub-objects will be created (via composition) or external objects 
+will be referenced (via association) by each attribute of a component.
+
+Of course, there are some important differences between software and the real
+world.  In the real world, we have to actually build every part of the car
+"ahead of time", and we must have one screw for every place a screw is needed.
+In software, classes let us define the concept of a "screw" once and then use
+it as many times as we want, anywhere that we want.
+
+Also, with PEAK, bindings are "lazy".  What this means is that we can define
+an "engine" class whose parts aren't actually created until they're needed.
+We just list the parts that are needed and what attributes they'll be bound
+to, and when the attribute is used, the part is automatically created or
+connected, according to our definition.
+
+Since each part "magically" appears the first time we want to use it, it's
+as though it was always there.  It's as if your car was an empty shell until
+you opened the door or looked in the window, at which point all the contents
+magically appeared.  And then when you got into the car, the radio was just
+an empty shell until you tried to turn it on, at which point all of its
+internal components sprang into being and wired themselves together.
+
+This "lazy" construction technique can speed startup times for applications
+which are built from large numbers of components, by not creating all the
+objects right away, and by never creating objects that don't get used during
+that application run.
+
+\subsection{Composing Applications}
+
+\subsection{Connecting Components}
+
+
+\section{Getting Started with PEAK}
+
+\subsection{Package layout/API Conventions}
+
+
