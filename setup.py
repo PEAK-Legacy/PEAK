@@ -2,37 +2,10 @@
 
 """Distutils setup file"""
 
-from distutils.core import Extension
-from os.path import join, walk
-from os import sep
-import fnmatch
+execfile('src/setup/prologue.py')
 
 include_tests = True        # edit this to stop installation of test modules
 include_metamodels = True   # edit this to stop installation of MOF, UML, etc.
-
-
-try:
-    import Pyrex.Distutils
-    EXT = '.pyx'
-
-except ImportError:
-    EXT = '.c'
-
-
-def findDataFiles(dir, skipDepth, *globs):
-
-    def visit(out, dirname, names):
-	n = []
-        for pat in globs:
-            n.extend(fnmatch.filter(names,pat))
-        if n:
-            instdir = sep.join(dirname.split(sep)[skipDepth:])
-            out.append( (instdir, [join(dirname,f) for f in n]) )
-
-    out = []
-    walk(dir,visit,out)
-    return out
-
 
 
 # Metadata
@@ -73,10 +46,6 @@ data_files = [
 ]
 
 
-
-
-
-
 if include_tests:
 
     packages += [
@@ -102,15 +71,14 @@ if include_metamodels:
 
     if include_tests:
 
-        packages += [
-            'peak.metamodels.tests',
-        ]
+        packages += [ 'peak.metamodels.tests' ]
 
         data_files += [
             ('peak/metamodels/tests',
                 ['src/peak/metamodels/tests/MetaMeta.xml']
             ),
         ]
+
 
 try:
     # Check if Zope X3 is installed; we use zope.component
@@ -141,6 +109,15 @@ if not zope_installed:
         ]
 
         data_files += findDataFiles('src/ZConfig/tests', 1, '*.xml', '*.txt', '*.conf')
+
+
+
+
+
+
+
+
+
 
 
 
