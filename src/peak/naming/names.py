@@ -617,7 +617,7 @@ class PropertyName(str):
         return self.endswith('*')
 
     def isDefault(self):
-        return self.endswith('*')
+        return self.endswith('?')
 
     def isPlain(self):
         return self[-1:] not in '?*'
@@ -625,12 +625,15 @@ class PropertyName(str):
 
     def matchPatterns(self):
 
-        if not self.isPlain():
+        if self.isWildcard():
             raise exceptions.InvalidName(
-                "Can't match patterns against special property names", self
+                "Can't match patterns against wildcard names", self
             )
 
         yield self
+
+        if self.isDefault():
+            return
 
         name = self
         
@@ -649,9 +652,6 @@ class PropertyName(str):
 
     def extends(self, other, strict=1):
         return not strict and self==other
-
-
-
 
 
     def asPrefix(self):
