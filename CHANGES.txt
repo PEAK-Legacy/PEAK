@@ -2,12 +2,24 @@ Fixes and Enhancements since Version 0.5 alpha 2
 
  Changed, Enhanced, or Newly Deprecated Features
 
+ - Added "[Import on Demand]" section type to .ini files, allowing you to
+   define shortcuts for modules that you frequently reference in your
+   configuration.  This lets you replace e.g. 'importString("foo.bar.baz:Spam")'
+   with 'foo_baz.Spam' in expressions, by adding something like this::
+
+    [Import on Demand]
+    foo_bar = "foo.bar.baz"
+
+   to your configuration.  The defined shortcut is then available for the
+   remainder of that configuration file, and in any .ini files included from
+   the current file.  See 'peak.ini' for an example and more info.
+
  - Logging-related interfaces have been moved into the 'peak.running.logs'
    module.  So, what used to be 'running.ILogger' is now 'logs.ILogger'.
 
  - Log events now use a standard component construction signature, and the
    class used for event objects is now configurable as the factory for
-   'logs.ILogEvent'.  (See "Component Factories" in 'peak.ini'.)
+   'logs.ILogEvent'.  (See "[Component Factories]" in 'peak.ini'.)
 
  - By popular demand, 'logs.ILogger' (and its default implementation) now
    includes 'trace()', 'notice()', 'alert()' and 'emergency()' methods that use

@@ -135,12 +135,31 @@ class IIniParser(Interface):
             bar = baz
 
         and a parser 'prefix' of '"some.prefix."', this method gets called
-        with '("some.prefix.foo.", "bar", "baz", ...)'.
-        """
+        with '("some.prefix.foo.", "bar", "baz", ...)'."""
+
+
+    def add_global(name,value):
+        """Add/update a global variable for rules evaluation
+
+        This creates a new 'globalDict' attribute, so that rules
+        parsed before this global was added, will still be using
+        the globals that were in effect when the rule was parsed."""
+
 
     prefix = Attribute("""Prefix that should be added to all property names""")
-    pMap       = Attribute("""IPropertyMap that the parser is loading""")
+    pMap   = Attribute("""IPropertyMap that the parser is loading""")
+
     globalDict = Attribute("""Globals dictionary used for eval()ing rules""")
+
+
+
+
+
+
+
+
+
+
 
 
 class ISettingParser(Interface):
@@ -179,25 +198,6 @@ class IRule(Interface):
         time for the same input parameters.  If it cannot guarantee this
         algorithmically, it must cache its results keyed by the parameters it
         used, and not compute the results a second time."""
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

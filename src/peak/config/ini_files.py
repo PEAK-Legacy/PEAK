@@ -3,16 +3,16 @@ from peak.util.imports import importString, importObject, whenImported
 from peak.util.FileParsing import AbstractConfigParser
 from interfaces import *
 from config_components import FactoryFor, CreateViaFactory, LazyRule
+import re
 
 __all__ = [
     'ConfigReader', 'loadConfigFiles', 'loadConfigFile', 'loadMapping',
     'ruleForExpr',
 ]
 
-
 SECTION_PARSERS = PropertyName('peak.config.iniFile.sectionParsers')
 CONFIG_LOADERS  = PropertyName('peak.config.loaders')
-
+isIdentifier = re.compile('^[A-Za-z_][A-Za-z0-9_]*$').match
 
 def ruleForExpr(name,expr,globalDict):
     """Return 'config.IRule' for property 'name' based on 'expr' string"""
@@ -91,7 +91,7 @@ class ConfigReader(AbstractConfigParser):
         self.prefix = PropertyName(prefix).asPrefix()
         if globalDict is None:
             globalDict = globals()
-        self.globalDict = globalDict.copy()
+        self.globalDict = globalDict
 
     def add_setting(self, section, name, value, lineInfo):
         _ruleName = PropertyName(section+name)
@@ -121,10 +121,72 @@ class ConfigReader(AbstractConfigParser):
 
         self.process_settings(section, lines, handler)
 
+    def add_global(self,name,value):
+
+        """Add/update a global variable for rules evaluation
+
+        This creates a new 'globalDict' attribute, so that rules
+        parsed before this global was added, will still be using
+        the globals that were in effect when the rule was parsed."""
+
+        self.globalDict = self.globalDict.copy()
+        self.globalDict[name]=value
+
+
+
 def do_include(parser, section, name, value, lineInfo):
     propertyMap = parser.pMap
     loader = importObject(CONFIG_LOADERS.of(propertyMap)[name])
-    eval("loader(propertyMap,%s,includedFrom=parser)" % value,parser.globalDict,locals())
+    eval(
+        "loader(propertyMap,%s,includedFrom=parser)" % value,
+        parser.globalDict,
+        locals()
+    )
+
+
+def register_factory(parser, section, name, value, lineInfo):
+    module = '.'.join(name.replace(':','.').split('.')[:-1])
+    pMap = parser.pMap
+    globalDict = parser.globalDict
+
+    def onImport(module):
+        iface = importString(name)
+        pMap.registerProvider(
+            FactoryFor(iface),
+            ruleForExpr(name,"importObject(%s)" % value, globalDict)
+        )
+        pMap.registerProvider(iface, CreateViaFactory(iface))
+
+    whenImported(module, onImport)
+
+
+
+
+def import_on_demand(parser, section, name, value, lineInfo):
+
+    if not isIdentifier(name):
+        e = SyntaxError(
+            "%r is not a valid module shortcut name (at line %d in %s)" %
+            (name,lineInfo[1],lineInfo[0])
+        )
+        e.filename, e.lineno, e.text = lineInfo
+        raise e
+
+    globalDict = parser.globalDict.copy()
+    from peak.util.imports import lazyModule  # ensure it's in locals
+    parser.add_global(name, eval("lazyModule(%s)" % value,globalDict,locals()))
+
+
+def load_on_demand(parser, section, name, value, lineInfo):
+    globalDict = parser.globalDict
+    parser.pMap.registerProvider(
+        PropertyName(name),
+        LazyRule(
+            lambda propertyMap, ruleName, propertyName: eval(value,globalDict,locals()),
+            prefix = name
+        )
+    )
+
 
 def provide_utility(parser, section, name, value, lineInfo):    # DEPRECATED!
     module = '.'.join(name.replace(':','.').split('.')[:-1])
@@ -137,28 +199,7 @@ def provide_utility(parser, section, name, value, lineInfo):    # DEPRECATED!
         )
     )
 
-def register_factory(parser, section, name, value, lineInfo):
-    module = '.'.join(name.replace(':','.').split('.')[:-1])
-    pMap = parser.pMap
-    globalDict = parser.globalDict
-    def onImport(module):
-        iface = importString(name)
-        pMap.registerProvider(
-            FactoryFor(iface),
-            ruleForExpr(name,"importObject(%s)" % value, globalDict)
-        )
-        pMap.registerProvider(iface, CreateViaFactory(iface))
 
-    whenImported(module, onImport)
 
-def on_demand(parser, section, name, value, lineInfo):
-    globalDict = parser.globalDict
-    parser.pMap.registerProvider(
-        PropertyName(name),
-        LazyRule(
-            lambda propertyMap, ruleName, propertyName: eval(value,globalDict,locals()),
-            prefix = name
-        )
-    )
 
 
