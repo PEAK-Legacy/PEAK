@@ -285,25 +285,57 @@ class ldapURL(naming.ParsedURL):
     nameAttr = 'basedn'
 
 
-    def __init__(self, scheme=None, body=None,
-                 host='', port=389, basedn='', attrs=None,
-                 scope=SCOPE_BASE, filter=None, extensions=None,
-    ):
-        extensions = extensions or {}
-        self.setup(locals())
+    class host(model.structField):
+        referencedType=model.String
+        defaultValue=None
+
+    class port(model.structField):
+        referencedType=model.Integer
+        defaultValue=389
+
+    class basedn(model.structField):
+        referencedType=model.String
+        defaultValue=''
+
+    class attrs(model.structField):
+        referencedType=model.Any    # XXX
+        defaultValue=None
+
+    class scope(model.structField):
+        referencedType=model.Integer
+        defaultValue=SCOPE_BASE
+
+    class filter(model.structField):
+        referencedType=model.String
+        defaultValue=None
+
+    class extensions(model.structField):
+        referencedType=model.Any    # XXX
+        defaultValue={}
+
+    class critical(model.structField):
+        referencedType=model.Any    # XXX
+        defaultValue = ()
 
 
-    def parse(self, scheme, body):
+
+
+
+
+
+
+
+
+    def parse(_self, _scheme, _body):
 
         _bindinfo = None
-        extensions = self.extensions
-
-        _hostport = body
+        _hostport = _body
+        extensions = {}
 
         if _hostport[:2] == '//':
             _hostport = _hostport[2:]
         else:
-            raise exceptions.InvalidName(str(self))
+            raise exceptions.InvalidName('%s:%s' % (_scheme,_body))
 
         if '/' in _hostport:
             _hostport, _rest = _hostport.split('/', 1)
@@ -320,11 +352,9 @@ class ldapURL(naming.ParsedURL):
                 try:
                     port = int(port)
                 except:
-                    raise exceptions.InvalidName(str(self))
+                    raise exceptions.InvalidName('%s:%s' % (_scheme,_body))
             else:
                 host = unquote(_hostport)
-
-
 
         if _bindinfo:
 
@@ -362,11 +392,6 @@ class ldapURL(naming.ParsedURL):
         if _rest[2]:
             filter = unquote(_rest[2])
 
-
-
-
-
-
         if _rest[3]:
 
             _exts = map(unquote, _rest[3].split(','))
@@ -381,10 +406,16 @@ class ldapURL(naming.ParsedURL):
                 _k, _v = _e.split('=', 1)
                 extensions[_k.lower()] = (_crit, _v)
 
+
+
         critical = [_k for (_k, (_crit, _v)) in extensions.items() if _crit]
         critical = tuple(critical)
 
-        return locals()
+        return dict(
+            [(k,v) for (k,v) in locals().items()
+                if not k.startswith('_')
+            ]
+        )
 
 
     def retrieve(self, refInfo, name, context, attrs=None):
@@ -393,6 +424,16 @@ class ldapURL(naming.ParsedURL):
             context.creationParent, context.creationName,
             address = self
         )
+
+    # XXX def getCanonicalBody(self):
+
+
+
+
+
+
+
+
 
 
 

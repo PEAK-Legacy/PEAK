@@ -4,7 +4,7 @@ from interfaces import *
 from syntax     import *
 from names      import *
 from contexts   import *
-
+from URL import Base as ParsedURL
 import spi
 
 

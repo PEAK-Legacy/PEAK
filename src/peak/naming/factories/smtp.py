@@ -1,9 +1,8 @@
-from peak.naming.api import ParsedURL
-
+from peak.api import naming, model
 import smtplib
 
 
-class smtpURL(ParsedURL):
+class smtpURL(naming.ParsedURL):
 
     supportedSchemes = ('smtp', )
 
@@ -13,18 +12,21 @@ class smtpURL(ParsedURL):
         (?P<host>[^:]*)(:(?P<port>[0-9]+))?         # host + port
     """
 
-    def __init__(self, scheme=None, body=None,
-        host=None, port=smtplib.SMTP_PORT, user=None, auth=None,
-    ):
-        self.setup(locals())
+    class user(model.structField):
+        referencedType=model.String
+        defaultValue=None
 
-    def parse(self,scheme,body):
+    class port(model.structField):
+        referencedType=model.Integer
+        defaultValue=smtplib.SMTP_PORT
 
-        d = super(smtpURL,self).parse(scheme,body)
+    class host(model.structField):
+        referencedType=model.String
+        defaultValue=None
 
-        if 'port' in d:
-            d['port'] = int(d['port'])
-        return d
+    class auth(model.structField):
+        referencedType=model.String
+        defaultValue=None
 
     def retrieve(self, refInfo, name, context, attrs=None):
         return smtplib.SMTP(self.host, self.port)

@@ -1,5 +1,12 @@
 Fixes and Enhancements since Version 0.5 alpha 1
 
+ - Refactored naming.ParsedURL to be a peak.model.Struct; this means that
+   existing ParsedURL subclasses will need to be revised if they used fields
+   other than 'scheme' and 'body'.  See PEAK's ParsedURL subclasses for
+   examples of the needed changes.  Mainly, '__init__' methods go away,
+   'parse' methods change slightly, and explicit field definitions (using
+   'model.structField' or similar) are required.
+
  - Added 'binding.whenAssembled(...)' as syntax sugar for
    'binding.Once(...,activateUponAssembly=True)'.
 

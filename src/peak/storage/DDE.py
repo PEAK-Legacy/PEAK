@@ -59,10 +59,25 @@ class ddeURL(naming.ParsedURL):
 
     supportedSchemes = 'win32.dde',
 
-    def __init__(self, scheme=None, body=None,
-        service=None, topic=None, file=None, retries=10, sleep=1
-    ):
-        self.setup(locals())
+    class service(model.structField):
+        referencedType = model.String
+
+    class topic(model.structField):
+        referencedType = model.String
+
+    class file(model.structField):
+        referencedType = model.String
+        defaultValue = None
+
+    class retries(model.structField):
+        referencedType = model.Integer
+        defaultValue = 10
+
+    class sleep(model.structField):
+        referencedType = model.Integer
+        defaultValue = 1
+
+
 
 
     def retrieve(self, refInfo, name, context, attrs=None):
@@ -74,10 +89,6 @@ class ddeURL(naming.ParsedURL):
             retries=self.retries,
             sleepFor=self.sleep,
         )
-
-
-
-
 
 
     def parse(self, scheme, body):
@@ -102,20 +113,9 @@ class ddeURL(naming.ParsedURL):
                     "Unrecognized parameter %s=%s" % (_x,_other[_x])
                 )
 
-        _other.update(locals())
-
+        _other['service'] = service
+        _other['topic'] = topic
         return _other
-
-
-
-
-
-
-
-
-
-
-
 
 
 

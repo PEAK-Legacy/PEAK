@@ -1,6 +1,6 @@
 from peak.naming.api import *
 from peak.util.uuid import UUID
-
+from peak.api import model
 
 class uuidURL(ParsedURL):
     """
@@ -16,19 +16,22 @@ class uuidURL(ParsedURL):
 
     supportedSchemes = 'uuid',
 
+    class quals(model.structField):
+        upperBound = None
+        defaultValue = ()
+        referencedType = model.Any
 
-    def __init__(self, scheme=None, body=None, uuid=None, quals=None):
-        self.setup(locals())
+    class uuid(model.structField):
+        class referencedType(model.String):
+            def mdl_normalize(klass,value):
+                return UUID(value)
 
 
     def parse(self, scheme, body):
-
         _l = body.split(';')
-
-        uuid = UUID(_l[0])
-
-        quals = tuple( [tuple(_x.split('=', 1)) for _x in _l[1:]] )
-
-        return locals()
+        return {
+            'uuid':  UUID(_l[0]),
+            'quals': tuple([ tuple(v.split('=',1)) for v in _l[1:] ])
+        }
 
 

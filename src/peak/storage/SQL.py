@@ -455,8 +455,11 @@ class GadflyURL(naming.ParsedURL):
 
     pattern = "(//)?(?P<db>[^@]+)@(?P<dir>.+)"
 
-    def __init__(self, scheme=None, body=None, db=None, dir=None):
-        self.setup(locals())
+    class db(model.structField):
+        referencedType = model.String
+
+    class dir(model.structField):
+        referencedType = model.String
 
     def retrieve(self, refInfo, name, context, attrs=None):
 
@@ -464,9 +467,6 @@ class GadflyURL(naming.ParsedURL):
             context.creationParent, context.creationName,
             address = self
         )
-
-
-
 
 
 
@@ -506,11 +506,20 @@ class GenericSQL_URL(naming.ParsedURL):
     (/(?P<db>.+))?
     """
 
-    def __init__(self, scheme=None, body=None,
-                 user=None, passwd=None, server=None, db=None,
-        ):
-        self.setup(locals())
+    class user(model.structField):
+        referencedType = model.String
+        defaultValue = None
 
+    class passwd(model.structField):
+        referencedType = model.String
+        defaultValue = None
+
+    class server(model.structField):
+        referencedType = model.String
+
+    class db(model.structField):
+        referencedType = model.String
+        defaultValue = None
 
     def retrieve(self, refInfo, name, context, attrs=None):
 
@@ -521,10 +530,42 @@ class GenericSQL_URL(naming.ParsedURL):
 
 
 
+
 drivers = {
     'sybase': SybaseConnection,
     'pgsql':  PGSQLConnection,
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

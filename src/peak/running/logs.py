@@ -7,9 +7,9 @@
 '''
 
 from peak.binding.components import Component, Once, New, requireBinding
-from peak.naming.names import ParsedURL
+from peak.naming.api import ParsedURL
 from peak.interface import implements
-from peak.api import NOT_GIVEN
+from peak.api import NOT_GIVEN, model
 
 from interfaces import ILogger
 
@@ -248,11 +248,15 @@ class logfileURL(ParsedURL):
 
     supportedSchemes = ('logfile', )
 
-    def __init__(self, scheme=None, body=None, filename=None, level=None):
-        self.setup(locals())
+    class filename(model.structField):
+        referencedType = model.String
+
+    class level(model.structField):
+        referencedType = model.Integer
+        defaultValue = ALL
+
 
     def parse(self, scheme, body):
-
         filename, _qs = body, {}
 
         if '?' in filename:
@@ -272,7 +276,7 @@ class logfileURL(ParsedURL):
                 "Unrecognized log level", body
             )
 
-        return locals()
+        return {'level':level, 'filename':filename}
 
 
     def retrieve(self, refInfo, name, context, attrs=None):
@@ -281,12 +285,10 @@ class logfileURL(ParsedURL):
             filename=self.filename, level=self.level
         )
 
-
-
-
-
 class peakLoggerURL(ParsedURL):
     """URL that only looks up PEAK loggers, even if 'logging' is installed"""
+
+    supportedSchemes = ('logging.logger', )
 
     def retrieve(self, refInfo, name, context, attrs=None):
 
@@ -303,8 +305,6 @@ class peakLoggerURL(ParsedURL):
 class loggerURL(peakLoggerURL):
 
     """URL that retrieves a PEP 282 logger, or a PEAK substitute"""
-
-    supportedSchemes = ('logging.logger', )
 
     def retrieve(self, refInfo, name, context, attrs=None):
 

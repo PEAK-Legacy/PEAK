@@ -35,7 +35,7 @@ __all__ = ['LockFile', 'NullLockFile']
 
 import os, errno, time
 from peak.util.threads import allocate_lock
-
+from peak.api import naming
 from peak.interface import Interface
 
 
@@ -490,9 +490,7 @@ else:
 
 
 
-from peak.naming.names import ParsedURL
-
-class lockfileURL(ParsedURL):
+class lockfileURL(naming.ParsedURL):
 
     supportedSchemes = (
         'lockfile', 'shlockfile', 'flockfile', 'winflockfile',
@@ -515,6 +513,8 @@ class lockfileURL(ParsedURL):
 
         elif self.scheme == 'winflockfile':
             return WinFLockFile(self.body)
+
+
 
 
 
