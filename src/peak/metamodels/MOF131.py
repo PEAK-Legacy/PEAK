@@ -591,6 +591,28 @@ class MOFModel(model.Model, storage.xmi.Loader):
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     class Package(GeneralizableElement):
 
         _allowedContents = binding.classAttr(
@@ -602,13 +624,32 @@ class MOFModel(model.Model, storage.xmi.Loader):
 
         )
 
-        def externalize(self, format):
+        def externalize(self, format='peak.model'):
+
+            if format=='peak.model':
+                from peak.model.mof2py import MOFGenerator
+                from peak.util.IndentedStream import IndentedStream
+                from cStringIO import StringIO
+                s = StringIO()
+                MOFGenerator(self,
+                    MOFModel=MOFModel, stream=IndentedStream(s)
+                ).writePackage(self)
+                return s
+
             raise FormatNotSupported(format)    # XXX should allow Python gen.
+
 
         def internalize(klass, format, stream):
             raise FormatNotSupported(format)    # XXX
 
         internalize = classmethod(internalize)
+
+
+
+
+
+
+
 
 
 
