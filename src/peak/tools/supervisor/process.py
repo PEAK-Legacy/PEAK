@@ -164,23 +164,22 @@ class ProcessSupervisor(EventDriven):
 
     def _doStart(self):
 
-        if len(self.processes)>=self.maxChildren:
-            return
+        if len(self.processes)<self.maxChildren:
 
-        proxy, stub = self.template.spawn(self)
-
-        if proxy is None:
-            self.abandonChildren()  # we're the child, so give up custody
-            self.mainLoop.childForked(stub)
-            return
-
-        self.mainLoop.activityOccurred()
-        self.log.debug("Spawned new child process (%d)", proxy.pid)
-        proxy.addListener(self._childChange)
-        self.processes[proxy.pid] = proxy
-
-        for plugin in self.plugins:
-            plugin.processStarted(proxy)
+            proxy, stub = self.template.spawn(self)
+    
+            if proxy is None:
+                self.abandonChildren()  # we're the child, so give up custody
+                self.mainLoop.childForked(stub)
+                return
+    
+            self.mainLoop.activityOccurred()
+            self.log.debug("Spawned new child process (%d)", proxy.pid)
+            proxy.addListener(self._childChange)
+            self.processes[proxy.pid] = proxy
+    
+            for plugin in self.plugins:
+                plugin.processStarted(proxy)
 
         self.lastStart = self.time()
         self.nextStart = None
@@ -198,6 +197,7 @@ class ProcessSupervisor(EventDriven):
     def startIfTooFew(self):
         if len(self.processes)<self.minChildren:
             self.requestStart()
+
 
 
 

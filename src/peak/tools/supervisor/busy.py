@@ -68,16 +68,16 @@ class BusyProxy(ChildProcess):
             self.isBusy = False
             self._notify()
 
-    def _setStatus(self,status):
-        super(BusyProxy,self)._setStatus(status)
-        if self.isFinished:
-            self.reactor.removeReader(self)
-            self.busyStream.close()
-
     __onStart = binding.Make(
         lambda self: self.reactor.addReader(self),
         uponAssembly = True
     )
+
+    def close(self):
+        super(BusyProxy,self).close()
+        self.reactor.removeReader(self)
+        self.busyStream.close()
+
 
 
 class BusyStarter(binding.Component):
