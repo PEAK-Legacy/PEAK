@@ -1,6 +1,6 @@
 """Miscellaneous API functions, classes, etc."""
 
-from Meta import NamedDescriptor
+from Meta import ActiveDescriptor
 
 __all__ = ['Once', 'OnceClass']
 
@@ -39,7 +39,7 @@ __all__ = ['Once', 'OnceClass']
 
 
 
-class Once(NamedDescriptor):
+class Once(ActiveDescriptor):
 
     """One-time Properties
     
@@ -62,9 +62,9 @@ class Once(NamedDescriptor):
         to the '__name__' of the supplied callable.  (So in the usage
         example above, it could have been omitted.)
 
-        'Once' is a 'Meta.NamedDescriptor', so if you place an instance of it
+        'Once' is a 'Meta.ActiveDescriptor', so if you place an instance of it
         in a class which supports descriptor naming (i.e., has a metaclass
-        derived from 'Meta.NamedDescriptors'), it will automatically know the
+        derived from 'Meta.ActiveDescriptors'), it will automatically know the
         correct attribute name to use in the instance dictionary, even if it
         is different than the supplied name or name of the supplied callable.
         However, if you place a 'Once' instance in a class which does *not*
@@ -94,7 +94,7 @@ class Once(NamedDescriptor):
 
         if not n or getattr(obj.__class__,n) is not self:
             raise TypeError(
-                "%s used in type which does not support NamedDescriptor"
+                "%s used in type which does not support ActiveDescriptors"
                 % self
             )
             
@@ -106,17 +106,17 @@ class Once(NamedDescriptor):
         raise NotImplementedError
 
 
-    def copyWithName(self,newName):
-    
-        if newName==self.attrName:
-            return self
-            
-        from copy import copy
-        newOb = copy(self)
-        newOb.attrName = newName
-        return newOb
+    def activate(self,klass,attrName):
 
+        if attrName !=self.attrName:
 
+            from copy import copy
+            newOb = copy(self)
+
+            newOb.attrName = attrName
+            setattr(klass, attrName, newOb)
+
+        klass.__volatile_attrs__.add(attrName)
 
 
 
@@ -149,8 +149,9 @@ class OnceClass(Once, type):
     def computeValue(self, *args):
         return self(*args)
     
-    def copyWithName(self, newName):
-        if newName==self.attrName:
-            return self
-        return Once(self.computeValue, newName)
+    def activate(self,klass,attrName):
 
+        if attrName !=self.attrName:
+            setattr(klass, attrName, Once(self.computeValue, attrName))
+
+        klass.__volatile_attrs__.add(attrName)

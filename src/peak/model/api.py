@@ -126,7 +126,7 @@ class Base(object):
     """Base for all S-E-F classes"""
 
     __metaclasses__  = (
-        Meta.AssertInterfaces, Meta.ClassInit, Meta.NamedDescriptors
+        Meta.AssertInterfaces, Meta.ClassInit, Meta.ActiveDescriptors
     )
     
     __implements__ = ISEF

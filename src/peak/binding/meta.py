@@ -1,39 +1,39 @@
-"""Occasionally Useful Metaclasses (And Friends)"""
+"""Frequently Useful Metaclasses (And Friends)"""
 
 __all__ = [
-    'ClassInit', 'AssertInterfaces', 'NamedDescriptors', 'NamedDescriptor',
+    'ClassInit', 'AssertInterfaces', 'ActiveDescriptors', 'ActiveDescriptor',
 ]
 
+from kjbuckets import *
 
-class NamedDescriptors(type):
+class ActiveDescriptors(type):
 
-    """Type which gives its descriptors a chance to find out their names"""
+    """Type which gives its descriptors a chance to find out their names,
+       and supports tracking volatile attributes for __getstate__ filtering"""
     
     def __init__(klass, name, bases, dict):
 
+        va = kjSet()
+        e  = kjSet()
+
+        for k in klass.__mro__:
+            va += getattr(k,'__volatile_attrs__',e)
+            
+        klass.__volatile_attrs__ = va
+
         for k,v in dict.items():
-            if isinstance(v,NamedDescriptor):
-                setattr(klass, k, v.copyWithName(k))
+            if isinstance(v,ActiveDescriptor):
+                v.activate(klass,k)
 
-        super(NamedDescriptors,klass).__init__(name,bases,dict)
+        super(ActiveDescriptors,klass).__init__(name,bases,dict)
 
 
-class NamedDescriptor(object):
+class ActiveDescriptor(object):
     """This is just a (simpler sort of) interface assertion class""" 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
+    def activate(self,klass,attrName):
+        """Informs the descriptor that it is in 'klass' with name 'attrName'"""
+        raise NotImplementedError
 
 
 
