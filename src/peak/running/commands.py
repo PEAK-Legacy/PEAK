@@ -416,7 +416,7 @@ class Bootstrap(AbstractInterpreter):
         try:
             factory = self.lookupComponent(name)
         except exceptions.NameNotFound, v:
-            raise InvocationError(v)
+            raise InvocationError("Name not found: %s" % v)
 
         try:
             return self.getSubcommand(factory)
