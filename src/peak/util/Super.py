@@ -33,7 +33,7 @@ class Super(object):
             if attr in cls.__dict__:
                 x = cls.__dict__[attr]
                 if hasattr(x, "__get__") and not hasattr(x,"__set__"):
-                    x = x.__get__(obj, obj)
+                    x = x.__get__(obj, starttype)
                 return x
 
         raise AttributeError, attr
