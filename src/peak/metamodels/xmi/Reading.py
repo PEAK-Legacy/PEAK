@@ -302,10 +302,10 @@ class XMI_DM(storage.EntityDM):
         klass = self.getClass(self.index[oid]._name)
         return klass()
 
-
     def getClass(self,name):
-        return getattr(self.metamodel,self.metamodel._XMIMap[name]) # XXX
-        
+        if ':' in name:
+            return getattr(self.metamodel,name.split(':',1)[1])
+        return getattr(self.metamodel,name.split('.')[-1])
 
     def getFeature(self,klass,name):
         return getattr(klass,klass._XMIMap.get(name,''),None)  # XXX
