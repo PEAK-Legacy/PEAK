@@ -6,6 +6,7 @@ from interfaces import *
 from weakref import WeakKeyDictionary
 from protocols.advice import getFrameInfo, addClassAdvisor
 from types import ClassType
+from peak.binding.components import _Base
 
 __all__ = [
     'AccessAttempt', 'PermissionType', 'Permission', 'RuleSet',
@@ -38,7 +39,6 @@ def allow(basePerms=None, **namesToPermLists):
 
 
 
-
 class GuardedClassAdapter(protocols.Adapter):
 
     protocols.advise(
@@ -47,21 +47,30 @@ class GuardedClassAdapter(protocols.Adapter):
     )
 
     def nameToPermissionsMap(self, d, a):
-
         klass = self.subject
         if '_peak_nameToPermissions_map' in klass.__dict__:
             return klass._peak_nameToPermissions_map
 
-        m = klass._peak_nameToPermissions_map = {}
+        m = {}
+
+        # Ensure that base classes have their act together...
+        for base in klass.__bases__:
+            if base is object: continue
+            adapt(base,IGuardedClass).getAttributePermissions(None)
+
         map(m.update,
             binding.getInheritedRegistries(
                 klass,'_peak_nameToPermissions_map'
             )
         )
+
         for k,v in klass.__dict__.items():
             v = adapt(v,IGuardedDescriptor,None)
             if v is not None and v.permissionsNeeded is not None:
                 m[k] = v.permissionsNeeded
+
+        if m:
+            klass._peak_nameToPermissions_map = m
 
         return m
 
@@ -70,15 +79,6 @@ class GuardedClassAdapter(protocols.Adapter):
     def getAttributePermissions(self, name):
         """Return (abstract) permission types needed to access 'name'"""
         return self.nameToPermissionsMap.get(name,())
-
-
-
-
-
-
-
-
-
 
     def declarePermissions(self, objectPerms=None, **namePerms):
 
@@ -89,7 +89,7 @@ class GuardedClassAdapter(protocols.Adapter):
                 "Can't change permissions on a class with subclasses", klass
             )
 
-        m = self.nameToPermissionsMap
+        klass._peak_nameToPermissions_map = m = self.nameToPermissionsMap
 
         m.update(namePerms)
         if objectPerms is not None:
@@ -107,7 +107,7 @@ class NamePermissionsAdapter(object):
 
     protocols.advise(
         instancesProvide = [IGuardedObject],
-        asAdapterForTypes = [binding.Component]
+        asAdapterForTypes = [_Base] # base for binding.Component and model.Type
     )
 
     def __init__(self,ob,proto):

@@ -6,7 +6,7 @@ from peak.util.imports import importObject, importString
 from interfaces import IAttachable, IActiveDescriptor
 from _once import *
 from protocols import IOpenProvider, IOpenImplementor, NO_ADAPTER_NEEDED
-from peak.util.advice import metamethod
+from protocols.advice import metamethod, getMRO
 from warnings import warn
 from types import ClassType
 
@@ -67,7 +67,7 @@ def getInheritedRegistries(klass, registryName):
             yield reg
 
     else:
-        mro = list(klass.__mro__)
+        mro = list(getMRO(klass))
         bases = [(-mro.index(b),b) for b in bases]
         bases.sort()
         for (b,b) in bases:
