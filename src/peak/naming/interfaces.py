@@ -47,39 +47,6 @@ class IName(Interface.Base):
     """Abstract name object"""
 
 
-class IObjectFactory(Interface.Base):
-
-    def getObjectInstance(refInfo, name, context, environment, attrs=None):
-        """Return the object that should be constructed from 'refInfo'"""
-
-
-class IStateFactory(Interface.Base):
-
-    def getStateToBind(obj, name, context, environment, attrs=None):
-        """Return the state that should be used to save 'obj'"""
-
-
-class IURLContextFactory(Interface.Base):
-
-    def getURLContext(scheme, context=None, environ=None, iface=IBasicContext):
-        """Return a context that can provide 'iface' for 'scheme' URLs"""
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 class IBasicContext(Interface.Base):
 
     """Basic naming context; supports only configuration and name handling"""
@@ -169,3 +136,40 @@ class I_NNS_Binding(IBasicContext):
 
     def unbind_nns_ptr(name):
         """Remove any NNS pointer bound to 'name'"""
+
+
+
+class IObjectFactory(Interface.Base):
+
+    def getObjectInstance(refInfo, name, context, environment, attrs=None):
+        """Return the object that should be constructed from 'refInfo'"""
+
+
+class IStateFactory(Interface.Base):
+
+    def getStateToBind(obj, name, context, environment, attrs=None):
+        """Return the state that should be used to save 'obj'"""
+
+
+class IURLContextFactory(Interface.Base):
+
+    def getURLContext(scheme, context=None, environ=None, iface=IBasicContext):
+        """Return a context that can provide 'iface' for 'scheme' URLs"""
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
