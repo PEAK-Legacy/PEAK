@@ -10,12 +10,8 @@ class UUIDTests(TestCase):
 
         generated = {}
 
-        for i in range(10):
+        for i in range(100):
 
-            # we should really run more, but it takes 1/20th
-            # of a second to generate each UUID on Windows without
-            # PyWin... :(
-            
             u = UUID()
             assert u not in generated
             generated[u]=1
@@ -33,6 +29,10 @@ class UUIDTests(TestCase):
     def checkForced(self):
         u = UUID(nodeid='deaf1234feed')
         assert u.endswith('deaf1234feed')
+
+
+
+
 
 
 

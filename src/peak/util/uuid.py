@@ -4,6 +4,7 @@ from time import time
 from md5 import md5
 
 lasttime = 0
+offset   = 0
 
 __all__ = [
     'UUID',
@@ -38,7 +39,6 @@ clock_seq = getClockSeq()
 
 
 
-
 class UUID(str):
 
     __slots__ = []
@@ -51,7 +51,7 @@ class UUID(str):
         other_all_none = (name is None) and (ns is None) \
             and (version is None) and (nodeid is None)
         
-        global lasttime
+        global lasttime, offset
 
         if CreateGuid and other_all_none and not from_string:
             # just want a new id and can use win32
@@ -81,7 +81,6 @@ class UUID(str):
 
 
         else:
-
             if version is None:
                 if name or ns:
                     version = 3
@@ -103,23 +102,28 @@ class UUID(str):
                     if not ok:
                         raise ValueError, "Illegal node id: " + nodeid
 
-                # Delay if repeat. When Python and/or hardware becomes
-                # fast enough thatthis happens often (or ever!) we
-                # can come up with a faster non-delay algorithm.
+                # Offset time value by a small (pseudo-)random number if a
+                # repeated time() value occurs.  This algorithm should avoid
+                # repeated UUID's for low-resolution system clocks, and yet
+                # avoid "jumping the clock" for millisecond or better-resolution
+                # clocks.  Assuming, of course, that you're not running this on
+                # a machine where Python can run the entire constructor fifty
+                # or more times per millisecond!
                 
                 t = time()
-                while t == lasttime:
-                    t = time()
-                lasttime = t
+                if t==lasttime:
+                    offset += (rand16() % 191) + 1
+                else:
+                    lasttime = t
+                    offset   = 0
 
-                ut = long(t * 10000000.0) + 0x01B21DD213814000L
+                ut = long(t * 10000000.0) + 0x01B21DD213814000L + offset
                 ut = "%015x" % ut
-    
+
+
                 from_string = "%s-%s-1%s-%04x-%s" % (
                     ut[7:], ut[3:7], ut[:3], clock_seq, nodeid
                 )
-
-
 
             elif version == 3:
                 if not name or not ns:
