@@ -2,6 +2,10 @@ Fixes and Enhancements since Version 0.5 alpha 1
 
  Changed, Enhanced, or Newly Deprecated Features
 
+ - Added a 'shellcmd:'  URL scheme that returns a function that calls
+   'os.system()' on the body of the URL.  It's intended for use as a command
+   factory, as is needed by the 'URLChecker' periodic task.
+
  - You can now define adapters from arbitrary types to 'binding.IBindingNode',
    and thus be able to use them as part of a component hierarchy - without
    needing to directly add 'getParentComponent()' or 'getComponentName()'
@@ -30,9 +34,15 @@ Fixes and Enhancements since Version 0.5 alpha 1
      #!/usr/bin/env peak EventDriven
 
    at the top of a ZConfig file formatted according to the new schema, and
-   have it run.  Unfortunately, so far the only type of task that can be
-   included is 'running.daemons.AdaptiveTask', which doesn't actually *do*
-   anything.
+   have it run.  There are two periodic tasks that can be configured and
+   run from such a file: 'CleanupFiles' and 'URLChecker'.  'CleanupFiles' will
+   delete files matching a pattern that are older than a certain age, while
+   'URLChecker' will check to see if the target of a naming system URL is
+   up/available/working, and if not, runs a command to restart it.  As an
+   amusing demo, try specifying a 'file:' URL with a 'shellcmd:touch theFile'
+   to recreate the file, then add a 'CleanupFiles' that deletes the file the
+   checker looks for.  This can be hours (well, minutes) of exciting fun as you
+   watch the dueling daemons undoing each others' work.
 
  - Added 'zconfig.schema' URL scheme that loads an enhanced ZConfig schema
    object that can act as a command line interpreter using the 'peak' script.

@@ -233,34 +233,41 @@ class AdaptiveTask(binding.Component):
 
     lock = None
 
+    _name = 'unnamed_task'    # Allow ZConfig to give us a '_name'
 
+    logName = binding.Once(
+        lambda s,d,a: PropertyName("peak.logs.daemons."+s._name)
+    )
 
-
-
-
-
-
-
-
+    log = binding.Once(
+        lambda s,d,a: s.lookupComponent(s.logName)
+    )
 
 
 from glob import glob
-import os, time
+import os.path, time
 
 
 class FileCleaner(AdaptiveTask):
 
     """Periodically remove stale files from a directory"""
-    
-    pattern = binding.requireBinding("Python glob pattern for files to check")
-    olderThan = binding.requireBinding("Age in seconds after which files are stale")
-    log = binding.requireBinding("logger object")
+
+    directory  = binding.requireBinding("Directory name to search in")
+    matchFiles = binding.requireBinding("Python glob for files to check")
+
+    olderThan  = binding.requireBinding(
+        "Age in seconds after which files are stale"
+    )
+
+    pattern   = binding.Once(
+        lambda s,d,a: os.path.join(s.directory,s.matchFiles)
+    )
 
     def getWork(self):
         t = time.time() - self.olderThan
         self.log.info(
             'Scanning for files matching %s older than %d minutes',
-            d, self.older_than/60
+            self.pattern, self.olderThan/60
         )
         return [f for f in glob(self.pattern) if os.stat(f).st_mtime < t]
 
@@ -278,53 +285,46 @@ class FileCleaner(AdaptiveTask):
 
 
 
-
-
-
-
-
-
-
-import traceback
-
-
 class URLChecker(AdaptiveTask):
 
-    """Checks if a resource specified by a URL is up and running
-    and tries to restart it if not"""
-    
-    url = binding.requireBinding("name (usually URL) for resource to check")    
-    restarter = binding.requireBinding("command to execute to restart")
+    """Check if specified resource is up and running; try to restart if not"""
+
+    url = binding.requireBinding("name (usually URL) of resource to check")
+    restartURL = binding.requireBinding("command to execute to restart")
+
+    restarter = binding.Once(
+        lambda s,d,a: s.lookupComponent(s.restartURL)
+    )
 
     def getWork(self):
         try:
             rsrc = self.lookupComponent(self.url)
         except:
-            # XXX log error
+            self.log.exception("%s: Error looking up %s", self._name, self.url)
             return True
-            
-        err = adapt(rsrc, ICheckableResource).checkResource()
 
-        if err:
-            # XXX log error
+        try:
+            err = adapt(rsrc, ICheckableResource).checkResource()
+
+            if err:
+                self.log.error("%s: %s", self._name, err)
+                return True
+        except:
+            self.log.exception("%s: Error checking %s", self._name, rsrc)
             return True
-        
-        return False
-        
 
     def doWork(self, job):
-        self.log.warning('Service %s not responding; restarting', self.name)
+        self.log.warning('%s: not responding; restarting', self._name)
         ret = adapt(self.restarter, ICmdLineAppFactory)(self).run()
         # XXX logging of command output?
         if ret:
-            self.log.warning("Service %s restart returned %d", self.name, ret)
-        
-        if self.getWork():
-            self.log.critical('Service %s still not responding', self.name)
-        else:
-            self.log.notice('Service %s now responding', self.name)
-        return True
+            self.log.warning("%s: restart returned %d", self._name, ret)
 
+        if self.getWork():
+            self.log.critical('%s: still not responding', self._name)
+        else:
+            self.log.log(logs.NOTICE, '%s: now responding', self._name)
+        return True
 
 class StreamFactoryAsCheckableResource(object):
 
@@ -337,10 +337,8 @@ class StreamFactoryAsCheckableResource(object):
         self.sf = ob
 
     def checkResource(self):
-        if self.sf.exists():
-            return None
-
-        return "Check failed"
+        if not self.sf.exists():
+            return "Check failed"
 
 
 
@@ -355,13 +353,15 @@ class ManagedConnectionAsCheckableResource(object):
         self.mc = ob
 
     def checkResource(self):
-        try:
-            self.mc.connection # reference it to ensure it's opened
-            return None
-        except:
-            return ''.join(traceback.format_exception(*sys.exc_info()))
+        self.mc.connection # reference it to ensure it's opened
+        # and just return None (success)
 
-        return "Check failed"
+
+
+
+
+
+
 
 
 

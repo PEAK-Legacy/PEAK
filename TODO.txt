@@ -1,26 +1,34 @@
 Open Issues/To-Do Items
 
- Targeted for 0.5 Alpha 2
-
-    * Finish 'protocols' breakout
-
-      - Finish reference docs
-
-      - Publish/link to the docs from PEAK tutorial and main website
-
-      - Tests for 'Attribute' class
-
-    * ZConfig Integration
-
-      - Sample 'AdaptiveTask' classes that perform the same functions as those
-        in the MetaDaemon package, integrated into the 'peak.running'
-        ZConfig schema component.
-
-
  Targeted for 0.5 Alpha 3
+
+    * Refactor binding and naming frameworks to
+
+      - get rid of cruft (such as JNDI 'attrs' hangover) and duplication
+
+      - make adaptation available for bindings (e.g. 'adaptTo=' keyword),
+        including when bindings are set via kwargs in component constructor
+
+      - streamline descriptor mechanisms used by binding and model to make them
+        uniform and cleanly functional (in both senses of the word functional)
+
+      - clean up attribute metadata framework and get rid of all the special
+        cases (e.g. isinstance() checks, special attribute names, etc.)
+
+      - add class framework for bindings so that new features like 'adaptTo'
+        don't have to be added to a jillion individual binding constructors
+
+      - make indirection convenient (e.g. bind to looking up something from
+        another binding)
+
+    * Implement "contextual protocols" (c.f. "object teams") and "parameterized
+      protocols" (E.g. 'ListOf(IFoo)', 'MappingOf(keys=IBar,values=IBaz)')
 
     * Rough-out web publishing framework
 
+      - Publication interfaces
+
+      - Viewer/Controller adaptation mechanisms
 
  Targeted for 0.5 Beta 1
 
@@ -30,14 +38,6 @@ Open Issues/To-Do Items
 
     * Web publishing framework sufficient to deploy page-based or object-
       published apps
-
-
-
-
-
-
-
-
 
  Targeted for 0.5 Final Release (or sooner)
 
