@@ -305,19 +305,12 @@ class TemplateResource(FSResource):
         # Templates may not be accessed directly via URL!
         raise NotFound(ctx,name)
 
-    def theTemplate(self):
-        """Load and parse the template on demand"""
-
-        doc = TemplateDocument(self,None)
-        stream = open(self.filename, 'rt')
-
-        try:
-            doc.parseFile(stream)
-        finally:
-            stream.close()
-        return doc
-
-    theTemplate = binding.Make(theTemplate)
+    theTemplate = binding.Make(
+        lambda self: config.processXML(
+            web.TEMPLATE_SCHEMA(self), self.filename, parent=self
+        ),
+        doc="""Load and parse the template on demand"""
+    )
 
     def traverseTo(self, name, ctx, default=NOT_GIVEN):
         return IWebTraversable(self.theTemplate).traverseTo(name, ctx, default)
@@ -325,6 +318,13 @@ class TemplateResource(FSResource):
     def getURL(self, ctx):
         # We're a method, so use our context URL, not container URL
         return ctx.traversedURL
+
+
+
+
+
+
+
 
 class FileResource(FSResource):
 

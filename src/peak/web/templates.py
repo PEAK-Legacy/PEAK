@@ -121,79 +121,79 @@ class DOMletAsHTTP(binding.Component):
 
 
 
-class ElementAsBuilder(protocols.Adapter):
+def startElement(parser,data):
+    parent = data['previous']['pwt.element']
 
-    protocols.advise(
-        instancesProvide = [SOX.IXMLBuilder],
-        asAdapterForProtocols=[IDOMletElement]
+    domlet = data.get('pwt.domlet')
+    if domlet:
+        factory = DOMLETS_PROPERTY.of(parent)[domlet]
+    else:
+        factory = parent.tagFactory
+
+    param = data.get('pwt.define')
+
+    data['pwt.element'] = element = factory(parent,
+        tagName=data['name'],
+        attribItems=data['attributes'],
+        domletProperty = domlet or None,
+        dataSpec  = data.get('pwt.data',''),
+        paramName = param or None,
     )
 
-    def _xml_newTag(self, name,attrs,stack,parser):
-        self.nsUri = parser.nsInfo
-        myNs = self.myNs or ('',)   # use unprefixed NS if no NS defined
-        top = self.subject
-        factory = top.tagFactory
-        domletName = dataSpec = paramName = None
-        a = []; append = a.append
-
-        for k,v in attrs:
-
-            if ':' in k:
-                ns, n = k.split(':',1)
-            else:
-                ns, n = '', k
-
-            if n=='domlet' and ns in myNs:
-                # XXX if domletName is not None or dataSpec is not None:
-                # XXX     raise ???
-                if ':' in v:
-                    domletName, dataSpec = v.split(':',1)
-                else:
-                    domletName, dataSpec = v, ''
-
-                if domletName:
-                    factory = DOMLETS_PROPERTY.of(top)[domletName]
-                    factory = adapt(factory, IDOMletElementFactory)
-
-            elif n=='define' and ns in myNs:
-                # XXX if paramName is not None:
-                # XXX     raise ???
-                paramName = v
-            else:
-                append((k,v))
-
-        element = factory(top, tagName=name, attribItems=a,
-            domletProperty = domletName or None, dataSpec  = dataSpec or '',
-            paramName = paramName or None,
-        )
-
-        if paramName:
-            top.addParameter(paramName,element)
-
-        return element
+    if param:
+        parent.addParameter(param,element)
 
 
-    def _xml_addChild(self,data):
-        self.subject.addChild(data)
+def finishElement(parser,data):
+    return data['pwt.element']
 
-    def _xml_finish(self):
-        return self.subject
 
-    def _xml_addText(self,xml):
-        top = self.subject
+def negotiateDomlet(parser, data, name, value):
+    data['attributes'].remove((name,value))
+    if ':' in value:
+        data['pwt.domlet'],data['pwt.data'] = value.split(':',1)
+    else:
+        data['pwt.domlet'] = value
+
+
+def negotiateDefine(parser, data, name, value):
+    data['attributes'].remove((name,value))
+    data['pwt.define'] = value
+
+
+
+def setupElement(parser,data):
+    d = dict(data.get('attributes',()))
+    if 'domlet' in d:
+        negotiateDomlet(parser,data,'domlet',d['domlet'])
+    if 'define' in d:
+        negotiateDefine(parser,data,'define',d['define'])
+
+    def child(result):
+        data['pwt.element'].addChild(result)
+
+    def text(xml):
+        top = data['pwt.element']
         top.addChild(top.textFactory(top,xml=escape(xml)))
 
-    def _xml_addLiteral(self,xml):
-        top = self.subject
+    def literal(xml):
+        top = data['pwt.element']
         top.addChild(top.literalFactory(top,xml=xml))
 
+    data['start'] = startElement
+    data['finish'] = finishElement
+    data['child'] = child
+    data['text'] = text
+    data['literal'] = literal
+    
 
-    myNs = binding.Make(        # prefixes that currently map to TEMPLATE_NS
-        lambda self: dict(
-            [(p,1) for (p,u) in self.nsUri.items() if u and u[-1]==TEMPLATE_NS]
-        ),
-        attrName = 'myNs'
-    )
+def setupDocument(parser,data):
+    setupElement(parser,data)
+    data['pwt.element'] = TemplateDocument(data['parent'])
+
+
+
+
 
 
 
@@ -419,12 +419,12 @@ class TemplateDocument(TaglessElement):
 
     """Document-level template element"""
 
-    parserClass = SOX.ExpatBuilder
-
     acceptParams = True     # handle any top-level parameters
 
-    def parseFile(self, stream):
-        self.parserClass().parseFile(stream,self)
+
+
+
+
 
 
 

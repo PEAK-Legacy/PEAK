@@ -15,7 +15,8 @@ from unittest import TestCase, makeSuite, TestSuite
 from peak.api import *
 from peak.tests import testRoot
 from cStringIO import StringIO
-
+import peak.web.templates as pwt
+from urllib import quote
 
 class TestApp(web.Traversable):
 
@@ -38,10 +39,9 @@ class TestApp(web.Traversable):
 
 
 
-
 class BasicTest(TestCase):
 
-    template = config.packageFile(__name__,'template1.pwt').open('t').read()
+    template = "pkgfile:peak.web.tests/template1.pwt"
 
     rendered = """<html><head>
 <title>Template test: The title (with &lt;xml/&gt; &amp; such in it)</title>
@@ -60,9 +60,8 @@ class BasicTest(TestCase):
         self.policy = web.TestPolicy(app)
 
     def mkTemplate(self):
-        d = web.TemplateDocument(testRoot())
-        d.parseFile(StringIO(self.template))
-        return d
+        schema = web.TEMPLATE_SCHEMA(testRoot())
+        return config.processXML(schema,self.template,parent=testRoot())
 
     def render(self):
         return self.policy.simpleTraverse('show')
@@ -83,12 +82,12 @@ class BasicTest(TestCase):
 
 class NSTest(BasicTest):
 
-    template = """<body xmlns:pwt="http://peak.telecommunity.com/DOMlets/">
+    template = "data:,"+quote("""<body xmlns:pwt="http://peak.telecommunity.com/DOMlets/">
 <h1 pwt:domlet="text:foo">Title Goes Here</h1>
 <ul pwt:domlet="list:bar">
     <li pwt:define="listItem" pwt:domlet="text"></li>
 </ul>
-</body>"""
+</body>""")
 
     rendered = """<body xmlns:pwt="http://peak.telecommunity.com/DOMlets/">
 <h1>The title (with &lt;xml/&gt; &amp; such in it)</h1>

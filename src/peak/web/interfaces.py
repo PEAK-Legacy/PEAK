@@ -11,7 +11,7 @@ __all__ = [
     'IDOMletNode',    'IDOMletNodeFactory', 'IPlace', 'ITraversalContext',
     'IDOMletElement', 'IDOMletElementFactory', 'ISkin', 'IPolicyInfo',
     'IViewTarget', 'IConfigurableLocation',
-    'VIEW_NAMES',
+    'VIEW_NAMES', 'TEMPLATE_SCHEMA',
 ]
 
 DEFAULT_METHOD    = PropertyName('peak.web.defaultMethod')
@@ -19,6 +19,7 @@ RESOURCE_PREFIX   = PropertyName('peak.web.resourcePrefix')
 APPLICATION_LOG   = PropertyName('peak.web.appLog')
 NAMESPACE_NAMES   = PropertyName('peak.web.namespaces')
 VIEW_NAMES        = PropertyName('peak.web.views')
+TEMPLATE_SCHEMA   = PropertyName('peak.web.template_schema')
 
 class IPolicyInfo(Interface):
 
@@ -36,7 +37,6 @@ class IAuthService(Interface):
 
     def getUser(environ):
         """Return a user object for the given WSGI 'environ'"""
-
 
 
 class IInteractionPolicy(IAuthService, IPolicyInfo):
