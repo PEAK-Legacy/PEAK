@@ -2,18 +2,20 @@ from types import StringType, FunctionType
 
 from TW.StructuralModel.Queries import NodeList
 from TW.StructuralModel._Aspects import ComputedFeature  #, StructuralModel
-from TW.Features import Transform, FeatureSet
+
 import MMX
 
 
-class _ComputedFeatures(Transform):
+# XXX from TW.Features import Transform, FeatureSet
 
-    def transform(self,maker,dict,verticalContext):
-        for k,v in dict.items():
-            if type(v) is FunctionType:
-                maker[k]=ComputedFeature(v)
+#class _ComputedFeatures(Transform):
+
+#    def transform(self,maker,dict,verticalContext):
+#        for k,v in dict.items():
+#            if type(v) is FunctionType:
+#                maker[k]=ComputedFeature(v)
         
-ComputedFeatures = _ComputedFeatures()
+#ComputedFeatures = _ComputedFeatures()
 
 
 from os.path import join,dirname
@@ -25,8 +27,6 @@ plurals = join(DIR,'plurals.txt')
 cache   = mmx+'.pickle'
 
 MetaModel = MMX.load(mmx,plurals,cache,name='UML_MetaModel')
-
-
 
 
 
@@ -123,7 +123,7 @@ class UMLModel(MetaModel):  # XXX needs StructuralModel, too
 
     class ModelElement:
     
-        __features__ = FeatureSet(ComputedFeatures)
+        # XXX __features__ = FeatureSet(ComputedFeatures)
         
         def QualifiedName(self):
             name = self.name()
@@ -139,7 +139,7 @@ class UMLModel(MetaModel):  # XXX needs StructuralModel, too
 
     class GeneralizableElement:
     
-        __features__ = FeatureSet(ComputedFeatures)
+        # XXX __features__ = FeatureSet(ComputedFeatures)
         
         def superclasses(self):
             return self.generalizations.Get('parent')
