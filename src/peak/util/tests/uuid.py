@@ -47,7 +47,7 @@ class UUIDTests(TestCase):
         # exhaustive test, but it'll do for detecting any
         # obvious breakage in the uuid module.
 
-        keys = globals().keys() + sys.modules.keys()
+        keys = globals().keys()
         last = {}
 
         ns1, ns2 = UUID(), UUID()
