@@ -218,7 +218,7 @@ class Base(Struct):
     class body(NameField):
         defaultValue = ''
         unquote = False
-
+        canBeEmpty = True
 
     syntax = body._syntax   # default syntax is just to parse the body
 
