@@ -146,13 +146,33 @@ if os.name=='posix':
             ])
         ]
 
+    uuidgen = False
+    if hasattr(os, 'uname'):
+        un = os.uname()
+        if un[0] == 'FreeBSD' and int(un[2].split('.')[0]) >= 5:
+            uuidgen = True
+        elif un[0] == 'NetBSD' and int(un[2].split('.')[0]) >= 2:
+            uuidgen = True
+        elif un[0] == 'NetBSD' and un[2].startswith('1.6Z'):
+            # XXX for development versions before 2.x where uuidgen
+            # is present -- this should be removed at some point
+            try:
+                if len(un[2]) > 4:
+                    if ord(un[2][4]) >= ord('I'):
+                        if os.path.exists('/lib/libc.so.12'):
+                            l = os.listdir('/lib')
+                            l = [x for x in l if x.startswith('libc.so.12.')]
+                            l = [int(x.split('.')[-1]) for x in l]
+                            l.sort(); l.reverse()
+                            if l[0] >= 111:
+                                uuidgen = True
+            except:
+                pass
 
-
-
-
-
-
-
+    if uuidgen:
+        extensions += [
+            Extension("peak.util._uuidgen", ["src/peak/util/_uuidgen" + EXT]),
+        ]
 
 
 

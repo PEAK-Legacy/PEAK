@@ -80,10 +80,17 @@ def from_win32():
     return CreateGuid()[-13:-1]
 
 
+def from_uuidgen():
+    try:
+        from _uuidgen import uuidgen
+        return uuidgen()[-12:]        
+    except:
+        return None
+
 methods = [from_random]
 
 if posix is not None and sys.platform != 'win32':
-    methods = [from_ifconfig] + methods
+    methods = [from_uuidgen, from_ifconfig] + methods
 
 # Win32
 if sys.platform == 'win32':

@@ -18,14 +18,17 @@ __all__ = [
 
 
 try:
-    from pywintypes import CreateGuid
-
+    from _uuidgen import uuidgen
 except ImportError:
-
     try:
-        from pythoncom import CreateGuid
+        from pywintypes import CreateGuid
+        uuidgen = lambda: str(CreateGuid)[1:-1]
     except ImportError:
-        CreateGuid = None
+        try:
+            from pythoncom import CreateGuid
+            uuidgen = lambda: str(CreateGuid)[1:-1]
+        except ImportError:
+            uuidgen = None
 
 
 def getClockSeq():
@@ -53,9 +56,9 @@ class UUID(str):
 
         global lasttime, offset
 
-        if CreateGuid and other_all_none and not from_string:
-            # just want any new id and can use win32
-            from_string = str(CreateGuid())[1:-1]    # strip off {}'s
+        if uuidgen and other_all_none and not from_string:
+            # just want any new id and can use the OS's generator
+            from_string = uuidgen()
 
         if from_string:
             # Validate
