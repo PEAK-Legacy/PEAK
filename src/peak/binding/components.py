@@ -380,21 +380,21 @@ class bindTo(Once):
         'someClass' can then refer to 'self.thingINeed' instead of
         calling 'self.lookupComponent("path/to/service")' repeatedly.
     """
-
+    defaultValue = NOT_GIVEN
     singleValue = True
 
-    def __init__(self,targetName,provides=None,doc=None,
+    def __init__(self,targetName,provides=None,doc=None,default=NOT_GIVEN,
         activateUponAssembly=False):
-
+        self.defaultValue = default
         self.targetNames = (targetName,)
         self.declareAsProviderOf = provides
         self.__doc__ = doc or ("binding.bindTo(%r)" % targetName)
         self.activateUponAssembly = activateUponAssembly
 
     def computeValue(self, obj, instanceDict, attrName):
-
-        names = self.targetNames
-        obs   = [lookupComponent(obj,n,creationName=attrName) for n in names]
+        default = self.defaultValue
+        names   = self.targetNames
+        obs     = [lookupComponent(obj,n,default,attrName) for n in names]
 
         for name,newOb in zip(names, obs):
 

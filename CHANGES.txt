@@ -1,7 +1,10 @@
 Fixes and Enhancements since Version 0.5 alpha 1
 
  Changed, Enhanced, or Newly Deprecated Features
- 
+
+ - 'binding.bindTo()' now accepts a 'default=' argument, whose value will be
+   used in case of a 'NameNotFound' error.
+
  - DEPRECATED 'naming.ParsedURL'.  It will disappear in 0.5 alpha 3 or beta.
    It is replaced by the new 'naming.URL.Base'.  The 'naming.URL' package
    provides a new URL parsing framework based on 'peak.model'.  Upgrading from
