@@ -695,7 +695,7 @@ default for src is '!.', the current input buffer"""
 
         def cmd(self, stdout, stderr, args, **kw):
             if args:
-                c = self.interactor.command(args[0])
+                c = self.interactor.command(args[0].lstrip('\\'))
                 if c is None:
                     print >>stderr, 'help: no such command: ' + args[0]
                 else:
