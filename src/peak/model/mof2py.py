@@ -1,22 +1,32 @@
 """Python code generation from MOF model
 
-    This is just a first draft that's missing a few important things:
+    This is just a rough draft that's still missing a few important things:
 
-    * Relative name handling: superclass references in class definitions
-      may refer to names that Python won't be able to find because of
-      the "only two namespaces" constraint.  So code generated for a
-      multi-package model might compile, but not run.
-
-    * Interpackage dependencies: this tries to make sure that superclasses
-      are written before their subclasses, but it doesn't check to ensure
-      that they're actually in the same package, so it might not be
-      generating the class in the right package!
+    * Relative names for 'referencedType' links: we only generate a simple
+      name reference right now, but we really need to import the package where
+      the type comes from, or at least use '"import:"' links to reference the
+      right module location.
 
     * Full type support: we need 'peak.model.datatypes' to offer reusable
       base types for CORBA primitive types, otherwise we can't generate
       types like 'Boolean', 'String', and so on.
 
-    * Docstring formatting is a bit "off"; notably, we're not wrapping
+    * A suitable mechanism for indexing the created model, such that it can
+      be used as a metamodel for 'peak.storage.xmi'.
+
+    Other issues:
+
+    - Python built-ins and 'peak.*' object names
+
+    - package prefixes
+
+    - Need to import 'peak.model' and include 'config.setupModule()' epilogue
+
+    Cosmetics
+
+    - Should generate all imports at top
+
+    - Docstring formatting is a bit "off"; notably, we're not wrapping
       paragraphs, and something seems wrong with linespacing, at least
       in my tests with the CWM metamodel.
 """
@@ -24,8 +34,39 @@
 from __future__ import generators
 
 from peak.api import *
-from MOF131 import MOFModel
 from peak.model.datatypes import TCKind, UNBOUNDED
+from peak.util.IndentedStream import IndentedStream
+from cStringIO import StringIO
+from peak.util.advice import advice
+
+class oncePerObject(advice):
+
+    def __call__(self,*__args,**__kw):
+
+        if __args[1] in __args[0].objectsWritten:
+            return
+
+        __args[0].objectsWritten[__args[1]]=True
+
+        return self._func(*__args,**__kw)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -49,11 +90,11 @@ class MOFGenerator(binding.Component):
     Attribute = binding.bindTo("MOFModel/Attribute")
     Reference = binding.bindTo("MOFModel/Reference")
 
+    NameNotFound = binding.bindTo("MOFModel/NameNotFound")
+
     StructuralFeature = binding.bindTo("MOFModel/StructuralFeature")
 
     def stream(self,d,a):
-        from peak.util.IndentedStream import IndentedStream
-        from cStringIO import StringIO
         return IndentedStream(StringIO())
 
     stream = binding.Once(stream)
@@ -96,11 +137,12 @@ class MOFGenerator(binding.Component):
 
     def beginObject(self, element, metatype='model.Element'):
 
-        self.objectsWritten[element] = True
+        ns = element.container
+        relName = self.getRelativeName
 
         if hasattr(element,'supertypes'):
 
-            baseNames = [m.name for m in element.supertypes]    # XXX
+            baseNames = [relName(m,ns) for m in element.supertypes]    # XXX
 
             if not baseNames:
                 baseNames.append(metatype)
@@ -120,52 +162,146 @@ class MOFGenerator(binding.Component):
 
 
 
+    pkgImportMap = binding.New(dict)
+    
+    def nameInPackage(self, element, package):
+
+        pim = self.pkgImportMap
+        
+        try:
+            return pim[package, element]
+        except KeyError:
+            pass
+
+        name = element.name
+        c = element.container
+
+        while c is not None and c is not package:
+            try:
+                ob = package.lookupElementExtended(name)
+            except self.NameNotFound:
+                break
+            else:
+                if ob is element:
+                    break
+                else:
+                    name = '%s__%s' % (c.name, name)
+                    c = c.container
+
+        if element.container is not package:
+            self.write(
+                'from %s import %s' % (
+                    str('.'.join(element.container.qualifiedName)),
+                    str(element.name)
+                )
+            )
+            if element.name <> name:
+                self.write('as '+name)
+            self.write('\n')
+
+        pim[package,element] = name
+        return name
+
+                
+    def writeFileHeader(self, package):
+        self.write('# --------------------------------------------------\n')
+        self.write('# Package: %s\n' % str('.'.join(package.qualifiedName)))
+        self.write('# File:    %s\n' % self.pkgFileName(package))
+        if package.supertypes:
+            self.write('# Bases:   %s\n'
+                % ', '.join(
+                    [str('.'.join(p.qualifiedName))
+                        for p in package.supertypes]
+                )
+            )
+        self.write('# --------------------------------------------------\n\n')
+
+
+    def writeFileFooter(self, package):
+        self.write('\n# --------------------------------------------------\n')
+        self.write('\n\n\n')
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     def writePackage(self, package):
 
-        if package in self.objectsWritten:
-            return
+        for subPkg in package.findElementsByType(self.Package):
+            self.objectsWritten[subPkg] = True
 
-        for pkg in package.supertypes:
-            self.writePackage(pkg)
+        self.writeFileHeader(package)
 
-        self.beginObject(package, 'model.Package')
+        for imp in package.findElementsByType(self.Import):
+            self.writeImport(imp)
+
+        self.writeNSContents(package,{})
+
+        for subPkg in package.findElementsByType(self.Package):
+            self.write('import %s\n' % subPkg.name)
+            
+        self.writeFileFooter(package)
+
+
+    writePackage = oncePerObject(writePackage)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    def pkgFileName(self,package):
+
+        name = str('/'.join(package.qualifiedName))
         
-        pkgtype = self.Import
-
-        containers = [
-            imp.importedNamespace
-            for imp in package.contents if isinstance(imp,pkgtype)
-        ]
-        containers.insert(0,package)
-
-        contentMap = {}
-        for ns in containers:
-            self.writeNSContents(ns, contentMap)
-
-        self.pop()
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+        for ob in package.findElementsByType(self.Package):
+            return '%s/__init__.py' % name
+        else:
+            return '%s.py' % name
+       
+            
     def writeNSContents(self, ns, contentMap):
     
-        for subPkg in self.findAndUpdate(ns, self.Package, contentMap):
-            self.writePackage(subPkg)
+        for imp in self.findAndUpdate(ns, self.Import, contentMap):
+            self.writeImport(imp)
+
+        for pkg in self.findAndUpdate(ns, self.Package, contentMap):
+            self.writePackage(pkg)
 
         for klass in self.findAndUpdate(ns, self.Class, contentMap):
             self.writeClass(klass)
@@ -190,26 +326,21 @@ class MOFGenerator(binding.Component):
             contentMap[ob.name] = ob
             yield ob
 
+    def writeImport(self, imp):
 
+        pkgName = '.'.join(imp.importedNamespace.qualifiedName)
+        self.write('# import %s as %s\n\n' % (pkgName, imp.name) )
 
-
-
-
-
-
-
-
-
-
+    writeImport = oncePerObject(writeImport)
 
 
     def writeClass(self, klass):
 
-        if klass in self.objectsWritten:
-            return
+        myPkg = klass.container
 
         for c in klass.supertypes:
-            self.writeClass(c)
+            if c.container is myPkg:
+                self.writeClass(c)
 
         self.beginObject(klass, 'model.Element')
 
@@ -223,6 +354,17 @@ class MOFGenerator(binding.Component):
             self.write('pass\n\n\n')
 
         self.pop()
+
+    writeClass = oncePerObject(writeClass)
+
+
+
+
+
+
+
+
+
 
 
     def writeDataType(self,dtype):
@@ -243,6 +385,8 @@ class MOFGenerator(binding.Component):
             self.pop()
 
 
+    writeDataType = oncePerObject(writeDataType)
+
 
     def writeStruct(self,dtype,memberInfo):
 
@@ -255,6 +399,13 @@ class MOFGenerator(binding.Component):
             
         self.push(1)
         self.pop()
+
+
+
+
+
+
+
 
 
     def writeStructMember(self,mname,mtype,posn):
@@ -279,6 +430,19 @@ class MOFGenerator(binding.Component):
             self.write('\n')
 
         self.pop()
+
+
+    def getRelativeName(self, element, package):
+
+        if element.container is package:
+            return element.name
+
+        return '%s.%s' % (
+            self.nameInPackage(element.container,package),
+            element.name
+        )
+
+
 
 
 
@@ -333,6 +497,121 @@ class MOFGenerator(binding.Component):
         for ref in feature.type.findElementsByTypeExtended(self.Reference):
             if ref.referencedEnd is ae:
                 return ref
+
+
+
+    def externalize(klass, metamodel, package, format):
+
+        s = StringIO()
+
+        klass(
+            package,
+            MOFModel=metamodel,
+            stream=IndentedStream(s)
+        ).writePackage(package)
+
+        return s.getvalue()
+
+
+    externalize = classmethod(externalize)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class MOFFileSet(MOFGenerator):
+
+    def externalize(klass, metamodel, package, format):
+
+        outfiles = []
+        
+        for pkg in package.findElementsByType(metamodel.Package):
+            outfiles.extend(klass.externalize(metamodel, pkg, format))
+            
+        s = StringIO()
+        g = klass(package, MOFModel=metamodel, stream=IndentedStream(s))
+        g.writePackage(package)
+
+        outfiles.append(
+            (g.pkgFileName(package), s.getvalue())
+        )
+
+        return outfiles
+
+
+    externalize = classmethod(externalize)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class MOFOutline(MOFGenerator):
+
+    def writePackage(self, package):
+
+        self.write('package %s:\n' % package.name)
+        self.push(1)
+        self.write('# %s\n' % self.pkgFileName(package))
+        self.writeNSContents(package, {})
+        self.pop()
+
+
+    def writeImport(self, imp):
+        self.write(
+            'import %s'
+                % str('.'.join(imp.importedNamespace.qualifiedName))
+        )
+        if imp.name!=imp.importedNamespace.name:
+            self.write(' as %s' % imp.name)
+
+        self.write('\n')
+
+
+    def writeClass(self, klass):
+        baseNames = [
+            self.getRelativeName(c,klass.container) for c in klass.supertypes
+        ]
+        self.write(
+            'class %s(%s):\n'
+                % (klass.name, ','.join(baseNames))
+        )
+        self.push(1)
+        self.writeNSContents(klass, {})
+        self.pop()
+
+    def writeDataType(self,dtype):
+        pass
+
+    def writeFeature(self,feature,posn):
+        pass
+
 
 
 
