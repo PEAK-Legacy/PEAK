@@ -149,7 +149,7 @@ class WSGIRequestHandler(BaseHTTPRequestHandler):
 
         status = headers.setdefault('status',default_status).strip()
         code,reason = status.split(' ',1)
-        self.send_response(code, reason)
+        self.send_response(int(code), reason)
         del headers['status']
 
         self.wfile.writelines(headers.headers)
