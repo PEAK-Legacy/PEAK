@@ -307,6 +307,7 @@ __all__ = [
 
 patchMap = {}
 
+from peak.exceptions import ModuleInheritanceWarning, SpecificationError
 
 def setupObject(obj, **attrs):
 
@@ -315,7 +316,6 @@ def setupObject(obj, **attrs):
     for k,v in attrs.items():
         if not hasattr(obj,k):
             setattr(obj,k,v)
-
 
 
 
@@ -343,8 +343,8 @@ def moduleBases(module, name=''):
     return tuple(toBases(getattr(module,'__bases__',()), name))
 
 
-class SpecificationError(Exception):
-    pass
+
+
 
 
 
@@ -572,7 +572,7 @@ def declareModule(name, relativePath=None, bases=(), patches=()):
 
 
 
-def setupModule():
+def setupModule(_lvl=1):
 
     """setupModule() - Build module, w/patches and inheritance
 
@@ -583,7 +583,7 @@ def setupModule():
     so its execution is cleaner.)
     """
 
-    frame = sys._getframe(1)
+    frame = sys._getframe(_lvl)
     dict = frame.f_globals
 
     if dict.has_key('__PEAK_Simulator__'):
@@ -654,7 +654,7 @@ def buildModule(module, code=None):
 
 
 
-def patchModule(moduleName):
+def patchModule(moduleName,_lvl=1):
 
     """"Patch" a module - like a runtime (aka "monkey") patch, only better
 
@@ -683,7 +683,7 @@ def patchModule(moduleName):
     imported before their mutual target for the patches to take effect.
     """
 
-    frame = sys._getframe(1)
+    frame = sys._getframe(_lvl)
     dict = frame.f_globals
 
     if dict.has_key('__PEAK_Simulator__'):
@@ -720,8 +720,8 @@ from peak.util.Code import BUILD_CLASS, STORE_NAME, MAKE_CLOSURE, \
 from peak.util.Meta import makeClass
 from warnings import warn, warn_explicit
 
-class ModuleInheritanceWarning(UserWarning):
-    pass
+
+
 
 mutableOps = (
     STORE_SLICE,  STORE_SLICE+1,  STORE_SLICE+2,  STORE_SLICE+3,

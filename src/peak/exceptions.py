@@ -112,12 +112,12 @@ class StopRunning(Exception):
     """Task doesn't want to be rescheduled"""
 
 
+# Module Inheritance
 
+class SpecificationError(Exception):
+    """Problem with module inheritance specification"""
 
-
-
-
-
-
+class ModuleInheritanceWarning(UserWarning):
+    """Problem with code in modules being inherited/generated"""
 
 
