@@ -134,7 +134,7 @@ class ZConfigSchemaURL(naming.URL.Base):
 
     def getObjectInstance(self, context, refInfo, name, attrs=None):
 
-        url = naming.toName(self.body, FileURL.mdl_fromString)
+        url = naming.toName(self.body, FileURL.fromFilename)
 
         return naming.lookup(context, url,
             creationParent = context.creationParent,
