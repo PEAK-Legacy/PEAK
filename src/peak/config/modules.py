@@ -568,8 +568,8 @@ class Simulator:
             for k,v in oldDPaths:
                 cdict[k] = classes[v][0]
 
+        cdict['__name__'] = qname
         newClass = makeClass(qname,bases,cdict)
-
 
 
         classes[qname] = newClass, bases, basePaths, cdict.items(), \
@@ -578,7 +578,6 @@ class Simulator:
         # Make sure that module and name are correct for pickling
 
         newClass.__module__ = self.dict['__name__']
-
         self.classPath[id(newClass)] = qname
 
         locked = self.locked
@@ -590,6 +589,7 @@ class Simulator:
 
         return newClass
         
+
 
 
 
