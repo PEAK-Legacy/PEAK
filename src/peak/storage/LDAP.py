@@ -21,14 +21,14 @@ except:
     ldap = None
     SCOPE_BASE, SCOPE_ONELEVEL, SCOPE_SUBTREE = range(3)
 
+RES_SEARCH_RESULT = 'RES_SEARCH_RESULT'
+RES_SEARCH_RESULT = getattr(ldap,RES_SEARCH_RESULT,RES_SEARCH_RESULT)
 
 scope_map = {'one': SCOPE_ONELEVEL, 'sub': SCOPE_SUBTREE, '': SCOPE_BASE}
 scope_fmt = {SCOPE_ONELEVEL: 'one', SCOPE_SUBTREE: 'sub', SCOPE_BASE: ''}
 
 def NullConverter(descr,value):
     return value
-
-
 
 
 
@@ -123,7 +123,7 @@ class LDAPCursor(AbstractCursor):
 
         restype = None
 
-        while restype != 'RES_SEARCH_RESULT':
+        while restype != RES_SEARCH_RESULT:
 
             try:
                 restype, data = fetch(msgid, getall, timeout)
