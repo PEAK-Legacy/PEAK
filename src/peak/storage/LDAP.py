@@ -283,7 +283,7 @@ class ldapURL(URL.Base):
 
     supportedSchemes = ('ldap', 'ldaps', 'ldapi')
     nameAttr = 'basedn'
-
+    defaultFactory = 'peak.storage.LDAP.LDAPConnection'
 
     class host(URL.Field):
         pass

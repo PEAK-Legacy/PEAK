@@ -13,11 +13,12 @@ from syntax import *
 from arithmetic import *
 
 from peak.binding.once import Activator, Once
+from peak.util.imports import importObject
 
 
 __all__ = [
     'AbstractName', 'toName', 'CompositeName', 'CompoundName',
-    'NNS_NAME', 'URLMatch',
+    'NNS_NAME', 'URLMatch', 'Reference',
     'LinkRef', 'NNS_Reference', 'isBoundary', 'crossesBoundaries',
 ]
 
@@ -29,7 +30,6 @@ def isBoundary(name):
 def crossesBoundaries(name):
     return name and name.nameKind==COMPOSITE_KIND and ( len(name)>1
         or name and not name[0] )
-
 
 
 
@@ -285,9 +285,34 @@ NNS_NAME = CompositeName.parse('/',CompoundName)
 
 
 
+class Reference(object):
+
+    protocols.advise(
+        instancesProvide = [IReference]
+    )
+
+    __slots__ = 'factoryName', 'addresses'
+
+    def __init__(self, factoryName, addresses=()):
+        self.factoryName = factoryName
+        self.addresses = addresses
+
+    def restore(self, context, name):
+        factory = importObject(FACTORY_PREFIX.of(context)[self.factoryName])
+        factory = adapt(factory, IObjectFactory)
+        return factory.getObjectInstance(context, self, name)
+
+    def __repr__(self):
+        return "Reference(%r,%r)" % (self.factoryName, self.addresses)
+        
+
 class LinkRef(object):
 
     """Symbolic link"""
+
+    protocols.advise(
+        instancesProvide = [IState]
+    )
 
     __slots__ = 'linkName'
 
@@ -297,10 +322,17 @@ class LinkRef(object):
     def __repr__(self):
         return "LinkRef(%s)" % `self.linkName`
 
+    def restore(self, context, name):
+        return context[self.linkName]
+
 
 class NNS_Reference(object):
 
     """Next Naming System reference"""
+
+    protocols.advise(
+        instancesProvide = [IState]
+    )
 
     __slots__ = 'relativeTo'
 
@@ -308,11 +340,20 @@ class NNS_Reference(object):
         self.relativeTo = relativeTo
 
     def __repr__(self):
-        return "NNS_Reference(%s)" % `self.relativeTo`
+        return "NNS_Reference(%r)" % self.relativeTo
 
-    def getObjectInstance(self, context, refInfo, name, attrs=None):
+    def restore(self, context, name):
         # default is to treat the object as its own NNS
         return self.relativeTo
+
+
+
+
+
+
+
+
+
 
 
 

@@ -1,10 +1,10 @@
-from peak.api import naming, model
+from peak.api import binding, naming, protocols, adapt
 import smtplib
-
 
 class smtpURL(naming.URL.Base):
 
     supportedSchemes = ('smtp', )
+    defaultFactory = 'peak.naming.factories.smtp.SMTPFactory'
 
     class user(naming.URL.Field):
         pass
@@ -27,8 +27,13 @@ class smtpURL(naming.URL.Base):
         host, (':', port)
     )
 
-    # XXX def retrieve(self, refInfo, name, context, attrs=None):
-    # XXX    return smtplib.SMTP(self.host, self.port)
 
+class SMTPFactory(binding.Singleton):
 
+    protocols.advise(classProvides=[naming.IObjectFactory])
+
+    def getObjectInstance(self, context, refInfo, name, attrs=None):
+        addr, = refInfo.addresses
+        addr = adapt(addr, smtpURL)
+        return smtplib.SMTP(addr.host, addr.port)
 

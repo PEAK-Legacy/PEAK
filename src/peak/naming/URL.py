@@ -357,12 +357,12 @@ class Base(Struct):
     getURLContext = classmethod(getURLContext)
 
 
+    def __adapt__(klass, ob):
+        """Allow address classes to be used as protocols"""
+        if isinstance(ob,str):
+            return klass.mdl_fromString(ob)
 
-
-
-
-
-
+    __adapt__ = classAttr(protocols.metamethod(__adapt__))
 
 
 

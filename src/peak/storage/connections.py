@@ -124,7 +124,8 @@ class AbstractCursor(binding.Component):
 class ManagedConnection(TransactionComponent):
 
     protocols.advise(
-        instancesProvide=[IManagedConnection]
+        instancesProvide=[IManagedConnection],
+        classProvides = [naming.IObjectFactory]
     )
 
     connection = binding.Once(lambda s,d,a: s._open())
@@ -156,7 +157,6 @@ class ManagedConnection(TransactionComponent):
 
         if self._closeASAP:
             self.close()
-
 
     def _open(self):
         """Return new "real" connection to be saved as 'self.connection'"""
@@ -233,12 +233,11 @@ class ManagedConnection(TransactionComponent):
         suggestParent=False
     )
 
+    def getObjectInstance(klass, context, refInfo, name, attrs=None):
+        addr, = refInfo.addresses   # only 1 address supported for now
+        return klass(address = addr)
 
-
-
-
-
-
+    getObjectInstance = classmethod(getObjectInstance)
 
 
 

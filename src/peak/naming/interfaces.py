@@ -7,12 +7,12 @@ from peak.api import PropertyName
 __all__ = [
 
     'IName', 'IAddress', 'IInitialContextFactory', 'IResolver', 'IPath',
-    'IURLContextFactory', 'IAddressFactory',
+    'IURLContextFactory', 'IAddressFactory', 'IObjectFactory', 'IState',
     'IBasicContext', 'IReadContext', 'IWriteContext', 'IReferenceable',
-    'COMPOUND_KIND', 'COMPOSITE_KIND', 'URL_KIND',
+    'COMPOUND_KIND', 'COMPOSITE_KIND', 'URL_KIND', 'IState', 'IReference',
     'IStreamFactory',
 
-    'CREATION_PARENT', 'SCHEMES_PREFIX',
+    'CREATION_PARENT', 'SCHEMES_PREFIX', 'FACTORY_PREFIX',
     'INIT_CTX_FACTORY', 'SCHEME_PARSER',
 
 ]
@@ -24,13 +24,13 @@ CREATION_PARENT  = PropertyName('peak.naming.creationParent')
 SCHEME_PARSER    = PropertyName('peak.naming.schemeParser')
 
 SCHEMES_PREFIX   = PropertyName('peak.naming.schemes')
+FACTORY_PREFIX   = PropertyName('peak.naming.factories')
 
 
-class IReferenceable(Interface):
-    """Thing that can return a reference to itself, for binding in a context"""
 
-    def getReference():
-        """Return a reference object that can be saved in a naming context"""
+
+
+
 
 
 
@@ -104,7 +104,7 @@ class IPath(IName):
 
 
 
-
+    
 
 
 
@@ -376,6 +376,10 @@ class IAddress(IName):
     def getAuthorityAndName():
         """Return an 'authority,name' tuple"""
 
+    defaultFactory = Attribute(
+        """Name of default object factory for this address"""
+    )
+
 
 class IInitialContextFactory(Interface):
     """Get access to an initial naming context"""
@@ -384,10 +388,47 @@ class IInitialContextFactory(Interface):
         """Return a naming context for 'parentComponent' with 'options'"""
 
 
+class IReferenceable(Interface):
+    """Thing that can return a reference to itself, for binding in a context"""
+
+    def getReference():
+        """Return a '(IReference,attrs)' pair for saving in a naming context"""
+
+class IState(Interface):
+    """Thing that stores an object's state in a naming context"""
+
+    def restore(context, name):
+        """Return the object that this is the state for"""
+
+class IReference(IState):
+    """A reference to an object, described as a factory name + addresses"""
+
+    factoryName = Attribute("Dotted name of an 'IObjectFactory'")
+    addresses = Attribute("Sequence of strings or parsed address objects")
 
 
 
+class IObjectFactory(Interface):
 
+    """Convert data in a naming system into a useful retrieved object"""
+
+    def getObjectInstance(context, refInfo, name, attrs=None):
+
+        """Return the object that should be constructed from 'refInfo'
+
+        This function or method should return the object which is referenced
+        by 'refInfo', or 'None' if it does not know how or does not wish to
+        interpret 'refInfo'.
+
+        'refInfo' is an 'IReference' representing an object found in 'context'
+        under 'name', with attributes 'attrs'.  The specific contents of
+        'refInfo', 'name', and 'attrs', are entirely dependent upon the
+        implementation details of the 'context' object.
+
+        (Note: the official semantics of the 'attrs' parameter is not yet
+        defined; it is reserved for implementing JNDI 'DirContext'-style
+        operations.  Currently 'None' is the only correct value for 'attrs'.)
+        """
 
 
 

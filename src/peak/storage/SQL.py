@@ -452,6 +452,7 @@ class GadflyConnection(SQLConnection):
 class GadflyURL(naming.URL.Base):
 
     supportedSchemes = ('gadfly',)
+    defaultFactory = 'peak.storage.SQL.GadflyConnection'
 
     class db(naming.URL.RequiredField):
         pass
@@ -464,11 +465,11 @@ class GadflyURL(naming.URL.Base):
     )
 
 
-protocols.declareAdapter(
-    lambda url, proto: GadflyConnection(address=url),
-    provides = [ISQLConnection],
-    forTypes = [GadflyURL],
-)
+
+
+
+
+
 
 
 
@@ -476,12 +477,11 @@ from peak.naming.factories.openable import FileURL
 
 class SqliteURL(FileURL):
     supportedSchemes = 'sqlite',
+    defaultFactory = 'peak.storage.SQL.SqliteConnection'
 
-protocols.declareAdapter(
-    lambda url, proto: SqliteConnection(address=url),
-    provides = [ISQLConnection],
-    forTypes = [SqliteURL],
-)
+
+
+
 
 
 
@@ -492,7 +492,14 @@ protocols.declareAdapter(
 
 class GenericSQL_URL(naming.URL.Base):
 
-    supportedSchemes = ('sybase', 'pgsql')
+    supportedSchemes = {
+        'sybase': 'peak.storage.SQL.SybaseConnection',
+        'pgsql':  'peak.storage.SQL.PGSQLConnection',
+    }
+
+    defaultFactory = property(
+        lambda self: self.supportedSchemes[self.scheme]
+    )
 
     class user(naming.URL.Field):
         pass
@@ -510,16 +517,9 @@ class GenericSQL_URL(naming.URL.Base):
         ('//',), (user, (':', passwd), '@'), server, ('/', db)
     )
 
-drivers = {
-    'sybase': SybaseConnection,
-    'pgsql':  PGSQLConnection,
-}
 
-protocols.declareAdapter(
-    lambda url, proto: drivers[url.scheme](address=url),
-    provides = [ISQLConnection],
-    forTypes = [GenericSQL_URL],
-)
+
+
 
 
 

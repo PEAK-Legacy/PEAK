@@ -10,6 +10,7 @@ from peak.binding.components import Component, Once, New, requireBinding
 from peak.naming import URL
 from peak.api import NOT_GIVEN, protocols, naming, config, NOT_FOUND
 from peak.naming.factories.openable import FileURL
+from peak.naming.interfaces import IObjectFactory
 from interfaces import ILogger
 
 from time import time, localtime, strftime
@@ -25,7 +26,6 @@ __all__ = [
     'AbstractLogger', 'LogFile', 'LogStream', 'peakLoggerURL',
     'peakLoggerContext',
 ]
-
 
 
 
@@ -247,6 +247,7 @@ class Event(Component):
 class logfileURL(FileURL):
 
     supportedSchemes = ('logfile', )
+    defaultFactory = 'peak.running.logs.LogFile'
 
     class level(URL.IntField):
         defaultValue = ALL
@@ -263,11 +264,10 @@ class logfileURL(FileURL):
     querySyntax = URL.Sequence('level=', level)
 
 
-protocols.declareAdapter(
-    lambda url, proto: LogFile(filename=url.getFilename(), level=url.level),
-    provides = [ILogger],
-    forTypes = [logfileURL],
-)
+
+
+
+
 
 
 
@@ -393,9 +393,25 @@ class AbstractLogger(Component):
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 class LogFile(AbstractLogger):
 
     filename = requireBinding("name of file to write logs to")
+    protocols.advise(classProvides=[IObjectFactory])
 
     def publish(self, event):
         if event.priority >= self.level:
@@ -405,6 +421,12 @@ class LogFile(AbstractLogger):
             finally:
                 fp.close()
 
+    def getObjectInstance(klass, context, refInfo, name, attrs=None):
+        url, = refInfo.addresses
+        return klass(filename=url.getFilename(), level=url.level)
+
+    getObjectInstance = classmethod(getObjectInstance)
+
 
 class LogStream(AbstractLogger):
 
@@ -413,6 +435,14 @@ class LogStream(AbstractLogger):
     def publish(self, event):
         if event.priority >= self.level:
             self.stream.write(str(event))
+
+
+
+
+
+
+
+
 
 
 

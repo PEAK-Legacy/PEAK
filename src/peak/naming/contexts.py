@@ -287,16 +287,16 @@ class NameContext(Component):
 
     def _deref(self, state, name):
 
-        if isinstance(state,LinkRef):       # XXX introspection!
-            return self[state.linkName]
+        ob = adapt(state, IState, None)
+
+        if ob is not None:
+            return ob.restore(self, name)
 
         return state
 
 
     def _mkref(self, obj, name):
         return adapt(obj, self.serializationProtocol)
-
-
 
 
 
@@ -341,7 +341,7 @@ class NameContext(Component):
         if state is NOT_FOUND:
             raise exceptions.NameNotFound(name) # XXX exception needs more info
 
-        if isinstance(state,LinkRef):   # XXX introspection!
+        if adapt(state,LinkRef,None) is not None:   # XXX introspection!
             return state
 
         return self._deref(state, name)
@@ -620,7 +620,7 @@ class AddressContext(NameContext):
 
     def _get(self, name, retrieve=True):
         # All syntactically valid addresses exist in principle
-        return name
+        return Reference(name.defaultFactory, (name,))
 
 
     def _resolveURL(self, name, iface):

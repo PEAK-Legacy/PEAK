@@ -58,6 +58,7 @@ class ddeURL(naming.URL.Base):
     including 'service' and 'topic'."""
 
     supportedSchemes = 'win32.dde',
+    defaultFactory = 'peak.storage.DDE.DDEConnection'
 
     class service(naming.URL.RequiredField):
         pass
@@ -73,7 +74,6 @@ class ddeURL(naming.URL.Base):
 
     class sleep(naming.URL.IntField):
         defaultValue = 1
-
 
 
 
@@ -127,18 +127,16 @@ class DDEConnection(storage.ManagedConnection):
 
     protocols.advise(
         instancesProvide = [storage.IDDEConnection],
-        asAdapterForTypes = [ddeURL],
-        factoryMethod = 'adaptFromURL',
     )
 
-    serviceName = binding.requireBinding("Service name for DDE conversation")
-    topicName   = binding.requireBinding("Topic name for DDE conversation")
-    launchFile  = None
+    serviceName = binding.bindTo("address/service")
+    topicName   = binding.bindTo("address/topic")
+    launchFile  = binding.bindTo("address/file", default=None)
 
-    retries  = 10
-    sleepFor = 1
+    retries  = binding.bindTo("address/retries", default=10)
+    sleepFor = binding.bindTo("address/sleep", default=1)
 
-    logger = binding.bindToProperty('peak.logs.dde')
+    logger = binding.bindTo('logging.logger:dde')
 
     def ddeServer(self,d,a):
         return ServerManager(
@@ -161,6 +159,8 @@ class DDEConnection(storage.ManagedConnection):
     def poke(self, commandStr, data=None):
         """DDE Poke of command string and optional data buffer"""
         return self.connection.Poke(commandStr, data)
+
+
 
     def _open(self):
 
@@ -196,47 +196,6 @@ class DDEConnection(storage.ManagedConnection):
     def _close(self):
         self.ddeServer.close()
         del self.ddeServer  # force shutdown
-
-
-
-
-
-
-
-    def adaptFromURL(klass, url, protocol):
-        return klass(
-            serviceName=url.service, topicName=url.topic,
-            launchFile=url.file, retries=url.retries, sleepFor=url.sleep
-        )
-
-    adaptFromURL = classmethod(adaptFromURL)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

@@ -40,11 +40,12 @@ class GenericPathURL(URL.Base):
 
 
 class OpenableURL(GenericPathURL):
-    pass
+    defaultFactory = 'peak.naming.factories.openable.URLStreamFactory'
 
 class FileURL(OpenableURL):
 
     supportedSchemes = 'file',
+    defaultFactory = 'peak.naming.factories.openable.FileFactory'
 
     # Make syntax usable w/subclasses that redefine individual fields
     syntax = binding.classAttr(
@@ -79,12 +80,11 @@ class FileURL(OpenableURL):
     fromFilename = classmethod(fromFilename)
 
 
-
 class PkgFileURL(URL.Base):
 
     nameAttr = 'body'
-
     supportedSchemes = 'pkgfile',
+    defaultFactory = 'peak.naming.factories.openable.FileFactory'
 
     class body(URL.NameField):
         referencedType = naming.CompositeName
@@ -129,9 +129,8 @@ class URLStreamFactory(binding.Component):
     consistent interface across file-like URLs."""
 
     protocols.advise(
+        classProvides=[naming.IObjectFactory],
         instancesProvide=[naming.IStreamFactory],
-        asAdapterForTypes=[OpenableURL],
-        factoryMethod = 'adaptFromURL',
     )
 
     target = binding.requireBinding("urllib2 URL or request")
@@ -155,12 +154,13 @@ class URLStreamFactory(binding.Component):
     def create(self,mode,seek=False,readable=False,autocommit=False):
         raise TypeError("Can't create URL", self.target)
 
-
     def update(self,mode,seek=False,readable=False,append=False,autocommit=False):
         raise TypeError("Can't update URL", self.target)
 
     def delete(self, autocommit=False):
         raise TypeError("Can't delete URL", self.target)
+
+
 
     def exists(self):
 
@@ -174,11 +174,11 @@ class URLStreamFactory(binding.Component):
             return True
 
 
-    def adaptFromURL(klass, url, protocol):
+    def getObjectInstance(klass, context, refInfo, name, attrs=None):
+        url, = refInfo.addresses
         return klass(target = str(url))
 
-    adaptFromURL = classmethod(adaptFromURL)
-
+    getObjectInstance = classmethod(getObjectInstance)
 
 
 
@@ -208,13 +208,11 @@ class FileFactory(binding.Component):
     """Stream factory for a local file object"""
 
     protocols.advise(
+        classProvides=[naming.IObjectFactory],
         instancesProvide=[naming.IStreamFactory],
-        asAdapterForTypes=[FileURL, PkgFileURL],
-        factoryMethod = 'adaptFromURL',
     )
 
     filename = binding.requireBinding("Filename to open/modify")
-
 
     def open(self,mode,seek=False,writable=False,autocommit=False):
         return self._open(mode, 'r'+(writable and '+' or ''), autocommit)
@@ -244,11 +242,13 @@ class FileFactory(binding.Component):
     # XXX def delete(self,autocommit=False):
     # XXX def move(self, other, overwrite=True, autocommit=False):
 
-    def adaptFromURL(klass, url, protocol):
+
+
+    def getObjectInstance(klass, context, refInfo, name, attrs=None):
+        url, = refInfo.addresses
         return klass(filename = url.getFilename())
 
-    adaptFromURL = classmethod(adaptFromURL)
-
+    getObjectInstance = classmethod(getObjectInstance)
 
 
 

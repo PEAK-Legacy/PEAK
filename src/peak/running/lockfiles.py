@@ -43,7 +43,7 @@ class LockFileBase:
     """Common base for lockfiles"""
 
     protocols.advise(
-        instancesProvide=[ILock]
+        instancesProvide=[ILock], classProvides = [naming.IObjectFactory]
     )
 
     def __init__(self, fn):
@@ -83,6 +83,44 @@ class LockFileBase:
     def locked(self):
         return self._locked
 
+    def getObjectInstance(klass,context,refInfo,name,attrs=None):
+        url, = refInfo.addresses
+        return klass(url.getFilename())
+
+    getObjectInstance = classmethod(getObjectInstance)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 ### Posix-y lockfiles ###
 
 try:
@@ -116,6 +154,9 @@ def pid_exists(pid):
             raise
 
     return exist
+
+
+
 
 
 
@@ -388,10 +429,10 @@ class NullLockFile(LockFileBase):
     def do_release(self):
         pass
 
+    def getObjectInstance(klass,context,refInfo,name,attrs=None):
+        return klass()
 
-
-
-
+    getObjectInstance = classmethod(getObjectInstance)
 
 
 
@@ -453,37 +494,37 @@ from peak.naming.factories.openable import FileURL
 
 class lockfileURL(FileURL):
 
-    supportedSchemes = (
-        'lockfile', 'shlockfile', 'flockfile', 'winflockfile',
-        'nulllockfile'
+    supportedSchemes = {
+        'lockfile': 'peak.running.lockfiles.LockFile',
+        'shlockfile': 'peak.running.lockfiles.SHLockFile',
+        'flockfile': 'peak.running.lockfiles.FLockFile',
+        'winflockfile': 'peak.running.lockfiles.WinFLockFile',
+        'nulllockfile': 'peak.running.lockfiles.NullLockFile',
+    }
+
+    defaultFactory = property(
+        lambda self: self.supportedSchemes[self.scheme]
     )
 
 
-def lockfileFromURL(url, protocol):
-
-    filename = url.getFilename()
-
-    if url.scheme == 'lockfile':
-        return LockFile(filename)
-
-    elif url.scheme == 'nulllockfile':
-        return NullLockFile()
-
-    elif url.scheme == 'shlockfile':
-        return SHLockFile(filename)
-
-    elif url.scheme == 'flockfile':
-        return FLockFile(filename)
-
-    elif url.scheme == 'winflockfile':
-        return WinFLockFile(filename)
 
 
-protocols.declareAdapter(
-    lockfileFromURL,
-    provides = [ILock],
-    forTypes = [lockfileURL],
-)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

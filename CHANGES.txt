@@ -2,6 +2,34 @@ Fixes and Enhancements since Version 0.5 alpha 2
 
  Changed, Enhanced, or Newly Deprecated Features
 
+ - The naming system no longer has 'objectFactories' and 'stateFactories' as
+   utilities; they have been replaced with new mechanisms involving adaptation.
+   Previously, addresses had a 'retrieve()' method that could be used to
+   retrieve the object defined by the address.  Now, to retrieve an object for
+   an address, you must either define a context that processes the address, or
+   the address must have a 'defaultFactory' attribute, which provides a name
+   to be imported to get an 'IObjectFactory' that can construct the referenced
+   object.  (This is simpler than it sounds; for URLs that reference
+   ManagedConnections, for example, all you need to do is provide the fully
+   qualified name of the connection class.)
+   
+   Meanwhile, writable naming contexts must have a 'serializationProtocol'
+   attribute, specifying what interface an object should be adapted to before
+   attempting to store it in that context.
+
+   The naming system no longer processes the 'creationName' keyword argument;
+   this is now considered the sole responsibility of 'peak.binding'.  The
+   'IComponent.lookupComponent()' method still accepts the keyword argument,
+   and attribute bindings still handle the creation name transparently.  It is
+   just not available via naming system APIs, and naming contexts no longer
+   have to deal with it.
+
+   The naming system base classes no longer use 'attrs' as an input parameter
+   or return value.  If you've subclassed anything from 'peak.naming.contexts',
+   note that your '_get()' methods should now just return the lookup value,
+   rather than a 'state,attrs' tuple.  For most naming contexts, this just
+   means you should change 'return foo, None' statements to just 'return foo'.
+
  - Property definition rules in an .ini file can now refer to 'rulePrefix' and
    'ruleSuffix' variables.  'rulePrefix' is a '.'-terminated string,
    representing the name the rule was defined with.  For example, if the
@@ -42,30 +70,6 @@ Fixes and Enhancements since Version 0.5 alpha 2
    'binding.IActiveDescriptor'.  'peak.binding' now uses this interface to
    identify active descriptors, so you can now create your own.  (Previously,
    'peak.binding' used 'isinstance()' to detect active descriptors.)
-
- - 'peak.naming' no longer automatically converts all addresses to the
-   addressed objects.  You must specifically request the interface you want
-   by adapting the retrieved object to that interface.  This can be done by
-   supplying an 'adaptTo=ISomething' keyword argument to the attribute binding
-   definition or your 'lookupComponent()' call.
-
-   The naming system no longer has 'objectFactories' and 'stateFactories';
-   these have been replaced with adaptation.  Writable naming contexts must
-   have a 'serializationProtocol' attribute specifying what interface an object
-   should be adapted to before attempting to store it in that context.
-
-   The naming system no longer processes the 'creationName' keyword argument;
-   this is now considered the sole responsibility of 'peak.binding'.  The
-   'IComponent.lookupComponent()' method still accepts the keyword argument,
-   and attribute bindings still handle the creation name transparently.  It is
-   just not available via naming system APIs, and naming contexts no longer
-   have to deal with it.
-
-   The naming system base classes no longer use 'attrs' as an input parameter
-   or return value.  If you've subclassed anything from 'peak.naming.contexts',
-   note that your '_get()' methods should now just return the lookup value,
-   rather than a 'state,attrs' tuple.  For most naming contexts, this just
-   means you should change 'return foo, None' statements to just 'return foo'.
 
  - REMOVED 'naming.ParsedURL'; it was deprecated as of 0.5 alpha 2.
 
