@@ -173,11 +173,9 @@ class MultiTraverser(Traversable):
         for item in self.items:
             return item.getObject()
 
-
     def preTraverse(self, interaction):
         for item in self.items:
             item.preTraverse(interaction)
-
 
     def traverseTo(self, name, interaction):
 
@@ -197,8 +195,10 @@ class MultiTraverser(Traversable):
 
         if not newItems:
             return NOT_FOUND
-
-        loc = self._subTraverser(self, name, items = newItems)
+        if len(newItems)==1:
+            loc = newItems[0]
+        else:
+            loc = self._subTraverser(self, name, items = newItems)
         return adapt(loc, interaction.pathProtocol)
 
     _subTraverser = lambda self, *args, **kw: self.__class__(*args,**kw)
