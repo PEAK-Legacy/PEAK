@@ -72,7 +72,7 @@ def importString(name, globalDict=None):
     else:
         module, path = name, []
 
-    item = __import__(module, globalDict or globals(), locals(), path)
+    item = __import__(module, globalDict or globals(), locals(), path[:1])
 
     for name in path:
         if name: item = getattr(item,name)
