@@ -381,7 +381,7 @@ class TestTasks(TestCase):
             if value == sentinel:
                 break
             log.append(value)
-
+            yield value
 
     def testSimple(self):
         # Test running a single-generator task, receiving values
@@ -559,6 +559,88 @@ class TestTasks(TestCase):
 
         events.Task(gen(ValueError))
         self.assertRaises(ValueError, c1.send, True)
+
+
+
+
+
+
+
+
+
+
+
+
+
+class TaskYielding(TestCase):
+
+    simpleGen = TestTasks.simpleGen.im_func
+
+    def testIsEventSource(self):
+        log1 = []; v = events.Value()
+        log2 = []; testData = [1,2,3,5,8,13]
+        task1 = events.Task(self.simpleGen(log1,v,None))
+        self.failUnless(adapt(task1,events.IEventSource,None) is not None)
+        task2 = events.Task(self.simpleGen(log2,task1,None))
+        map(v.set, testData)
+        self.assertEqual(testData, log1)
+        self.assertEqual(testData, log2)
+
+
+    def produce(self,data):
+        for v in data:
+            yield v
+
+    def testNestedYielding(self):
+        data = [1,2,3,5,8,13]; log = []
+        task = events.Task(self.simpleGen(log, self.produce(data), NOT_GIVEN))
+        self.assertEqual(log,data)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    def testComposition(self):
+
+        def timesTwo(source):
+            yield source; yield events.resume()*2
+
+        def asString(source):
+            yield source; yield str(events.resume())
+
+        def strDouble(source):
+            yield asString(timesTwo(source)); yield events.resume()
+
+        def doubleStr(source):
+            yield timesTwo(asString(source)); yield events.resume()
+
+        data = [1,2,3,5,8,13]; v = events.Value()
+
+        for item in data:
+            log = []
+            task = events.Task(self.simpleGen(log, strDouble(v), NOT_GIVEN))
+            v.set(item); self.assertEqual(log,[str(item*2)])
+
+        for item in data:
+            log = []
+            task = events.Task(self.simpleGen(log, doubleStr(v), NOT_GIVEN))
+            v.set(item); self.assertEqual(log,[str(item)*2])
+
+
+
 
 
 
@@ -1054,10 +1136,20 @@ class AdviceTests(TestCase):
 
 
 
+
+
+
+
+
+
+
+
+
+
 TestClasses = (
     BasicTests, ValueTests, ConditionTests, SemaphoreTests, AnyOfTests,
     TestTasks, ScheduledTasksTest, SchedulerTests, AdviceTests,
-    DerivedValueTests, DerivedConditionTests, BroadcastTests,
+    DerivedValueTests, DerivedConditionTests, BroadcastTests, TaskYielding,
     SubscriptionTests, LogicTests, NullTests1, NullTests2, SemanticsTests
 )
 

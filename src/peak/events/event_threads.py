@@ -4,7 +4,7 @@ from interfaces import *
 from types import GeneratorType
 from sys import exc_info, _getframe
 import traceback
-from sources import Condition, Value, AnyOf
+from sources import Condition, Value, AnyOf, Observable
 import time
 from peak.util.advice import advice
 
@@ -326,7 +326,8 @@ class TaskState(object):
 
 
 
-class Task(object):
+class Task(Observable):
+
     """Thread-like "task" that pauses and resumes in response to events
 
     Usage::
@@ -347,17 +348,35 @@ class Task(object):
 
     __slots__ = 'isFinished', '_state'
 
-    protocols.advise( instancesProvide=[ITask] )
+    protocols.advise(
+        instancesProvide=[ITask],
+        asAdapterForProtocols=[IProcedure],
+        factoryMethod='fromProcedure',
+    )
+
+    singleFire = False      # Broadcast results to listeners
+    overrunOK  = False      # Results are not bufferable
+
 
     def __init__(self, iterator):
+        Observable.__init__(self)
         self.isFinished = Condition()
         self._state = TaskState()
-        self._state.CALL(iterator)
-        self._start()
+        self._state.CALL(iterator); self._start()
+
+
+
+
+    def fromProcedure(klass,ob,proto):
+        return klass(ob)
+
+    fromProcedure = classmethod(fromProcedure)
+
 
     def _start(self):
         """Hook for subclasses to start the task"""
         self.step()
+
 
     def _uncaughtError(self):
         """Hook for subclasses to catch exceptions that escape the task"""
@@ -367,21 +386,51 @@ class Task(object):
             self.isFinished.set(True)
             return True
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     def step(self, source=None, event=NOT_GIVEN):
+
         """See 'events.ITask.step'"""
-        state = self._state; state.YIELD(event)
+
+        state = self._state
+        state.YIELD(event)
 
         while state.stack:
+
             switch = event = None   # avoid holding previous references
+
             try:
                 for event in state.stack[-1]:
                     state.CATCH()
                     break
                 else:
                     state.RETURN() # No switch; topmost iterator is finished!
+                    state.YIELD(NOT_GIVEN)  # don't return a value
                     state.CATCH()
                     continue    # resume the next iterator down, or exit
+
             except:
+
                 # Remove the current iterator, since it can't be resumed
                 state.RETURN()
                 state.THROW()
@@ -392,21 +441,54 @@ class Task(object):
                     # nobody to delegate to, pass the buck to our caller
                     return self._uncaughtError()
 
+
+
+
+
+
+
+
+
             # Perform the task switch, if any
+
             try:
+
                 switch = adapt(event,ITaskSwitch,None)
+
                 if switch is not None:
                     if not switch.nextAction(self,state):
                         state.YIELD(switch) # save reference until we resume
                         return True
                 else:
                     state.YIELD(event)
+                    if len(state.stack)==1:
+                        self._fire(event)
+                    else:
+                        state.RETURN()  # pass the yielded value back to caller
+
             except:
                 state.THROW()
                 continue    # push the error back into the current iterator
 
+
         self.isFinished.set(True)
         return True
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 class _STask(Task):
 

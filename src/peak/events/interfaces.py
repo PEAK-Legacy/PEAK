@@ -285,7 +285,7 @@ class ISemaphore(IWritableSource,IConditional):
 
 
 
-class ITask(protocols.Interface):
+class ITask(IEventSource):
 
     """Task that can be paused and resumed based on event occurences
 
@@ -305,10 +305,15 @@ class ITask(protocols.Interface):
     back to the task, that value will be returned by 'resume()'.
 
     Procedures may send values back to their calling iterators by yielding
-    values that do not implement 'ITaskSwitch'.  Event sources may send values
-    back to a task by passing them as events to the task's 'step()'
-    callback method.
-    """
+    values that do not implement 'ITaskSwitch'.  If there is no calling
+    iterator, the yielded value is sent to any callbacks that have been added
+    to the task itself.  (Tasks are event sources, so they may be yielded on,
+    or have callbacks added to them to receive values yielded by the task's
+    outermost procedure.)  Note that when a nested procedure terminates,
+    'NOT_GIVEN' is returned from 'events.resume()' in the calling procedure.
+
+    Finally, note that event sources may send values back to a task by passing
+    them as events to the task's 'step()' callback method."""
 
     def step(source=None,event=NOT_GIVEN):
         """Run until task is suspended by an 'ITaskSwitch' or finishes
@@ -320,11 +325,6 @@ class ITask(protocols.Interface):
     isFinished = protocols.Attribute(
         """'IConditional' that fires when the task is completed"""
     )
-
-
-
-
-
 
 class IScheduledTask(ITask):
 
