@@ -13,7 +13,7 @@ class SkinTraverser(MultiTraverser):
 
     items = binding.bindTo('../layers')
 
-
+    _subTraverser = MultiTraverser
 
 
 
@@ -89,17 +89,13 @@ class Skin(Traversable):
         while path.startswith('/'):
             path = path[1:]
 
-        base = self.getAbsoluteURL()
-        path = '%s/%s/%s' % base, interaction.resourcePrefix, path
+        base = self.getAbsoluteURL(interaction)
+        path = '%s/%s/%s' % (base, interaction.resourcePrefix, path)
 
         while path.endswith('/'):
             path = path[:-1]
 
-
-
-
-
-
+        return path
 
 
 

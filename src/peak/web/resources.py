@@ -189,7 +189,7 @@ class DefaultLayer(Traversable):
         except ImportError:
             d = NOT_FOUND
         else:
-            filename = os.path.basename(mod.__file__)
+            filename = os.path.dirname(mod.__file__)
 
             if filename in self.fileCache:
                 d = self.fileCache[filename]

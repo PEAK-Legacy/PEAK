@@ -3,8 +3,9 @@
 from zope.publisher import http, browser, xmlrpc, publish
 
 __all__ = [
-    'HTTPRequest', 'BrowserRequest', 'XMLRPCRequest'
+    'HTTPRequest', 'BrowserRequest', 'XMLRPCRequest', 'TestRequest'
 ]
+
 
 class HTTPRequest(http.HTTPRequest, http.HTTPCharsets):
 
@@ -30,5 +31,53 @@ class XMLRPCRequest(xmlrpc.XMLRPCRequest, http.HTTPCharsets):
 
     __slots__ = ()
     request = property(lambda self: self)
+
+
+
+
+
+
+
+
+class TestRequest(
+    browser.TestRequest, browser.BrowserLanguages, http.HTTPCharsets
+):
+
+    """TestRequest w/built-in charset and language handlers"""
+
+    __slots__ = ()
+    request = property(lambda self: self)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 

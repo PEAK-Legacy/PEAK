@@ -7,7 +7,7 @@ from peak.running.commands import EventDriven
 __all__ = [
     'Interaction', 'NullAuthenticationService', 'InteractionPolicy',
     'CGIPublisher', 'DefaultExceptionHandler', 'NullSkinService',
-    'TraversalPath'
+    'TraversalPath', 'TestInteraction',
 ]
 
 
@@ -295,6 +295,47 @@ class Interaction(security.Interaction):
         raise Unauthorized(name=name)   # XXX
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class TestInteraction(Interaction):
+
+    """Convenient interaction to use for tests, experiments, etc."""
+    
+    policy = binding.bindTo('..', adaptTo=IInteractionPolicy)
+
+    request = binding.New('peak.web.requests:TestRequest')
+
+
+    
 
 
 

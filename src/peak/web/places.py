@@ -73,7 +73,7 @@ class Traversable(binding.Component):
 
         if name:
             base = self.getParentComponent().getAbsoluteURL(interaction)
-            return '%s/%s' % base, name
+            return '%s/%s' % (base, name)
 
         raise ValueError("Traversable was not assigned a name", self)
 
@@ -198,10 +198,10 @@ class MultiTraverser(Traversable):
         if not newItems:
             return NOT_FOUND
 
-        loc = self.__class__(items = newItems)
+        loc = self._subTraverser(self, name, items = newItems)
         return adapt(loc, interaction.pathProtocol)
 
-
+    _subTraverser = lambda self, *args, **kw: self.__class__(*args,**kw)
 
 class CallableAsWebPage(protocols.Adapter):
 
