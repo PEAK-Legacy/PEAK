@@ -885,6 +885,24 @@ default for src is '!.', the current input buffer"""
 
 
 
+    class cmd_cd(ShellCommand):
+        """\\cd [directoryname] -- change directory, or print current directory"""
+    
+        args = ('', 0, 1)
+        
+        def cmd(self, cmd, opts, args, stdout, stderr, **kw):
+            if args:
+                try:
+                    os.chdir(args[0])
+                except:
+                    sys.excepthook(*sys.exc_info()) # XXX
+            else:
+                print >>stdout, os.getcwd()
+
+    cmd_cd = binding.Make(cmd_cd)
+
+
+        
     class cmd_htmldump(ShellCommand):
         """\\htmldump [-f] [-x table[,table,...]] -- dump entire database as HTML document
 
