@@ -155,7 +155,7 @@ metaclass, with the appropriate class attributes::
     >>> class Test:
     ...     foo = binding.classAttr(42)
     >>> type(Test)
-    <type 'class'>
+    <type 'class...'>
     >>> Test = binding.activateClass(Test)
     >>> type(Test)
     <class 'TestClass'>

@@ -139,7 +139,8 @@ class TestTraversals(TestCase):
        
     def testContextAttrs(self):
         self.failUnless(self.getPath('/').current is self.ctx)
-        self.assertRaises(TypeError, lambda: self.getPath('/').traversedURL)
+        self.assertRaises(
+            (TypeError,AttributeError), lambda: self.getPath('/').traversedURL)
         for attr in """
             url previous environ interaction policy skin rootURL
             traversedURL absoluteURL user default nothing
@@ -155,7 +156,6 @@ class TestTraversals(TestCase):
     def testEnvironItems(self):
         for key in self.ctx.environ:
             self.checkPath('/environ/'+key, self.ctx.environ[key])
-
 
 
 

@@ -178,8 +178,8 @@ must have one or the other, not both.
 
 Note also that more than one option can be specified for a given attribute,
 although in that case they will usually all be ``Set(value=someval)`` options.
-For example, the For example, the ``-v`` and ``-q`` options shown above would
-most likely be used with the same attribute, e.g.::
+For example, the ``-v`` and ``-q`` options shown above would most likely be
+used with the same attribute, e.g.::
 
     >>> class Foo:
     ...     binding.metadata(verbose = [opt_v, opt_q])
@@ -307,7 +307,7 @@ in the input arguments.
     ['xyz']
     >>> foo.verbose
     1
-    
+
 
 * Two options::
 
@@ -443,7 +443,7 @@ following properties that can be set:
     title, but before the options in that group are listed.  ``optparase``
     treats this as a single paragraph of text and may rewrap it, so don't
     bother with any fancy formatting.
-    
+
 ``sortKey``
     The sort key is a value used to arrange groups in a specified order.
     Groups with lower ``sortKey`` values appear earlier in generated help than
