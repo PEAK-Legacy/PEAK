@@ -2,7 +2,7 @@ from peak.api import *
 
 __all__ = [
     'ITask', 'ITaskSwitch', 'IEventSource', 'IEventSink', 'IReadableSource',
-    'IWritableSource', 'ICondition', 'ISemaphore', 'IThread',
+    'IWritableSource', 'IConditional', 'ISemaphore', 'IThread',
     'IScheduledThread', 'IThreadState', 'IScheduler', 'ISelector',
 ]
 
@@ -139,19 +139,19 @@ class IWritableSource(IReadableSource):
         If the 'force' parameter is a true value, and the event source would
         not have fired an event due to a lack of change in value, the event
         source should fire the event anyway.  (The firing may be suppressed
-        for other reasons, such as falsehood in the case of an 'ICondition'
+        for other reasons, such as falsehood in the case of an 'IConditional'
         or 'ISemaphore'.)"""
 
 
-class ICondition(IWritableSource):
+class IConditional(IReadableSource):
 
     """An event source that fires when (or resumes while) its value is true
 
-    Note that callbacks added to an 'ICondition' with a true value should be
+    Note that callbacks added to an 'IConditional' with a true value should be
     called immediately."""
 
 
-class ISemaphore(ICondition):
+class ISemaphore(IWritableSource,IConditional):
 
     """An event source that allows 'n' threads to proceed at once"""
 
@@ -195,7 +195,7 @@ class IThread(protocols.Interface):
         """
 
     isFinished = protocols.Attribute(
-        """'ICondition' that's set to 'True' when the thread is completed"""
+        """'IConditional' that fires when the thread is completed"""
     )
 
 
@@ -236,7 +236,7 @@ class IScheduledThread(IThread):
 
 
     aborted = protocols.Attribute(
-        """'ICondition' that's set to 'True' if the thread is aborted"""
+        """'IConditional' that fires if the thread is aborted"""
     )
 
 
@@ -309,10 +309,10 @@ class IScheduler(protocols.Interface):
         went to "sleep"."""
 
     def until(time):
-        """Get an 'ICondition' that fires when 'scheduler.now() >= time'"""
+        """Get an 'IConditional' that fires when 'scheduler.now() >= time'"""
 
     def timeout(secs):
-        """Get an 'ICondition' that will fire 'secs' seconds from now"""
+        """Get an 'IConditional' that will fire 'secs' seconds from now"""
 
     def time_available():
         """Return number of seconds until next scheduled callback"""
@@ -336,13 +336,13 @@ class ISelector(protocols.Interface):
     seconds."""
 
     def readable(stream):
-        """'ICondition' that's true when 'stream' is readable"""
+        """'IConditional' that's true when 'stream' is readable"""
 
     def writable(stream):
-        """'ICondition' that's true when 'stream' is writable"""
+        """'IConditional' that's true when 'stream' is writable"""
 
     def exceptional(stream):
-        """'ICondition' that's true when 'stream' is in error/out-of-band"""
+        """'IConditional' that's true when 'stream' is in error/out-of-band"""
 
     def resolve(name, timeout=10):
         """'ITask' that yields IP for 'name', or raises a timeout error"""

@@ -4,7 +4,7 @@ from unittest import TestCase, makeSuite, TestSuite
 from peak.api import *
 from peak.tests import testRoot
 
-class BasicTests(TestCase):
+class BasicTests(TestCase,object):
 
     kind = "stream"
     sourceType = events.Distributor
@@ -70,8 +70,8 @@ class BasicTests(TestCase):
         self.doPut(1,True)
         self.assertEqual(self.log, [])
 
-        self.doPut(1,True)
-        self.assertEqual(self.log, [(self.source, True)])
+        self.doPut(2,True)
+        self.assertEqual(self.log, [(self.source, 2)])
 
 
 
@@ -134,7 +134,7 @@ class ValueTests(BasicTests):
 class ConditionTests(ValueTests):
 
     sourceType = events.Condition
-    requiredInterface = events.ICondition
+    requiredInterface = events.IConditional
 
     def reenter(self,source,event):
         self.doPut(False)
@@ -143,13 +143,54 @@ class ConditionTests(ValueTests):
     def testSuspend(self):
         # Verify that source suspends when value is true
 
-        for f in False, '', None, 0:
+        for f in False, '', 0:
             self.doPut(f,True)
-            self.failUnless( self.source.nextAction() is None, self.source.value)
+            self.failUnless( self.source.nextAction() is None, self.source())
 
-        for t in True, 'x', 27:
+        for t in True, 'xx', 27:
             self.doPut(t,True)
             self.failIf( self.source.nextAction() is None)
+
+
+
+
+
+
+
+
+
+
+
+
+class DerivedValueTests(BasicTests):
+
+    sourceType = events.DerivedValue
+    kind = "broadcast"
+
+    requiredInterface = events.IReadableSource
+
+    def setUp(self):
+        self.base = events.Value(False)
+        self.source = self.sourceType(lambda: self.base() * 2, self.base)
+        self.log = []
+
+    def doPut(self,value,force=False):
+        try:
+            v = value/2.0
+        except TypeError:
+            v = value[:len(value)/2]
+        self.base.set(v, force)
+
+
+class DerivedConditionTests(DerivedValueTests):
+
+    sourceType = events.DerivedCondition
+    requiredInterface = events.IConditional
+
+    reenter = ConditionTests.reenter.im_func
+    testSuspend = ConditionTests.testSuspend.im_func
+
+
 
 
 
@@ -656,7 +697,8 @@ class AdviceTests(TestCase):
 
 TestClasses = (
     BasicTests, ValueTests, ConditionTests, SemaphoreTests, AnyOfTests,
-    TestThreads, ScheduledThreadsTest, SchedulerTests, AdviceTests
+    TestThreads, ScheduledThreadsTest, SchedulerTests, AdviceTests,
+    DerivedValueTests, DerivedConditionTests
 )
 
 def test_suite():

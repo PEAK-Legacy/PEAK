@@ -5,9 +5,9 @@ from weakref import ref
 
 __all__ = [
     'AnyOf', 'Distributor', 'Value', 'Condition', 'Semaphore',
+    'DerivedValue', 'DerivedCondition', 'Observable', 'Readable', 'Writable',
+    'Conditional',
 ]
-
-
 
 
 
@@ -121,17 +121,9 @@ class AnyOf(object):
             source.addCallback(onceOnly)
 
 
-class Distributor(object):
+class Observable(object):
 
-    """Sends each event to one callback
-
-    This is perhaps the simplest possible 'IEventSource'.  When its 'send()'
-    method is called, the supplied event is passed to any registered
-    callbacks.  As soon as a callback "accepts" the event (by returning a true
-    value), distribution of the event stops.
-
-    Yielding to an 'events.Distributor' in a thread always suspends the thread
-    until the next 'send()' call on the distributor.
+    """Base class for a generic event source
 
     You may subclass this class to create other kinds of event sources: change
     the 'singleFire' class attribute to 'False' in your subclass if you would
@@ -162,13 +154,15 @@ class Distributor(object):
         self._callbacks.append(func)
 
 
-    def send(self,event):
-        """Send 'event' to one or more callbacks, as needed
 
-        Note that this method is *not* part of 'IEventSource', and is therefore
-        not part of the API of 'Distributor' subclasses, unless they explicitly
-        state otherwise.
-        """
+
+
+
+
+
+
+
+    def _fire(self, event):
 
         callbacks, self._callbacks = self._callbacks, []
         count = len(callbacks)
@@ -203,7 +197,95 @@ class Distributor(object):
 
 
 
-class Value(Distributor):
+
+
+
+
+
+
+class Distributor(Observable):
+
+    """Sends each event to one callback
+
+    This is perhaps the simplest possible 'IEventSource'.  When its 'send()'
+    method is called, the supplied event is passed to any registered
+    callbacks.  As soon as a callback "accepts" the event (by returning a true
+    value), distribution of the event stops.
+
+    Yielding to an 'events.Distributor' in a thread always suspends the thread
+    until the next 'send()' call on the distributor.
+    """
+
+    __slots__ = ()
+
+    def send(self,event):
+        """Send 'event' to one or more callbacks, until accepted"""
+        self._fire(event)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class Readable(Observable):
+
+    """Base class for an 'IReadableSource' -- adds a '_value' and '__call__'"""
+
+    __slots__ = '_value'
+
+    singleFire   = False
+
+    protocols.advise(
+        instancesProvide=[IReadableSource]
+    )
+
+    def __call__(self):
+        """See 'events.IReadableSource.__call__()'"""
+        return self._value
+
+
+class Writable(Readable):
+
+    """Base class for an 'IWritableSource' -- adds a 'set()' method"""
+
+    __slots__ = ()
+
+    protocols.advise(
+        instancesProvide=[IWritableSource]
+    )
+
+    def set(self,value,force=False):
+        """See 'events.IWritableSource.set()'"""
+        if force or value<>self._value:
+            self._value = value
+            self._fire(value)
+
+
+
+
+
+
+
+
+
+class Value(Writable):
 
     """Broadcast changes in a variable to all observers
 
@@ -224,19 +306,14 @@ class Value(Distributor):
     is supplied as the 'source'.  (See 'events.IEventSink'.)
     """
 
-    __slots__ = 'value'
-
-    protocols.advise(
-        instancesProvide=[IWritableSource]
-    )
+    __slots__ = ()
 
     defaultValue = NOT_GIVEN
-    singleFire   = False
 
     def __init__(self,value=NOT_GIVEN):
         if value is NOT_GIVEN:
             value = self.defaultValue
-        self.value = value
+        self._value = value
         super(Value,self).__init__()
 
 
@@ -244,16 +321,73 @@ class Value(Distributor):
 
 
 
-    def set(self,value,force=False):
-        """See 'events.IWritableSource.set()'"""
-        if force or value<>self.value:
-            self.value = value
-            self.send(value)
+
+
+
+
+
+class DerivedValue(Readable):
+
+    """'DerivedValue(formula, *values)' - a value derived from other values
+
+    Usage::
+
+        # 'derived' changes whenever x or y change
+        derived = DerivedValue(lambda: x()+y(), x, y)
+
+    A 'DerivedValue' fires an event equal to 'formula()' whenever any of the
+    supplied 'values' fire, and the value of 'formula()' is not equal to its
+    last known value (if any).
+    """
+
+    __slots__ = '_source', '_formula', '_registered'
+
+    def __init__(self,formula,*values):
+        self._source = AnyOf(*values)
+        self._formula = formula
+        self._registered = False
+        super(DerivedValue,self).__init__()
 
 
     def __call__(self):
-        """See 'events.IReadableSource.__call__()'"""
-        return self.value
+        """Get current or cached value of 'formula()'"""
+        try:
+            return self._value
+        except AttributeError:
+            value = self._value = self._formula()
+            self._register()
+            return value
+
+
+    def _register(self):
+        if not self._registered and self._callbacks or hasattr(self,'_value'):
+            self._registered = True
+            self._source.addCallback(self._set)
+
+
+
+
+    def _set(self,source,event):
+
+        self._registered = False
+
+        if self._callbacks:
+            value = self._formula()
+            self._register()
+
+            if not hasattr(self,'_value') or self._value<>value:
+                self._value = value
+                self._fire(value)
+
+        else:
+            del self._value
+            # no need to register, since we have neither callback nor caching
+
+
+    def addCallback(self,func):
+        """See 'events.IEventSource.addCallback()'"""
+        super(DerivedValue,self).addCallback(func)
+        self._register()
 
 
 
@@ -274,18 +408,48 @@ class Value(Distributor):
 
 
 
+class Conditional(Readable):
+
+    """Base class for an 'IConditional': fires if and only if value is true"""
+
+    protocols.advise( instancesProvide=[IConditional] )
+
+    __slots__ = ()
+
+    def nextAction(self, thread=None, state=None):
+        """Suspend only if current value is false"""
+        value = self()
+        if value:
+            if state is not None:
+                state.YIELD(value)
+            return True
+
+        if thread is not None:
+            self.addCallback(thread.step)
+
+
+    def addCallback(self, func):
+        """Add callback, but fire it immediately if value is currently true"""
+
+        value = self()
+
+        if value:
+            func(self,value)
+        else:
+            super(Conditional,self).addCallback(func)
+
+
+    def _fire(self, event):
+        """Only transmit true events"""
+        if event:
+            super(Conditional,self)._fire(event)
 
 
 
 
 
 
-
-
-
-
-
-class Condition(Value):
+class Condition(Conditional,Value):
 
     """Send callbacks/allow threads to proceed when condition is true
 
@@ -304,44 +468,8 @@ class Condition(Value):
     """
 
     __slots__ = ()
-
-    protocols.advise( instancesProvide=[ICondition] )
-
     defaultValue = False
 
-    def nextAction(self, thread=None, state=None):
-        """See 'events.ITaskSwitch.nextAction()'"""
-
-        if self.value:
-            if state is not None:
-                state.YIELD(self.value)
-            return True
-
-        if thread is not None:
-            self.addCallback(thread.step)
-
-
-
-
-
-
-
-    def set(self,value,force=False):
-        """See 'events.IWritableSource.set()'"""
-
-        old = self.value
-        self.value = value
-        if force or (value and not old):
-            self.send(value)
-
-
-    def addCallback(self, func):
-        """See 'events.IEventSource.addCallback()'"""
-
-        if self.value:
-            func(self,self.value)
-        else:
-            super(Condition,self).addCallback(func)
 
 
 
@@ -362,12 +490,48 @@ class Condition(Value):
 
 
 
+class DerivedCondition(Conditional,DerivedValue):
+
+    """'DerivedCondition(formula, *values)' - derive condition from value(s)
+
+    Usage::
+
+        # 'derived' is re-evaluated whenever x or y change
+        derived = DerivedCondition(lambda: x()>=y(), x, y)
+
+    A 'DerivedCondition' fires an event equal to 'formula()' whenever any of
+    the supplied 'values' fire, the value of 'formula()' is not equal to its
+    last known value (if any), and the value of 'formula()' is true.
+
+    Note that like other 'events.IConditional' implementations, callbacks
+    added to a 'DerivedCondition' will be fired immediately if the current
+    value of 'formula()' is true, and threads yielding to a true
+    'DerivedCondition' will also proceed immediately without waiting for a
+    callback.
+    """
+
+    __slots__ = ()
 
 
 
 
 
-class Semaphore(Condition):
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class Semaphore(Conditional,Value):
 
     """Allow up to 'n' threads to proceed simultaneously
 
@@ -392,11 +556,11 @@ class Semaphore(Condition):
 
     def put(self):
         """See 'events.ICondition.put()'"""
-        self.set(self.value+1)
+        self.set(self._value+1)
 
     def take(self):
         """See 'events.ICondition.take()'"""
-        self.set(self.value-1)
+        self.set(self._value-1)
 
 
 
