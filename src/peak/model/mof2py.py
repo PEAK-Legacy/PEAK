@@ -43,7 +43,7 @@ from __future__ import generators
 
 from peak.api import *
 from peak.util.IndentedStream import IndentedStream
-from cStringIO import StringIO
+from StringIO import StringIO
 from peak.util.advice import advice
 
 from os.path import dirname,exists
@@ -805,7 +805,7 @@ def genPkg(modelDescr, modelFile, pkgBase, srcDir, progress=lambda *x:None):
 
     from peak.metamodels import MOF131
 
-    init = MOF131.Package(roots[0].getParentComponent(),
+    init = MOF131.Package(binding.getParentComponent(roots[0]),
         name='__init__',
         annotation='Structural Model for %s - Generated from %s' % (modelDescr,modelFile),
         contents=[MOF131.Import(name=r.name, importedNamespace=r) for r in roots]
