@@ -17,6 +17,10 @@ Fixes and Enhancements since Version 0.5 alpha 1
 
    * supports and implements the PEP 246 'adapt()' protocol
 
+   * transparently supports transitive adaptation - i.e. if adapter AB
+     adapts from A to B, and adapter BC adapts from B to C, then an adapt(x,C)
+     where 'x' is an 'A', will be implemented as BC(AB(x)).
+
    * can interoperate with other interface packages, including Zope's, but
      does not require them
 

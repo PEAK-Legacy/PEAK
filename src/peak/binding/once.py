@@ -5,7 +5,7 @@ from peak.api import NOT_FOUND
 from peak.util.imports import importObject, importString
 from interfaces import IComponentFactory
 from _once import *
-
+from peak.interface import implements, IDirectProvider
 
 __all__ = [
     'Once', 'New', 'Copy', 'Activator', 'ActiveClass', 'ActiveClasses',
@@ -249,9 +249,10 @@ class Activator(type):
     """Descriptor metadata management"""
 
     __name__ = 'Activator'    # trick to make instances' __name__ writable
-
     __class_descriptors__ = {}
     __all_descriptors__ = {}
+
+    implements(IDirectProvider)
 
     def __new__(meta, name, bases, cdict):
 
@@ -284,7 +285,6 @@ class Activator(type):
         klass.__name__ = name
 
 
-
         d = klass.__class_descriptors__ = {}
 
         for k in class_descr:
@@ -296,25 +296,25 @@ class Activator(type):
         ad.update(klass.__class_descriptors__)
         klass.__all_descriptors__ = ad
 
+        ps = {}
+        map(ps.update,getInheritedRegistries(klass, '__protocols_supported__'))
+        klass.__protocols_supported__ = ps
 
         return klass
 
 
+    def declareSupportFor(self,*protocols):
+        reg = self.__protocols_supported__
+        for p in protocols:
+            reg[p] = True
 
+    declareSupportFor = metamethod(declareSupportFor)
 
+    def __conform__(self,proto):
+        if self.__protocols_supported__.get(proto):
+            return self
 
-
-
-
-
-
-
-
-
-
-
-
-
+    __conform__ = metamethod(__conform__)
 
 
 

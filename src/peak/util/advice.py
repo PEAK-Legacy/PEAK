@@ -3,39 +3,39 @@ from types import ClassType, FunctionType
 import sys
 
 __all__ = [
-    'advice', 'addClassAdvisor', 'isClassAdvisor',
+    'advice', 'addClassAdvisor', 'isClassAdvisor', 'metamethod', 'supermeta',
 ]
 
 
+def metamethod(func):
+    """Wrapper for metaclass method that might be confused w/instance method"""
+    return property(lambda ob: func.__get__(ob,ob.__class__))
 
 
+# metamethod-safe 'super()' for Python 2.2; 2.3 can use super() instead
 
+def supermeta(typ,ob):
 
+    mro = iter(ob.__class__.__mro__)
+    for cls in mro:
+        if cls is typ:
+            cls = mro.next()
+            break
+    else:
+        raise TypeError("Not sub/supertypes:", supertype, subtype)
 
+    typ = ob.__class__
 
+    class theSuper(object):
+        def __getattr__(self,name):
+            descr = getattr(cls,name)
+            try:
+                descr = descr.__get__
+            except AttributeError:
+                return descr
+            return descr(ob,typ)
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    return theSuper()
 
 
 

@@ -5,18 +5,18 @@ from interfaces import *
 from peak.util.imports import importObject
 from os.path import isfile
 import sys, os
-
+from peak.interface import adapt
 
 __all__ = [
     'AbstractCommand', 'AbstractInterpreter', 'IniInterpreter', 'EventDriven',
     'ZConfigInterpreter', 'Bootstrap', 'rerunnableAsFactory',
-    'callableAsFactory', 'appAsFactory', 'executableAsFactory',
-    'InvocationError',
+    'callableAsFactory', 'appAsFactory', 'InvocationError',
 ]
 
 
 class InvocationError(Exception):
     """Problem with command arguments or environment"""
+
 
 
 
@@ -45,8 +45,6 @@ class AbstractCommand(binding.Component):
 
     implements(ICmdLineApp)
     classProvides(ICmdLineAppFactory)
-
-    XXX = binding.classAttr("This is a kludge so classProvides works")
 
     argv    = binding.bindTo('import:sys:argv')
     stdin   = binding.bindTo('import:sys:stdin')
@@ -80,6 +78,8 @@ define a usage message for their subclass.
 
     isInteractive = binding.Once(isInteractive)
 
+
+
     def getSubcommand(self, executable, **kw):
 
         """Return a 'ICmdLineApp' with our environment as its defaults
@@ -89,7 +89,7 @@ define a usage message for their subclass.
         supplied object is not an 'IExecutable'.
         """
 
-        factory = executableAsFactory(executable)
+        factory = adapt(executable,ICmdLineAppFactory)
 
         for k in 'argv stdin stdout stderr environ'.split():
             if k not in kw:
@@ -285,9 +285,12 @@ class _runner(AbstractCommand):
             return v.args[0]
 
 
-def callableAsFactory(callable):
+def callableAsFactory(callable,proto=None):
 
     """Convert a callable object to an 'ICmdLineAppFactory'"""
+
+    if not hasattr(callable,'__call__'):
+        raise NotImplementedError("Object must be callable",callable)
 
     def factory(**kw):
         kw.setdefault('callable',callable)
@@ -296,8 +299,7 @@ def callableAsFactory(callable):
     directlyProvides(factory, ICmdLineAppFactory)
     return factory
 
-
-def appAsFactory(app):
+def appAsFactory(app,proto=None):
 
     """Convert an 'ICmdLineApp' to an 'ICmdLineAppFactory'"""
 
@@ -308,8 +310,7 @@ def appAsFactory(app):
     directlyProvides(factory, ICmdLineAppFactory)
     return factory
 
-
-def rerunnableAsFactory(runnable):
+def rerunnableAsFactory(runnable,proto=None):
 
     """Convert an 'IRerunnable' to an 'ICmdLineAppFactory'"""
 
@@ -321,51 +322,9 @@ def rerunnableAsFactory(runnable):
     return factory
 
 
-
-
-
-
-
-def executableAsFactory(executable):
-
-    """Convert any 'IExecutable' to an 'ICmdLineAppFactory'
-
-    Any 'IExecutable' may be supplied as the basis for creating
-    the 'ICmdLineAppFactory'.  'NotImplementedError' is raised if the
-    supplied object is not an 'IExecutable'."""
-
-
-    if ICmdLineAppFactory.isImplementedBy(executable):
-        return executable    # okay as is
-
-    elif ICmdLineApp.isImplementedBy(executable):
-        return appAsFactory(executable)
-
-    elif IRerunnable.isImplementedBy(executable):
-        return rerunnableAsFactory(executable)
-
-    elif callable(executable):
-        return callableAsFactory(executable)
-
-    else:
-        raise NotImplementedError("Not an IExecutable", executable)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+ICmdLineAppFactory.registerImplementation(object, callableAsFactory)
+ICmdLineApp.addImpliedProtocol(ICmdLineAppFactory, appAsFactory)
+IRerunnable.addImpliedProtocol(ICmdLineAppFactory, rerunnableAsFactory)
 
 class Bootstrap(AbstractInterpreter):
 

@@ -14,6 +14,7 @@ from interfaces import *
 from method_exporter import MethodExporter
 from peak.util.hashcmp import HashAndCompare
 from peak.util.imports import lazyModule
+from peak.util.advice import supermeta
 
 fmtparse = lazyModule('peak.util.fmtparse')
 
@@ -21,7 +22,6 @@ __all__ = [
     'StructuralFeature',  'Collection', 'Sequence',
     'DerivedFeature', 'structField', 'Attribute',
 ]
-
 
 
 
@@ -201,7 +201,7 @@ class FeatureClass(HashAndCompare,MethodExporter):
     def __conform__(feature,protocol):
         if protocol is fmtparse.Rule:
             return feature._syntax
-
+        return supermeta(MethodExporter,feature).__conform__(protocol)
 
 class StructuralFeature(object):
 
