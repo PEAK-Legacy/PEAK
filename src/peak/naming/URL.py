@@ -181,12 +181,12 @@ class Base(Struct):
     supportsScheme = classmethod(supportsScheme)
 
 
-    def __init__(self, scheme=None, body=None, **__kw):
+    def __init__(self, scheme=None, body='', **__kw):
 
         scheme = scheme or self.__class__.defaultScheme
 
         if body:
-            data = self.parse(scheme,body)
+            data = self.parse(scheme,str(body))
             data.update(__kw)
             __kw = data
 
