@@ -256,7 +256,7 @@ class BusyProxy(ChildProcess):
 
     def doRead(self):
         try:
-            byte = self.busyStream.read()[-1:]
+            byte = self.busyStream.read(1)
         except ValueError:
             # already closed
             return
