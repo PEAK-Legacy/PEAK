@@ -9,7 +9,7 @@ from types import FunctionType
 
 
 __all__ = [
-    'Base','App','Service','Specialist','DynamicBinding','StaticBinding',
+    'Base','App','Service','Specialist','AutoCreated',
     'StructuralFeature', 'Field', 'Collection', 'Reference', 'Sequence',
     'Classifier','PrimitiveType','Enumeration','DataType','Element',
     'bindTo', 'requireBinding', 'bindToNames', 'bindToParent', 'bindToSelf',
@@ -23,19 +23,19 @@ __all__ += allInterfaces
 
 
 
-class DynamicBindingMC(Meta.AssertInterfaces):
-
-    def __get__(self, obj, typ=None):
-        if obj is None: return self        
-        newOb = self()
-        newOb._setSEFparent(obj)
-        obj.__dict__[newOb._componentName] = newOb
-        return newOb
 
 
-class DynamicBinding(object):
 
-    __metaclass__ = DynamicBindingMC
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -285,9 +285,50 @@ class Base(object):
 
     _componentName = property(_componentName)
 
-class Service(DynamicBinding, Base):
+class AutoCreatable(type):
 
-    """Instance (as opposed to class)"""
+    """Metaclass for classes which auto-create"""
+
+    def __get__(self, obj, typ=None):
+
+        if obj is None:
+            return self
+
+        newOb = self(obj)
+        
+        obj.__dict__[newOb._componentName] = newOb
+        return newOb
+
+
+class AutoCreated(Base):
+
+    """Class which auto-creates instances for instances of its containing class
+    """
+
+    __metaclasses__ = AutoCreatable,
+
+    def __init__(self, parent=None):
+
+        super(AutoCreated,self).__init__()
+
+        if parent is not None:
+            self._setSEFparent(parent)
+
+
+
+
+
+
+
+
+
+
+
+
+
+class Service(AutoCreated):
+
+    """Well-known instances"""
 
     __implements__ = IService
     
@@ -303,8 +344,8 @@ class App(Service):
         return element
 
 
-class StaticBinding(object):
-    pass
+
+
 
 
 
@@ -900,13 +941,13 @@ class Sequence(Collection):
 
 
 
-class Classifier(StaticBinding, Base):
+class Classifier(Base):
     """Basis for all flavors"""
             
 class PrimitiveType(Classifier):
     """A primitive type (e.g. Boolean, String, etc.)"""
 
-class Enumeration(DynamicBinding, Classifier):
+class Enumeration(Classifier):
     """An enumerated type"""
 
 class DataType(Classifier):

@@ -17,7 +17,7 @@ import TW.SEF.Basic
 __bases__ = TW.SEF.Basic,
 
 
-class DynamicBinding(object):
+class AutoCreated(object):
     # We have to have this here in order to reference it, even though
     # there's nothing to change
     pass
@@ -39,7 +39,7 @@ class Base(object):
 
 
 
-class StructuralFeature(DynamicBinding,Base):
+class StructuralFeature(AutoCreated):
 
     __metaclasses__ = ()    # prevents us from being a 'FeatureMC' instance
 

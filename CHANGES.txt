@@ -1,5 +1,15 @@
 New Features and Bug Fixes since v0.2, preview 1
 
+ * SEF.DynamicBinding is now SEF.AutoCreated, and all AutoCreatable
+   classes like SEF.App and SEF.Service must now have an '__init__' method
+   that accepts their SEF parent component.  This lets such objects have
+   access to the SEF hierarchy during initialization.  (Note that this
+   means any '__init__' methods of such classes must be revised to take
+   this into consideration.  See TW.Database.DataModel.Database for an
+   example of such a revision.)
+
+   Also, I dropped the unused SEF.StaticBinding class.
+
  * 'setupModule()' and 'adviseModule()' will now issue warnings for most
    questionable code structures and variable redefinitions that might not
    work the way you'd expect or intend under module inheritance.
