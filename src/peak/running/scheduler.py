@@ -212,35 +212,35 @@ class UntwistedReactor(binding.Component):
     )
 
     running = False
-    writers = binding.Make(list)
-    readers = binding.Make(list)
+    writers = binding.Make(dict)
+    readers = binding.Make(dict)
     sleep   = binding.Obtain('import:time.sleep')
     select  = binding.Obtain('import:select.select')
     _error  = binding.Obtain('import:select.error')
     logger  = binding.Obtain('logger:peak.reactor')
     sigSvc  = binding.Obtain(events.ISignalSource)
     scheduler = binding.Obtain(events.IScheduler)
-
+    selector  = binding.Obtain(events.ISelector)
     checkInterval = binding.Obtain(
         PropertyName('peak.running.reactor.checkInterval')
     )
 
-    def callLater(self, delay, callable, *args, **kw):
-        self.scheduler.sleep(delay).addCallback(
-            lambda s,e: callable(*args,**kw) or True
-        )
-
     def addReader(self, reader):
-        if reader not in self.readers: self.readers.append(reader)
+        if reader not in self.readers:
+            e = self.readers[reader] = self.selector.readable(reader)
+            e.addCallback(lambda s,e: self._fire(self.readers, reader, reader.doRead))
 
     def addWriter(self, writer):
-        if writer not in self.writers: self.writers.append(writer)
+        if writer not in self.writers:
+            self.writers[writer]=self.selector.writable(writer)
+            e.addCallback(lambda s,e: self._fire(self.writers, writer, writer.doWrite))
 
     def removeReader(self, reader):
-        if reader in self.readers: self.readers.remove(reader)
+        if reader in self.readers: del self.readers[reader]
 
     def removeWriter(self, writer):
-        if writer in self.writers: self.writers.remove(writer)
+        if writer in self.writers: del self.writers[writer]
+
 
 
 
@@ -285,18 +285,48 @@ class UntwistedReactor(binding.Component):
 
 
 
-    def iterate(self, delay=None):
+    def callLater(self, delay, callable, *args, **kw):
+        self.scheduler.sleep(delay).addCallback(
+            lambda s,e: callable(*args,**kw) or True
+        )
 
-        wasRunning = self.running
 
-        try:
-            self.scheduler.tick()
-        except ReactorCrash:
-            return
-        except:
-            self.logger.exception(
-                "%s: error executing scheduled callback:", self
+    def _fire(self, events, target, method):
+
+        if target in events:
+            # Only fire currently-active events
+            events[target].addCallback(
+                lambda s,e: self._fire(events,target,method)
             )
+            method()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    def iterate(self, delay=None):
 
         if delay is None:
             if not self.running:
@@ -307,20 +337,31 @@ class UntwistedReactor(binding.Component):
                     delay = self.checkInterval
 
         delay = max(delay, 0)
+        deadline = self.scheduler.now() + delay
 
-        if (self.readers or self.writers) and (self.running or not wasRunning):
-            try:
-                r, w, e = self.select(self.readers, self.writers, [], delay)
-            except self._error,v:
-                if v.args[0]==EINTR:    # signal received during select
-                    return
-                raise
+        try:
+            self.scheduler.tick()
+        except ReactorCrash:
+            return
+        except:
+            self.logger.exception(
+                "%s: error executing scheduled callback:", self
+            )
 
-            for reader in r: reader.doRead()
-            for writer in w: writer.doWrite()
+        delay = deadline - self.scheduler.now()
 
-        elif delay and self.running:
+        if delay>0 and self.running:
             self.sleep(delay)
+
+
+
+
+
+
+
+
+
+
 
 
 

@@ -9,8 +9,7 @@ Open Issues/To-Do Items
 
       - Implement basic 'events.ISelector' and 'IEventLoop'
 
-      - 'UntwistedReactor' should use an 'events.ISelector' to implement
-        I/O functions, and 'IEventLoop' to implement 'run()'
+      - 'UntwistedReactor' should use an 'IEventLoop' to implement 'run()'
 
       - Add 'events.twisted_support', with 'TwistedScheduler',
        'TwistedSelector', and 'DeferredAsTaskSwitch'
@@ -39,6 +38,7 @@ Open Issues/To-Do Items
       - Cleanup/document attribute binding interface
 
 
+
     * peak.running.timers
 
       - Factor out state into separate object so timers aren't shared state
@@ -61,10 +61,6 @@ Open Issues/To-Do Items
          a later release)
 
        - try/catch DOMlet (and related error rendering interface/framework)
-
-
-
-
 
 
 

@@ -359,13 +359,13 @@ class ISelector(ISignalSource):
     away, its threads/callbacks will not be called."""
 
     def readable(stream):
-        """'IConditional' that's true when 'stream' is readable"""
+        """'IEventSource' that fires when 'stream' is readable"""
 
     def writable(stream):
-        """'IConditional' that's true when 'stream' is writable"""
+        """'IEventSource' that fires when 'stream' is writable"""
 
     def exceptional(stream):
-        """'IConditional' that's true when 'stream' is in error/out-of-band"""
+        """'IEventSource' that fires when 'stream' is in error/out-of-band"""
 
 
 
