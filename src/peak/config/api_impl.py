@@ -9,7 +9,7 @@ from peak.naming.names import PropertyName
 
 __all__ = [
     'getGlobal','setGlobal', 'registerGlobalProvider',
-    'getLocal', 'setLocal',  'registerLocalProvider',  'newDefaultConfig',
+    'getLocal', 'setLocal',  'registerLocalProvider',
 
     'getProperty',
 
@@ -24,10 +24,8 @@ def getGlobal():
 
     """Return the global configuration object"""
 
-    if not _globalCfg.locked:
-        g = GlobalConfig()
-        setGlobal(g)
-        g.startup()
+    if not hasattr(_globalCfg,'value'):
+        setGlobal(GlobalConfig())
 
     return _globalCfg.get()
 
@@ -38,6 +36,8 @@ def setGlobal(cfg):
 
     _globalCfg.set(cfg)
     setLocal(cfg, None)     # force local config for global config to be None
+
+
 
 _defaultCfg = EigenCell()
 _localCfgs = EigenDict()
@@ -53,10 +53,8 @@ def getLocal(forRoot=None):
     if forRoot is not None and _localCfgs.has_key(forRoot):
         return _localCfgs[forRoot]
         
-    if not _defaultCfg.locked:
-        c = newDefaultConfig()
-        setLocal(None, c)
-        c.startup()
+    if not hasattr(_defaultCfg,'value'):
+        setLocal(None, LocalConfig(getGlobal()))
         
     return _defaultCfg.get()
 
@@ -72,11 +70,13 @@ def setLocal(forRoot, cfg):
 
 
 
-def newDefaultConfig():
 
-    """Return a new, default local configuration object based on getGlobal()"""
 
-    return LocalConfig(getGlobal())
+
+
+
+
+
 
 
 

@@ -203,21 +203,36 @@ class ConfigReader(AbstractConfigParser):
         self.process_settings(section, lines, handler)
 
 
-class GlobalConfig(Component):
+class BasicConfig(Component):
 
-    def __init__(self):
-        pass
+    def __instance_provides__(self,d,a):
+        pm=PropertyMap()
+        pm.setParentComponent(self)
+        d[a]=pm
+        self.setup(pm)
+        return pm
 
-    def startup(self):
-        self.setup(self.__instance_provides__)
+    __instance_provides__ = Once(__instance_provides__, provides=IPropertyMap)
     
+
+    def _getConfigData(self, configKey, forObj):
+        self.__instance_provides__  # ensure existence & setup
+        return super(BasicConfig,self)._getConfigData(configKey,forObj)
+
+
+    def setup(self, propertyMap):
+        pass
+        
+
+class GlobalConfig(BasicConfig):
+
     def config_filenames(self,d,a):
         import os; from peak import __file__ as filebase
         return [os.path.join(os.path.dirname(filebase), 'peak.ini')]
 
     config_filenames = Once(config_filenames)
 
-        
+
     def setup(self, propertyMap):
 
         for file in self.config_filenames:
@@ -229,31 +244,7 @@ class GlobalConfig(Component):
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-class LocalConfig(Component):
-
-    def __init__(self,parent):
-        self.setParentComponent(parent)
-
-    def startup(self):
-        self.setup(self.__instance_provides__)
-
-    def setup(self, propertyMap):
-        pass
+class LocalConfig(BasicConfig):
 
     def setParentComponent(self,parent):
 
