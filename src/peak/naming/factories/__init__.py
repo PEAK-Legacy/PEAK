@@ -11,9 +11,10 @@ schemes = {
 }
 
 schemeParsers = {
-    'smtp'  :   'smtp:smtpURL',
-    'ldap'  :   'ldap:ldapURL',
     'import':   'peak_imports:importURL',
+    'ldap'  :   'ldap:ldapURL',
+    'smtp'  :   'smtp:smtpURL',
+    'uuid'  :   'uuid:uuidURL',
 }
 
 
