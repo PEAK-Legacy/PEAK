@@ -1,9 +1,9 @@
 from unittest import TestCase, makeSuite, TestSuite
 from peak.api import *
 from peak.tests import testRoot
+import peak.web.sitemaps as sm
 
 class ParserTests(TestCase):
-
     def setUp(self):
         self.xml_parser = config.XMLParser(
             config.lookup(testRoot(), 'peak.web.sitemap_schema'),
@@ -143,15 +143,73 @@ class ParserTests(TestCase):
         self.assertRaises(web.NotFound, self.traverse, bar, 'TestLocation')
 
 
-    # content(type) [location,helper,permission]
-    #   'offer' and 'container' should fail if inside 'content'
+    def testNotAllowedInContent(self):
+        self.startElement('location', [])
+        self.startElement('content', ['type','int'])
+        self.assertRaises(SyntaxError, self.startElement,
+            'offer',['path','foo', 'as','bar'])
+        self.endElement('offer')
+        self.assertRaises(SyntaxError, self.startElement,
+            'container',['object','{}'])
+        self.endElement('container')
+        self.assertRaises(SyntaxError, self.startElement,
+            'content',['type','int'])
 
-    # view(name, resource|attribute|object|function)[helper,id,permission]
 
-    # allow(attributes|interfaces)[permission]
+
+
+
+
+
+
+    def testChoice(self):
+        choose = lambda names,**kw: sm.choose(self.nparser,names,kw)
+        self.assertRaises(SyntaxError, choose, ('a','b'))
+        self.assertEqual(choose(['a','b'],b=1), ('b',1))
+        self.assertRaises(SyntaxError, choose, ('a','b'), a=1, b=2)
+
+    def testViewWrappers(self):
+        ctx = self.policy.newContext()
+        permHandler = sm.addPermission(nullHandler,security.Nobody)
+        self.assertRaises(web.NotAllowed,permHandler,ctx,None,'','x','x')
+        permHandler = sm.addPermission(nullHandler,security.Anybody)
+        self.failUnless(permHandler(ctx,None,'','x','x').current is None)
+        helpedHandler = sm.addHelper(nullHandler,lambda x: [x])
+        self.assertEqual(helpedHandler(ctx,None,'','x','x').current, [None])
+
+    def testBasicViews(self):
+        end=self.endElement
+        self.startElement('location', [])
+        self.startElement('content', ['type','int'])
+        self.startElement('view',['name','foo','object','"xyz"']); end()
+        self.startElement('view',['name','bar','attribute',"__class__"]); end()
+        self.startElement('view',['name','baz','expr','ob','helper','repr'])
+        end()
+        self.startElement('view',['name','fiz','function','nullHandler']);end()
+        end('content')
+        loc = end('location')
+        ctx = self.policy.newContext(start=loc).childContext('test',123)
+        ctx = loc.beforeHTTP(ctx)
+        self.assertEqual(ctx.traverseName("foo").current, "xyz")
+        self.assertEqual(ctx.traverseName("bar").current, int)
+        self.assertEqual(ctx.traverseName("baz").current, "123")
+        self.assertEqual(ctx.traverseName("fiz").current, 123)
+
+    def testViewHandlers(self):
+        ctx = self.policy.newContext()
+        handler = sm.attributeView('url')
+        self.assertEqual(handler(ctx,ctx,'','x','x').current, ctx.url)
+        handler = sm.objectView(123)
+        self.assertEqual(handler(ctx,ctx,'','x','x').current, 123)
+
+
+    # allow(attributes+interfaces)[permission]
+
+    # content [location]
+
+    # view(resource)[id?]
 
     # location[include,configure]
-    # require[helper]
 
     # XXX Location should support direct permissions, and ignore redundant ones
 
@@ -159,14 +217,16 @@ class ParserTests(TestCase):
 class TestLocation(web.Location):
     pass
 
+def nullHandler(ctx, ob, namespace, name, qname, default=NOT_GIVEN):
+    return ctx.childContext(qname,ob)
+
+
 TestClasses = (
     ParserTests,
 )
 
 def test_suite():
     return TestSuite([makeSuite(t,'test') for t in TestClasses])
-
-
 
 
 
