@@ -1,35 +1,35 @@
-"""
-Lockfiles
+"""Lockfiles for inter-process communication
 
-These are used for synchronization between processes, unlike
-thread.LockType locks.  The common use is non-blocking lock attempts. 
-For convenience and in order to reduce confusion with the (somewhat odd)
-thread lock interface, these locks have a different interface.
+    These are used for synchronization between processes, unlike
+    thread.LockType locks.  The common use is non-blocking lock attempts. 
+    For convenience and in order to reduce confusion with the (somewhat odd)
+    thread lock interface, these locks have a different interface.
 
     attempt()   try to obtain the lock, return boolean success
     obtain()    wait to obtain the lock, returns None
     release()   release an obtained lock, returns None
     locked()    returns True if any thread IN THIS PROCESS
                 has obtained the lock, else False
+
+    In general, you should assume that only the 'LockFile' class will be
+    available.  Only use a more-specific lockfile type if you have need
+    of compatibility with non-PEAK software that uses that special type
+    of lockfile.  (In practice, this means that the only time you'll ever
+    use anything other than the generic 'LockFile' class is if you need
+    to work with something on a Unix-like platform that uses the equivalent
+    of 'FLockFile', as 'SHLockFile' is the default implementation of 'LockFile'
+    on Unix-like platforms.)
+
+    Currently, only Unix-ish and Windows platforms supported; if your platform
+    isn't supported, not even the 'LockFile' class will be available from this
+    module.  For Windows, the 'msvcrt' module must be available (it is in the
+    standard Python 2.2.1 binary distribution for Windows).
 """
 
-__all__ = ['LockFile', 'SHLockFile', 'FLockFile']
+__all__ = ['LockFile'] 
 
 import os, errno, string, time
 from peak.util.threads import allocate_lock
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -50,9 +50,9 @@ class LockFileBase:
 
     def attempt(self):
         if self._lock.acquire(False):
-            r = 0
+            r = False
             try:
-                r = self.do_acquire(0)
+                r = self.do_acquire(False)
             finally:
                 if not r and self._lock.locked():
                     self._lock.release()
@@ -62,9 +62,9 @@ class LockFileBase:
     
     def obtain(self):
         self._lock.acquire()
-        r = 0
+        r = False
         try:
-            r = self.do_acquire(1)
+            r = self.do_acquire(True)
         finally:
             if not r and self._lock.locked():
                 self._lock.release()
@@ -83,19 +83,25 @@ class LockFileBase:
 ### Posix-y lockfiles ###
 
 try:
-    import posix; from posix import O_EXCL, O_CREAT, O_RDWR
-except:
+    import posix
+    from posix import O_EXCL, O_CREAT, O_RDWR
+except ImportError:
     posix=None
 
 try:
     import fcntl
-except:
+except ImportError:
     fcntl = None
-        
+
+try:
+    import msvcrt
+except ImportError:
+    msvcrt = None
+
 
 def pid_exists(pid):
     """Is there a process with PID pid?"""
-    if pid < False:
+    if pid < 0:
         return False
     
     exist = False
@@ -115,13 +121,8 @@ def pid_exists(pid):
 
 
 
-
-
-
-
-
-
 def check_lock(fn):
+
     """Check the validity of an existing lock file
 
     Reads the PID out of the lock and check if that process exists"""
@@ -136,7 +137,9 @@ def check_lock(fn):
         return 1 # be conservative
 
 
+
 def make_tempfile(fn, pid):
+
     tfn = os.path.join(os.path.dirname(fn), 'shlock%d' % pid)
 
     errcount = 1000
@@ -159,12 +162,8 @@ def make_tempfile(fn, pid):
 
 
 
-
-
-
 class SHLockFile(LockFileBase):
-    """
-    HoneyDanBer/NNTP/shlock(1)-style locking
+    """HoneyDanBer/NNTP/shlock(1)-style locking
 
     Two bigs wins to this algorithm:
 
@@ -181,8 +180,7 @@ class SHLockFile(LockFileBase):
       o Not compatible with NFS or any shared filesystem
         (due to disjoint PID spaces)
 
-      o Waiting for lock must be implemented by polling
-    """
+      o Waiting for lock must be implemented by polling"""
 
     def do_acquire(self, waitflag):
         if waitflag:
@@ -194,17 +192,17 @@ class SHLockFile(LockFileBase):
                 sleep = min(sleep + 1, 15)
                 locked = self.do_acquire(False)
 
-            self._locked = locked
             return locked
+
         else:
             tfn = make_tempfile(self.fn, os.getpid())
-
             while 1:
                 try:
-                    os.link(tfn, self.fn)
+                    os.link(tfn,self.fn)
                     os.unlink(tfn)
-                    self._locked = 1
-                    return 1
+                    self._locked = True
+                    return True
+
                 except OSError, x:
                     if x.errno == errno.EEXIST:
                         if check_lock(self.fn):
@@ -221,6 +219,8 @@ class SHLockFile(LockFileBase):
 
     def do_release(self):
         os.unlink(self.fn)
+
+
 
 
 
@@ -284,7 +284,7 @@ class FLockFile(LockFileBase):
                 posix.write(self.fd, `os.getpid()` + '\n')
                 locked = True
             except:
-                self.release()
+                self.do_release()
                 raise
         except IOError, x:
             if x.errno == errno.EWOULDBLOCK:
@@ -306,8 +306,91 @@ class FLockFile(LockFileBase):
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class WinFLockFile(LockFileBase):
+
+    """Like FLockFile, but for Windows"""
+    
+    def do_acquire(self, waitflag=False):
+
+        if waitflag:
+            sleep = 1
+            locked = self.do_acquire(False)
+
+            while not locked:
+                time.sleep(sleep)
+                sleep = min(sleep + 1, 15)
+                locked = self.do_acquire(False)
+            return locked
+
+        locked = False
+
+        self.f = open(self.fn, 'a')
+        try:
+            msvcrt.locking(self.f.fileno(), msvcrt.LK_NBLCK, 1)
+            try:
+                self.f.write(`os.getpid()` + '\n')  # informational only
+                self.f.seek(0)  # lock is at offset 0, so go back there
+                locked = True                
+            except:
+                self.do_release()
+                raise
+                
+        except IOError, x:
+            if x.errno == errno.EACCES:
+                self.f.close()
+                del self.f
+            else:
+                raise
+ 
+        self._locked = locked         
+        return locked
+
+
+
+    def do_release(self):
+        msvcrt.locking(self.f.fileno(), msvcrt.LK_UNLCK, 1)
+        self.f.close()
+        del self.f
+
+
+
 # Default is shlock(1)-style if available
+
 if posix:
+    __all__.extend(['SHLockFile','FLockFile'])
     LockFile = SHLockFile
+    del WinFLockFile
+    
 else:
-    pass # XXX win32
+
+    # don't need them and they won't work...
+    del make_tempfile, check_lock, pid_exists
+
+    if msvcrt:
+        __all__.append('WinFLockFile')
+        LockFile = WinFLockFile
+
+    else:
+        # Waaaaaaa!, as Jim F. would say...
+        __all__ = []
+
