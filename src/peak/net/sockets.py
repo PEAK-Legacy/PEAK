@@ -1,8 +1,7 @@
 from protocols import Interface, Attribute
 from peak.api import *
 from interfaces import *
-import sys, socket
-
+import sys, os, socket
 
 class socketURL(naming.URL.Base):
     def listen_sockets(self, maxsocks=sys.maxint):
@@ -117,3 +116,22 @@ protocols.declareAdapterForProtocol(
     lambda o,p: o.listen_sockets(maxsocks=1)[0],
     IListenSocketAddr
 )
+
+
+class fdURL(naming.URL.Base):
+    supportedSchemes = 'fd',
+    
+    class fileno(naming.URL.IntField): pass
+
+    syntax = naming.URL.Sequence(
+        fileno
+    )
+
+
+
+protocols.declareAdapterForType(
+    IClientSocket,
+    lambda o,p: socket.fromfd(o.fileno, socket.AF_UNIX, socket.SOCK_STREAM),
+    fdURL
+)
+
