@@ -154,7 +154,7 @@ class VersionConfig(AbstractCommand):
             raise InvocationError("'check' command doesn't take arguments")
         for module in self.iterModules():
             print >>self.stderr, "Verifying", module.name,
-            print >>self.stderr, "is at", module.currentVersion,
+            print >>self.stderr, "is at", module.currentVersion
             module.checkFiles()
 
 
