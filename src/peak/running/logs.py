@@ -289,7 +289,7 @@ class peakLoggerURL(URL.Base):
 
     """URL that only looks up PEAK loggers, even if 'logging' is installed"""
 
-    supportedSchemes = ('logging.logger', )
+    supportedSchemes = ('logging.logger', 'logger')
 
 
 class peakLoggerContext(naming.AddressContext):

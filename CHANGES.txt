@@ -2,6 +2,10 @@ Fixes and Enhancements since Version 0.5 alpha 2
 
  Changed, Enhanced, or Newly Deprecated Features
 
+ - The 'logging.logger:' URL scheme has been simplified to 'logger:'.  Please
+   convert your scripts and configuration files, as the longer form will go
+   away in the alpha 4 development cycle.
+
  - Added 'commands.lookupCommand()' to look up a command shortcut or URL, ala
    the `peak` script or `commands.Bootstrap` class.  Also added various
    `commands.ErrorSubcommand` subclasses to make it easier to issue errors

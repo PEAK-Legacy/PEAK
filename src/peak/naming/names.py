@@ -199,7 +199,7 @@ class AbstractName(tuple):
             component, self, default=default, creationParent=component
         )
 
-
+    mdl_typeCode = None
 
 
 
