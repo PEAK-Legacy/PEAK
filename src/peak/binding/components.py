@@ -17,8 +17,8 @@ __all__ = [
     'Base', 'Component','AutoCreated', 'AutoCreatable',
     'bindTo', 'requireBinding', 'bindSequence', 'bindToParent', 'bindToSelf',
     'getRootComponent', 'getParentComponent', 'lookupComponent',
-    'acquireComponent', 'globalLookup', 'findUtility', 'findUtilities',
-    'bindToUtilities', 'bindToProperty', 'iterParents', 'Constant',
+    'acquireComponent', 'globalLookup', 
+    'bindToUtilities', 'bindToProperty', 'Constant',
     'getComponentName', 'getComponentPath', 'Acquire', 'ComponentName',
 ]
 
@@ -52,7 +52,9 @@ def getComponentPath(component, relativeTo=None):
     if relativeTo is None:
         root = getRootComponent(component)
 
-    for c in iterParents(component):
+    c = component
+
+    while 1:
 
         if c is root:
             path.append(''); break
@@ -61,16 +63,14 @@ def getComponentPath(component, relativeTo=None):
             break
 
         path.append(getComponentName(c) or '*')
+        
+        c = getParentComponent(c)
+
+        if c is None:
+            break
 
     path.reverse()
     return ComponentName(path)
-
-
-
-
-
-
-
 
 
 
@@ -162,88 +162,6 @@ def acquireComponent(name, component=None, targetName=None):
 
 
 
-def iterParents(component=None):
-
-    """Return iterator for all parents of 'component', including config roots
-    """
-
-    last = component
-        
-    for part in "..":
-
-        while component is not None:
-
-            yield component
-
-            last      = component
-            component = getParentComponent(component)
-
-        component = config.getLocal(last)
-
-
-def findUtilities(iface, component=None):
-
-    """Return iterator over all utilities providing 'iface' for 'component'"""
-
-    forObj = component
-
-    for component in iterParents(component):
-
-        try:
-            utility = component.__class__._getConfigData
-        except AttributeError:
-            continue
-
-        utility = utility(component, iface, forObj)
-
-        if utility is not NOT_FOUND:
-            yield utility
-
-
-
-
-
-def findUtility(iface, component=None, default=NOT_GIVEN):
-
-    """Return first utility supporting 'iface' for 'component', or 'default'"""
-
-    for u in findUtilities(iface, component):
-        return u
-
-    if default is NOT_GIVEN:
-        raise exceptions.NameNotFound(iface, resolvedObj = component)
-
-    return default
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 class ComponentName(Name):
 
     """Path between components
@@ -293,9 +211,9 @@ def lookupComponent(name, component=None):
     Interface object.  Strings and compound names will be interpreted
     as paths relative to the starting component.  An empty name will return
     the starting component.  Interfaces and Properties will be looked up using
-    'findUtility(name, component)'.  All other kinds of names, including URL
-    strings and 'CompositeName' instances, will be looked up using
-    'binding.globalLookup()'.
+    'config.findUtility(name, component)'.  All other kinds of names,
+    including URL strings and 'CompositeName' instances, will be looked up
+    using 'binding.globalLookup()'.
     
     Regardless of how the lookup is processed, an 'exceptions.NameNotFound'
     error will be raised if the name cannot be found."""
@@ -329,7 +247,7 @@ _getNextPathComponent = dict( (
 def _lookupComponent(component, name, targetName=None):
 
     if IConfigKey.isImplementedBy(name):
-        return findUtility(name, component)
+        return config.findUtility(name, component)
         
     parsedName = toName(name, ComponentName, 1)
 
@@ -511,7 +429,7 @@ def bindToUtilities(iface, provides=None, doc=None):
 
     """Binding to a list of all 'iface' utilities above the component"""
 
-    return Once(lambda s,d,a: list(findUtilities(iface,s)),
+    return Once(lambda s,d,a: list(config.findUtilities(iface,s)),
         provides=provides, doc=doc
     )
 

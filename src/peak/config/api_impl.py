@@ -100,7 +100,7 @@ def getProperty(propName, obj=None, default=NOT_GIVEN):
             "getProperty() can't use wildcard/default properties", propName
         )
 
-    prop = binding.findUtility(propName, obj, NOT_FOUND)
+    prop = findUtility(propName, obj, NOT_FOUND)
 
     if prop is not NOT_FOUND:
         return prop
@@ -127,19 +127,19 @@ def registerGlobalProvider(ifaces, provider):
 
 def setGlobalProperty(propName, value):
 
-    pm = binding.findUtility(IPropertyMap, getGlobal())
+    pm = findUtility(IPropertyMap, getGlobal())
     pm.setValue(propName, value)
 
 
 def setGlobalRule(propName, ruleObj):
 
-    pm = binding.findUtility(IPropertyMap, getGlobal())
+    pm = findUtility(IPropertyMap, getGlobal())
     pm.setRule(propName, ruleObj)
 
 
 def setGlobalDefault(propName, defaultObj):
 
-    pm = binding.findUtility(IPropertyMap, getGlobal())
+    pm = findUtility(IPropertyMap, getGlobal())
     pm.setDefault(propName, defaultObj)
 
 
@@ -168,19 +168,19 @@ def registerLocalProvider(forRoot, ifaces, provider):
 
 def setPropertyFor(obj, propName, value):
 
-    pm = binding.findUtility(IPropertyMap, obj)
+    pm = findUtility(IPropertyMap, obj)
     pm.setValue(propName, value)
 
 
 def setRuleFor(obj, propName, ruleObj):
 
-    pm = binding.findUtility(IPropertyMap, obj)
+    pm = findUtility(IPropertyMap, obj)
     pm.setRule(propName, ruleObj)
 
 
 def setDefaultFor(obj, propName, defaultObj):
 
-    pm = binding.findUtility(IPropertyMap, obj)
+    pm = findUtility(IPropertyMap, obj)
     pm.setDefault(propName, defaultObj)
 
 

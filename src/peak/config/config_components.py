@@ -2,7 +2,7 @@ from __future__ import generators
 
 from peak.api import *
 from peak.util.imports import importString, importObject
-from peak.binding.components import Component, New, Base, Once
+from peak.binding.components import Component, New, Base, Once, getParentComponent
 
 from peak.util.EigenData import EigenCell, AlreadyRead
 from peak.util.FileParsing import AbstractConfigParser
@@ -14,7 +14,7 @@ from Interface import Interface
 __all__ = [
     'GlobalConfig', 'LocalConfig', 'PropertyMap', 'LazyLoader', 'ConfigReader',
     'loadConfigFile', 'loadMapping', 'PropertySet', 'fileNearModule',
-    'Provider','CachingProvider'
+    'Provider','CachingProvider','iterParents','findUtilities','findUtility',
 ]
 
 
@@ -36,6 +36,88 @@ _emptyRuleCell.exists()
 def fileNearModule(moduleName,filename):
     filebase = importString(moduleName+':__file__')
     import os; return os.path.join(os.path.dirname(filebase), filename)
+
+
+
+def iterParents(component=None):
+
+    """Return iterator for all parents of 'component', including config roots
+    """
+
+    last = component
+        
+    for part in "..":
+
+        while component is not None:
+
+            yield component
+
+            last      = component
+            component = getParentComponent(component)
+
+        component = config.getLocal(last)
+
+
+def findUtilities(iface, component=None):
+
+    """Return iterator over all utilities providing 'iface' for 'component'"""
+
+    forObj = component
+
+    for component in iterParents(component):
+
+        try:
+            utility = component.__class__._getConfigData
+        except AttributeError:
+            continue
+
+        utility = utility(component, iface, forObj)
+
+        if utility is not NOT_FOUND:
+            yield utility
+
+
+
+
+
+def findUtility(iface, component=None, default=NOT_GIVEN):
+
+    """Return first utility supporting 'iface' for 'component', or 'default'"""
+
+    for u in findUtilities(iface, component):
+        return u
+
+    if default is NOT_GIVEN:
+        raise exceptions.NameNotFound(iface, resolvedObj = component)
+
+    return default
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
