@@ -111,7 +111,7 @@ class Decorator(Traversable):
                 return adapt(loc, interaction.pathProtocol)
 
             # Access failed, see if attribute is private
-            guard = adapt(self,IGuardedObject,None)
+            guard = adapt(self,security.IGuardedObject,None)
 
             if guard is not None and guard.getPermissionsForName(name):
                 # We have explicit permissions defined, so reject access
