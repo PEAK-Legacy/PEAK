@@ -162,6 +162,47 @@ class BasicTests(TestCase,object):
             self.assertEqual(self.log,[(derived,40)])
 
 
+    def testReentrantCancel(self):
+        # Make sure that removing a callback while callbacks are in progress
+        # doesn't cause a problem
+        cancel2 = None
+        cancel1 = self.source.addCallback(lambda s,e: cancel2())
+        cancel2 = self.source.addCallback(self.sink)
+        self.doPut(1,True)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 class BroadcastTests(BasicTests):
 
     sourceType = events.Broadcaster

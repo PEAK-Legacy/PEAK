@@ -270,12 +270,12 @@ class Observable(object):
         count = len(callbacks)
 
         if self.singleFire:
-            while count:
+            while count and callbacks:
                 if callbacks.pop(0)[0](self,event):
                     return
                 count -= 1
         else:
-            while count:
+            while count and callbacks:
                 callbacks.pop(0)[0](self,event)
                 count -= 1
 
