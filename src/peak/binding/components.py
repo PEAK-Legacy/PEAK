@@ -56,7 +56,7 @@ def CachingProvider(callable, weak=False, local=False):
 
         else:
             # get the owner of the property map
-            foundIn = foundIn.getParentComponent()
+            foundIn = getParentComponent(foundIn)
 
         utility = provider.cache.get(foundIn)
 
@@ -173,9 +173,10 @@ def iterParents(component=None):
             yield component
 
             last      = component
-            component = component.getParentComponent()
+            component = getParentComponent(component)
 
         component = config.getLocal(last)
+
 
 
 def findUtilities(iface, component=None):
@@ -184,12 +185,24 @@ def findUtilities(iface, component=None):
 
     for component in iterParents(component):
 
-        utility = component._getConfigData(iface, forObj)
+        try:
+            utility = component._getConfigData
+        except AttributeError:
+            continue
+
+        utility = utility(iface, forObj)
 
         if utility is not NOT_FOUND:
             yield utility
 
-    
+
+
+
+
+
+
+
+
 def findUtility(iface, component=None, default=NOT_GIVEN):
 
     for u in findUtilities(iface, component):
@@ -199,7 +212,6 @@ def findUtility(iface, component=None, default=NOT_GIVEN):
         raise exceptions.NameNotFound(iface, resolvedObj = component)
 
     return default
-
 
 
 
@@ -225,18 +237,6 @@ _getNextPathComponent = dict( (
     ('.',  lambda x:x),
     ('..', getParentComponent),
 ) ).get
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -425,7 +425,7 @@ def bindToParent(level=1,provides=None,doc=None):
     def computeValue(obj, instDict, attrName):
 
         for step in range(level):
-            newObj = obj.getParentComponent()
+            newObj = getParentComponent(obj)
             if newObj is None: break
             obj = newObj
 

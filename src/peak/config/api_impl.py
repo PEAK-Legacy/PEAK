@@ -50,7 +50,9 @@ def getLocal(forRoot=None):
 
     forRoot = binding.getRootComponent(forRoot)
 
-    if forRoot is not None and _localCfgs.has_key(forRoot):
+    # Only weakref-able objects can have a root assigned
+
+    if type(forRoot).__weakrefoffset__ and forRoot in _localCfgs:
         return _localCfgs[forRoot]
         
     if not hasattr(_defaultCfg,'value'):
@@ -63,20 +65,18 @@ def setLocal(forRoot, cfg):
 
     """Replace local config for 'forRoot', as long as it hasn't been used"""
 
+    forRoot = binding.getRootComponent(forRoot)
+
     if forRoot is None:
         _defaultCfg.set(cfg)
-    else:
+
+    elif type(forRoot).__weakrefoffset__:
         _localCfgs[forRoot] = cfg
 
-
-
-
-
-
-
-
-
-
+    else:
+        raise TypeError(
+            "Root objects w/custom LocalConfigs must be weak-referenceable"
+        )
 
 
 
