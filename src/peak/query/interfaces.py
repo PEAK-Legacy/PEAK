@@ -83,7 +83,7 @@ class IRelationComparison(IRelationCondition):
 class IRelationVariable(Interface):
     """A relation variable (RV) in relational algebra"""
 
-    def __call__(where=None,join=(),outer=(),keep=()):
+    def __call__(where=None,join=(),outer=(),rename=(),keep=()):
         """Return a new RV based on select/project/join operations as follows:
 
         'where' -- specify a condition that all rows of the new RV must meet
