@@ -61,6 +61,11 @@ class AbstractContext(Component):
 
     def _resolveComposite(self, name, iface):
 
+        # You should override this method if you want dynamic weak NNS
+        # support; that is, if you want to mix composite names and compound
+        # names and figure out dynamically when you've crossed over into
+        # another naming system.  
+
         if len(name)==1:
             return self.resolve(name[0], iface)
 
@@ -70,12 +75,48 @@ class AbstractContext(Component):
         return self, name   # XXX this isn't very useful!
 
 
+
+
+
+
+
+    def _checkSupported(self, name, iface):
+
+        if iface.isImplementedBy(self):
+            return
+
+        raise exceptions.NotAContext(
+            "Unsupported interface", iface,
+            resolvedObj=self, remainingName=name
+        )
+    
+
     def _resolveLocal(self, name, iface):
+
+        self._checkSupported(name, iface)
         return self, name
+
 
 
     def _resolveURL(self, name, iface):
+
+        self._checkSupported(name, iface)
         return self, name
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
