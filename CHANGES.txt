@@ -8,10 +8,10 @@ Fixes and Enhancements since Version 0.5 alpha 3
    event sources with 'addCallback()' methods, you must make sure that they
    return a canceller from now on.
 
- - Added 'ref:factory@addr' URL scheme that maps to a corresponding
-   'naming.Reference("factory",["addr"])'.  'factory' can be either a dotted
-   import string referencing a 'naming.IObjectFactory', or you can define
-   a factory in the 'peak.naming.factories' property space.
+ - Added 'ref:factory@addr1||addr2' URL scheme that maps to a corresponding
+   'naming.Reference("factory",["addr1","addr2"])'.  'factory' can be either a
+   dotted import string referencing a 'naming.IObjectFactory', or you can
+   define a factory in the 'peak.naming.factories' property space.
 
  - Added a 'zconfig.schema' factory, so that 'ref:zconfig.schema@streamURL'
    will load a schema loader.  Schema loaders are themselves object factories,

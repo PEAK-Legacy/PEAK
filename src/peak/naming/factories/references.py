@@ -15,7 +15,8 @@ class refURL(naming.URL.Base):
         pass
 
     class addresses(naming.URL.Collection):
-        pass
+        separator = '||'
+        lowerBound = 1
 
     syntax = naming.URL.Sequence(
         factoryName, '@', addresses
