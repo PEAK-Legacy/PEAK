@@ -136,7 +136,7 @@ class SQLInteractor(binding.Component):
         first = 1
         for r in c._cursor.description:
             w = r[2]
-            if w < 0: w = 20 # XXX
+            if w <= 0: w = 20 # XXX
             
             t.append(self.toStr(r[0], w)); d.append('-' * w); l.append(w)
 
