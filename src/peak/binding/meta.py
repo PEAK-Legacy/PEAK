@@ -180,12 +180,10 @@ class MethodExporter(ActiveDescriptor, type):
 
                 message = "Ow, that hurts!"
                 
-                def slap(self, extra):
-                    feature = self.__class__.__feature__
+                def slap(feature, self, extra):
                     print "%s: %s (%s)" % (self.name, feature.message, extra)
 
                 slap.namingConvention = "slap%(initCap)s"
-
 
             class Person(object):
 
@@ -208,8 +206,8 @@ class MethodExporter(ActiveDescriptor, type):
 
         While a bit silly, this demonstrates how the method template 'slap()'
         is used to generate 'slapFace()' and 'slapBack()' methods, using
-        a 'namingConvention' function attribute, and the special name
-        '__feature__'.
+        a 'namingConvention' function attribute, and the calling convention
+        for "verbs".
 
         Typically, you will define MethodExporters with multiple verbs, and
         you may also use template variants, which are chosen by metadata in
@@ -222,8 +220,7 @@ class MethodExporter(ActiveDescriptor, type):
 
                 thickness = 5
                 
-                def slap_thick(self):
-                    feature = self.__class__.__feature__
+                def slap_thick(feature, self):
                     print "THUD!", feature.thickness
 
                 slap_thick.namingConvention = "slap%(initCap)s"
@@ -233,8 +230,7 @@ class MethodExporter(ActiveDescriptor, type):
                 )
                 slap_thick.verb = "slap"
 
-                def slap_thick(self):
-                    feature = self.__class__.__feature__
+                def slap_thick(feature, self):
                     print "SMACK!", feature.thickness
 
                 slap_thin.namingConvention = "slap%(initCap)s"
@@ -280,8 +276,7 @@ class MethodExporter(ActiveDescriptor, type):
                     'e'*(20-feature.thickness), feature.__name__
                 )
 
-            def slap(self):
-                feature = self.__class__.__feature__
+            def slap(feature, self):
                 feature.yelp()
                 
             slap.namingConvention = "slap%(initCap)s"
@@ -292,10 +287,10 @@ class MethodExporter(ActiveDescriptor, type):
         'Person.face.yelp()' to obtain the same results.
 
         By now, the sharp-eyed reader will be wondering about the bits of
-        magic code that keep showing up, such as 'self.__class__.__feature__'
-        and 'slap.namingConvention = "slap%(initCap)s"'.  Not to mention
-        our earlier usage of the 'installIf' and 'verb' attributes.  So let's
-        move on to the reference sections...
+        magic code that keep showing up, such as the '(feature, self)'
+        parameter pattern, and 'slap.namingConvention = "slap%(initCap)s"'.
+        Not to mention our earlier usage of the 'installIf' and 'verb'
+        attributes.  So let's move on to the reference sections...
 
         namingConvention
 
@@ -336,24 +331,32 @@ class MethodExporter(ActiveDescriptor, type):
                     __metaclass__ = MethodExporter
                     baz = foo
 
-        __feature__
+        Parameters and Calling Conventions
 
-            You've probably noticed that our method templates refer to
-            'self.__class__.__feature__' in order to access the feature
-            object itself.  And you may be wondering, "How does '__feature__'
-            know whether to be 'face' or 'back'?"  The answer is in the
-            magic of code rebinding.
+            All methods of a MethodExporter are defined as Python 'classmethod'
+            objects.  (This is done for you automatically by MethodExporter, so
+            you don't have to explicitly declare them as such.)
 
-            Functions used as method templates are *templates* for the
-            methods.  They are not used directly.  Instead, the code is
-            copied and the 'func_code.co_names' attribute is rewritten
-            so that '__feature__' is replaced with the actual feature
-            name.  Thus, 'face' ends up with a different 'slap()' method
-            than 'back()', and their code effectively says
-            'self.__class__.face' or 'self.__class__.back', respectively.
-            However, because the code objects came from the same lines of
-            code, any errors will refer to the original file and line
-            numbers of that code.
+            Being class methods, the first parameter of any method or method
+            template that you place in a MethodExporter class is always the
+            class.  By convention in TransWarp, this parameter is named
+            'feature', but you may use any name that makes sense to you.  When
+            the method executes, this parameter will refer to the
+            MethodExporter, so you can access its attributes and methods.  For
+            simple methods of the MethodExporter itself, this is the only
+            parameter which you *must* define.
+
+            Method templates, however, must take a second parameter, named
+            'self' by convention in TransWarp.  This parameter will receive
+            the instance of the containing class that the MethodExporter is
+            being used in.  Any further parameters beyond this point belong
+            to the signature of your method template and are not defined or
+            used by the infrastructure.
+            
+            This approach allows method templates to do double duty.  They
+            can be used as class methods and passed an instance of the outer
+            class, or they can be used directly as instance methods of the
+            outer class.
 
         Inner and Outer Method Definitions
 
@@ -371,7 +374,7 @@ class MethodExporter(ActiveDescriptor, type):
                         thickness = 15
 
                     def slapBack(self):
-                        self.__class__.back.slap()
+                        self.__class__.back.slap(self)
                         print "Do you really have to do that?"
 
                     def slapFace(self):
@@ -384,14 +387,14 @@ class MethodExporter(ActiveDescriptor, type):
             redefined in the subclass.  (In which case, the redefined behavior
             will be followed by the "Do you really have to do that?" question.)
 
-        Why 'self.__class__.__feature__'?
+        Why 'self.__class__.back'?
 
             Sharp-eyed Pythonistas may wonder why we don't just say
-            'self.__feature__' and be done with it.  The reason is that
-            features can also be properties, so 'self.__feature__' might
-            actually be the instance value of the property defined by
-            the feature.  'self.__class__.__feature__' will always be
-            the class' definition of the feature, which is what we want.
+            'self.back' and be done with it.  The reason is that features
+            can also be properties, so 'self.back' might actually be the
+            instance value of the property defined by the feature.
+            'self.__class__.back' will always be the class' definition of the
+            feature 'back', which is what we want.
 
             The SEF framework adds '__get__', '__set__', and '__delete__'
             methods to a subclass of MethodExporter, which lets you create
@@ -404,10 +407,7 @@ class MethodExporter(ActiveDescriptor, type):
             little code.  The combined docstrings for this metaclass are over
             *three times the size of the actual code*.  So if you've already
             read this far, you might as well read the source if you have a need
-            to understand the actual implementation.  :)
-    """
-
-
+            to understand the actual implementation.  :)"""
     def getMethod(self, ob, verb):
 
         """Look up a method dynamically
@@ -438,14 +438,14 @@ class MethodExporter(ActiveDescriptor, type):
                 (self.__name__,klass,attrName,self.__name__)
             )
 
+        from TW.Utils.Method import MethodWrapper
+
         for verb,methodName in self.methodNames.items():
             old = getattr(klass, methodName, None)
             if old is None or hasattr(
                 getattr(old,'im_func',None),'namingConvention'
             ):
-                setattr(klass, methodName, getattr(self,verb))
-
-
+                setattr(klass, methodName, MethodWrapper(getattr(self,verb)))
 
 
 
@@ -470,7 +470,7 @@ class MethodExporter(ActiveDescriptor, type):
             nc = getattr(method,'namingConvention',None)
             if nc:
                 mt[methodName]=method
-                setattr(self,methodName,staticmethod(method))
+                setattr(self,methodName,classmethod(method))
             else:
                 setattr(self,methodName,classmethod(method))
 
@@ -484,9 +484,9 @@ class MethodExporter(ActiveDescriptor, type):
 
             if installIf is None or installIf(self,func):
                 mn[verb] = func.namingConvention % names
-                f=Function(func)
-                f.co_names[f.co_names.index('__feature__')] = className
-                setattr(self,verb,staticmethod(f.func()))
+                setattr(self,verb,classmethod(func))
+
+
 
 
 

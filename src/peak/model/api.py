@@ -628,23 +628,20 @@ class StructuralFeature(object):
     referencedType = None
     defaultValue   = None
 
-    def get(self):
-        feature = self.__class__.__feature__
+    def get(feature, self):
         return self.__dict__.get(feature.__name__, feature.defaultValue)
 
     get.namingConvention = 'get%(initCap)s'
 
 
-    def set(self,val):
-        feature = self.__class__.__feature__
+    def set(feature, self,val):
         self.__dict__[feature.__name__]=val
         feature._changed(self)
 
     set.namingConvention = 'set%(initCap)s'
 
 
-    def delete(self):
-        feature = self.__class__.__feature__
+    def delete(feature, self):
         del self.__dict__[feature.__name__]
         feature._changed(self)
 
@@ -654,10 +651,14 @@ class StructuralFeature(object):
     def _changed(feature, element):
         pass
 
+
+
+
 class Field(StructuralFeature):
 
     __class_implements__ = IValue    
     upperBound = 1
+
 
 class Collection(StructuralFeature):
 
@@ -666,23 +667,20 @@ class Collection(StructuralFeature):
     def _getList(feature, element):
         return element.__dict__.setdefault(feature.__name__, [])
         
-    def get(self):
-        feature = self.__class__.__feature__
+    def get(feature, self):
         return feature._getList(self)
 
     get.namingConvention = 'get%(initCap)s'
 
-    def set(self,val):
-        feature = self.__class__.__feature__
+    def set(feature, self,val):
         feature.__delete__(self)
         self.__dict__[feature.__name__]=val
         feature._changed(self)
 
     set.namingConvention = 'set%(initCap)s'
 
-    def add(self,item):
+    def add(feature, self,item):
         """Add the item to the collection/relationship"""      
-        feature = self.__class__.__feature__
         ub = feature.upperBound
         value = feature._getList(self)
 
@@ -695,9 +693,10 @@ class Collection(StructuralFeature):
 
     add.namingConvention = 'add%(initCap)s'
 
-    def remove(self,item):
+
+
+    def remove(feature, self,item):
         """Remove the item from the collection/relationship, if present"""
-        feature = self.__class__.__feature__
         feature._unlink(self,item)
         feature._notifyUnlink(self,item)
         feature._changed(self)
@@ -705,9 +704,7 @@ class Collection(StructuralFeature):
     remove.namingConvention = 'remove%(initCap)s'
 
 
-    def replace(self,oldItem,newItem):
-
-        feature = self.__class__.__feature__
+    def replace(feature, self,oldItem,newItem):
 
         d = feature._getList(self)
         p = d.index(oldItem)
@@ -736,10 +733,12 @@ class Collection(StructuralFeature):
 
 
 
-    def delete(self):
+
+
+
+    def delete(feature, self):
         """Unset the value of the feature (like __delattr__)"""
 
-        feature = self.__class__.__feature__
         referencedEnd = feature.referencedEnd
 
         d = feature._getList(self)
@@ -777,6 +776,7 @@ class Collection(StructuralFeature):
 
 
 
+
     def _link(feature,element,item):
         d=feature._getList(element)
         d.append(item)
@@ -794,20 +794,20 @@ class Reference(Collection):
 
     upperBound = 1
 
-    def get(self):
-        feature = self.__class__.__feature__
+    def get(feature, self):
         vals = feature._getList(self)
         if vals: return vals[0]
 
     get.namingConvention = 'get%(initCap)s'
 
 
-    def set(self,val):
-        feature = self.__class__.__feature__
+    def set(feature, self,val):
         feature.__delete__(self)
         feature.getMethod(self,'add')(val)
 
     set.namingConvention = 'set%(initCap)s'
+
+
 
 
 
@@ -824,9 +824,8 @@ class Sequence(Collection):
 
     isOrdered = 1
 
-    def insertBefore(self,oldItem,newItem):
+    def insertBefore(feature, self,oldItem,newItem):
 
-        feature = self.__class__.__feature__
         d = feature._getList(self)
         
         ub = feature.upperBound
@@ -844,6 +843,7 @@ class Sequence(Collection):
             raise ValueError(oldItem,"not found")
     
     insertBefore.namingConvention = 'insert%(initCap)sBefore'
+
 
 
 

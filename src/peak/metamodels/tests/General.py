@@ -129,8 +129,7 @@ class featureBase(object):
 
     singular = 1
 
-    def get_single(self):
-        feature = self.__class__.__feature__
+    def get_single(feature, self):
         return self.__dict__[feature.__name__][0]
 
     get_single.namingConvention = 'get%(initCap)s'
@@ -138,8 +137,7 @@ class featureBase(object):
     get_single.installIf = lambda feature,method: feature.singular
 
 
-    def get_multi(self):
-        feature = self.__class__.__feature__
+    def get_multi(feature, self):
         return self.__dict__[feature.__name__]
 
     get_multi.namingConvention = 'get%(initCap)s'
@@ -147,26 +145,21 @@ class featureBase(object):
     get_multi.installIf = lambda feature,method: not feature.singular
 
 
-    def set(self,val):
-        feature = self.__class__.__feature__
+    def set(feature,self,val):
         self.__dict__[feature.__name__]=[val]
 
     set.namingConvention = 'set%(initCap)s'
 
-    def delattr(self):
-        feature = self.__class__.__feature__
+    def delattr(feature,self):
         del self.__dict__[feature.__name__]
 
     delattr.namingConvention = 'delattr%(initCap)s'
 
-
-
-
-    def doubled(self):
-        feature = self.__class__.__feature__
+    def doubled(feature,self):
         return feature.getMethod(self,'get')() * 2
 
     doubled.namingConvention = '%(name)sDoubled'
+
 
 
 class X(SEF.Element):
@@ -192,6 +185,13 @@ class SubclassOfX(X):
         # the old OverwriteDoubled method in the class
         # should apply...
         singular = 0
+
+
+
+
+
+
+
 
 
 
