@@ -16,16 +16,14 @@ class SimpleLocation(binding.Component):
     def getObject(self):
         return self
 
-    def getSublocation(self, name, interaction, forUser=NOT_GIVEN):
+    def getSublocation(self, name, interaction):
 
         ob = self.getObject()
         loc = getattr(ob, name, NOT_FOUND)
 
         if loc is not NOT_FOUND:
 
-            if (forUser is not None
-                and not interaction.allows(ob, name, user=forUser)
-            ):
+            if not interaction.allows(ob, name):
                 return NOT_ALLOWED
 
             loc = adapt(loc, interaction.locationProtocol)
@@ -34,6 +32,8 @@ class SimpleLocation(binding.Component):
 
     def preTraverse(self, interaction):
         pass    # Should do any traversal requirements checks
+
+
 
 
 
@@ -91,7 +91,7 @@ class ContainerAsLocation(ComponentAsLocation):
         asAdapterForTypes = [dict],
     )
 
-    def getSublocation(self, name, interaction, forUser=NOT_GIVEN):
+    def getSublocation(self, name, interaction):
 
         if name.startswith('@@'):
             return super(ContainerAsLocation,self).getSublocation(
@@ -105,7 +105,7 @@ class ContainerAsLocation(ComponentAsLocation):
                 name,interaction
             )
 
-        if forUser is None or interaction.allows(ob, user=forUser):
+        if interaction.allows(ob):
             return adapt(ob, interaction.locationProtocol)
 
         return NOT_ALLOWED

@@ -87,13 +87,8 @@ class IWebLocation(Interface):
     def preTraverse(interaction):
         """Invoked before traverse by web requests"""
 
-    def getSublocation(name, interaction, forUser=NOT_GIVEN):
-        """Return named IWebLocation, or NOT_ALLOWED/NOT_FOUND
-
-        If 'forUser' is 'None', do not perform security checks.  Otherwise,
-        'forUser' should be passed to 'interaction.allows()' for security
-        checks.
-        """
+    def getSublocation(name, interaction):
+        """Return named IWebLocation, or NOT_ALLOWED/NOT_FOUND"""
 
     def getObject(interaction):
         """Return the underlying object that is at this location"""
@@ -113,6 +108,11 @@ class IWebException(Interface):
 
     def handleException(interaction, thrower, exc_info, retry_allowed=1):
         """Perform necessary recovery actions"""
+
+
+
+
+
 
 
 

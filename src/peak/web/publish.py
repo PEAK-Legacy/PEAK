@@ -31,7 +31,7 @@ class DefaultExceptionHandler(binding.Singleton):
             # Don't allow exc_info to leak, even if the above resulted in
             # an error
             exc_info = None
-        
+
 
 
 
@@ -42,7 +42,7 @@ class DefaultExceptionHandler(binding.Singleton):
 class NullSkinService(binding.Singleton):
 
     def getSkin(self, interaction):
-        return interaction.root
+        return interaction.app
 
 
 class NullAuthenticationService(binding.Singleton):
@@ -56,7 +56,7 @@ class InteractionPolicy(binding.Component, protocols.StickyAdapter):
     protocols.advise(
         instancesProvide = [IInteractionPolicy],
         asAdapterForProtocols = [binding.IComponent],
-        factoryMethod = 'fromComponent',       
+        factoryMethod = 'fromComponent',
     )
 
     def fromComponent(klass, ob, proto):
@@ -70,8 +70,8 @@ class InteractionPolicy(binding.Component, protocols.StickyAdapter):
     errorProtocol    = binding.bindTo(LOCATION_PROTOCOL)
     locationProtocol = binding.bindTo(LOCATION_PROTOCOL)
     behaviorProtocol = binding.bindTo(BEHAVIOR_PROTOCOL)
-    authSvc          = binding.bindTo(AUTHENTICATION_SERVICE)    
-    skinSvc          = binding.bindTo(SKIN_SERVICE)    
+    authSvc          = binding.bindTo(AUTHENTICATION_SERVICE)
+    skinSvc          = binding.bindTo(SKIN_SERVICE)
     defaultMethod    = binding.bindTo(DEFAULT_METHOD)
 
 
@@ -93,11 +93,11 @@ class Interaction(security.Interaction):
 
     def root(self,d,a):
         root = adapt(self.app, self.locationProtocol)
-        binding.suggestParentComponent(None,None,root)
+        binding.suggestParentComponent(self.skin,None,root)
         return root
-        
+
     root = binding.Once(root, suggestParent=False)
-    
+
     errorProtocol = binding.bindTo('policy/locationProtocol')
     locationProtocol = binding.bindTo('policy/locationProtocol')
     behaviorProtocol = binding.bindTo('policy/behaviorProtocol')
@@ -128,7 +128,7 @@ class Interaction(security.Interaction):
 
         if name=='..':
             parent = binding.getParentComponent(ob)
-            if parent is not None and ob is not self.app:
+            if parent is not None and ob is not self.skin:
                 return parent
             return ob
 
@@ -151,10 +151,10 @@ class Interaction(security.Interaction):
         if adapt(ob.getObject(), self.behaviorProtocol, None) is None:
             # Not renderable, try for default method
             return ob, (self.policy.defaultMethod,)
-            
+
         # object is renderable, no need for further traversal
         return ob, ()
-            
+
 
     def callObject(self, request, ob):
         return adapt(ob.getObject(), self.behaviorProtocol).render(self)
