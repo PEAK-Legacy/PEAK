@@ -456,7 +456,7 @@ class Base(object):
     __class_implements__ = IBindingFactory
     __implements__       = IBindingAPI
     __metaclass__        = ActiveClass
-
+    __class_provides__   = EigenRegistry()  # XXX this should be a once classAttr
 
     def __init__(self, parentComponent=None, componentName=None, **kw):
 

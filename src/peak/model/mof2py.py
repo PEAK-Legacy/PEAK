@@ -136,7 +136,7 @@ class MOFGenerator(binding.Component):
         
         doc = doc.replace('"""','\\"\"\\"')     # """ -> \"\"\"
 
-        self.write('\n"""%s"""\n\n' % doc)
+        self.write('\n"""%s"""\n\n' % doc.encode('latin1'))
 
 
     def writeClassHeader(self, element, baseNames=[]):
@@ -365,6 +365,7 @@ _config              = _lazy('peak.config.api')
                 if k.container is not package:
                     nip(k.container, package)
             eid(klass)
+
 
     def writePackage(self, package):
 
@@ -776,7 +777,79 @@ class MOFOutline(MOFGenerator):
         pass
 
 
+def genPkg(modelDescr, modelFile, pkgBase, srcDir, progress=lambda *x:None):
 
+    """Generate a 'peak.model' package from a MOF XMI file
 
+    'modelDescr' -- title of the model, e.g. '"UML 1.3"'
+
+    'modelFile' -- the XMI file to generate from
+
+    'pkgBase' -- dotted package prefix, e.g. '"peak.metamodels.UML13.model."'
+
+    'srcDir' -- directory prefix before 'pkgBase', e.g. '"./src"'
+
+    'progress' -- a function that will be called with data about each
+         MOF package written; useful for progress indicators.
+
+    Any missing directories will be created, but '__init__.py' files will
+    not be created for parent packages of the specified package, so the
+    output will not be a valid package unless you add them yourself.  Files
+    in the destination directory may be overwritten, but existing files that
+    don't correspond to the MOF model contents will not be deleted.  If you
+    regenerate a changed model, you might want to delete the target directory
+    tree first.
+    """
+
+    roots = storage.xmi.fromFile(modelFile)
+
+    from peak.metamodels import MOF131
+
+    init = MOF131.Package(
+        name='__init__',
+        annotation='Structural Model for %s - Generated from %s' % (modelDescr,modelFile),
+        contents=[MOF131.Import(name=r.name, importedNamespace=r) for r in roots]
+    )
+
+    for r in roots+[init]:
+        progress(
+            r.externalize('fileset',
+                writeFiles=True,pkgPrefix=pkgBase,srcDir=srcDir
+            )
+        )
+
+if __name__=='__main__':
+
+    def progress(x): print x
+
+    genPkg(
+        'UML 1.3',
+        'peak/metamodels/UML_1.3_01-12-02.xml',
+        'peak.metamodels.UML13.model.', '', progress
+    )
+    
+    genPkg(
+        'UML 1.4',
+        'peak/metamodels/UML_1.4_01-02-15.xml',
+        'peak.metamodels.UML14.model.', '', progress
+    )
+
+    genPkg(
+        'UML 1.5',
+        'peak/metamodels/UML_1.5_02-09-03.xml',
+        'peak.metamodels.UML15.model.', '', progress
+    )
+
+    genPkg(
+        'CWM 1.0',
+        'peak/metamodels/CWM_1.0_01-02-03.xml',
+        'peak.metamodels.CWM10.model.', '', progress
+    )
+
+    genPkg(
+        'CWM 1.1',
+        'peak/metamodels/CWM_1.1_02-05-01.xml',
+        'peak.metamodels.CWM11.model.', '', progress
+    )
 
 
