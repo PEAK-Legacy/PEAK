@@ -137,10 +137,10 @@ def lazyModule(modname, relativePath=None):
             _loadAndRunHooks(module)
         except:
             # Reset our state so that we can retry later
-            LazyModule.__getattribute__ = oldGA.im_func
-            LazyModule.__setattr__      = oldSA.im_func
+            if '__file__' not in module.__dict__: 
+                LazyModule.__getattribute__ = oldGA.im_func
+                LazyModule.__setattr__      = oldSA.im_func
             raise
-
         try:
             # Convert to a real module (if under 2.2)
             module.__class__ = ModuleType
@@ -191,7 +191,8 @@ def _loadAndRunHooks(module):
     # if this fails, we haven't called the hooks, so leave them in place
     # for possible retry of import
 
-    reload(module)
+    if module.__dict__.keys()==['__name__']:  # don't reload if already loaded!
+        reload(module)
 
     try:
         for hook in getModuleHooks(module.__name__):
@@ -200,7 +201,6 @@ def _loadAndRunHooks(module):
     finally:
         # Ensure hooks are not called again, even if they fail
         postLoadHooks[module.__name__] = None
-
 
 
 def getModuleHooks(moduleName):
@@ -275,8 +275,6 @@ def whenImported(moduleName, hook):
         )
     else:
         return _setModuleHook(moduleName,hook)
-
-
 
 
 
