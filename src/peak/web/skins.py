@@ -6,55 +6,14 @@ from resources import Resource
 from environ import traverseName, getCurrent, getSkin, getPolicy
 
 __all__ = [
-    'Skin', 'LayerService', 'SkinService',
+    'Skin',
 ]
 
 
-class LayerService(binding.Component):
-
-    """Service for accessing layers (w/caching and sharing between skins)"""
-
-    protocols.advise(
-        instancesProvide=[ILayerService]
-    )
-
-    layerMap = binding.Make( config.Namespace('peak.web.layers') )
-
-    def getLayer(self,layerName):
-        ob = getattr(self.layerMap,layerName)
-        binding.suggestParentComponent(self,layerName,ob)
-        return ob
 
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-class SkinService(binding.Component):
-
-    protocols.advise(
-        instancesProvide=[ISkinService]
-    )
-
-    app = root = binding.Delegate('policy')
-
-    policy = binding.Obtain('..')
-
-    skinMap = binding.Make( config.Namespace('peak.web.skins') )
-
-    def getSkin(self, name):
-        ob = getattr(self.skinMap,name)
-        binding.suggestParentComponent(self.policy,name,ob)
-        return ob
 
 
 

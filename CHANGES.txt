@@ -1,5 +1,11 @@
 Fixes and Enhancements since Version 0.5 alpha 3
 
+ - 'web.ISkinService' and 'web.ILayerService' were consolidated into
+   'web.IInteractionPolicy', because the need to have configurable
+   implementations of these services is negligible.  That is, the
+   corresponding property namespaces ('peak.web.skins' and 'peak.web.layers')
+   are more than adequate as registries.
+   
  - Removed 'peak.running.timers' and 'peak.util.dispatch'.  Neither was in
    active use, and both are being replaced by the new generic functions
    package in PyProtocols.

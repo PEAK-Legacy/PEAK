@@ -92,7 +92,7 @@ class InteractionPolicy(binding.Component, protocols.StickyAdapter):
 
     def fromComponent(klass, ob):
         ip = klass(ob)
-        protocols.StickyAdapter.__init__(ip, ob)
+        protocols.StickyAdapter.__init__(ip, ob, IInteractionPolicy)
         return ip
 
     fromComponent = classmethod(fromComponent)
@@ -104,18 +104,18 @@ class InteractionPolicy(binding.Component, protocols.StickyAdapter):
     resourcePrefix = binding.Obtain(RESOURCE_PREFIX)
 
     _authSvc       = binding.Make(IAuthService, adaptTo=IAuthService)
-    _skinSvc       = binding.Make(ISkinService, adaptTo=ISkinService)
-    _layerSvc      = binding.Make(ILayerService, adaptTo=ILayerService)
     _mkInteraction = binding.Obtain(config.FactoryFor(security.IInteraction))
 
     root = binding.Obtain('app', adaptTo=IWebTraversable)
 
-    getSkin = binding.Delegate('_skinSvc')
-    getLayer = binding.Delegate('_layerSvc')
     getUser  = binding.Delegate('_authSvc')
 
     def newInteraction(self,**options):
         return self._mkInteraction(self,None,**options)
+
+
+
+
 
 
 
@@ -162,6 +162,22 @@ class InteractionPolicy(binding.Component, protocols.StickyAdapter):
 
 
 
+    layerMap = binding.Make( config.Namespace('peak.web.layers') )
+
+    def getLayer(self,layerName):
+        ob = getattr(self.layerMap,layerName)
+        binding.suggestParentComponent(self,layerName,ob)
+        return ob
+
+    skinMap = binding.Make( config.Namespace('peak.web.skins') )
+
+    def getSkin(self, name):
+        ob = getattr(self.skinMap,name)
+        binding.suggestParentComponent(self,name,ob)
+        return ob
+
+
+
 class TestPolicy(InteractionPolicy):
 
     """Convenient interaction to use for tests, experiments, etc."""
@@ -183,22 +199,6 @@ class TestPolicy(InteractionPolicy):
             return ''.join(body)
 
         return env
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -226,7 +226,7 @@ class CGIPublisher(binding.Component):
     # was already imported, which leads to bootstrap problems, at least
     # with very trivial web apps (like examples/trivial_web).
 
-    def fromApp(klass, app, protocol):
+    def fromApp(klass, app, protocol=None):
         return klass(app, app=app)
 
     fromApp = classmethod(fromApp)

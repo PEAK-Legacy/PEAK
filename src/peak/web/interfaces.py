@@ -5,8 +5,7 @@ from peak.api import PropertyName
 from peak.binding.interfaces import IComponent
 
 __all__ = [
-    'IWebTraversable', 'IInteractionPolicy',
-    'ISkinService', 'ILayerService', 'IAuthService', 'IWebException',
+    'IWebTraversable', 'IInteractionPolicy', 'IAuthService', 'IWebException',
     'RESOURCE_PREFIX', 'DEFAULT_METHOD', 'APPLICATION_LOG',
     'IDOMletState', 'IHTTPHandler', 'IHTTPApplication',
     'IDOMletNode',    'IDOMletNodeFactory', 'IResource',
@@ -30,35 +29,6 @@ class IPolicyInfo(Interface):
     defaultMethod  = Attribute("""Default method name (e.g. 'index_html')""")
 
 
-
-
-
-
-
-
-
-
-
-class IResourceService(Interface):
-
-    resources = Attribute("""ITraversable for resource root""")
-
-    def getResource(path):
-        """Return the named resource"""
-
-
-class ISkinService(Interface):
-
-    def getSkin(name):
-        """Return the named skin"""
-
-
-class ILayerService(Interface):
-
-    def getLayer(name):
-        """Return the named layer"""
-
-
 class IAuthService(Interface):
 
     def getUser(environ):
@@ -69,20 +39,15 @@ class IAuthService(Interface):
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-class IInteractionPolicy(ISkinService, ILayerService, IAuthService, IPolicyInfo):
+class IInteractionPolicy(IAuthService, IPolicyInfo):
 
     """Component holding cross-hit configuration and consolidated services"""
+
+    def getSkin(name):
+        """Return the named skin"""
+
+    def getLayer(name):
+        """Return the named layer"""
 
     def newInteraction(**options):
         """Create a new 'IInteraction' with given arguments"""
@@ -98,12 +63,6 @@ class IInteractionPolicy(ISkinService, ILayerService, IAuthService, IPolicyInfo)
 
     def handleException(environ, error_stream, exc_info, retry_allowed=1):
         """Convert exception to a handler, and invoke it"""
-
-
-
-
-
-
 
 
 
@@ -163,6 +122,7 @@ class IResource(IWebTraversable):
 
 
 class IHTTPHandler(Interface):
+
     """A component for rendering an HTTP response"""
 
     def handle_http(self, environ, input, errors):
@@ -170,6 +130,7 @@ class IHTTPHandler(Interface):
 
 
 class IHTTPApplication(IHTTPHandler):
+
     """An IHTTPHandler that handles exceptions, transactions, etc."""
 
 
@@ -181,18 +142,16 @@ class IWebException(Interface):
         """Perform necessary recovery actions"""
 
 
+class IResourceService(Interface):
+
+    resources = Attribute("""ITraversable for resource root""")
+
+    def getResource(path):
+        """Return the named resource"""
+
 
 class ISkin(IResource, IResourceService):
     """A resource container, and the root resource for its contents"""
-
-
-
-
-
-
-
-
-
 
 
 
