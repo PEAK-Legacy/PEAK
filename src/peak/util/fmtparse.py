@@ -100,7 +100,7 @@ class Rule(object):
         """Return a version of this syntax using the specified terminators"""
         raise NotImplementedError
 
-    def getOpening(self,closing):
+    def getOpening(self,closing,memo):
         """Possible opening characters for this match, based on 'closing'"""
         raise NotImplementedError
 
@@ -175,7 +175,7 @@ class Epsilon(Rule):
     def withTerminators(self,terminators,memo):
         return self
 
-    def getOpening(self,closing):
+    def getOpening(self,closing,memo):
         return closing
 
 
