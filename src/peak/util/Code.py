@@ -15,6 +15,7 @@ for code in range(256):
 LOAD_NAME = opcode['LOAD_NAME']
 LOAD_GLOBAL = opcode['LOAD_GLOBAL']
 LOAD_CONST = opcode['LOAD_CONST']
+SET_LINENO = opcode['SET_LINENO']
 
 
 try:
@@ -38,7 +39,6 @@ except:
 
 
 
-
 class Code(object):
 
     def __init__(self, code=None):
@@ -51,34 +51,8 @@ class Code(object):
             
     def init_code_defaults(self):
         self.init_code_tuple((
-            0,
-            0,
-            (),
-            (),
-            (),
-            '<edited code>',
-            'no name',
-            0,
-            '',
-            '',
-            (),
-            (),
+            0, 0,(),(),(),'<edited code>','no name',0,'','',(),(),
         ))
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
     def init_code(self,code):
         self.init_code_tuple((            
@@ -98,6 +72,14 @@ class Code(object):
             code.co_cellvars,
         ))
         
+    def __iter__(self):
+        return codeIter(self)
+
+    def code(self):
+        return new.code(*self.code_as_tuple())
+
+
+
     def init_code_tuple(self,tup):
         ( self.co_argcount, self.co_nlocals, self.co_stacksize, self.co_flags,
           co_code, co_consts, co_names, co_varnames, self.co_filename,
@@ -108,17 +90,6 @@ class Code(object):
         self.co_names = list(co_names)
         self.co_varnames = list(co_varnames)
         self.co_code = array('B',co_code)
-
-
-
-
-
-
-
-
-
-
-
 
 
     def code_as_tuple(self):
@@ -139,11 +110,6 @@ class Code(object):
             self.co_cellvars
         )
 
-    def code(self):
-        return new.code(*self.code_as_tuple())
-
-    def __iter__(self):
-        return codeIter(self)
 
     def iterFromEnd(self):
         return codeIter(self,len(self.co_code))
@@ -152,15 +118,13 @@ class Code(object):
         if name not in self.co_names:
             self.co_names.append(name)
         return self.co_names.index(name)
-    
+
+
+
     def const_index(self,const):
         if const not in self.co_consts:
             self.co_consts.append(const)
         return self.co_consts.index(const)
-
-
-
-
 
     def local_index(self,name):
         if name not in self.co_varnames:
@@ -176,6 +140,7 @@ class Code(object):
         if name not in self.co_cellvars:
             self.co_cellvars.append(name)
         return self.co_cellvars.index(name)
+
 
     def findOp(self,op):
         return codeIter(self,0,[op])
@@ -193,6 +158,41 @@ class Code(object):
             used[names[cursor.arg]]=1
 
         return used.keys()
+
+
+
+
+    def renumberLines(self, toLine):
+
+        self.co_firstlineno = toLine
+
+        cursor = self.findOp(SET_LINENO)
+        cursor.next()
+        offset = (toLine - cursor.arg)
+        cursor.go(0)
+
+        for op in cursor:
+            cursor.write(SET_LINENO, cursor.arg + offset)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
