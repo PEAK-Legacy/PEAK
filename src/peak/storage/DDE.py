@@ -61,7 +61,7 @@ class DDEConnection(storage.ManagedConnection):
 
     def __call__(self, requestStr):
         """Issue a DDE request (requestStr -> responseStr)"""
-        return self.connection.Request(request)
+        return self.connection.Request(requestStr)
 
     def execute(self, commandStr):
         """Execute a DDE command"""
@@ -69,7 +69,7 @@ class DDEConnection(storage.ManagedConnection):
 
     def poke(self, commandStr, data=None):
         """DDE Poke of command string and optional data buffer"""
-        return self.connection.Poke(command, data)
+        return self.connection.Poke(commandStr, data)
 
 
 
@@ -80,7 +80,7 @@ class DDEConnection(storage.ManagedConnection):
 
 
 
-   def _open(self):
+    def _open(self):
 
         attemptedLaunch = False
 
