@@ -626,25 +626,25 @@ class MOFModel(model.Model, storage.xmi.Loader):
 
 
 
-        def externalize(self, format='peak.model'):
+        def externalize(self, format='peak.model', **options):
 
             externalize = importObject(_writers.of(self).get(format))
 
             if externalize is None:
                 raise FormatNotSupported(format)
 
-            return externalize(MOFModel, self, format)
+            return externalize(MOFModel, self, format, **options)
 
 
 
-        def internalize(klass, format, stream):
+        def internalize(klass, format, stream, **options):
 
             internalize = importObject(_readers.of(klass).get(format))
 
             if internalize is None:
                 raise FormatNotSupported(format)
 
-            return internalize(MOFModel, klass, format, stream)
+            return internalize(MOFModel, klass, format, stream, **options)
 
 
         internalize = classmethod(internalize)
@@ -976,4 +976,4 @@ class MOFModel(model.Model, storage.xmi.Loader):
     MultiplicityType = MultiplicityType
 
     NameNotFound = NameNotFound
-    
+    NameNotResolved = NameNotResolved

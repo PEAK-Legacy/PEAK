@@ -2,11 +2,6 @@
 
     This is just a rough draft that's still missing a few important things:
 
-    * Relative names for 'referencedType' links: we only generate a simple
-      name reference right now, but we really need to import the package where
-      the type comes from, or at least use '"import:"' links to reference the
-      right module location.
-
     * Full type support: we need 'peak.model.datatypes' to offer reusable
       base types for CORBA primitive types, otherwise we can't generate
       types like 'Boolean', 'String', and so on.
@@ -38,6 +33,11 @@ from peak.model.datatypes import TCKind, UNBOUNDED
 from peak.util.IndentedStream import IndentedStream
 from cStringIO import StringIO
 from peak.util.advice import advice
+
+
+
+
+
 
 class oncePerObject(advice):
 
@@ -89,9 +89,10 @@ class MOFGenerator(binding.Component):
     DataType  = binding.bindTo("MOFModel/DataType")
     Attribute = binding.bindTo("MOFModel/Attribute")
     Reference = binding.bindTo("MOFModel/Reference")
+    Namespace = binding.bindTo("MOFModel/Namespace")
 
     NameNotFound = binding.bindTo("MOFModel/NameNotFound")
-
+    NameNotResolved = binding.bindTo("MOFModel/NameNotResolved")
     StructuralFeature = binding.bindTo("MOFModel/StructuralFeature")
 
     def stream(self,d,a):
@@ -103,6 +104,22 @@ class MOFGenerator(binding.Component):
     pop    = binding.bindTo('stream/pop')
 
     objectsWritten = binding.New(dict)
+
+    pkgPrefix = ''
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     def writeDocString(self, doc):
 
@@ -121,6 +138,7 @@ class MOFGenerator(binding.Component):
 
         self.write('"""%s"""\n\n' % doc)
 
+
     def writeClassHeader(self, element, baseNames=[]):
 
         if baseNames:
@@ -133,6 +151,15 @@ class MOFGenerator(binding.Component):
 
         if element.annotation:
             self.writeDocString(element.annotation)
+
+
+
+
+
+
+
+
+
 
 
     def beginObject(self, element, metatype='model.Element'):
@@ -153,7 +180,103 @@ class MOFGenerator(binding.Component):
         self.writeClassHeader(element, baseNames)
 
 
+    def getImportName(self, element):
+        return self.pkgPrefix + str('.'.join(element.qualifiedName))
 
+
+    def acquire(self, element, name):
+
+        for p in self.iterParents(element):
+            if not isinstance(p,self.Namespace): continue
+            try:
+                return p.lookupElement(name)
+            except self.NameNotFound:
+                pass
+
+
+
+    def iterParents(self, element):
+
+        while element is not None:
+            yield element
+            element = element.container
+
+
+
+    def comparePaths(self, e1, e2):
+
+        p1 = list(self.iterParents(e1)); p1.reverse()
+        p2 = list(self.iterParents(e2)); p2.reverse()
+
+        common = [i1 for (i1,i2) in zip(p1,p2) if i1 is i2]
+
+        cc = len(common)       
+        p1 = p1[cc:]
+        p2 = p2[cc:]
+        
+        return common, p1, p2
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    def getRelativePath(self, e1, e2):
+
+        c,p1,p2 = self.comparePaths(e1,e2)
+
+        if c:
+            if not p2:
+                p1.insert(0,c[-1])
+                p2.insert(0,c[-1])
+                c.pop()
+
+            ob = self.acquire(e1,p2[0].name)
+
+            if ob is p2[0]:
+                p1=[]   # just acquire it
+
+            return ['..']*len(p1)+[e.name for e in p2]
+
+        p1.reverse()    # Search all parents of the source
+        
+        for parent in p1:
+
+            if not isinstance(parent,self.Package):
+                continue
+
+            for imp in parent.findElementsByType(self.Import):
+                c,sp1,sp2 = self.comparePaths(imp.importedNamespace, e2)
+                if c:
+                    # sp2 is path from imp -> e2
+                    return self.getRelativePath(e1,imp)+[e.name for e in sp2]
+
+        raise self.NameNotResolved(
+            "No path between objects", e1.qualifiedName, e2.qualifiedName
+        )
 
 
 
@@ -191,7 +314,7 @@ class MOFGenerator(binding.Component):
         if element.container is not package:
             self.write(
                 'from %s import %s' % (
-                    str('.'.join(element.container.qualifiedName)),
+                    self.getImportName(element.container),
                     str(element.name)
                 )
             )
@@ -328,8 +451,8 @@ class MOFGenerator(binding.Component):
 
     def writeImport(self, imp):
 
-        pkgName = '.'.join(imp.importedNamespace.qualifiedName)
-        self.write('# import %s as %s\n\n' % (pkgName, imp.name) )
+        pkgName = self.getImportName(imp.importedNamespace)
+        self.write('import %s as %s\n\n' % (pkgName, imp.name) )
 
     writeImport = oncePerObject(writeImport)
 
@@ -456,7 +579,9 @@ class MOFGenerator(binding.Component):
         if not feature.isChangeable:
             self.write('isChangeable = False\n')
 
-        self.write('referencedType = %r\n' % str(feature.type.name))
+        self.write('referencedType = %r\n'
+            % str('/'.join(self.getRelativePath(feature,feature.type)))
+        )
 
         if isinstance(feature,self.Reference):
 
@@ -488,8 +613,6 @@ class MOFGenerator(binding.Component):
 
 
 
-
-
     def findInverse(self, feature):
 
         ae = feature.referencedEnd.otherEnd()
@@ -500,14 +623,15 @@ class MOFGenerator(binding.Component):
 
 
 
-    def externalize(klass, metamodel, package, format):
+    def externalize(klass, metamodel, package, format, **options):
 
         s = StringIO()
 
         klass(
             package,
             MOFModel=metamodel,
-            stream=IndentedStream(s)
+            stream=IndentedStream(s),
+            **options
         ).writePackage(package)
 
         return s.getvalue()
@@ -530,10 +654,9 @@ class MOFGenerator(binding.Component):
 
 
 
-
 class MOFFileSet(MOFGenerator):
 
-    def externalize(klass, metamodel, package, format):
+    def externalize(klass, metamodel, package, format, **options):
 
         outfiles = []
         
@@ -541,7 +664,9 @@ class MOFFileSet(MOFGenerator):
             outfiles.extend(klass.externalize(metamodel, pkg, format))
             
         s = StringIO()
-        g = klass(package, MOFModel=metamodel, stream=IndentedStream(s))
+        g = klass(
+            package, MOFModel=metamodel, stream=IndentedStream(s), **options
+        )
         g.writePackage(package)
 
         outfiles.append(
@@ -552,8 +677,6 @@ class MOFFileSet(MOFGenerator):
 
 
     externalize = classmethod(externalize)
-
-
 
 
 
@@ -586,7 +709,7 @@ class MOFOutline(MOFGenerator):
     def writeImport(self, imp):
         self.write(
             'import %s'
-                % str('.'.join(imp.importedNamespace.qualifiedName))
+                % self.getImportName(imp.importedNamespace)
         )
         if imp.name!=imp.importedNamespace.name:
             self.write(' as %s' % imp.name)
