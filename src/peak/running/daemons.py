@@ -192,7 +192,7 @@ class AdaptiveTask(binding.Component):
             else:
                 # Adapt polling interval
                 pi = self.pollInterval * self.multiplyIdleBy
-                pi = max(pi + self.increaseIdleBy, self.maximumIdle)
+                pi = min(pi + self.increaseIdleBy, self.maximumIdle)
                 self.pollInterval = pi
 
             self.__ranLastTime = didWork
