@@ -247,8 +247,12 @@ class UntwistedReactor(binding.Component):
     def iterate(self, delay=None):
 
         now = self.time()
+        wasRunning = self.running
 
-        while self.running and self.laters and self.laters[0].time <= now:
+        while (
+            (self.running or not wasRunning)
+            and self.laters and self.laters[0].time <= now
+        ):
             try:
                 self.laters.pop(0)()
             except:
@@ -266,7 +270,7 @@ class UntwistedReactor(binding.Component):
 
         delay = max(delay, 0)
 
-        if self.readers or self.writers:
+        if (self.readers or self.writers) and (self.running or not wasRunning):
             try:
                 r, w, e = self.select(self.readers, self.writers, [], delay)
             except self._error,v:
@@ -277,12 +281,8 @@ class UntwistedReactor(binding.Component):
             for reader in r: reader.doRead()
             for writer in w: writer.doWrite()
 
-        elif delay:
+        elif delay and self.running:
             self.sleep(delay)
-
-
-
-
 
 
 class _Appt(object):
