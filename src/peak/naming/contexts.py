@@ -1,10 +1,10 @@
 """Base classes for naming contexts"""
 
-from Interfaces import *
-from Names import *
+from interfaces import *
+from names import *
 from references import *
 
-import SPI
+import spi
 
 _marker = object()
 
@@ -103,7 +103,7 @@ class AbstractContext(object):
 
                 return self, name
 
-            ctx = SPI.getURLContext(
+            ctx = spi.getURLContext(
                 name.scheme, self, None, iface
             )
 
@@ -164,12 +164,12 @@ class AbstractContext(object):
 
     def _deref(self, state, name, attrs=None):
 
-        return SPI.getObjectInstance(
+        return spi.getObjectInstance(
             state, name, self, self.getEnvironment(), attrs
         )
 
 
-    def lookupLink(self,name):
+    def lookupLink(self, name):
 
         """Return terminal link for 'name'"""
 
@@ -189,7 +189,7 @@ class AbstractContext(object):
         return self._deref(state, name, attrs)
 
 
-    def __getitem__(self,name):
+    def __getitem__(self, name):
     
         """Lookup 'name' and return an object"""
         
@@ -223,7 +223,7 @@ class AbstractContext(object):
         return self._deref(state, name, attrs)
 
 
-    def __contains__(self,name):
+    def __contains__(self, name):
         """Return a true value if 'name' has a binding in context"""
 
         ctx, name = self._getTargetCtx(name)
@@ -234,44 +234,44 @@ class AbstractContext(object):
         return self._get(name,_marker,None) is not _marker
 
 
-    def lookup(self,name):
+    def lookup(self, name):
         """Lookup 'name' --> object; synonym for __getitem__"""
         return self[name]
 
-    def has_key(self,name):
+    def has_key(self, name):
         """Synonym for __contains__"""
         return name in self
 
 
 
-    def keys():
+    def keys(self):
         """Return a sequence of the names present in the context"""
         return [name for name in self]
         
-    def items():
+    def items(self):
         """Return a sequence of (name,boundItem) pairs"""
-        return [ (name,self._getOb(name)) for name in self ]
+        return [ (name,self._getOb(name, None)) for name in self ]
 
-    def info():
+    def info(self):
         """Return a sequence of (name,refInfo) pairs"""
         return [ (name,self._get(name,retrieve=RETRIEVE_INFO))
                     for name in self
         ]
 
-    def bind(name,object,attrs=None):
+    def bind(self, name, object, attrs=None):
 
         """Synonym for __setitem__, with attribute support"""
 
         self.__setitem__(name,object,attrs)
 
-    def unbind(name,object):
+    def unbind(self, name, object):
 
         """Synonym for __delitem__"""
 
         del self[name]
 
 
-    def rename(oldName,newName):
+    def rename(self, oldName, newName):
 
         """Rename 'oldName' to 'newName'"""
 
@@ -285,7 +285,7 @@ class AbstractContext(object):
        
         self._rename(name,newName)
 
-    def __setitem__(name,object,attrs=None):
+    def __setitem__(name, object, attrs=None):
 
         """Bind 'object' under 'name'"""
 
@@ -296,14 +296,14 @@ class AbstractContext(object):
 
         else:
             
-            state,bindattrs = SPI.getStateToBind(
+            state,bindattrs = spi.getStateToBind(
                 object,name,self,self.getEnvironment(),attrs
             )
 
             self._bind(name, state, bindAttrs)
 
 
-    def __delitem__(name):
+    def __delitem__(self, name):
         """Remove any binding associated with 'name'"""
 
         ctx, name = self._getTargetCtx(name,IWriteContext)
@@ -340,15 +340,15 @@ class AbstractContext(object):
         raise NotImplementedError
 
 
-    def __iter__():
+    def __iter__(self):
         """Return an iterator of the names present in the context"""
         raise NotImplementedError
 
-    def _bind(self,name,state,attrs=None):
+    def _bind(self, name, state, attrs=None):
         raise NotImplementedError
 
-    def _unbind(self,name):
+    def _unbind(self, name):
         raise NotImplementedError
 
-    def _rename(self,old,new):
+    def _rename(self, old, new):
         raise NotImplementedError
