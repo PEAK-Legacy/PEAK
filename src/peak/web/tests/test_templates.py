@@ -98,20 +98,20 @@ class NSTest(BasicTest):
 class NSTest2(NSTest):
 
     template = "data:,"+quote("""<body with:page-layout="/default">
-<h1 content:replace="foo">Title Goes Here</h1>
+<h1 this:unless="no-such-thing" content:replace="foo">Title Goes Here</h1>
 <ul><div this:list="bar">
     <li this:is="listItem"><span this:replace=".">foo</span></li>
 </div></ul>
 </body>""")
 
 class ListHeaderFooterTest(BasicTest):
-    template = "data:,"+quote("""<ul content:list="bar" this:is="page"
+    template = "data:,"+quote("""<ul
+        this:is="page" this:uses="bar" content:list="." 
     ><li this:is="header">Header</li><li this:is="listItem" content:replace="."
     ></li><li this:is="footer">Footer</li></ul>""")
 
     rendered = "<ul><li>Header</li><li>1</li><li>2</li><li>3</li>" \
                "<li>Footer</li></ul>"
-
 
 
 
@@ -210,6 +210,18 @@ class MiscTests(TestCase):
         self.assertRaises(web.UnsupportedMethod,self.renderDoc,doc)
 
 
+    def testUses(self):
+        for kind in pwt.Uses, pwt.Unless:
+            for path in "spammity-whiz","foo":
+                doc = pwt.TemplateDocument(self.app)
+                uses = kind(doc,dataSpec=path,tagName=None,attribItems=())
+                uses.addChild(pwt.Literal(uses,xml="foo"))
+                doc.addChild(uses)
+                txt = self.renderFragment(doc)
+                if (path=="foo") == (kind is pwt.Uses):
+                    self.assertEqual(txt, "foo")
+                else:
+                    self.assertEqual(txt, "")
 
 
 
@@ -222,19 +234,7 @@ class MiscTests(TestCase):
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
+    
 
 
 

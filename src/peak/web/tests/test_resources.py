@@ -219,6 +219,8 @@ class IntegrationTests(TestCase):
             " <body>\n"
             "<h1>Python Object 123</h1>\n" "<hr />\n"
             "My URL is http://127.0.0.1/123.\n"
+            "The server name as a property: "
+            "<span>PropertyName('127.0.0.1')</span>\n"
             "<hr />\n" "</body></html>\n"
         )
 
@@ -235,8 +237,6 @@ class IntegrationTests(TestCase):
             "<td /><td /><td />\n" "</tr></table>\n" "<hr />\n"
             "</body></html>\n"
         )
-
-
 
 
 

@@ -24,7 +24,7 @@ from peak.api import *
 from interfaces import *
 from xml.sax.saxutils import quoteattr, escape
 from publish import TraversalPath
-from peak.util import SOX
+from peak.util import SOX, imports
 from places import Decorator
 from environ import traverseItem, traverseDefault
 from errors import NotFound
@@ -538,37 +538,37 @@ class TaglessElement(Element):
     _openTag = _closeTag = _emptyTag = ''
 
 
+class Uses(Element):
+
+    """Render child elements with target data, or skip element altogether"""
+
+    staticText = None
+    render_if = True
+
+    def renderFor(self, data, state):
+        try:
+            if self.dataSpec:
+                data, state = self._traverse(data, state)
+        except (web.NotFound,web.NotAllowed):
+            if self.render_if:
+                return
+        else:
+            if not self.render_if:
+                return
+
+        state.write(self._openTag)
+
+        for child in self.optimizedChildren:
+            child.renderFor(data,state)
+
+        state.write(self._closeTag)
 
 
+class Unless(Uses):
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    """Skip child elements if target data is available"""
+    
+    render_if = False
 
 
 
@@ -750,26 +750,26 @@ class TaglessXML(XML):
     _openTag = _closeTag = _emptyTag = ''
 
 
+class Expects(Element):
 
+    """Render child elements with target data, or skip element altogether"""
 
+    staticText = None
 
+    dataSpec = ''   # to disable conversion to path
 
+    protocol = binding.Make(
+        lambda self: imports.importString(self.dataSpec),uponAssembly=True
+    )
 
+    def renderFor(self, data, state):
 
+        data = data.clone(current=adapt(data.current,self.protocol))
 
-
-
-
-
-
-
-
-
-
-
-
-
-
+        state.write(self._openTag)
+        for child in self.optimizedChildren:
+            child.renderFor(data,state)
+        state.write(self._closeTag)
 
 
 
