@@ -299,14 +299,17 @@ class TransactionComponent(binding.AutoCreated, AbstractParticipant):
 
         """Our TransactionService (auto-joined when attribute is accessed)"""
 
-        ts = binding.findUtility(self, ITransactionService)
+        ts = self.lookupComponent(ITransactionService)
         ts.join(self)
         self.inTransaction = True
-
+        d[a] = ts
+        self.onJoinTxn(ts)
         return ts
 
     txnSvc = binding.Once(txnSvc)
 
+    def onJoinTxn(self, txnService):
+        pass
 
     def finishTransaction(self, txnService, committed):
 

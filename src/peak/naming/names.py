@@ -572,7 +572,7 @@ NNS_NAME = CompositeName('/')
 
 
 
-pnameValidChars = re.compile( r"([-+*?._a-z0-9]+)", re.I ).match
+pnameValidChars = re.compile( r"([-+*?!:._a-z0-9]+)", re.I ).match
 
 class PropertyName(str):
 

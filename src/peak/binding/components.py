@@ -178,7 +178,7 @@ def iterParents(component):
         component = config.getLocal(last)
 
 
-def findUtilities(component, iface):
+def findUtilities(iface, component=None):
 
     forObj = component
 
@@ -190,9 +190,9 @@ def findUtilities(component, iface):
             yield utility
 
     
-def findUtility(component, iface, default=NOT_GIVEN):
+def findUtility(iface, component=None, default=NOT_GIVEN):
 
-    for u in findUtilities(component, iface):
+    for u in findUtilities(iface, component):
         return u
 
     if default is NOT_GIVEN:
@@ -251,8 +251,8 @@ def lookupComponent(component, name):
     'name' can be any name acceptable to the 'peak.naming' package, or an
     Interface object.  Strings and 'CompoundName' names will be interpreted
     as paths relative to the starting component.  An empty name will return
-    the starting component.  Interfaces will be looked up using
-    'findUtility(component,...)'.  All other kinds of names, including URL
+    the starting component.  Interfaces and Properties will be looked up using
+    'findUtility(name, component)'.  All other kinds of names, including URL
     strings and 'CompositeName' instances, will be looked up using
     'binding.globalLookup()'.
     
@@ -279,7 +279,7 @@ def lookupComponent(component, name):
         path segment."""
 
     if IConfigKey.isImplementedBy(name):
-        return findUtility(component, name)
+        return findUtility(name, component)
         
     parsedName = toName(name, ComponentName, 1)
 
@@ -469,7 +469,7 @@ def bindToUtilities(iface, provides=None, doc=None):
 
     """Binding to a list of all 'iface' utilities above the component"""
 
-    return Once(lambda s,d,a: [u for u in findUtilities(s,iface)],
+    return Once(lambda s,d,a: [u for u in findUtilities(iface,s)],
         provides=provides, doc=doc
     )
 
@@ -484,7 +484,7 @@ def bindToProperty(propName, default=NOT_GIVEN, provides=None, doc=None):
 
     propName = PropertyName(propName)
 
-    return Once(lambda s,d,a: config.getProperty(s,propName,default),
+    return Once(lambda s,d,a: config.getProperty(propName,s,default),
         provides=provides, doc=doc
     )
 

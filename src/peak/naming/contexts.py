@@ -421,7 +421,7 @@ class GenericURLContext(AbstractContext):
         if parser.supportsScheme(scheme):
             return parser
 
-        parser = config.getProperty(context, SCHEMES_PREFIX+scheme, None)
+        parser = config.getProperty(SCHEMES_PREFIX+scheme, context, None)
 
         if parser is not None:
 

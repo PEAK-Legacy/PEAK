@@ -110,8 +110,8 @@ class DescriptorTest(TestCase):
         data = self.data
         ns   = data.aService.nestedService
 
-        assert binding.findUtility(ns,IS1U) is data
-        assert binding.findUtility(ns,IS2U) is ns
+        assert binding.findUtility(IS1U,ns) is data
+        assert binding.findUtility(IS2U,ns) is ns
 
 
 
@@ -124,9 +124,9 @@ class DescriptorTest(TestCase):
     def checkAcquireInst(self):
 
         data = self.data
-        ob1 = binding.findUtility(data,ISampleUtility1,None)
-        ob2 = binding.findUtility(data.aService,ISampleUtility1,None)
-        ob3 = binding.findUtility(data.aService.nestedService,ISampleUtility1,
+        ob1 = binding.findUtility(ISampleUtility1,data,None)
+        ob2 = binding.findUtility(ISampleUtility1,data.aService,None)
+        ob3 = binding.findUtility(ISampleUtility1,data.aService.nestedService,
         None)
         assert ob1 is None
         assert ob2 is not None
@@ -138,11 +138,11 @@ class DescriptorTest(TestCase):
     def checkAcquireSingleton(self):
 
         data = self.data
-        ob1 = binding.findUtility(data,ISampleUtility2,None)
-        ob2 = binding.findUtility(data.aService,ISampleUtility2,None)
-        ob3 = binding.findUtility(data.aService.nestedService,ISampleUtility2,
+        ob1 = binding.findUtility(ISampleUtility2,data,None)
+        ob2 = binding.findUtility(ISampleUtility2,data.aService,None)
+        ob3 = binding.findUtility(ISampleUtility2,data.aService.nestedService,
         None)
-        ob4 = binding.findUtility(data.aService.nestedService,ISampleUtility2,
+        ob4 = binding.findUtility(ISampleUtility2,data.aService.nestedService,
         None)
 
         assert ob1 is None

@@ -56,7 +56,7 @@ def getInitialContext(parentComponent=None, **options):
 
     factory = importObject(
         config.getProperty(
-            parentComponent, INIT_CTX_FACTORY,
+            INIT_CTX_FACTORY, parentComponent,
             'peak.naming.contexts:BasicInitialContext'
         )
     )
@@ -84,7 +84,7 @@ def getURLContext(scheme, context, iface=IBasicContext):
 
     """Return a 'Context' object for the given URL scheme and interface."""
 
-    factory = config.getProperty(context, SCHEMES_PREFIX+scheme, None)
+    factory = config.getProperty(SCHEMES_PREFIX+scheme, context, None)
 
     if factory is not None:
 
