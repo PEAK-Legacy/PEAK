@@ -121,7 +121,7 @@ class SQLCursor(AbstractCursor):
 
 
 
-    logger = binding.Obtain(PropertyName('peak.logs.sql'))
+    logger = binding.Obtain('logger:sql')
 
     __path = binding.Make(lambda self: binding.getComponentPath(self))
 
@@ -256,6 +256,7 @@ class SQLConnection(ManagedConnection):
 
     serializable = binding.Obtain(naming.Indirect('serialProp'),default=False)
 
+    log = binding.Obtain('logger:sql')
 
     def voteForCommit(self, txnService):
         super(SQLConnection,self).voteForCommit(txnService)
@@ -278,7 +279,6 @@ class SQLConnection(ManagedConnection):
 
     def _prepare(self):
         raise NotImplementedError("Two-phase commit not implemented", self)
-
 
 
 
@@ -711,8 +711,7 @@ class OracleBase(SQLConnection):
 
         if self.twoPhase:
             self._begin()
-
-        if self.serializable:
+        elif self.serializable:
             self('SET TRANSACTION ISOLATION LEVEL SERIALIZABLE')
 
 
@@ -720,11 +719,12 @@ class OracleBase(SQLConnection):
         try:
             self._doCommit()
         except self.Error,v:
+            self.log.exception("Error during Oracle commit!")
+            self.closeASAP()
             # Oracle raises this error on a two-phase commit if no rows were
             # actually changed in the DB.
             if self._errCode(v)<>'ORA-24756':
                 raise
-
 
     def finishTransaction(self, txnService, committed):
 
@@ -794,27 +794,27 @@ class CXOracleConnection(OracleBase):
     )
 
     def _begin(self):
-        self.connection.begin(0,str(self.txnId),self.txnBranch)
+        if not hasattr(self.API,'TRANS_NEW'):
+            return self._doBegin()           
+        kind = self.API.TRANS_NEW
+        if self.serializable:
+            kind += self.API.TRANS_SERIALIZABLE             
+        self._doBegin(kind)
+
+    def _doBegin(self,*extra):
+        self.connection.begin(0,str(self.txnId),self.txnBranch,*extra)
+
+    def _readOnly(self):
+        if self.twoPhase and hasattr(self.API,'TRANS_NEW'):
+            self._doBegin(self.API.TRANS_NEW+self.API.TRANS_READONLY)
+        else:
+            super(CXOracleConnection,self)._readOnly()
 
     def _doCommit(self):
         self.connection.commit()
 
     def _errCode(self,v):
         return str(v).split(':',1)[0]
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
