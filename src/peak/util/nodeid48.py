@@ -30,6 +30,9 @@ def from_ifconfig():
         f = os.popen('/sbin/ifconfig -a')
         s = f.read()
         f.close()
+        # hack for linuxes that have "dummy0" with 00:00:00:00:00:00...
+        # then again, this whole technique is a hack :-)
+        s = s.replace('00:00:00:00:00:00', 'BAD_DUMMY')
         m = r.search(s)
         if m:
             m = ''.join(m.groups())
