@@ -1,8 +1,9 @@
 <?xml version = '1.0' encoding = 'ISO-8859-1' ?>
-<!DOCTYPE schema SYSTEM '../../ZConfig/doc/schema.dtd' >
+<!DOCTYPE schema SYSTEM '../../../ZConfig/doc/schema.dtd' >
 
-<schema extends="EventDriven.xml" prefix="peak.running"
-    datatype=".supervisor.ProcessSupervisor.fromZConfig">
+<schema extends="pkgfile:peak.running/EventDriven.xml"
+        prefix="peak.tools.supervisor"
+        datatype=".process.ProcessSupervisor.fromZConfig">
 
     <description>
     This schema describes the configuration of a ProcessSupervisor: a PEAK
@@ -35,7 +36,6 @@
         </description>
 
     </key>
-
 
 
 
