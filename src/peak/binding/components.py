@@ -665,12 +665,15 @@ class FeatureMC(Meta.ActiveDescriptor, type):
 
 
     def __set__(self, ob, val):
-
         """Set the feature's value by delegating to 'ob.setX()'"""
-
         return self.getMethod(ob,'set')(val)
 
-    
+
+    def __delete__(self, ob):
+        """Delete the feature's value by delegating to 'ob.delattrX()'"""
+        return self.getMethod(ob,'delattr')()
+
+
     def getMethod(self, ob, verb):
         """Look up a method dynamically"""
         return getattr(ob,self.methodNames[verb])
@@ -688,9 +691,6 @@ class FeatureMC(Meta.ActiveDescriptor, type):
 
         for verb,methodName in self.methodNames.items():
             setattr(klass, methodName, getattr(self,verb))
-
-
-
 
 
 

@@ -153,22 +153,30 @@ class featureBase(object):
 
     set.namingConvention = 'set%(initCap)s'
 
+    def delattr(self):
+        feature = self.__class__.__feature__
+        del self.__dict__[feature.__name__]
+
+    delattr.namingConvention = 'delattr%(initCap)s'
+
+
+
 
     def doubled(self):
         feature = self.__class__.__feature__
-        return feature.get(self) * 2
+        return feature.getMethod(self,'get')() * 2
 
     doubled.namingConvention = '%(name)sDoubled'
 
 
-
 class X(Element):
-
-    class Y(featureBase):
-        pass
 
     class zebra(featureBase):
         singular = 0
+
+    class Y(zebra):
+        # test of subclassing from existing feature...
+        singular = 1
 
 
 
@@ -182,12 +190,18 @@ class checkExport(TestCase):
         assert self.el.getY()==1
         assert self.el.__dict__['Y']==[1]
         assert self.el.YDoubled()==2
-        
+        self.el.delattrY()
+        assert not self.el.__dict__.has_key('Y')
+
     def checkDescr(self):
         self.el.zebra = 2
         assert self.el.zebra==[2]
         assert self.el.__dict__['zebra']==[2]
         assert self.el.zebraDoubled()==[2,2]
+        del self.el.zebra
+        assert not self.el.__dict__.has_key('zebra')
+
+
 
 TestClasses = (
     checkExport, UMLTest, QueryTests, XMILoad, XMITests
