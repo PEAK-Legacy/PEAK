@@ -72,8 +72,8 @@ class MetaModelNode(TW.SOX.Node):
     _acquiredAttrs = ('factory','path','pluralize')
     
     featureTypeMap = {
-        'ref': '_sefReference', 'bag': '_sefSet', 'list': '_sefSequence',
-        'value': '_sefValue',
+        'ref': '_sefReference', 'bag': '_sefCollection', 'list': '_sefSequence',
+        'value': '_sefField',
     }
 
 

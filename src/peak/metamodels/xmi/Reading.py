@@ -193,11 +193,11 @@ class XMIReading:
         def _fromXMI(self,node):
             map(self.set,node._subNodes)
     
-    class _sefSet:
+    class _sefCollection:
         def _fromXMI(self,node):
             add = self.addItem
             for node in node._subNodes:
-                if not node in self: add(node)
+                if not self.isReferenced(node): add(node)
 
     def _fromXMI(self,node):
         return node
