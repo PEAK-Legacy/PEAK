@@ -2,6 +2,14 @@ Fixes and Enhancements since Version 0.5 alpha 2
 
  Changed, Enhanced, or Newly Deprecated Features
 
+ - A list or tuple of 'IComponentKey' instances is now treated as a single
+   component key, that returns a tuple of the values returned by each
+   constituent component key.  This means that 'binding.bindTo()' and
+   'lookupComponent()' can now accept a list or tuple of component keys.  This
+   makes 'bindSequence()' obsolete, so 'bindSequence()' is now DEPRECATED.
+   'binding.bindSequence(key1,key2,...)' can now be replaced with
+   'binding.bindTo([key1,key,...])', and will produce the same results.
+
  - 'naming.IBasicContext.lookup()' and 'naming.lookup()' now accept a 'default'
    argument, similar to that used by 'lookupComponent()' and most other
    lookup-like APIs in PEAK.  This change was made so that component lookups

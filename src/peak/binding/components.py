@@ -421,25 +421,18 @@ class bindTo(Attribute):
         'someClass' can then refer to 'self.thingINeed' instead of
         calling 'self.lookupComponent("path/to/service")' repeatedly.
     """
+
     default = NOT_GIVEN
-    singleValue = True
+    targetName = None
 
     def __init__(self,targetName,**kw):
-        self.targetNames = adapt(targetName, IComponentKey),
-        kw.setdefault('doc', ("binding.bindTo(%r)" % targetName))
+        self.targetName = adapt(targetName, IComponentKey)
+        kw.setdefault('doc', ("binding.bindTo(%s)" % `self.targetName`))
         super(bindTo,self).__init__(**kw)
 
 
     def computeValue(self, obj, instanceDict, attrName):
-
-        default = self.default
-        names   = self.targetNames
-        obs     = [ key.findComponent( obj, default ) for key in names ]
-
-        if self.singleValue:
-            return obs[0]
-
-        return tuple(obs)
+        return self.targetName.findComponent(obj, self.default)
 
 
 
@@ -449,38 +442,45 @@ class bindTo(Attribute):
 
 
 
-class bindSequence(bindTo):
 
-    """Automatically look up and cache a sequence of services by name
 
-        Usage::
 
-            class someClass(binding.AutoCreated):
 
-                thingINeed = binding.bindSequence(
-                    "path/to/service", "another/path", ...
-                )
 
-        'someClass' can then refer to 'self.thingINeed' to get a tuple of
-        services instead of calling 'self.lookupComponent()' on a series of
-        names.
-    """
 
-    singleValue = False
 
-    def __init__(self, *targetNames, **kw):
-        self.targetNames = tuple([adapt(n,IComponentKey) for n in targetNames])
-        kw.setdefault('doc', ("binding.bindSequence%s" % `targetNames`))
+def bindSequence(*targetNames, **kw):
+    """DEPRECATED: use binding.bindTo([key1,key2,...])"""
+    return bindTo(targetNames, **kw)
 
-        # Note: the following intentionally skips bindTo.__init__, as it
-        # has an incompatible signature:
-        super(bindTo,self).__init__(**kw)
+
+class SequenceFinder(object):
+
+    """Look up sequences of component keys"""
+
+    __slots__ = 'ob'
+
+    protocols.advise(
+        instancesProvide = [IComponentKey],
+        asAdapterForProtocols = [protocols.sequenceOf(IComponentKey)]
+    )
+
+    def __init__(self, ob, proto):
+        self.ob = ob
+
+    def findComponent(self, component, default=NOT_GIVEN):
+        return tuple([ob.findComponent(component, default) for ob in self.ob])
 
 
 def whenAssembled(func, **kw):
     """'Once' function with 'activateUponAssembly' flag set"""
     kw['activateUponAssembly'] = True
     return Once(func, **kw)
+
+
+
+
+
 
 
 
