@@ -84,6 +84,9 @@ class LockType(object):
 
     """Dummy lock type used when threads are inactive or unavailable"""
     
+    def __init__(self):
+        self._lockCount = 0
+        
     def acquire(self):
         self._lockCount += 1
 
