@@ -715,6 +715,7 @@ class FeatureMC(Meta.ActiveDescriptor, type):
             nc = getattr(method,'namingConvention',None)
             if nc:
                 mt[methodName]=method
+                setattr(self,methodName,staticmethod(method))
             else:
                 setattr(self,methodName,classmethod(method))
 
@@ -735,14 +736,12 @@ class FeatureMC(Meta.ActiveDescriptor, type):
                 f.co_names[f.co_names.index('__feature__')] = className
                 setattr(self,verb,staticmethod(f.func()))
 
+class StructuralFeature(Base):
 
-class StructuralFeature(DynamicBinding, Base):
+    __metaclasses__ = FeatureMC,
 
-    # XXX lowerBound = Eval("isRequired and 1 or 0")
-    # XXX lowerBound.copyIntoSubclasses = 1
-
-    isRequired    = 0  # XXX SubclassDefault(0)
-
+    isRequired    = 0
+    lowerBound    = 0
     upperBound    = None    # None means unbounded upper end
 
     isOrdered     = 0
@@ -750,183 +749,143 @@ class StructuralFeature(DynamicBinding, Base):
 
     referencedEnd = None    # and without an 'other end'
     referencedType = None
+    defaultValue   = None
 
-    def getElement(self):
-        return self.getSEFparent()
-        
-    def getService(self,name=None):
-        return self.getSEFparent().getService(name)
+    def get(self):
+        feature = self.__class__.__feature__
+        return self.__dict__.get(feature.__name__, feature.defaultValue)
 
-    def getReferencedType(self):
-        return self.getService(self.referencedType)
-
-    def _getData(self,default=()):
-        return self.getSEFparent()._fData.get(self._componentName,default)
-
-    def _setData(self,value):
-        self.getSEFparent()._fData[self._componentName]=value
-
-    def _delData(self):
-        del self.getSEFparent()._fData[self._componentName]
-
-    def _hasData(self):
-        return self.getSEFparent()._fData.has_key(self._componentName)
+    get.namingConvention = 'get%(initCap)s'
 
 
+    def set(self,val):
+        feature = self.__class__.__feature__
+        self.__dict__[feature.__name__]=[val]
+
+    set.namingConvention = 'set%(initCap)s'
 
 
+    def delete(self):
+        feature = self.__class__.__feature__
+        del self.__dict__[feature.__name__]
+
+    delete.namingConvention = 'delete%(initCap)s'
+    delete.verb = 'delattr'    
 
 
 class Field(StructuralFeature):
-
-    __implements__ = IValue
-    
+    __class_implements__ = IValue    
     upperBound = 1
-
-    def __call__(self):
-        """Return the value of the feature"""
-        return self._getData(None)
-
-    def values(self):
-        """Return the value(s) of the feature as a sequence, even if it's a single value"""
-        v=self._getData(NOT_FOUND)
-        if v is NOT_FOUND: return ()
-        return v,
-
-    def clear(self):
-        """Unset the value of the feature (like __delattr__)"""
-        if self._hasData():
-            self._delData()
-
-    def set(self,value):
-        """Set the value of the feature to value"""
-        if self.isChangeable:
-            self._set(value)
-        else:
-            raise TypeError,("Read-only field %s" % self._componentName)
-
-    def _set(self,value):
-        self.clear()
-        self._setData(value)
-
-
-
-
-
-
-
-
-
 
 class Collection(StructuralFeature):
 
-    __implements__ = ICollection
+    __class_implements__ = ICollection
+
+    def get(self):
+        feature = self.__class__.__feature__
+        return self.__dict__.get(feature.__name__, [])
+
+    get.namingConvention = 'get%(initCap)s'
 
 
-    def set(self,value):
-        """Set the value of the feature to value"""
-        self._set(value)
+    def add(self,item):
 
-
-    def addItem(self,item):
-        """Add the item to the collection/relationship, reject if multiplicity exceeded"""
+        """Add the item to the collection/relationship"""
         
-        ub = self.upperBound
-        
-        if not ub or len(self)<ub:
-            self._notifyLink(item)
-            self._link(item)
+        feature = self.__class__.__feature__
+        ub = feature.upperBound
+        value = feature.__get__(self)
+
+        if not ub or len(value)<ub:
+            feature._notifyLink(self,item)
+            feature._link(self,item)
         else:
-            raise ValueError
+            raise ValueError("Too many items")
+
+    add.namingConvention = 'add%(initCap)s'
 
 
-    def removeItem(self,item):
+    def remove(self,item):
         """Remove the item from the collection/relationship, if present"""
-        self._unlink(item)
-        self._notifyUnlink(item)
+        feature = self.__class__.__feature__
+        feature._unlink(self,item)
+        feature._notifyUnlink(self,item)
+
+    remove.namingConvention = 'remove%(initCap)s'
 
 
-    def replaceItem(self,oldItem,newItem):
-        d = self._getData([])
+
+
+
+
+    def replace(self,oldItem,newItem):
+
+        feature = self.__class__.__feature__
+
+        d = feature.__get__(self)
         p = d.index(oldItem)
+
         if p!=-1:
             d[p]=newItem
-            self._setData(d)
-            self._notifyUnlink(oldItem)
-            self._notifyLink(newItem)
+            feature._notifyUnlink(self,oldItem)
+            feature._notifyLink(self,newItem)
         else:
-            raise ValueError    # XXX
+            raise ValueError(oldItem,"not found")
+
+    replace.namingConvention = 'replace%(initCap)s'
 
 
-
-    def __call__(self):
-        """Return the value of the feature"""
-        return self._getData()
-
-
-    def values(self):
-        """Return the value(s) of the feature as a sequence, even if it's a single value"""
-        return self._getData()
-
-
-    def clear(self):
+    def delete(self):
         """Unset the value of the feature (like __delattr__)"""
 
-        referencedEnd = self.referencedEnd
+        feature = self.__class__.__feature__
+        referencedEnd = feature.referencedEnd
 
-        d = self._getData()
+        d = feature.__get__(self)
 
         if referencedEnd:
-            element = self.getElement()
+            
             for item in d:
-                otherEnd = getattr(item,referencedEnd)
-                otherEnd._unlink(element)
+                otherEnd = getattr(item.__class__,referencedEnd)
+                otherEnd._unlink(item,self)
 
-        if d:
-            self._delData()
-
-
-    def __len__(self):
-        return len(self._getData())
-
-    def isEmpty(self):
-        return len(self._getData())==0
-
-    def isReferenced(self,item):
-        return item in self._getData()
+        super(Collection,feature).delete(self)
 
 
 
 
 
 
-    def _notifyLink(self,item):
+
+
+
+    def _notifyLink(self,element,item):
+
         referencedEnd = self.referencedEnd
-        if referencedEnd:
-            otherEnd = getattr(item,referencedEnd)
-            otherEnd._link(self.getElement())
 
-    def _notifyUnlink(self,item):
+        if referencedEnd:
+            otherEnd = getattr(item.__class__,referencedEnd)
+            otherEnd._link(item,element)
+
+
+    def _notifyUnlink(self,element,item):
+
         referencedEnd = self.referencedEnd
+
         if referencedEnd:
-            otherEnd = getattr(item,referencedEnd)
-            otherEnd._unlink(self.getElement())
+            otherEnd = getattr(item.__class__,referencedEnd)
+            otherEnd._unlink(item,element)
 
 
-    def _set(self,value):
-        self.clear()
-        self._setData(value)
+    def _link(self,element,item):
+        d=self.__get__(element)
+        d.append(item)
+        self.__set__(element,d)
 
-
-    def _link(self,element):
-        d=self._getData([])
-        d.append(element)
-        self._setData(d)
-
-    def _unlink(self,element):
-        d=self._getData([])
-        d.remove(element)
-        self._setData(d)
+    def _unlink(self,element,item):
+        d=self.__get__(element)
+        d.remove(item)
+        self.__set__(element,d)
 
 
 
@@ -943,7 +902,7 @@ class Collection(StructuralFeature):
 
 class Reference(Collection):
 
-    __implements__ = IReference
+    __class_implements__ = IReference
 
     upperBound = 1
 
@@ -958,7 +917,7 @@ class Reference(Collection):
 
 class Sequence(Collection):
 
-    __implements__ = ISequence
+    __class_implements__ = ISequence
 
     isOrdered = 1
 

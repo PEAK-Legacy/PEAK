@@ -6,6 +6,6 @@ import TW.XMI.Reading
 import TW.SEF.Queries
 import TW.SEF.Basic 
 
-__bases__ = TW.XMI.Reading, TW.SEF.Queries, TW.SEF.Basic
+__bases__ = TW.XMI.Reading, TW.SEF.Queries, TW.SEF.FeatureObjects
 
 setupModule()
