@@ -96,7 +96,7 @@ def getParentComponent(component):
 
         if isinstance(component,ModuleType):
             m = '.'.join(component.__name__.split('.')[:-1])
-            if m: return importString(m)
+            if m: return importString(m+':')
 
     else:
         return gpc(component)
