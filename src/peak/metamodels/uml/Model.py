@@ -1,8 +1,5 @@
 from types import StringType, FunctionType
-
-from TW.StructuralModel.Queries import NodeList
-from TW.StructuralModel.Features import ComputedFeature  #, StructuralModel
-
+from TW.StructuralModel.Queries import NodeList, ComputedFeature
 
 from TW.Utilities import Pluralizer
 
@@ -24,6 +21,9 @@ cache   = mmx+'.pickle'
 
 from TW.MOF import MMX
 MetaModel = MMX.load(mmx,cache,UMLPlurals,name='UML_MetaModel')
+
+
+
 
 
 
