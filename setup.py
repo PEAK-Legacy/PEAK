@@ -65,7 +65,7 @@ class happy(Command):
         if self.happy_options is None:
             self.happy_options = [
                 '-t', 'TransWarp Reference', '-d', self.doc_output_path,
-                '-i', 'examples', '-i', 'old', '.',
+                '-i', 'examples', '-i', 'old', '-i', 'tests', '.',
             ]
             if not self.verbose: self.happy_options.insert(0,'-q')
 
