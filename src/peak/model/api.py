@@ -101,11 +101,11 @@ class XMIInjector(binding.ActiveClass):
 
             for n in names:
                 m[n] = attrName
+                while '.' in n:
+                    n = n.split('.',1)[1]
+                    m[n]=attrName
 
             
-
-
-
 
 
 
@@ -179,7 +179,7 @@ class FeatureMC(XMIInjector, MethodExporter):
 
 
     fromString = binding.bindTo('typeObject/fromString')
-
+    fromFields = binding.bindTo('typeObject/fromFields')
 
 
 
@@ -490,15 +490,27 @@ class Sequence(Collection):
 
 
 
-class ClassifierMeta(XMIInjector, binding.ActiveClass):
-    pass
-
-
 class Classifier(binding.Base):
 
     """Basis for all flavors"""
 
-    __metaclass__ = ClassifierMeta
+    __metaclass__ = XMIInjector
+
+    def setParentComponent(self, parentComponent, componentName=None):
+        if parentComponent is not None or componentName is not None:
+            raise TypeError("Data values are not components")
+    
+    def getParentComponent(self):
+        return None
+
+    def getComponentName(self):
+        return None
+
+    def _setBinding(self,attr,value):
+        raise TypeError("Immutable object", self)
+
+    def __setattr__(self,attr,value):
+        raise TypeError("Immutable object", self)
 
 
 class PrimitiveType(Classifier):
@@ -519,19 +531,7 @@ class PrimitiveType(Classifier):
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-class EnumerationMeta(ClassifierMeta):
+class EnumerationMeta(XMIInjector):
 
     def __init__(klass, name, bases, cdict):
 
@@ -581,14 +581,14 @@ class DataType(Classifier):
 
     fromString = classmethod(fromString)
 
+    def fromFields(klass, fields):
+        raise NotImplementedError
+
+    fromFields = classmethod(fromFields)
+        
 
 class ElementMeta(DataType.__class__, Persistent.__class__):
     pass
-
-
-
-
-
 
 
 
@@ -619,6 +619,7 @@ class Element(DataType, Persistent):
 
     __implements__ = IElement
     __metaclass__  = ElementMeta
+    __setattr__    = binding.Base.__setattr__
 
     def _setBinding(self,attr,value):
         d = self.__dict__
@@ -648,11 +649,10 @@ class Element(DataType, Persistent):
             self._p_jar = parentComponent
         self._p_oid = componentName
 
-    def getParentComponent(self):
-        return self._p_jar
+    def getParentComponent(self):   return self._p_jar
+    def getComponentName(self):     return self._p_oid
 
-    def getComponentName(self):
-        return self._p_oid
+
 
 config.setupModule()
 

@@ -43,7 +43,7 @@ class UMLClass(model.Model):
 
     class ModelElement:
     
-        class QualifiedName(model.DerivedAssociation):
+        class qualifiedName(model.DerivedAssociation):
 
             def _getList(feature,element):
 
@@ -52,7 +52,7 @@ class UMLClass(model.Model):
                 if not name:
                     return []
                 
-                names = list(query([self])['namespace*']['name'])
+                names = list(query([element])['namespace*']['name'])
                 names.reverse(); names.append(name)
             
                 return ['.'.join(names)]

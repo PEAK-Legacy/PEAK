@@ -222,21 +222,21 @@ class QueryDM(TransactionComponent):
 
         ob = self.ghost(oid,state)
 
-        ob._p_jar = self
-        ob._p_oid = oid
+        if isinstance(ob,Persistent):
 
-        if state is None:
-            ob._p_deactivate()
-        else:
-            ob.__setstate__(state)
+            ob._p_jar = self
+            ob._p_oid = oid
 
-        self.cache[oid] = ob
+            if state is None:
+                ob._p_deactivate()
+            else:
+                ob.__setstate__(state)
+
+            self.cache[oid] = ob
 
         return ob
 
     preloadState = __getitem__
-
-
 
 
 

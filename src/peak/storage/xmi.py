@@ -2,26 +2,9 @@
 
     TODO
 
-        XMI 1.0
+        Write Algorithm
 
-        - XMI.field: needs model support for 'fromFields()'
-
-        - handle CORBA types (YAGNI?)
-
-        - HREF support (ugh!)  Note that cross-file HREF needs some way to cache
-          the other documents and an associated DM, if it's to be dynamic.
-
-        XMI 1.1
-
-        - Attribute-encoded datatypes
-
-        - metamodel lookups
-
-        Writing
-
-        - needs to know composition link direction (needs peak.model support)
-
-        - Algorithm plan:
+          - needs to know composition link direction (needs peak.model support)
 
           - Element state will contain a reference to pseudo-DOM node, if
             available.  Elements are saved by modifying node in-place.
@@ -55,6 +38,7 @@
             way, and thus switch between XMI 1.0 and 1.1 (or other) storage
             formats.
 
+
           - For thunking to be effective, XMI.extensions must be sharable,
             and therefore immutable -- so XMI extension/text class is needed.
 
@@ -69,52 +53,27 @@
           - Need to research 'ignorableWhitespace' et al to ensure that we can
             write cleanly indented files but with same semantics as originals.
 
+
         Other
+
+        - XMI.any  (it's used by OMG metamodels such as CWM 1.0)
+
+        - metamodel lookups
 
         - cross-reference between files could be supported by having document
           objects able to supply a relative or absolute reference to another
-          document.  But this requires HREF support.  :(
+          document.  But this requires HREF support.  :(  Note that cross-file
+          HREF needs some way to cache the other documents and an associated
+          DM, if it's to be dynamic.
 
-        - XMI.any, XMI.CorbaTypeCode, XMI.CorbaTcXXX ...?
+        - XMI.CorbaTypeCode, XMI.CorbaTcXXX ...?  
 
 """
-
 
 from peak.api import *
 from peak.util import SOX
 from weakref import WeakValueDictionary
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+from Persistence import Persistent
 
 
 
@@ -162,35 +121,6 @@ class XMINode(object):
         return self
 
 
-    def getId(self):
-        atts = self.attrs
-        for a in self.indexAttrs:
-            if atts.has_key(a):
-                return (a,atts[a])
-        Id = None,id(self)
-        self.index[Id] = self
-        return Id
-
-    def getRef(self):
-        atts = self.attrs
-        if 'xmi.uuidref' in atts:
-            return 'xmi.uuid', atts['xmi.uuidref']
-        if 'xmi.idref' in atts:
-            return 'xmi.id',  atts['xmi.idref']
-        #XXX need to check href for XMI 1.1
-        return self.getId()
-    
-    def getValue(self):
-        atts = self.attrs
-        if 'xmi.value' in atts:
-            return atts['xmi.value']
-        # XXX check for non-xmi. attrs to support attr-enc datatypes
-        # XXX check for subnodes
-        # XXX if all subnodes are XMI.field, use fromFields()
-        # XXX if other subnodes, treat as object refs/values
-        # XXX also, we should probably refactor to handle multiplicity>1
-        return ''.join(self.allNodes)
-
     def findNode(self,name):
         if self._name==name:
             return self
@@ -200,11 +130,81 @@ class XMINode(object):
                 return f
 
 
+    def getId(self):
+        atts = self.attrs
+        for a in self.indexAttrs:
+            if atts.has_key(a):
+                return (a,atts[a])
+        Id = None,id(self)
+        self.index[Id] = self
+        return Id
+
+
+    def getRef(self):
+
+        atts = self.attrs
+
+        if 'href' in atts:
+            raise NotImplementedError(
+                "Can't handle href yet" #XXX
+            )
+
+        if 'xmi.uuidref' in atts:
+            return 'xmi.uuid', atts['xmi.uuidref']
+
+        if 'xmi.idref' in atts:
+            return 'xmi.id',  atts['xmi.idref']
+
+        return self.getId()
+    
+
+
+
+
+
+    def getValue(self, feature, dm):
+
+        atts = self.attrs
+
+        if 'xmi.value' in atts:
+            return atts['xmi.value']
+
+        for k in atts:
+
+            if not k.startswith('xmi.'):
+
+                klass = feature.typeObject
+
+                if issubclass(klass,Persistent):
+                    raise TypeError(
+                        "Can't handle persistent type as field!" #XXX
+                    )
+
+                value = klass()
+                value.__dict__.update(self.stateForClass(klass, dm))
+                return value
+
+        sub = [node for node in self.subNodes if not node.isExtension]
+
+        if not sub:
+            return ''.join(self.allNodes)
+
+        if len(sub)==1 and not sub[0]._name.startswith('XMI.'):
+            return dm[sub[0].getRef()]
+
+        fields = []
+        for node in sub:
+            if node._name <> 'XMI.field':
+                raise ValueError("Don't know how to handle", node._name) #XXX
+            fields.append(node.getValue(feature,dm))
+
+        return feature.fromFields(tuple(fields))
+        
 
 
 
     def stateForClass(self, klass, dm):
-    
+
         d = {}
 
         for attr,val in self.attrs.items():
@@ -219,7 +219,7 @@ class XMINode(object):
                 d.setdefault(f.attrName,[]).extend(
                     [dm[('xmi.id',n)] for n in val.split()]
                 )
-            
+
         for node in self.subNodes:
 
             if node.isExtension: continue
@@ -227,7 +227,7 @@ class XMINode(object):
             if f is None: continue
 
             if model.IValue.isImplementedBy(f):
-                d[f.attrName] = f.fromString(node.getValue())
+                d[f.attrName] = f.fromString(node.getValue(f, dm))
             else:
                 d.setdefault(f.attrName,[]).extend(
                     [dm[n.getRef()]
@@ -330,27 +330,42 @@ class XMI_DM(storage.EntityDM):
 
     resetStatesAfterTxn = False
 
-    index = binding.bindTo('document/index')
-
+    index     = binding.bindTo('document/index')
     metamodel = binding.requireBinding("Metamodel with _XMIMap")
-
-    document = binding.requireBinding("XMIDocument with data to use")
-
+    document  = binding.requireBinding("XMIDocument with data to use")
 
     def ghost(self, oid, state=None):
         if oid==():
             return storage.PersistentQuery()
-        klass = self.getClass(self.index[oid]._name)
-        return klass()
+        target = self.index[oid]
+        klass = self.getClass(target._name)
+        if issubclass(klass,Persistent):
+            return klass()
+        ob = klass()
+        ob.__dict__.update(target.stateForClass(ob.__class__, self))
+        return ob
+
 
     def getClass(self,name):
         if ':' in name:
             return getattr(self.metamodel,name.split(':',1)[1])
         return getattr(self.metamodel,name.split('.')[-1])
 
-    def getFeature(self,klass,name):
-        return getattr(klass,klass._XMIMap.get(name,''),None)  # XXX
-        
+
+    def getFeature(self,klass,name):    # XXX
+
+        if ':' in name:
+            name = name.split(':',1)[1]
+
+        xm = getattr(klass,'_XMIMap',())
+
+        if name in xm:
+            return getattr(klass,xm[name],None)
+        else:
+            name = name.split('.')[-1]
+            return getattr(klass,name,None)  
+
+
 
     def load(self, oid, ob):
         
@@ -362,8 +377,6 @@ class XMI_DM(storage.EntityDM):
             ]
         
         return target.stateForClass(ob.__class__, self)
-
-
 
 
 
