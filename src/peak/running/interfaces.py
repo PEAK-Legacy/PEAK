@@ -1,6 +1,6 @@
 from protocols import Interface, Attribute, declareAdapter
 from peak.api import PropertyName, NOT_GIVEN
-from peak.binding.interfaces import IComponentFactory, IComponent
+from peak.binding.interfaces import IComponent
 import sys, os
 
 CLUSTER = PropertyName('peak.running.cluster')
@@ -80,29 +80,28 @@ class IExecutable(Interface):
 
 
 
-class ICmdLineAppFactory(IComponentFactory, IExecutable):
+class ICmdLineAppFactory(IExecutable):
 
-    """Class interface for creating ICmdLineApp components
+    """Class interface for creating components from a command-line app
 
-    A command-line app object is created with keyword arguments for 'stdin',
-    'stdout', 'stderr', 'environ', and 'argv'.  It is free to use default
-    values for items not supplied, but it must *not* bypass or override any
-    values which *are* supplied.  E.g. it should *never* write to 'sys.stdin'.
+    A component is created with keyword arguments for 'stdin','stdout',
+    'stderr', 'environ', and 'argv'.  If the return object implements
+    'ICmdLineApp', it must use the supplied arguments.  It is free to use
+    default values for items not supplied, but it must *not* bypass or override
+    any values which *are* supplied.  E.g. it should *never* write to
+    'sys.stdin'.
+
     The purpose of this encapsulation is to allow application objects to
     be composed by other application objects, and to also allow "server"
     invocations of applications, as is needed for protocols like FastCGI
     and ReadyExec."""
 
     def __call__(parentComponent, componentName=None,
-
         argv  = sys.argv,
-
         stdin = sys.stdin,
         stdout = sys.stdout,
         stderr = sys.stderr,
-
         environ = os.environ, **otherAttrs):
-
         """Create a new "command-line" application instance"""
 
 
@@ -118,6 +117,7 @@ class ICmdLineApp(IComponent, IExecutable):
         once; an 'ICmdLineApp' is not required to be re-runnable.  Implement
         'IRerunnable' (which supports passing environment arguments to 'run()')
         if multiple runs are desired."""
+
 
 
 

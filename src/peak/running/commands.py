@@ -258,7 +258,7 @@ class AbstractInterpreter(AbstractCommand):
         if len(self.argv)<2:
             raise InvocationError("missing argument(s)")
 
-        return self.interpret(self.argv[1]).run()
+        return ICmdLineApp(self.interpret(self.argv[1])).run()
 
 
     def interpret(self, argument):
@@ -293,19 +293,19 @@ class AbstractInterpreter(AbstractCommand):
         cmd = klass.__new__(klass, *__args, **__kw)
         cmd.__init__(*__args, **__kw)
 
-        if len(cmd.argv)<2:
-            # No args, we can't do this.  Return the actual
-            # command instance, which will then fail at _run()
-            # time.  A bit kludgy, but it works.
-            return cmd
-
         # Return the subcommand instance in place of the interpreter instance
         try:
+            if len(cmd.argv)<2:
+                # No args, we can't do this.
+                raise InvocationError("missing argument(s)")
             return cmd.interpret(cmd.argv[1])
-        except InvocationError:
-            return cmd
+
+        except InvocationError,msg:
+            sys.exit(cmd._invocationError(msg))
 
     __call__ = binding.classAttr(__call__)
+
+
 
 
 
@@ -598,20 +598,20 @@ class Bootstrap(AbstractInterpreter):
 
         #!/usr/bin/env python2.2
 
-        from peak.running.commands import Bootstrap
-        from peak.api import config
-        import sys
-
-        sys.exit(
-            Bootstrap(
-                config.makeRoot()
-            ).run()
-        )
+        from peak.running import commands
+        commands.runMain( commands.Bootstrap )
 
     The script above will look up its first supplied command line argument,
     and then invoke the found object as a command, supplying the remaining
     command line arguments.
     """
+
+
+
+
+
+
+
 
     acceptURLs = True
 
