@@ -146,7 +146,7 @@ class XMITests(TestCase):
         assert self.root.name=='Data'
         
     def checkSubModel(self):
-        assert self.mm; l = list(self.mm['namespace']['name'])
+        assert list(self.mm) or list(self.mm); l = list(self.mm['namespace']['name'])
         assert l==['Data'], l
 
     def checkContents(self):

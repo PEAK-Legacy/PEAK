@@ -451,8 +451,10 @@ DataType = Struct   # XXX backward compatibility...  deprecated
 
 class ElementClass(TypeClass, Persistent.__class__):
     pass
-    
+
+
 class Element(Type, Persistent):
+
     """A persistent domain element"""
 
     __implements__ = binding.IBindingAPI
@@ -470,6 +472,65 @@ class Element(Type, Persistent):
         return self._p_oid
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    def _getBindingFuncs(klass, attr, useSlot=False):
+
+        oldGet, oldSet, oldDel = super(Element,klass)._getBindingFuncs(
+            attr,useSlot
+        )
+
+        def _doGet(ob):
+            value = oldGet(ob)
+            if isinstance(value,LazyLoader):
+                d.__delete__(ob)
+                value.load(ob,attr)
+                return oldGet(ob)
+            return value
+
+        def _doSet(ob,value):
+            try:
+                old = _doGet(ob)
+            except AttributeError:
+                ob._p_changed = True
+            else:
+                if old is not value or not isinstance(value,Persistent):
+                    ob._p_changed = True
+            oldSet(ob,value)
+
+        def _doDel(ob):
+            try:
+                old = _doGet(ob)
+            except AttributeError:
+                pass
+            else:
+                ob._p_changed = True
+                oldDel(ob)
+
+        return _doGet, _doSet, _doDel
+
+
+    _getBindingFuncs = classmethod(_getBindingFuncs)
+
+
+
+
     def _bindingChanging(self, attr, value=NOT_FOUND, isSlot=False):
 
         old = self._getBinding(attr,NOT_FOUND,isSlot)
@@ -485,6 +546,7 @@ class Element(Type, Persistent):
                 getattr(self.__class__,attr).__delete__(self)
             else:
                 del self.__dict__[attr]
+
             value.load(self,attr)   # XXX           
             return self._getBinding(attr,NOT_FOUND)
 

@@ -45,17 +45,14 @@ class FeatureClass(HashAndCompare,MethodExporter):
     
         This metaclass adds property support to 'MethodExporter' by adding
         '__get__', '__set__', and '__delete__' methods, which are delegated
-        to the method templates for the 'get', 'set' and 'delattr' verbs.
+        to the method templates for the 'get', 'set' and 'unset' verbs.
 
         In other words, if you define a feature 'foo', following standard
-        naming patterns for its 'set', 'get' and 'delattr' verbs, and 'bar' is
+        naming patterns for its 'set', 'get' and 'unset' verbs, and 'bar' is
         an Element whose class includes the 'foo' feature, then 'bar.foo = 1'
         is equivalent to 'bar.setFoo(1)'.  Similarly, referencing 'bar.foo' by
         itself is equivalent to 'bar.getFoo()', and 'del bar.foo' is equivalent
-        to 'bar.delattrFoo()'.
-
-        (Note: this is true even if the Element class supplies its own 'setFoo'
-        or 'getFoo' implementations, since the 'getMethod()' API is used.)
+        to 'bar.unsetFoo()'.
 
         Please see the 'peak.model.method_exporter.MethodExporter' class
         documentation for more detail on how method templates are defined,
@@ -69,22 +66,25 @@ class FeatureClass(HashAndCompare,MethodExporter):
         """Get the feature's value by delegating to 'ob.getX()'"""
 
         if ob is None: return self
-        return self.getMethod(ob,'get')()
+        return self.get(ob)
 
 
     def __set__(self, ob, val):
         """Set the feature's value by delegating to 'ob.setX()'"""
 
         if self.isChangeable:
-            self.getMethod(ob,'set')(val)
+            self.set(ob,val)
         else:
             raise AttributeError("Unchangeable feature",self.attrName)
 
+
+
+
     def __delete__(self, ob):
-        """Delete the feature's value by delegating to 'ob.delattrX()'"""
+        """Delete the feature's value by delegating to 'ob.unsetX()'"""
 
         if self.isChangeable:
-            self.getMethod(ob,'unset')()
+            self.unset(ob)
         else:
             raise AttributeError("Unchangeable feature",self.attrName)
 
@@ -129,7 +129,6 @@ class FeatureClass(HashAndCompare,MethodExporter):
         doc = "Feature is changeable; defaults to 'True' if not 'isDerived'"
     )
 
-
     implAttr   = binding.Once(
         lambda s,d,a: (s.useSlot and '_f_'+s.attrName or s.attrName),
         doc = "The underlying (private) attribute implementing this feature"
@@ -142,7 +141,6 @@ class FeatureClass(HashAndCompare,MethodExporter):
 
     isReference = binding.Once(isReference)
 
-
     def _defaultValue(self,d,a):
         try:
             return self.defaultValue
@@ -151,12 +149,14 @@ class FeatureClass(HashAndCompare,MethodExporter):
 
     _defaultValue = binding.Once(_defaultValue)
 
+    _bindFuncs = binding.Once(
+        lambda s,d,a:
+            s.getParentComponent()._getBindingFuncs(s.implAttr,s.useSlot)
+    )
 
-
-
-
-
-
+    _doGet = binding.Once(lambda s,d,a: s._bindFuncs[0])
+    _doSet = binding.Once(lambda s,d,a: s._bindFuncs[1])
+    _doDel = binding.Once(lambda s,d,a: s._bindFuncs[2])
 
 
 
@@ -191,33 +191,97 @@ class StructuralFeature(object):
     )
 
 
+
+
+
+
+
+
+
+
+
+
+
+
     def _get_many(feature, element):
-        return feature._getList(element)
+        try:
+            return feature._doGet(element)
+        except AttributeError:
+            return []
 
-    _get_many.installIf = lambda f,m: f.isMany
+    _get_many.installIf = lambda f,m: f.isMany and not f.isDerived
     _get_many.verb      = 'get'
-
-
-
-
-
 
 
     def _get_one(feature, element):
 
-        l = feature._getList(element)
-
-        if not l:
+        try:
+            return feature._doGet(element)
+        except AttributeError:
             value = feature._defaultValue
             if value is NOT_GIVEN:
                 raise AttributeError,feature.attrName
             return value
 
-        return l[0]
-
-
-    _get_one.installIf = lambda f, m: not f.isMany
+    _get_one.installIf = lambda f, m: not f.isMany and not f.isDerived
     _get_one.verb      = 'get'
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    def _getList_many(feature, element):      
+        try:
+            return getattr(element,feature.attrName)    # XXX hack to force load
+        except AttributeError:
+            return []
+
+    _getList_many.installIf = lambda f,m: f.isMany
+    _getList_many.verb      = '_getList'
+
+
+    def _getList_one_derived(feature, element):
+        try:
+            return [feature.get(element)]
+        except AttributeError:
+            return []
+
+    _getList_one_derived.installIf = lambda f, m: not f.isMany and f.isDerived
+    _getList_one_derived.verb      = '_getList'
+
+
+    def _getList_one(feature, element):   
+        try:
+            getattr(element,feature.attrName)   # XXX hack to force load
+            return [feature._doGet(element)]
+        except AttributeError,x:
+            return []
+
+    _getList_one.installIf = lambda f, m: not f.isMany and not f.isDerived
+    _getList_one.verb      = '_getList'
+
+
+
+
+
+
+
+
+
 
 
 
@@ -244,33 +308,10 @@ class StructuralFeature(object):
 
 
 
-    def _getList_many(feature, element):
-        return element._getBinding(feature.implAttr, [], feature.useSlot)
-
-    _getList_many.installIf = lambda f,m: f.isMany and not f.isDerived
-    _getList_many.verb      = '_getList'
 
 
-    def _getList_one(feature, element):
-    
-        value = element._getBinding(
-            feature.implAttr, NOT_FOUND, feature.useSlot
-        )
-
-        if value is NOT_FOUND:
-            return []
-
-        return [value]
-
-    _getList_one.installIf = lambda f, m: not f.isMany and not f.isDerived
-    _getList_one.verb      = '_getList'
 
 
-    def _getList(feature, element):
-        """This must be defined in subclass"""
-        raise NotImplementedError
-
-    _getList.installIf = lambda f, m: f.isDerived
 
 
 
@@ -344,7 +385,7 @@ class StructuralFeature(object):
         for posn,item in items:
             remove(element,item,posn)
             
-        element._delBinding(feature.implAttr,feature.useSlot)
+        feature._doDel(element) #._delBinding(feature.implAttr,feature.useSlot)
 
 
     _unset_many.installIf = lambda f,m: f.isChangeable and f.isMany
@@ -420,10 +461,10 @@ class StructuralFeature(object):
         feature._onLink(element,item,posn)
 
         if ub==1:
-            element._setBinding(feature.implAttr, item, feature.useSlot)
+            feature._doSet(element,item)
             return item
 
-        element._setBinding(feature.implAttr, d, feature.useSlot)
+        feature._doSet(element,d)
 
         if posn is None:
             d.append(item)
@@ -453,10 +494,10 @@ class StructuralFeature(object):
 
         feature._onUnlink(element,item,posn)
         if not feature.isMany:
-            return element._delBinding(feature.implAttr)
+            return feature._doDel(element)
 
         d=feature._getList(element)
-        element._setBinding(feature.implAttr, d, feature.useSlot)
+        feature._doSet(element,d)
 
         if posn is None:
             d.remove(item)
@@ -509,7 +550,7 @@ class StructuralFeature(object):
         else:
             doLink(element,normalize(value),0)
 
-        element._setBinding(feature.implAttr,value,feature.useSlot)
+        feature._doSet(element,value)
 
 
 

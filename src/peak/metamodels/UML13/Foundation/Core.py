@@ -47,7 +47,9 @@ class ModelElement:
 
     class qualifiedName(model.DerivedFeature):
 
-        def _getList(feature,element):
+        upperBound = 1
+
+        def get(feature,element):
 
             name = element.name
 
@@ -57,23 +59,21 @@ class ModelElement:
             names = list(query([element])['namespace*']['name'])
             names.reverse(); names.append(name)
         
-            return ['.'.join(names)]
+            return '.'.join(names)
 
 
 class GeneralizableElement:
 
     class superclasses(model.DerivedFeature):
 
-        def _getList(feature,element):
+        def get(feature,element):
             return list(query([element])['generalization']['parent'])
     
 
     class subclasses(model.DerivedFeature):
 
-        def _getList(feature,element):
+        def get(feature,element):
             return list(query([element])['specialization']['child'])
-
-
 
 
 

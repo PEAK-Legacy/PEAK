@@ -25,15 +25,15 @@ __all__ = [
 ]
 
 
+class _proxy(Once):
 
+    def __init__(self,attrName):
+        self.attrName = attrName
+        
+    def usageError(self):
+        raise AttributeError, self.attrName
 
-
-
-
-
-
-
-
+    def computeValue(self,d,a): raise AttributeError, a
 
 
 
@@ -560,16 +560,16 @@ class Base(object):
         return val
 
 
+    def _getBindingFuncs(klass, attr, useSlot=False):
 
+        if useSlot:
+            d = getattr(klass,attr)
+        else:
+            d = _proxy(attr)
 
-
-
-
-
-
-
-
-
+        return d.__get__, d.__set__, d.__delete__
+        
+    _getBindingFuncs = classmethod(_getBindingFuncs)
 
 
     def _delBinding(self, attr, useSlot=False):
