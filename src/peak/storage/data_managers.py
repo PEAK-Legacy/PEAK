@@ -444,7 +444,7 @@ class EntityDM(QueryDM):
             if key in dirty:
                 del dirty[key]
 
-            del ob._p_changed
+            ob._p_deactivate()
 
 
 
@@ -515,7 +515,7 @@ class EntityDM(QueryDM):
 
         for set in self.dirty, self.saved:
             for ob in set.values():
-                del ob._p_changed
+                ob._p_deactivate()
 
             set.clear()
 
