@@ -1,5 +1,58 @@
 """Base classes for storing/retrieving model objects via XMI format
 
+    Because the XMI 1.x specs are incredibly confusing and self-contradictory,
+    it's necessary for us to clarify our interpretations of the specs and
+    what restrictions we are placing upon our implementation goals.
+
+    Our intended uses of XMI are as follows:
+
+     1. Processing of UML models saved by commonly-available design tools
+
+     2. Code generation from MOF metamodels for modelling languages such as
+        UML and CWM, which are supplied in XMI format by the OMG and other
+        standards bodies.
+
+     3. Use as a metadata-driven persistence and import/export format for
+        PEAK applications.  (The idea being that a readable format that
+        doesn't require custom coding would make it easy to experiment
+        with domain model designs, and to create test suites and test
+        data for domain logic verification before the "final" storage
+        machinery is built.)
+
+    Usage 1 only requires reading of XMI 1.0 and 1.1 features needed by
+    UML models, and is effectively complete now.  Usage 2 requires support
+    for reading 'XMI.any' and CORBA typecodes.  Usage 3 requires that we
+    be able to write XMI files - and any version would suffice.  However,
+    if we support both 1.0 and 1.1 format for writing XMI, then we could
+    support doing automated transforms of UML content, generation of UML
+    or other constructs from code or database schemas, etc.  So ideally,
+    we should be able to write both 1.0 and 1.1.
+
+    XMI 2.0 looks very promising from the perspective of future tool
+    support, but unfortunately it will not help us with any usage but #3.
+    It may also need a somewhat differently structured implementation.  So
+    for now we will mostly ignore XMI 2.0.  However, 2.0 introduces the idea
+    of using tagged values on a metamodel to specify implementation
+    details such as variations in tag or attribute names, etc., that would
+    be useful to have for our intended applications.  So, where applicable,
+    we will represent these tagged values as PEAK configuration properties
+    of the form 'org.omg.xmi.*' corresponding to the official XMI tag
+    names for those configuration options.
+
+    Within the XMI 1.x series, we will not support the 'XMI.TypeDefinitions'
+    block and its contents.  Survey of existing XMI files suggests this is
+    not used in practice, and it was removed as of the XMI 1.2 spec.
+    Unfortunately, we *do* have to support the 'XMI.Corba*' tags, as they
+    are used by metamodels (such as UML and CWM) that are defined based on
+    MOF 1.3 or earlier.  (MOF 1.4 and up abandon Corba typecodes as a basis
+    for metamodel definition; unfortunately, few systems of interest to us
+    are presently based on the MOF 1.4 metametamodel.)
+
+    In any case, the 'XMI.TypeDefinitions' block is only used when encoding
+    datatypes that are not part of the metamodel for the data being encoded.
+    For PEAK applications, all such type definitions should be part of the
+    model, and this is true for common UML usage as well.
+
     TODO
 
         Write Algorithm
@@ -52,25 +105,7 @@
 
         XMI 1.2
 
-            XMI 1.2 is mostly a simplification and clarification of XMI 1.1;
-            we should consider whether the dropped features are really
-            necessary even in our 1.1 support; it's highly unlikely we'll
-            encounter them in actual use.  We may wish to simply implement
-            XMI 1.2 and call it "backward compatible" with XMI 1.1:
-
-            * XMI 1.2 drops support for CORBA types in favor of
-              MOF 1.4 types, and using XML Schema Datatypes for the boolean,
-              integer, long, float, double, and string types.
-
-            * The list of removed types includes: XMI.struct, XMI.arrayLen,
-              XMI.array, XMI.discrim, XMI.union, and XMI.any.  (Note that
-              XMI.any is used by the CWM 1.0 metamodel!)
-
-            * Datatype elements kept are: XMI.field, XMI.sequence,
-              XMI.seqItem, and XMI.enum.
-                        
-            Clarifications added to 1.2 spec that should probably be
-            interpreted as applicable in 1.1 as well:
+            XMI 1.2 is mostly a simplification and clarification of XMI 1.1:
             
                 - Encoding of multi-valued attributes; note that it is not
                   permissible to have a value for a feature both in an
@@ -105,10 +140,6 @@
               If omitted, the type of the object is assumed to be the type
               specified by the composite reference.
 
-            * XMI 2.0 allows configuration-based control over whether
-              attributes are serialized, including derived attributes;
-              how should we handle derived attributes in XMI 1.x?
-
             * Although 'xmi:id' is the normal ID attribute, it can be
               specified via a tagged value as being different.  It isn't
               clear how this would work if there were multiple ID attributes
@@ -116,10 +147,6 @@
 
 
         Other
-
-          - XMI.any  (it's used by OMG metamodels such as CWM 1.0, mainly
-            for things like strings, when the feature the value is stored in
-            allows "any" value.)
 
           - metamodel lookups
 
@@ -129,9 +156,10 @@
             cross-file HREF needs some way to cache the other documents and an
             associated DM, if it's to be dynamic.
 
-          - XMI.CorbaTypeCode, XMI.CorbaTcXXX ...?  These are gone in XMI 1.2;
-            do we have any 1.0 or 1.1 models that need them?
 """
+
+
+
 
 
 from peak.api import *
@@ -141,6 +169,19 @@ from Persistence import Persistent
 from xml.sax import saxutils
 from types import StringTypes
 from peak.model.datatypes import TCKind
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

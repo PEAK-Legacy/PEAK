@@ -39,10 +39,10 @@ class String(PrimitiveType):
 class Name(String):
     pass
 
-class SimpleTC(Enumeration):
+class PrimitiveTC(Enumeration):
 
-    """Simple (i.e. atomic/unparameterized) CORBA typecode kinds"""
-    
+    """Primitive CORBA typecode kinds"""
+
     tk_short = enum()
     tk_long  = enum()
     tk_ushort = enum()
@@ -55,21 +55,21 @@ class SimpleTC(Enumeration):
     tk_wchar = enum()
     tk_octet = enum()
 
+    tk_longlong = enum()
+    tk_ulonglong = enum()
+    tk_longdouble = enum()
+
+    
+class SimpleTC(PrimitiveTC):
+
+    """Simple (i.e. atomic/unparameterized) CORBA typecode kinds"""
+    
     tk_any   = enum()
     tk_TypeCode = enum()
     tk_Principal = enum()
     tk_null = enum()
     tk_void = enum()
     
-    tk_longlong = enum()
-    tk_ulonglong = enum()
-    tk_longdouble = enum()
-
-
-
-
-
-
 
 
 
