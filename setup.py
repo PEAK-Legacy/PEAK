@@ -45,18 +45,20 @@ class test(Command):
 
     description = "Run unit tests after installation"
 
-    user_options = []
+    user_options = [('test-module=','m','Test module (default=TW.tests)'),]
 
     def initialize_options(self):
-        self.test_names = None
+        self.test_module = None
 
     def finalize_options(self):
 
-        if self.test_names is None:
-            self.test_names = ['TW.tests.test_suite']
+        if self.test_module is None:
+            self.test_module = 'TW.tests'
+
+        self.test_args = [self.test_module+'.test_suite']
 
         if self.verbose:
-            self.test_names.insert(0,'--verbose')
+            self.test_args.insert(0,'--verbose')
 
     def run(self):
 
@@ -65,9 +67,7 @@ class test(Command):
 
         if not self.dry_run:
             from unittest import main
-            main(None, None, sys.argv[:1]+self.test_names)
-
-
+            main(None, None, sys.argv[:1]+self.test_args)
 
 
 

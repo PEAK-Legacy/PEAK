@@ -70,14 +70,23 @@ Installing TransWarp
 
  TESTING YOUR INSTALLATION
 
-  TransWarp comes with a moderately-sized built-in test suite.  If you have
-  the Python "unittest" module installed in your Python path, you can use
-  it to run the test suites, like this::
+  TransWarp comes with a moderately-sized built-in test suite.  If you wish to
+  run it after installation, you can do so like this::
 
-   python unittest.py TW.tests.test_suite
+   python setup.py test
 
-  This will run about 53 tests on various parts of TransWarp.  If you have
+  This will run about 75 tests on various parts of TransWarp.  If you have
   installed everything correctly, 100% of the tests should succeed.  If
   you're missing any needed parts, you will probably be unable to run the
   tests at all.
+
+  If you'd like to run only a portion of the test suite, you can supply
+  the '--test-module' or '-m' option to the test command as follows::
+
+    python setup.py test --test-module=TW.Database.tests
+
+    python setup.py test -m TW.API.tests
+
+  And so on.  You can also use 'python setup.py -q test' to make the tests
+  run more "quietly".
 
