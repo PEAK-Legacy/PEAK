@@ -254,7 +254,7 @@ class SQLInteractor(binding.Component):
 
 
 
-    def showResults(self, c, formatter, opts, stdout, stderr):
+    def showResults(self, c, opts, stdout, stderr):
         if c._cursor.description:
             kw = {
                 'header' : not opts.has_key('-h'),
@@ -262,12 +262,7 @@ class SQLInteractor(binding.Component):
                 'delim'  : opts.get('-d', '|')
             }
                 
-            fmt = c.getFormatter(formatter, **kw)
-            if fmt is None:
-                print >>stderr, "Unknown formatter '%s', defaulting to 'horiz'" % formatter
-                fmt = c.getFormatter('horiz', **kw)
-                
-            fmt(stdout)
+            c.dumpTo(stdout, format = opts.get('-m'), **kw)
 
 
        
@@ -283,13 +278,19 @@ class SQLInteractor(binding.Component):
 
 
     class cmd_go(ShellCommand):
-        """go [-d delim] [-m style] [-h] [-f] [-n] [-s n] [xacts] -- submit current input
+        """go [-d delim] [-m style] [-x code] [-r code] [-p] [-h] [-f] [-n] [-s n] [xacts] -- submit current input
 
 -d delim\tuse specified delimiter
--m style\tuse specified format (one of: horiz, vert, plain, python, ldif)
+-m style\tuse specified format
 -h\t\tsuppress header
 -f\t\tsuppress footer
 -n\t\tdon't expand variables in SQL
+-x\t\texecute python code with "cursor" bound to results, instead
+\t\tof printing
+-r\t\texecute python code per row with "row" bound, instead of
+\t\tprinting
+-p\t\tdrop into python interactor with "cursor" bound, instead of
+\t\tprinting
 -s n\t\tsleep 'n' seconds between batches, if xacts is greater than 1
 
 xacts\t\tnumber of times to repeat execution of the input. Only results
@@ -297,7 +298,7 @@ xacts\t\tnumber of times to repeat execution of the input. Only results
 
         noBackslash = True
 
-        args = ('d:m:hfs:n', 0, 1)
+        args = ('d:m:hfs:nx:r:p', 0, 1)
 
         def cmd(self, cmd, opts, args, stdout, stderr, **kw):
             secs = opts.get('-s', '0')
@@ -357,8 +358,32 @@ xacts\t\tnumber of times to repeat execution of the input. Only results
                 self.interactor.resetBuf()
                 return
 
-            formatter = opts.get('-m', 'horiz')
-            self.interactor.showResults(c, formatter, opts, stdout, stderr)
+            ccode = opts.get('-x')
+            rcode = opts.get('-r')
+            pymode = opts.has_key('-p')
+
+            if ccode or rcode or pymode:
+                shell = self.shell
+                
+                if ccode or pymode:
+                    shell.setvar('cursor', c)
+                    try:
+                        if ccode:
+                            shell.execute(ccode)
+                        if pymode:
+                            shell.interact()
+                    finally:
+                        shell.unsetvar('cursor')
+
+                if rcode:
+                    try:
+                        for row in c:
+                            shell.setvar('row', row)
+                            shell.execute(rcode)
+                    finally:
+                        shell.unsetvar('row')
+            else:
+                self.interactor.showResults(c, opts, stdout, stderr)
 
             self.interactor.setBuf(i, name='!!')
 
@@ -834,7 +859,7 @@ default for src is '!.', the current input buffer"""
         """\\describe [-d delim] [-m style] [-h] [-f] [-v] [name] -- describe objects in database, or named object
 
 -d delim\tuse specified delimiter
--m style\tuse specified format (one of: horiz, vert, plain, python, ldif)
+-m style\tuse specified format
 -h\t\tsuppress header
 -f\t\tsuppress footer
 -v\t\tverbose; give more information
@@ -850,9 +875,8 @@ default for src is '!.', the current input buffer"""
                 if si is None:
                     print >>stderr, "%s: database doesn't support describe" % cmd
                 else:
-                    formatter = opts.get('-m', 'horiz')
                     c = si.listObjects('-v' in opts)
-                    self.interactor.showResults(c, formatter, opts, stdout, stderr)
+                    self.interactor.showResults(c, opts, stdout, stderr)
 
     cmd_describe = binding.Make(cmd_describe)
 

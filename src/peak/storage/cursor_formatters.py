@@ -122,7 +122,7 @@ class cursorToPlain(AbstractCursorFormatter):
 
 
 
-class cursorToPython(AbstractCursorFormatter):
+class cursorToRepr(AbstractCursorFormatter):
     def formatRows(self, c, stdout):
         nr = 0
 

@@ -101,6 +101,10 @@ ls()\t\tshow contents of c
         return self.idict['__c__']
 
 
+    def execute(self, code):
+        exec code in self.idict
+
+
     def getvar(self, var, default=NOT_GIVEN):
         v = self.idict.get(var, default)
         if v is NOT_GIVEN:

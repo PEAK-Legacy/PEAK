@@ -45,6 +45,7 @@ class SQLCursor(AbstractCursor):
 
     conn = binding.Obtain('..')
     multiOK = False
+    defaultFormat = "sql"
 
     _cursor = binding.Make(lambda self: self._conn.cursor())
 

@@ -47,6 +47,7 @@ class LDAPCursor(AbstractCursor):
     msgid        = None
     bulkRetrieve = False
     attrs        = None
+    defaultFormat= "ldap"
 
     disconnects = binding.Obtain(['import:ldap.SERVER_DOWN',])
 

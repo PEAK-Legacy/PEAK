@@ -566,8 +566,8 @@ class ICursor(Interface):
     def close():
         """Close/reset the true DB cursor; the proxy can still be reused"""
 
-    def getFormatter(name, header=True, footer=True, delim='|', **kw):
-        """Get an ICursorFormatter of the given name, bound to this cursor"""
+    def dumpTo(stream, format=None, header=True, footer=True, delim='|', **kw):
+        """render cursor to stream"""
 
 
 class IRow(Interface):

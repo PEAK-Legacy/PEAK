@@ -113,13 +113,19 @@ class AbstractCursor(binding.Component):
     __invert__ = justOne
 
 
-    def getFormatter(self, fmtname, **kw):
-        factory = CURSFMT_PREFIX.of(self).get(fmtname)
-        if factory is None:
-            return None
+    defaultFormat = "horiz"
+    
+    def dumpTo(self, stream, format=None, **kw):
+        if format is None:
+            format = self.defaultFormat
 
-        return factory(parentComponent=self, cursor=self, **kw)
-        
+        factory = CURSFMT_PREFIX.of(self).get(format)
+        if factory is None:
+            return # XXX
+
+        fmt = factory(parentComponent=self, cursor=self, **kw)
+
+        fmt(stream)
 
 
 
