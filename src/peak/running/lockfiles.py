@@ -2,7 +2,7 @@
 Lockfiles
 
 These are used for synchronization between processes, unlike
-thread.LocKType locks.  The common use is non-blocking lock attempts. 
+thread.LockType locks.  The common use is non-blocking lock attempts. 
 For convenience and in order to reduce confusion with the (somewhat odd)
 thread lock interface, these locks have a different interface.
 
@@ -13,11 +13,34 @@ thread lock interface, these locks have a different interface.
                 has obtained the lock, else False
 """
 
+__all__ = ['LockFile', 'SHLockFile', 'FLockFile']
+
 import os, errno, string, time
 from peak.util.threads import allocate_lock
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 class LockFileBase:
+
     """Common base for lockfiles"""
     
     def __init__(self, fn):
@@ -57,7 +80,6 @@ class LockFileBase:
         return self._locked
 
 
-
 ### Posix-y lockfiles ###
 
 try:
@@ -85,6 +107,18 @@ def pid_exists(pid):
             raise
    
     return exist
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 def check_lock(fn):
@@ -119,6 +153,12 @@ def make_tempfile(fn, pid):
                 errcount = errcount - 1
             else:
                 raise
+
+
+
+
+
+
 
 
 
@@ -181,6 +221,26 @@ class SHLockFile(LockFileBase):
 
     def do_release(self):
         os.unlink(self.fn)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -249,4 +309,5 @@ class FLockFile(LockFileBase):
 # Default is shlock(1)-style if available
 if posix:
     LockFile = SHLockFile
-   
+else:
+    LockFile = FLockFile

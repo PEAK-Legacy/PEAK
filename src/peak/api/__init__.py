@@ -28,9 +28,8 @@
 
 __all__ = [
     'NOT_GIVEN', 'NOT_FOUND', 'Items',
-    'binding', 'naming', 'model', 'config'
+    'binding', 'naming', 'model', 'config', 'running',
 ]
-
 
 from peak.binding.imports import lazyImport
 
@@ -38,6 +37,7 @@ binding = lazyImport('peak.binding.api')
 naming  = lazyImport('peak.naming.api')
 model   = lazyImport('peak.model.api')
 config  = lazyImport('peak.running.config.api')
+running = lazyImport('peak.running.api')
 
 # Convenience features
 
