@@ -477,17 +477,17 @@ class Collection(StructuralFeature):
         feature._changed(self)
 
     def add(feature, self,item):
-        """Add the item to the collection/relationship"""      
-        ub = feature.upperBound
-        value = feature._getList(self)
 
-        if not ub or len(value)<ub:
+        """Add the item to the collection/relationship"""      
+
+        ub = feature.upperBound
+
+        if not ub or len(feature._getList(self))<ub:
             feature._notifyLink(self,item)
             feature._link(self,item)
             feature._changed(self)
         else:
             raise ValueError("Too many items")
-
 
 
     def remove(feature, self,item):
@@ -517,7 +517,7 @@ class Collection(StructuralFeature):
 
         referencedEnd = feature.referencedEnd
 
-        d = feature._getList(self)
+        d = feature._getList(self)  # forces existence of feature
 
         if referencedEnd:
             

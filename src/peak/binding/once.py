@@ -2,7 +2,33 @@
 
 from meta import ActiveDescriptor
 
-__all__ = ['Once', 'OnceClass']
+__all__ = ['Once', 'New', 'Copy', 'OnceClass']
+
+
+def New(obtype, name=None):
+
+    """One-time binding of a new instance of 'obtype'
+
+    Usage::
+
+        class someClass(binding.Component):
+
+            myDictAttr = binding.New(dict)
+
+            myListAttr = binding.New(list)
+
+    The 'myDictAttr' and 'myListAttr' will become empty instance
+    attributes on their first access attempt from an instance of
+    'someClass'.
+    
+    This is basically syntactic sugar for 'Once' to create an empty
+    instance of a type.  The same rules apply as for 'Once' about
+    whether the 'name' parameter is required.  (That is, you need it if you're
+    using this in a class whose metaclass doesn't support ActiveDescriptors,
+    such as when you're not deriving from a standard PEAK base class.)
+    """
+
+    return Once( (lambda s,d,a: obtype()), name)
 
 
 
@@ -13,17 +39,32 @@ __all__ = ['Once', 'OnceClass']
 
 
 
+def Copy(obj, name=None):
 
+    """One-time binding of a copy of 'obj'
 
+    Usage::
+        class someClass(binding.Component):
 
+            myDictAttr = binding.Copy( {'foo': 2} )
+            
+            myListAttr = binding.Copy( [1,2,'buckle your shoe'] )
 
+    The 'myDictAttr' and 'myListAttr' will become per-instance copies of the
+    supplied initial values on the first attempt to access them from an
+    instance of 'someClass'.
 
+    This is basically syntactic sugar for 'Once' to create copies using
+    the Python 'copy.copy()' function.  The same rules apply as for
+    'Once' about whether the 'name' parameter is required.  (That is, you need
+    it if you're using this in a class whose metaclass doesn't support
+    ActiveDescriptors, such as when you're not deriving from a standard PEAK
+    base class.)
+    """
+    
 
-
-
-
-
-
+    from copy import copy
+    return Once( (lambda s,d,a: copy(obj)), name)
 
 
 
@@ -101,6 +142,7 @@ class Once(ActiveDescriptor):
     def usageError(self):            
         raise TypeError(
             "%s used in type which does not support ActiveDescriptors"
+            "and a name was not supplied"
             % self
         )
 
@@ -119,7 +161,6 @@ class Once(ActiveDescriptor):
             setattr(klass, attrName, newOb)
 
         klass.__volatile_attrs__.add(attrName)
-
 
 class OnceClass(Once, type):
 

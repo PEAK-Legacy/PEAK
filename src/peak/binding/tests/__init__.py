@@ -80,6 +80,8 @@ class AdviceTest(ModuleTest):
 
 
 
+testList = [1,2,'buckle your shoe']
+
 class DescriptorData(binding.Component):
 
     thing1 = "this is my thing"
@@ -101,11 +103,9 @@ class DescriptorData(binding.Component):
             thing6 = binding.bindToParent(2)
 
 
+    newDict = binding.New(dict)
 
-
-
-
-
+    listCopy = binding.Copy(testList)
 
 
 
@@ -161,6 +161,29 @@ class DescriptorTest(TestCase):
             pass
         else:
             raise AssertionError("Didn't get an error retrieving 'thing3'")
+
+    def checkNew(self):
+    
+        data = self.data
+        d = data.newDict
+        assert type(d) is dict      # should be dict
+        assert data.newDict is d    # only compute once
+        
+        data = DescriptorData()
+        assert d == data.newDict        # should be equal
+        assert d is not data.newDict    # but separate!
+
+
+    def checkCopy(self):
+
+        data = self.data
+        l = data.listCopy
+
+        assert type(l) is list      # should be a list
+        assert l == testList        # should be equal
+        assert l is not testList    # but separate!
+
+
 
 TestClasses = (
     ModuleTest, AdviceTest, DescriptorTest,
