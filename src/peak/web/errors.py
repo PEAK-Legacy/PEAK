@@ -4,7 +4,6 @@ from cStringIO import StringIO
 import sys
 __all__ = ['WebException', 'NotFound', 'NotAllowed', 'UnsupportedMethod']
 
-
 class WebException(Exception):
 
     protocols.advise( instancesProvide = [IWebException,IHTTPHandler] )
@@ -24,7 +23,7 @@ class WebException(Exception):
 
     def __init__(self, ctx, *args):
         Exception.__init__(self, *args)
-        self.ctx = ctx
+        self.ctx = ITraversalContext(ctx)   # Fail unless ctx supplied!
 
     def template(self):
         skin = self.ctx.skin
@@ -37,6 +36,7 @@ class WebException(Exception):
                 return self     # XXX
 
     template = binding.Make(template)
+
 
 
     def handle_http(self,ctx):
@@ -58,11 +58,10 @@ class WebException(Exception):
             # XXX sys.exc_info(); will this always be the case?
             policy.log.log(self.levelName,"ERROR:",exc_info=exc_info)
 
-            ctx = self.ctx.peerContext(self.ctx.name, self)
-            ctx.environ = ctx.environ.copy()
+            ctx = self.ctx.clone(current=self, environ=ctx.environ.copy())
             ctx.environ['wsgi.input'] = StringIO('')
 
-            s,h,b = ctx.traverseName('template').renderHTTP()
+            s,h,b = ctx.childContext('template',self.template).renderHTTP()
 
             if s[:3]=='200':
                 s = self.httpStatus     # replace with our error status
@@ -73,6 +72,7 @@ class WebException(Exception):
             # Don't allow exc_info to leak, even if the above resulted in
             # an error
             ctx = exc_info = self.exc_info = None
+
 
 
 
