@@ -88,7 +88,8 @@ def addPermission(handler,permission):
 
 def addHelper(handler,helper):
     def helped_handler(ctx, ob, namespace, name, qname, default=NOT_GIVEN):
-        return handler(ctx, helper(ob), namespace, name, qname, default)
+        ob = helper(ob)
+        return handler(ctx.clone(current=ob),ob,namespace,name,qname,default)
     return helped_handler
 
 def attributeView(attr):
@@ -111,6 +112,14 @@ def resourceView(path):
     def handler(ctx, ob, namespace, name, qname, default=NOT_GIVEN):
         return ctx.childContext(qname,ctx.getResource(path))
     return handler
+
+
+
+
+
+
+
+
 
 def locationView(spec):
     keyPath,locId = str(spec).split('@',1)
@@ -149,15 +158,6 @@ def addSetting(parser,data,key,setting):
 def evalObject(data,expr):
     g = getGlobals(data['previous'])
     return eval(expr,g,g)
-
-
-
-
-
-
-
-
-
 
 
 

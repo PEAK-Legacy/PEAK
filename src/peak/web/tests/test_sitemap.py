@@ -193,9 +193,9 @@ class ParserTests(TestCase):
         permHandler = sm.addPermission(nullHandler,security.Anybody)
         self.failUnless(permHandler(ctx,None,'','x','x').current is None)
         helpedHandler = sm.addHelper(nullHandler,lambda x: [x])
-        self.assertEqual(helpedHandler(ctx,None,'','x','x').current, [None])
-
-
+        c2 = helpedHandler(ctx,None,'','x','x')
+        self.assertEqual(c2.current, [None])
+        self.assertEqual(c2.previous.current, [None])
 
 
 
