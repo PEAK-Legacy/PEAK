@@ -3,7 +3,7 @@ from Interface.Attribute import Attribute
 from peak.api import exceptions
 
 __all__ = [
-    'IRule', 'IPropertyMap', 'IConfigKey',
+    'IRule', 'IPropertyMap', 'IConfigKey', 'ISettingLoader',
 ]
 
 
@@ -55,35 +55,35 @@ class IRule(Interface):
         What an IRule must *not* do, however, is return different results over
         time for the same input parameters.  If it cannot guarantee this
         algorithmically, it must cache its results keyed by the parameters it
-        used, and not compute the results a second time.
-        """
+        used, and not compute the results a second time."""
 
 
+class ISettingLoader(Interface):
 
+    """Callable used to load configuration data"""
 
+    def __call__(propertyMap, *args, **kw):
+        """Load settings into 'propertyMap'
 
+        Loading functions can require whatever arguments are useful or desired.
+        The value of each "Load Settings From" config file entry will be
+        interpreted as part of a call to the loader.  For example, this entry::
 
+            [Load Settings From]
+            mapping = importString('os.environ'), prefix='environ.*'
 
+        will be interpereted as::
 
+            loader(propertyMap, importString('os.environ'), prefix='environ.*')
 
-
-
-
-
-
-
-
-
-
-
-
-
+        So it's up to the author of the loader to choose and document the
+        arguments to be used in configuration files."""
 
 
 class IPropertyMap(Interface):
 
-    def setRule(propName, ruleFactory):
-        """Add IRuleFactory's rule to rules for computing a property
+    def setRule(propName, ruleObj):
+        """Set rule for computing a property
 
         Note that if the specified property (or any more-specific form)
         has already been accessed, an 'AlreadyRead' exception results.

@@ -582,7 +582,7 @@ class PropertyName(str):
 
         valid = pnameValidChars(self)
 
-        if valid.end()<len(self):
+        if not valid or valid.end()<len(self):
             raise exceptions.InvalidName(
                 "Invalid characters in property name", self
             )

@@ -1,17 +1,21 @@
 from __future__ import generators
 
+from peak.api import *
+from peak.binding.imports import importString, importObject
 from peak.binding.components import Component, New, Base, Provider, Once
 
-from peak.api import NOT_FOUND, NOT_GIVEN
 from peak.util.EigenData import EigenCell, AlreadyRead
+from peak.util.FileParsing import AbstractConfigParser
 
 from peak.naming.names import PropertyName
 
 from interfaces import *
 from Interface import Interface
 
+
 __all__ = [
-    'GlobalConfig', 'LocalConfig', 'PropertyMap', 'LoadingRule', 'ConfigFile',
+    'GlobalConfig', 'LocalConfig', 'PropertyMap', 'LazyLoader', 'ConfigReader',
+    'loadConfigFile', 'loadMapping',
 ]
 
 
@@ -28,10 +32,6 @@ def _setCellInDict(d,key,value):
 _emptyRuleCell = EigenCell()
 _emptyRuleCell.set(lambda *args: NOT_FOUND)
 _emptyRuleCell.exists()
-
-
-
-
 
 
 
@@ -121,7 +121,7 @@ class PropertyMap(Base):
 
     _getConfigData = getValueFor
 
-class LoadingRule(object):
+class LazyLoader(object):
 
     loadNeeded = True
 
@@ -147,7 +147,7 @@ class LoadingRule(object):
 
 
 
-def loadMapping(pMap, (prefix, mapping) ):
+def loadMapping(pMap, mapping, prefix='*'):
 
     prefix = PropertyName(prefix).asPrefix()
 
@@ -155,51 +155,53 @@ def loadMapping(pMap, (prefix, mapping) ):
         pMap.setValue(prefix+k, v)
 
 
+def loadConfigFile(pMap, filename, prefix='*'):
+    ConfigReader(pMap,prefix).readFile(filename)
 
 
 
 
 
+class ConfigReader(AbstractConfigParser):
+
+    def __init__(self, propertyMap, prefix='*'):
+        self.pMap = propertyMap
+        self.prefix = PropertyName(prefix).asPrefix()
+
+    def add_setting(self, section, name, value, lineInfo):
+        self.pMap.setRule(section+name,
+            lambda propertyMap, propertyName, targetObj: eval(value)
+        )
+
+    def do_include(self, section, name, value, lineInfo):
+        from api_impl import getProperty
+        propertyMap = self.pMap
+        loader = getProperty("peak.config.loaders."+name, propertyMap)
+        loader = importObject(loader)
+        eval("loader(propertyMap,%s)" % value)
 
 
-class ConfigFile(object):
+    def provide_utility(self, section, name, value, lineInfo):
 
-    def __init__(self, filenames):
-        self.filenames = filenames
+        self.pMap.registerProvider(
+            importString(name), eval(value)
+        )
 
-    def __call__(self, pMap, prefix, name):
+    def add_section(self, section, lines, lineInfo):
+        if section is None:
+            section='*'
+            
+        s = ' '.join(section.strip().lower().split())
 
-        # load from config file
-        from ConfigParser import ConfigParser
-        cp = self.cp = ConfigParser()
-        cp.optionxform = str
-        cp.read(self.filenames)
-        options, get = cp.options, cp.get
+        if s=='load settings from':
+            handler = self.do_include
+        elif s=='provide utilities':
+            handler = self.provide_utility
+        else:
+            section = self.prefix + PropertyName(section).asPrefix()
+            handler = self.add_setting
 
-        for section in cp.sections():
-
-            section = section.strip()
-
-            if section and not section.endswith('.'):
-                sp = prefix + section + '.'
-            else:
-                sp = prefix + section
-
-            for opt in options(section):
-                pMap.setValue(sp+opt, eval(get(section,opt,1)))
-
-        return NOT_FOUND
-
-
-
-
-
-
-
-
-
-
-
+        self.process_settings(section, lines, handler)
 
 
 
@@ -216,23 +218,23 @@ class GlobalConfig(Component):
 
         
     def setup(self, propertyMap):
-        
-        from os import environ
-        loadMapping(propertyMap,('environ.*',environ))
 
-        propertyMap.setRule(
-            '*', LoadingRule(ConfigFile(self.config_filenames))
-        )
-
-        from peak.naming import factories
-
-        propertyMap.registerProvider(
-            factories.__implements__, Provider(lambda *x: factories)
-        )
-
+        for file in self.config_filenames:
+            loadConfigFile(propertyMap, file)
+            
 
     def setParentComponent(self,parent):
         raise TypeError("Global config can't have a parent")
+
+
+
+
+
+
+
+
+
+
 
 
 

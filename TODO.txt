@@ -18,17 +18,6 @@ Open Issues/To-Do Items
 
     peak.config
 
-        - Config files:
-
-            - add "Include Files" section (?=filename)
-
-            - add "Utility Providers" section (interface=provider)
-
-            - delay eval() until rule is accessed
-
-        - Change GlobalConfig to load environ and peak.ini directly,
-          rather than as load-on-demand rules
-
         - docstrings for reference
 
     peak.model
@@ -38,6 +27,17 @@ Open Issues/To-Do Items
         - review XMI/Querying extensions for forward compatibility planning
 
         - clean up TW docstrings & interfaces
+
+
+
+
+
+
+
+
+
+
+
 
     peak.naming
 
