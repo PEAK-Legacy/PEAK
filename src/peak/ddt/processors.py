@@ -288,14 +288,14 @@ class MethodChecker(AbstractProcessor):
     def getHandler(self,text):
         """Get a handler using 'text' from a cell
 
-        The default implementation uses 'titleAsMethodName' to normalize the
-        cell text to a "camel case" (e.g. 'camelCase') format, and then
-        attempts to return 'getattr(self,methodName)'.
+        The default implementation computes a method name using
+        'self.methodNameFor(text)', and then attempts to return
+        'getattr(self,methodName)'.
 
         You can override this routine to return any callable object that
         accepts a 'ddt.Cell' as its sole parameter.
         """
-        return getattr(self,titleAsMethodName(text))
+        return getattr(self,self.methodNameFor(text))
 
 
     def beforeRow(self):
@@ -316,13 +316,13 @@ class MethodChecker(AbstractProcessor):
         implementation does nothing."""
 
 
+    def methodNameFor(self,text):
+        """Convert 'text' to a method name
 
+        The default implemenation uses 'titleAsMethodName' to normalize the
+        cell text to a "camel case" (e.g. 'camelCase') format."""
 
-
-
-
-
-
+        return titleAsMethodName(text)
 
 
 
@@ -483,7 +483,7 @@ class ModelChecker(MethodChecker):
         the column, the mapper is informed of this via its 'suggestType()'
         method.
         """
-        name = titleAsMethodName(name)
+        name = self.methodNameFor(name)
         mapper = adapt(getattr(self.targetClass,name), ICellMapper)
         binding.suggestParentComponent(self,name,mapper)
         if name in self._methodMap:
@@ -687,9 +687,9 @@ class SQLChecker(RecordChecker):
     dbKey     = PropertyName('peak.ddt.testDB')
 
 
-
+    def methodNameFor(self,text):
+        return text.strip()
     
-
 
 
 
