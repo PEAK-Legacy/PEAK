@@ -507,7 +507,7 @@ class ISQLIntrospector(Interface):
             the object name, and a column 'obtype' second, with one of
             the following values standardized:
             
-                table, systable, view, proc, index
+                table, systable, view, proc, index, synonym
 
             if obtypes is given, it shall be a sequence of the above types,
             and rows shall only be returned for the given types.

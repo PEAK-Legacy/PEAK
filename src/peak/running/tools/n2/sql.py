@@ -58,11 +58,12 @@ class SQLInteractor(binding.Component):
         si = adapt(self.con, storage.ISQLIntrospector, None)
         if si is not None:
             return [x.obname
-                for x in si.listObjects(False, ('table','view','proc'))]
+                for x in si.listObjects(False,
+		('table','view','proc','synonym'))]
 
         return []
 
-    obnames = binding.Once(obnames)
+    obnames = binding.Once(obnames, suggestParent=False)
 
 
     def prompt(self):

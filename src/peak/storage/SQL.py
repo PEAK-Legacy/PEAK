@@ -655,3 +655,23 @@ class DCOracle2Connection(ValueBasedTypeConn):
         'BINARY','DATETIME','NUMBER','ROWID','STRING',
     )
 
+    def listObjects(self, full=False, obtypes=NOT_GIVEN):
+        addsel = addwhere = ''
+
+        if full:
+            addsel = ', subobject_name, object_id, data_object_id, last_ddl_time, timestamp, status, temporary, generated, secondary'
+
+        if obtypes is not NOT_GIVEN:
+            addwhere = ' where object_type in (%s)' % \
+                ', '.join(["'%s'" %
+                    {'proc':'FUNCTION'}.get(s, s.upper()) for s in obtypes])
+
+        return self('''select lower(object_name) as "obname",
+        DECODE(object_type, 'FUNCTION', 'proc', lower(object_type))
+        as "obtype", created as "created"%s
+            from user_objects%s''' % (addsel, addwhere))
+
+    protocols.advise(
+        instancesProvide=[ISQLIntrospector]
+    )
+
