@@ -1,8 +1,14 @@
 from peak.api import binding
+from interfaces import *
+from transactions import TransactionComponent
 
 __all__ = ['AbstractRack']
 
-class AbstractRack(binding.Component):
+
+
+class AbstractRack(TransactionComponent):
+
+    __implements__ = IRack
 
     def __getitem__(self, oid, state=None):
 
@@ -18,8 +24,19 @@ class AbstractRack(binding.Component):
 
         return ob
 
-
     preloadState = __getitem__
+
+
+
+
+
+
+
+
+
+
+
+
 
 
     def oidFor(self, ob):
@@ -30,7 +47,8 @@ class AbstractRack(binding.Component):
 
             if oid is None:
                 # force it to have an ID by saving it
-                ob._p_changed = 1; self.commit(ob)
+                ob._p_changed = 1
+                self.flush(ob)
                 return ob._p_oid
 
             else:
@@ -38,11 +56,6 @@ class AbstractRack(binding.Component):
 
         else:
             return self.thunk(ob)
-
-    def flush(self):
-        dirty = self.dirty.values()
-        self.dirty.clear()
-        map(self.commit, dirty)
 
 
     def newItem(self,klass=None):
@@ -60,14 +73,42 @@ class AbstractRack(binding.Component):
         return ob
 
 
-
     # Set/state management
 
-    dirty            = binding.New(dict)
+    dirty = binding.New(dict)
+    saved = binding.New(dict)
 
-    committed        = binding.New(dict)
 
-    commitInProgress = False
+
+    def flush(self, ob=None):
+
+        markSaved = self.saved.setdefault
+        dirty = self.dirty
+
+        obs = ob is None and self.dirty.values() or [ob]
+
+        for ob in obs:
+
+            if ob._p_oid is None:
+
+                # No oid, it's a new object that needs saving
+                oid = ob._p_oid = self.new(ob)
+                self.cache[oid]=ob
+
+            else:
+                # just save it the ordinary way
+                self.save(ob)
+
+            # Update status flags and object sets
+            key = id(ob)
+
+            markSaved(key,ob)
+            del dirty[key]
+
+            del ob._p_changed
+
+
+
 
 
 
@@ -120,7 +161,7 @@ class AbstractRack(binding.Component):
 
 
 
-    
+
     # Persistence.IPersistentDataManager methods
 
     def setstate(self, ob):
@@ -136,23 +177,17 @@ class AbstractRack(binding.Component):
 
         # postcondition:
         #   ob is in 'dirty' set
-        #   ob is registered with txn if not previously registered
-        #      or if a top-level txn commit is in progress
-        #      (we have to re-register ob so that it'll be saved again,
-        #       since the precondition is that it changed since the last save)
+        #   Rack is registered w/transaction if not previously registered
 
         key = id(ob)
         
         # Ensure it's in the 'dirty' set
         self.dirty.setdefault(key,ob)
 
-        if key not in self.committed or self.commitInProgress:
-            pass # XXX register w/transaction here
-
-        # ELSE: if the object has been saved before, and we're *not*
-        # in a transaction commit, we don't need to register it again,
-        # since the only way it could be in 'self.committed' is if it
-        # was first registered via this routine.
+        # Ensure that we have a transaction service and we've joined
+        # the transaction in progress...
+        
+        return self.txnSvc
 
 
     def mtime(self, ob):
@@ -162,71 +197,41 @@ class AbstractRack(binding.Component):
 
 
 
-    # Transaction.IDataManager methods
+
+
+
+
+
+
+    # ITransactionParticipant methods
     
-    def tpc_begin(self, transaction):
-        self.commitInProgress = True
-
-    def commit(self, ob, transaction=None):
-
-        key = id(ob)
-        dirty = self.dirty
-
-        if key not in dirty:
-            # ob isn't changed; this is normal because we might have written
-            # it out during a flush() operation prior to transaction commit
-            return
-
-        # Ensure it's in the committed list, and not flagged dirty or changed
-
-        del dirty[key]
-        self.committed.setdefault(key,ob)
-        del ob._p_changed
-
-        if ob._p_oid is None:
-
-            # No oid, it's a new object that needs saving
-            oid = ob._p_oid = self.new(ob)
-            self.cache[oid]=ob
-
+    def readyToVote(self, txnService):
+        if self.dirty:
+            self.flush()
+            return False
         else:
-            # just save it the ordinary way
-            self.save(ob)
+            return True
 
-    def tpc_vote(self, transaction):
+
+    def voteForCommit(self, txnService):
         # Everything should have been written by now...  If not, it's VERY BAD
         # because the DB we're storing to might've already gotten a tpc_vote(),
         # and won't accept writes any more.  So raise holy hell if we're dirty!
         assert not self.dirty
 
-    def tpc_finish(self, transaction):
+
+    def commitTransaction(self, txnService):
         self.committed.clear()
-        self.commitInProgress = False
-
-    def abort(self, ob, transaction):
-
-        ob._p_deactivate()
-
-        if self.committed:  
-
-            # Note that 'dirty' objects don't matter here, since they will be
-            # given individual abort calls by the transation.  Only if we
-            # have committed objects (due to pre-commit flush() operations)
-            # do we need to force their deactivation.
-
-            self.tpc_abort(transaction)
 
 
-    def tpc_abort(self, transaction):
+    def abortTransaction(self, txnService):
 
         for set in self.dirty, self.committed:
-
             for ob in set.values():
                 ob._p_deactivate()
 
             set.clear()
 
-        self.commitInProgress = False
 
 
 

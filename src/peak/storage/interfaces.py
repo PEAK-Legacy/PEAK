@@ -6,7 +6,8 @@ from Interface.Attribute import Attribute
 __all__ = [
     'ITransactionService', 'ITransactionParticipant',
     'ITransactionErrorHandler', 'BrokenTransaction',
-    'NotReadyError', 'TransactionInProgress', 'OutsideTransaction'
+    'NotReadyError', 'TransactionInProgress', 'OutsideTransaction',
+    'IRack', 'IRackImplementation',
 ]
 
 class ITransactionService(Interface):
@@ -36,7 +37,6 @@ class ITransactionService(Interface):
     def abort():
         """Abort the transaction, or raise OutsideTransaction if not in
         progress."""
-
 
 
     def fail():
@@ -200,3 +200,72 @@ class OutsideTransaction(Exception):
 class BrokenTransaction(Exception):
     """Transaction can't commit, due to participants breaking contracts
        (E.g. by throwing an exception during the commit phase)"""
+
+
+
+# Rack interfaces
+
+try:
+    from Persistence.IPersistentDataManager import IPersistentDataManager
+
+except ImportError:
+    class IPersistentDataManager(Interface):
+        # Temporary hack until we include Persistence in our setup.py...
+        pass
+
+
+class IRack(ITransactionParticipant, IPersistentDataManager):
+
+    """Data manager for persistent objects or queries"""
+
+    def __getitem__(oid):
+        """Retrieve the persistent object designated by 'oid'"""
+        
+    def preloadState(oid, state):
+        """Pre-load 'state' for object designated by 'oid' and return it"""
+        
+    def oidFor(ob):
+        """Return an 'oid' suitable for retrieving 'ob' from this rack"""
+        
+    def newItem(klass=None):
+        """Create and return a new persistent object of class 'klass'"""
+
+    def flush(ob=None):
+        """Sync stored state to in-memory state of 'ob' or all objects"""
+
+
+
+
+
+
+
+
+
+
+
+
+class IRackImplementation(Interface):
+
+    """Methods/attrs that must/may be redefined in an AbstractRack subclass"""
+    
+    cache = Attribute("a cache for ghosts and loaded objects")
+
+    defaultClass = Attribute("Default class used for 'newItem()' method")
+
+    def ghost(oid, state=None):
+        """Return a ghost of appropriate class, based on 'oid' and 'state'"""
+
+    def load(oid):
+        """Load & return the state for 'oid', suitable for '__setstate__()'"""
+
+    def save(ob):
+        """Save 'ob' to underlying storage"""
+
+    def new(ob):
+        """Create 'ob' in underlying storage and return its new 'oid'"""
+
+    def defaultState(ob):
+        """Return a default '__setstate__()' state for a new 'ob'"""
+
+    def thunk(ob):
+        """Hook for implementing cross-database "thunk" references"""

@@ -246,6 +246,8 @@ class TransactionService(binding.AutoCreated):
 
 class AbstractParticipant(object):
 
+    __implements__ = ITransactionParticipant
+
     def readyToVote(self, txnService):
         return True
 
@@ -283,12 +285,11 @@ class AbstractParticipant(object):
 
 
 
-
-
-class TransactionComponent(binding.Component, AbstractParticipant):
+class TransactionComponent(binding.AutoCreated, AbstractParticipant):
 
     """Object that has a 'txnSvc' and auto-joins transactions"""
 
+    # XXX add binding.AutoCreated.__implements__ once binding.interfaces exist
 
     def txnSvc(self,d,a):
 
