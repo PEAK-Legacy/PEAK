@@ -2,6 +2,8 @@ Fixes and Enhancements since Version 0.5 alpha 2
 
  Changed, Enhanced, or Newly Deprecated Features
 
+ - Added automatic installation of 'datetime' package for Python < 2.3.
+
  - CGI support has been moved from 'peak.running.zpublish' into
    'peak.running.commands' (for "raw" CGI/FastCGI) and 'peak.web' (for the
    PEAK high-level publishing framework).  You can use 'peak CGI someName' to

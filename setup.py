@@ -121,6 +121,15 @@ if not zope_installed:
 
 
 
+import sys
+
+if sys.version_info < (2,3):
+    # Install datetime module if we're not on 2.3
+    packages += ['datetime']
+    if include_tests:
+        packages += ['datetime.tests']
+
+
 import os
 
 if os.name=='posix':
@@ -132,6 +141,24 @@ if os.name=='posix':
                 "src/fcgiapp/fcgiappmodule.c", "src/fcgiapp/fcgiapp.c"
             ])
         ]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -155,6 +182,20 @@ setup(
     ext_modules = extensions,
     scripts = scripts,
 )
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
