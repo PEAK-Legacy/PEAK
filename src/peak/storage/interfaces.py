@@ -134,34 +134,34 @@ class ISavepoint(Interface):
         to retry a nested transaction, you'll need to re-issue a 'savepoint()'
         request following the rollback, and use the new savepoint object."""
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    def revert(txnService):
+        """Roll back to last savepoint, or raise
+        CannotRevertException; Database connections whose underlying
+        DB doesn't support savepoints should definitely raise
+        CannotRevertException.  Resource managers that write data to other
+        participants, should simply roll back state for all objects
+        changed since the last savepoint, whether written through to
+        the underlying storage or not.  Transactional caches may want
+        to reset on this message, also, depending on their precise
+        semantics. Note: this is not ZODB!  You will not get a
+        revert() before an abort_txn(), just because a savepoint has
+        occurred during the transaction!"""
         
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 class ITransactionParticipant(Interface):
 
     """Participant in a transaction; may be a resource manager, a
@@ -223,65 +223,50 @@ class ITransactionParticipant(Interface):
     time vote_comit() was issued, regardless of the order in which the
     participants received the messages."""
         
-    def begin_txn(txn):
+
+    def beginTransaction(txnService):
         """Transaction is beginning; nothing special to be done in
         most cases. A transactional cache might use this message to
         reset itself.  A database connection might issue BEGIN TRAN
         here."""
         
-    def readyForSavepoint(txn):
+
+    def readyForSavepoint(txnService):
         """Savepoint is beginning; flush dirty objects and enter
         write-through mode, if applicable.  Note: this is not ZODB!
         You will not get savepoint messages before a regular commit,
         just because another savepoint has already occurred!"""
         
-    def getSavepoint(txn):
+
+    def getSavepoint(txnService):
         """Savepoint is finished, it's safe to return to buffering
         writes; a database connection would probably issue a
         savepoint/checkpoint command here."""
-        
-    def revert(self, txn):
-        """Roll back to last savepoint, or raise
-        CannotRevertException; Database connections whose underlying
-        DB doesn't support savepoints should definitely raise
-        CannotRevertException.  Resource managers that write data to other
-        participants, should simply roll back state for all objects
-        changed since the last savepoint, whether written through to
-        the underlying storage or not.  Transactional caches may want
-        to reset on this message, also, depending on their precise
-        semantics. Note: this is not ZODB!  You will not get a
-        revert() before an abort_txn(), just because a savepoint has
-        occurred during the transaction!"""
-        
-    def readyToVote(txn):
+
+
+    def readyToVote(txnService):
         """Transaction commit is beginning; flush dirty objects and
         enter write-through mode, if applicable.  DB connections will
         probably do nothing here.  Note: participants *must* continue
         to accept writes until vote_commit() occurs, and *must*
         accept repeated writes of the same objects!"""
 
-    def voteForCommit(txn):
+    def voteForCommit(txnService):
         """Raise an exception if commit isn't possible.  This will
         mostly be used by resource managers that handle their own
         storage, or the few DB connections that are capable of
         multi-phase commit."""
         
-    def commitTransaction(txn):
+    def commitTransaction(txnService):
         """This message follows vote_commit, if no participants vetoed
         the commit.  DB connections will probably issue COMMIT TRAN
         here. Transactional caches might use this message to reset
         themselves."""
         
-    def abortTransaction(txn):
+    def abortTransaction(txnService):
         """This message can be received at any time, and means the
         entire transaction must be rolled back.  Transactional caches
         might use this message to reset themselves."""
-
-
-
-
-
-
 
 
 

@@ -3,7 +3,8 @@ from interfaces import *
 from time import time
 
 __all__ = [
-    'NullSavepoint', 'FailureSavepoint', 'MultiSavepoint'
+    'NullSavepoint', 'FailureSavepoint', 'MultiSavepoint',
+    'ZODBTransactionService', 'AbstractParticipant'
 ]
 
 
@@ -38,8 +39,7 @@ class AbstractTransactionService(binding.Component):
 
 
 
-
-    def savepoint(self):
+    def _savepoint(self):
 
         """Create a savepoint
 
@@ -68,7 +68,7 @@ class AbstractTransactionService(binding.Component):
         if unready:
             raise NotReadyError(unready)
 
-        spl = [p.getSavepoint() for p in self.participants]
+        spl = [p.getSavepoint(self) for p in self.participants]
         
         return MultiSavepoint(spl)
         
@@ -80,7 +80,7 @@ class AbstractTransactionService(binding.Component):
 
 
 
-    def _vote(self):
+    def _prepare(self):
 
         """Get votes from all participants
 
@@ -104,8 +104,9 @@ class AbstractTransactionService(binding.Component):
             raise NotReadyError(unready)
 
         for p in self.participants:
-            p.voteForCommit()
+            p.voteForCommit(self)
 
+        return True
 
     def begin(self, **info):
 
@@ -117,8 +118,34 @@ class AbstractTransactionService(binding.Component):
 
         self._begin()
 
+        for p in self.participants:
+            p.beginTransaction(self)
+            
+    def commit(self):
+
+        if not self.isActive():
+            raise OutsideTransaction
+
+        self._prepare()
+        self._commit()
 
 
+    def _commit(self):
+        for p in self.participants:
+            p.commitTransaction(self)
+
+
+    def abort(self):
+
+        if not self.isActive():
+            raise OutsideTransaction
+
+        self._abort()
+
+
+    def _abort(self):
+        for p in self.participants:
+            p.abortTransaction(self)
 
 
     def getTimestamp(self):
@@ -135,6 +162,63 @@ class AbstractTransactionService(binding.Component):
 
 
 
+class AbstractParticipant(object):
+
+    def beginTransaction(self, txnService):
+        pass
+
+    def readyForSavepoint(self, txnService):
+        return True
+
+    def getSavepoint(self, txnService):
+        return NullSavepoint
+
+    def readyToVote(self, txnService):
+        return True
+
+    def voteForCommit(self, txnService):
+        pass
+
+    def commitTransaction(self, txnService):
+        pass
+
+    def abortTransaction(self, txnService):
+        pass
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class _ZODBTxnProxy(object):
+
+    def __init__(self, txnService):
+        self.txnService = txnService
+
+    def prepare(self,txn):
+        return self.txnService._prepare()
+
+    def abort(self,txn):
+        self.txnService._abort()
+
+    def commit(self,txn):
+        self.txnService._commit()
+
+    def savepoint(self,txn):
+        return self.txnService._savepoint()
 
 
 
@@ -160,6 +244,45 @@ class AbstractTransactionService(binding.Component):
 
 
 
+class ZODBTransactionService(AbstractTransactionService):
+
+    ztxn = None
+    
+    def _begin(self):
+        from Transaction import get_transaction
+        txn = self.ztxn = get_transaction()
+        txn.join(_ZODB4TxnProxy(self))
+
+
+    def abort(self):
+    
+        if not self.isActive():
+            raise OutsideTransaction
+
+        self.ztxn.abort()
+
+
+    def commit(self):
+
+        if not self.isActive():
+            raise OutsideTransaction
+
+        self.ztxn.commit()
+
+
+    def savepoint(self):
+
+        if not self.isActive():
+            raise OutsideTransaction
+
+        return self.ztxn.savepoint()
+
+
+    def isActive(self):
+        return self.ztxn is not None
+
+    def _cleanup(self):
+        self.ztxn = None
 
 
 class _NullSavepoint(object):
