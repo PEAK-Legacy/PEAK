@@ -43,7 +43,8 @@ class Element(Classifier, Persistent):
 
     """A (potentially persistent) domain element"""
 
-    __implements__ = IElement
+    __implements__ = binding.IBindingAPI
+
     __metaclass__  = ElementClass
 
     def _setBinding(self,attr,value):

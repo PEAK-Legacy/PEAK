@@ -73,8 +73,8 @@ class NotAContext(NamingException):
     """Continuation is not a context/does not support required interface"""
 
 
-
-
+class EnumerationError(KeyError,ValueError):
+    """Invalid name or value for enumeration"""
 
 
 

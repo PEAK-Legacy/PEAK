@@ -60,40 +60,40 @@ class MultiplicityType(model.Immutable):
 
 
 class VisibilityKind(model.Enumeration):
-    public_vis = 'public_vis'
-    protected_vis = 'protected_vis'
-    private_vis = 'private_vis'
+    public_vis = model.enum()
+    protected_vis = model.enum()
+    private_vis = model.enum()
 
 
 
 class DepthKind(model.Enumeration):
-    shallow = 'shallow'
-    deep = 'deep'
+    shallow = model.enum()
+    deep = model.enum()
 
 
 
 class DirectionKind(model.Enumeration):
-    in_dir = 'in_dir'
-    out_dir = 'out_dir'
-    inout_dir = 'inout_dir'
-    return_dir = 'return_dir'
+    in_dir = model.enum()
+    out_dir = model.enum()
+    inout_dir = model.enum()
+    return_dir = model.enum()
     
 
 
 class ScopeKind(model.Enumeration):
-    instance_level = 'instance_level'
-    classifier_level = 'classifier_level'
+    instance_level = model.enum()
+    classifier_level = model.enum()
 
 
 class AggregationKind(model.Enumeration):
-    none = 'none'
-    shared = 'shared'
-    composite = 'composite'
+    none = model.enum()
+    shared = model.enum()
+    composite = model.enum()
 
 
 class EvaluationKind(model.Enumeration):
-    immediate = 'immediate'
-    deferred = 'deferred'
+    immediate = model.enum()
+    deferred = model.enum()
 
 
 class LiteralType(model.PrimitiveType):
@@ -101,9 +101,9 @@ class LiteralType(model.PrimitiveType):
 
 
 class VerifyResultKind(model.Enumeration):
-    valid = 'valid'
-    invalid = 'invalid'
-    published = 'published'
+    valid = model.enum()
+    invalid = model.enum()
+    published = model.enum()
 
 
 class ViolationType(model.Immutable):

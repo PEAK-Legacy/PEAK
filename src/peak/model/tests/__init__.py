@@ -1,12 +1,12 @@
-"""Unit tests for model.Element/FeatureMC, etc."""
+"""Unit tests for model.Element/FeatureClass, etc."""
 
 from unittest import TestCase, makeSuite, TestSuite
 from peak.api import *
+from peak.model.structural import FeatureClass
 
 class featureBase(object):
 
-    __metaclass__ = model.FeatureMC
-
+    __metaclass__ = FeatureClass
     singular = 1
 
     newVerbs = Items(
@@ -122,43 +122,43 @@ class checkExport(TestCase):
 
 
 class basicColor(model.Enumeration):
-    __keys__ = 'red','yellow','blue'
+    red, yellow, blue = model.enums(3)
+
 
 class anyColor(basicColor):
-    __keys__ = 'green','purple','orange'
+
+    green, purple  = model.enums('green','purple')
+
+    other = model.enumDict(
+        {'orange':'orange'}
+    )
 
 
 class EnumerationTests(TestCase):
 
     def checkIdentityAndEquality(self):
-        for name in basicColor.__keys__:
-            assert basicColor(name) is basicColor(name)
-            assert anyColor(name) is not basicColor(name)
-            assert anyColor(name) == basicColor(name)
-            assert `anyColor(name)` == ('anyColor.%s' % name)
+        for v in basicColor:
+            assert basicColor(v.name) is basicColor(v._hashAndCompare)
+            assert anyColor(v.name) is not v
+            assert anyColor(v.name) == v
+            assert repr(anyColor(v.name)) == ('anyColor.%s' % v.name)
 
+    def checkSeq(self):
 
+        for name in anyColor:
+            assert name in basicColor or name in ('green','purple','orange')
 
+        assert list(anyColor) == [
+            'blue','green','orange','purple','red','yellow'
+        ]
 
+        assert list(basicColor)==['blue','red','yellow']
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+        assert list(basicColor)==[
+            basicColor.blue,
+            basicColor.red,
+            basicColor.yellow
+        ]
 
 
 
@@ -310,7 +310,7 @@ class exerciseFeatures(TestCase):
 
 
 TestClasses = (
-    checkExport, checkMetaData, exerciseFeatures, 
+    checkExport, checkMetaData, exerciseFeatures, EnumerationTests
 )
 
 

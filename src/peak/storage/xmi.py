@@ -295,7 +295,7 @@ class XMINode(object):
             f = dm.getFeature(klass, attr)
             if f is None: continue
 
-            if model.IValue.isImplementedBy(f):
+            if not f.isReference:
                 d[f.attrName] = f.fromString(val)
             else:
                 d.setdefault(f.attrName,[]).extend(
@@ -308,7 +308,7 @@ class XMINode(object):
             f = dm.getFeature(klass, node._name)
             if f is None: continue
 
-            if model.IValue.isImplementedBy(f):
+            if not f.isReference:
                 d[f.attrName] = node.getValue(f, dm)
             else:
                 d.setdefault(f.attrName,[]).extend(

@@ -1,4 +1,5 @@
-from structural import PrimitiveType, Enumeration
+from structural import PrimitiveType
+from enumerations import Enumeration, enum
 
 __all__ = [
     'Integer','UnlimitedInteger','UNBOUNDED','Boolean','String','Name'
@@ -18,18 +19,22 @@ class UnlimitedInteger(PrimitiveType):
 
 
 class Integer(PrimitiveType):
-
     fromString = int
 
 
 class Boolean(Enumeration):
-    true = 1; false = 0
+    true = enum(True)
+    false = enum(False)
 
 
 class String(PrimitiveType):
-    pass
+
+    def fromString(klass,value):
+        return value
+
+    fromString = classmethod(fromString)
 
 
-class Name(PrimitiveType):
+class Name(String):
     pass
 

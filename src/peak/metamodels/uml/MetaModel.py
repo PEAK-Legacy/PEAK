@@ -58,43 +58,43 @@ class UMLClass(model.Model, storage.xmi.Loader):
 
 
     class OrderingKind(model.Enumeration):
-        sorted = 'sorted'
-        ordered = 'ordered'
-        unordered = 'unordered'
+        sorted = model.enum()
+        ordered = model.enum()
+        unordered = model.enum()
 
 
     class VisibilityKind(model.Enumeration):
-        protected = 'protected'
-        public = 'public'
-        private = 'private'
+        protected = model.enum()
+        public = model.enum()
+        private = model.enum()
 
 
     class PseudostateKind(model.Enumeration):
-        fork = 'fork'
-        shallowHistory = 'shallowHistory'
-        junction = 'junction'
-        branch = 'branch'
-        deepHistory = 'deepHistory'
-        initial = 'initial'
-        final = 'final'
-        join = 'join'
+        fork = model.enum()
+        shallowHistory = model.enum()
+        junction = model.enum()
+        branch = model.enum()
+        deepHistory = model.enum()
+        initial = model.enum()
+        final = model.enum()
+        join = model.enum()
 
 
     class CallConcurrencyKind(model.Enumeration):
-        concurrent = 'concurrent'
-        guarded = 'guarded'
-        sequential = 'sequential'
+        concurrent = model.enum()
+        guarded = model.enum()
+        sequential = model.enum()
 
 
     class AggregationKind(model.Enumeration):
-        aggregate = 'aggregate'
-        composite = 'composite'
-        none = 'none'
+        aggregate = model.enum()
+        composite = model.enum()
+        none = model.enum()
 
 
     class ParameterDirectionKind(model.Enumeration):
 
-        __values__ = dict([
+        __values = model.enumDict([
             ('in',     1),
             ('out',    2),
             ('inout',  3),
@@ -103,18 +103,18 @@ class UMLClass(model.Model, storage.xmi.Loader):
 
 
     class ScopeKind(model.Enumeration):
-        instance = 'instance'
-        classifier = 'classifier'
+        instance = model.enum()
+        classifier = model.enum()
 
 
     class ChangeableKind(model.Enumeration):
-        frozen = 'frozen'
-        addOnly = 'addOnly'
-        changeable = 'changeable'
+        frozen = model.enum()
+        addOnly = model.enum()
+        changeable = model.enum()
 
 
     class MessageDirectionKind(model.Enumeration):
-        __values__ = dict([
+        __values = model.enumDict([
             ('activation', 1),
             ('return',     2),
         ])
@@ -122,8 +122,8 @@ class UMLClass(model.Model, storage.xmi.Loader):
 
 
     class OperationDirectionKind(model.Enumeration):
-        provide = 'provide'
-        require = 'require'
+        provide = model.enum()
+        require = model.enum()
 
     class UnlimitedInteger(model.PrimitiveType):
 
@@ -138,12 +138,15 @@ class UMLClass(model.Model, storage.xmi.Loader):
         fromString = int
 
     class Boolean(model.Enumeration):
-        true = 1; false = 0
+        true = model.enum(True)
+        false = model.enum(False)
 
     class String(model.PrimitiveType):
-        pass
+        def fromString(klass,value):
+            return value
+        fromString = classmethod(fromString)
 
-    class Name(model.PrimitiveType):
+    class Name(String):
         pass
 
 

@@ -59,14 +59,14 @@ class MailModel(model.Model, storage.xmi.Loader):
 
 
     class String(model.PrimitiveType):
-        pass    # default converts string to string
-
+        def fromString(klass,value):
+            return value
+        fromString = classmethod(fromString)
 
     class Address(model.DataType):
     
-        class name(model.Field):
+        class name(model.structField):
             referencedType = 'String'
-            isChangeable   = False
 
         class streetNumber(name):   pass
         class street(name):         pass
