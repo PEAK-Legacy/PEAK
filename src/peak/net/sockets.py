@@ -3,10 +3,88 @@ from peak.api import *
 from interfaces import *
 import sys, socket
 
+
+def getConstants(module,prefix):
+    p = len(prefix)
+    d = module.__dict__
+    return [(k[p:].lower(),v) for k,v in d.items() if k.startswith(prefix)]
+
+
+class ExtendedEnum(model.Enumeration):
+
+    def mdl_toString(klass,x):
+        if x in klass: return klass[x].name
+        return str(int(x))
+
+    def mdl_fromString(klass,x):
+        if x.lower() in klass:
+            return klass[x.lower()]
+        return klass._convert(x)
+
+    def _convert(klass,x):
+        return int(x)
+
+    _convert = classmethod(_convert)
+
+    def __int__(self):
+        return self._hashAndCompare
+
+
+
+
+
+
+
+
+
+
+
+class SocketFamily(ExtendedEnum):
+
+    __values = model.enumDict( getConstants(socket,'AF_') )
+
+
+class SocketType(ExtendedEnum):
+
+    __values = model.enumDict( getConstants(socket, 'SOCK_') )
+
+
+class SocketProtocol(ExtendedEnum):
+
+    __values = model.enumDict( getConstants(socket, 'IPPROTO_') )
+
+    def _convert(klass,x):
+        try:
+            return int(x)
+        except ValueError:
+            return socket.getprotobyname(x)
+
+    _convert = classmethod(_convert)
+
+
+class FileDescriptor(ExtendedEnum):
+
+    stdin = model.enum(0)
+    stdout = model.enum(1)
+    stderr = model.enum(2)
+
+
+
+
+
+
+
+
+
+
+
+
+
 class socketURL(naming.URL.Base):
+
     def listen_sockets(self, maxsocks=sys.maxint):
         sockets = []
-        
+
         for res in self.listen_addrs():
             af, socktype, proto, canonname, sa = res
             try:
@@ -20,24 +98,46 @@ class socketURL(naming.URL.Base):
                 pass
 
         if not sockets:
-            raise socket.error, msg                
-            
-        return sockets        
-    
+            raise socket.error, msg
 
-    
+        return sockets
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 class tcpudpURL(socketURL):
+
+    protocols.advise(
+        instancesProvide = [IClientSocketAddr, IListenSocketAddr]
+    )
+
     supportedSchemes = {
         'tcp' : socket.SOCK_STREAM,
         'udp' : socket.SOCK_DGRAM
     }
-    
+
     class host(naming.URL.RequiredField): pass
 
     class port(naming.URL.Field): pass
-        
+
     syntax = naming.URL.Sequence(
-        ('//',), host, (':', port), ('/',)
+        '//', host, (':', port), ('/',)
     )
 
     def connect_addrs(self):
@@ -51,19 +151,28 @@ class tcpudpURL(socketURL):
 
         return socket.getaddrinfo(host, self.port,
             0, self.supportedSchemes[self.scheme], 0, socket.AI_PASSIVE)
-        
-    protocols.advise(
-        instancesProvide = [IClientSocketAddr, IListenSocketAddr]
-    )
-                
+
+
+
+
+
+
+
+
+
 
 
 class unixURL(socketURL):
+
+    protocols.advise(
+        instancesProvide = [IClientSocketAddr, IListenSocketAddr]
+    )
+
     supportedSchemes = {
         'unix' : socket.SOCK_STREAM,
         'unix.dg' : socket.SOCK_DGRAM
     }
-    
+
     class path(naming.URL.RequiredField): pass
 
     syntax = naming.URL.Sequence(path)
@@ -74,22 +183,35 @@ class unixURL(socketURL):
         ]
 
     listen_addrs = connect_addrs
-    
-    protocols.advise(
-        instancesProvide = [IClientSocketAddr, IListenSocketAddr]
-    )
 
-    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 def ClientConnect(addr):
     """Attempt to connect to an IClientSocketAddr"""
-    
+
     sock = None
     for res in addr.connect_addrs():
         af, socktype, proto, canonname, sa = res
         try:
             sock = socket.socket(af, socktype, proto)
-            sock.connect(sa)                        
+            sock.connect(sa)
         except socket.error, msg:
             if sock:
                 sock.close()
@@ -104,58 +226,64 @@ def ClientConnect(addr):
 
 
 
-protocols.declareAdapterForProtocol(
-    IClientSocket,
+protocols.declareAdapter(
     lambda o,p: ClientConnect(o),
-    IClientSocketAddr
+    provides=[IClientSocket],
+    forProtocols=[IClientSocketAddr]
 )
 
 
-protocols.declareAdapterForProtocol(
-    IListeningSocket,
+protocols.declareAdapter(
     lambda o,p: o.listen_sockets(maxsocks=1)[0],
-    IListenSocketAddr
+    provides=[IListeningSocket],
+    forProtocols=[IListenSocketAddr]
 )
 
 
-fd_map = {'stdin': '0', 'stdout': '1', 'stderr': '2'}
-fd_fmt = {0: 'stdin', 1: 'stdout', 2: 'stderr'}
+
+
+
 
 class fdURL(naming.URL.Base):
-    """
-    fd:fileno[,type=af[/kind[/protocol]]]
-    
-    fileno can be an integer, or one of "stdin", "stdout", "stderr"
+    """fd:fileno[,type=af[/kind[/protocol]]]
 
-    example:
+    'fileno' can be an integer, or one of 'stdin', 'stdout', 'stderr'
+
+    'af' can be the lowercase form of any 'socket.AF_*' constant, e.g.
+    'unix', 'inet', 'inet6', etc.  ('inet' is the default if unspecified.)
+
+    'kind' can be the lowercase form of any 'socket.SOCK_*' constant, e.g.
+    'stream', 'dgram', 'raw', etc.  ('stream' is the default if unspecified.)
+
+    'protocol' can be an integer, or the lowercase form of any
+    'socket.IPPROTO_*' constant, e.g. 'ip', 'icmp', 'udp', etc.  It can also
+    be the name of a protocol that will be looked up using
+    'socket.getprotobyname()'.  ('ip' is the default if unspecified.)
+
+    Example::
+
         fd:stdin,type=inet6/dgram/udp
     """
 
     supportedSchemes = 'fd',
-    
+
     class fileno(naming.URL.IntField):
-        syntax = naming.URL.Conversion(
-            converter = lambda x: int(fd_map.get(x.lower(), x)),
-            formatter = lambda x: fd_fmt.get(x, str(x)),
-        )
+        referencedType = FileDescriptor
 
     class af(naming.URL.IntField):
-        defaultValue = getattr(socket, 'AF_UNIX', socket.AF_INET)
-        syntax = naming.URL.Conversion(
-            converter = lambda x: getattr(socket, 'AF_' + x.upper())
-        )
-        
-    class stype(naming.URL.IntField):
-        defaultValue = socket.SOCK_STREAM
-        syntax = naming.URL.Conversion(
-            converter = lambda x: getattr(socket, 'SOCK_' + x.upper())
-        )
+        referencedType = SocketFamily
+        defaultValue   = SocketFamily.inet
+        canBeEmpty     = True
+
+    class stype(naming.URL.Field):
+        referencedType = SocketType
+        defaultValue   = SocketType.stream
+        canBeEmpty     = True
 
     class proto(naming.URL.IntField):
-        defaultValue = 0
-        syntax = naming.URL.Conversion(
-            converter = lambda x: socket.getprotobyname(x)
-        )
+        referencedType = SocketProtocol
+        defaultValue   = SocketProtocol.ip
+        canBeEmpty     = True
 
     syntax = naming.URL.Sequence(
         fileno, (',type=', af, ('/', stype, ('/', proto)))
@@ -165,10 +293,36 @@ class fdURL(naming.URL.Base):
         return socket.fromfd(self.fileno, self.af, self.stype, self.proto)
 
 
-protocols.declareAdapterForType(
-    IClientSocket, lambda o,p: o.asSocket(), fdURL
+protocols.declareAdapter(
+    lambda o,p: o.asSocket(),
+    provides=[IClientSocket,IListeningSocket],
+    forTypes=[fdURL]
 )
 
-protocols.declareAdapterForType(
-    IListeningSocket, lambda o,p: o.asSocket(), fdURL
-)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

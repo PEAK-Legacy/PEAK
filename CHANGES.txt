@@ -2,6 +2,17 @@ Fixes and Enhancements since Version 0.5 alpha 2
 
  Changed, Enhanced, or Newly Deprecated Features
 
+ - Standardized these characteristics of name and address syntax:
+
+   * '//' at the beginning of URL bodies is *mandatory* when the URL begins
+     with an "authority" as described by RFC 2396.  When the URL is not
+     required to contain an authority (e.g. 'peak.storage.SQL.GenericSQL_URL'),
+     the '//' is *optional*, and the canonical form of the URL will not include
+     it.
+
+   * Standardized names for RFC 2396 fields: 'user', 'passwd', 'host', and
+     'port'.
+
  - Added 'peak.metamodels.ASDL', a metamodel for the Zephyr Abstract Syntax
    Description Language.  ASDL is a convenient way to describe a domain model
    for an abstract syntax tree (AST), and the models generated with the new

@@ -1,8 +1,43 @@
-"""Naming system tests"""
+"""Naming system tests
+
+ The following schemes are not currently tested:
+
+    * 'icb' -- it depends on 'peak.net.common', which is not in CVS yet.  When
+      it's in, these tests (and perhaps others) should be added::
+
+        'icb://nik:u@localhost/aGroup':
+            Items(nick='nik',user='u',passwd=None,server='localhost',
+                group='aGroup'),
+
+        'icb://n:u:p@localhost':
+            Items(nick='n',user='u',passwd='p',server='localhost',
+                group=None),
+
+    * 'nis', 'unix', 'unix.dg', 'logging.logger', 'zconfig.schema', and
+      'shellcmd' -- these do not have parsed bodies
+
+    * 'pgsql', 'psycopg', 'mockdb' -- these all are based on 'GenericSQL_URL',
+      which is tested by the 'sybase' test case.
+
+    * 'sqlite' -- it's a 'file:' URL in disguise
+
+    * 'nulllockfile', 'shlockfile', 'flockfile', 'winflockfile' -- these are
+      all based on 'lockfileURL', which is tested by the 'lockfile' test case.
+"""
 
 from unittest import TestCase, makeSuite, TestSuite
 from peak.api import *
 from peak.tests import testRoot
+
+
+
+
+
+
+
+
+
+
 
 validNames = {
 
@@ -44,6 +79,7 @@ validNames = {
               quals=(('ext1','1'), ('ext2','2'))
         ),
 
+
     'sybase:foo:bar@baz/spam':
         Items(server='baz', db='spam', user='foo', passwd='bar'),
 
@@ -69,11 +105,38 @@ validNames = {
               retries=24, sleep=42),
 
     'file://localhost/D|/autoexec.old':
-        Items(scheme='file', hostname='localhost',
+        Items(scheme='file', host='localhost',
                 path=('','D|','autoexec.old'), query=None,),
 
     'pkgfile:peak/peak.ini': Items(scheme='pkgfile',body=('peak','peak.ini')),
+    'cxoracle:u:p@s': Items(user='u',passwd='p',server='s'),
+    'dcoracle2://usr@srv/': Items(user='usr',server='srv'),
+    'tcp://localhost:http': Items(host='localhost',port='http'),
+    'udp://127.0.0.1:80': Items(host='127.0.0.1',port='80'),  # ugh
+    'fd:0,type=inet/stream/ip': Items(fileno=0, proto=0),
+    'fd:stderr': Items(fileno=2),
+    'fd:27,type=inet/dgram': Items(fileno=27),
+    'fd:27,type=/dgram': Items(fileno=27),
+
+
+
+
+    'http://u:pw@serv:8080/some/thing?query=whatever#pos':
+        Items(user='u',passwd='pw',host='serv',port=8080,fragment='pos',
+            query='query=whatever',path=('some','thing')
+        ),
+
+    'ftp://serv/some/thing#pos':
+        Items(user=None,passwd=None,host='serv',port=None,fragment='pos',
+            path=('some','thing')
+        ),
+
+    'https://u@serv/some%2Fslashed/thing?query=whatever&who':
+        Items(user='u',passwd=None,host='serv',port=None,fragment=None,
+            query='query=whatever&who',path=('some/slashed','thing')
+        ),
 }
+
 
 
 def parse(url):
@@ -85,21 +148,47 @@ canonical = {
     'ldap://localhost:9912/cn=monitor????!bindname=cn=root,!x-bindpw=somePw',
     'sybase://user:p%40ss@server': 'sybase:user:p%40ss@server',
     'gadfly://drinkers@c:\\temp': 'gadfly:drinkers@c:\\temp',
+    'dcoracle2://usr@srv/': 'dcoracle2:usr@srv',
+    'fd:0,type=inet/stream/ip': 'fd:stdin',
+    'fd:27,type=inet/dgram': 'fd:27,type=/dgram',
+
 }
+
+
+
+
+
+
+
+
 
 class NameParseTest(TestCase):
 
     def checkValidAndCanonical(self):
+
         for name in validNames:
+
             stdform = canonical.get(name,name)
-            parsed = str(parse(name))
-            assert stdform == parsed, (name, stdform, parsed)
+            parsed  = parse(name)
+
+            # string formats should compare equal
+            self.assertEqual([name,stdform], [name,str(parsed)])
+
+            # parsed forms should also compare equal
+            self.assertEqual(parse(stdform),parsed)
+
 
     def checkData(self):
         for name,values in validNames.items():
             obj = parse(name)
             for (k,v) in values:
-                assert getattr(obj,k)==v, (k,getattr(obj,k),v)
+                self.assertEqual([k,getattr(obj,k)], [k,v])
+
+        # Ensure that canonical forms have the same values
+        for name,stdform in canonical.items():
+            obj = parse(stdform)  # ensure
+            for (k,v) in validNames[name]:
+                self.assertEqual([k,getattr(obj,k)], [k,v])
 
     def checkNotFound(self):
         try:
@@ -108,13 +197,6 @@ class NameParseTest(TestCase):
             pass
         else:
             raise AssertionError("Should've raised NameNotFound")
-
-
-
-
-
-
-
 
 
 

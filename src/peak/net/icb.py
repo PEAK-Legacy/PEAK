@@ -41,7 +41,7 @@ class ICB_URL(naming.URL.Base):
     # icb://[nick[:user[:passwd]@]server[:port][/[group]]
 
     syntax = naming.URL.Sequence(
-        ('//',), (nick, (':', user, (':', passwd)), '@'),
+        '//', (nick, (':', user, (':', passwd)), '@'),
         server, (':', port), ('/', (group,))
     )
 

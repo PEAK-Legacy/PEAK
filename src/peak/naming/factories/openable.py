@@ -8,9 +8,9 @@ class GenericPathURL(URL.Base):
     supportedSchemes = 'http','https','ftp','file',
 
     class user(URL.Field): pass
-    class password(URL.Field): pass
+    class passwd(URL.Field): pass
 
-    class hostname(URL.Field):
+    class host(URL.Field):
         defaultValue = None
         syntax = URL.Conversion(
             URL.ExtractQuoted(URL.MatchString(pattern='[^/:]*')),
@@ -33,7 +33,7 @@ class GenericPathURL(URL.Base):
         binding.Make(
             lambda s: URL.Sequence(
                 '//',
-                ( (s.user, (':',s.password) ,'@'), s.hostname, (':',s.port)),
+                ( (s.user, (':',s.passwd) ,'@'), s.host, (':',s.port)),
                 '/', s.path, ('?',s.query), ('#',s.fragment)
             )
         )
@@ -52,7 +52,7 @@ class FileURL(OpenableURL):
         binding.Make(
             lambda s: URL.Sequence(
                 URL.Alternatives(
-                    URL.Sequence('//', s.hostname, s.path),
+                    URL.Sequence('//', s.host, s.path),
                     s.path,
                 ), ('?', s.querySyntax), ('#', s.fragment),
             )
