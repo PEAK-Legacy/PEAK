@@ -1,14 +1,14 @@
+# XXX This is off-line...  needs to create an analog of Template that supports
+# XXX dictionary-type actions.  Alternatively, we may forgo this module
+# XXX altogether in favor of bootstrapping from XMI, per the way newer versions
+# XXX of the NSUML package do.
+
 from kjbuckets import *
 from TW.Utils import SOX
 
 from TW.API import Template, SEF
 from TW.Utils.Misc import upToDate
 from TW.Utils.Pluralizer import Pluralizer
-
-
-
-
-
 
 
 
@@ -280,7 +280,6 @@ class _Loader:
             raise
                 
 load = _Loader()
-
 
 
 

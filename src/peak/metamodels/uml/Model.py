@@ -39,47 +39,6 @@ __bases__ = MetaModel,
 
 
 
-class _ComputedFeatures(Catalyst):
-
-    def transformSpecification(self,featureDict):
-    
-        if featureDict:
-            for k,v in featureDict.items():
-                if isinstance(v,FunctionType):
-                    featureDict[k]=ComputedFeature(v)
-                    
-        return featureDict
-        
-ComputedFeatures = _ComputedFeatures('')
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 class _UMLModel:    # stuff that still needs refactoring
 
     class Integer:
