@@ -17,6 +17,7 @@ from peak.util.Import import interpretSpec, interpretSequence
 
 
 from interfaces import *
+from references import *
 from names import *
 
 import factories
