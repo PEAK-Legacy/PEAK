@@ -124,7 +124,7 @@ class NamingInteractor(binding.Component):
     cmd_cd = binding.New(cmd_cd)
 
 
-    class cmd_ls_common(ShellCommand):
+    class ls_common(ShellCommand):
         """ls [-1|-l] [-s] [-R] [-r] [name-or-$var] -- list namespace contents
 
 -1\tsingle column format
@@ -195,19 +195,19 @@ name\tlist object named, else current context"""
 
                         self.cmd(cmd, opts, [], stdout, stderr, ctx)
 
-    class cmd_l(cmd_ls_common):
+    class cmd_l(ls_common):
         """l [-s] [-R] [-r] [name] -- shorthand for ls -l. 'help ls' for more."""
 
         args = ('Rrs', 0, 1)
 
         def cmd(self, cmd, opts, args, stdout, stderr, **kw):
             opts['-l'] = None
-            self.interactor.cmd_ls_common.cmd(
+            self.interactor.ls_common.cmd(
                 self, cmd, opts, args, stdout, stderr, **kw)
 
 
-    cmd_dir = binding.New(cmd_ls_common)
-    cmd_ls = binding.New(cmd_ls_common)
+    cmd_dir = binding.New(ls_common)
+    cmd_ls = binding.New(ls_common)
     cmd_l = binding.New(cmd_l)
 
 
