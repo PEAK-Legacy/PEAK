@@ -37,20 +37,22 @@ class NamingInteractor(binding.Component):
             if not cl or cl[0] == '#':
                 continue
 
-            cmdinfo = parseCmd(cl, shell)
-            cmd = cmdinfo['argv'][0]
+            cmdinfo = parseCmd(self, cl, shell)
+            try:
+                cmd = cmdinfo['argv'][0]
+                cmdobj = getattr(self, 'cmd_' + cmd, None)
+                if cmdobj is None:
+                    print >>cmdinfo['stderr'], "n2: %s: command not found. Try 'help'." % cmd
+                else:
+                    cmdobj.run(
+                        cmdinfo['stdin'], cmdinfo['stdout'], cmdinfo['stderr'],
+                        cmdinfo['environ'], cmdinfo['argv']
 
-            cmdobj = getattr(self, 'cmd_' + cmd, None)
-            if cmdobj is None:
-                print >>cmdinfo['stderr'], "n2: %s: command not found. Try 'help'." % cmd
-            else:
-                cmdobj.run(
-                    cmdinfo['stdin'], cmdinfo['stdout'], cmdinfo['stderr'],
-                    cmdinfo['environ'], cmdinfo['argv']
-                )
-
-            # let files get closed, etc
-            del cmdinfo
+                    )
+            finally:
+                for f in cmdinfo['close']:
+                    f.close()
+                del cmdinfo
 
         popRLHistory()
 

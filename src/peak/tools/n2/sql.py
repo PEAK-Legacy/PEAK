@@ -226,15 +226,17 @@ class SQLInteractor(storage.TransactionComponent):
 
                 return
             else:
-                cmdinfo = parseCmd(self.substVar(l), shell)
+                cmdinfo = parseCmd(self, self.substVar(l), shell)
+                try:
+                    r = cmdobj.run(
+                        cmdinfo['stdin'], cmdinfo['stdout'], cmdinfo['stderr'],
+                        cmdinfo['environ'], cmdinfo['argv']
+                    )
+                finally:
+                    for f in cmdinfo['close']:
+                        f.close()            
 
-                r = cmdobj.run(
-                    cmdinfo['stdin'], cmdinfo['stdout'], cmdinfo['stderr'],
-                    cmdinfo['environ'], cmdinfo['argv']
-                )
-
-                # let files get closed, etc
-                del cmdinfo
+                    del cmdinfo
 
             if r is True:
                 self.redraw(self.shell.stdout, True)

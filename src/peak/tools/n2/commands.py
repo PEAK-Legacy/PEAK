@@ -6,7 +6,7 @@ import re, sys, os
 __all__ = ['parseCmd', 'ShellCommand']
 
 
-def parseCmd(cmdline, defaults):
+def parseCmd(ctx, cmdline, defaults):
     """Parse a command line, and return a dictionary containing
     argv, stdin, stdout, stderr, and environ.
 
@@ -18,7 +18,7 @@ def parseCmd(cmdline, defaults):
     TODO: support VAR=value before command to change environment?
     """
 
-    r = {}
+    r = {'close':{}}
 
     for a in ('stdin', 'stdout', 'stderr', 'environ'):
         r[a] = getattr(defaults, a)
@@ -27,24 +27,44 @@ def parseCmd(cmdline, defaults):
 
     av = []
     l = qsplit(cmdline)
-    for a in l:
-        if a.startswith('>>'):
-            r['stdout'] = open(a[2:], 'a')
-        elif a.startswith('>'):
-            r['stdout'] = open(a[1:], 'w')
-        elif a.startswith('2>>'):
-            r['stderr'] = open(a[3:], 'a')
-        elif a.startswith('2>'):
-            r['stderr'] = open(a[2:], 'w')
-        elif a.startswith('<'):
-            r['stdin'] = open(a[1:], 'r')
-        else:
-            av.append(a)
 
-    if pipeto is not None:
-        r['stdout'] = os.popen(pipeto, 'w')
+    try:
+        for a in l:
+            if a.startswith('>>'):
+                factory = config.IStreamSource(a[2:]).getFactory(ctx)
+                r['stdout'] = f = factory.update('t', append=True, autocommit=True)
+                r['close'][f] = 1
+            elif a.startswith('>'):
+                factory = config.IStreamSource(a[1:]).getFactory(ctx)
+                r['stdout'] = f = factory.create('t', autocommit=True)
+                r['close'][f] = 1
+            elif a.startswith('2>>'):
+                factory = config.IStreamSource(a[3:]).getFactory(ctx)
+                r['stderr'] = f = factory.update('t', append=True, autocommit=True)
+                r['close'][f] = 1
+            elif a.startswith('2>'):
+                factory = config.IStreamSource(a[2:]).getFactory(ctx)
+                r['stderr'] = f = factory.create('t', autocommit=True)
+                r['close'][f] = 1
+            elif a.startswith('<'):
+                factory = config.IStreamSource(a[1:]).getFactory(ctx)
+                r['stdin'] = f = factory.open('t', autocommit=True)
+                r['close'][f] = 1
+            else:
+                av.append(a)
 
-    r['argv'] = av
+        if pipeto is not None:
+            r['stdout'] = f = os.popen(pipeto, 'w')
+            r['close'][f] = 1
+
+        r['argv'] = av
+    except:
+        for f in r['close'].keys():
+            f.close()
+            
+        raise
+        
+    r['close'] = r['close'].keys()
 
     return r
 
