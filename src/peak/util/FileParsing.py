@@ -1,4 +1,4 @@
-"""Line-oriented File Parsing Tools
+"""Line-Oriented File Parsing Tools
 
     This module supplies functions for creating and using "lineInfo"
     streams, which are iterables of '(source,lineNo,line)' tuples. The
@@ -23,7 +23,9 @@
     Once you have a stream to play with, you can then use some of the
     processors such as 'iterConfigSections()' and 'iterConfigSettings()',
     which return iterators yielding various kinds of configuration data
-    (based on ConfigParser-like syntax rules).
+    (based on ConfigParser-like syntax rules).  Or, you can use the
+    'AbstractConfigParser' class as a base class to create your own
+    specialized parsers.
 """
 
 from __future__ import generators
@@ -32,10 +34,8 @@ import re
 
 __all__ = [
     'fromStream', 'fromFile', 'fromString',
-    'iterConfigSections', 'iterConfigSettings', 'AbstractParser',
+    'iterConfigSections', 'iterConfigSettings', 'AbstractConfigParser',
 ]
-
-
 
 
 
@@ -285,35 +285,73 @@ def iterConfigSettings(lineSource):
 
 
 
-class AbstractParser(object):
+class AbstractConfigParser(object):
 
-    """Basic configuration file parser"""
+    """Abstract configuration file parser based on sections and settings
+
+        The basic idea of this class is that you subclass it, supplying
+        replacements for the 'get_handler()' and/or 'add_setting()' methods.
+        If your format will handle all sections the same way, just override
+        'add_setting()'.  If it will handle sections differently, override
+        'get_handler()' to return an appropriate method for processing settings
+        in that section.  If you want sections which aren't parsed as settings
+        at all, you'll need to revise the 'add_section()' method to handle
+        such sections differently.
+
+        To use your class, you'll create an instance of the parser, then
+        call its 'readFile()', 'readStream()' or 'readString()' methods to
+        process configuration data from as many sources as you like.  What
+        will happens when each setting is received, is of course up to your
+        subclass to determine."""
 
     def readFile(self, filename, mode='r'):
+        """Read file 'filename' into configuration"""
         self.parse(fromFile(filename, mode))
 
     def readStream(self, stream, source):
+        """Read 'stream' into configuration"""
         self.parse(fromStream(stream, source))
 
     def readString(self, text, source='<string>'):
+        """Read 'text' into configuration"""
         self.parse(fromString(text, source))
 
     def parse(self, lineSource):
-        section = self.parse_section
+        """Read lineInfo-stream 'lineSource' into configuration"""
+        section = self.add_section
         for s,l,li in iterConfigSections(lineSource):
             section(s,l,li)
 
-    def parse_section(self, section, lines, lineInfo):
-        self.read_settings(section, lines)
 
 
-    def read_settings(self, section, lines):
-        set = self.handle_setting
+
+
+    def add_section(self, section, lines, lineInfo):
+
+        """Add a section to configuration"""
+
+        handler = self.get_handler(section, lines, lineInfo)
+        self.process_settings(section, lines, handler)
+
+
+    def process_settings(self, section, lines, handler):
+
+        """Process a section's worth of settings using 'handler'"""
+
         for n,v,l in iterConfigSettings(lines):
-            set(section,n,v,l)
+            handler(section,n,v,l)
 
 
-    def handle_setting(self, section, name, value, lineInfo):
+    def get_handler(self, section, lines, lineInfo):
+
+        """Override this to choose setting handlers per section"""
+
+        return self.add_setting
+
+
+    def add_setting(self, section, name, value, lineInfo):
+
+        """Override this to implement your standard processing for settings"""
 
         if section is None:
             pass    # setting in un-named section
@@ -326,39 +364,6 @@ class AbstractParser(object):
 
 
 
-if __name__=='__main__':
 
-    TEST_DATA = """
 
-# these are comment lines at the top of
-rem the anonymous section
-; and should be ignored
-
-[Section 1]
-
-something = simple, no continuations
-
-other: this has
-    several
-        continuation
-
-    lines, including
-
-    blanks.
-
-oneMore = this has
-
-# embedded comments that shouldn't show up
-
-    in the middle.
-
-[Section 2]
-
-this = has
-    # indented comments
-    that should be part of the text
-# but not this line!
-"""
-
-    AbstractParser().readString(TEST_DATA)
 

@@ -47,6 +47,10 @@ Open Issues/To-Do Items
 
         - move factories.__init__ stuff to peak.naming.spi, loaded via peak.ini
 
+        - move reference classes to peak.naming.names
+
+        - ParsedURL refactoring (fromArgs, automatic re.compile, body parsing)
+
         - docstrings for reference
 
     peak.running
@@ -73,11 +77,48 @@ Open Issues/To-Do Items
 
         - docstrings for reference
 
+
+
+
     peak.util
 
         - docstrings for reference
 
         - more unit tests?
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
  Future Releases

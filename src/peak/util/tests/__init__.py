@@ -5,8 +5,9 @@ those tests.
 """
 
 allSuites = [
-    'SOX:test_suite',
     'EigenData:test_suite',
+    'FileParsing:test_suite',
+    'SOX:test_suite',
     'uuid:test_suite',
 ]
 
