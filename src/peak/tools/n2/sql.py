@@ -292,7 +292,7 @@ class SQLInteractor(binding.Component):
 
 -N null\tuse given string to represent NULL
 -d delim\tuse specified delimiter
--m style\tuse specified format
+-m style\tuse specified format (see \\styles for a list)
 -h\t\tsuppress header
 -f\t\tsuppress footer
 -n\t\tdon't expand variables in SQL
@@ -866,11 +866,27 @@ default for src is '!.', the current input buffer"""
 
 
 
+    class cmd_styles(ShellCommand):
+        """\\styles -- list available output styles"""
+        
+        args = ('', 0, 0)
+        
+        def cmd(self, stdout, **kw):
+            base = PropertyName('peak.cursor.formatters.*')
+            skip = len(base.asPrefix())
+        
+            l = [v[skip:] for v in config.iterKeys(self, base)]
+            
+            self.shell.printColumns(stdout, l)
+            
+    cmd_styles = binding.Make(cmd_styles)
+
+
     class cmd_describe(ShellCommand):
         """\\describe [-d delim] [-m style] [-h] [-f] [-v] [name] -- describe objects in database, or named object
 
 -d delim\tuse specified delimiter
--m style\tuse specified format
+-m style\tuse specified format (see \\styles for a list)
 -h\t\tsuppress header
 -f\t\tsuppress footer
 -v\t\tverbose; give more information
