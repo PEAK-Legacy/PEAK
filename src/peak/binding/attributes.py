@@ -1,8 +1,83 @@
 from interfaces import IActiveDescriptor
-from protocols import adapt
+from protocols import adapt, advice
 from types import ClassType
+import dispatch,protocols
 
-__all__ = ['activateClass','classAttr','Activator']
+__all__ = [
+    'activateClass','classAttr','Activator','declareAttribute','metadata'
+]
+
+
+def metadata(**kw):
+    """Declare metadata for attributes of containing class
+
+    Usage::
+
+        class Foo:
+            binding.metadata(
+                some_attr=[security.Anybody, options.Set('-v',value=True)],
+                other_attr=syntax("foo|bar"),
+                # etc...
+            )
+
+    Keyword argument names are treated as attribute names, and the values are
+    passed to 'binding.declareAttribute()' in order to declare the given
+    metadata for the containing class.  Please see individual frameworks'
+    documentation for information about what metadata they need or provide,
+    and what that metadata's semantics are.
+    """
+    def callback(klass):
+        for k,v in kw.items():
+            declareAttribute(klass,k,v)
+        return klass
+
+    advice.addClassAdvisor(callback)
+
+
+
+
+
+
+
+[dispatch.on('metadata')]
+def declareAttribute(classobj,attrname,metadata):
+    """Declare 'metadata' about 'attrname' in 'classobj'
+
+    This generic function is used to dispatch metadata declarations.  You do
+    not normally call it directly, unless implementing a metadata API or
+    attribute descriptor.  Instead, you add methods to it, in order to support
+    a new metadata type you've defined.
+
+    Note that it's up to your methods to define the semantics, such as where
+    the metadata will be stored.  The only predefined semantics are for
+    metadata of 'None' (which is a no-op), and 'protocols.IBasicSequence' types
+    (which recursively invokes 'declareAttribute()' on the sequence's contents).
+
+    Also note that many metadata frameworks have a notion of context, such
+    that different metadata might apply to the class in different contexts.
+    If this is the case for your metadata type, the method you add to this
+    function should set metadata for whatever your framework's "default
+    context" is.
+    """
+
+[declareAttribute.when(type(None))]
+def declare_None(classobj,attrname,metadata):
+    """Declaring attribute metadata of 'None' is a no-op."""
+
+[declareAttribute.when(protocols.IBasicSequence)]
+def declare_Sequence(classobj,attrname,metadata):
+    """Declaring attribute w/a sequence declares all contained items"""
+    for item in metadata:
+        declareAttribute(classobj,attrname,item)
+
+
+
+
+
+
+
+
+
 
 
 def activateClass(klass):
@@ -37,6 +112,13 @@ def activateClass(klass):
         if v is not None:
             cd[k] = v.activateInClass(klass,k)
     return klass
+
+
+
+
+
+
+
 
 
 class classAttr(object):

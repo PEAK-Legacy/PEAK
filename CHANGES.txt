@@ -1,5 +1,17 @@
 Fixes and Enhancements since Version 0.5 alpha 3
 
+ - Added a new "attribute metadata" mini-framework to 'peak.binding'.  This
+   framework makes it possible to declare arbitrary metadata about attributes,
+   using either a class advisor ('binding.metadata()', similar in form and
+   function to the existing 'security.allow()') or using a 'metadata' attribute
+   of attribute bindings (which is the second positional parameter in all
+   the standard bindings like 'Make', 'Obtain', etc.).  Over time, existing
+   metadata mechanisms will be refactored to use this new mini-framework,
+   instead of the various integrated ad-hoc mechanisms that exist now (like
+   the 'permissionNeeded' attribute).  For more information on how the new
+   metadata hooks work, including doctest examples, see the 'attributes.txt'
+   file in the 'peak.binding' package, under the heading "Attribute Metadata".
+   
  - Added a new function, 'binding.activateClass()', that can be used to
    activate any bindings in the class.  This can now be used in place of
    subclassing a PEAK base class or using a PEAK metaclass.  In future, this

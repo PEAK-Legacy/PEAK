@@ -5,6 +5,85 @@ Attribute Bindings and Metadata
     >>> from peak.api import *
 
 
+Attribute Metadata
+==================
+
+``peak.binding`` offers a framework for declaring metadata about classes'
+attributes.  This framework can be used for any kind of attribute-related
+metadata from security permissions to command-line options, to XML syntax.
+
+Metadata Types
+--------------
+
+To create a new kind of metadata, we need to create a class that represents
+the metadata, and then add a method to  the ``binding.declareAttribute()``
+generic function.  For our example, we'll create a ``Message`` metadata type
+that just prints a message when the metadata is registered::
+
+    >>> class Message(str):
+    ...     pass
+    >>> def print_message(classobj,attrname,metadata):
+    ...     print metadata, "(%s.%s)" % (classobj.__name__,attrname)
+    >>> binding.declareAttribute.addMethod(Message,print_message)
+
+Now, we'll see if it works::
+
+    >>> class Foo: pass
+    >>> binding.declareAttribute(Foo,'bar',Message("testing"))
+    testing (Foo.bar)
+    
+In addition to defining your own metadata types, ``declareAttribute()`` has
+built-in semantics for ``None`` and sequence types.  The former is a no-op, and
+the latter re-invokes ``declareAttribute()`` on the sequence contents::
+
+    >>> binding.declareAttribute(Foo, 'baz', 
+    ...     [Message('test1'), Message('test2')]
+    ... )
+    test1 (Foo.baz)
+    test2 (Foo.baz)
+    >>> binding.declareAttribute(Foo, 'spam', None)     # no-op
+
+
+Declaring Metadata
+------------------
+
+Of course, if you had to use ``declareAttribute()`` directly to declare
+metadata, it would be really inconvenient.  It's much eaiser to use either
+``binding.metadata()``, or attribute bindings like ``binding.Make``.
+
+``binding.metadata()`` is a "class advisor", which means that you use it in
+the body of a class, to affect the created class.  It takes keyword arguments
+containing metadata to be declared for the named attributes::
+
+    >>> class Foo:
+    ...     binding.metadata(
+    ...         bar = Message("Ahoy!"),
+    ...         baz = [Message("foo"), Message("bar")],
+    ...     )
+    foo (Foo.baz)
+    bar (Foo.baz)
+    Ahoy! (Foo.bar)
+
+Also, all of the standard attribute bindings (``Make``, ``Obtain``,
+``Require``, and ``Delegate``) will accept metadata as their second positional
+parameter or as a ``metadata`` keyword argument::
+
+    >>> class Foo:
+    ...     __metaclass__ = binding.Activator   # XXX
+    ...     bar = binding.Make(dict, Message("Ahoy!"))
+    ...     spam = binding.Require("something", Message("Voila!"))
+    ...     baz = binding.Obtain(".", [Message("foo"),Message("bar")])
+    ...     ping = binding.Delegate('spam', Message("Ni"))
+    ...     whee = binding.Attribute(metadata=Message("tickity"))
+    Ahoy! (Foo.bar)
+    Voila! (Foo.spam)
+    foo (Foo.baz)
+    bar (Foo.baz)
+    tickity (Foo.whee)
+    Ni (Foo.ping)
+
+
+
 Descriptor Activation
 ---------------------
 
@@ -22,7 +101,7 @@ method::
     ...     def activateInClass(self, klass, attrName):
     ...         print "activated", klass, attrName
     ...         return 42
-    
+
 When placed inside a class that has ``binding.activateClass()`` called on it,
 the descriptor's activation method will be called, and the descriptor's
 return value will be registered in a ``__class_descriptors__`` dictionary::
@@ -43,6 +122,20 @@ the same class::
     >>> binding.activateClass(Test)
     <class 'Test'>
 
+Also note that if the same descriptor appears more than once in the class, it
+will be called more than once, and it should be prepared to handle this.  (For
+example, PEAK's active descriptors typically replace themselves with a copy
+in the containing class.)  Notice that although ``foo`` and ``bar`` below are
+the same object, they are "both" activated::
+
+    >>> class Test(object):
+    ...     foo = bar = DummyDescriptor()
+    >>> Test.foo is Test.bar
+    1
+    >>> Test = binding.activateClass(Test)
+    activated <class 'Test'> bar
+    activated <class 'Test'> foo
+
 ``activateClass()`` also checks for any ``binding.classAttr`` instances in the
 class, and if any are present, it recreates the class as an instance of a new
 metaclass, with the appropriate class attributes::
@@ -54,7 +147,21 @@ metaclass, with the appropriate class attributes::
     >>> Test = binding.activateClass(Test)
     >>> type(Test)
     <class 'TestClass'>
-    >>> Test.foo
+    >>> Test.foo    # Available as an attribute, via the metaclass
     42
+    >>> Test().foo  # but it's not actually in the class or its instances
+    Traceback (most recent call last):
+    ...
+    AttributeError: ...
+
+TODO: in-place activation for class attrs, via del class attr from child,
+create subclass of meta, activating it, and change class.__class__ to new meta
+(Will this work w/other metaclasses?  Non-in-place activation won't work
+w/generic functions, so need to test.)
+
+``activateContainingClass()`` depth/frame
+
+
+
 
 

@@ -557,8 +557,9 @@ class Obtain(Attribute):
     default = NOT_GIVEN
     targetName = None
 
-    def __init__(self,targetName,**kw):
+    def __init__(self,targetName,metadata=None,**kw):
         self.targetName = adapt(targetName, IComponentKey)
+        kw['metadata']=metadata
         super(Obtain,self).__init__(**kw)
 
     def computeValue(self, obj, instanceDict, attrName):
@@ -569,7 +570,6 @@ class Obtain(Attribute):
             return "binding.Obtain(%r):\n\n%s" % (self.targetName,self.__doc__)
         else:
             return "binding.Obtain(%r)" % (self.targetName,)
-
 
 
 class SequenceFinder(object):
@@ -636,9 +636,10 @@ class Delegate(Make):
 
     delegateAttr = None
 
-    def __init__(self, delegateAttr, **kw):
+    def __init__(self, delegateAttr, metadata=None, **kw):
         def delegate(s,d,a):
             return getattr(getattr(s,delegateAttr),a)
+        kw['metadata']=metadata
         super(Delegate,self).__init__(delegate,delegateAttr=delegateAttr,**kw)
 
     def __repr__(self):
@@ -653,15 +654,15 @@ class Delegate(Make):
 
 
 
-
 class Require(Attribute):
 
     """Placeholder for a binding that should be (re)defined by a subclass"""
 
     description = ''
 
-    def __init__(self, description="", **kw):
+    def __init__(self, description="", metadata=None, **kw):
         kw['description'] = description
+        kw['metadata']=metadata
         super(Require,self).__init__(**kw)
 
 

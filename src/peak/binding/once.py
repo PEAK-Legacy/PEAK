@@ -11,6 +11,7 @@ from protocols.advice import metamethod, getMRO
 from warnings import warn
 from types import ClassType
 from attributes import activateClass, classAttr, Activator, supertype
+from attributes import declareAttribute
 
 __all__ = [
     'Make', 'ActiveClass',
@@ -20,7 +21,6 @@ __all__ = [
 
 class ComponentSetupWarning(UserWarning):
     """Large iterator passed to suggestParentComponent"""
-
 
 
 
@@ -372,10 +372,11 @@ class Attribute(Descriptor):
     doc = None
     adaptTo = None
     suggestParent = True
-
+    metadata = None
 
     def activateInClass(self,klass,attrName):
         setattr(klass, attrName, self._copyWithName(attrName))
+        declareAttribute(klass,attrName,self.metadata)
         return self
 
 
@@ -405,7 +406,6 @@ class Attribute(Descriptor):
         if self.suggestParent:
             suggestParentComponent(obj, attrName, value)
         return value
-
 
 
     # The following methods only get called when an instance of this class is
@@ -558,7 +558,7 @@ class Make(Attribute):
     XXX need more docs for adaptations to 'IRecipe'
     """
 
-    def __init__(self, recipe, **kw):
+    def __init__(self, recipe, metadata=None, **kw):
         kw.setdefault('attrName',
             getattr(recipe, '__name__', None)
         )
@@ -566,8 +566,8 @@ class Make(Attribute):
         kw.setdefault('doc',
             getattr(recipe,'__doc__',None)
         )
+        kw['metadata']=metadata
         super(Make,self).__init__(**kw)
-
 
 
 
