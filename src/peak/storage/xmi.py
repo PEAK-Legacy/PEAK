@@ -232,16 +232,16 @@ class XMINode(object):
             )
 
         if 'xmi.uuidref' in atts:
-            return 'xmi.uuid', atts['xmi.uuidref']
+            ref = 'xmi.uuid', atts['xmi.uuidref']
 
-        if 'xmi.idref' in atts:
-            return 'xmi.id',  atts['xmi.idref']
+        elif 'xmi.idref' in atts:
+            ref = 'xmi.id',  atts['xmi.idref']
+        else:
+            ref = self.getId()
 
-        return self.getId()
+        return self.index[ref].getId()
+        
     
-
-
-
 
 
     def getValue(self, feature, dm):
