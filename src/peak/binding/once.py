@@ -171,20 +171,20 @@ class Once(ActiveDescriptor):
         """
         if obj is None: return self
 
-        d = obj.__dict__
         n = self.attrName
 
         if not n or getattr(obj.__class__,n,None) is not self:
             self.usageError()
 
-        d[n] = NOT_FOUND    # recursion guard
+        setattr(obj,n,NOT_FOUND)    # recursion guard
 
         try:
-            d[n] = value = self.computeValue(obj, d, n)
+            value = self.computeValue(obj, obj.__dict__, n)
         except:
-            del d[n]
+            delattr(obj,n)
             raise
-            
+
+        setattr(obj,n,value)
         return value
 
 
