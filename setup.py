@@ -232,7 +232,7 @@ setup(
         'peak.metamodels': ['*.asdl']
     },
 
-    test_module = TEST_MODULE,
+    test_suite = 'peak.tests.test_suite',
     ext_modules = extensions,
     scripts = scripts,
 )
