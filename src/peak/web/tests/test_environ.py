@@ -263,8 +263,8 @@ class TestNamespaces(TestCase):
             'peak.web.skins.foo', config.Value(self.foo_skin)
         )
         self.p1 = config.registeredProtocol(self.policy,web.VIEW_NAMES+'.foo')
-        protocols.declareAdapter(lambda ob:foo_handler,[self.p1],forTypes=[int])
-        protocols.declareAdapter(lambda ob:bar_handler,[self.p1],forTypes=[str])
+        protocols.declareAdapter(lambda ob:(ob,foo_handler),[self.p1],forTypes=[int])
+        protocols.declareAdapter(lambda ob:(ob,bar_handler),[self.p1],forTypes=[str])
 
         from test_templates import TestApp
         self.app = TestApp(testRoot())

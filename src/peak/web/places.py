@@ -254,7 +254,7 @@ class Location(Place,binding.Configurable):
         self.have_views = True
         IViewTarget(target).registerWithProtocol(
             config.registeredProtocol(self,VIEW_NAMES+'.'+name),
-            lambda ob:handler
+            lambda ob:(ob,handler)
         )
 
     def addContainer(self,container,permissionNeeded=None):

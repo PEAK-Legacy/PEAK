@@ -330,9 +330,9 @@ def traverseView(ctx, ob, ns, name, qname, default=NOT_GIVEN):
 
     p = ctx.view_protocol(name)
     if p is not None:
-        handler = adapt(ob,p,NOT_FOUND)
+        target, handler = adapt(ob,p,(NOT_FOUND,NOT_FOUND))
         if handler is not NOT_FOUND:
-            return handler(ctx, ctx.current, ns, name, qname, default)
+            return handler(ctx, target, ns, name, qname, default)
 
     if default is NOT_GIVEN:
         raise errors.NotFound(ctx,qname,ob)
