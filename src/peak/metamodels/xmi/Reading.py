@@ -121,7 +121,50 @@ class XMIFactory:
 
 
 
+def _makeXMIMap(parents):
+
+    context,(container,rest) = parents
+
+    # Build a map from objects' XMI names to their "real" names
+    
+    m = {}
+    name = context.name
+
+    for base in container.bases:
+        m.update(getattr(base,name,{}))
+    
+    for k,v in container.output.items():
+        for xmi in getattr(v,'_XMINames',()):
+            m[xmi]=k
+
+    # And store it under the name we are assigned
+    
+    container.output[name] = m
+
+
+XMIMapMaker = SimplePostProcessor(_makeXMIMap)
+
+XMIMapMaker.copyIntoSubclasses = 1
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 class XMIReading:
+
+    _XMIMap = XMIMapMaker
 
     class _sefStructuralFeature:
     
@@ -143,6 +186,8 @@ class XMIReading:
         def _fromXMI(self,node):
             return self
 
+        _XMIMap = XMIMapMaker
+
 
     class _sefReference:
         def _fromXMI(self,node):
@@ -155,13 +200,6 @@ class XMIReading:
 
     def _fromXMI(self,node):
         return node
-
-
-
-
-
-
-
 
 
 
