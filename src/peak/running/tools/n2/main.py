@@ -12,7 +12,7 @@ except:
     readline = None
 
 from interfaces import *
-import ns
+import ns, sql
 
 
 class N2(AbstractCommand):

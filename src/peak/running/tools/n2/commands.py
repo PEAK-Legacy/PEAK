@@ -140,6 +140,8 @@ class ShellCommand(binding.Component):
     def run(self, stdin, stdout, stderr, environ, argv):
         optpat, minarg, maxarg = getattr(self, 'args', ('', 0, 0))
 
+        retval = None
+        
         try:
             opts, args = getopt(argv[1:], optpat)
             opts = dict(opts)
@@ -147,12 +149,14 @@ class ShellCommand(binding.Component):
                 raise SyntaxError
         except:
             print >>stderr, 'usage:', self.__doc__
-            return
+            return False
 
         try:
-            self.cmd(
+            retval = self.cmd(
                 cmd=argv[0], opts=opts, args=args,
                 stdin=stdin, stdout=stdout, stderr=stderr, environ=environ
             )
         except:
             sys.excepthook(*sys.exc_info()) # XXX
+
+        return retval
