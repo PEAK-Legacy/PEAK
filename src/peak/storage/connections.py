@@ -11,6 +11,8 @@ __all__ = [
 
 from peak.util.Struct import struct
 
+CURSFMT_PREFIX   = PropertyName('peak.cursor.formatters')
+
 class RowBase(struct):
     protocols.advise(
         instancesProvide = [IRow]
@@ -111,6 +113,13 @@ class AbstractCursor(binding.Component):
     __invert__ = justOne
 
 
+    def getFormatter(self, fmtname, **kw):
+        factory = CURSFMT_PREFIX.of(self).get(fmtname)
+        if factory is None:
+            return None
+
+        return factory(parentComponent=self, cursor=self, **kw)
+        
 
 
 

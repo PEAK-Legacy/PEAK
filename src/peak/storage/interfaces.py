@@ -566,6 +566,9 @@ class ICursor(Interface):
     def close():
         """Close/reset the true DB cursor; the proxy can still be reused"""
 
+    def getFormatter(name, header=True, footer=True, delim='|', **kw):
+        """Get an ICursorFormatter of the given name, bound to this cursor"""
+
 
 class IRow(Interface):
     """Row that smells like a tuple, dict, or instance attr"""
