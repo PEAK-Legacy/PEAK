@@ -189,7 +189,7 @@ class MethodExporter(ActiveDescriptor, type):
 
                 slap_thick.verb = "slap"
 
-                def slap_thick(feature, self):
+                def slap_thin(feature, self):
                     print "SMACK!", feature.thickness
 
                 slap_thin.installIf = (
