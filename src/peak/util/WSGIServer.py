@@ -97,9 +97,9 @@ class WSGIRequestHandler(BaseHTTPRequestHandler):
         return env
 
 
-
-
-
+    def dump_to_stderr(self,text):
+        if text:
+            sys.stderr.write(text)
 
 
 
@@ -148,7 +148,10 @@ class WSGIRequestHandler(BaseHTTPRequestHandler):
             default_status = '200 OK'
 
         status = headers.setdefault('status',default_status).strip()
-        code,reason = status.split(' ',1)
+        if ' ' in status:
+            code,reason = status.split(' ',1)
+        else:
+            code,reason = status,""
         self.send_response(int(code), reason)
         del headers['status']
 
@@ -156,9 +159,6 @@ class WSGIRequestHandler(BaseHTTPRequestHandler):
         self.wfile.write('\r\n')
         self.wfile.write(stdout.read())
 
-    def dump_to_stderr(self,text):
-        if text:
-            sys.stderr.write(text)
 
 
 
