@@ -211,9 +211,7 @@ class EventDriven(AbstractCommand):
     idleTimeout = 0
     runAtLeast = 0
 
-    handlers = binding.requireBinding(
-        """Objects that will register themselves in reactor or task queue"""
-    )
+    handlers = binding.New(list)
 
 
     def setup(self, parent=None):
@@ -244,15 +242,28 @@ class EventDriven(AbstractCommand):
 
 
 
+
+
 _browser_methods = 'GET', 'POST', 'HEAD'
 
 class CGIPublisher(binding.Component):
 
     """Use 'zope.publisher' to run an application as CGI/FastCGI"""
 
+    __implements__ = IRerunnable
+
+    XMLRPC  = binding.bindTo("import:zope.publisher.xmlrpc:XMLRPCRequest")
+    Browser = binding.bindTo("import:zope.publisher.browser:BrowserRequest")
+    HTTP    = binding.bindTo("import:zope.publisher.http:HTTPRequest")
+
     publish = binding.bindTo("import:zope.publisher.publish:publish")
 
-    def run(self, input, output, errors, environ):
+    xmlrpcPublication  = binding.requireBinding("IPublication for XMLRPC")
+    browserPublication = binding.requireBinding("IPublication for Browser")
+    httpPublication    = binding.requireBinding("IPublication for HTTP")
+
+
+    def run(self, input, output, errors, environ, argv=[]):
 
         """Process one request"""
 
@@ -262,75 +273,23 @@ class CGIPublisher(binding.Component):
             if (method == 'POST' and
                 env.get('CONTENT_TYPE', '').lower().startswith('text/xml')
                 ):
-                request = self.xmlrpcRequest(input, output, errors, env)
+                request = self.XMLRPC(input, output, env)
+                request.setPublication(self.xmlrpcPublication)
             else:
-                request = self.browserRequest(input, output, errors, env)
+                request = self.Browser(input, output, env)
+                request.setPublication(self.browserPublication)
         else:
-            request = self.httpRequest(input, output, errors, env)
+            request = self.HTTP(input, output, env)
+            request.setPublication(self.httpPublication)
         
         return self.publish(request)
-        
-    def xmlrpcRequest(self, input, output, errors, env):
-        raise NotImplementedError   # XXX
-
-    def browserRequest(self, input, output, errors, env):
-        raise NotImplementedError   # XXX
-
-    def httpRequest(self, input, output, errors, env):
-        raise NotImplementedError   # XXX
-
-
-
-
-
-
-
-class CGICommand(EventDriven):
-
-    """Run CGI/FastCGI in an event-driven loop"""
-
-    reactor = binding.bindTo(IBasicReactor)
-
-    publisher = binding.requireBinding("A CGIPublisher")
-
-
-    def isFastCGI(self):
-
-        try:
-            import fcgiapp
-        except ImportError:
-            return False    # Assume no FastCGI if module not present
-
-        return not fcgiapp.isCGI()
-
-
-    def setup(self, parent=None):
-
-        super(CGICommand, self).setup(parent)
-
-        if self.isFastCGI():
-
-            self.reactor.addReader(
-                FastCGIAcceptor(handler=self.publisher)
-            )
-
-        else:
-            self.reactor.callLater(
-                0, self.publisher.run,
-                self.stdin, self.stdout, self.stderr, self.environ
-            )
-
-
-
-
-
 
 
 class FastCGIAcceptor(binding.Base):
 
     """Accept FastCGI connections"""
 
-    handler  = binding.requireBinding("FastCGI handler")
+    command  = binding.requireBinding("IRerunnable command")
 
     mainLoop = binding.bindTo(IMainLoop)
     ping     = binding.bindTo('mainLoop/activityOccurred')
@@ -360,6 +319,49 @@ class FastCGIAcceptor(binding.Base):
 
 
 
+
+
+
+
+
+
+
+class CGICommand(EventDriven):
+
+    """Run CGI/FastCGI in an event-driven loop"""
+
+    reactor = binding.bindTo(IBasicReactor)
+
+    command = binding.requireBinding("An IRerunnable command")
+
+    newAcceptor = FastCGIAcceptor
+
+
+    def isFastCGI(self):
+
+        try:
+            import fcgiapp
+        except ImportError:
+            return False    # Assume no FastCGI if module not present
+
+        return not fcgiapp.isCGI()
+
+
+    def setup(self, parent=None):
+
+        super(CGICommand, self).setup(parent)
+
+        if self.isFastCGI():
+
+            self.reactor.addReader(
+                self.newAcceptor(command=self.command)
+            )
+
+        else:
+            self.reactor.callLater(
+                0, self.command.run,
+                self.stdin, self.stdout, self.stderr, self.environ, self.argv
+            )
 
 
 

@@ -9,7 +9,7 @@ __all__ = [
 
     'CLUSTER',
 
-    'ICmdLineAppFactory', 'ICmdLineApp',
+    'ICmdLineAppFactory', 'ICmdLineApp', 'IRerunnable',
 
     'IPeriodicTask', 'ITaskQueue', 'IMainLoop',
 
@@ -71,12 +71,24 @@ class ICmdLineApp(IComponent):
     """Encapsulate a "commandline-style" app for reusability/composability"""
 
     def run():
-        """Perform the functionality of the application; return exit code"""
+        """Perform the functionality of the application; return exit code
+
+        Note that the intent is for this method to be called once and only
+        once; an 'ICmdLineApp' is not required to be re-runnable.  Implement
+        'IRerunnable' (which supports passing environment arguments to 'run()')
+        if multiple runs are desired."""
 
 
 
+class IRerunnable(Interface):
 
+    """Like a command-line app, but serially reusable
 
+    This interface is for "stateless" commands that can run without having
+    their execution environment as part of their state."""
+
+    def run(stdin,stdout,stderr,environ,argv=[]):
+        """Perform function and return exit code"""
 
 
 
@@ -99,18 +111,6 @@ class IPeriodicTask(Interface):
 
     def __cmp__(other):
         """Compare to another daemon on the basis of priority"""
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
