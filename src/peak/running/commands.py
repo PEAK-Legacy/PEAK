@@ -945,7 +945,6 @@ class CGIInterpreter(Bootstrap):
     """Run an application as a CGI, by adapting it to IRerunnableCGI"""
 
     cgiWrapper = CGICommand
-    cgiProtocol = IRerunnableCGI
 
     usage = """
 Usage: peak CGI NAME_OR_URL arguments...
@@ -972,7 +971,7 @@ to invoke it.
         if factory is ob:   # XXX ???
             ob = factory(self, 'cgi')
 
-        cgi = adapt(ob, self.cgiProtocol, None)
+        cgi = IWSGIApplication(ob, None)
 
         if cgi is not None:
             return self.cgiWrapper(self, cgiCommand = cgi, argv=self.argv[:1])
@@ -980,7 +979,6 @@ to invoke it.
         raise InvocationError(
             "Can't convert", ob, "to CGI; found at", name
         )
-
 
 
 

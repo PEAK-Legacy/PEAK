@@ -14,9 +14,9 @@ class Handler(WSGIRequestHandler):
     def log_message(self,format,*args):
         self.server.log.info(format,*args)
 
-    def dump_to_stderr(self,text):
-        if text:
-            self.server.stderr.write(text)
+    def get_stderr(self):
+        return self.server.stderr
+
 
 
 
@@ -42,7 +42,8 @@ class Handler(WSGIRequestHandler):
 class WSGIServer(commands.EventDriven, WSGIServer):
 
     cgiCommand = binding.Require(
-        "IRerunnableCGI to invoke on each hit", adaptTo = running.IRerunnableCGI
+        "IWSGIApplication to invoke on each hit",
+        adaptTo = running.IWSGIApplication
     )
 
     fileno  = binding.Delegate('socket')
@@ -63,9 +64,7 @@ class WSGIServer(commands.EventDriven, WSGIServer):
         lambda self: socket.getfqdn(self.socket_address[0])
     )
 
-    server_port = binding.Make(
-        lambda self: self.socket_address[1]
-    )
+    server_port = binding.Make(lambda self: self.socket_address[1])
 
     _getEnv = binding.Make(lambda self: self.setup_environ(), uponAssembly=True)
 
@@ -77,8 +76,9 @@ class WSGIServer(commands.EventDriven, WSGIServer):
             port=''
         webbrowser.open("http://%s%s/" % (self.server_name,port),new,autoraise)
 
-    def get_service(self):
+    def get_app(self):
         return self.cgiCommand
+
 
     eventLoop = binding.Obtain(events.IEventLoop)
 
@@ -112,8 +112,8 @@ Usage: peak serve NAME_OR_URL arguments...
 
 Run NAME_OR_URL as a CGI application in a local webserver on the port specified
 by the 'peak.tools.server.url' property.  The object found at the specified
-name or URL will be adapted to 'running.IRerunnableCGI' interface, and then
-run in a local web server.
+name or URL will be adapted to the 'running.IWSGIApplication' interface, and
+then run in a local web server.
 """
 
     cgiWrapper = WSGIServer
@@ -128,13 +128,12 @@ Usage: peak launch NAME_OR_URL arguments...
 
 Run NAME_OR_URL as a CGI application in a local webserver on the port specified
 by the 'peak.tools.server.url' property.  The object found at the specified
-name or URL will be adapted to 'running.IRerunnableCGI' interface, and then
-run in a local web server.
+name or URL will be adapted to the 'running.IWSGIApplication' interface, and
+then run in a local web server.
 
 This command is similar to the 'peak serve' command, except that it also
 attempts to open the application in a web browser window.
 """
-
     cgiWrapper = WSGILauncher
 
 
@@ -152,6 +151,7 @@ protocols.adviseObject(demo_service, [running.IWSGIApplication])
 
 if __name__ == '__main__':
     WSGIServer(config.makeRoot(), cgiCommand=demo_service()).run()
+
 
 
 
