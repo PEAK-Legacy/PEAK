@@ -404,7 +404,7 @@ class MethodExporter(ActiveClass):
 
             if installIf is None or installIf(self,func):
                 verb = func.verb
-                mn[verb] = verbs[verb] % names
+                if verb in verbs: mn[verb] = verbs[verb] % names
                 setattr(self,verb,classmethod(func))
 
 
