@@ -105,7 +105,6 @@ class ParserTests(TestCase):
         self.failUnless(
             self.traverse(loc,'TestLocation').current is TestLocation
         )
-
         self.startElement('location',['name','bar'])
         self.startElement('container',
             ['object','globals()','permission','security.Nobody']
@@ -115,11 +114,12 @@ class ParserTests(TestCase):
         self.assertRaises(web.NotFound, self.traverse, loc, 'TestLocation')
 
     def testLocationId(self):
-        self.startElement('location',['id','root'])
-        loc = self.endElement()
-        self.failUnless(
-            self.traverse(loc,'++id++root').current is loc
-        )
+        self.startElement('location',['id','outer'])
+        self.startElement('location',['id','inner', 'name','xyz'])
+        inner = self.endElement()
+        outer = self.endElement()
+        self.failUnless(self.traverse(outer,'++id++outer').current is outer)
+        self.failUnless(self.traverse(outer,'++id++inner').current is inner)
 
     def testOfferPath(self):
         self.startElement('location',[])
@@ -131,7 +131,6 @@ class ParserTests(TestCase):
         self.failUnless(
             self.traverse(loc,'++id++bar').current is foo
         )
-
 
     def testRequirePermission(self):
         self.startElement('location', [])
@@ -154,12 +153,13 @@ class ParserTests(TestCase):
         bar = self.endElement('location')
         self.assertRaises(web.NotFound, self.traverse, bar, 'TestLocation')
 
-
-
-
-
-
-
+    def testContainerSuggestion(self):
+        global testComponent; testComponent = binding.Component()
+        self.startElement('location',[])
+        self.startElement('container',['object','testComponent'])
+        self.endElement()
+        loc = self.endElement()
+        self.failUnless(testComponent.getParentComponent() is loc)
 
 
     def testNotAllowedInContent(self):
@@ -173,6 +173,10 @@ class ParserTests(TestCase):
         self.endElement('container')
         self.assertRaises(SyntaxError, self.startElement,
             'content',['type','int'])
+        self.endElement('content')
+        self.assertRaises(SyntaxError, self.startElement,
+            'location',['name','x'])
+        self.endElement('location')
 
 
     def testChoice(self):
@@ -190,10 +194,6 @@ class ParserTests(TestCase):
         self.failUnless(permHandler(ctx,None,'','x','x').current is None)
         helpedHandler = sm.addHelper(nullHandler,lambda x: [x])
         self.assertEqual(helpedHandler(ctx,None,'','x','x').current, [None])
-
-
-
-
 
 
 

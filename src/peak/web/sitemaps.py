@@ -15,7 +15,7 @@ def acquire(data,key,default=None):
         data = data.get('previous')
     else:
         return default
-    
+
 def finishComponent(parser,data):
     if 'sm.component' in data:
         return data['sm.component']
@@ -75,7 +75,7 @@ def choose(parser, names, attrs):
     parser.err(
         "Element must include *exactly* one of these attributes: "
         + ', '.join(names)
-    )            
+    )
 
 
 
@@ -101,7 +101,7 @@ def attributeView(attr):
             raise web.NotFound(ctx,qname,ob)
         return default
     return handler
-    
+
 def objectView(target):
     def handler(ctx, ob, namespace, name, qname, default=NOT_GIVEN):
         return ctx.childContext(qname,target)
@@ -117,7 +117,7 @@ def locationView(spec):
     locId = '++id++'+locId
     def handler(ctx, ob, namespace, name, qname, default=NOT_GIVEN):
         path = str(ctx.clone(current=ob).traverseName(keyPath).current)
-        base = ctx.traverseName(locId).absoluteURL     
+        base = ctx.traverseName(locId).absoluteURL
         return ctx.childContext(qname,base+'/'[:not base.endswith('/')]+path)
     return handler
 
@@ -141,7 +141,7 @@ def registerView(name,handler,data,attrs):
 def doAllow(parser,data):
     attrs = SOX.validatedAttributes(
         parser,data,('attributes',),('permission','helper')
-    )        
+    )
 
     for attr in attrs['attributes'].split(','):
         registerView(attr,attributeView(attr.strip()),data,attrs)
@@ -171,39 +171,40 @@ def makeLocation(parser,data,attrs,parent,name):
         factory = naming.lookup(parent,
             naming.parseURL(parent, attrs['extends'], parser._url)
         )
-        return config.processXML(
+        loc = config.processXML(
             web.SITEMAP_SCHEMA(parent),
             relativeResource(parser,attrs['extends'],parent),
             parent=parent, sm_included_from=attrs, sm_globals=globals(), #XXX
         )
+    elif 'class' in attrs:
+        loc = evalObject(data,attrs['class'])(parent,name)
+    else:
+        loc = Location(parent,name)
 
-    if 'class' in attrs:
-        return evalObject(data,attrs['class'])(parent,name)
+    if 'id' in attrs:
+        registry = IConfigurableLocation(parent,None)
+        if registry is not None:
+            registry.registerLocation(str(attrs['id']),name)
+        else:
+            loc.registerLocation(str(attrs['id']),'.')
 
-    return Location(parent,name)
-    
+    if 'config' in attrs:
+        config.loadConfigFile(
+            loc,relativeResource(parser,attrs['config'],parent)
+        )
+
+    return loc
+
 
 def relativeResource(parser, attr, parent):
     return naming.lookup(parent,
         # Might be a relative URL, so parse w/parser URL as base
         naming.parseURL(parent, attr, parser._url)
     )
-    
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 def startLocation(parser,data):
+
     attrs = SOX.validatedAttributes(parser,data,locRequired,locOptional)
     acquirePermission(data,attrs)
     prev = findComponentData(data)
@@ -219,16 +220,14 @@ def startLocation(parser,data):
             name = inclattrs.get('name')
             if 'class' in inclattrs:
                 attrs['class'] = inclattrs['class']
+
     elif not name:
         parser.err("Non-root locations must have a 'name'")
 
+    elif data['previous'] is not prev:
+        parser.err("Locations must be directly inside other locations")
+
     loc = makeLocation(parser,data,attrs,parent,name)
-    if 'id' in attrs:
-        loc.registerLocation(str(attrs['id']),'.')
-    if 'config' in attrs:
-        config.loadConfigFile(
-            loc,relativeResource(parser,attrs['config'],parent)
-        )
     data['sm.component'] = loc
     data['sm.sublocations'] = subloc = {}
     loc.addContainer(subloc)
@@ -242,6 +241,7 @@ def defineLocation(parser,data):
     def addLocation(loc):
         data['sm.sublocations'][loc.getComponentName()] = loc
     data['child'] = addLocation
+
 
 
 content_req = ('type',)
@@ -307,7 +307,7 @@ def doView(parser,data):
         handler = resourceView(expr)
 
     registerView(attrs['name'],handler,data,attrs)
-    
+
 
 def defineView(parser,data):
     assertNotTop(parser,data)
