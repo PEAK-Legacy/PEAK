@@ -203,34 +203,14 @@ class EventLoop(io_events.EventLoop):
 
 
 
-class TwistedReadEvent(events.Broadcaster):
+class TwistedReadEvent(io_events.AbstractIOEvent):
 
-    __slots__ = '_add','_remove','_registered','fd'
+    __slots__ = 'reactor','fd'
 
     def __init__(self,reactor,fileno):
-        self.fd = fileno
-        self._add = reactor.addReader
-        self._remove = reactor.removeReader
-        self._registered = False
         super(TwistedReadEvent,self).__init__()
-
-    def _register(self):
-        if self._callbacks and not self._registered:
-            self._add(self); self._registered = True
-
-        elif self._registered:
-            self._remove(self); self._registered = False
-
-    def _fire(self,event):
-        try:
-            super(TwistedReadEvent,self)._fire(event)
-        finally:
-            self._register()
-
-    def addCallback(self,func):
-        canceller = super(TwistedReadEvent,self).addCallback(func)
-        self._register()
-        return canceller
+        self.fd = fileno
+        self.reactor = reactor
 
     def fileno(self):
         return self.fd
@@ -238,23 +218,30 @@ class TwistedReadEvent(events.Broadcaster):
     def doRead(self):
         self._fire(True)
 
-    def connectionLost(self,*args):
-        pass    # XXX
+    def connectionLost(self,*args): pass    # XXX
 
     def logPrefix(self):
         return '(peak.events)'
+
+    def _activate(self):
+        self.reactor.addReader(self)
+
+    def _deactivate(self):
+        self.reactor.removeReader(self)
+
 
 class TwistedWriteEvent(TwistedReadEvent):
 
     __slots__ = ()
 
-    def __init__(self,reactor,fileno):
-        super(TwistedWriteEvent,self).__init__(reactor,fileno)
-        self._add = reactor.addWriter
-        self._remove = reactor.removeWriter
-
     def doWrite(self):
         self._fire(True)
+
+    def _activate(self):
+        self.reactor.addWriter(self)
+
+    def _deactivate(self):
+        self.reactor.removeWriter(self)
 
 
 class Selector(io_events.Selector):
@@ -269,6 +256,19 @@ class Selector(io_events.Selector):
             return sources.Broadcaster()    # XXX reactor doesn't allow this
         else:
             return [TwistedReadEvent, TwistedWriteEvent][rwe](self.reactor,key)
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

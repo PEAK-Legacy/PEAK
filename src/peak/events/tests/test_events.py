@@ -408,6 +408,47 @@ class AnyOfTests(TestCase):
 
 
 
+    def testFlattening(self):
+        # Verify that AnyOf() doesn't keep a reference to any nested AnyOf's
+        c1, c2, c3 = events.Condition(), events.Condition(), events.Condition()
+        any1 = events.AnyOf(c1,c2)
+        from sys import getrefcount
+        rc1 = getrefcount(any1)
+
+        any2 = events.AnyOf(any1,c3)
+        self.assertEqual(rc1, getrefcount(any1))
+
+        any3 = events.AnyOf(c3,any1)
+        self.assertEqual(rc1, getrefcount(any1))
+
+
+    def testDupes(self):
+        # Verify that AnyOf() doesn't keep references to duplicate events
+        c1 = events.Condition()
+
+        from sys import getrefcount
+        rc1 = getrefcount(c1)
+
+        any1 = events.AnyOf(c1,c1)
+        self.assertEqual(getrefcount(c1), rc1+1)
+
+        any2 = events.AnyOf(any1, c1)
+        self.assertEqual(getrefcount(c1), rc1+2)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 class TestTasks(TestCase):
 
     def spawn(self, iterator):

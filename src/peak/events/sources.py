@@ -81,7 +81,6 @@ del NullClass
 
 
 def subscribe(source,callback):
-
     """Subscribe 'callback' to an 'IEventSource', using a weak reference
 
     Usage::
@@ -99,27 +98,28 @@ def subscribe(source,callback):
     if isinstance(callback,MethodType):
         cbr = ref(callback.im_self, canceller)
         f = callback.im_func
-
         def cb(src,evt):
-            if go:
-                source.addCallback(go[0])
-            if go:
-                return f(cbr(),src,evt)
+            try:
+                tgt = cbr()
+                if tgt is not None:
+                    if go: source.addCallback(go[0])
+                    if go: return f(tgt,src,evt)
+            finally:
+                tgt = None
     else:
         cbr = ref(callback, canceller)
         def cb(src,evt):
-            if go:
-                source.addCallback(go[0])
-            if go:
-                return cbr()(src,evt)
+            try:
+                tgt = cbr()
+                if tgt is not None:
+                    if go: source.addCallback(go[0])
+                    if go: return tgt(src,evt)
+            finally:
+                tgt = None
 
     go = [cb]
     source.addCallback(cb)
     return canceller
-
-
-
-
 
 class AnyOf(object):
 
@@ -163,14 +163,44 @@ class AnyOf(object):
 
 
     def __new__(klass, *sources):
-        if len(sources)==1:
-            return adapt(sources[0],IEventSource)
-        elif sources:
-            self =object.__new__(klass)
-            self._sources = adapt(sources, protocols.sequenceOf(IEventSource))
-            return self
+
+        if sources:
+
+            # Flatten sources
+            srclist = []
+            for src in adapt(sources, protocols.sequenceOf(IEventSource)):
+                if isinstance(src,AnyOf):
+                    srclist.extend(src._sources)
+                else:
+                    srclist.append(src)
+
+            # Eliminate duplicates
+            srcids = {}
+            sources = tuple(
+                [src for src in srclist
+                    if src not in srcids and srcids.setdefault(src,True)
+                ]
+            )
+
+            # Return the result
+            if len(sources)==1:
+                return adapt(sources[0],IEventSource)
+            else:
+                self = object.__new__(klass)
+                self._sources = sources
+                return self
 
         raise ValueError, "AnyOf must be called with one or more IEventSources"
+
+
+
+
+
+
+
+
+
+
 
 
     def nextAction(self, task=None, state=None):
@@ -192,7 +222,7 @@ class AnyOf(object):
 
     def addCallback(self,func):
         """See 'events.IEventSource.addCallback()'"""
-        
+
         cancels = []
 
         def onceOnly(source,event):
@@ -202,7 +232,18 @@ class AnyOf(object):
 
         cancels = [source.addCallback(onceOnly) for source in self._sources]
         return lambda: [(c(),cancels.remove(c)) for c in cancels]
-            
+
+
+
+
+
+
+
+
+
+
+
+
 class Observable(object):
 
     """Base class for a generic event source

@@ -1,5 +1,30 @@
 Fixes and Enhancements since Version 0.5 alpha 3
 
+ - Fixed several 'peak.events' bugs, as reported by Vladimir Iliev, Yaroslav
+   Samchuk, and Alexander Smishlajev:
+
+   * 'events.AnyOf' could hold multiple references to a single event source,
+     and nesting 'AnyOf()' calls could leak references to the nested events.
+
+   * 'events.subscribe()' had a potential race condition wherein a callback
+     could be invoked after its weak reference was garbage collected, leading
+     to bizarre error messages about 'self' being 'None'.
+
+   * 'select()' could be called on select event objects even if there were
+     no current subscribers to the event, potentially leading to calling
+     'select()' on a closed socket.
+
+   * Non-default signal handlers were remaining installed even when there
+     were no current subscribers to the applicable event, as long as a
+     reference to the event object existed.
+
+   As a result of these changes, certain I/O event types (esp. signals and
+   stream readable/writeable events) are now longer-lived.  For example,
+   signal event objects are now immortal, and the read/write event for a
+   particular 'fileno()' will be reused for as long as its supplying
+   'Selector' or 'EventLoop' instance exists.  (Previously, weak references
+   were used so that these objects would be recycled when not in use.)
+
  - Added 'config.registeredProtocol()' API, that supports defining named and
    local protocols.  This allows easy emulation of Zope 3's "named" and "local"
    adapters and views.

@@ -39,13 +39,95 @@ else:
     signal = signal.signal
 
 
+class AbstractIOEvent(sources.Broadcaster):
+
+    """Abstract base for broadcast events based on other event systems
+    
+    (Such as 'signal', 'select()', etc.)
+    """
+
+    __slots__ = '_registered'
+
+    def __init__(self,*__args,**__kw):
+        self._registered = False
+        super(AbstractIOEvent,self).__init__(*__args,**__kw)
+
+    def _register(self):
+        if self._callbacks:
+            if not self._registered:
+                self._activate()
+                self._registered = True
+        elif self._registered:
+            self._deactivate()
+            self._registered = False
+
+    def _fire(self,event):
+        try:
+            super(AbstractIOEvent,self)._fire(event)
+        finally:
+            self._register()
+
+    def addCallback(self,func):
+        try:
+            return super(AbstractIOEvent,self).addCallback(func)
+        finally:
+            self._register()
+
+
+
+
+
+
+
+
+class SignalEvent(AbstractIOEvent):
+
+    """Event used for trapping signals"""
+
+    __slots__ = 'signum'
+
+    def __init__(self,signum):
+        super(SignalEvent,self).__init__()
+        self.signum = signum
+
+    def _activate(self):
+        signal(self.signum, self.handler)
+
+    def _deactivate(self):
+        signal(self.signum, original_signal_handlers[self.signum])
+        
+    def handler(self,signum,frame):
+        self.send((signum,frame))
+
+
+class StreamEvent(AbstractIOEvent):
+
+    """Event used for read/write/exception conditions on streams"""
+
+    __slots__ = '_activate','_deactivate'
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 class SignalEvents(binding.Singleton):
 
     """Global signal manager"""
 
     protocols.advise( classProvides = [ISignalSource] )
 
-    _events = {None: lambda x=sources.Broadcaster(): x }
+    _events = {None: sources.Broadcaster()}     # Null signal
 
     def signals(self,*signames):
         """'IEventSource' that triggers whenever any of named signals occur"""
@@ -53,13 +135,9 @@ class SignalEvents(binding.Singleton):
         if len(signames)==1:
             signum = signals.get(signames[0])
             try:
-                return self._events[signum]()
+                return self._events[signum]
             except KeyError:
-                e = sources.Broadcaster()
-                self._events[signum] = ref(
-                    e, lambda ref: self._rmSignal(signum)
-                )
-                signal(signum, self._fire)
+                e = self._events[signum] = SignalEvent(signum)
                 return e
         else:
             return sources.AnyOf(*[self.signals(n) for n in signames])
@@ -69,16 +147,20 @@ class SignalEvents(binding.Singleton):
         """Return true if signal named 'signame' exists"""
         return signame in signals
 
-    def _fire(self, signum, frame):
-        if signum in self._events:
-            self._events[signum]().send((signum,frame))
-
     def __call__(self,*args):
         return self
 
-    def _rmSignal(self,signum):
-        del self._events[signum]
-        signal(signum, original_signal_handlers[signum])
+
+
+
+
+
+
+
+
+
+
+
 
 class EventLoop(binding.Component):
 
@@ -230,7 +312,7 @@ class Selector(binding.Component):
 
             for fired,events in (fe,e),(fr,r),(fw,w):
                 for stream in fired:
-                    events[stream]().send(True)
+                    events[stream].send(True)
 
 
     monitor = binding.Make(taskFactory(monitor), uponAssembly=True)
@@ -251,15 +333,14 @@ class Selector(binding.Component):
             key = int(stream)
 
         try:
-            return self.cache[rwe][key]()
+            return self.cache[rwe][key]
         except KeyError:
-            e = self._mkEvent(rwe,key)
-            self.cache[rwe][key] = ref(e, lambda ref: self._rmEvent(rwe,key))
+            self.cache[rwe][key] = e = self._mkEvent(rwe,key)
             return e
 
     def _mkEvent(self,rwe,key):
-        ob = _IOEvent()
-        ob._activate = lambda ob: self._activate(rwe,key,ob)
+        ob = StreamEvent()
+        ob._activate = lambda: self._activate(rwe,key,ob)
         ob._deactivate = lambda: self._deactivate(rwe,key)
         return ob
 
@@ -269,53 +350,13 @@ class Selector(binding.Component):
 
     def _activate(self,rwe,key,src):
         if key not in self.rwe[rwe]:
-            self.rwe[rwe][key] = ref(src)
+            self.rwe[rwe][key] = src
             self.count.put()
 
     def _deactivate(self,rwe,key):
         if key in self.rwe[rwe]:
             del self.rwe[rwe][key]
             self.count.take()
-
-
-
-
-
-
-
-
-
-class _IOEvent(sources.Broadcaster):
-
-    __slots__ = '_activate','_deactivate'
-
-    def addCallback(self,func):
-        canceller = super(_IOEvent,self).addCallback(func)
-        if self._callbacks:
-            self._activate(self)
-        return canceller
-
-    def _fire(self,event):
-        self._deactivate()
-        super(_IOEvent,self)._fire(event)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
