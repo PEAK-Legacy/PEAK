@@ -185,7 +185,7 @@ class ParsedURL(OpaqueURL):
                 self.__dict__.update(m.groupdict())
                 return
                 
-        raise InvalidNameException(name)
+        raise InvalidNameException(url)
         
 
 
