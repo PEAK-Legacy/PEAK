@@ -123,8 +123,6 @@ Open Issues/To-Do Items
 
   peak.model
 
-    * A way to generate Z3 Interfaces from Feature-based specifications?
-
     * Implement WarpCORE-oriented structural model, w/Querying support
 
     * "Indexed" version of in-memory model?
@@ -162,11 +160,9 @@ Open Issues/To-Do Items
 
 
 
-  peak.metamodels.uml
 
-    * Need to write an MMX or XMI -> Python generator, and hook it back up into
-      the UML package, since we're right now relying on a module generated
-      by code that depends on stuff which is going away.
+
+  peak.metamodels.uml
 
     * Helper methods in Elements & Services for marshalling, common queries, etc.
 
@@ -190,4 +186,4 @@ Open Issues/To-Do Items
     * Simple Zope product demo (upload XMI, then browse the model via the web)
 
 
- 
+
