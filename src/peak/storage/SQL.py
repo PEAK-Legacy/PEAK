@@ -135,24 +135,24 @@ class SQLConnection(ManagedConnection):
 class SybaseConnection(SQLConnection):
 
     def _open(self):
-        user,passwd,server,db = self.address[:4]
+        a = self.address
         from Sybase import Connection
-        return Connection(server, user, passwd, db)
+        return Connection(a.server, a.user, a.passwd, a.db)
             
     def onJoinTxn(self, txnService):
         # Sybase doesn't auto-chain transactions...
         self.connection.begin()
 
+    def txnTime(self,d,a):
 
+        # First, ensure that we're in a transaction
+        self.txnSvc
 
+        # Then retrieve the server's idea of the current time
+        r = ~ self('SELECT getdate()')
+        return r[0]
 
-
-
-
-
-
-
-
+    txnTime = binding.Once(txnTime)
 
 
 
