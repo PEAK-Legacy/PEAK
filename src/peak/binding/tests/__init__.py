@@ -4,56 +4,15 @@ from unittest import TestCase, makeSuite, TestSuite
 from peak.api import *
 from Interface import Interface
 
-class ModuleTest(TestCase):
-
-    def setUp(self):
-        import testM1, testM2
-        self.M1, self.M2 = testM1, testM2
-
-    def checkBase(self):
-        assert self.M1.BaseClass.foo==1
-        assert self.M2.BaseClass.foo==2
-        
-    def checkSub(self):
-        assert self.M1.Subclass.foo==1
-        assert self.M2.Subclass.foo==2
-
-    def checkNested(self):
-        assert self.M1.Subclass.Nested.bar=='baz'
-        assert self.M2.Subclass.Nested.bar=='baz'
-        assert self.M1.Subclass.NestedSub.bar == 'baz'
-        assert self.M2.Subclass.NestedSub.bar == 'baz'
-        assert not hasattr(self.M1.Subclass.NestedSub,'spam')
-        assert self.M2.Subclass.NestedSub.spam == 'Nested'
-
-    def checkFuncGlobals(self):
-        assert self.M1.aFunc1()=='M1'
-        assert self.M2.aFunc1()=='M2'
-
-    def checkWrapping(self):
-        assert self.M1.aFunc2('x')=='M1(x)'
-        assert self.M2.aFunc2('x')=='after(M1(before(x)))'
-
-    def checkRefBetweenClasses(self):
-        assert self.M2.Referencer.containedClass.M1=='M1'
 
 
 
-    def checkBaseBinding(self):
-        import UserList
-        assert self.M2.RebindSub.M1=='M1'
-        assert self.M2.RebindSub.M2=='M2'
-        assert self.M2.RebindSub.__bases__ == (
-            self.M2.UnusedBase, UserList.UserList, object  
-        ), self.M2.RebindSub.__bases__
 
 
-class AdviceTest(ModuleTest):
-    
-    def setUp(self):
-        import testM2a, testM1a, testM1
-        self.M1 = testM1
-        self.M2 = testM1a
+
+
+
+
 
 
 
@@ -81,6 +40,8 @@ class AdviceTest(ModuleTest):
 
 
 testList = [1,2,'buckle your shoe']
+class IS1U(Interface): pass
+class IS2U(Interface): pass
 
 class DescriptorData(binding.Component):
 
@@ -96,9 +57,10 @@ class DescriptorData(binding.Component):
 
     class aService(binding.AutoCreated):
 
-        thing5 = binding.bindToParent()
+        thing5 = binding.bindToParent(provides=IS1U)
 
         class nestedService(binding.AutoCreated):
+            _provides = IS2U
 
             thing6 = binding.bindToParent(2)
 
@@ -117,9 +79,6 @@ class DescriptorData(binding.Component):
     deep = binding.bindTo('aService/nestedService/thing6/thing1')
 
     testImport = binding.bindTo('import:unittest:TestCase')
-
-
-
 
 class ISampleUtility1(Interface): pass
 class ISampleUtility2(Interface): pass
@@ -146,20 +105,34 @@ class DescriptorTest(TestCase):
         )
 
 
+    def checkUtilityAttrs(self):
+
+        data = self.data
+        ns   = data.aService.nestedService
+
+        assert binding.findUtility(ns,IS1U) is data
+        assert binding.findUtility(ns,IS2U) is ns
+
+
+
+
+
+
+
+
+
     def checkAcquireInst(self):
 
         data = self.data
         ob1 = binding.findUtility(data,ISampleUtility1)
         ob2 = binding.findUtility(data.aService,ISampleUtility1)
         ob3 = binding.findUtility(data.aService.nestedService,ISampleUtility1)
-
         assert ob1 is None
         assert ob2 is not None
         assert ob3 is not None
         assert ob3 is not ob2
         assert ob2.getParentComponent() is data.aService
         assert ob3.getParentComponent() is data.aService.nestedService
-
 
 
     def checkAcquireSingleton(self):
@@ -187,6 +160,8 @@ class DescriptorTest(TestCase):
         assert self.data.__dict__['thing2'] is thing2
 
 
+
+
     def checkMulti(self):
 
         thing4 = self.data.thing4
@@ -194,13 +169,6 @@ class DescriptorTest(TestCase):
         assert type(thing4) is tuple
         assert thing4[0] is self.data.thing1
         assert thing4[1] is self.data.thing2
-
-
-
-
-
-
-
 
 
     def checkParents(self):
@@ -228,6 +196,13 @@ class DescriptorTest(TestCase):
             raise AssertionError("Didn't get an error retrieving 'thing3'")
 
 
+
+
+
+
+
+
+
     def checkNew(self):
     
         data = self.data
@@ -238,10 +213,6 @@ class DescriptorTest(TestCase):
         data = DescriptorData()
         assert d == data.newDict        # should be equal
         assert d is not data.newDict    # but separate!
-
-
-
-
 
 
     def checkCopy(self):
@@ -273,20 +244,8 @@ class DescriptorTest(TestCase):
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
 TestClasses = (
-    ModuleTest, AdviceTest, DescriptorTest,
+    DescriptorTest,
 )
 
 
