@@ -13,5 +13,5 @@
 ##############################################################################
 """Tests for the configuration data structures and loader.
 
-$Id: __init__.py,v 1.3 2003/10/03 17:30:52 pje Exp $
+$Id: __init__.py,v 1.4 2003/10/03 20:34:18 pje Exp $
 """
