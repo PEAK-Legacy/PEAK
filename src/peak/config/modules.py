@@ -250,7 +250,7 @@ from types import ModuleType
 from peak.util.EigenData import AlreadyRead
 from peak.util._Code import codeIndex
 from peak.util.imports import lazyModule, joinPath, getModuleHooks
-from peak.util.advice import isClassAdvisor
+from protocols.advice import isClassAdvisor
 
 # Make the default value of '__proceed__' a built-in, so that code written for
 # an inheriting module won't fail with a NameError if there's no base module

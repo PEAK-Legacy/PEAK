@@ -13,7 +13,7 @@ from peak.api import *
 from interfaces import *
 from method_exporter import MethodExporter
 from peak.util.hashcmp import HashAndCompare
-from peak.util.advice import supermeta
+from protocols.advice import supermeta
 from peak.util import fmtparse
 from peak.naming.names import Indirect
 from peak.binding.components import ComponentName

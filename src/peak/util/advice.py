@@ -1,8 +1,8 @@
-# temporary backward compatibility - drop in alpha 3?
-
-from protocols.advice import *
-
 from new import instancemethod
+from peak.util.signature import ISignature, getPositionalArgs
+import protocols
+
+
 
 
 
@@ -82,10 +82,19 @@ class advice(object):
 
     __slots__ = '_func'
 
+    extraArgs = 0
+
+    protocols.advise(instancesProvide = [ISignature])
 
     def __init__(self, func):
         self._func = func
 
+    def getPositionalArgs(self):
+        """Return a sequence of positional argument names"""
+        return getPositionalArgs(self._func)[self.extraArgs:]
+
+    def getCallable(self):
+        return self._func
 
     def __get__(self,ob,typ):
         if typ is None: typ = ob.__class__
@@ -105,7 +114,6 @@ class advice(object):
 
     def __getattr__(self, attr):
         return getattr(self._func,attr)
-
 
     # __doc__ is a special case; our class wants to supply it, and so won't
     # let __getattr__ near it.
