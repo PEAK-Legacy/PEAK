@@ -162,7 +162,7 @@ class IllformedExternalizedObject(Exception):
 
 
 
-class MOFModel(model.Model):
+class MOFModel(model.Model, storage.xmi.Loader):
 
     class ModelElement(model.Element):
     
@@ -188,6 +188,7 @@ class MOFModel(model.Model):
         class container(model.Reference):
             referencedType = 'Namespace'
             referencedEnd  = 'contents'
+            defaultValue = None
 
         class requiredElements(model.DerivedAssociation):
             def _getList(feature, element):
@@ -196,7 +197,6 @@ class MOFModel(model.Model):
         class constraints(model.Collection):
             referencedType = 'Constraint'
             referencedEnd  = 'constrainedElements'
-
 
 
 
@@ -367,14 +367,14 @@ class MOFModel(model.Model):
 
 
 
-        def resolvedQualifiedName(self, qualifiedName):
+        def resolveQualifiedName(self, qualifiedName):
 
             i=0
             ns=self
 
             for name in qualifiedName:
 
-                if not isinstance(s, MOFModel.Namespace):
+                if not isinstance(ns, MOFModel.Namespace):
                     raise NameNotResolved('NotNameSpace',qualifiedName[i:])
 
                 try:
@@ -554,6 +554,23 @@ class MOFModel(model.Model):
                 visitor(TAGGED_ELEMENTS_DEP,self.elements)
             super(MOFModel.Tag,self)._visitDependencies(visitor)
 
+        class tagId(model.Field):
+            referencedType = String
+
+        class values(model.Field):
+            referencedType = model.PrimitiveType  # XXX
+            upperBound = None
+
+        class elements(model.Collection):
+            referencedType = 'ModelElement'
+
+
+
+
+
+
+
+
 
     class Package(GeneralizableElement):
 
@@ -565,11 +582,6 @@ class MOFModel(model.Model):
             )
 
         )
-
-
-
-
-
 
 
     class Classifier(GeneralizableElement):
@@ -601,18 +613,6 @@ class MOFModel(model.Model):
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
     class DataType(Classifier):
 
         _allowedContents = binding.classAttr(
@@ -628,14 +628,16 @@ class MOFModel(model.Model):
 
 
         class isRoot(model.structField):
+            referencedType = Boolean
             defaultValue = True
 
         class isLeaf(model.structField):
+            referencedType = Boolean
             defaultValue = True
 
         class isAbstract(model.structField):
+            referencedType = Boolean
             defaultValue = False
-
 
 
     class Class(Classifier):
@@ -650,8 +652,6 @@ class MOFModel(model.Model):
         class isSingleton(model.Field):
             referencedType = Boolean
             defaultValue = False
-
-
 
 
     class Feature(ModelElement):

@@ -168,31 +168,31 @@ from weakref import WeakValueDictionary
 from Persistence import Persistent
 from xml.sax import saxutils
 from types import StringTypes
-from peak.model.datatypes import TCKind, SimpleTC
+from peak.model.datatypes import TCKind, SimpleTC, Boolean, TypeCode
 
 
+_any_converters = {
 
+    'short': int,
+    'long':  long,
+    'ushort': int,
+    'ulong': long,
+    'float': float,
+    'double': float,
 
+    'boolean': Boolean.fromString,
+    'char': str,
+    'wchar': unicode,
+    
+    'octet': None, # XXX
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    'longlong': long,
+    'ulonglong': long,
+    'longdouble': long,
+    
+    'string': str,
+    'wstring': unicode,
+}
 
 
 
@@ -341,6 +341,11 @@ class XMINode(object):
 
         if len(sub)==1:
 
+            # XXX this assumes that feature is singular... and doesn't
+            # XXX take into account the typecode expectations of the
+            # XXX feature!  But we can't fix this until our UML metamodel
+            # XXX is sound wrt datatypes.  :(
+
             child = sub[0]
 
             if not child._name.startswith('XMI.'):
@@ -360,11 +365,6 @@ class XMINode(object):
 
         return feature.fromFields(tuple(fields))
         
-
-
-
-
-
 
 
     def getTypeCode(self, feature, dm):
@@ -390,7 +390,7 @@ class XMINode(object):
 
         elif kind==TCKind.tk_alias:
             return TypeCode(
-                kind=kind, content_type=child.getTypeCode(feature,dm)
+                kind=kind, content_type=child.getValue(feature,dm)
             )
 
         elif kind==TCKind.tk_struct:
@@ -398,8 +398,8 @@ class XMINode(object):
 
         elif kind in (TCKind.tk_sequence,TCKind.tk_array):
             return TypeCode(
-                kind=kind, content_type=child.getTypeCode(feature,dm),
-                length=int(child.atts.get('xmi.tcLength',0))
+                kind=kind, content_type=child.getValue(feature,dm),
+                length=int(child.attrs.get('xmi.tcLength',0))
             )
 
         elif kind==TCKind.tk_enum:
@@ -413,24 +413,32 @@ class XMINode(object):
 
         elif kind in (TCKind.tk_string,TCKind.tk_wstring):
             return TypeCode(
-                kind=kind, length=int(child.atts.get('xmi.tcLength',0))
+                kind=kind, length=int(child.attrs.get('xmi.tcLength',0))
             )
 
         elif kind==TCKind.tk_fixed:
             return TypeCode(
                 kind=kind,
-                fixed_digits=int(child.atts.get('xmi.tcDigits',0)),
-                fixed_scale=int(child.atts.get('xmi.tcScale',0))
+                fixed_digits=int(child.attrs.get('xmi.tcDigits',0)),
+                fixed_scale=int(child.attrs.get('xmi.tcScale',0))
             )
 
-        # XXX should never get here...
+        raise AssertionError("Impossible typecode kind",kind)
 
 
     def getStructTypeCode(self, feature, dm):
         pass    # XXX
 
+
     def getEnumTypeCode(self, feature, dm):
-        pass    # XXX
+        names = []
+        for node in self.subNodes:
+            if node._name == 'XMI.CorbaTcEnumLabel' \
+                and 'xmi.tcName' in node.attrs:
+                names.append(node.attrs['xmi.tcName'])
+            else:
+                raise ValueError('Invalid tag in enumeration typecode')
+        return TypeCode(kind = TCKind.tk_enum, member_names = tuple(names))
 
     def getUnionTypeCode(self, feature, dm):
         pass    # XXX
@@ -438,8 +446,41 @@ class XMINode(object):
     def getExceptionTypeCode(self, feature, dm):
         pass    # XXX
 
+
+
+
     def getAny(self, feature, dm):
-        pass    # XXX
+
+        kind = self.attrs['xmi.type']
+        converter = _any_converters.get(kind)
+
+        if not converter or self.subNodes:
+            raise ValueError("Can't handle non-primitive 'XMI.any' type",kind)
+
+        return converter(''.join(self.allNodes))
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
