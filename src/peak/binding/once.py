@@ -728,13 +728,11 @@ class Singleton(object):
     that if you define an '__init__' method, it will be called with the
     singleton class object (or a subclass) when the class is created."""
 
+    __metaclass__ = Activator
 
     def __new__(klass):
         return klass
 
 Singleton.__class__ = SingletonClass
-
-
-
-
+del Singleton.__metaclass__
 
