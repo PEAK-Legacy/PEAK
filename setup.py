@@ -42,7 +42,6 @@ PACKAGE_VERSION = "0.5a0"
 
 HAPPYDOC_IGNORE = [
     '-i', 'examples',  '-i', 'old', '-i', 'tests',
-    '-i', 'Interface', '-i', 'Persistence', '-i', 'kjbuckets',
 ]
 
 
@@ -52,9 +51,6 @@ packages = [
     'peak', 'peak.api', 'peak.binding', 'peak.config', 'peak.model',
     'peak.naming', 'peak.naming.factories', 'peak.running',
     'peak.storage', 'peak.util',
-
-    'Interface', 'Interface.Common', 'Interface.Registry',
-    'Persistence',
 ]
 
 extensions = [
@@ -87,9 +83,6 @@ if include_tests:
         'peak.tests', 'peak.binding.tests', 'peak.config.tests',
         'peak.model.tests', 'peak.naming.tests', 'peak.running.tests',
         'peak.storage.tests', 'peak.util.tests',
-
-        'Interface.tests', 'Interface.Common.tests',
-        'Interface.Registry.tests',
     ]
 
     data_files += [
@@ -144,6 +137,7 @@ if not zope_installed:
     if include_tests:
         packages += [
             'zope.interface.tests', 'persistence.tests', 'ZConfig.tests',
+            'zope.interface.common.tests',
         ]
 
         data_files += findDataFiles('src/ZConfig/tests', 1, '*.xml', '*.txt', '*.conf')
