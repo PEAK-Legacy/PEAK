@@ -654,6 +654,88 @@ class Text(ContentReplacer):
 
 
 
+class URLAttribute(Element):
+
+    """Put the URL in an attribute"""
+
+    staticText = None
+
+    def renderFor(self, data, state):
+
+        if self.dataSpec:
+            data, state = self._traverse(data, state)
+
+        url = unicode(data.absoluteURL)
+
+        if not self.optimizedChildren and not self.nonEmpty:
+            state.write(self._emptyTag % locals())
+            return
+
+        state.write(self._openTag % locals())
+        for child in self.optimizedChildren:
+            child.renderFor(data,state)
+        state.write(self._closeTag)
+
+class URLText(ContentReplacer):
+
+    """Write absolute URL as body text"""
+
+    def renderFor(self, data, state):
+
+        if self.dataSpec:
+            data, state = self._traverse(data, state)
+
+        write = state.write
+
+        write(self._openTag)
+
+        if not data.isNull:
+            write(unicode(data.absoluteURL))
+
+        write(self._closeTag)
+
+
+def URLTag(parentComponent, componentName=None, domletProperty=None, **kw):
+
+    """Create a URLText or URLAttribute DOMlet based on parameters"""
+
+    kw['domletProperty'] = domletProperty
+    prop = (domletProperty or '').split('.')
+
+    if len(prop)==1 or prop[-1]=='text':
+        return URLText(parentComponent, componentName, **kw)
+
+    elif prop[-1]=='notag':
+        kw['_openTag'] = kw['_closeTag'] = ''
+        return URLText(parentComponent, componentName, **kw)
+
+    else:
+        attrName = prop[-1].replace('+',':')
+        attrs = [(k,v.replace('%','%%')) for (k,v) in kw.get('attribItems',())]
+        d = dict(attrs)
+
+        if attrName not in d:
+            attrs.append((attrName,'%(url)s'))
+        else:
+            attrs = [
+                tuple([k]+((k!=attrName) and [v] or ['%(url)s']))
+                    for (k,v) in attrs
+            ]
+
+        kw['attribItems'] = attrs
+        return URLAttribute(parentComponent, componentName, **kw)
+
+protocols.adviseObject(URLTag, provides=[IDOMletElementFactory])
+
+
+
+
+
+
+
+
+
+
 class List(ContentReplacer):
 
     def renderFor(self, data, state):

@@ -348,6 +348,7 @@ class DefaultLayer(Traversable):
             pkg, mod = findPackage(name)
         except ImportError:
             d = NOT_FOUND
+            pkg = name
         else:
             filename = os.path.dirname(mod.__file__)
 
@@ -365,7 +366,6 @@ class DefaultLayer(Traversable):
 
     # Our name doesn't count in the URL
     resourcePath = binding.bindTo('../resourcePath')
-
 
 class TemplateResource(FSResource):
 

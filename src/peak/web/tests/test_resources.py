@@ -4,7 +4,7 @@ from peak.tests import testRoot
 
 from test_templates import TestApp, BasicTest
 
-class ResourceApp(TestApp):
+class ResourceApp1(TestApp):
 
     # This makes all 'peak.*' package resources available for testing;
     # Ordinarily, you'd do this via a config file, but this is quick and easy
@@ -15,16 +15,72 @@ class ResourceApp(TestApp):
 
     show = web.bindResource('template1')
 
+class MethodTest1(BasicTest):
 
-class MethodTest(BasicTest):
+    appClass = ResourceApp1
 
     def setUp(self):
         r = testRoot()
-        self.interaction = web.TestInteraction(ResourceApp(r))
+        self.interaction = web.TestInteraction(self.appClass(r))
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class ResourceApp2(ResourceApp1):
+
+    show = web.bindResource('template2')
+
+    xml = web.bindResource(
+        '/peak.running/EventDriven', permissionsNeeded=[security.Anybody]
+    )
+
+class MethodTest2(MethodTest1):
+    appClass = ResourceApp2
+
+    rendered = """<body>
+<h1>The title</h1>
+
+<ul><li>1</li><li>2</li><li>3</li></ul>
+
+<a href="http://127.0.0.1/++resources++/peak.running/EventDriven.xml">
+The EventDriven.xml file, found at
+http://127.0.0.1/++resources++/peak.running/EventDriven.xml
+</a>
+
+</body>"""
 
 TestClasses = (
-    MethodTest,
+    MethodTest1, MethodTest2
 )
 
 def test_suite():
     return TestSuite([makeSuite(t,'check') for t in TestClasses])
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

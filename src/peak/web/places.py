@@ -112,7 +112,7 @@ class TraversalContext(binding.Component):
 
 
     absoluteURL = binding.Once(
-        lambda s,d,a: s.traversable.getURL(self),
+        lambda self,d,a: self.traversable.getURL(self),
         doc = "Absolute URL of the current object"
     )
 
