@@ -7,11 +7,9 @@ cdef extern from "Python.h":
 
 cdef extern object GET_DICTIONARY(object o)
 
-cdef void *_NOTFOUND
 cdef void *_lockType
 cdef object Py_None     # Avoid dictionary lookups for 'None'
 
-from peak.api import NOT_FOUND
 from peak.util.threads import get_ident
 
 
@@ -23,7 +21,6 @@ cdef class bindingLock:
         self.id = get_ident()
 
 
-_NOTFOUND = <void *> NOT_FOUND
 _lockType = <void *> bindingLock
 Py_None   = None        # Avoid dictionary lookups for 'None'
 
@@ -38,6 +35,9 @@ cdef int isOurs(void *obj):
     id = get_ident()
     lock = <bindingLock> obj
     return lock.id == id
+
+
+
 
 cdef class BaseDescriptor:
 
@@ -82,10 +82,7 @@ cdef class BaseDescriptor:
 
         if obj:
 
-            if obj == _NOTFOUND:
-                raise AttributeError, n
-
-            elif (<_object *>obj).ob_type == _lockType:
+            if (<_object *>obj).ob_type == _lockType:
 
                 if isOurs(obj):
                     raise AttributeError(
@@ -120,6 +117,9 @@ cdef class BaseDescriptor:
             d[n] = value
 
         return value
+
+
+
 
     def usageError(self):
         raise TypeError(
