@@ -1,8 +1,165 @@
+from __future__ import generators
 from peak.api import binding
 from transactions import TransactionComponent
 from interfaces import *
+from weakref import WeakValueDictionary
+from peak.util.Struct import makeStructType, makeFieldProperty
 
-__all__ = [ 'ManagedConnection', ]
+__all__ = [
+    'ManagedConnection', 'DBCursor', 'LDAPCursor',
+]
+
+
+def _nothing():
+    pass
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class DBCursor(binding.Component):
+
+    """Iterable cursor bridge/proxy"""
+
+    __implements__ = ICursor
+    
+    tooMany = AssertionError
+    tooFew  = EOFError
+
+    def __init__(self,parent,**kw):
+
+        self.setParentComponent(parent)
+
+        for k,v in kw.items():
+            setattr(self,k,v)
+
+        parent.registerCursor(self)
+
+
+    def _cursor(self,d,a):
+        return self._conn.cursor()
+
+    _cursor = binding.Once(_cursor)
+    _conn   = binding.bindTo('../connection')
+
+    def close(self):
+        if self.hasBinding('_cursor'):
+            self._cursor.close()
+            del self._cursor
+        if self.hasBinding('_conn'):
+            del self._conn
+            
+    def __setattr__(self,attr,val):
+        if self.hasBinding(attr) or hasattr(self.__class__,attr):
+            self.__dict__[attr]=val
+        else:
+            setattr(self._cursor,attr,val)
+
+    def __getattr__(self,attr):
+        return getattr(self._cursor,attr)
+
+    def __iter__(self, onlyOneSet=True):
+
+        fetch = self._cursor.fetchone
+        row = fetch()
+
+
+        # we don't want to mess with souped-up row types
+        # so require an exact match to 'tuple' type
+        
+        if type(row) is tuple:  
+
+            rowStruct = makeStructType('rowStruct',
+                [d[0] for d in self._cursor.description],
+                __implements__ = IRow, __module__ = __name__,
+            )
+            
+            row.__class__ = rowStruct
+            yield row
+            
+            for row in iter(fetch, None):
+                row.__class__ = rowStruct
+                yield row
+
+        else:
+            yield row
+            for row in iter(fetch, None):
+                yield row
+
+        if onlyOneSet and self.nextset():
+            raise self.tooMany
+
+
+    def allSets(self):
+
+        oneSet = self.__iter__
+
+        yield list(oneSet(False))
+
+        while self.nextset():
+            yield list(oneSet(False))
+
+    def nextset(self):
+        return getattr(self._cursor, 'nextset', _nothing)()
+
+
+    def justOne(self):
+
+        i = iter(self)
+
+        try:
+            row = i.next()
+        except StopIteration:
+            raise self.tooFew
+
+        try:
+            next = i.next()
+        except StopIteration:
+            return row
+
+        raise self.tooMany
+
+
+    __invert__ = justOne
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 class ManagedConnection(TransactionComponent):
@@ -26,16 +183,15 @@ class ManagedConnection(TransactionComponent):
     def close(self):
         """Close the connection immediately"""
 
-        have = self.__dict__.has_key
+        have = self.hasBinding
 
         if have('connection'):
+            self.closeCursors()
             self._close()
             del self.connection
 
         if have('_closeASAP'):
             del self._closeASAP
-
-
 
 
 
@@ -76,3 +232,165 @@ class ManagedConnection(TransactionComponent):
     def joinTxn(self):
         """Join the current transaction, if not already joined"""
         return self.txnSvc
+
+
+    def voteForCommit(self, txnService):
+        self.closeCursors()
+
+    def abortTransaction(self, txnService):
+        self.closeCursors()
+
+
+
+
+
+    _cursors = binding.New(WeakValueDictionary)
+
+
+    def registerCursor(self,cursor):
+        self._cursors[id(cursor)] = cursor
+
+
+    def closeCursors(self):
+        if self.hasBinding('_cursors'):
+            for c in self._cursors.values():
+                c.close()
+
+
+    def __call__(self, *args, **kw):
+
+        cursor = self.cursorClass(self, **kw)
+
+        if args:
+            cursor.execute(*args)
+
+        return cursor
+
+
+    cursorClass = DBCursor
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class LDAPCursor(DBCursor):
+
+    """LDAP pseudo-cursor"""
+
+    _cursor = None
+
+    timeout      = -1
+    msgid        = None
+    bulkRetrieve = False
+
+    disconnects = binding.bindToNames('import:ldap.SERVER_DOWN',)
+
+    def close(self):
+
+        if self.msgid is not None:
+            self._conn.abandon(self.msgid)
+            self.msgid = None
+
+        super(LDAPCursor,self).close()
+
+
+    def execute(self,dn,scope,filter='objectclass=*',attrs=None,dnonly=0):
+
+        try:
+            self.msgid = self._conn.search(dn,scope,filter,attrs,dnonly)
+
+        except self.disconnects:
+            self.errorDisconnect()
+
+
+    def errorDisconnect(self):
+        self.close()
+        self.getParentComponent().close()
+        raise
+    
+
+    def nextset(self):
+        """LDAP doesn't do multi-sets"""
+        return False
+
+
+    def __iter__(self):
+
+        msgid, timeout = self.msgid, self.timeout
+
+        if msgid is None:
+            raise ValueError("No operation in progress")
+
+        getall = self.bulkRetrieve and 1 or 0
+        fetch = self._conn.result
+
+        ldapEntry = makeStructType('ldapEntry',
+            [], __implements__ = IRow, __module__ = __name__,
+        )
+
+        newEntry = ldapEntry.fromMapping; restype = None
+
+        while restype != 'RES_SEARCH_RESULT':
+
+            try:
+                restype, data = fetch(msgid, getall, timeout)
+
+            except self.disconnects:
+                self.errorDisconnect()
+
+            if restype is None:               
+                yield None  # for timeout errors
+
+            for dn,m in data:
+
+                m['dn']=dn
+
+                try:
+                    yield newEntry(m)                
+
+                except ValueError:
+                    map(ldapEntry.addField, m.keys())
+                    yield newEntry(m)        
+
+        # Mark us as done with this query
+        self.msgid = None
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -39,6 +39,47 @@ class structType(type):
 
 
 
+    def addField(klass, fieldName):
+
+        """Add field 'fieldName' to an existing struct class"""
+
+        fm = klass.__fieldmap__
+
+        if fieldName not in fm:
+
+            fm[fieldName] = fieldNum = len(fm)
+            setattr(klass, fieldName, makeFieldProperty(fieldName,fieldNum))
+            klass.__fields__.append(fieldName)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 class struct(tuple):
 
     """Typed, immutable, multi-field object w/sequence and mapping interfaces
@@ -296,7 +337,6 @@ def makeFieldProperty(fieldName, fieldNum):
     return property(get)
 
 def makeStructType(name, fields, baseType=struct, **kw):
-    bases = bases or (struct,)
     kw['__fields__'] = fields
     return structType(name or 'anonymous_struct', (baseType,), kw)
 

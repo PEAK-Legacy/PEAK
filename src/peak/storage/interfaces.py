@@ -5,7 +5,7 @@ from Interface.Attribute import Attribute
 
 __all__ = [
     'ITransactionService', 'ITransactionParticipant', 'ICache',
-    'ITransactionErrorHandler', 'BrokenTransaction',
+    'ITransactionErrorHandler', 'BrokenTransaction', 'ICursor', 'IRow',
     'NotReadyError', 'TransactionInProgress', 'OutsideTransaction',
     'IRack', 'IRackImplementation', 'IManagedConnection', 'IManagedConnImpl',
 ]
@@ -326,6 +326,47 @@ class IManagedConnection(ITransactionParticipant):
 
 
 
+    def __call__(*args, **kw):
+        """Return a (possibly initialized) ICursor
+
+            Creates a new ICursor instance initialized with the passed
+            keyword arguments.  If positional arguments are supplied,
+            they are passed to the new cursor's 'execute()' method before
+            it is returned.
+
+            This method is the primary way of interacting with a connection;
+            either you'll pass positional arguments and receive an
+            initialized and iterable cursor, or you'll call with no arguments
+            or keywords only to receive a cursor that you can use to perform
+            more "low-level" interactions with the database.
+        """
+
+
+    def registerCursor(ob):
+        """Register an object whose 'close()' method must be called"""
+
+
+    def closeCursor():
+        """Close all registered cursors which are still active"""
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 class IManagedConnImpl(Interface):
 
     """Methods that must/may be defined in a ManagedConnection subclass"""
@@ -395,3 +436,54 @@ class ICache(Interface):
     def values():
         """Return a sequence of the cache's contents"""
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+class ICursor(Interface):
+
+    """Iterable database cursor"""
+
+    def execute(*args):
+
+        """Execute a command
+
+            Note that the types and semantics of this method's arguments
+            are database-specific.  DBAPI cursors expect an SQL 'command'
+            and an optional 'params' object, while LDAP cursors expect
+            the arguments for an LDAP 'search' operation.
+
+            Following 'execute()', a cursor should be ready for iteration
+            over its result rows.
+        """
+
+    def __iter__():
+        """Return an iterator returning the IRows of the result"""
+
+    def allSets():
+        """Return an iterator returning a list of IRows for each result set"""
+
+    def justOne():
+        """Assert that result contains only one IRow, and return it"""
+
+    def __invert__():
+        """The same as justOne(); i.e. '~cursor == cursor.justOne()'"""
+
+    def nextset():
+        """Result of calling the true DB cursor's 'nextset()', or None"""
+
+    def close():
+        """Close/reset the true DB cursor; the proxy can still be reused"""
+
+
+class IRow(Interface):
+    """Row that smells like a tuple, dict, or instance attr"""

@@ -524,8 +524,8 @@ class Base(object):
     __parentCell = Once(__parentCell)
 
 
-
-
+    def hasBinding(self,attr):
+        return self.__dict__.has_key(attr)
 
 
 
