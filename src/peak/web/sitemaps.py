@@ -122,24 +122,67 @@ def objectView(target):
 
 
 locRequired = ()
-locOptional = 'name','class','id','permission',
+locOptional = 'name','class','id','permission', 'extends', #config
+
+def makeLocation(parser,data,attrs,parent,name):
+
+    if 'extends' in attrs:
+        factory = naming.lookup(parent,
+            naming.parseURL(parent, attrs['extends'], parser._url)
+        )
+        return config.processXML(
+            config.lookup(parent, 'peak.web.sitemap_schema'),
+            naming.lookup(parent,
+                # Might be a relative URL, so parse w/parser URL as base
+                naming.parseURL(parent, attrs['extends'], parser._url)
+            ),
+            parent=parent, sm_included_from=attrs, sm_globals=globals(), #XXX
+        )
+
+    if 'class' in attrs:
+        return evalObject(data,attrs['class'])(parent,name)
+
+    return Location(parent,name)
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 def startLocation(parser,data):
+
     attrs = SOX.validatedAttributes(parser,data,locRequired,locOptional)
     acquirePermission(data,attrs)
     prev = findComponentData(data)
     parent = prev['sm.component']
     name = attrs.get('name')
+
     if isRoot(prev):
         if name is not None:
             parser.err("Root location cannot have a 'name'")
+
+        if 'sm_included_from' in prev:
+            inclattrs = prev['sm_included_from']
+            name = inclattrs.get('name')
+            if 'class' in inclattrs:
+                attrs['class'] = inclattrs['class']
     elif not name:
         parser.err("Non-root locations must have a 'name'")
 
-    if 'class' in attrs:
-        loc = evalObject(data,attrs['class'])(parent,name)
-    else:
-        loc = Location(parent,name)
+    loc = makeLocation(parser,data,attrs,parent,name)
 
     if 'id' in attrs:
         loc.registerLocation(attrs['id'],'.')
@@ -160,8 +203,6 @@ def defineLocation(parser,data):
 
 
 
-
-
 content_req = ('type',)
 content_opt = ('permission','helper')    # ,'location'
 
@@ -175,6 +216,7 @@ def defineContent(parser,data):
     assertNotTop(parser,data)
     assertOutsideContent(parser,data)
     data['start'] = doContent
+
 
 def doImport(parser,data):
     attrs = SOX.validatedAttributes(parser,data,('module',),('as',))
@@ -199,7 +241,6 @@ def defineContainer(parser,data):
     assertOutsideContent(parser,data)
     data['start'] = doContainer
     data['empty'] = True
-
 
 
 

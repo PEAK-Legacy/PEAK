@@ -2,17 +2,18 @@ from unittest import TestCase, makeSuite, TestSuite
 from peak.api import *
 from peak.tests import testRoot
 import peak.web.sitemaps as sm
+from urllib import quote
 
 class ParserTests(TestCase):
-    def setUp(self):
+
+    def setUp(self,**kw):
         self.xml_parser = config.XMLParser(
             config.lookup(testRoot(), 'peak.web.sitemap_schema'),
-            parent = testRoot(), sm_globals=globals()
+            parent = testRoot(), sm_globals=globals(), **kw
         )
         self.parse = self.xml_parser.parse
 
         self.nparser = nparser = self.xml_parser.makeParser()
-        nparser.addNamespace('','mid:pw-sitemap@peak-dev.org')
         self.startElement = nparser.startElement
         self.endElement = nparser.endElement
         nparser._beforeParsing(self.xml_parser.parseFunctions())
@@ -27,6 +28,16 @@ class ParserTests(TestCase):
         v = self.endElement('location')
         self.failUnless(web.IPlace(v) is v)
         self.assertEqual(v.place_url,'')
+
+
+
+
+
+
+
+
+
+
 
     def testChild(self):
         self.startElement('location',[])
@@ -67,6 +78,8 @@ class ParserTests(TestCase):
         self.startElement('import',['module','peak.web.tests.test_sitemap'])
         self.assertRaises(SyntaxError, self.startElement, 'location',[])
 
+
+
     def testRootIsLocation(self):
         self.assertRaises(SyntaxError, self.startElement,
             'import',['module','peak.web.tests.test_sitemap'])
@@ -78,7 +91,6 @@ class ParserTests(TestCase):
     def testMissingAttrs(self):
         self.startElement('location',[])
         self.assertRaises(SyntaxError, self.startElement, 'import',[])
-
 
     def testChildLocationMustBeNamed(self):
         self.startElement('location',[])
@@ -143,6 +155,13 @@ class ParserTests(TestCase):
         self.assertRaises(web.NotFound, self.traverse, bar, 'TestLocation')
 
 
+
+
+
+
+
+
+
     def testNotAllowedInContent(self):
         self.startElement('location', [])
         self.startElement('content', ['type','int'])
@@ -156,17 +175,12 @@ class ParserTests(TestCase):
             'content',['type','int'])
 
 
-
-
-
-
-
-
     def testChoice(self):
         choose = lambda names,**kw: sm.choose(self.nparser,names,kw)
         self.assertRaises(SyntaxError, choose, ('a','b'))
         self.assertEqual(choose(['a','b'],b=1), ('b',1))
         self.assertRaises(SyntaxError, choose, ('a','b'), a=1, b=2)
+
 
     def testViewWrappers(self):
         ctx = self.policy.newContext()
@@ -176,6 +190,18 @@ class ParserTests(TestCase):
         self.failUnless(permHandler(ctx,None,'','x','x').current is None)
         helpedHandler = sm.addHelper(nullHandler,lambda x: [x])
         self.assertEqual(helpedHandler(ctx,None,'','x','x').current, [None])
+
+
+
+
+
+
+
+
+
+
+
+
 
     def testBasicViews(self):
         end=self.endElement
@@ -195,6 +221,7 @@ class ParserTests(TestCase):
         self.assertEqual(ctx.traverseName("baz").current, "123")
         self.assertEqual(ctx.traverseName("fiz").current, 123)
 
+
     def testViewHandlers(self):
         ctx = self.policy.newContext()
         handler = sm.attributeView('url')
@@ -203,13 +230,42 @@ class ParserTests(TestCase):
         self.assertEqual(handler(ctx,ctx,'','x','x').current, 123)
 
 
+    def testExtendedLocation(self):
+        self.setUp(sm_included_from={'name':'foo','class':'TestLocation'})
+        self.startElement('location', [])
+        loc = self.endElement('location')
+        self.assertEqual(loc.getComponentName(), 'foo')
+        self.failUnless(isinstance(loc,TestLocation))
+
+
+
+
+
+
+
+
+    def testLocationExtends(self):
+        self.startElement('location', ['extends','data:,'+quote("""
+                <location id="nested.root">
+                <import module="peak.web.tests.test_sitemap" as="tsm"/>
+                <location name="foo" class="tsm.TestLocation"/>
+                </location>"""), 'id','root'
+            ]
+        )
+        loc = self.endElement('location')
+        self.failUnless(
+            isinstance(self.traverse(loc,'foo').current,TestLocation)
+        )
+        self.failUnless(self.traverse(loc,'++id++root').current is loc)
+        self.failUnless(self.traverse(loc,'++id++nested.root').current is loc)
+        
     # allow(attributes+interfaces)[permission]
 
     # content [location]
 
     # view(resource)[id?]
 
-    # location[include,configure]
+    # location[configure]
 
     # XXX Location should support direct permissions, and ignore redundant ones
 
@@ -227,20 +283,5 @@ TestClasses = (
 
 def test_suite():
     return TestSuite([makeSuite(t,'test') for t in TestClasses])
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
