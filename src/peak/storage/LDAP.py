@@ -224,7 +224,7 @@ class ldapURL(naming.ParsedURL):
             raise exceptions.InvalidName(str(self))
 
         if '/' in _hostport:
-            _hostport, _rest = hostport.split('/', 1)
+            _hostport, _rest = _hostport.split('/', 1)
         else:
             _rest = ''
 
