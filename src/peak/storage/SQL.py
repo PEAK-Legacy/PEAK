@@ -329,10 +329,10 @@ class ValueBasedTypeConn(SQLConnection):
 class SybaseConnection(ValueBasedTypeConn):
 
     DRIVER    = "Sybase"
-    hostname  = binding.Obtain(PropertyName('Sybase.client.hostname'), default=None)
-    appname   = binding.Obtain(PropertyName('Sybase.client.appname'),  default=None)
-    textlimit = binding.Obtain(PropertyName('Sybase.client.textlimit'),default=None)
-    textsize  = binding.Obtain(PropertyName('Sybase.client.textsize'), default=None)
+    hostname  = binding.Obtain(PropertyName('Sybase.client.hostname'), default=None, noCache=True)
+    appname   = binding.Obtain(PropertyName('Sybase.client.appname'),  default=None, noCache=True)
+    textlimit = binding.Obtain(PropertyName('Sybase.client.textlimit'),default=None, noCache=True)
+    textsize  = binding.Obtain(PropertyName('Sybase.client.textsize'), default=None, noCache=True)
 
     otmap = {
         'systable' : 'S',
