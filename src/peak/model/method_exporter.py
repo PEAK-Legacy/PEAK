@@ -47,7 +47,9 @@ class MethodExporter(protocols.ProviderMixin,ActiveClass):
         install "verbSubject()"-style methods in classes which contain them.
         The verbs are implemented as method templates in the class statement
         which defines the MethodExporter, and the subject name comes from
-        the name of the class being defined.
+        the name of the class being defined.  (Note: the target class must have
+        a metaclass based on 'binding.Activator', either through explicit
+        definition or via inheritance from e.g. 'binding.Component'.)
 
         Usage example::
 
@@ -64,6 +66,8 @@ class MethodExporter(protocols.ProviderMixin,ActiveClass):
 
             class Person(object):
 
+                __metaclass__ = binding.Activator
+
                 def __init__(self,name):
                     self.name = name
 
@@ -74,6 +78,7 @@ class MethodExporter(protocols.ProviderMixin,ActiveClass):
                     pass
 
             joe = Person('Joe')
+
 
             # Prints: "Joe: Watch out for my glasses! (Thanks, I needed that!)"
             joe.slapFace("Thanks, I needed that!")
@@ -118,6 +123,9 @@ class MethodExporter(protocols.ProviderMixin,ActiveClass):
 
             class Person(object):
 
+                __metaclass__ = binding.Activator
+
+
                 class face(slappableFeature):
                     thickness = 5
 
@@ -133,6 +141,7 @@ class MethodExporter(protocols.ProviderMixin,ActiveClass):
             # two ways to print "THUD! 15"
             joe.slapBack()
             Person.back.slap(joe)
+
 
         As you can see from this example, 'face' and 'back' actually do exist
         as real attributes of the 'Person' class.  They are instances of
@@ -394,15 +403,6 @@ class MethodExporter(protocols.ProviderMixin,ActiveClass):
     def subjectNames(self):
         """Return a nameMapping object for this feature"""
         return nameMapping(self)
-
-
-
-
-
-
-
-
-
 
 
 
