@@ -39,7 +39,8 @@ def getInheritedRegistries(klass, registryName):
 
 
 
-def New(obtype, bindToOwner=None, name=None, provides=None, doc=None):
+def New(obtype, bindToOwner=None, name=None, provides=None, doc=None, 
+    activateUponAssembly=False):
 
     """One-time binding of a new instance of 'obtype'
 
@@ -72,15 +73,14 @@ def New(obtype, bindToOwner=None, name=None, provides=None, doc=None):
         else:
             return factory()
 
-    return Once( mkNew, name, provides, doc)
+    return Once( mkNew, name, provides, doc, activateUponAssembly)
 
 
 
 
 
 
-
-def Copy(obj, name=None, provides=None, doc=None):
+def Copy(obj, name=None, provides=None, doc=None, activateUponAssembly=False):
 
     """One-time binding of a copy of 'obj'
 
@@ -106,9 +106,9 @@ def Copy(obj, name=None, provides=None, doc=None):
 
 
     from copy import copy
-    return Once( (lambda s,d,a: copy(obj)), name, provides, doc)
-
-
+    return Once( 
+        (lambda s,d,a: copy(obj)), name, provides, doc, activateUponAssembly
+    )
 
 
 
@@ -156,11 +156,22 @@ class Once(OnceDescriptor):
 
     attrName = OnceDescriptor_attrName
     _provides = None
+    activateUponAssembly = False
 
-    def __init__(self, func, name=None, provides=None, doc=None):
+
+
+
+
+    def __init__(self,
+        func, name=None, provides=None, doc=None, activateUponAssembly=False):
+
         self.computeValue = func
         self.attrName = self.__name__ = name or getattr(func,'__name__',None)
-        self._provides = provides; self.__doc__ = doc or getattr(func,'__doc__','')
+        self._provides = provides
+        self.__doc__ = doc or getattr(func,'__doc__','')
+        if activateUponAssembly:
+            self.activateUponAssembly = True
+
 
     def usageError(self):
         raise TypeError(
@@ -190,17 +201,6 @@ class Once(OnceDescriptor):
 
         newOb.attrName = newOb.__name__ = attrName
         return newOb
-
-
-
-
-
-
-
-
-
-
-
 
 
 class classAttr(object):

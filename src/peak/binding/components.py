@@ -383,12 +383,13 @@ class bindTo(Once):
 
     singleValue = True
 
-
-    def __init__(self,targetName,provides=None,doc=None):
+    def __init__(self,targetName,provides=None,doc=None,
+        activateUponAssembly=False):
 
         self.targetNames = (targetName,)
         self._provides=provides
         self.__doc__ = doc or ("binding.bindTo(%r)" % targetName)
+        self.activateUponAssembly = activateUponAssembly
 
     def computeValue(self, obj, instanceDict, attrName):
 
@@ -406,7 +407,6 @@ class bindTo(Once):
                 return newOb
 
         return tuple(obs)
-
 
 class bindSequence(bindTo):
 
@@ -431,7 +431,7 @@ class bindSequence(bindTo):
         self.targetNames = targetNames
         self._provides = kw.get('provides')
         self.__doc__ = kw.get('doc',("binding.bindSequence%s" % `targetNames`))
-
+        self.activateUponAssembly = kw.get('activateUponAssembly')
 
 
 
@@ -515,7 +515,7 @@ def delegateTo(delegateAttr, name=None, provides=None, doc=None):
         lambda s,d,a: getattr(getattr(s,delegateAttr),a), name, provides, doc
     )
 
-def Acquire(key,doc=None):
+def Acquire(key,doc=None,activateUponAssembly=False):
     """Provide a utility or property, but look it up if not supplied
 
     'key' must be a configuration key (e.g. an Interface or a PropertyName).
@@ -529,7 +529,7 @@ def Acquire(key,doc=None):
     if not IConfigKey.isImplementedBy(key):
         raise exceptions.InvalidName("Not a configuration key:", key)
 
-    return bindTo(key,key,doc)
+    return bindTo(key,key,doc,activateUponAssembly=activateUponAssembly)
 
 def bindToParent(level=1, name=None, provides=None, doc=None):
 
@@ -589,16 +589,17 @@ class requireBinding(Once):
         )
 
 
-def bindToUtilities(iface, provides=None, doc=None):
+def bindToUtilities(iface,provides=None,doc=None,activateUponAssembly=False):
 
     """Binding to a list of all 'iface' utilities above the component"""
 
     return Once(lambda s,d,a: list(config.findUtilities(iface,s)),
-        provides=provides, doc=doc
+        provides=provides, doc=doc, activateUponAssembly=activateUponAssembly
     )
 
 
-def bindToProperty(propName, default=NOT_GIVEN, provides=None, doc=None):
+def bindToProperty(propName, default=NOT_GIVEN, provides=None, doc=None,
+    activateUponAssembly=False):
 
     """Binding to property 'propName', defaulting to 'default' if not found
 
@@ -609,9 +610,8 @@ def bindToProperty(propName, default=NOT_GIVEN, provides=None, doc=None):
     propName = PropertyName(propName)
 
     return Once(lambda s,d,a: config.getProperty(propName,s,default),
-        provides=provides, doc=doc
+        provides=provides, doc=doc, activateUponAssembly = activateUponAssembly
     )
-
 
 class _Base(object):
 
@@ -769,14 +769,14 @@ class Component(_Base):
         if parent is None:
             self.uponAssembly()
         else:
-            if (self.__class__.__needsAssembly__ 
+            if (self.__class__.__attrsToBeAssembled__
                 or self._getBinding('__objectsToBeAssembled__')):
                 notifyUponAssembly(parent,self)
 
         self.getParentComponent = cell.get
         return parent
 
-        
+
     def getComponentName(self):
         return self.__componentName
 
@@ -813,22 +813,13 @@ class Component(_Base):
         map(aa.update, getInheritedRegistries(klass, '__attrsToBeAssembled__'))
 
         for attrName, descr in klass.__class_descriptors__.items():
-            notify = getattr(descr,'notifyUponAssembly',False)
+            notify = getattr(descr,'activateUponAssembly',False)
             if notify: aa[attrName] = True
 
         return aa
 
     __attrsToBeAssembled__ = classAttr(Once(__attrsToBeAssembled__))
 
-    __needsAssembly__ = classAttr(
-        Once(
-            lambda klass,d,a: 
-                len(klass.__attrsToBeAssembled__)
-                or klass.notifyUponAssembly.im_func
-                    is not Component.notifyUponAssembly.im_func
-        )
-    )
-    
 
     def notifyUponAssembly(self,child):
 
@@ -857,6 +848,15 @@ class Component(_Base):
             getattr(self,attr)
 
         self.__objectsToBeAssembled__ = None
+
+
+
+
+
+
+
+
+
 
 
     def __class_provides__(klass,d,a):
