@@ -130,6 +130,8 @@ class OpaqueURL(struct):
 
     __fields__ = 'scheme', 'body'
     
+    _supportedSchemes = ()
+
     isComposite = 0
     isCompound  = 0
     isURL       = 1
@@ -153,13 +155,11 @@ class OpaqueURL(struct):
     def __repr__(self):
         return "%s(%r)" % (self.__class__.__name__, str(self))
 
+    def supportsScheme(klass, scheme):
+        return scheme in klass._supportedSchemes or not klass._supportedSchemes
 
-
-
-
-
-
-
+    supportsScheme = classmethod(supportsScheme)
+    
 
 
 class ParsedURL(OpaqueURL):
@@ -203,11 +203,9 @@ class ParsedURL(OpaqueURL):
 
 
 
-    _supportedSchemes = ()
-
     def fromURL(klass, url):
 
-        if url.scheme in klass._supportedSchemes:
+        if self.supportsScheme(url.scheme):
 
             m = klass.pattern.match(url.body)
 
@@ -221,6 +219,8 @@ class ParsedURL(OpaqueURL):
         raise exceptions.InvalidName(url)
         
     fromURL = classmethod(fromURL)
+
+
 
 
 

@@ -415,8 +415,38 @@ class GenericURLContext(AbstractContext):
     schemeParser = bindToProperty(SCHEME_PARSER, provides=SCHEME_PARSER)
 
     def _getParserFor(self, scheme):
-        # XXX this will break if parser doesn't support 'scheme' !
-        return self.schemeParser
+
+        parser = self.schemeParser
+
+        if parser.supportsScheme(scheme):
+            return parser
+
+        parser = config.getProperty(context, SCHEMES_PREFIX+scheme, None)
+
+        if parser is not None:
+
+            parser = importObject(parser)
+    
+            if IAddress.isImplementedByInstancesOf(parser):
+                return parser
+
+        return None
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
     def _getTargetCtx(self, name, iface=IBasicContext):
@@ -447,6 +477,17 @@ class GenericURLContext(AbstractContext):
 
     def _get(self, name, default=None, retrieve=1):
         return (name, None)     # refInfo, attrs
+
+
+
+
+
+
+
+
+
+
+
 
 
 class BasicInitialContext(AbstractContext):
