@@ -92,7 +92,10 @@ class NullSkinService(binding.Component):
 
     defaultSkin = binding.Once(
         lambda self, d, a:
-            web.Skin(self.app, root=self.root, policy=self.policy, layers=[])
+            web.Skin(
+                self.app, root=self.root, policy=self.policy,
+                layers=[web.DefaultLayer()]
+            )
             # XXX needs to create a default layer
     )
 
@@ -104,9 +107,6 @@ class NullAuthenticationService(binding.Singleton):
 
     def getUser(self, interaction):
         return None
-
-
-
 
 
 

@@ -42,7 +42,8 @@ extensions = [
 # Base data files
 
 data_files = [
-    ('peak', ['src/peak/peak.ini']),
+    ('peak',     ['src/peak/peak.ini']),
+    ('peak/web', ['src/peak/web/resource_defaults.ini']),
 ] + findDataFiles('src/peak/running', 1, '*.xml')
 
 
@@ -76,8 +77,6 @@ if include_metamodels:
         packages += [ 'peak.metamodels.tests' ]
 
         data_files += findDataFiles('src/peak/metamodels/tests', 1, '*.xml')
-
-
 
 
 

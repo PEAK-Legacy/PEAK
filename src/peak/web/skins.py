@@ -2,6 +2,7 @@ from peak.api import *
 from interfaces import *
 from places import Traversable, MultiTraverser
 from publish import TraversalPath
+
 __all__ = ['Skin',]
 
 
@@ -11,7 +12,6 @@ class SkinTraverser(MultiTraverser):
         return self.getParentComponent().getResourceURL('',interaction)
 
     items = binding.bindTo('../layers')
-
 
 
 
@@ -49,7 +49,11 @@ class Skin(Traversable):
 
     root   = binding.requireBinding("Underlying traversal root")
     policy = binding.requireBinding("Interaction Policy")
-    layers = binding.requireBinding("Sequence of resource managers")
+    layers = binding.requireBinding(
+        "Sequence of resource managers", suggestParent=False
+        # We don't suggest the parent, so that the layers will bind to our
+        # traverser, instead of to us!
+    )
 
     def dummyInteraction(self,d,a):
         policy = self.policy
@@ -73,10 +77,6 @@ class Skin(Traversable):
             return adapt(self.traverser, interaction.pathProtocol)
 
         return self.root.traverseTo(name, interaction)
-
-
-
-
 
 
 
