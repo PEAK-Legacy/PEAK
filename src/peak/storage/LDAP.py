@@ -164,7 +164,7 @@ class LDAPConnection(ManagedConnection):
 
 class ldapURL(naming.ParsedURL):
 
-    """RF2255 LDAP URLs, with the following changes:
+    """RFC2255 LDAP URLs, with the following changes:
     
     1) Additionally supports ldaps and ldapi (TLS and Unix Domain variants).
 
