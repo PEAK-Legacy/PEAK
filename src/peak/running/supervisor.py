@@ -4,9 +4,9 @@ from peak.api import *
 from interfaces import *
 from peak.net.interfaces import IListeningSocket
 from commands import EventDriven, Bootstrap, AbstractInterpreter
-from process import signals
-
-
+from process import signals, ChildProcess, AbstractProcessTemplate
+from shlex import shlex
+from cStringIO import StringIO
 
 
 
@@ -46,11 +46,27 @@ class ProcessSupervisor(EventDriven):
     pidFile       = binding.Require("Filename where process ID is kept")
     minChildren   = 1
     maxChildren   = 4
-    startInterval = 15      # seconds between forks
+    startInterval = 15  # seconds between forks
+    importModules = ()  # Placeholder for ZConfig pre-import hook; see schema
 
-    template = binding.Require(
-        "IProcessTemplate for child processes", adaptTo=IProcessTemplate,
-        offerAs=[IProcessTemplate], suggestParent=False
+    cmdText = binding.Require("String form of subprocess command line")
+
+    cmdLine = binding.Make(
+        lambda self: list(
+            iter(shlex(StringIO(self.cmdLine)).get_token,'')
+        )+self.argv[1:]
+    )
+
+    template = binding.Make(
+        lambda self: self.getSubcommand(
+            Bootstrap,
+            argv = self.cmdLine,
+            parentComponent = config.makeRoot(),
+            componentName = self.commandName
+        ),
+        adaptTo=IProcessTemplate,
+        offerAs=[IProcessTemplate],
+        suggestParent=False
     )
 
     startLockURL = binding.Make(
@@ -60,6 +76,9 @@ class ProcessSupervisor(EventDriven):
     pidLockURL = binding.Make(
         lambda self: "flockfile:%s.lock" % self.pidFile
     )
+
+
+
 
     startLock = binding.Make(
         lambda self: self.lookupComponent(self.startLockURL),
@@ -76,9 +95,6 @@ class ProcessSupervisor(EventDriven):
 
     processes = binding.Make(dict)
     plugins   = binding.Make(list)
-
-
-
 
     reactor = binding.Make(
         'peak.running.scheduler:UntwistedReactor', offerAs=[IBasicReactor]
@@ -102,22 +118,6 @@ class ProcessSupervisor(EventDriven):
         template = adapt(self.template, ISupervisorPluginProvider, None)
         if template is not None:
             self.plugins.extend(template.getSupervisorPlugins(self))
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
