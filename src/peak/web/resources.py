@@ -6,7 +6,7 @@ from templates import DOMletAsWebPage, TemplateDocument
 from peak.naming.factories.openable import FileURL
 from peak.util.imports import importString
 import os.path, posixpath, sys
-
+from errors import UnsupportedMethod
 
 __all__ = [
     'Resource', 'FSResource', 'ResourceDirectory', 'FileResource',
@@ -422,8 +422,8 @@ class FileResource(FSResource):
         interaction = ctx.interaction
         response = interaction.response
 
-        #if not interaction.request.method in ('GET','HEAD'):
-        #   raise UnsupportedMethod(ctx)
+        if not interaction.request.method in ('GET','HEAD'):
+            raise UnsupportedMethod(ctx)
 
         if interaction.clientHas(self.lastModified, self.ETag):
             return response
@@ -433,21 +433,21 @@ class FileResource(FSResource):
         response.setHeader('Content-Type', self.mime_type)
         response.setHeader('Content-Length', str(size))
 
-        # Put response into streaming mode
-        write = response.write
-        stream = open(self.filename, 'rb')
-        size = self.blocksize
-
-        # read/write data in size-N blocks
-        try:
-            while 1:
-                data = stream.read(size)
-                if not data: break
-                write(data)
-        finally:
-            stream.close()
+        if interaction.request.method == 'GET':
+            write = response.write
+            stream = open(self.filename, 'rb')
+            size = self.blocksize
+            try:
+                # read/write data in size-N blocks
+                while 1:
+                    data = stream.read(size)
+                    if not data: break
+                    write(data)
+            finally:
+                stream.close()
 
         return response
+
 
 class ImageResource(FileResource):
     pass

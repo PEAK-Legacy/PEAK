@@ -1,7 +1,7 @@
 from peak.api import *
 from interfaces import *
 
-__all__ = ['WebException', 'NotFound', 'NotAllowed']
+__all__ = ['WebException', 'NotFound', 'NotAllowed', 'UnsupportedMethod']
 
 
 class WebException(Exception):
@@ -90,6 +90,9 @@ class NotAllowed(WebException):
     httpStatus = '403'  # Forbidden
 
 
+class UnsupportedMethod(WebException):
+
+    httpStatus = '405'  # Method Not Allowed
 
 
 
