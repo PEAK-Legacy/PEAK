@@ -12,7 +12,7 @@ from peak.naming.interfaces import NameNotFoundException
 from peak.util.EigenData import EigenRegistry, EigenCell
 
 from Interface import Interface
-from peak.api import config, NOT_FOUND
+from peak.api import config, NOT_FOUND, NOT_GIVEN
 
 
 __all__ = [
@@ -20,7 +20,7 @@ __all__ = [
     'bindTo', 'requireBinding', 'bindSequence', 'bindToParent', 'bindToSelf',
     'getRootComponent', 'getParentComponent', 'lookupComponent',
     'acquireComponent', 'globalLookup', 'findUtility', 'findUtilities',
-    'bindToUtilities',
+    'bindToUtilities', 'bindProperty',
 ]
 
 
@@ -466,25 +466,25 @@ class requireBinding(Once):
 
 
 def bindToUtilities(iface, provides=None, doc=None):
+
+    """Binding to a list of all 'iface' utilities above the component"""
+
     return Once(lambda s,d,a: [u for u in findUtilities(s,iface,s)],
         provides=provides, doc=doc
     )
 
 
+def bindProperty(propName, default=NOT_GIVEN, provides=None, doc=None):
 
+    """Binding to property 'propName', defaulting to 'default' if not found
 
+        If 'default' is not supplied, failure to locate the named property
+        will result in a 'config.PropertyNotFound' exception.
+    """
 
-
-
-
-
-
-
-
-
-
-
-
+    return Once(lambda s,d,a: config.getProperty(s,propName,default),
+        provides=provides, doc=doc
+    )
 
 
 
