@@ -2,8 +2,8 @@ TransWarp Release 0.2 preview 1
 
  Copyright (C) 2001,2002 by Phillip J. Eby, All rights reserved.
  This software may be used under the same terms as Zope or Python.
- THERE IS ABSOLUTELY NO WARRANTY.  Code quality varies from "alpha"
- to "experimental pre-alpha".  :)
+ THERE ARE ABSOLUTELY NO WARRANTIES OF ANY KIND.  Code quality varies
+ from "alpha" to "experimental pre-alpha".  :)
 
 
  Package Description

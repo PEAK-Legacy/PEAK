@@ -25,25 +25,64 @@
     not list all the classes from its "base module" in order to change them
     by altering a base class in that module.
 
+    Note: All the modules listed in '__bases__' must call 'setupModule()', even
+    if they do not define a '__bases__' or desire module inheritance
+    themselves.  This is because TransWarp cannot otherwise get access to
+    their bytecode in a way that is compatible with the many "import hook"
+    systems that exist for Python.  (E.g. running bytecode from zip files or
+    frozen into an executable, etc.)
+
     Function Rebinding
 
-        One extra advantage of using 'setupModule()' is that all functions
-        (including those which are methods) have their globals rebound to point
-        to the destination module.  This means that if a function or method
-        references a global in the module you're inheriting from, you can
-        override that global in the "subclass module", without having to recode
-        the function that referenced it.
+        All functions inherited via "module inheritance" using 'setupModule()'
+        (including those which are instance or class methods) have their
+        globals rebound to point to the destination module.  This means that if
+        a function or method references a global in the module you're
+        inheriting from, you can override that global in the "subclass module",
+        without having to recode the function that referenced it.  (This is
+        especially useful for 'super()' calls!)
 
         In addition to rebinding general globals, functions which reference
         the global name '__proceed__' are also specially rebound so that
-        '__proceed__' is the previous definition of the function, if any, in
+        '__proceed__' is the previous definition of that function, if any, in
         the inheritance list.  (It is 'None' if there is no previous
-        definition.)  This allows you to do the rough equivalent of a "super"
+        definition.)  This allows you to do the rough equivalent of a 'super()'
         call (or AspectJ "around advice") without having to explicitly import
         the old version of a function.  Note that '__proceed__' is always
         either a function or 'None', so you must include 'self' as a parameter
-        when calling it from a method.
+        when calling it from a method definition.
 
+    Inheritance of Metaclass Constraints
+
+        Python 2.2 enforces metaclass constraints for "new-style" classes.
+        That is, it requires that a new class' metaclass be "compatible" with
+        the metaclass of each of the base classes of the class, where
+        "compatible" means "is the same as, or is a subclass of".
+
+        Python, however, does not automatically generate such a metaclass for
+        you.  You must ordinarily supply that metaclass yourself, either as
+        an explicit '__metaclass__' definition, or by having one of the base
+        classes supply a suitable metaclass.  This is fine for simple programs,
+        where metaclasses are infrequently mixed, but more problematic for
+        complex frameworks like TransWarp, where a variety of metaclasses are
+        mixed and matched to supply various properties.
+
+        So, using 'setupModule()' gives you an additional bonus: TransWarp
+        will automatically generate the necessary metaclasses for you, so long
+        as within any single module you don't break Python's metaclass checks.
+        That is, if you define class 'A' in modules 'M1' and 'M2', then as
+        long as each definition is valid in standard Python, you can use
+        different metaclasses for each, and TransWarp will automatically
+        generate a new metaclass (via inheritance from the old metaclasses)
+        if the definitions ever need to be merged.  (And, of course, if you
+        called 'setupModule()' in both 'M1' and 'M2'.)
+
+        In addition, there is an extra metaclass hook that TransWarp provides.
+        If you define a '__metaclasses__' attribute in a class definition,
+        'setupModule()' will use it as a list of additional metaclasses which
+        should be used in metaclass generation.  For more information on how
+        this and other TransWarp metaclass generation features work, please
+        see the documentation of the 'TW.Utils.Meta' module.
 
     Special Considerations for Mutables and Dynamic Initialization
 
@@ -56,19 +95,24 @@
         
         Mutable values, however, may require special considerations.  For
         example, if a module sets up some kind of registry as a module-level
-        variable, and an inheriting module doesn't want to share that registry,
-        things can get tricky.  If the "superclass module" writes values into
+        variable, and an inheriting module overrides the definition, things
+        can get tricky.  If the "superclass module" writes values into
         that registry as part of module initialization, those values will also
         be written into the registry defined by the "subclass module".
 
-        The simple workaround for these considerations, however, is to move
+        Another possible issue is if the "superclass module" performs other
+        externally visible, non-idempotent operations, such as registering
+        classes or functions in another module's registry, printing things to
+        the console, etc.
+
+        The simple workaround for all these considerations, however, is to move
         your dynamic initialization code to a module-level '__init__' function.
 
 
     Module-level '__init__()' Functions
 
-        The last thing 'setupModule()' does before returning is check for a
-        module-level '__init__()' function, and calls it with no arguments, if
+        The last thing 'setupModule()' does before returning, is to check for a
+        module-level '__init__()' function, and call it with no arguments, if
         it exists.  This allows you to do any dynamic initialization operations
         (such as modifying or resetting global mutables) *after* inheritance
         has taken effect.  As with any other function defined in the module,
@@ -77,23 +121,11 @@
         predecessors' initialization code, if needed/desired.
 
         Note, by the way, that if you have an 'if __name__=="__main__"' block
-        in your module, it should move inside the '__init__()' function for
-        best results.
+        in your module, it would probably be best if you move it inside the
+        '__init__()' function, as this ensures that it will not be run
+        repeatedly if you do not wish it to be.  It will also allow other
+        modules to inherit that code and wrap around it, if they so desire.
         
-    Where to Find More Information on...
-
-        Inheritance of Metaclass Constraints -- the Python 2.2 metaclass
-            tutorial explains the concept of metaclass constraints, and notes
-            that Python 2.2 checks that metaclasses conform, but does not
-            automatically generate a metaclass if none is present.  TransWarp,
-            however, *does* do this when you use 'setupModule()'.  See
-            'TW.Utils.Meta' for the implementation, and the book "Putting
-            Metaclasses To Work" for the theory.
-
-        How Module Inheritance Works -- See 'TW.Utils.Simulator' for all the
-            low-down dirty details of how the bytecode is hacked and how the
-            "simulator" actually implements the various namespace alterations.
-
 
     To-do Items
 
@@ -104,7 +136,9 @@
 
         * This docstring is woefully inadequate to describe all the interesting
           subtleties of module inheritance; a tutorial is really needed.  But
-          there *does* need to be a reference-style explanation as well.
+          there *does* need to be a reference-style explanation as well, that
+          describes the precise semantics of interpretation for assignments,
+          'def', and 'class', in modules running under simulator control.
 
         * Add 'LegacyModule("name")' and 'loadLegacyModule("name")' APIs to
           allow inheriting from and/or giving advice to modules which do not
@@ -118,6 +152,13 @@ __proceed__ = None
 __all__ = ['adviseModule', 'setupModule', '__proceed__']
 
 adviceMap = {}
+
+
+
+
+
+
+
 
 
 

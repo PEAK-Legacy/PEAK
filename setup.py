@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+"""Distutils setup file"""
 
 from distutils.core import setup
 from distutils.command.install_data import install_data
