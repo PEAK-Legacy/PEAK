@@ -24,9 +24,6 @@
 
     'Items()' -- a convenience function that produces a 'dict.items()'-style
         list from a mapping and/or keyword arguments.
-
-    'LOG_*()' -- shortcut functions to call logs.LogEvent().publish() with a
-        preset priority, e.g. 'LOG_NOTICE("message",component)'
 """
 
 from __future__ import generators
@@ -35,12 +32,16 @@ __all__ = [
     'NOT_GIVEN', 'NOT_FOUND', 'Items', 'PropertyName',
     'binding', 'naming', 'model', 'config', 'running', 'logs', 'storage',
     'exceptions',
-    'LOG_CRITICAL', 'LOG_ERROR', 'LOG_WARNING', 'LOG_NOTICE', 'LOG_INFO',
-    'LOG_DEBUG', 'LOG',
 ]
 
-from peak.util.imports import lazyModule
 
+
+
+
+
+# Convenience features
+
+from peak.util.imports import lazyModule
 binding     = lazyModule('peak.binding.api')
 config      = lazyModule('peak.config.api')
 exceptions  = lazyModule('peak.exceptions')
@@ -49,38 +50,6 @@ naming      = lazyModule('peak.naming.api')
 running     = lazyModule('peak.running.api')
 storage     = lazyModule('peak.storage.api')
 logs        = lazyModule('peak.running.logs')
-
-
-# Logging shortcuts
-
-def LOG_CRITICAL(message, parent=None, **info):
-    logs.Event(message,parent,priority=logs.PRI_CRITICAL,**info).publish()
-
-def LOG_ERROR(message, parent=None, **info):
-    logs.Event(message,parent,priority=logs.PRI_ERROR,**info).publish()
-
-def LOG_WARNING(message, parent=None, **info):
-    logs.Event(message,parent,priority=logs.PRI_WARNING,**info).publish()
-
-def LOG_NOTICE(message, parent=None, **info):
-    logs.Event(message,parent,priority=logs.PRI_NOTICE,**info).publish()
-
-def LOG_INFO(message, parent=None, **info):
-    logs.Event(message,parent,priority=logs.PRI_INFO,**info).publish()
-
-def LOG_DEBUG(message, parent=None, **info):
-    logs.Event(message,parent,priority=logs.PRI_DEBUG,**info).publish()
-
-def LOG(message, parent=None, **info):
-    logs.Event(message,parent,**info).publish()
-
-
-
-
-
-
-
-# Convenience features
 
 class _Symbol(object):
 
@@ -105,20 +74,10 @@ class _Symbol(object):
 
     __str__ = __repr__
 
-
 # XXX we need to wrap these in security proxies if zope.security present
 
 NOT_GIVEN = _Symbol("NOT_GIVEN", __name__)
 NOT_FOUND = _Symbol("NOT_FOUND", __name__)
-
-
-
-
-
-
-
-
-
 
 
 def Items(mapping=None, **kwargs):

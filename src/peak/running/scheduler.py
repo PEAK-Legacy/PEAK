@@ -203,6 +203,8 @@ class UntwistedReactor(binding.Component):
     def removeWriter(self, writer):
         if writer in self.writers: self.writers.remove(writer)
 
+    logger = binding.bindToProperty('peak.logs.reactor')
+
     def iterate(self, delay=None):
 
         now = self.time()
@@ -211,8 +213,8 @@ class UntwistedReactor(binding.Component):
             try:
                 self.laters.pop(0)()
             except:
-                LOG_ERROR(
-                    "Error executing scheduled callback", self, exc_info=True
+                self.logger.exception(
+                    "%s: error executing scheduled callback:", self
                 )
 
         if delay is None:
@@ -232,8 +234,6 @@ class UntwistedReactor(binding.Component):
 
         elif delay:
             self.sleep(delay)
-
-
 
 
 

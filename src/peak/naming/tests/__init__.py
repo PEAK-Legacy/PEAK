@@ -55,11 +55,29 @@ validNames = {
 
     'config:environ.TMP/':
         Items(scheme='config', body=(('environ','TMP'),'') ),
+
+    'logfile:/foo/bar?level=WARNING':
+        Items(scheme='logfile', filename='/foo/bar', level=30),
+
+    'win32.dde:foo::bar;file=c:\\baz;retries=24;sleep=42':
+        Items(scheme='win32.dde', service='foo', topic='bar', file='c:\\baz',
+              retries=24, sleep=42),
 }
 
 
 def parse(url):
     return naming.parseURL(testRoot(),url)
+
+
+
+
+
+
+
+
+
+
+
 
 
 class NameParseTest(TestCase):
@@ -72,12 +90,6 @@ class NameParseTest(TestCase):
             obj = parse(name)
             for (k,v) in values:
                 assert getattr(obj,k)==v, (k,getattr(obj,k),v)
-
-
-
-
-
-
 
 
 from peak.naming.api import CompoundName as lname, CompositeName as gname
@@ -106,6 +118,9 @@ class NameAdditionTest(TestCase):
             assert n1+n2==res, (n1,n2,n1+n2,res)
 
 
+
+
+
 TestClasses = (
     NameParseTest, NameAdditionTest
 )
@@ -117,6 +132,32 @@ def test_suite():
         s.append(makeSuite(t,'check'))
 
     return TestSuite(s)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

@@ -121,6 +121,10 @@ class SQLCursor(AbstractCursor):
 
 
 
+    logger = binding.bindToProperty('peak.logs.sql')
+
+    __path = binding.Once(lambda s,d,a: binding.getComponentPath(s))
+
     def execute(self, *args):
 
         self.setTxnState()
@@ -137,18 +141,14 @@ class SQLCursor(AbstractCursor):
 
             __traceback_info__ = args
 
-            LOG_ERROR(
-                "Error executing SQL query", self, exc_info=True
+            self.logger.exception(
+                "%s: error executing SQL query: %s\n"
+                "Traceback:",
+                self.__path, args
             )
 
             self.conn.closeASAP()    # close connection after error
             raise
-
-
-
-
-
-
 
 
 

@@ -2,72 +2,30 @@
 
     * Flesh out ILogSink (__call__), ILogEvent, and docs here and in peak.api
 
-    * Dump formatted kwargs as part of the standard log format
-
-      issues: currently, we don't know which items in our dict were kwargs.
-      record a list of which were passed? Also, some we wouldn't want to
-      include even if they were passed explicity (for example, priority,
-      which is passed explicitly by the LOG_XXX functions.
-
     * SysLog and LogTee objects/URLs (low priority; we don't seem to use
       these at the moment)
-
-    * Syslog (and others) may want the second part of asString without the
-      leading stuff -- maybe refactor into another routine that returns
-      just the second part
 '''
 
-from peak.binding.components import Component, Once, New
-from peak.api import binding, config, naming, NOT_GIVEN, PropertyName
+from peak.binding.components import Component, Once, New, requireBinding
+from peak.naming.names import ParsedURL
+from peak.interface import implements, Interface
+from peak.api import NOT_GIVEN
+
+from interfaces import ILogger
+
 from time import time, localtime, strftime
 import sys, os, traceback
+
 from socket import gethostname
 _hostname = gethostname().split('.')[0]
 del gethostname
 
 
 __all__ = [
-    'LOG_LEVEL', 'Event', 'PRI_SYSEMERG', 'PRI_SYSALERT', 'PRI_CRITICAL',
-    'PRI_ERROR', 'PRI_WARNING', 'PRI_NOTICE', 'PRI_INFO', 'PRI_VERBOSE',
-    'PRI_DEBUG', 'PRI_TRACE', 'ILogSink', 'ILogEvent',
+    'getLevelName', 'getLevelFor', 'addLevelName', 'Event', 'logfileURL',
+    'AbstractLogger', 'LogFile', 'LogStream', 'loggerURL', 'peakLoggerURL',
 ]
 
-LOG_LEVEL = PropertyName('peak.log_level')
-
-
-
-
-
-
-                        # syslog        PEP 282         zLOG
-                        # ---------     -------         ----
-PRI_SYSEMERG = 500      # LOG_EMERG
-PRI_SYSALERT = 400      # LOG_ALERT
-PRI_CRITICAL = 300      # LOG_CRIT      CRITICAL(50)    PANIC
-PRI_ERROR    = 200      # LOG_ERR       ERROR(40)       ERROR
-PRI_WARNING  = 100      # LOG_WARNING   WARN(30)        WARNING, PROBLEM
-PRI_NOTICE   = 50       # LOG_NOTICE
-PRI_INFO     = 0        # LOG_INFO      INFO(20)        INFO
-PRI_VERBOSE  = -100     #                               BLATHER
-PRI_DEBUG    = -200     # LOG_DEBUG     DEBUG(10)       DEBUG
-PRI_TRACE    = -300     #               ALL(0)          TRACE
-
-syslog_scale = (
-    (PRI_DEBUG,    7, 'LOG_DEBUG'),
-    (PRI_INFO,     6, 'LOG_INFO'),
-    (PRI_NOTICE,   5, 'LOG_NOTICE'),
-    (PRI_WARNING,  4, 'LOG_WARNING'),
-    (PRI_ERROR,    3, 'LOG_ERR'),
-    (PRI_CRITICAL, 2, 'LOG_CRIT'),
-    (PRI_SYSALERT, 1, 'LOG_ALERT'),
-    (PRI_SYSEMERG, 0, 'LOG_EMERG'),
-)
-
-
-priorities = {}
-for k, v in globals().items():
-    if k.startswith('PRI_'):
-        priorities[k] = v
 
 
 
@@ -80,27 +38,110 @@ for k, v in globals().items():
 
 
 
-from peak.interface import Interface
 
-class ILogSink(Interface):
-    def sink(event):
-        """Attempt to handle the event.
+def addLevelName(lvl,name):
 
-        Returns true if the event was consumed, else false"""
+    """Define 'name' for 'lvl'; fails if 'name' already in use"""
 
+    if name in nameToLevel and nameToLevel[name]<>lvl:
+        raise ValueError("Level already defined",name,nameToLevel[name])
+
+    nameToLevel[name]=lvl
+
+    if logging:
+        logging.addLevelName(lvl,name)
+
+    return levelToName.setdefault(lvl,name)
+
+
+def getLevelName(lvl, default=NOT_GIVEN):
+
+    """Get a name for 'lvl', or return 'default'
+
+    If 'default' is not given, this returns '"Level %s" % lvl', for
+    symmetry with the 'logging' package."""
+
+    try:
+        return levelToName[lvl]
+
+    except KeyError:
+        std = "Level %s" % lvl
+
+        if logging:
+            name = logging.getLevelName(lvl)
+            if name <> std:
+                addLevelName(lvl,name)
+                return name
+
+    if default is NOT_GIVEN:
+        return std
+
+    return default
+
+
+
+def getLevelFor(ob, default=NOT_GIVEN):
+
+    """Get a level integer for 'ob', or return 'default'
+
+    If 'ob' is in fact a number (i.e. adding 0 to it works), it will be
+    returned as-is.  If 'ob' is a string representation of an integer, its
+    numeric value is returned.  This is so that functions which want to accept
+    either numbers or level names can do so by calling this converter.
+
+    If no conversion can be found, and no default is specified, LookupError
+    is raised."""
+
+    try:
+        return ob+0     # If this works, it's a number, leave it alone
+    except TypeError:
         pass
 
+    try:
+        return nameToLevel[ob]
 
-class ILogEvent(Interface):
-    pass
+    except KeyError:
+        std = "Level %s" % ob
+
+        if logging:
+            lvl = logging.getLevelName(ob)
+            if lvl <> std:
+                addLevelName(lvl,ob)
+                return lvl
+
+    try:
+        # See if we can convert it to a number
+        return int(ob)
+    except ValueError:
+        pass
+
+    if default is NOT_GIVEN:
+        raise LookupError("No such log level", ob)
+
+    return default
 
 
+try:
+    import logging
+except ImportError:
+    logging = None
+
+if logging:
+    # Add the other syslog levels
+    logging.addLevelName(25, 'NOTICE')
+    logging.addLevelName(60, 'ALERT')
+    logging.addLevelName(70, 'EMERG')
 
 
+nms  = 'TRACE ALL DEBUG INFO NOTICE WARNING ERROR CRITICAL ALERT EMERG'.split()
+lvls =      0,  0,   10,  20,    25,     30,   40,      50,   60,   70
 
+levelToName = dict(zip(lvls,nms))
+nameToLevel = dict(zip(nms,lvls))
 
+globals().update(nameToLevel)
 
-
+__all__.extend(nms)
 
 
 
@@ -123,13 +164,12 @@ class ILogEvent(Interface):
 
 class Event(Component):
 
-    __implements__ = ILogEvent
-
     ident      = 'PEAK' # XXX use component names if avail?
     message    = ''
-    priority   = PRI_TRACE
+    priority   = TRACE
     timestamp  = Once(lambda *x: time())
     uuid       = New('peak.util.uuid:UUID')
+    hostname   = _hostname
     process_id = Once(lambda *x: os.getpid())
     exc_info   = ()
 
@@ -162,48 +202,49 @@ class Event(Component):
     def __getitem__(self, key):
         return getattr(self,key)
 
-    def publish(self, publishTo=NOT_GIVEN):
 
-        if publishTo is NOT_GIVEN:
-            publishTo=self.getParentComponent()
+    def linePrefix(self,d,a):
+        return  "%s %s %s[%d]: " % (
+            strftime('%b %d %H:%M:%S', localtime(self.timestamp)),
+            _hostname, self.ident, self.process_id
+        )
 
-        if self.priority<config.getProperty(publishTo, LOG_LEVEL, PRI_WARNING):
-            return
-
-        for sink in config.findUtilities(publishTo, ILogSink):
-            if sink.sink(self):
-                return  # if absorbed, we're done
-
-        # If no logger absorbed us, go to stderr
-        print >>sys.stderr, self.asString.encode('utf8','replace'),
+    linePrefix = Once(linePrefix)
 
 
     def asString(self, d, a):
 
         if self.exc_info:
-            text = '\n'.join(filter(None,[self.message,self.traceback]))
+            return '\n'.join(filter(None,[self.message,self.traceback]))
         else:
-            text = self.message
-
-        prefix = "%s %s %s[%d]: " % (
-            strftime('%b %d %H:%M:%S', localtime(self.timestamp)),
-            _hostname, self.ident, self.process_id
-        )
-
-        return '%s%s\n' % (prefix, text.rstrip().replace('\n', '\n'+prefix))
+            return self.message
 
     asString = Once(asString)
 
+
+    def prefixedString(self,d,a):
+        return '%s%s\n' % (
+            self.linePrefix,
+            self.asString.rstrip().replace('\n', '\n'+self.linePrefix)
+        )
+
+    prefixedString = Once(prefixedString)
+
+
+    def __unicode__(self):
+        return self.prefixedString
+
+
     def __str__(self):
-        return self.asString
-
-    hostname = _hostname
+        return self.prefixedString.encode('utf8','replace')
 
 
 
 
 
-class logfileURL(naming.ParsedURL):
+
+
+class logfileURL(ParsedURL):
 
     supportedSchemes = ('logfile', )
 
@@ -219,66 +260,148 @@ class logfileURL(naming.ParsedURL):
 
             _qs = dict([x.split('=', 1) for x in _qs.split('&')])
 
-        level = _qs.get('level', 'PRI_TRACE').upper()
-        if not level.startswith('PRI_') and not level.startswith('LOG_'):
-            level = 'PRI_' + level
+        _lvl = _qs.get('level', 'ALL').upper()
 
-        level = priorities[level] # XXX handle KeyError somehow?
+        if _lvl.startswith('PRI_') or _lvl.startswith('LOG_'):
+            _lvl = _lvl[4:]
+
+        level = getLevelFor(_lvl, None)
+
+        if level is None:
+            raise InvalidNameError(
+                "Unrecognized log level", body
+            )
 
         return locals()
 
 
     def retrieve(self, refInfo, name, context, attrs=None):
-        return Logfile(self.filename, self.level)
+        return LogFile(
+            context.creationParent, context.creationName,
+            filename=self.filename, level=self.level
+        )
 
 
 
 
 
+class peakLoggerURL(ParsedURL):
+    """URL that only looks up PEAK loggers, even if 'logging' is installed"""
+
+    def retrieve(self, refInfo, name, context, attrs=None):
+
+        prop = 'peak.logs'
+
+        if self.body:
+            prop = '%s.%s' % prop, self.body
+
+        return config.getProperty(
+            context.creationParent, prop
+        )
 
 
+class loggerURL(peakLoggerURL):
+
+    """URL that retrieves a PEP 282 logger, or a PEAK substitute"""
+
+    supportedSchemes = ('logging.logger', )
+
+    def retrieve(self, refInfo, name, context, attrs=None):
+
+        if logging:
+            return logging.getLogger(self.body)
+
+        return super(loggerURL,self).retrieve(refInfo, name, context, attrs)
 
 
+def _levelledMessage(lvl,exc_info=()):
+
+    def msg(self, msg, *args, **kwargs):
+        if self.level <= lvl:
+            self.publish(
+                self.EventClass(
+                    (msg % args), self, priority=lvl, **kwargs
+                )
+            )
+    return msg
 
 
+class AbstractLogger(Component):
+
+    implements(ILogger)
+
+    level = requireBinding("Minimum priority for messages to be published")
+    EventClass = Event
 
 
+    def isEnabledFor(self,lvl):
+        return self.level >= lvl
 
-class LogSink:
+    def getEffectiveLevel(self,lvl):
+        return self.level
 
-    __implements__ = ILogSink
+    debug     = _levelledMessage(DEBUG)
+    info      = _levelledMessage(INFO)
+    warning   = _levelledMessage(WARNING)
+    error     = _levelledMessage(ERROR)
+    critical  = _levelledMessage(CRITICAL)
 
-    def sink(self, event):
-        return True
+    def exception(self, msg, *args, **kwargs):
+        if self.level <= ERROR:
+            self.publish(
+                self.EventClass(
+                    (msg % args), self, priority=ERROR, exc_info=True, **kwargs
+                )
+            )
+
+    def log(self, lvl, msg, *args, **kwargs):
+        if self.level <= lvl:
+            self.publish(
+                self.EventClass(
+                    (msg % args), self, priority=lvl, **kwargs
+                )
+            )
+
+    def publish(self, event):
+        pass
+
+
 
     def __call__(self, priority, msg, ident=None):
-        if isinstance(msg,tuple):
-            e = Event('ERROR', exc_info = msg)
-        else:
-            e = Event(msg, priority=priority)
 
-        if ident is not None:
-            e.ident = ident
+        if priority>=self.level:
+            if isinstance(msg,tuple):
+                e = Event('ERROR', exc_info = msg)
+            else:
+                e = Event(msg, priority=priority)
+
+            if ident is not None:
+                e.ident = ident
 
         self.sink(e)
 
 
 
-class Logfile(LogSink):
+class LogFile(AbstractLogger):
 
-    def __init__(self, filename, level):
-        self.filename, self.level = filename, level
+    filename = requireBinding("name of file to write logs to")
 
-        return
-
-    def sink(self, event):
+    def publish(self, event):
         if event.priority >= self.level:
             fp = open(self.filename, "a")
-            fp.write(event.asString)
-            fp.close()
+            try:
+                fp.write(str(event))
+            finally:
+                fp.close()
 
-        return True
 
+class LogStream(AbstractLogger):
+
+    stream = requireBinding("Writable stream to write messages to")
+
+    def publish(self, event):
+        if event.priority >= self.level:
+            self.stream.write(str(event))
 
 
 

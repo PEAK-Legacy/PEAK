@@ -210,7 +210,6 @@ class AdaptiveTask(binding.Component):
 
     def doWork(self,job):
         """Do the job; throw errors if unsuccessful"""
-        LOG_DEBUG(`job`, self)
         return job
 
 
@@ -233,6 +232,7 @@ class AdaptiveTask(binding.Component):
 
 
     lock = None
+
 
 
 

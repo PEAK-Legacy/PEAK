@@ -48,64 +48,64 @@ class BasicTxnErrorHandler(object):
 
     def voteFailed(self, txnService, participant):
 
-        t,v,tb = sys.exc_info()
+        txnService.logger.warning(
+            "%s: error during participant vote", txnService, exc_info=True
+        )
 
-        try:
-            LOG_WARNING(
-                "Error during participant vote", txnService, exc_info=(t,v,tb)
-            )
-
-            # Force txn to abort
-            txnService.fail()
-            raise t,v,tb
-
-        finally:
-            del t,v,tb
+        # Force txn to abort
+        txnService.fail()
+        raise
 
 
     def commitFailed(self, txnService, participant):
 
-        t,v,tb = sys.exc_info()
-
-        try:
-            LOG_CRITICAL(
-                "Unrecoverable transaction failure", txnService,
-                exc_info=(t,v,tb)
-            )
-            txnService.fail()
-            raise t,v,tb
-
-        finally:
-            del t,v,tb
-
+        txnService.logger.critical(
+            "%s: unrecoverable transaction failure", txnService,
+            exc_info=True
+        )
+        txnService.fail()
+        raise
 
 
     def abortFailed(self, txnService, participant):
 
-        t,v,tb = sys.exc_info()
+        txnService.logger.warning(
+            "%s: error during participant abort", txnService,
+            exc_info=True
+        )
 
-        try:
-            LOG_WARNING(
-                "Error during participant abort", txnService, exc_info=(t,v,tb)
-            )
+        # remove and retry after fail
+        txnService.removeParticipant(participant)
+        raise
 
-            # remove and retry after fail
-            txnService.removeParticipant(participant)
-            raise t,v,tb
-
-        finally:
-            del t,v,tb
 
 
     def finishFailed(self, txnService, participant, committed):
 
-        LOG_WARNING(
-            "Error during participant finishTransaction", txnService,
+        txnService.logger.warning(
+            "%s: error during participant finishTransaction", txnService,
             exc_info=True
         )
 
         # ignore the error
         txnService.removeParticipant(participant)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -141,6 +141,7 @@ class TransactionService(binding.Component):
 
     state          = binding.New(TransactionState)
     errorHandler   = binding.New(BasicTxnErrorHandler)
+    logger         = binding.bindToProperty('peak.logs.transaction')
 
     def join(self, participant):
 
@@ -157,7 +158,6 @@ class TransactionService(binding.Component):
 
         else:
             raise exceptions.TransactionInProgress
-
 
 
 

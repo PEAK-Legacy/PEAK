@@ -1,5 +1,23 @@
 Fixes and Enhancements since Version 0.5 alpha 1
 
+ - Removed 'LOG_XYZ' convenience functions from 'peak.api', and refactored
+   'peak.running.logs' to use a PEP 282-like interface, 'running.ILogger'.
+   Under the new scheme, messages must be sent to a specific entry point
+   (e.g. 'self.logger.warning("foo")').  Components can bind an attribute
+   directly to a logger object, or via configuration properties or utilities.
+   PEAK components that do logging all define a 'logger' attribute, bound
+   to a configuration property in the 'peak.logs' property namespace.  By
+   a default in 'peak.ini', 'peak.logs.*' is configured to output messages
+   of 'WARNING' priority or higher to 'sys.stderr'.
+
+   For compatibility with the PEP 282 logging package, a 'logging.logger:'
+   URL scheme has been added; looking up the URL '"logging.logger:foo.bar"'
+   is equivalent to 'logging.getLogger("foo.bar")', unless the 'logging'
+   package is not available, in which case the configuration property
+   'peak.logs.foo.bar' will be looked up in the target context of the
+   lookup.  Optionally, you can configure the 'logging.logger' URL scheme so
+   that it only uses PEAK loggers, and never uses the PEP 282 loggers.
+   
  - Added 'binding.metamethod()' wrapper for metaclass methods that might
    not be accessible from their instances if the instances (classes) also
    defined the method for *their* instances.  You must now use this wrapper

@@ -1,6 +1,6 @@
 from peak.api import *
 
-import win32ui, dde, os, sys
+import os, sys, weakref
 from time import sleep
 
 
@@ -12,18 +12,19 @@ class ServerManager(object):
 
     """This ensures that 'Shutdown()' gets called when the server is GC'd"""
 
-    def __init__(self,name):
+    def __init__(self,name,logger=logs.AbstractLogger(level=logs.EMERG)):
+        import win32ui, dde
         server = self.server = dde.CreateServer()
         self.name = name
+        self.logger = logger
         server.Create(name)
-        return server
 
     def __call__(self, serviceName, topicName):
-
+        import dde
         conn = dde.CreateConversation(self.server)
 
-        LOG_DEBUG("Attempting DDE connection to (%s,%s) for %s" %
-            (serviceName, topicName, self.name)
+        self.logger.debug("%s: attempting DDE connection to (%s,%s)",
+            self.name, serviceName, topicName
         )
 
         conn.ConnectTo(serviceName, topicName)
@@ -31,12 +32,11 @@ class ServerManager(object):
 
     def __del__(self):
         if self.server is not None:
-            LOG_DEBUG("Shutting down DDE server for %s" % self.name)
+            self.logger.debug("%s: shutting down DDE server", self.name)
             self.server.Shutdown()
             self.server = None
 
     close = __del__
-
 
 
 class ddeURL(naming.ParsedURL):
@@ -67,7 +67,7 @@ class ddeURL(naming.ParsedURL):
 
     def retrieve(self, refInfo, name, context, attrs=None):
         return DDEConnection(
-            context.creationParent,
+            context.creationParent, context.creationName,
             serviceName=self.service,
             topicName=self.topic,
             launchFile=self.file,
@@ -132,9 +132,15 @@ class DDEConnection(storage.ManagedConnection):
     retries  = 10
     sleepFor = 1
 
+    logger = binding.bindToProperty('peak.logs.dde')
 
     def ddeServer(self,d,a):
-        return ServerManager(str(binding.getComponentPath(self)))
+        return ServerManager(
+            str(binding.getComponentPath(self)),
+            # weakref to the logger so that the ServerManager isn't part of
+            # a cycle with us (if our logger refers to us)
+            logger=weakref.proxy(self.logger)
+        )
 
     ddeServer = binding.Once(ddeServer)
 
@@ -150,12 +156,6 @@ class DDEConnection(storage.ManagedConnection):
     def poke(self, commandStr, data=None):
         """DDE Poke of command string and optional data buffer"""
         return self.connection.Poke(commandStr, data)
-
-
-
-
-
-
 
 
 
@@ -182,7 +182,7 @@ class DDEConnection(storage.ManagedConnection):
                 sleep(self.sleepFor)
             else:
                 if self.launchFile:
-                    LOG_DEBUG(("Launching %s" % self.launchFile), self)
+                    self.logger.debug("%s: launching %s",self,self.launchFile)
                     os.startfile(self.launchFile)
 
                 attemptedLaunch = True
