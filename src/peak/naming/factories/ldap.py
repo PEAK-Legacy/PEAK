@@ -48,14 +48,16 @@ class ldapURL(ParsedURL):
     
     _supportedSchemes = ('ldap', 'ldaps', 'ldapi')
     
-    __fields__ = 'host', 'port', 'basedn', 'attrs', 'scope', 'filter', \
-                'extensions', 'critical'
+    __fields__ = 'scheme', 'body', 'host', 'port', 'basedn', 'attrs', \
+                'scope', 'filter', 'extensions', 'critical'
     
     def fromURL(klass, url):
         bindinfo = None
         host = basedn = ''
         port = 389
         extensions = {}
+        
+        scheme, body = url.scheme, url.body
         
         hostport = url.body
         if hostport[:2] == '//':
