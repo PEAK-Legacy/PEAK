@@ -353,6 +353,27 @@ class ParserTests(TestCase):
         loc = self.endElement()
         self.assertEqual(self.traverse(loc,'foo').current, "bar")
 
+    def testContainerLookup(self):
+        self.startElement('location',[])
+        self.startElement('container',['lookup','storage.ITransactionService'])
+        cnt, loc = self.endElement(), self.endElement()
+        self.failUnless(
+            cnt is binding.lookupComponent(loc,storage.ITransactionService)
+        )
+
+    def testContainerOutsideLoc(self):
+        self.assertRaises(SyntaxError,
+            self.startElement, 'container',['object','None'])
+
+
+
+    def testContainerAttrs(self):
+        self.startElement('location', [])
+        self.assertRaises(SyntaxError, self.startElement, 'container',
+            ['object','None','lookup','None']
+        )
+        self.assertRaises(SyntaxError, self.startElement, 'container', [])
+
 
 class TestLocation(web.Location):
     pass
@@ -360,6 +381,26 @@ class TestLocation(web.Location):
 
 def nullHandler(ctx, ob, namespace, name, qname, default=NOT_GIVEN):
     return ctx.childContext(qname,ob)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

@@ -316,21 +316,55 @@ def defineImport(parser,data):
     data['empty'] = True
 
 
+
+
+
+
+
+
+
+
+
+
 def doContainer(parser,data):
-    attrs = SOX.validatedAttributes(parser,data,('object',),('permission',))
+    attrs = SOX.validatedAttributes(
+        parser, data, (), ('lookup','object','permission',)
+    )
     prev = findComponentData(data)
     perm = acquirePermission(data,attrs)
-    container = evalObject(data,attrs['object'])
-    prev['sm_container_stack'].append(
-        lambda: prev['sm.component'].addContainer(container,perm)
-    )
+    loc = prev['sm.component']
 
+    if ('object' in attrs)==('lookup' in attrs):
+        parser.err("container must have a 'lookup' or 'object'")
+    elif 'object' in attrs:
+        container = evalObject(data,attrs['object'])
+    else:
+        container = binding.lookupComponent(
+            loc,evalObject(data,attrs['lookup'])
+        )
 
+    prev['sm_container_stack'].append(lambda: loc.addContainer(container,perm))
+    data['container'] = container
+
+def finishContainer(parser,data):
+    return data['container']
+   
 def defineContainer(parser,data):
     assertNotTop(parser,data)
     assertOutsideContent(parser,data)
     data['start'] = doContainer
+    data['finish'] = finishContainer
     data['empty'] = True
+
+
+
+
+
+
+
+
+
+
 
 
 view_required = 'name',
@@ -356,15 +390,10 @@ def doView(parser,data):
 
     registerView(parser,data,attrs,attrs['name'],handler)
 
-
 def defineView(parser,data):
     assertNotTop(parser,data)
     data['start'] = doView
     data['empty'] = True
-
-
-
-
 
 
 def doOffer(parser,data):
@@ -406,5 +435,17 @@ class SiteMap(binding.Singleton):
             web.SITEMAP_SCHEMA(context), str(url),
             parent=context, sm_globals=globals(), #XXX
         )
+
+
+
+
+
+
+
+
+
+
+
+
 
 
