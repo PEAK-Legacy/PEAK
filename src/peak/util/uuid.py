@@ -22,11 +22,11 @@ try:
 except ImportError:
     try:
         from pywintypes import CreateGuid
-        uuidgen = lambda: str(CreateGuid)[1:-1]
+        uuidgen = lambda: str(CreateGuid())[1:-1]
     except ImportError:
         try:
             from pythoncom import CreateGuid
-            uuidgen = lambda: str(CreateGuid)[1:-1]
+            uuidgen = lambda: str(CreateGuid())[1:-1]
         except ImportError:
             uuidgen = None
 
