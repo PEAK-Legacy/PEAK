@@ -157,9 +157,9 @@ setup(
         Extension("kjbuckets", ["src/kjbuckets/kjbucketsmodule.c"]),
         Extension("Persistence.cPersistence",
             ["src/Persistence/cPersistence.c"]
-        )
+        ),
+        Extension("peak.util.buffer_gap", ["src/peak/util/buffer_gap.c"]),
     ],
-
 
 
     cmdclass = {
