@@ -401,7 +401,7 @@ class CompositeName(AbstractName):
         if not filter(None,parts):
             parts.pop()
 
-        if firstPartType is not None:
+        if parts and firstPartType is not None:
             parts[0] = firstPartType(parts[0])
             if len(parts)==1: return parts[0]
         return klass(parts)

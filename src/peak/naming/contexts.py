@@ -334,7 +334,7 @@ class NameContext(Component):
         if ctx is not self: return ctx.lookupLink(name)
 
         if isBoundary(name):
-            info = self._get_nns(name[0])
+            info = self._get_nns(self.compoundParser(name[0]))
         else:
             info = self._get(name)
 
@@ -376,16 +376,6 @@ class NameContext(Component):
 
         return self._getOb(name, default)
 
-    def _getOb(self, name, default=NOT_FOUND):
-
-        if isBoundary(name):
-            info = self._get_nns(name[0])
-        else:
-            info = self._get(name)
-
-        if info is NOT_FOUND: return default
-        state, attrs = info
-        return self._deref(state, name, attrs)
 
     def __contains__(self, name):
         """Return a true value if 'name' has a binding in context"""
@@ -396,9 +386,11 @@ class NameContext(Component):
             return name in ctx
 
         if isBoundary(name):
-            return self._get_nns(name[0], False) is not NOT_FOUND
+            return self._get_nns(self.compoundParser(name[0]), False
+                ) is not NOT_FOUND
 
         return self._get(name, False) is not NOT_FOUND
+
 
     def lookup(self, name):
         """Lookup 'name' --> object; synonym for __getitem__"""
@@ -412,11 +404,9 @@ class NameContext(Component):
         """Return a sequence of the names present in the context"""
         return [name for name in self]
         
-
     def items(self):
         """Return a sequence of (name,boundItem) pairs"""
         return [ (name,self._getOb(name, None)) for name in self ]
-
 
     def info(self):
         """Return a sequence of (name,refInfo) pairs"""
@@ -439,6 +429,16 @@ class NameContext(Component):
         del self[name]
 
 
+    def _getOb(self, name, default=NOT_FOUND):
+
+        if isBoundary(name):
+            info = self._get_nns(self.compoundParser(name[0]))
+        else:
+            info = self._get(name)
+
+        if info is NOT_FOUND: return default
+        state, attrs = info
+        return self._deref(state, name, attrs)
 
 
 
