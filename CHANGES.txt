@@ -183,6 +183,9 @@ Fixes and Enhancements since Version 0.5 alpha 2
 
  Corrected Problems
 
+  - The logging system would raise an error if a log message with no arguments
+    contained a '%' sign.
+
   - There was a typo in peak.naming.arithmetic that caused homogeneous non-URL
     name subtraction to fail.
 

@@ -330,12 +330,12 @@ def _levelledMessage(lvl,exc_info=()):
 
     def msg(self, msg, *args, **kwargs):
         if self.level <= lvl:
-            self.publish(
-                self.EventClass(
-                    (msg % args), self, priority=lvl, **kwargs
-                )
-            )
+            if args:
+                msg = msg % args
+            self.publish(self.EventClass(msg , self, priority=lvl, **kwargs))
     return msg
+
+
 
 class AbstractLogger(Component):
 
