@@ -37,6 +37,13 @@ class SQLInteractor(binding.Component):
     line = 1
     semi = -1
     
+
+
+    def prompt(self):
+        return '%s%d> ' % (self.state, self.line)
+
+
+
     def interact(self, object, shell):
         binding.suggestParentComponent(shell, None, object)
 
@@ -46,7 +53,7 @@ class SQLInteractor(binding.Component):
         
         while not self.quit:
             try:
-                l = self.readline('%s%d> ' % (self.state, self.line)) + '\n'
+                l = self.readline(self.prompt()) + '\n'
             except EOFError:
                 print >>shell.stdout
                 return
@@ -132,7 +139,7 @@ class SQLInteractor(binding.Component):
                 del cmdinfo
 
             if r is True:
-                pass # XXX
+                self.redraw(self.shell.stdout)
 
         return r
         
@@ -271,9 +278,13 @@ class SQLInteractor(binding.Component):
         
         args = ('d:m:hf', 0, 0)
         
-        def cmd(self, cmd, opts, stdout, **kw):
+        def cmd(self, cmd, opts, stdout, stderr, **kw):
             i = self.interactor.getBuf()
-            if not i.strip():
+            if i.strip():
+                if self.interactor.state:
+                    print >>stderr, "Please finish comment or quotes first."
+                    return
+            else:
                 i = self.interactor.getBuf('!!')
                 if not i.strip():
                     self.interactor.resetBuf()
@@ -611,6 +622,18 @@ default for src is '!.', the current input buffer"""
 
 
 
+    class cmd_redraw(ShellCommand):
+        """\\redraw -- redraw current input buffer"""
+
+        args = ('', 0, 0)
+        
+        def cmd(self, cmd, **kw):
+            return True
+            
+    cmd_redraw = binding.New(cmd_redraw)
+
+
+
     class cmd_echo(ShellCommand):
         """\\echo secs -- echo for 'secs' seconds"""
 
@@ -644,6 +667,27 @@ default for src is '!.', the current input buffer"""
 
 
 
+    def redraw(self, stdout):
+        b = self.getBuf()
+        self.resetBuf()
+        out = self.shell.stdout
+
+        if b.endswith('\n'):
+            b = b[:-1]
+
+        b = b.split('\n')
+
+        for l in b:
+            l += '\n'
+            stdout.write(self.prompt())
+            stdout.write(l)
+            
+            self.line += 1
+            
+            self.updateState(l)
+
+         
+       
     def updateState(self, s):
         state = self.state
 
@@ -701,4 +745,4 @@ protocols.declareAdapter(
     provides = [IN2Interactor],
     forProtocols = [storage.ISQLConnection]
 )
-            
+
