@@ -28,7 +28,7 @@ Open Issues/To-Do Items
         - SQL cursor error logging, close conn on error, and rewrap errors
           w/SQL in error object
 
-        - SQL field type conversion
+        - SQL field type conversion. txnTime should also be converted.
 
         - LDAP field type conversion
 
@@ -41,8 +41,6 @@ Open Issues/To-Do Items
         - unit tests for more complex object scenarios: references, thunks..?
 
         - docstrings for reference
-
-        - URL+driver for postgres
 
     peak.model
 
