@@ -263,7 +263,9 @@ class ValueBasedTypeConn(SQLConnection):
                     tm[v] = c
                 else:
                     # We support either '.int4' or '.INTEGER' style properties
-                    tm[v] = importObject(ps.get(PropertyName(v,force=True),c))
+                    tm[v] = importObject(
+                        ps.get(PropertyName.fromString(v),c)
+                    )
 
         return tm
 

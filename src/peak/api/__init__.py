@@ -128,20 +128,15 @@ class PropertyName(str):
 
     """Name of a configuration property, usable as a configuration key"""
 
-    def __new__(klass, value, force=False):
-        while 1:
-            self = super(PropertyName,klass).__new__(klass,value)
-            valid = pnameValidChars(self)
-            vend = valid and valid.end() or 0
-            if vend<len(self):
-                if not force:
-                    raise exceptions.InvalidName(
-                        "Invalid characters in property name", self
-                    )
-                # Force-fit the character and loop
-                value = self[:vend] + '_'+ self[vend:]
-            else:
-                break
+    def __new__(klass, value, protocol=None):
+
+        self = super(PropertyName,klass).__new__(klass,value)
+        valid = pnameValidChars(self)
+        vend = valid and valid.end() or 0
+        if vend<len(self):
+            raise exceptions.InvalidName(
+                "Invalid characters in property name", self
+            )
 
         parts = self.split('.')
 
@@ -154,6 +149,7 @@ class PropertyName(str):
                     "'*' must be last part of wildcard property name", self
                 )
 
+
         if '?' in self:
             if '?' in parts or self.index('?') < (len(self)-1):
                     raise exceptions.InvalidName(
@@ -161,6 +157,10 @@ class PropertyName(str):
                     )
 
         return self
+
+
+
+
 
     def isWildcard(self):
         return self.endswith('*')
@@ -196,9 +196,9 @@ class PropertyName(str):
 
     lookupKeys = matchPatterns
 
+
     def registrationKeys(self,depth=0):
         return (self,depth),
-
 
 
 
@@ -226,6 +226,47 @@ class PropertyName(str):
         return PropertySet(forObj, self)
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    def fromString(klass, value, keep_wildcards=False, keep_empties=False):
+
+        value = str(value)
+
+        if not keep_wildcards:
+            value = value.replace('?','_').replace('*','_')
+
+        if not keep_empties:
+            value = '.'.join(filter(None,value.split('.')))
+
+        while 1:
+            valid = pnameValidChars(value)
+            vend = valid and valid.end() or 0
+            if vend<len(value):
+                # Force-fit the character and loop
+                value = value[:vend] + '_'+ value[vend+1:]
+            else:
+                break
+        return klass(value)
+
+    fromString = classmethod(fromString)
+
+
 # If/when we use 'peak.config', declare that PropertyName supports IConfigKey
 # and that it adapts strings to IConfigKey
 
@@ -243,4 +284,6 @@ whenImported('peak.config.interfaces',
         )
     )
 )
+
+
 

@@ -376,7 +376,7 @@ class ConfigReader(AbstractConfigParser):
         s = ' '.join(section.lower().split())
 
         if ' ' in s:
-            pn = PropertyName(s.replace(' ','.'),force=True)
+            pn = PropertyName.fromString(s.replace(' ','.'))
             func = importObject(SECTION_PARSERS.of(self.pMap).get(pn))
             if func is None:
                 raise SyntaxError(("Invalid section type", section, lineInfo))
