@@ -7,10 +7,6 @@
 
     <!-- Define "specialists" for looking up content -->
     
-    <content type="model.User" location="loginId@users">
-        <view name="index_html" resource="/bulletins/user_profile"/>
-    </content>
-
     <location name="Users" id="users">
         <container lookup="model.UserDM"/>
         <view name="index_html" resource="bulletins/show_users"/>
@@ -29,6 +25,9 @@
 
     <!-- Define views on content types -->
 
+    <content type="model.User" location="loginId@users">
+        <view name="index_html" resource="/bulletins/user_profile"/>
+    </content>
 
     <content type="model.Bulletin" location="id@bulletins">
         <view name="index_html" resource="bulletins/show_bulletin"/>
