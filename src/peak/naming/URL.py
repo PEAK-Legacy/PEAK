@@ -5,6 +5,7 @@ from urllib import unquote
 
 from peak.api import exceptions, NOT_GIVEN
 from peak.binding.once import classAttr, Once
+from peak.binding.components import bindTo
 from peak.model.elements import Struct
 from peak.model.features import structField
 from peak.model.datatypes import String, Integer
@@ -12,7 +13,7 @@ from peak.model.interfaces import IType
 from peak.interface import adapt, implements, classProvides
 from interfaces import *
 from arithmetic import *
-from names import CompoundName
+from names import CompoundName, URLMatch
 
 __all__ = [
     'Base', 'Field', 'RequiredField', 'IntField', 'NameField', 'Collection',
@@ -22,7 +23,6 @@ __all__ = [
 ]
 
 from peak.util.fmtparse import *
-
 
 
 
@@ -81,13 +81,10 @@ class ExtractQuoted(Rule):
 
 
 class Field(structField):
+
     referencedType = String
     defaultValue = None
     unquote = True
-    syntax = None
-    separator = ''
-    sepMayTerm = False
-    canBeEmpty = False
 
     def _syntax(feature,d,a):
 
@@ -99,7 +96,8 @@ class Field(structField):
         if syntax is None:
             syntax = Conversion(
                 ExtractQuoted(unquote = feature.unquote),
-                converter = feature.fromString, # XXX need toString also
+                converter = feature.fromString,
+                formatter = feature.toString,
                 defaultValue = feature._defaultValue,
                 canBeEmpty = feature.canBeEmpty
             )
@@ -117,9 +115,11 @@ class Field(structField):
 
     _syntax = classAttr(Once(_syntax))
 
-    def __conform__(feature,protocol):
-        if protocol is Rule:
-            return feature._syntax
+
+
+
+
+
 
 class Collection(Field):
     upperBound = None
@@ -170,7 +170,6 @@ class Base(Struct):
     classProvides(IAddressFactory, IType)
 
     pattern          = None
-    syntax           = None
     nameKind         = URL_KIND
     nameAttr         = None
     supportedSchemes = ()
@@ -180,12 +179,11 @@ class Base(Struct):
 
     supportsScheme = classmethod(supportsScheme)
 
+
     def __init__(self, scheme=None, body=None, **__kw):
+
         scheme = scheme or self.__class__.defaultScheme
-        if not self.supportsScheme(scheme):
-            raise exceptions.InvalidName(
-                "Unsupported scheme %r for %r" % (scheme, self.__class__)
-            )
+
         if body:
             data = self.parse(scheme,body)
             data.update(__kw)
@@ -203,43 +201,45 @@ class Base(Struct):
         super(Base,self).__init__(**__kw)
         self.__class__.body._setup(self, self.getCanonicalBody())
 
+
+
     class scheme(structField):
+
         referencedType = String
         sortPosn = 1
+
+        _defaultValue = classAttr(bindTo('defaultScheme'))
+
+        def _onLink(feature,element,item,posn):
+            if not element.supportsScheme(item):
+                raise exceptions.InvalidName(
+                    "Unsupported scheme %r for %r" % (item, element.__class__)
+                )
 
     class body(structField):
         referencedType = String
         sortPosn = 2
         defaultValue = ''
+        unquote = False
+
+
+    syntax = body._syntax   # default syntax is just to parse the body
+
+
+    def mdl_fromString(klass, aName):
+        m = URLMatch(aName)
+        if m:
+            return klass( m.group(1), aName[m.end():] )
+        else:
+            return klass( None, aName)
+
 
     def retrieve(self, refInfo, name, context, attrs=None):
         pass
 
+
     def __str__(self):
         return "%s:%s" % (self.scheme, self.body)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

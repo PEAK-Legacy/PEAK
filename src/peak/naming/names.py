@@ -432,10 +432,8 @@ def toName(aName, nameClass=CompoundName, acceptURL=1):
     if isinstance(aName,StringTypes):
 
         if acceptURL and URLMatch(aName):
-            m = URLMatch(aName)
-            scheme, body = m.group(1), aName[m.end():]
             import URL
-            return URL.Base(scheme,body)
+            return URL.Base.mdl_fromString(aName)
 
         return (nameClass or CompoundName)(aName)
 
@@ -447,6 +445,7 @@ def toName(aName, nameClass=CompoundName, acceptURL=1):
 
 
 NNS_NAME = CompositeName.parse('/',CompoundName)
+
 
 
 

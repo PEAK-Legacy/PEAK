@@ -13,14 +13,14 @@ from peak.api import *
 from interfaces import *
 from method_exporter import MethodExporter
 from peak.util.hashcmp import HashAndCompare
+from peak.util.imports import lazyModule
 
+fmtparse = lazyModule('peak.util.fmtparse')
 
 __all__ = [
     'StructuralFeature',  'Collection', 'Sequence',
     'DerivedFeature', 'structField', 'Attribute',
 ]
-
-
 
 
 
@@ -105,9 +105,9 @@ class FeatureClass(HashAndCompare,MethodExporter):
 
     typeObject = binding.Once(typeObject)
     fromString = binding.bindTo('typeObject/mdl_fromString')
+    toString   = binding.bindTo('typeObject/mdl_toString')
     fromFields = binding.bindTo('typeObject/mdl_fromFields')
     normalize  = binding.bindTo('typeObject/mdl_normalize')
-
     sortPosn   = None
 
     def _hashAndCompare(self,d,a):
@@ -166,37 +166,37 @@ class FeatureClass(HashAndCompare,MethodExporter):
     typeKind    = binding.bindTo('typeCode/kind')
     typeCode    = binding.Once(lambda s,d,a: s.rawTypeCode.unaliased() )
 
+    def _syntax(feature,d,a):
 
+        syntax = feature.syntax
 
+        if syntax is None:
+            syntax = getattr(feature.typeObject, 'mdl_syntax', None)
 
+        if syntax is None:
+            syntax = fmtparse.Conversion(
+                converter = feature.fromString,
+                formatter = feature.toString,
+                defaultValue = feature._defaultValue,
+                canBeEmpty = feature.canBeEmpty
+            )
 
+        if feature.isMany:
+            syntax = fmtparse.Repeat(
+                syntax,
+                minCt = feature.lowerBound,
+                maxCt = feature.upperBound,
+                separator = feature.separator or fmtparse.Epsilon,
+                sepMayTerm = feature.sepMayTerm
+            )
 
+        return fmtparse.Named( feature.attrName, syntax )
 
+    _syntax = binding.Once(_syntax)
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    def __conform__(feature,protocol):
+        if protocol is fmtparse.Rule:
+            return feature._syntax
 
 
 
@@ -221,6 +221,11 @@ class StructuralFeature(object):
     referencedEnd  = None
     referencedType = None
 
+    syntax         = None   # Syntax rule for this feature (unnamed)
+    separator      = ''     # parsing separator between multivalues
+    sepMayTerm     = False  # Can separator occur after last value?
+    canBeEmpty     = False  # XXX
+
     newVerbs = Items(
         get     = 'get%(initCap)s',
         set     = 'set%(initCap)s',
@@ -230,11 +235,6 @@ class StructuralFeature(object):
         replace = 'replace%(singularName.initCap)s',
         insertBefore = 'insert%(singularName.initCap)sBefore',
     )
-
-
-
-
-
 
 
 

@@ -17,13 +17,13 @@ from types import FunctionType
 from peak.persistence import Persistent
 from peak.storage.lazy_loader import LazyLoader
 from peak.binding.components import _Base
+from peak.util.imports import lazyModule
 
+fmtparse = lazyModule('peak.util.fmtparse')
 
 __all__ = [
     'Type', 'PrimitiveType', 'Immutable', 'Struct', 'Element',
 ]
-
-
 
 
 
@@ -211,8 +211,8 @@ class Type(Namespace):
 
     mdl_defaultValue = NOT_GIVEN
 
-    mdl_isAbstract = True   # 'model.Type' itself is abstract
-
+    mdl_isAbstract   = True   # 'model.Type' itself is abstract
+    mdl_syntax       = None   # Syntax rule for parsing/formatting
 
     def __new__(klass,*__args,**__kw):
 
@@ -229,13 +229,13 @@ class Type(Namespace):
 
 
     def mdl_fromString(klass, value):
+        if klass.mdl_syntax is not None:
+            return klass(**fmtparse.parse(value, klass.mdl_syntax))
         raise NotImplementedError
 
 
     def mdl_normalize(klass, value):
         return value
-
-
 
 
 
@@ -277,6 +277,47 @@ class Type(Namespace):
 
     def getComponentName(self):
         return None
+
+
+
+
+
+
+
+
+    def mdl_toString(klass, value):
+        return str(value)
+
+
+    def __str__(self):
+        if self.__class__.mdl_syntax is not None:
+            return fmtparse.format(value._mdl_toDict(value), klass.mdl_syntax)
+        else:
+            return super(Type,self).__str__()
+
+
+    def _mdl_toDict(self):
+        d = {}
+        for f in self.__class__.mdl_featureNames:
+            try:
+                d[f] = getattr(self,f)
+            except AttributeError:
+                continue
+        return d
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

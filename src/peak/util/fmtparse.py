@@ -46,15 +46,14 @@
       the rule signalling the error.  Of course, all the rules should be
       calling input.error() instead of creating ParseError instances...
 
-    * Integrate basic support for this into 'peak.model' so that it becomes
-      "super easy" to define syntax for any data model, not just URLs.
-
     * Perform timing tests and investigate parsing speedups for:
 
         - "Compiling" rules to regular expressions + postprocessors
 
         - "Optimizing" rules (e.g. convert Optional(user, '@') to something
           that forward-scans for '@' before trying to match 'user').
+
+        - Moving speed-critical parts to C
 """
 
 
@@ -75,6 +74,7 @@ class ParseError(Exception):
 
 class MissingData(Exception):
     pass
+
 
 
 
@@ -105,14 +105,14 @@ class Rule(object):
         raise NotImplementedError
 
     def __adapt__(klass, ob):
-        if isinstance(ob,str):
-            return StringConstant(ob)
-        elif isinstance(ob,tuple):
-            return Optional(*ob)
+        # never inherit '__adapt__'!
+        if klass is Rule:
+            if isinstance(ob,str):
+                return StringConstant(ob)
+            elif isinstance(ob,tuple):
+                return Optional(*ob)
 
     __adapt__ = classmethod(__adapt__)
-
-
 
 
 
@@ -155,8 +155,8 @@ class Input(object):
     def finished(self,state):
         raise NotImplementedError
 
-    def __adapt__(self,ob):
-        if isinstance(ob,str):
+    def __adapt__(klass,ob):
+        if klass is Input and isinstance(ob,str):
             return StringInput(ob)
 
     __adapt__ = classmethod(__adapt__)

@@ -46,6 +46,9 @@ class IType(Interface):
     def mdl_fromString(aString):
         """Return an instance of type created based on 'aString'"""
 
+    def mdl_toString(instance):
+        """Return a str() of 'instance'"""
+
     def mdl_fromFields(fieldSequence):
         """Return an instance of type created based on 'fieldSequence'
 
@@ -55,6 +58,10 @@ class IType(Interface):
 
     def mdl_normalize(value):
         """Return 'value' normalized to the type, or raise error if invalid"""
+
+    mdl_syntax = Attribute(
+        """Syntax rule for parsing/formatting this type, or None"""
+    )
 
     mdl_isAbstract = Attribute(
         """Is this an abstract class?  If so, instances can't be created."""
@@ -71,6 +78,7 @@ class IType(Interface):
     mdl_featureNames = Attribute(
         """Names of all features, in monotonic order (see 'mdl_features')"""
     )
+
 
     mdl_sortedFeatures = Attribute(
         """All feature objects of this type, in sorted order"""
@@ -111,14 +119,6 @@ class IType(Interface):
         subtype's display look "the same" as a base type's display, except for
         those features that it adds to the supertype."""
     )
-
-
-
-
-
-
-
-
 
 
 class IEnumType(IType):
