@@ -891,7 +891,7 @@ Python built-in types, are always root components.  For example:
 
 \begin{verbatim%
 }>>> print binding.getParentComponent(123456)
-123456
+None
 >>> print binding.getRootComponent([1,2,3])
 [1, 2, 3]
 >>> print binding.getComponentPath("a string")
@@ -911,10 +911,9 @@ getParentComponent} method defined in its class.  For example:
 
 \begin{verbatim%
 }>>> class myGUIControl:
-	def getParentComponent(self):
-		return self.parentWindow
+        def getParentComponent(self):
+            return self.parentWindow
 
-	
 >>> aControl = myGUIControl()
 >>> aControl.parentWindow = "just a demo"
 >>> print binding.getParentComponent(aControl)
@@ -939,6 +938,7 @@ Notice that since we didn't provide any special support in our example GUI
 control class for component names, the \module{peak.binding} system considers
 it not to have a name.  And unknown names show up as \samp{'*'} in component
 path segments.
+
 
 
 Of course, if we wanted to support our hypothetical GUI controls having
