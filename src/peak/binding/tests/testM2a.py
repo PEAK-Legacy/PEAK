@@ -44,4 +44,4 @@ aGlobal1 = 'M2'
 def aFunc2(aParam):
     return 'after(%s)' % __proceed__('before(%s)' % aParam)
 
-binding.patchModule('peak.binding.tests.testM1a')
+config.patchModule('peak.binding.tests.testM1a')

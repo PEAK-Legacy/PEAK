@@ -2,6 +2,7 @@
 
 from peak.util.EigenData import *
 from config_components import *
+from modules import *
 from weakref import WeakKeyDictionary
 
 __all__ = [
@@ -15,14 +16,12 @@ _defaultCfg = EigenCell()
 _localCfgs = EigenDict()
 _localCfgs.data = WeakKeyDictionary()
 
-
 def getGlobal():
 
     if not _globalCfg.locked:
         setGlobal(GlobalConfig())
 
     return _globalCfg.get()
-
 
 def setGlobal(cfg):
     _globalCfg.set(cfg)
@@ -38,6 +37,7 @@ def getLocal(forRoot=None):
         setLocal(None, newDefaultConfig())
 
     return _defaultCfg.get()
+
 
 def setLocal(forRoot, cfg):
     if forRoot is None:

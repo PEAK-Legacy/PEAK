@@ -12,4 +12,4 @@ __bases__ = (
     peak.metamodels.FeatureObjects,
 )
 
-binding.setupModule()
+config.setupModule()

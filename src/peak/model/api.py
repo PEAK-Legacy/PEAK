@@ -441,7 +441,7 @@ class StructuralFeature(binding.Component):
         del self.__dict__[feature.attrName]
         feature._changed(self)
 
-    binding.configure(delete, verb='delattr')
+    config.setupObject(delete, verb='delattr')
 
     def _changed(feature, element):
         pass
@@ -528,7 +528,7 @@ class Collection(StructuralFeature):
         del self.__dict__[feature.attrName]
         feature._changed(self)
 
-    binding.configure(delete, verb='delattr')
+    config.setupObject(delete, verb='delattr')
 
 
     def _notifyLink(feature, element, item):
@@ -671,7 +671,7 @@ class Element(DataType):
     __implements__ = IElement
 
 
-binding.setupModule()
+config.setupModule()
 
 
 

@@ -40,6 +40,6 @@ def aFunc1():
 def aFunc2(aParam):
     return 'M1(%s)' % aParam
 
-binding.setupModule()
+config.setupModule()
 
 

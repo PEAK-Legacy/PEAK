@@ -309,4 +309,4 @@ class Sequence(Collection):
         else:
             raise ValueError    # XXX
     
-binding.setupModule()
+config.setupModule()

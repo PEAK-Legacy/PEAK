@@ -3663,5 +3663,5 @@ class UMLClass:
         _XMINames = ('Behavioral_Elements.Common_Behavior.DataValue',)
 
 
-binding.setupModule()
+config.setupModule()
 

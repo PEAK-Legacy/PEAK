@@ -2,7 +2,8 @@
 
 from __future__ import generators
 from once import Once, New, WeakRefBinding
-import meta, modules
+import meta
+from peak.running.config.modules import setupModule
 
 from weakref import ref, WeakValueDictionary
 
@@ -24,7 +25,6 @@ __all__ = [
 
 
 InterfaceClass = Interface.__class__
-
 
 
 
@@ -654,7 +654,7 @@ class AutoCreated(Component):
 
 
 
-modules.setupModule()
+setupModule()
 
 
 

@@ -188,13 +188,13 @@ import __builtin__; __builtin__.__proceed__ = None
 
 
 __all__ = [
-    'patchModule', 'setupModule', 'configure', 'ModuleInheritanceWarning'
+    'patchModule', 'setupModule', 'setupObject', 'ModuleInheritanceWarning'
 ]
 
 patchMap = {}
 
 
-def configure(obj, **attrs):
+def setupObject(obj, **attrs):
 
     """Set attributes without overwriting values defined in a derived module"""
 
