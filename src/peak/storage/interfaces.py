@@ -291,15 +291,29 @@ class IManagedConnection(ITransactionParticipant):
 
     """Transactable "Connection" object that appears to always be open"""
 
-    _connection = Attribute(
-    
+    connection = Attribute(
+
         """The actual underlying (LDAP, SQL, etc.) connection object
 
-        This attribute is reserved for use by subclasses of ManagedConnection.
+        This attribute is primarily for use by subclasses of ManagedConnection.
         It is a 'binding.Once()' link to the '_open()' method (see
         IManagedConnImpl interface for details)."""
     )
-   
+
+    txnTime = Attribute(
+        """This connection's view of the Unix-format time of this transaction
+
+        This attribute should be computed once and stored for the transaction
+        duration, by something like 'SELECT GETDATE()' in the case of an SQL
+        connection.  If the underlying connection has no notion of the current
+        time, this can be computed by calling getTimestamp() on the transaction
+        object.  In any event, accessing this attribute should ensure that the
+        connection joins the current transaction, if it hasn't already"""
+    )
+
+    def joinTxn():
+        """Join the current transaction, if not already joined"""
+        
     def closeASAP():
         """Close the connection as soon as it's not in a transaction"""
         
@@ -312,45 +326,31 @@ class IManagedConnection(ITransactionParticipant):
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 class IManagedConnImpl(Interface):
 
     """Methods that must/may be defined in a ManagedConnection subclass"""
 
     def _open():
-        """Return new "real" connection to be saved as 'self._connection'
+        """Return new "real" connection to be saved as 'self.connection'
 
             This method will be called whenever a new connection needs to
             be opened.  It should return an opened connection of the
             appropriate type, using whatever configuration data is
-            available.  The result will be saved as 'self._connection' for
+            available.  The result will be saved as 'self.connection' for
             use by other methods.  (Note: your subclass code shouldn't call
             'self._open()', since it'll be called automatically if it's
-            needed, when you attempt to use 'self._connection'.
+            needed, when you attempt to use 'self.connection'.
 
             Overriding this method is required.
         """
 
     def _close(self):
-        """Actions to take before 'del self._connection', if needed.
+        """Actions to take before 'del self.connection', if needed.
 
-            This method is automatically called when 'self._connection'
+            This method is automatically called when 'self.connection'
             exists and needs to be closed.  If your subclass needs to
             do anything special at this time (e.g. calling a close
-            method on 'self._connection', you can override this method
+            method on 'self.connection', you can override this method
             to do so.
         """
 

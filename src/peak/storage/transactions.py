@@ -292,7 +292,9 @@ class TransactionComponent(binding.AutoCreated, AbstractParticipant):
     # XXX add binding.AutoCreated.__implements__ once binding.interfaces exist
 
     inTransaction = False
-    
+
+    txnAttrs = 'txnSvc', 'inTransaction'
+
     def txnSvc(self,d,a):
 
         """Our TransactionService (auto-joined when attribute is accessed)"""
@@ -300,7 +302,7 @@ class TransactionComponent(binding.AutoCreated, AbstractParticipant):
         ts = binding.findUtility(ITransactionService)
         ts.join(self)
         self.inTransaction = True
-        
+
         return ts
 
     txnSvc = binding.Once(txnSvc)
@@ -309,8 +311,14 @@ class TransactionComponent(binding.AutoCreated, AbstractParticipant):
     def finishTransaction(self, txnService, committed):
 
         """Ensure that subsequent transactions will require re-registering"""
+
+        d = self.__dict__
+        have = d.has_key
         
-        del self.txnSvc, self.inTransaction
+        for attr in self.txnAttrs:
+            if have(attr):
+                del d[attr]
+
 
 
 
