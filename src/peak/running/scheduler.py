@@ -221,10 +221,12 @@ class UntwistedReactor(binding.Component):
                 )
 
         if delay is None:
-            delay = self.laters and self.laters[0].time - self.time() or 3600
-
             if not self.running:
                 delay = 0
+            elif self.laters:
+                delay = self.laters[0].time - self.time()
+            else:
+                delay = 3600    # XXX
 
         delay = max(delay, 0)
 
@@ -237,8 +239,6 @@ class UntwistedReactor(binding.Component):
 
         elif delay:
             self.sleep(delay)
-
-
 
 
 
