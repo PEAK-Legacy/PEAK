@@ -3,8 +3,8 @@ from peak.api import *
 __all__ = [
     'ITask', 'ITaskSwitch', 'IEventSource', 'IEventSink', 'IReadableSource',
     'IWritableSource', 'IConditional', 'ISemaphore', 'IThread',
-    'IScheduledThread', 'IThreadState', 'IScheduler', 'ISelector',
-    'IEventLoop',
+    'IScheduledThread', 'IThreadState', 'IScheduler', 'ISignalSource',
+    'ISelector', 'IEventLoop',
 ]
 
 
@@ -326,13 +326,37 @@ class IScheduler(protocols.Interface):
 
 
 
-class ISelector(protocols.Interface):
+class ISignalSource(protocols.Interface):
+
+    """Signal events"""
+
+    def signals(*signames):
+        """'IEventSource' that triggers whenever any of named signals occur
+
+        Note: signal callbacks occur from within a signal handler, so it's
+        usually best to yield to an 'IScheduler.sleep()' (or use a scheduled
+        thread) in order to avoid doing anything that might interfere with
+        running code.
+
+        Also note that signal event sources are only active so long as a
+        reference to them exists.  If all references go away, the signal
+        handler is deactivated, and no callbacks will be sent, even if they
+        were already registered.
+        """
+
+    def haveSignal(signame):
+        """Return true if signal named 'signame' exists"""
+
+
+class ISelector(ISignalSource):
 
     """Like a reactor, but supplying 'IEventSources' instead of callbacks
 
     May be implemented using a callback on 'IScheduler.now' that calls a
     reactor's 'iterate()' method with a delay of 'IScheduler.time_available()'
-    seconds."""
+    seconds.  Note that all returned event sources are active only so long
+    as a reference to them is kept.  If all references to an event source go
+    away, its threads/callbacks will not be called."""
 
     def readable(stream):
         """'IConditional' that's true when 'stream' is readable"""
@@ -343,14 +367,11 @@ class ISelector(protocols.Interface):
     def exceptional(stream):
         """'IConditional' that's true when 'stream' is in error/out-of-band"""
 
-    def resolve(name, timeout=10):
-        """'ITask' that yields IP for 'name', or raises a timeout error"""
 
-    def signal(*signames):
-        """'IEventSource' that triggers whenever any of named signals occur"""
 
-    def haveSignal(signame):
-        """Return true if signal named 'signame' exists"""
+
+
+
 
 
 class IEventLoop(IScheduler, ISelector):
@@ -362,6 +383,33 @@ class IEventLoop(IScheduler, ISelector):
         all errors without allowing them to reach the caller.  Note
         that event loop implementations based on Twisted *require*
         that 'suppressErrors' be used."""
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

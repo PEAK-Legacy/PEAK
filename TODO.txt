@@ -5,12 +5,7 @@ Open Issues/To-Do Items
     * peak.events migration
 
       - 'running.IProcessProxy' should use conditions/values instead of
-        listeners, and drop 'checkStatus()' method
-
-      - 'running.IMainLoop' should have a value for 'lastActivity', and combine
-        'setExitCode' and 'childForked' as 'exitWith()'.
-
-      - 'ISignalManager' should offer events and ability to check signal name
+        listeners
 
       - Implement basic 'events.ISelector'
 
@@ -37,11 +32,12 @@ Open Issues/To-Do Items
 
       - ZConfig schema for logging plugins, allowing multiple handlers/category
 
-
-
     * peak.binding
 
       - Cleanup/document attribute binding interface
+
+
+
 
     * peak.running.timers
 
@@ -61,6 +57,10 @@ Open Issues/To-Do Items
          a later release)
 
        - try/catch DOMlet (and related error rendering interface/framework)
+
+
+
+
 
 
 

@@ -1,7 +1,7 @@
 from peak.core import protocols, adapt, NOT_GIVEN
 from interfaces import *
 from peak.util.EigenData import AlreadyRead
-from weakref import ref
+
 
 __all__ = [
     'AnyOf', 'Distributor', 'Value', 'Condition', 'Semaphore',
@@ -131,7 +131,7 @@ class Observable(object):
     reject the event.
     """
 
-    __slots__ = '_callbacks'
+    __slots__ = '_callbacks', '__weakref__'
 
     singleFire = True
 

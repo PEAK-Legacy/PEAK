@@ -262,9 +262,9 @@ class IMainLoop(Interface):
 
 
     lastActivity = Attribute(
-        """The 'time()' that 'activityOccurred()' was last called, or the
-        start of the current 'run()', whichever is later.  If 'run()' is
-        not currently executing, this is 'None'."""
+        """'events.IReadable' giving the 'time()' that 'activityOccurred()' was
+        last called, or the start of the current 'run()', whichever is later.
+        If 'run()' is not currently executing, the value is 'None'."""
     )
 
 
@@ -285,12 +285,8 @@ class IMainLoop(Interface):
                         may occur any time after the run starts.")
         """
 
-    def setExitCode(exitCode):
-        """Set 'exitCode' as return value for current 'run()' invocation"""
-
-
-    def childForked(self, stub):
-        """Exit the mainloop immediately, returning 'stub'"""
+    def exitWith(self, exitCode):
+        """Exit the mainloop immediately, returning 'exitCode'"""
 
 
 
@@ -317,6 +313,10 @@ class IAdaptiveTask(IPeriodicTask):
     minimumIdle = Attribute(
         """'pollInterval' used when daemon has work to do"""
     )
+
+
+
+
 
 
 
@@ -451,7 +451,7 @@ class ITwistedReactor(IBasicReactor):
 
 class ISignalManager(Interface):
 
-    """Global management of signal handlers
+    """DEPRECATED - Please use 'events.ISignalSource' instead!
 
     A signal handler is any weakly-referenceable object with 'SIG*()' methods
     (e.g. 'SIGKILL()', 'SIGCHLD()', etc.).  Handlers are automatically removed
@@ -494,9 +494,6 @@ class IProcessProxy(Interface):
 
     """Object that represents a child process"""
 
-    def checkStatus():
-        """Check for changes in process status, and notify listeners if any"""
-
     def addListener(func):
         """'func' will be called with the proxy when process status changes
 
@@ -529,7 +526,10 @@ class IProcessProxy(Interface):
         """Is the process running? (not isFinished and not isStopped)"""
     )
 
-    def close(): """Stop monitoring this process"""
+    def close():
+        """Stop monitoring this process"""
+
+
 
     exitStatus = Attribute(
         """Returncode of the process, if finished (WEXITSTATUS)"""
@@ -594,7 +594,7 @@ class IProcessTemplate(Interface):
             template = SomeProcessTemplate(config.makeRoot())
             proxy, stub = template.spawn(self)
             if proxy is None:
-                self.mainLoop.childForked(stub)
+                self.mainLoop.exitWith(stub)
             else:
                 proxy.addListener(self.newChildStatus)
             # ...

@@ -170,7 +170,7 @@ class ProcessSupervisor(EventDriven):
     
             if proxy is None:
                 self.abandonChildren()  # we're the child, so give up custody
-                self.mainLoop.childForked(stub)
+                self.mainLoop.exitWith(stub)
                 return
     
             self.mainLoop.activityOccurred()

@@ -178,10 +178,7 @@ class TestApp(binding.Component):
         offerAs=[events.IScheduler]
     )
 
-    mainLoop = binding.Make(
-        lambda self: MainLoop(time=self.clock.time),
-        offerAs=[running.IMainLoop]
-    )
+    mainLoop = binding.Make(running.IMainLoop, offerAs=[running.IMainLoop])
 
     tq = binding.Make(running.ITaskQueue, offerAs=[running.ITaskQueue])
 
@@ -201,6 +198,9 @@ sleep = lambda n: ('Sleeping for',n)
 notWork = ('getting work',False)
 gotWork = ('getting work',True)
 didWork = ('doing work',True)
+
+
+
 
 
 class ReactiveTests(TestCase):

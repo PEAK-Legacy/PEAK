@@ -1,7 +1,23 @@
 Fixes and Enhancements since Version 0.5 alpha 2
 
  Changed, Enhanced, or Newly Deprecated Features
- 
+
+ - 'running.ISignalManager' is now DEPRECATED; please use 'events.ISignalSource'
+   instead.
+
+ - Added 'events.ISignalSource', that returns 'events.Broadcaster' objects for
+   signals.  This allows you to yield to signals in an 'events.Thread', or
+   safely set one-time callbacks on them.
+   
+ - 'running.IMainLoop' has been changed to use an 'events.IReadable' for
+   the 'lastActivity' attribute, and the 'setExitCode' and 'childForked'
+   methods have been replaced with an 'exitWith()' method.
+
+ - The 'peak.running.mainLoop.signalHandler' property has been replaced with
+   'peak.running.mainLoop.stopOnSignals', which defaults to including SIGINT,
+   SIGTERM, and SIGBREAK.  If you need custom signal handling, please use
+   the event sources provided by an 'events.ISignalSource'.
+
  - Simplified configuration for using Twisted, roughly as proposed in
    "this message.":http://www.eby-sarna.com/pipermail/peak/2004-January/001125.html
 
@@ -291,13 +307,6 @@ Fixes and Enhancements since Version 0.5 alpha 2
  - Added 'IMainLoop.setExitCode()' and 'IMainLoop.childForked()' methods, to
    allow reactor-driven components to control the mainloop's exit code.
 
- - Added 'running.ISignalManager' and a default implementation.  Use its
-   'addHandler()/removeHandler()' methods to add or remove signal handlers.
-   Signal handlers define methods like 'def SIGCHLD(self,signum,frame):' that
-   will be called when the associated signal is received.  All active handlers
-   for a given signal are invoked, so you can easily have multiple components
-   listen for 'SIGCHLD', for example.
-
  - Added 'IBasicReactor.crash()', which forces an immediate reactor loop exit,
    ignoring pending scheduled calls.
 
@@ -460,12 +469,6 @@ Fixes and Enhancements since Version 0.5 alpha 2
  - 'peak.running.scheduler.UntwistedReactor' now supports a configuration
    property ('peak.running.reactor.checkInterval') to determine how long it
    should run 'select()' calls for, when there are no scheduled tasks.
-
- - 'peak.running.scheduler.MainLoop' now supports using a "signal
-   handler" component (via the 'peak.running.mainLoop.signalHandler' property)
-   to process signals while a 'run()' loop is in progress.  Signal handlers can
-   also be added or removed at any time via the 'running.ISignalManager'
-   service.
 
  - 'peak.running.commands.AbstractCommand' now offers a '_run()' method that
    can be overridden in subclasses, instead of 'run()'.  If you override the

@@ -96,29 +96,33 @@ class ChildProcess(binding.Component):
     stoppedBecause = None
     exitedBecause  = None
 
-    _checking     = False
     listeners     = binding.Make(list)
-    signalManager = binding.Obtain(ISignalManager)
-
+    signalSource  = binding.Obtain(events.ISignalSource)
+    scheduler     = binding.Obtain(events.IScheduler)
     import os
 
-    __onStart = binding.Make(
-        lambda self: self.signalManager.addHandler(self),
-        uponAssembly = True
-    )
+    def waitForSignals(self):
+        while not self.isFinished:
 
-    def SIGCHLD(self, signum, frame):
-        self.checkStatus()
+            yield self.signalSource.signals('SIGCLD','SIGCHLD'); events.resume()
+
+            # ensure that we are outside the signal handler before doing
+            # a wait()
+            yield self.scheduler.sleep(); events.resume()
+
+            self._checkStatus()
+
+    waitForSignals = binding.Make(
+        events.threaded(waitForSignals), uponAssembly = True
+    )
 
     def addListener(self,func):
         self.listeners.append(func)
 
+
+
     def close(self):
         self.signalManager.removeHandler(self)
-
-
-
-
 
 
     def sendSignal(self, signal):
@@ -138,23 +142,19 @@ class ChildProcess(binding.Component):
             return True
 
 
-    def checkStatus(self):
-
-        if not self.isFinished and not self._checking:
-
-            self._checking = True   # prevent re-entrance via signal handler
-
+    def _checkStatus(self):
+        try:
             try:
-                try:
-                    p, s = self.os.waitpid(self.pid, self.os.WNOHANG)
-                except OSError,v:
-                    self.log.exception("Unexpected error in waitpid()")
-                else:
-                    if p==self.pid:
-                        self._setStatus(s)
-                        self._notify()
-            finally:
-                self._checking = False
+                p, s = self.os.waitpid(self.pid, self.os.WNOHANG)
+            except OSError,v:
+                self.log.exception("Unexpected error in waitpid()")
+            else:
+                if p==self.pid:
+                    self._setStatus(s)
+                    self._notify()
+        finally:
+            self._checking = False
+
 
 
 

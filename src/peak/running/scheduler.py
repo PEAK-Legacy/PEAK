@@ -81,6 +81,7 @@ def getTwisted():
 
 
 class MainLoop(binding.Component):
+
     """Top-level application event loop, with timeout management"""
 
     protocols.advise(
@@ -88,22 +89,23 @@ class MainLoop(binding.Component):
     )
     exitCode      = 0
     reactor       = binding.Obtain(IBasicReactor)
-    time          = binding.Obtain('import:time.time')
-    lastActivity  = None
-    signalManager = binding.Obtain(ISignalManager)
-    signalHandler = binding.Obtain(
-        PropertyName('peak.running.mainLoop.signalHandler')
-    )
+    lastActivity  = binding.Make(lambda: events.Value(None))
+    stopOnSignals = binding.Obtain(PropertyName('peak.running.mainLoop.stopOnSignals'))
+    signalSource  = binding.Obtain(events.ISignalSource)
+    scheduler     = binding.Obtain(events.IScheduler)
 
     def activityOccurred(self):
-        self.lastActivity = self.time()
+        self.lastActivity.set(self.scheduler.now())
 
     def run(self, stopAfter=0, idleTimeout=0, runAtLeast=0):
         """Loop polling for IO or GUI events and calling scheduled funcs"""
 
-        self.lastActivity = self.time()
-        self.signalManager.addHandler(self.signalHandler)
+        self.activityOccurred()
         self.exitCode = 0
+
+        if self.stopOnSignals:
+            handler = self.signalSource.signals(*self.stopOnSignals)
+            handler.addCallback(lambda s,e: self.reactor.stop)
 
         try:
             if stopAfter:
@@ -116,15 +118,13 @@ class MainLoop(binding.Component):
             return self.exitCode
 
         finally:
-            del self.lastActivity
-            self.signalManager.removeHandler(self.signalHandler)
+            self.lastActivity.set(None); handler = None
 
-        # XXX we should probably log start/stop events
 
     def _checkIdle(self, timeout):
 
         # Check whether we've been idle long enough to stop
-        idle = self.time() - self.lastActivity
+        idle = self.scheduler.now() - self.lastActivity()
 
         if idle >= timeout:
             self.reactor.stop()
@@ -135,13 +135,13 @@ class MainLoop(binding.Component):
             self.reactor.callLater(timeout - idle, self._checkIdle, timeout)
 
 
-    def setExitCode(self, exitCode):
+    def exitWith(self, exitCode):
         self.exitCode = exitCode
-
-
-    def childForked(self, stub):
-        self.setExitCode(stub)
         self.reactor.crash()
+
+
+
+
 
 
 
@@ -218,7 +218,7 @@ class UntwistedReactor(binding.Component):
     select  = binding.Obtain('import:select.select')
     _error  = binding.Obtain('import:select.error')
     logger  = binding.Obtain('logger:peak.reactor')
-    sigMgr  = binding.Obtain(ISignalManager)
+    sigSvc  = binding.Obtain(events.ISignalSource)
     scheduler = binding.Obtain(events.IScheduler)
 
     checkInterval = binding.Obtain(
@@ -247,7 +247,8 @@ class UntwistedReactor(binding.Component):
     def run(self, installSignalHandlers=True):
 
         if installSignalHandlers:
-            self.sigMgr.addHandler(self)
+            handler = self.sigSvc.signals('SIGTERM','SIGBREAK','SIGINT')
+            handler.addCallback(lambda s,e: self.stop())
 
         try:
             self.running = True
@@ -261,9 +262,7 @@ class UntwistedReactor(binding.Component):
 
         finally:
             self.running = False
-
-            if installSignalHandlers:
-                self.sigMgr.removeHandler(self)
+            handler = None  # drop signal handling, if we were using it
 
             # clear selectables (XXX why???)
             self._delBinding('readers')
@@ -277,10 +276,11 @@ class UntwistedReactor(binding.Component):
         self.running = False
         raise ReactorCrash
 
-    def SIGINT(self, num, frame):
-        self.stop()
 
-    SIGTERM = SIGBREAK = SIGINT
+
+
+
+
 
 
 

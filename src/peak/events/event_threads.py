@@ -287,10 +287,10 @@ class Thread(object):
 
     def step(self, source=None, event=NOT_GIVEN):
         """See 'events.IThread.step'"""
-        state = self._state
-        state.YIELD(event)
+        state = self._state; state.YIELD(event)
 
         while state.stack:
+            switch = event = None   # avoid holding previous references
             try:
                 for event in state.stack[-1]:
                     state.CATCH()
@@ -315,6 +315,7 @@ class Thread(object):
                 switch = adapt(event,ITaskSwitch,None)
                 if switch is not None:
                     if not switch.nextAction(self,state):
+                        state.YIELD(switch) # save reference until we resume
                         return True
                 else:
                     state.YIELD(event)
@@ -324,7 +325,6 @@ class Thread(object):
 
         self.isFinished.set(True)
         return True
-
 
 class _SThread(Thread):
 
