@@ -39,7 +39,7 @@ class DynamicBinding(object):
 
 
 
-class bindTo(Meta.NamedDescriptor):
+class bindTo(Once):
 
     """Automatically look up and cache a relevant service
 
@@ -80,7 +80,7 @@ class bindTo(Meta.NamedDescriptor):
 
 
 
-class requireBinding(Meta.NamedDescriptor):
+class requireBinding(Once):
 
     """Placeholder for a binding that should be (re)defined by a subclass"""
 

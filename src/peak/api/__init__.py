@@ -55,10 +55,14 @@ from Modules import __all__ as ModulesAll
 __all__.extend(ModulesAll)
 
 
-# Core metaclasses come next, many things will use them...
+# Core metaclasses and misc. API's come next; many things use them...
 
 import Meta
 __all__.append('Meta')
+
+from Misc import *
+from Misc import __all__ as MiscAll
+__all__.extend(MiscAll)
 
 
 # Last, but very far from least, Service-Element-Feature support.
