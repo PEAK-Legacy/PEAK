@@ -16,8 +16,9 @@
 from peak.util.Import import interpretSpec, interpretSequence
 
 
-from Interfaces import *
-from Names import *
+from interfaces import *
+from exceptions import *
+from names import *
 
 import factories
 
@@ -33,7 +34,6 @@ __implements__ = IObjectFactory, IStateFactory, IURLContextFactory
 defaultFactories = factories,
 
     
-
 
 
 
@@ -128,7 +128,7 @@ def getObjectInstance(refInfo, name, context, environment, attrs=None):
 
     if isinstance(refInfo,Reference):
 
-        factory = getattr(refInfo,'objectFactory',None):
+        factory = getattr(refInfo,'objectFactory',None)
 
         if factory:
             factory = interpretSpec(factory)
