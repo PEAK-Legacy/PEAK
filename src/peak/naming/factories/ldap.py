@@ -2,8 +2,10 @@ from peak.naming.api import *
 from urllib import quote, unquote
 
 try:
+    import ldap
     from ldap import SCOPE_BASE, SCOPE_ONELEVEL, SCOPE_SUBTREE
 except:
+    ldap = None
     SCOPE_BASE, SCOPE_ONELEVEL, SCOPE_SUBTREE = range(3)
 
 
@@ -33,7 +35,7 @@ class ldapURL(ParsedURL):
     host            hostname of server (or empty string)
     port            port number (integer, default 389)
     basedn          the dn provided (or empty string)
-    attrs           list of attributes to retrieve, [] if unspecified
+    attrs           tuple of attributes to retrieve, None if unspecified
     scope           SCOPE_BASE (default), SCOPE_ONELEVEL, or SCOPE_SUBTREE
     filter          search filter (or empty string)
     extensions      dictionary mapping extension names to tuples of
@@ -46,13 +48,16 @@ class ldapURL(ParsedURL):
     
     _supportedSchemes = ('ldap', 'ldaps', 'ldapi')
     
-    def _fromURL(self, url):
+    __fields__ = 'host', 'port', 'basedn', 'attrs', 'scope', 'filter', \
+                'extensions', 'critical'
+    
+    def fromURL(klass, url):
         bindinfo = None
-        self.host = self.basedn = ''
-        self.port = 389
-        self.extensions = {}
+        host = basedn = ''
+        port = 389
+        extensions = {}
         
-        hostport = self.body
+        hostport = url.body
         if hostport[:2] == '//':
             hostport = hostport[2:]
 	else:
@@ -68,46 +73,46 @@ class ldapURL(ParsedURL):
                 bindinfo, hostport = hostport.split('@', 1)
 
             if ':' in hostport:
-                self.host, port = map(unquote, hostport.split(':', 1))
+                host, port = map(unquote, hostport.split(':', 1))
                 try:
-                    self.port = int(port)
+                    port = int(port)
                 except:
                     raise InvalidNameException(url)
             else:
-                self.host = unquote(hostport)
+                host = unquote(hostport)
 
         if bindinfo:
             if ':' in bindinfo:
                 bindinfo, bindpw = map(unquote, bindinfo.split(':', 1))
-                self.extensions['x-bindpw'] = (1, bindpw)
+                extensions['x-bindpw'] = (1, bindpw)
             else:
                 bindinfo = unquote(bindinfo)
-            self.extensions['bindname'] = (1, bindinfo)
+            extensions['bindname'] = (1, bindinfo)
         
         if rest:
             if '?' in rest:
                 basedn, rest = rest.split('?', 1)
-                self.basedn = unquote(basedn)
+                basedn = unquote(basedn)
             else:
-                self.basedn = unquote(rest)
+                basedn = unquote(rest)
                 rest = ''
 
         rest = (rest.split('?') + ['']*3)[:4]
 
         if rest[0]:
-            self.attrs = map(unquote, rest[0].split(','))
+            attrs = tuple(map(unquote, rest[0].split(',')))
         else:
-            self.attrs = []
+            attrs = None
             
         scope = unquote(rest[1]).lower()
         if scope == 'one':
-            self.scope = SCOPE_ONELEVEL
+            scope = SCOPE_ONELEVEL
         elif scope == 'sub':
-            self.scope = SCOPE_SUBTREE
+            scope = SCOPE_SUBTREE
         else:
-            self.scope = SCOPE_BASE
+            scope = SCOPE_BASE
 
-        self.filter = unquote(rest[2])
+        filter = unquote(rest[2])
 
         if rest[3]:
             exts = map(unquote, rest[3].split(','))
@@ -116,9 +121,14 @@ class ldapURL(ParsedURL):
                 if e[0] == '!':
                     crit = 1; e = e[1:]
                 k, v = e.split('=', 1)
-                self.extensions[k.lower()] = (crit, v)
+                extensions[k.lower()] = (crit, v)
 
-        self.critical = a = []; a = a.append
-        for k, (crit, v) in self.extensions.items():
+        critical = a = []; a = a.append
+        for k, (crit, v) in extensions.items():
             if crit:
                 a(k)
+        critical = tuple(critical)
+        
+        return klass.extractFromMapping(locals())
+
+    fromURL = classmethod(fromURL)
