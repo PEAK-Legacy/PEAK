@@ -6,9 +6,10 @@ __all__ = [
     'Interface', 'declareAdapterForType', 'declareAdapterForProtocol',
     'declareAdapterForObject', 'instancesProvide', 'instancesDoNotProvide',
     'protocolImplies', 'directlyProvides', 'implements', 'doesNotImplement',
-    'implyProtocols', 'adapterForTypes', 'adapterForProtocols', 'classProvides',
-    'moduleProvides', 'IAdapter', 'IProtocol', 'IProtocolProvider',
-    'IProtocolImplementor', 'Attribute',
+    'implyProtocols', 'adapterForTypes', 'adapterForProtocols',
+    'classProvides', 'moduleProvides', 'IAdapterFactory', 'IProtocol',
+    'IAdaptingProtocol', 'IOpenProtocol', 'IOpenProvider',
+    'IOpenImplementor', 'Attribute',
 ]
 
 # Fundamental Adapters
@@ -35,7 +36,6 @@ from types import ClassType, FunctionType, ModuleType, InstanceType
 ClassTypes = ClassType, type
 
 from peak.util.advice import addClassAdvisor, metamethod
-
 
 
 
@@ -82,21 +82,27 @@ def adapt(obj, protocol, default=_marker, factory=IMPLEMENTATION_ERROR):
 
 # Adapter "arithmetic"
 
-def minimumAdapter(a1,a2):
+def minimumAdapter(a1,a2,d1=0,d2=0):
 
-    """Which is a "shorter route" to implementation, 'a1' or 'a2'?
+    """Shortest route to implementation, 'a1' @ depth 'd1', or 'a2' @ 'd2'?
 
-    Assuming both a1 and a2 are interchangeable adapters, return the one
-    which is preferable.  If there is no obvious choice, raise TypeError."""
+    Assuming both a1 and a2 are interchangeable adapters (i.e. have the same
+    source and destination protocols), return the one which is preferable; that
+    is, the one with the shortest implication depth, or, if the depths are
+    equal, then the adapter that is composed of the fewest chained adapters.
+    If both are the same, then prefer 'NO_ADAPTER_NEEDED', followed by
+    anything but 'DOES_NOT_SUPPORT', with 'DOES_NOT_SUPPORT' being least
+    preferable.  If there is no unambiguous choice, and 'not a1 is a2',
+    TypeError is raised.
+    """
+
+    if d1<d2:
+        return a1
+    elif d2<d1:
+        return a2
 
     if a1 is a2:
         return a1   # don't care which
-
-    if a2 is DOES_NOT_SUPPORT or a1 is NO_ADAPTER_NEEDED:
-        return a1
-
-    if a1 is DOES_NOT_SUPPORT or a2 is NO_ADAPTER_NEEDED:
-        return a2
 
     a1ct = getattr(a1,'__adapterCount__',1)
     a2ct = getattr(a2,'__adapterCount__',1)
@@ -106,20 +112,14 @@ def minimumAdapter(a1,a2):
     elif a2ct<a1ct:
         return a2
 
+    if a1 is NO_ADAPTER_NEEDED or a2 is DOES_NOT_SUPPORT:
+        return a1
+
+    if a1 is DOES_NOT_SUPPORT or a2 is NO_ADAPTER_NEEDED:
+        return a2
+
     # it's ambiguous
-    raise TypeError("Ambiguous adapter choice", a1, a2)
-
-
-
-
-
-
-
-
-
-
-
-
+    raise TypeError("Ambiguous adapter choice", a1, a2, d1, d2)
 
 def composeAdapters(baseAdapter, baseProtocol, extendingAdapter):
 
@@ -142,24 +142,24 @@ def composeAdapters(baseAdapter, baseProtocol, extendingAdapter):
         getattr(extendingAdapter,'__adapterCount__',1)+
         getattr(baseAdapter,'__adapterCount__',1)
     )
-
     return newAdapter
 
 
+def updateAdapterRegistry(mapping, key, adapter, depth):
 
+    """Replace 'mapping[key]' w/'adapter' @ 'depth', return true if changed"""
 
+    new = adapter
+    old = mapping.get(key)
 
+    if old is not None:
+        old, oldDepth = old
+        new = minimumAdapter(old,adapter,oldDepth,depth)
+        if old is new and depth>=oldDepth:
+            return False
 
-
-
-
-
-
-
-
-
-
-
+    mapping[key] = new, depth
+    return True
 
 
 # Trivial interface implementation
@@ -169,84 +169,84 @@ class Protocol:
     """Generic protocol w/type-based adapter registry"""
 
     def __init__(self):
-        self.__adapters__ = {}; self.__implies__ = {}
+        self.__adapters = {}
+        self.__implies = {}
+        self.__lock = allocate_lock()
 
     def getImpliedProtocols(self):
-        return self.__implies__.items()
+        return self.__implies.items()
 
 
-    def addImpliedProtocol(self, proto, adapter=NO_ADAPTER_NEEDED):
+    def addImpliedProtocol(self,proto,adapter=NO_ADAPTER_NEEDED,depth=1):
 
-        old = self.__implies__.get(proto,DOES_NOT_SUPPORT)
-        new = minimumAdapter(old,adapter)
-
-        if old is new:
-            return new
-
-        self.__implies__[proto] = new
+        self.__lock.acquire()
+        try:
+            if not updateAdapterRegistry(self.__implies,proto,adapter,depth):
+                return self.__implies[proto][0]
+        finally:
+            self.__lock.release()
 
         # Always register implied protocol with classes, because they should
         # know if we break the implication link between two protocols
 
-        for klass,baseAdapter in self.__adapters__.items():
+        for klass,(baseAdapter,d) in self.__adapters.items():
             declareAdapterForType(
-                proto, composeAdapters(baseAdapter,self,new), klass
+                proto,composeAdapters(baseAdapter,self,adapter),klass,depth+d
             )
 
-        return new
+        return adapter
 
-    def __conform__(self,protocol):
-        # I implement IProtocol directly
-        if protocol is IProtocol:
-            return self
+    addImpliedProtocol = metamethod(addImpliedProtocol)
 
 
 
 
-    def registerImplementation(self, klass, adapter=NO_ADAPTER_NEEDED):
 
-        old = self.__adapters__.get(klass)
-        new = adapter
 
-        if old is not None:
-            new = minimumAdapter(old,adapter)
+    def registerImplementation(self,klass,adapter=NO_ADAPTER_NEEDED,depth=1):
 
-        if old is new:
-            return new
+        self.__lock.acquire()
+        try:
+            if not updateAdapterRegistry(self.__adapters,klass,adapter,depth):
+                return self.__adapters[klass][0]
+        finally:
+            self.__lock.release()
 
-        self.__adapters__[klass] = new
+        if adapter is DOES_NOT_SUPPORT:
+            # Don't register non-support with implied protocols, because
+            # "X implies Y" and "not X" doesn't imply "not Y".  In effect,
+            # explicitly registering DOES_NOT_SUPPORT for a type is just a
+            # way to "disinherit" a superclass' claim to support something.
+            return adapter
 
-        if new is DOES_NOT_SUPPORT:
-            return new
-
-        # register with implied protocols, only if not DOES_NOT_SUPPORT
-        for proto, extender in self.getImpliedProtocols():
+        for proto, (extender,d) in self.getImpliedProtocols():
             declareAdapterForType(
-                proto, composeAdapters(new,self,extender), klass
+                proto, composeAdapters(adapter,self,extender), klass, depth+d
             )
 
-        return new
+        return adapter
 
-    def registerObject(self, ob, adapter=NO_ADAPTER_NEEDED):
+    registerImplementation = metamethod(registerImplementation)
+
+
+
+    def registerObject(self, ob, adapter=NO_ADAPTER_NEEDED,depth=1):
 
         # Just handle implied protocols
 
-        for proto, extender in self.getImpliedProtocols():
+        for proto, (extender,d) in self.getImpliedProtocols():
             declareAdapterForObject(
-                proto, composeAdapters(adapter,self,extender), ob
+                proto, composeAdapters(adapter,self,extender), ob, depth+d
             )
 
-
-
-
-
+    registerObject = metamethod(registerObject)
 
 
 
 
     def __adapt__(self, obj):
 
-        get = self.__adapters__.get
+        get = self.__adapters.get
 
         try:
             typ = obj.__class__
@@ -255,7 +255,7 @@ class Protocol:
 
         factory=get(typ)
         if factory is not None:
-            return factory(obj,self)
+            return factory[0](obj,self)
 
         try:
             mro = typ.__mro__
@@ -264,15 +264,15 @@ class Protocol:
             # XXX being able to use 'InstanceType' is important for adapting
             # XXX any classic class, and 'object' is important for universal
             # XXX adapters.
-            mro = type('tmp',(typ,object),{}).__mro__[:-1]+(InstanceType,object)
+            mro = type('x',(typ,object),{}).__mro__[:-1]+(InstanceType,object)
             typ.__mro__ = mro   # mommy make it stop!
 
         for klass in mro[1:]:
             factory=get(klass)
             if factory is not None:
                 # Cache successful lookup
-                declareAdapterForType(self, factory, klass)
-                return factory(obj,self)
+                declareAdapterForType(self, factory[0], klass)
+                return factory[0](obj,self)
 
         # Cache the failed lookup
         declareAdapterForType(self, DOES_NOT_SUPPORT, typ)
@@ -285,6 +285,21 @@ class Protocol:
 
     __adapt__ = metamethod(__adapt__)
 
+try:
+    from thread import allocate_lock
+
+except ImportError:
+    try:
+        from dummy_thread import allocate_lock
+
+    except ImportError:
+        class allocate_lock(object):
+            __slots__ = ()
+            def acquire(*args): pass
+            def release(*args): pass
+
+
+
 class InterfaceClass(Protocol, type):
 
     def __init__(self, __name__, __bases__, __dict__):
@@ -293,7 +308,7 @@ class InterfaceClass(Protocol, type):
 
     def getImpliedProtocols(self):
         return [
-            (b,NO_ADAPTER_NEEDED) for b in self.__bases__
+            (b,(NO_ADAPTER_NEEDED,1)) for b in self.__bases__
                 if isinstance(b,Protocol) and b is not Interface
         ] + super(InterfaceClass,self).getImpliedProtocols()
 
@@ -305,53 +320,38 @@ class InterfaceClass(Protocol, type):
 
 
 
-
-
 class Interface(object):
     __metaclass__ = InterfaceClass
 
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
 # Fundamental, explicit interface/adapter declaration API:
-#   All declarations should pass through these three routines.
+#   All declarations should end up passing through these three routines.
 
-def declareAdapterForType(protocol, adapter, typ):
+def declareAdapterForType(protocol, adapter, typ, depth=1):
     """Declare that 'adapter' adapts instances of 'typ' to 'protocol'"""
 
-    adapter = adapt(protocol, IProtocol).registerImplementation(typ, adapter)
+    adapter = adapt(protocol, IOpenProtocol).registerImplementation(
+        typ, adapter, depth
+    )
 
-    dci = adapt(typ, IProtocolImplementor, None)
+    oi = adapt(typ, IOpenImplementor, None)
 
-    if dci is not None:
-        dci.declareClassImplements(protocol,adapter)
+    if oi is not None:
+        oi.declareClassImplements(protocol,adapter,depth)
 
 
-def declareAdapterForProtocol(protocol, adapter, proto):
+def declareAdapterForProtocol(protocol, adapter, proto, depth=1):
     """Declare that 'adapter' adapts 'proto' to 'protocol'"""
-    adapt(proto, IProtocol).addImpliedProtocol(protocol, adapter)
+    adapt(proto, IOpenProtocol).addImpliedProtocol(protocol, adapter, depth)
 
 
-def declareAdapterForObject(protocol, adapter, ob):
+def declareAdapterForObject(protocol, adapter, ob, depth=1):
     """Declare that 'adapter' adapts 'ob' to 'protocol'"""
-    ob = adapt(ob,IProtocolProvider)
-    ob.declareProvides(protocol,adapter)
-    adapt(protocol,IProtocol).registerObject(ob)
-
-
+    ob = adapt(ob,IOpenProvider)
+    ob.declareProvides(protocol,adapter,depth)
+    adapt(protocol,IOpenProtocol).registerObject(ob,adapter,depth)
 
 
 
@@ -492,7 +492,9 @@ def moduleProvides(*protocols):
 
 # Interfaces and adapters for managing declarations
 
-class IAdapter(Interface):
+class IAdapterFactory(Interface):
+
+    """Callable that can adapt an object to a protocol"""
 
     def __call__(ob, protocol):
         """Return an implementation of 'protocol' for 'ob'"""
@@ -500,57 +502,66 @@ class IAdapter(Interface):
 
 class IProtocol(Interface):
 
-    def addImpliedProtocol(proto, adapter=NO_ADAPTER_NEEDED):
-        """'adapter' provides conversion from this protocol to 'proto'"""
+    """Object usable as a protocol by 'adapt()'"""
 
-    def registerImplementation(klass, adapter=NO_ADAPTER_NEEDED):
-        """'adapter' provides protocol for instances of klass"""
+    def __hash__():
+        """Protocols must be usable as dictionary keys"""
 
-    def registerObject(ob, adapter=NO_ADAPTER_NEEDED):
-        """'adapter' provides protocol for 'ob' directly"""
+    def __eq__(other):
+        """Protocols must be comparable with == and !="""
+
+    def __ne__(other):
+        """Protocols must be comparable with == and !="""
 
 
-class IProtocolProvider(Interface):
+class IAdaptingProtocol(IProtocol):
 
-    def declareProvides(protocol, adapter=NO_ADAPTER_NEEDED):
+    """A protocol that potentially knows how to adapt some object to itself"""
+
+    def __adapt__(ob):
+        """Return 'ob' adapted to protocol, or 'None'"""
+
+
+class IConformingObject(Interface):
+
+    """An object that potentially knows how to adapt to a protocol"""
+
+    def __conform__(protocol):
+        """Return an implementation of 'protocol' for self, or 'None'"""
+
+
+
+class IOpenProvider(Interface):
+
+    """An object that can be told how to adapt to protocols"""
+
+    def declareProvides(protocol, adapter=NO_ADAPTER_NEEDED, depth=1):
         """Register 'adapter' as providing 'protocol' for this object"""
 
 
-class IProtocolImplementor(Interface):
+class IOpenImplementor(Interface):
 
-    def declareClassImplements(protocol, adapter=NO_ADAPTER_NEEDED):
+    """Object/type that can be told how its instances adapt to protocols"""
+
+    def declareClassImplements(protocol, adapter=NO_ADAPTER_NEEDED, depth=1):
         """Register 'adapter' as implementing 'protocol' for instances"""
 
 
+class IOpenProtocol(IAdaptingProtocol):
 
+    """A protocol that be told what it implies, and what supports it
 
+    Note that these methods are for the use of the declaration APIs only,
+    and you should NEVER call them directly."""
 
+    def addImpliedProtocol(proto, adapter=NO_ADAPTER_NEEDED, depth=1):
+        """'adapter' provides conversion from this protocol to 'proto'"""
 
+    def registerImplementation(klass, adapter=NO_ADAPTER_NEEDED, depth=1):
+        """'adapter' provides protocol for instances of klass"""
 
-
-
-
-
-class ClassicClassAsImplementor(object):
-
-    adapterForTypes(IProtocolProvider, [ClassType])
-
-    def __init__(self, ob, protocol):
-
-        conf_func = getattr(ob,'__conform__',None)
-
-        if conf_func is None:
-            ob.__conform__ = Classic__conform__
-
-        elif getattr(conf_func,'im_func',None) is not Classic__conform__:
-            raise TypeError(
-                "%r has a __conform__ method of its own" % ob
-            )
-
-        self.klass = ob
-
-    def declareClassImplements(self,protocol, adapter=NO_ADAPTER_NEEDED):
-        setattr(self.klass, `protocol`, protocol,adapter)
+    def registerObject(ob, adapter=NO_ADAPTER_NEEDED, depth=1):
+        """'adapter' provides protocol for 'ob' directly"""
 
 
 
@@ -561,24 +572,17 @@ class ClassicClassAsImplementor(object):
 
 
 
+# Bootstrap APIs to work with Protocol and InterfaceClass, without needing to
+# give Protocol a '__conform__' method that's hardwired to IOpenProtocol.
+# Note that InterfaceClass has to be registered first, so that when the
+# registration propagates to IAdaptingProtocol and IProtocol, InterfaceClass
+# will already be recognized as an IOpenProtocol, preventing infinite regress.
 
+IOpenProtocol.registerImplementation(InterfaceClass)    # VERY BAD!!
+IOpenProtocol.registerImplementation(Protocol)          # NEVER DO THIS!!
 
+# From this line forward, the declaration APIs work.  Use them instead!
 
-
-
-
-
-
-
-
-
-def Classic__conform__(self, protocol):
-
-    """__conform__ method that handles registration for classic classes"""
-
-    proto, adapter = getattr(self.__class__,`protocol`,(None,None))
-    if adapter is not None:
-        return adapter(self,protocol)
 
 
 class conformsRegistry(dict):
@@ -609,15 +613,11 @@ class conformsRegistry(dict):
 
 
 
+class MiscObjectsAsOpenProvider(object):
 
+    """Supply __conform__ registry for funcs, modules, & classic instances"""
 
-
-
-class ArbitraryObjectAsProvider(object):
-
-    """Poke a __conform__ registry into an arbitrary object"""
-
-    adapterForTypes(IProtocolProvider, [FunctionType,ModuleType,InstanceType])
+    adapterForTypes(IOpenProvider, [FunctionType,ModuleType,InstanceType])
 
     def __init__(self,ob,proto):
 
@@ -641,7 +641,7 @@ class ArbitraryObjectAsProvider(object):
         self.reg = reg
 
 
-    def declareProvides(self, protocol, adapter=NO_ADAPTER_NEEDED):
+    def declareProvides(self, protocol, adapter=NO_ADAPTER_NEEDED, depth=1):
         self.reg[protocol] = adapter
 
 
@@ -695,16 +695,59 @@ class Attribute(object):
 
 
 
+# Monkeypatch Zope Interfaces
+
+def __adapt__(self, obj):
+    if self.isImplementedBy(obj):
+        return obj
+
+
+try:
+    # Zope X3
+    from zope.interface import Interface as ZopeInterface
+    from zope.interface.implements import implements as ZopeImplements
+    from zope.interface.implements import flattenInterfaces as ZopeFlatten
+
+except ImportError:
+
+    try:
+        # Older Zopes
+        from Interface import Interface as ZopeInterface
+        from Interface.Implements import implements as ZopeImplements
+        from Interface.implements import flattenInterfaces as ZopeFlatten
+
+    except ImportError:
+        ZopeInterface = None
+
+
+if ZopeInterface is not None:
+
+    ZopeInterface.__class__.__adapt__ = __adapt__
+    ZopeInterface.__class__._doFlatten = staticmethod(ZopeFlatten)
+    ZopeInterface.__class__._doSetImplements = staticmethod(ZopeImplements)
+    ZopeInterfaceTypes = [ZopeInterface.__class__]
+
+    instancesImplement(ZopeInterface.__class__, IAdaptingProtocol)
+
+else:
+    ZopeInterfaceTypes = []
+
+
+del ZopeInterface, __adapt__
+
+
 # Adapter for Zope X3 Interfaces
 
 class ZopeInterfaceAsProtocol(object):
 
     __slots__ = 'iface'
 
+    adapterForTypes(IOpenProtocol, ZopeInterfaceTypes)
+
     def __init__(self, iface, proto):
         self.iface = iface
 
-    def addImpliedProtocol(self, proto, adapter=NO_ADAPTER_NEEDED):
+    def addImpliedProtocol(self, proto, adapter=NO_ADAPTER_NEEDED,depth=1):
         raise TypeError(
             "Zope interfaces can't add implied protocols",
             self.iface, proto
@@ -714,14 +757,12 @@ class ZopeInterfaceAsProtocol(object):
         if self.iface.isImplementedBy(obj):
             return obj
 
-    def registerImplementation(self, klass, adapter=NO_ADAPTER_NEEDED):
+    def registerImplementation(self,klass,adapter=NO_ADAPTER_NEEDED,depth=1):
         if adapter is NO_ADAPTER_NEEDED:
-            from zope.interface.implements import implements
-            implements(klass, self.iface)
+            ZopeImplements(klass, self.iface)
         elif adapter is DOES_NOT_SUPPORT:
-            from zope.interface.implements import flattenInterfaces
             klass.__implements__ = tuple([
-                iface for iface in flattenInterfaces(
+                iface for iface in ZopeFlatten(
                     getattr(klass,'__implements__',())
                 ) if not self.iface.isEqualOrExtendedBy(iface)
             ])
@@ -733,47 +774,6 @@ class ZopeInterfaceAsProtocol(object):
 
     def registerObject(ob,adapter=NO_ADAPTER_NEEDED):
         pass    # Zope interfaces handle implied protocols directly
-
-
-
-# Monkeypatch Zope X3 Interfaces
-
-try:
-    from zope.interface import Interface as ZopeInterface
-
-except ImportError:
-    pass
-
-else:
-
-    def __adapt__(self, obj):
-        if self.isImplementedBy(obj):
-            return obj
-
-    def __conform__(self,proto):
-        if proto is IProtocol:
-            return ZopeInterfaceAsProtocol(self,proto)
-
-    ZopeInterface.__class__.__adapt__   = __adapt__
-    ZopeInterface.__class__.__conform__ = __conform__
-
-    del ZopeInterface, __adapt__, __conform__
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

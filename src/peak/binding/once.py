@@ -6,7 +6,7 @@ from peak.util.imports import importObject, importString
 from interfaces import IComponentFactory
 from _once import *
 from peak.interface import adapt, implements, classProvides, \
-    IProtocolProvider, IProtocolImplementor, NO_ADAPTER_NEEDED, \
+    IOpenProvider, IOpenImplementor, NO_ADAPTER_NEEDED, \
     declareAdapterForType
 from peak.util.advice import metamethod
 
@@ -291,7 +291,7 @@ class Activator(type):
 
     __name__ = 'Activator'    # trick to make instances' __name__ writable
 
-    implements(IProtocolProvider)
+    implements(IOpenProvider)
 
     def __new__(meta, name, bases, cdict):
 
@@ -327,7 +327,6 @@ class Activator(type):
 
 
         d = klass.__class_descriptors__ = {}
-
         for k in class_descr:
             v = cdict[k]
             d[k] = v.activate(klass,k)
@@ -344,20 +343,21 @@ class Activator(type):
             getInheritedRegistries(klass, '__protocols_implemented__')
         )
         klass.__protocols_implemented__ = pi
-
         return klass
 
-    def declareProvides(self,protocol,adapter=NO_ADAPTER_NEEDED):
+    def declareProvides(self,protocol,adapter=NO_ADAPTER_NEEDED,depth=1):
         """This lets our instances support 'classProvides'"""
         self.__protocols_provided__[protocol] = adapter
         return adapter
 
     declareProvides = metamethod(declareProvides)
 
-    def declareClassImplements(self, protocol,adapter=NO_ADAPTER_NEEDED):
+    def declareClassImplements(self, protocol,adapter=NO_ADAPTER_NEEDED,
+        depth=1
+    ):
         self.__protocols_implemented__[protocol] = adapter
         for sc in self.__subclasses__():
-            declareAdapterForType(protocol, adapter, sc)
+            declareAdapterForType(protocol, adapter, sc, depth)
 
     def __conform__(self,protocol):
         adapter = self.__protocols_provided__.get(protocol)
@@ -455,7 +455,7 @@ class Adaptable(object):
 
     __metaclass__ = ActiveClass
 
-    classProvides(IProtocolImplementor)
+    classProvides(IOpenImplementor)
 
     def __conform__(self,protocol):
         adapter = self.__class__.__protocols_implemented__.get(protocol)

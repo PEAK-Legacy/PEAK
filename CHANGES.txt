@@ -48,6 +48,14 @@ Fixes and Enhancements since Version 0.5 alpha 1
      adapts from A to B, and adapter BC adapts from B to C, then an adapt(x,C)
      where 'x' is an 'A', will be implemented as BC(AB(x)).
 
+   * Supports "open protocols" that allow you to "superclass" a protocol
+     to create a subset protocol; objects that support the first protocol
+     will automatically support the subset protocol.  For example, if one
+     person defines a "dictionary" protocol, someone else can create a
+     "read-only dictionary" protocol, and all objects supporting the
+     "dictionary protocol" will be considered to implement the "read-only
+     dictionary" protocol.
+
    * can interoperate with other interface packages, including Zope's, but
      does not require them
 
