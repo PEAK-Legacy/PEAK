@@ -2,7 +2,7 @@
 
 from unittest import TestCase, makeSuite, TestSuite
 from peak.api import *
-
+from Interface import Interface
 
 class PropertyTest(TestCase):
 
@@ -23,6 +23,127 @@ class PropertyTest(TestCase):
                 assert ps[k] is v
 
         
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class IS1U(Interface):
+    pass
+
+class IS2U(Interface):
+    pass
+
+
+class UtilityData(binding.Component):
+
+    class aService(binding.AutoCreated):
+
+        thing5 = binding.bindToParent(provides=IS1U)
+
+        class nestedService(binding.AutoCreated):
+            _provides = IS2U
+
+
+    deep = binding.bindTo('aService/nestedService/thing6/thing1')
+
+
+class ISampleUtility1(Interface):
+    pass
+
+
+class ISampleUtility2(Interface):
+    pass
+
+
+def makeAUtility(context):
+    u=binding.Component(); u.setParentComponent(context)
+    return u
+
+
+
+
+
+
+
+
+
+
+class UtilityTest(TestCase):
+
+    def setUp(self):
+
+        self.data = UtilityData(None, 'data')
+
+        self.data.aService.registerProvider(
+            ISampleUtility1,
+            config.Provider(makeAUtility)
+        )
+
+        self.data.aService.registerProvider(
+            ISampleUtility2,
+            config.CachingProvider(makeAUtility)
+        )
+
+
+    def checkUtilityAttrs(self):
+
+        data = self.data
+        ns   = data.aService.nestedService
+        assert config.findUtility(IS1U,ns) is data
+        assert config.findUtility(IS2U,ns) is ns
+
+
+    def checkAcquireInst(self):
+
+        data = self.data
+        ob1 = config.findUtility(ISampleUtility1,data,None)
+        ob2 = config.findUtility(ISampleUtility1,data.aService,None)
+        ob3 = config.findUtility(ISampleUtility1,data.aService.nestedService,
+        None)
+        assert ob1 is None
+        assert ob2 is not None
+        assert ob3 is not None
+        assert ob3 is not ob2
+        assert ob2.getParentComponent() is data.aService
+        assert ob3.getParentComponent() is data.aService.nestedService
+
+
+
+    def checkAcquireSingleton(self):
+
+        data = self.data
+        ob1 = config.findUtility(ISampleUtility2,data,None)
+        ob2 = config.findUtility(ISampleUtility2,data.aService,None)
+        ob3 = config.findUtility(ISampleUtility2,data.aService.nestedService,
+        None)
+        ob4 = config.findUtility(ISampleUtility2,data.aService.nestedService,
+        None)
+
+        assert ob1 is None
+        assert ob2 is not None
+        assert ob3 is not None
+        assert ob4 is not None
+        assert ob3 is ob2
+        assert ob4 is ob2
+        assert ob2.getParentComponent() is data.aService
+        assert ob3.getParentComponent() is data.aService
+        assert ob4.getParentComponent() is data.aService
+
+
+
+
 
 
 
@@ -91,7 +212,7 @@ class AdviceTest(ModuleTest):
 
 
 TestClasses = (
-    PropertyTest, ModuleTest, AdviceTest, 
+    PropertyTest, ModuleTest, AdviceTest, UtilityTest,
 )
 
 
