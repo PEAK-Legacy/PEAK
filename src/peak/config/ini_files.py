@@ -162,6 +162,21 @@ def register_factory(parser, section, name, value, lineInfo):
 
 
 
+def define_xml_attributes(parser, section, name, value, lineInfo):
+    x,x,x,xmlns = section.split(None,3)
+    parser.pMap.registerProvider(
+        config.XMLKey('attribute',xmlns,name),
+        ruleForExpr(name, value, parser.globalDict)
+    )
+    
+def define_xml_elements(parser, section, name, value, lineInfo):
+    x,x,x,xmlns = section.split(None,3)
+    parser.pMap.registerProvider(
+        config.XMLKey('element',xmlns,name),
+        ruleForExpr(name, value, parser.globalDict)
+    )
+    
+
 def add_services(parser, section, name, value, lineInfo):
     name = PropertyName(name)
     pMap = parser.pMap
@@ -197,6 +212,32 @@ def load_on_demand(parser, section, name, value, lineInfo):
             prefix = name
         )
     )
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

@@ -367,6 +367,133 @@ class BasicKeyTests(TestCase):
 
 
 
+xml_cfg = """
+[XML Attributes for http://example.com/foo]
+bar = "baz"
+* = "spam"
+
+[XML Elements for http://another.example.com/]
+bar = "foo"
+* = "widget"
+
+[XML Elements for *]
+testing = 1,2,3
+* = "huh?"
+
+[XML Attributes for *]
+isthis = "thing on?"
+* = None
+"""
+
+FOO_NS = "http://example.com/foo"
+ANOTHER_NS = "http://another.example.com/"
+
+xml_values = [
+    (('attribute',FOO_NS,'bar'), 'baz'),
+    (('attribute',FOO_NS,'foo'), 'spam'),
+    (('attribute',FOO_NS,'testing'), 'spam'),
+    (('attribute',FOO_NS,'isthis'), 'spam'),   
+    (('element',ANOTHER_NS,'bar'), 'foo'),
+    (('element',ANOTHER_NS,'foo'), 'widget'),
+    (('element',ANOTHER_NS,'testing'), 'widget'),
+    (('element',ANOTHER_NS,'isthis'), 'widget'),
+    (('attribute',ANOTHER_NS,'bar'), None),
+    (('attribute',ANOTHER_NS,'foo'), None),
+    (('attribute',ANOTHER_NS,'testing'), None),
+    (('attribute',ANOTHER_NS,'isthis'), 'thing on?'),
+    (('element',FOO_NS,'bar'), "huh?"),
+    (('element',FOO_NS,'foo'), "huh?"),
+    (('element',FOO_NS,'testing'), (1,2,3)),
+    (('element',FOO_NS,'isthis'), "huh?"),
+]
+
+
+class XMLKeysTest(TestCase):
+
+    def getBaseKey(self,xkey):
+        (key,depth), =xkey.registrationKeys()
+        self.assertEqual(depth,0)
+        self.assertEqual(list(xkey.parentKeys()), [])
+        return key
+
+    def testErrors(self):
+        self.assertRaises(TypeError, config.XMLKey)
+        self.assertRaises(TypeError, config.XMLKey, 'attribute')
+        self.assertRaises(TypeError, config.XMLKey, 'attribute', '*')
+        self.assertRaises(exceptions.EnumerationError,
+            config.XMLKey, 'xyz', '*', '*'
+        )
+
+    def testRegKeys(self):
+        k1 = config.XMLKey('element','ns1','name1')
+        self.failUnless(config.IConfigKey(k1) is k1)
+        key1 = self.getBaseKey(k1)
+
+        k2 = config.XMLKey('attribute','ns1','name1')
+        key2 = self.getBaseKey(k2)
+        self.assertNotEqual(key1,key2)
+
+        k3 = config.XMLKey('element','ns2','name1')
+        key3 = self.getBaseKey(k3)
+        self.assertNotEqual(key1,key3)
+        
+        k4 = config.XMLKey('element','ns1','name2')
+        key4 = self.getBaseKey(k4)
+        self.assertNotEqual(key1,key4)
+
+        self.assertEqual(list(k4.parentKeys()), [])
+
+
+
+
+
+
+
+    def testLookupKeys(self):
+        for kind in 'element','attribute':
+            k1 = config.XMLKey(kind,'*','*')
+            self.assertEqual(list(k1.lookupKeys()), [self.getBaseKey(k1)])
+
+            k2 = config.XMLKey(kind,'*','name')
+            self.assertEqual(
+                list(k2.lookupKeys()),
+                [self.getBaseKey(k2),self.getBaseKey(k1)]
+            )
+
+            k3 = config.XMLKey(kind,'xmlns','*')
+            self.assertEqual(
+                list(k3.lookupKeys()),
+                [self.getBaseKey(k3),self.getBaseKey(k1)]
+            )
+
+            k4 = config.XMLKey(kind,'xmlns','name')
+            self.assertEqual(
+                list(k4.lookupKeys()),
+                [self.getBaseKey(k4),self.getBaseKey(k3),self.getBaseKey(k2),
+                    self.getBaseKey(k1)]
+            )
+
+    def testParse(self):
+        c = binding.Configurable(testRoot())
+        config.ConfigReader(c).readString(xml_cfg)
+        for args,result in xml_values:
+            self.assertEqual(c.lookupComponent(config.XMLKey(*args)),result)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 class SimpleMapTest(TestCase):
 
     regKeys = [
@@ -497,7 +624,7 @@ TestClasses = (
     ComponentWithBindingViaPlugin,
     ParentComponent, ChildComponent, InheritedComponent, InheritedComponentAPI,
     InheritedParent, InheritedChild,
-    ServiceAreaTests, RegisteredProtocolTests,
+    ServiceAreaTests, RegisteredProtocolTests, XMLKeysTest
 )
 
 

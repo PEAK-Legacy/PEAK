@@ -1,5 +1,12 @@
 Fixes and Enhancements since Version 0.5 alpha 3
 
+ - Added 'config.XMLKey()', an 'IConfigKey' type that can be used to register
+   configuration values for XML attribute and element names under specified
+   XML namespace URI's.  Also, there are now '[XML Attributes for nsuri]' and
+   '[XML Elements for nsuri]' section types available for use in .ini files.
+   (Replace 'nsuri' with the appropriate XML namespace URI, or use '*' for a
+   wildcard.)
+   
  - 'web.IResource' is gone, replaced by 'web.IPlace'.  The notion of a place is
    broader than the notion of a resource, and we will soon need to have
    other "location" objects that implement 'IPlace'.

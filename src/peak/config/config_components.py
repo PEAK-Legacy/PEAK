@@ -10,22 +10,20 @@ from peak.util.FileParsing import AbstractConfigParser
 from registries import FactoryFor
 from interfaces import *
 from protocols.advice import getMRO, determineMetaclass
+from peak.model.enumerations import enum, Enumeration
 
 __all__ = [
     'ConfigMap', 'LazyRule', 'fileNearModule', 'packageFile', 'IniLoader',
     'Value', 'iterKeys', 'Namespace', 'iterValues',
     'CreateViaFactory', 'parentsProviding', 'parentProviding', 'lookup',
-    'ServiceArea',
+    'ServiceArea', 'XMLKey',
 ]
 
 
 def _setCellInDict(d,key,value):
-
     cell = d.get(key)
-
     if cell is None:
         cell = d[key] = EigenCell()
-
     cell.set(value)
 
 _emptyRuleCell = EigenCell()
@@ -37,6 +35,8 @@ def fileNearModule(moduleName,filename):
     """DEPRECATED: please switch to 'config.packageFile()' or a URL"""
     filebase = importString(moduleName+':__file__')
     import os; return os.path.join(os.path.dirname(filebase), filename)
+
+
 
 
 def packageFile(moduleName,filename):
@@ -58,11 +58,93 @@ def packageFile(moduleName,filename):
     )
 
 
+
+class XMLKind(Enumeration):
+    """Allowed kinds for XMLKey instances"""
+
+    attribute = enum()
+    element = enum()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class XMLKey:
+    """XMLKey(kind,xmlns,name) -- key to look up XML elements and attributes
+
+    Usage::
+
+        # Get a key for the 'foo' element in XML namespace 'http://something'
+        key = config.XMLKey('element','http://something','foo')
+
+    'kind' must be a string equal to '"element"' or '"attribute"'.  'xmlns'
+    should be an XML namespace URI, or an asterisk ('"*"').  'name' should
+    be an unqualified XML element or attribute name, or an asterisk.  Asterisks
+    indicate wildcards, similar to the way wildcards work in 'PropertyName'
+    objects.  When an 'XMLKey' is used as a configuration key, it searches
+    first for an exact match, then a wildcard name match with the same XML
+    namespace, then a wildcard XML namespace match with the same element or
+    attribute name, and finally it looks for a wildcard in both positions.
+    (Note, however, that the 'element' and 'attribute' configuration namespaces
+    are entirely disjoint, and do not overlap in any way; an XML element lookup
+    will never return an XML attribute or vice versa.)
+
+    'kind', 'xmlns', and 'name' are all accessible as attributes of an
+    'XMLKey', so you can use them in wildcard rules, e.g.::
+
+        [XML Attributes for http://something]
+        * = some_module.someFunc(configKey.name)
+    """
+
+    protocols.advise(
+        instancesProvide=[IConfigKey],
+    )
+
+    def __init__(self,kind,xmlns,name):
+        self.kind = XMLKind(kind).name
+        self.xmlns = xmlns
+        self.name = name
+        self.baseKey = (XMLKey,self.kind,xmlns,name)
+        self.hashCode = hash(self.baseKey)
+
+    def registrationKeys(self,depth=0):
+        return [(self,0)]
     
+    def parentKeys(self):
+        return ()
 
+    def lookupKeys(self):
+        yield self
 
+        if self.name<>'*':
+            yield XMLKey(self.kind,self.xmlns,'*')
+            if self.xmlns<>'*':
+                yield XMLKey(self.kind,'*',self.name)
+                yield XMLKey(self.kind,'*','*')
 
+        elif self.xmlns<>'*':
+            yield XMLKey(self.kind,'*',self.name)
+            
 
+    def __hash__(self):
+        return self.hashCode
+
+    def __cmp__(self,other):
+        return cmp(self.baseKey,other)
+
+    def __repr__(self):
+        return "XMLKey%r" % (self.baseKey[1:],)
 
 
 
