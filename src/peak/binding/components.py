@@ -6,6 +6,7 @@ from peak.api import *
 from once import *
 from interfaces import *
 from weakref import WeakValueDictionary
+from types import ModuleType
 
 from peak.naming.names import toName, AbstractName, COMPOUND_KIND
 from peak.naming.syntax import PathSyntax
@@ -22,7 +23,6 @@ __all__ = [
     'bindToUtilities', 'bindToProperty', 'Constant',
     'getComponentName', 'getComponentPath', 'Acquire', 'ComponentName',
 ]
-
 
 
 
@@ -91,8 +91,13 @@ def getParentComponent(component):
 
     try:
         gpc = component.__class__.getParentComponent
+
     except AttributeError:
-        pass
+
+        if isinstance(component,ModuleType):
+            m = '.'.join(component.__name__.split('.')[:-1])
+            if m: return importString(m)
+
     else:
         return gpc(component)
 
@@ -103,10 +108,17 @@ def getComponentName(component):
 
     try:
         gcn = component.__class__.getComponentName
+
     except AttributeError:
-        pass
+
+        if isinstance(component,ModuleType):
+            return component.__name__.split('.')[-1]
+
     else:
         return gcn(component)
+
+
+
 
 
 def getRootComponent(component):
@@ -121,6 +133,7 @@ def getRootComponent(component):
 
     return component
 
+
 def globalLookup(name, component=None, targetName=None):
 
     """Lookup 'name' in global 'InitialContext', relative to 'component'"""
@@ -128,11 +141,6 @@ def globalLookup(name, component=None, targetName=None):
     return naming.lookup(name, component,
         creationParent=component, creationName=targetName
     )
-
-
-
-
-
 
 
 def acquireComponent(name, component=None, targetName=None):
@@ -152,14 +160,6 @@ def acquireComponent(name, component=None, targetName=None):
 
     else:
         return globalLookup(name, component, targetName)
-
-
-
-
-
-
-
-
 
 
 class ComponentName(AbstractName):
