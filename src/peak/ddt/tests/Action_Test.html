@@ -5,7 +5,7 @@
   <meta content="Phillip J. Eby" name="author">
 </head>
 <body>
-Let's test an ActionProcessor:<br>
+Let's test an ActionChecker:<br>
 <br>
 <table style="text-align: left;" border="1" cellspacing="2"
  cellpadding="2">
@@ -112,7 +112,7 @@ Let's test an ActionProcessor:<br>
   </tbody>
 </table>
 <br>
-and a model processor:<br>
+and a model checker:<br>
 <br>
 <table cellpadding="3" cellspacing="0" cols="6" border="1">
   <tbody>
@@ -167,6 +167,42 @@ and a model processor:<br>
   </tbody>
 </table>
 <br>
+<P>&nbsp;</P>
+<P>and a function checker:</P>
+
+<TABLE BORDER>
+<TR><TD VALIGN="TOP" COLSPAN=4>
+<P>Function peak.core.Items</TD>
+</TR>
+<TR><TD WIDTH="25%" VALIGN="TOP">
+<P>a</TD>
+<TD WIDTH="25%" VALIGN="TOP">
+<P>b</TD>
+<TD WIDTH="25%" VALIGN="TOP">
+<P>c</TD>
+<TD WIDTH="25%" VALIGN="TOP">
+<P>output</TD>
+</TR>
+<TR><TD WIDTH="25%" VALIGN="TOP">
+<P>1</TD>
+<TD WIDTH="25%" VALIGN="TOP">
+<P>2</TD>
+<TD WIDTH="25%" VALIGN="TOP">
+<P>3</TD>
+<TD WIDTH="25%" VALIGN="TOP">
+<P>[('a',1),('c',3),('b',2)]</TD>
+</TR>
+<TR><TD WIDTH="25%" VALIGN="TOP">
+<P>99</TD>
+<TD WIDTH="25%" VALIGN="TOP">
+<P>'bottles'</TD>
+<TD WIDTH="25%" VALIGN="TOP">
+<P>"of beer"</TD>
+<TD WIDTH="25%" VALIGN="TOP">
+<P>[('a', 99), ('c', 'of beer'), ('b', 'bottles')]</TD>
+</TR>
+</TABLE>
+
 and the summary:<br>
 <br>
 <table style="text-align: left;" border="1" cellspacing="2"

@@ -9,6 +9,7 @@ __all__ = [
     'titleAsPropertyName', 'titleAsMethodName', 'DocumentProcessor',
     'AbstractProcessor', 'MethodChecker', 'ModelChecker', 'SQLChecker',
     'RecordChecker', 'ActionChecker', 'Summary', 'RollbackProcessor',
+    'FunctionChecker', 'ItemCell',
 ]
 
 
@@ -24,7 +25,6 @@ def titleAsMethodName(text):
     """Convert a string like '"Spam the Sprocket"' to '"spamTheSprocket"'"""
     text = ''.join(text.strip().title().split())
     return text[:1].lower()+text[1:]
-
 
 
 
@@ -70,7 +70,7 @@ class DocumentProcessor(binding.Component):
             self.processTables( iter(document.tables) )
         finally:
             self.tearDown(document)
-            
+
     def processTables(self,tables):
         for table in tables:
             self.processTable(table, tables)
@@ -333,7 +333,7 @@ class ModelChecker(MethodChecker):
     Unlike 'ddt.MethodChecker', this class can be used without subclassing.
     Just specify the 'targetClass' in the constructor, and optionally set
     'itemPerRow' to 'False' if you want one target instance to be used for
-    all rows.  You can also supply 'methodTypes' to list the 'model.IType'
+    all rows.  You can also supply 'typeInfo' to list the 'model.IType'
     types that should be used when invoking methods or checking their return
     values.  For example, you might use the following in an .ini file::
 
@@ -341,7 +341,7 @@ class ModelChecker(MethodChecker):
 
         MyProcessor = ddt.ModelChecker(
             targetClass = importString('my_model.MyElement'),
-            methodTypes = Items(
+            typeInfo = Items(
                 someMethodReturningInt = model.Integer,
                 someMethodTakingFloat = model.Float,
                 # etc.
@@ -361,7 +361,7 @@ class ModelChecker(MethodChecker):
 
     itemPerRow = True
 
-    methodTypes = ()
+    typeInfo = ()
 
     columnSuffixes = ( (':','set'), ('?','get') )
 
@@ -375,9 +375,8 @@ class ModelChecker(MethodChecker):
         """The specific instance currently being tested"""
     )
 
-    _methodMap = binding.Make(
-        lambda self: dict(self.methodTypes)
-    )
+    _typeMap = binding.Make( lambda self: dict(self.typeInfo) )
+
 
 
     def getHandler(self,text):
@@ -405,6 +404,7 @@ class ModelChecker(MethodChecker):
         """Get rid of old instance, if needed, after finishing a row"""
         if self.itemPerRow:
             self._delBinding('targetInstance')
+
 
 
 
@@ -479,16 +479,57 @@ class ModelChecker(MethodChecker):
         This is done by retrieving the named attribute from the class (after
         applying 'titleAsMethodName()' to the name) and and adapting it to
         the 'ddt.ICellMapper' interface.  If there is an entry in
-        'self.methodTypes' that indicates the datatype that should be used for
+        'self.typeInfo' that indicates the datatype that should be used for
         the column, the mapper is informed of this via its 'suggestType()'
         method.
         """
         name = self.methodNameFor(name)
         mapper = adapt(getattr(self.targetClass,name), ICellMapper)
         binding.suggestParentComponent(self,name,mapper)
-        if name in self._methodMap:
-            mapper.suggestType(self._methodMap[name])
+        mapper.suggestType(self._typeMap.get(name,model.Repr))
         return mapper
+
+
+class FunctionChecker(ModelChecker):
+
+    """Verify return values from a function called with keyword arguments
+
+    Column names specify either the names of keyword arguments, except for the
+    last column, whose contents are always the expected return value.  The only
+    required constructor keyword for 'FunctionChecker' is 'testFunction', which
+    must be the callable whose return value is being checked."""
+
+    testFunction = binding.Require("Callable whose return value is tested")
+
+    columnSuffixes = ( ('','set'), )    # always treat columns as 'set'
+
+    targetClass = dict  # assemble keyword arguments in a dictionary
+
+
+    def setupHandlers(self,row,rows):
+        """Set up handlers, always treating the last column as the output"""
+        super(FunctionChecker,self).setupHandlers(row,rows)
+        self.handlers[-1] = self.invokeFunction
+
+
+    def getMapper(self,name):
+        """Map column names to dictionary keys (keyword args)"""
+        name = name.strip()
+        mapper = ItemCell(name)
+        mapper.suggestType(self._typeMap.get(name,model.Repr))
+        return mapper
+
+
+    def invokeFunction(self,cell):
+        """Invoke the function and verify the result"""
+        # XXX support some sort of 'error' return for exceptions?
+        try:
+            cell.assertEqual(
+                self.testFunction(**self.targetInstance), model.Repr
+            )
+        except:
+            cell.exception()
+
 
 class RecordChecker(ModelChecker):
 
@@ -506,7 +547,7 @@ class RecordChecker(ModelChecker):
 
     def mappers(self):
         """List of 'ICellMapper' objects corresponding to table columns"""
-        mappers = []        
+        mappers = []
         for cell in self.headings:
             try:
                 mappers.append(self.getMapper(cell.text))
@@ -530,7 +571,7 @@ class RecordChecker(ModelChecker):
 
 
 
-    
+
     def processRows(self,rows):
 
         """Compare contents against generated data"""
@@ -553,14 +594,14 @@ class RecordChecker(ModelChecker):
             if not self.records or self.mappers:
 
                 missing, extra = self.compare(list(rows), self.records)
-    
+
                 for row in missing:
                     row.cells[0].annotation = "missing"
                     row.cells[0].wrong()
-    
+
                 for record in extra:
                     newRow = table.newRow(
-                        cells = [       
+                        cells = [
                             table.newCell(text=mapper.format(record))
                                 for mapper in self.mappers
                         ]
@@ -628,17 +669,17 @@ class RecordChecker(ModelChecker):
             # One list is empty, so other is "missing" (or extra) by definition
             return rows,data
 
-        elif len(rows)==1 and len(data)==1:           
-            self.compareRow(rows[0],data[0])    # do 1-to-1 comparison           
+        elif len(rows)==1 and len(data)==1:
+            self.compareRow(rows[0],data[0])    # do 1-to-1 comparison
             return [],[]                        # no missing or extra rows
-            
+
         else:
             # Partition the data into subsets based on current column,
             # then assemble missing/extra data by recursing on subsets
             mapper = self.mappers[column]
             extract = mapper.extract
             parse = mapper.parse
-            
+
             recordMap = kjGraph([(extract(record),record) for record in data])
             rowMap = kjGraph([(parse(row.cells[column]),row) for row in rows])
 
@@ -666,7 +707,7 @@ class SQLChecker(RecordChecker):
     By default, the SQL will be run against a connection object found under the
     'peak.ddt.testDB' property name.  You should define this property in a
     '[Named Services]' section of your test configuration file(s).
-    
+
     Alternatively, you can supply a connection object as the 'testDB'
     constructor argument, or supply a 'dbKey' constructor argument to change
     the configuration key to something other than 'peak.ddt.testDB'.
@@ -688,7 +729,7 @@ class SQLChecker(RecordChecker):
     def methodNameFor(self,text):
         return text.strip()
 
-    
+
     def getMapper(self,name):
         mapper = super(SQLChecker,self).getMapper(name)
         mapper.suggestType(model.Repr)
@@ -872,7 +913,7 @@ class PropertyAsCellMapper(object):
         self.subject = ob
         self.extract = ob.__get__
         self._set = ob.__set__
-        
+
     dataType = model.String
 
     def suggestType(self,dataType):
@@ -898,7 +939,48 @@ class PropertyAsCellMapper(object):
         return self.dataType.mdl_toString(self.extract(instance))
 
 
-        
+
+
+class ItemCell(PropertyAsCellMapper):
+
+    """Treat mapping key as a cell mapper"""
+
+    def __init__(self,key):
+        self.subject = key
+
+    def extract(self,ob):
+        return ob[self.subject]
+
+    def _set(self,ob,value):
+        ob[self.subject] = value
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 class CallableAsCellMapper(PropertyAsCellMapper):
 
@@ -912,7 +994,7 @@ class CallableAsCellMapper(PropertyAsCellMapper):
     def __init__(self,ob,proto):
         self.subject = ob
         self.extract = self._set = ob.getCallable()
-        
+
 
     def invoke(self,instance,cell):
         try:
@@ -951,7 +1033,7 @@ class FeatureAsCellMapper(PropertyAsCellMapper):
     )
 
     def __init__(self,ob,proto):
-        self._parse = ob.parse        
+        self._parse = ob.parse
         self._format = ob.format
         super(FeatureAsCellMapper,self).__init__(ob,proto)
 

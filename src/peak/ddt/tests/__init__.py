@@ -342,7 +342,7 @@ class BasicTests(TestCase):
 
         self.assertEqual(
             runner.stderr.getvalue().strip(),
-            "21 right, 1 wrong, 0 ignored, 1 exceptions"
+            "23 right, 1 wrong, 0 ignored, 1 exceptions"
         )
 
 
