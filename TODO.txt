@@ -146,9 +146,7 @@ Open Issues/To-Do Items
           context or a filesystem context)
 
         - rework smtp: to return a factory object that supports open().
-          Also think about whether smtp should move elsewhere. Maybe
-          there should be peak.network or peak.internet for things like
-          smtp, ftp, etc contexts?
+          Also think about whether smtp should move to peak.net?
 
 
 
