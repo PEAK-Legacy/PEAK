@@ -4,22 +4,121 @@ Open Issues/To-Do Items
 
     * Refactor binding and naming frameworks to
 
-      - streamline descriptor mechanisms used by binding and model to make them
-        uniform and cleanly functional (in both senses of the word functional)
-
       - make indirection convenient (e.g. bind to looking up something from
         another binding)
 
       - eliminate remaining introspection/'isinstance()' checks
 
+
+    * peak.binding
+
+       - Cleanup/document attribute binding interface
+
+       - Attribute -> AttribDef
+
+       - binding.AttribDef has an adequate docstring
+
+       - Review all current usage of NameNotFound in binding and naming
+         packages.  If possible, push default values closer to the point of
+         retrieval.  (The idea is to minimize the possibility that an unrelated
+         NameNotFound error gets hidden by a routine catching NameNotFound
+         in order to return a default value.)
+
+       - Ensure default __repr__'s for all bindings are acceptable
+
+       - Update tutorial for current kwargs
+
+
+
+
+
+
+
+
+
+
+
+
+    * peak.web (some of this may get bumped to alpha 4)
+
+       - default error templates, w/useful info
+
+       - Refactor skin/layer/resource machinery so that layers can be shared
+         between skins (because i18n will probably want skins and that's going
+         to greatly multiply memory requirements)
+
+       - clean up DOMlet parse/build framework (e.g. add line number info)
+
+       - A set of simple, basic form controls that handle value rendering only
+         (form metadata, validation, etc. will be handled by peak.web.forms in
+         a later release)
+
+       - try/catch DOMlet (and related error rendering interface/framework)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ Targeted for 0.5 Alpha 4
+
+    * Transaction/storage refactorings
+
+      - transaction scopes for commands and tasks
+
+      - integrate locks with transactions
+
+      - transactable persistent queues
+
+      - DM.find()/DM.get() queries
+
+
+    * peak.web
+
+       - allow use of // in DOMlets' data paths, to access resource space
+
+       - DOMlets for layout/region, as defined in "A layout framework":http://www.eby-sarna.com/pipermail/transwarp/2003-August/000684.html
+
+       - conditional GET support (last modified/ETag) for static resources
+
+       - image resources
+
+       - the return of the Specialist
+
+
+    * Have a way to easily in-line custom component usage (e.g. automatically
+      create a subclass component with specified 'bindTo' bindings to get its
+      configuration).
+
     * Implement "contextual protocols" (c.f. "object teams") and "parameterized
       protocols" (E.g. 'ListOf(IFoo)', 'MappingOf(keys=IBar,values=IBaz)')
 
-    * Rough-out web publishing framework
 
-      - Publication interfaces
 
-      - Viewer/Controller adaptation mechanisms
+
+
+
+
 
 
  Targeted for 0.5 Beta 1
@@ -30,12 +129,6 @@ Open Issues/To-Do Items
 
     * Web publishing framework sufficient to deploy page-based or object-
       published apps
-
-
-
-
-
-
 
 
 
@@ -57,8 +150,16 @@ Open Issues/To-Do Items
           there should be peak.network or peak.internet for things like
           smtp, ftp, etc contexts?
 
-        - add in Ty's cool "n2" (Namespace Navigator) shell for working with
-          naming providers.
+
+
+
+
+
+
+
+
+
+
 
 
  Targeted for version 0.6
@@ -78,6 +179,28 @@ Open Issues/To-Do Items
      produce ambiguous or unintended results.  (Or replace with ZConfig
      schema that can generate clusterit files.  And/or replace clusterit
      tools with PEAK ones.)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
  Future Releases
