@@ -4,6 +4,7 @@ cdef extern from "Python.h":
 
 cdef extern object GET_DICTIONARY(object o)
 
+cdef object _NOTFOUND
 
 from peak.api import NOT_FOUND
 
@@ -38,7 +39,6 @@ cdef class OnceDescriptor:
 
 
 
-
     def __get__(self, void *obj, void *typ):
     
         # Compute the attribute value and cache it
@@ -55,7 +55,7 @@ cdef class OnceDescriptor:
 
         if n in d:
             ob = d[n]
-            if ob is NOT_FOUND:
+            if ob is _NOTFOUND:
                 raise AttributeError,n
             return d[n]
             
@@ -103,3 +103,5 @@ cdef class __attrName_Descriptor:
 OnceDescriptor_attrName = __attrName_Descriptor()
 
 __all__ = ['OnceDescriptor_attrName', 'OnceDescriptor']
+
+_NOTFOUND = NOT_FOUND
