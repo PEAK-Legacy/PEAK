@@ -622,8 +622,9 @@ class __NamespaceExtensions(protocols.Adapter):
 
     def computeProperty(self, propertyMap, name, prefix, suffix, targetObject):
         return config.lookup(
-            propertyMap, self.subject._prefix+suffix, default=NOT_FOUND
+            targetObject, self.subject._prefix+suffix, default=NOT_FOUND
         )
+
 
     def setParentComponent(self, parentComponent, componentName=None,
         suggest=False
@@ -647,7 +648,6 @@ class __NamespaceExtensions(protocols.Adapter):
     def __call__(self,client,instDict,attrName):
         subject = self.subject
         return subject.__class__(subject._prefix[:-1], client, subject._cache)
-
 
 
 
