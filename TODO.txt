@@ -7,8 +7,6 @@ Open Issues/To-Do Items
       - make indirection convenient (e.g. bind to looking up something from
         another binding)
 
-      - eliminate remaining introspection/'isinstance()' checks
-
 
     * peak.binding
 
@@ -31,6 +29,8 @@ Open Issues/To-Do Items
        - Investigate whether suggestParentComponent() should be suppressed when
          the value is computed by the binding, or if perhaps 'suggestParent'
          should be set to 'False' by default for some kinds of bindings.
+
+
 
 
 
@@ -306,7 +306,7 @@ Open Issues/To-Do Items
       - What determines whether an implemented Service actually stores objects
         or delegates this to its subclass services?
 
-    * Simple Zope product demo (upload XMI, then browse the model via the web)
+    * Simple demo (browse XMI model via the web)
 
 
 

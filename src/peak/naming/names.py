@@ -162,47 +162,6 @@ class AbstractName(tuple):
             return default
 
 
-URLMatch = re.compile('([-+.a-z0-9]+):',re.I).match
-
-class URLMeta(Activator):
-
-    def __init__(klass, name, bases, classDict):
-
-        if 'pattern' in classDict:
-
-            pattern = classDict['pattern']
-
-            if isinstance(pattern,str):
-                klass.pattern = re.compile(pattern)
-
-        return super(URLMeta,klass).__init__(name, bases, classDict)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 class CompositeName(AbstractName):
 
     """A name whose parts may belong to different naming systems
@@ -285,6 +244,8 @@ class CompoundName(AbstractName):
 
 
 
+URLMatch = re.compile('([-+.a-z0-9]+):',re.I).match
+
 def toName(aName, nameClass=CompoundName, acceptURL=1):
 
     """Convert 'aName' to a Name object
@@ -316,8 +277,6 @@ def toName(aName, nameClass=CompoundName, acceptURL=1):
 
 
 NNS_NAME = CompositeName.parse('/',CompoundName)
-
-
 
 
 

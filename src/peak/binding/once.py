@@ -97,16 +97,49 @@ def suggestParentComponent(parent,name,child):
         # Tell it directly
         ob.setParentComponent(parent,name,suggest=True)
 
-    elif isinstance(child,(list,tuple)):
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class SequenceAsAttachable(protocols.Adapter):
+
+    """Set parent component for all members of a list/tuple"""
+
+    protocols.advise(
+        instancesProvide = [IAttachable],
+        asAdapterForTypes = [list, tuple],
+    )
+
+    def setParentComponent(self,parentComponent,componentName=None,suggest=False):
 
         ct = 0
 
-        for ob in child:
+        for ob in self.subject:
 
             ob = adapt(ob,IAttachable,None)
 
             if ob is not None:
-                ob.setParentComponent(parent,name,suggest=True)
+                ob.setParentComponent(parentComponent,componentName,suggest)
             else:
                 ct += 1
                 if ct==100:
@@ -115,9 +148,17 @@ def suggestParentComponent(parent,name,child):
                          " contain components, this is wasteful.  (You may"
                          " want to set 'suggestParent=False' on the attribute"
                          " binding or lookupComponent() call, if applicable.)"
-                         % name),
+                         % componentName),
                         ComponentSetupWarning, 3
                     )
+
+
+
+
+
+
+
+
 
 
 
