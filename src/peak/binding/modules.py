@@ -147,19 +147,19 @@
                 
           does not.  This is only a problem for inheriting from legacy code,
           since code written specifically for TransWarp can easily work around
-          it, but it's still a nit to pick.          
+          it, but it's still a nit to pick.
+
+        * Less easy to work around, is the fact that module-based vertical
+          inheritance is not detected when the inheriting class is nested,
+          as in::
+
+            class Foo:
+
+                class Bar(SEF.Service):
+
+          The above will fail unless SEF is defined in Foo as well as at the
+          module level.  :(
 """
-
-
-
-
-
-
-
-
-
-
-
 
 
 from TW.API import *
@@ -203,7 +203,7 @@ def getSpecForModule(module):
 
 
 
-def setupModule(dict=None):
+def setupModule(dict=None, noBuild=None):
 
     """setupModule(globals()) - Build module, w/advice and inheritance
 
@@ -240,10 +240,10 @@ def setupModule(dict=None):
         bases.append(adviceForModule(m.__name__))
 
     bases.reverse(); spec = Recipe(ModuleDictInterpreter, *tuple(bases))
-    new = spec(FunctionRebindingBuildTarget, globals=dict); dict.clear();
-    dict.update(new); dict['__specification__'] = spec    # save module spec
+    if not noBuild:
+        new = spec(FunctionRebindingBuildTarget, globals=dict); dict.clear(); dict.update(new)
+    dict['__specification__'] = spec    # save module spec
     
-
 def adviseModule(moduleName, withDict=None):
 
     if withDict is None:
