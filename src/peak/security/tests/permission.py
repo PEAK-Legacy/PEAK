@@ -1,59 +1,18 @@
-"""Permission tests
-
-TODO
-
- - Simple permission checks
-
- - Delegated permission
-
- - Varying algorithm by subject class
-
- - Global permission grant overrides local
-
-"""
+"""Permission tests"""
 
 from unittest import TestCase, makeSuite, TestSuite
 from peak.api import *
 from peak.tests import testRoot
 
 
-class ITestPermissionChecker(protocols.Interface):
-
-    """Permission protocol for the tests"""
-
-    protocols.advise(
-        protocolIsSubsetOf = [security.IPermissionChecker]
-    )
-
-
-class TestInteraction(security.Interaction):
-    user = None
-    permissionProtocol = ITestPermissionChecker
-
-
-
-
-
-
-
-
-
-
 class SimpleTests(TestCase):
 
     def setUp(self):
-        self.interaction = TestInteraction()
+        self.context = security.Context()
 
     def checkUniversals(self):
-        assert self.interaction.allows(
-            None, permissionNeeded=security.Anybody
-        )
-        assert not self.interaction.allows(
-            None, permissionNeeded=security.Nobody
-        )
-
-
-
+        assert self.context.hasPermission(None, security.Anybody, None)
+        assert not self.context.hasPermission(None, security.Nobody, None)
 
 
 
@@ -121,126 +80,85 @@ class Person(object):
     )
 
 
-class EquipmentRules(security.RuleSet):
+class EquipmentRules(security.Context):
 
-    rules = Items(
-        checkWorkerForShipment = [Worker.of(Shipment)],
-        checkSupervisor = [Manager.of(Person)],
-        checkSelfOrManager = [SelfOrManager],
-        checkWorkerOrManager = [ManageAsset, ShipmentViewer],
-        checkManageBatch = [ManageBatch],
-        checkPermissionsInPlace = [Worker, Manager],
-    )
-
-    def checkWorkerForShipment(klass, attempt):
-        return attempt.allows(attempt.subject.fromFacility,
-            permissionNeeded=Worker
-        ) or   attempt.allows(attempt.subject.toFacility,
-            permissionNeeded=Worker
+    [security.hasPermission.when("perm==Worker and subject in Shipment")]
+    def checkWorkerForShipment(self, user, perm, subject):
+        return self.hasPermission(user, Worker, subject.fromFacility
+        ) or self.hasPermission(user, Worker, subject.toFacility
         ) or security.Denial(
             "You need to be a worker at either the origin or destination"
             " facility for this shipment."
         )
 
-    def checkSupervisor(klass, attempt):
-        return attempt.user is attempt.subject.supervisor
+    [security.hasPermission.when("perm==Manager and subject in Person")]
+    def checkSupervisor(self, user, perm, subject):
+        return user is subject.supervisor or security.Denial(
+            "You must be a supervisor of this person."
+        )
 
-    def checkSelfOrManager(klass, attempt):
-        return attempt.user in (attempt.subject,attempt.subject.supervisor)
+    [security.hasPermission.when("perm==SelfOrManager")]
+    def checkSelfOrManager(self, user, perm, subject):
+        return user in (subject,subject.supervisor) or security.Denial(
+            "You must be this person or their supervisor."
+        )
 
-    def checkWorkerOrManager(klass, attempt):
-        return attempt.allows(
-            permissionNeeded=Worker
-        ) or attempt.allows(permissionNeeded=Manager) or security.Denial(
+    [security.hasPermission.when("perm in [ManageAsset, ShipmentViewer]")]
+    def checkWorkerOrManager(self, user, perm, subject):
+        return self.hasPermission(
+            user, Worker, subject
+        ) or self.hasPermission(user,Manager,subject) or security.Denial(
             "You need to be a worker or manager at the relevant facility"
         )
 
+    [security.hasPermission.when("perm in [Worker, Manager]")]
+    def checkPermissionsInPlace(self, user, perm, subject):
+        # check same permission, but for location
+        return self.hasPermission(user,perm,subject.location)
 
 
 
 
 
 
-
-    def checkManageBatch(klass, attempt):
+    [security.hasPermission.when("perm==ManageBatch")]
+    def checkManageBatch(self, user, perm, subject):
         return (
-            attempt.allows(permissionNeeded=Owner) or
-            attempt.allows(permissionNeeded=Worker) or
-            attempt.allows(permissionNeeded=Manager) or
+            self.hasPermission(user,Owner,subject) or
+            self.hasPermission(user,Worker,subject) or
+            self.hasPermission(user,Manager,subject) or
             security.Denial(
                 "You must be the batch's owner, or a worker or manager at"
                 " the relevant facility."
             )
         )
 
-    def checkPermissionsInPlace(klass, attempt):
-        return attempt.allows(
-            attempt.subject.location    # check same permission for location
+
+    [security.hasPermission.when("perm==Shipper and subject in Shipment")]
+    def checkShipper(self, user, perm, subject):
+        return self.hasPermission(user, Worker, subject.fromFacility)
+
+    [security.hasPermission.when("perm==Receiver and subject in Shipment")]
+    def checkReceiver(self, user, perm, subject):
+        return self.hasPermission(user, Worker, subject.toFacility)
+
+    [security.hasPermission.when("perm==Worker and subject in Facility")]
+    def checkWorkerForFacility(self, user, perm, subject):
+        return user.facility is subject or security.Denial(
+            "You must be a worker at the relevant facility."
         )
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    rules += Items(
-        checkShipper = [Shipper.of(Shipment)],
-        checkReceiver = [Receiver.of(Shipment)],
-        checkWorkerForFacility = [Worker.of(Facility)],
-        checkManagerForFacility = [Manager.of(Facility)],
-        checkBatchOwner = [Owner.of(Batch)],
-        checkOtherOwner = [Owner],
-    )
-
-    def checkShipper(klass, attempt):
-        return attempt.allows(attempt.subject.fromFacility,
-            permissionNeeded=Worker
-        )
-
-    def checkReceiver(klass, attempt):
-        return attempt.allows(attempt.subject.toFacility,
-            permissionNeeded=Worker
-        )
-
-    def checkWorkerForFacility(klass, attempt):
-        return attempt.user.facility is attempt.subject
-
-    def checkManagerForFacility(klass, attempt):
-        return attempt.user in attempt.subject.managers or security.Denial(
+    [security.hasPermission.when("perm==Manager and subject in Facility")]
+    def checkManagerForFacility(self, user, perm, subject):
+        return user in subject.managers or security.Denial(
             "You must be a manager at the relevant facility"
         )
 
-    def checkBatchOwner(klass, attempt):
-        return attempt.user is attempt.subject.owner or security.Denial(
+    [security.hasPermission.when("perm==Owner and subject in Batch")]
+    def checkBatchOwner(self, user, perm, subject):
+        return user is subject.owner or security.Denial(
             "You must be the batch's owner"
         )
-
-    def checkOtherOwner(klass, attempt):
-        # Only batches have owners
-        return False
-
-EquipmentRules.declareRulesFor(ITestPermissionChecker)
-
 
 
 
@@ -355,8 +273,10 @@ scenarios = [
 class ScenarioTests(TestCase):
 
     def assertAllowed(self, subject, name, users):
+        context = EquipmentRules()
+        perm = context.permissionFor(subject,name)
         for person in MrSmythe, Mickey, JeanPierre, BobChien:
-            allowed = TestInteraction(user=person).allows(subject,name)
+            allowed = context.hasPermission(person,perm,subject)
             assert not allowed==(person not in users), (
                 "%s fails for %s.%s" % (person.name, subject.name, name)
             )
@@ -364,8 +284,6 @@ class ScenarioTests(TestCase):
     def checkScenarios(self):
         for s in scenarios:
             self.assertAllowed(*s)
-
-
 
 TestClasses = (
     SimpleTests, ScenarioTests

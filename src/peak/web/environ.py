@@ -11,7 +11,7 @@
 """
 
 __all__ = [
-    'Context', 'StartContext',
+    'Context', 'StartContext', 'Interaction',
     'simpleRedirect', 'clientHas','parseName', 'traverseResource',
     'traverseView', 'traverseSkin', 'traverseAttr', 'traverseItem',
     'traverseDefault', 'traverseLocationId', 'relativeURL',
@@ -22,9 +22,9 @@ import protocols, posixpath, os, re
 from cStringIO import StringIO
 from peak.api import *
 import errors
-from peak.security.interfaces import IInteraction, IGuardedObject
 from wsgiref.util import shift_path_info, setup_testing_defaults, request_uri
 from peak.security.api import Anybody, allow
+
 
 
 
@@ -112,6 +112,47 @@ def traverseSkin(ctx, ob, ns, nm, qname, default=NOT_GIVEN):
     if default is NOT_GIVEN:
         raise errors.NotFound(ctx, qname, ctx.current)
     return default
+
+
+
+
+
+
+
+
+
+class Interaction(binding.Component, security.Context):
+
+    """DON'T USE THIS
+
+    This is a temporary bridge between the old interaction API and the
+    new rules system; don't write new code for this!
+    """
+
+    protocols.advise(
+        instancesProvide = [IInteraction]
+    )
+
+    user = binding.Require(
+        "The principal responsible for this interaction"
+    )
+
+    def allows(self, subject,
+        name=None, permissionNeeded=NOT_GIVEN, user=NOT_GIVEN
+    ):
+        if permissionNeeded is NOT_GIVEN:
+            permissionNeeded = self.permissionFor(subject,name)
+
+        if user is NOT_GIVEN:
+            user = self.user
+
+        return self.hasPermission(user,permissionNeeded,subject)
+        
+
+
+
+
+
 
 
 
@@ -327,17 +368,14 @@ def clientHas(environ, lastModified=None, ETag=None):
 
 
 def traverseAttr(ctx, ob, ns, name, qname, default=NOT_GIVEN):
-    guard = IGuardedObject(ob, None)
 
-    if guard is not None:
-        perm = guard.getPermissionForName(name)
-
-        if perm:
-            # We have explicit permissions defined, so allow access after check
-            loc = getattr(ob, name, NOT_FOUND)
-            if loc is not NOT_FOUND:
-                ctx.requireAccess(qname, ob, name, perm)
-                return ctx.childContext(qname,loc)
+    perm = ctx.interaction.permissionFor(ob,name)
+    if perm is not None:
+        # We have explicit permissions defined, so allow access after check
+        loc = getattr(ob, name, NOT_FOUND)
+        if loc is not NOT_FOUND:
+            ctx.requireAccess(qname, ob, name, perm)
+            return ctx.childContext(qname,loc)
 
     if default is NOT_GIVEN:
         raise errors.NotFound(ctx,qname,ob)
@@ -358,6 +396,9 @@ def traverseItem(ctx, ob, ns, name, qname, default=NOT_GIVEN):
     if default is NOT_GIVEN:
         raise errors.NotFound(ctx,qname,ob)
     return default
+
+
+
 
 
 

@@ -214,7 +214,6 @@ class Location(Place,binding.Configurable):
     containers = binding.Make(list)
     have_views = False
     local_views = binding.Make(dict)
-    binding.metadata(security.Anybody)    # XXX
 
     def traverseTo(self, name, ctx, default=NOT_GIVEN):
 
@@ -241,6 +240,7 @@ class Location(Place,binding.Configurable):
     def addContainer(self,container,permissionNeeded=None):
         binding.suggestParentComponent(self,None,container)
         self.containers.insert(0,(permissionNeeded,container))
+
 
 
 

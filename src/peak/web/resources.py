@@ -54,8 +54,6 @@ class FSResource(Resource):
         classProvides=[naming.IObjectFactory],
     )
 
-    binding.metadata(security.Anybody, basename=security.Anybody) # XXX
-
     filename = binding.Require("OS-specific full filename")
 
     filenameAsProperty = binding.Make(
@@ -77,7 +75,9 @@ class FSResource(Resource):
 
     getObjectInstance = classmethod(getObjectInstance)
 
-    basename = binding.Make(lambda self: os.path.basename(self.filename))
+    basename = binding.Make(lambda self: os.path.basename(self.filename),
+        [security.Anybody]
+    )
 
 
 class ResourceDirectory(FSResource, binding.Configurable):

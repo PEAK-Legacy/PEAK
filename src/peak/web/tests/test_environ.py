@@ -94,7 +94,7 @@ class TestTraversals(TestCase):
     def testGetStuff(self):
         self.failUnless(self.ctx.policy is self.policy)
         self.failUnless(
-            security.IInteraction(self.ctx.interaction,None) is not None
+            web.IInteraction(self.ctx.interaction,None) is not None
         )
 
     def diffCtx(self,ctx1,ctx2):

@@ -1,5 +1,5 @@
 from protocols import Interface, Attribute
-from peak.security.interfaces import IAuthorizedPrincipal, IInteraction
+from peak.security.interfaces import ISecurityContext
 import protocols
 from peak.api import PropertyName, NOT_GIVEN
 from peak.binding.interfaces import IComponent
@@ -12,7 +12,7 @@ __all__ = [
     'IDOMletElement', 'IDOMletElementFactory', 'ISkin', 'IPolicyInfo',
     'IConfigurableLocation', 'IViewService',
     'VIEW_NAMES', 'TEMPLATE_SCHEMA', 'SITEMAP_SCHEMA', 'LOCATION_ID',
-    'IDOMletRenderable',
+    'IDOMletRenderable', 'IInteraction',
 ]
 
 DEFAULT_METHOD    = PropertyName('peak.web.defaultMethod')
@@ -29,6 +29,47 @@ LOCATION_ID       = lambda lid: PropertyName('peak.web.locations.'+lid)
 
 
 
+
+
+
+
+
+
+
+
+
+
+class IInteraction(ISecurityContext):
+    """Component representing a security-controlled user/app interaction
+
+    An interaction provides the necessary context to identify what security
+    rules should be used, and on whose behalf the action is being performed
+    (i.e. the principal).  To determine if an access is allowed, you use the
+    interaction's 'allows()' method.
+    """
+
+    user = Attribute("""The IPrincipal responsible for the interaction""")
+
+    permissionProtocol = Attribute(
+        """The protocol to which permissions should be adapted for checking"""
+    )
+
+    def allows(subject,name=None,permissionNeeded=NOT_GIVEN,user=NOT_GIVEN):
+        """Return true if 'user' has 'permissionNeeded' for 'subject'
+
+        If 'user' is not supplied, the interaction's user should be used.  If
+        the permission is not supplied, 'subject' should be adapted to
+        'IGuardedObject' in order to obtain the required permission.
+
+        Note that if 'subject' does not support 'IGuardedObject', and the
+        required permission is not specified, then this method should always
+        return true when the 'name' is 'None', and false otherwise.  That is,
+        an unguarded object is accessible, but none of its attributes are.
+        (This is so that value objects such as numbers and strings don't need
+        permissions.)
+
+        This method should return a true value, or a 'security.Denial()' with
+        an appropriate 'message' value."""
 
 
 

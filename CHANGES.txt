@@ -1,5 +1,24 @@
 Fixes and Enhancements since Version 0.5 alpha 3
 
+ - The old 'peak.security' implementation has been removed, and replaced with
+   a simpler, more flexible implementation based on generic functions (using
+   less than half the code and seven fewer interfaces).  Complete documentation
+   and API tests for the new implementation can be found in 'rules.txt' in the
+   'peak.security' package directory.
+
+   (Note: as a side-effect of this change, the old 'security.IInteraction'
+   interface and 'security.Interaction' class can now be temporarily found
+   as 'web.IInteraction' and 'web.Interaction' respectively.  Both will soon
+   be refactored out of existence, however, so please update your code
+   accordingly!)
+
+   Also, the new implemetation does not require redundant
+   'security.allow(security.Anybody)' declarations just because you've declared
+   other permissions for a class, so these declarations have been removed from
+   ``peak.web``.  They don't do any harm, however, so you can leave them in
+   your own code as long as you change them to use 'binding.metadata()' instead
+   of the deprecated 'security.allow()'.
+
  - 'security.allow()' is now DEPRECATED; please use 'binding.metadata()'
    instead.  (There is no change to the calling signature, but
    'binding.metadata' accepts any metadata, not just permissions.)

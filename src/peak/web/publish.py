@@ -104,7 +104,7 @@ class InteractionPolicy(binding.Configurable, protocols.StickyAdapter):
     resourcePrefix = binding.Obtain(RESOURCE_PREFIX, [security.Anybody])
 
     _authSvc       = binding.Make(IAuthService, adaptTo=IAuthService)
-    _mkInteraction = binding.Obtain(config.FactoryFor(security.IInteraction))
+    _mkInteraction = binding.Obtain(config.FactoryFor(IInteraction))
 
 
     getUser = binding.Delegate('_authSvc')

@@ -333,8 +333,6 @@ class Element(binding.Component):
         instancesProvide = [IDOMletElement],
     )
 
-    binding.metadata(security.Anybody)
-
     children       = binding.Make(list)
     params         = binding.Make(dict)
 
@@ -366,6 +364,8 @@ class Element(binding.Component):
             return self._emptyTag
 
     staticText = binding.Make(staticText, suggestParent=False)
+
+
 
     def optimizedChildren(self):
 
