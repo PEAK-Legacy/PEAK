@@ -505,6 +505,12 @@ class Base(object):
     __parentCell = Once(__parentCell)
 
     def _getConfigData(self, configKey, forObj):
+
+        attr = self.__class_provides__.get(configKey)
+
+        if attr:
+            return getattr(self, attr, NOT_FOUND)
+
         return NOT_FOUND
 
 
@@ -522,12 +528,6 @@ class Base(object):
 
     def _postGet(self,attr,value,isSlot=False):
         return value
-
-
-
-
-
-
 
 
 
