@@ -55,7 +55,7 @@ class UUID(str):
 
         if CreateGuid and other_all_none and not from_string:
             # just want any new id and can use win32
-            from_string = CreateGuid()[1:-1]    # strip off {}'s
+            from_string = str(CreateGuid())[1:-1]    # strip off {}'s
             
         if from_string:
             # Validate
