@@ -10,7 +10,7 @@ from types import ModuleType
 
 from peak.naming.names import toName, AbstractName, COMPOUND_KIND
 from peak.naming.syntax import PathSyntax
-from peak.util.EigenData import EigenRegistry, EigenCell
+from peak.util.EigenData import EigenCell
 from peak.config.interfaces import IConfigKey, IPropertyMap
 from peak.util.imports import importString
 
@@ -19,7 +19,7 @@ __all__ = [
     'Base', 'Component',
     'bindTo', 'requireBinding', 'bindSequence', 'bindToParent', 'bindToSelf',
     'getRootComponent', 'getParentComponent', 'lookupComponent',
-    'acquireComponent', 'globalLookup', 
+    'acquireComponent', 'globalLookup',
     'bindToUtilities', 'bindToProperty', 'Constant',
     'getComponentName', 'getComponentPath', 'Acquire', 'ComponentName',
 ]
@@ -29,7 +29,7 @@ class _proxy(Once):
 
     def __init__(self,attrName):
         self.attrName = attrName
-        
+
     def usageError(self):
         raise AttributeError, self.attrName
 
@@ -63,7 +63,7 @@ def getComponentPath(component, relativeTo=None):
             break
 
         path.append(getComponentName(c) or '*')
-        
+
         c = getParentComponent(c)
 
         if c is None:
@@ -148,7 +148,7 @@ def acquireComponent(name, component=None, targetName=None):
     """Acquire 'name' relative to 'component', w/fallback to globalLookup()"""
 
     target = component
-    
+
     while target is not None:
 
         ob = getattr(target, name, NOT_FOUND)
@@ -214,7 +214,7 @@ def lookupComponent(name, component=None):
     'config.findUtility(name, component)'.  All other kinds of names,
     including URL strings and 'CompositeName' instances, will be looked up
     using 'binding.globalLookup()'.
-    
+
     Regardless of how the lookup is processed, an 'exceptions.NameNotFound'
     error will be raised if the name cannot be found."""
 
@@ -248,7 +248,7 @@ def _lookupComponent(component, name, targetName=None):
 
     if IConfigKey.isImplementedBy(name):
         return config.findUtility(name, component)
-        
+
     parsedName = toName(name, ComponentName, 1)
 
     if not parsedName.nameKind == COMPOUND_KIND:
@@ -316,11 +316,11 @@ class bindTo(Once):
         for name,newOb in zip(names, obs):
 
             if newOb is NOT_FOUND:
-            
+
                 del instanceDict[attrName]
                 raise exceptions.NameNotFound(attrName, resolvedName = name)
 
-            if self.singleValue:            
+            if self.singleValue:
                 return newOb
 
         return tuple(obs)
@@ -419,7 +419,7 @@ class requireBinding(Once):
         self.attrName = self.__name__ = name
 
     def computeValue(self, obj, instanceDict, attrName):
-    
+
         raise NameError("Class %s must define %s; %s"
             % (obj.__class__.__name__, attrName, self.description)
         )
@@ -456,7 +456,7 @@ class Base(object):
     __class_implements__ = IBindingFactory
     __implements__       = IBindingAPI
     __metaclass__        = ActiveClass
-    __class_provides__   = EigenRegistry()  # XXX this should be a once classAttr
+
 
     def __init__(self, parentComponent=None, componentName=None, **kw):
 
@@ -506,7 +506,7 @@ class Base(object):
 
     def _getConfigData(self, configKey, forObj):
 
-        attr = self.__class_provides__.get(configKey)
+        attr = self.__class__.__class_provides__.get(configKey)
 
         if attr:
             return getattr(self, attr, NOT_FOUND)
@@ -546,7 +546,7 @@ class Base(object):
 
         if useSlot:
             val = getattr(self,attr,default)
-           
+
         else:
             val = self.__dict__.get(attr,default)
 
@@ -568,7 +568,7 @@ class Base(object):
             d = _proxy(attr)
 
         return d.__get__, d.__set__, d.__delete__
-        
+
     _getBindingFuncs = classmethod(_getBindingFuncs)
 
 
@@ -623,20 +623,18 @@ class Component(Base):
         'peak.config.config_components:PropertyMap', provides=IPropertyMap
     )
 
-    __class_provides__    = EigenRegistry()
-    
 
     def _getConfigData(self, configKey, forObj):
-    
+
         attr = self._getBinding('__instance_provides__')
 
         if attr:
             value = attr.getValueFor(configKey, forObj)
-            
+
             if value is not NOT_FOUND:
                 return value
 
-        attr = self.__class_provides__.get(configKey)
+        attr = self.__class__.__class_provides__.get(configKey)
 
         if attr:
             return getattr(self, attr, NOT_FOUND)
@@ -651,3 +649,8 @@ class Component(Base):
 
 
 
+        
+        
+        
+        
+        

@@ -4,8 +4,8 @@ Open Issues/To-Do Items
 
     * Fix issue w/reading XMI 1.1 files where metamodel has nested packages
 
-    * Clean up __class_provides__ so that it isn't just something randomly
-      poked in by binding.Once(); it needs a clean infrastructure/interface.
+    * Document interface expected of "active descriptors" and their complements
+      (e.g. __class_provides__), refactoring for cleanliness as needed.
 
     * Refactor "Pythonic" UML 1.3 extensions so they're usable for most
       MOF-aligned metamodels (e.g. all UML and CWM versions)

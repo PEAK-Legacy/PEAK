@@ -54,7 +54,7 @@ def New(obtype, bindToOwner=None, name=None, provides=None, doc=None):
     The 'myDictAttr' and 'myListAttr' will become empty instance
     attributes on their first access attempt from an instance of
     'someClass'.
-    
+
     This is basically syntactic sugar for 'Once' to create an empty
     instance of a type.  The same rules apply as for 'Once' about
     whether the 'name' parameter is required.  (That is, you need it if you're
@@ -89,7 +89,7 @@ def Copy(obj, name=None, provides=None, doc=None):
         class someClass(binding.Component):
 
             myDictAttr = binding.Copy( {'foo': 2} )
-            
+
             myListAttr = binding.Copy( [1,2,'buckle your shoe'] )
 
     The 'myDictAttr' and 'myListAttr' will become per-instance copies of the
@@ -103,7 +103,7 @@ def Copy(obj, name=None, provides=None, doc=None):
     active descriptors, such as when you're not deriving from a standard PEAK
     base class.)
     """
-    
+
 
     from copy import copy
     return Once( (lambda s,d,a: copy(obj)), name, provides, doc)
@@ -124,7 +124,7 @@ def Copy(obj, name=None, provides=None, doc=None):
 class Once(OnceDescriptor):
 
     """One-time Properties
-    
+
         Usage ('Once(callable,name)')::
 
             class someClass(object):
@@ -162,34 +162,36 @@ class Once(OnceDescriptor):
         self.attrName = self.__name__ = name or getattr(func,'__name__',None)
         self._provides = provides; self.__doc__ = doc or getattr(func,'__doc__','')
 
-    def usageError(self):            
+    def usageError(self):
         raise TypeError(
             "%s was used in a type which does not support active bindings,"
             " but a valid attribute name was not supplied"
             % self
         )
 
+
     def computeValue(self, obj, instanceDict, attrName):
         raise NotImplementedError
+
 
     def activate(self,klass,attrName):
 
         if attrName !=self.attrName:
-            setattr(klass, attrName, self._copyWithName(attrName))
+            self = self._copyWithName(attrName)
+            setattr(klass, attrName, self)
 
         if self._provides is not None:
 
-            if not klass.__dict__.has_key('__class_provides__'):
+            try:
+                cp = klass.__dict__['__class_provides__']
+            except KeyError:
+                raise TypeError(
+                    "'provides' used on a class that can't register them",
+                    self, klass
+                )
+            cp.register(self._provides, attrName)
 
-                cp = EigenRegistry()
-
-                for c in klass.__mro__:
-                    if c.__dict__.has_key('__class_provides__'):
-                        cp.update(c.__class_provides__)
-
-                klass.__class_provides__ = cp
-
-            klass.__class_provides__.register(self._provides,attrName)
+        return self
 
 
     def _copyWithName(self, attrName):
@@ -199,8 +201,6 @@ class Once(OnceDescriptor):
 
         newOb.attrName = newOb.__name__ = attrName
         return newOb
-        
-
 
 
 class classAttr(object):
@@ -238,11 +238,11 @@ class classAttr(object):
 
     Notice that the generated metaclass is reused for subsequent
     subclasses, as long as they don't define any new class attributes."""
-    
+
     __slots__ = 'binding'
 
     def __init__(self, binding): self.binding = binding
-        
+
 
 class Activator(type):
 
@@ -253,7 +253,7 @@ class Activator(type):
     __class_descriptors__ = {}
 
     __all_descriptors__ = {}
-    
+
     def __new__(meta, name, bases, cdict):
 
         class_attrs = []; addCA = class_attrs.append
@@ -279,14 +279,16 @@ class Activator(type):
             meta = Activator( name+'Class', (meta,), d )
 
             # The new metaclass' __new__ will finish up for us...
-            return meta(name,bases,cdict)   
+            return meta(name,bases,cdict)
 
         klass = supertype(Activator,meta).__new__(meta, name, bases, cdict)
         klass.__name__ = name
 
 
-        d = klass.__class_descriptors__ = {}
+        cp = klass.__class_provides__ = EigenRegistry()
+        map(cp.update, getInheritedRegistries(klass, '__class_provides__'))
 
+        d = klass.__class_descriptors__ = {}
         for k in class_descr:
             v = cdict[k]
             d[k] = v.__class__.activate(v,klass,k)
@@ -296,10 +298,8 @@ class Activator(type):
         ad.update(klass.__class_descriptors__)
         klass.__all_descriptors__ = ad
 
+
         return klass
-
-
-
 
 
 
@@ -347,7 +347,7 @@ class ActiveClass(Activator):
         return self.__parent__[0]
 
     def getComponentName(self):
-        return self.__cname__        
+        return self.__cname__
 
     def _getConfigData(self, configKey, forObj):
         return NOT_FOUND
@@ -363,13 +363,13 @@ class ActiveClass(Activator):
             parent = '%s:%s' % (parent,name)
 
         return importString(parent),
-        
+
     __parent__ = Once(__parent__)
 
 
     def __cname__(self,d,a):
         return self.__name__.split('.')[-1]
-        
+
     __cname__ = Once(__cname__)
 
 
@@ -440,11 +440,12 @@ class Singleton(object):
     these will also be promoted to the metaclass.  This means, for example,
     that if you define an '__init__' method, it will be called with the
     singleton class object (or a subclass) when the class is created."""
-    
+
     __metaclass__ = SingletonClass
 
     def __new__(klass):
         return klass
 
 del _ignoreNames['__new__']     # we want this to be promoted, for subclasses
+
 
