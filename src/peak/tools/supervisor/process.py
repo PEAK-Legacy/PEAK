@@ -267,7 +267,7 @@ class ProcessSupervisor(EventDriven, config.ServiceArea):
                 self.log.debug("Child process %d has finished", proxy.pid)
 
             del self.processes[proxy.pid]
-            self._processCount.set(self.processCount()-1)
+            self.processCount.set(self.processCount()-1)
 
         elif proxy.stoppedBecause():
             self.log.error("Child process %d stopped due to signal %d (%s)",
