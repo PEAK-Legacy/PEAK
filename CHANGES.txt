@@ -2,6 +2,9 @@ Fixes and Enhancements since Version 0.5 alpha 2
 
  Changed, Enhanced, or Newly Deprecated Features
 
+ - The PEAK_CONFIG environment variable can now list multiple files, separated
+   by the platform's 'os.pathsep' (e.g. ':' on Unix, ';' on Windows).
+
  - It's no longer necessary to provide a '_defaultState()' implementation
    for an EntityDM: a default implementation is now supplied.
 
