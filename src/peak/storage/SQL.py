@@ -215,6 +215,37 @@ class SybaseConnection(SQLConnection):
     txnTime = binding.Once(txnTime)
 
 
+class PGSQLConnection(SQLConnection):
+
+    API = binding.bindTo("import:pgdb")
+
+    def _open(self):
+
+        a = self.address
+
+        return self.API.connect(
+            host=a.server, database=a.db, user=a.user, password=a.passwd
+        )
+            
+
+    def onJoinTxn(self, txnService):
+        # XXX 
+        self.connection.begin()
+
+
+
+    def txnTime(self,d,a):
+        # XXX
+        # First, ensure that we're in a transaction
+        self.txnSvc
+
+        # Then retrieve the server's idea of the current time
+        r = ~ self('SELECT getdate()')
+        return r[0]
+
+    txnTime = binding.Once(txnTime)
+
+
 
 
 
@@ -282,7 +313,7 @@ class GadflyURL(naming.ParsedURL):
 
 class GenericSQL_URL(naming.ParsedURL):
 
-    _supportedSchemes = ('sybase',)
+    _supportedSchemes = ('sybase', 'pgsql')
 
     pattern = """(?x)
     (//)?
@@ -312,5 +343,6 @@ class GenericSQL_URL(naming.ParsedURL):
 
 
 drivers = {
-    'sybase': SybaseConnection
+    'sybase': SybaseConnection,
+    'pgsql': PGSQLConnection
 }
