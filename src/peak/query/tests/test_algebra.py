@@ -4,7 +4,7 @@ from unittest import TestCase, makeSuite, TestSuite
 from peak.api import *
 from peak.tests import testRoot
 from peak.query.api import *
-#from peak.query.algebra import And, Or
+from peak.query.algebra import ThetaJoin, Not, And, Or, Select
 
 class SimplificationAndEquality(TestCase):
 
@@ -34,36 +34,33 @@ class SimplificationAndEquality(TestCase):
         self.condX = adapt('x',IBooleanExpression)
         self.condY = adapt('y',IBooleanExpression)
         self.condZ = adapt('z',IBooleanExpression)
+        self.rvA = adapt('A',IRelationVariable)
+        self.rvB = adapt('B',IRelationVariable)
+        self.rvC = adapt('C',IRelationVariable)
+        self.rvD = adapt('D',IRelationVariable)
 
-
-
-
-
-    def testCommutativity(self):
-
+    def testBooleanCommutativity(self):
         x,y,z = self.condX, self.condY, self.condZ
-
         self.assertEqual( (x & y & z), (z & y & x) )
         self.assertNotEqual( (x & y & z), (x & y) )
-
         self.assertEqual( (x|y|z), (z|y|x) )
         self.assertNotEqual( (x|y|z), (x|y) )
 
-
-    def testAndIsNotOr(self):
+    def testBooleanEqualities(self):
         x,y,z = self.condX, self.condY, self.condZ
         self.assertNotEqual( (x&y), (x|y) )
+        self.assertEqual(x,x)
+        self.assertNotEqual(x,y)
+        self.assertEqual( (x|x), x )
+        self.assertEqual( (x&x), x )
+        self.assertEqual( (x&y)&(x&y&z), (x&y&z) )
 
-
-    def testAssociativity(self):
+    def testBooleanAssociativity(self):
         x,y,z = self.condX, self.condY, self.condZ
-
         self.assertEqual( (x&(y&z)), ((x&y)&z) )
         self.assertNotEqual( (x|(y&z)), (x&y)|z )
-
         self.assertEqual( (x|(y|z)), ((x|y)|z) )
         self.assertNotEqual( (x&(y|z)), ((x|y)&z) )
-
 
     def testNegation(self):
         x,y,z = self.condX, self.condY, self.condZ
@@ -78,6 +75,91 @@ class SimplificationAndEquality(TestCase):
         self.assertEqual( ~~(x&y), (x&y) )
         self.assertEqual(~((x|y)&z), (~(x|y)|~z) )
         self.assertEqual((~(x&y)&~z), ~((x&y)|z) )
+
+
+
+
+
+    def testJoinCommutativity(self):
+
+        x,y,z = self.condX, self.condY, self.condZ
+        A,B,C,D = self.rvA, self.rvB, self.rvC, self.rvD
+
+        self.assertEqual(A.thetaJoin(x,B), B.thetaJoin(x,A))
+        self.assertEqual(A.thetaJoin(x,B,C), B.thetaJoin(x,A,C))
+        self.assertEqual(A.thetaJoin(x,B,C), C.thetaJoin(x,B,A))
+
+
+    def testJoinAssociativity(self):
+
+        x,y,z = self.condX, self.condY, self.condZ
+        A,B,C,D = self.rvA, self.rvB, self.rvC, self.rvD
+
+        self.assertEqual(
+            ThetaJoin(x,A,B).thetaJoin(y,C),
+            ThetaJoin(x&y,A,B,C)
+        )
+
+        self.assertEqual(
+            A.thetaJoin(x,B).thetaJoin(y,C.thetaJoin(z,D)),
+            A.thetaJoin(x&y&z,B,C,D)
+        )
+
+
+    def testSignatures(self):
+        x,y,z = self.condX, self.condY, self.condZ
+        A,B,C,D = self.rvA, self.rvB, self.rvC, self.rvD
+
+        self.assertRaises(TypeError,Or)         # too few args
+        self.assertRaises(TypeError,And)
+        self.assertRaises(TypeError,Not)
+        self.assertRaises(TypeError,Select)
+        self.assertRaises(TypeError,ThetaJoin)
+        self.assertRaises(TypeError,ThetaJoin,x)
+        self.assertRaises(TypeError,ThetaJoin,x,A)
+
+        self.assertRaises(TypeError,Not,x,y)    # too many args
+        self.assertRaises(TypeError,Select,x,A,B)
+
+    def testSelectionAssociativity(self):
+
+        x,y,z = self.condX, self.condY, self.condZ
+        A,B,C,D = self.rvA, self.rvB, self.rvC, self.rvD
+
+        self.assertEquals(
+            A.thetaJoin(x,B).select(y),
+            A.thetaJoin(x&y,B)
+        )
+
+        self.assertEquals(
+            A.select(y).select(z),
+            A.select(y&z)
+        )
+
+        self.assertEquals(
+            A.select(z).select(y),
+            A.select(y&z)
+        )
+
+        self.assertEquals(
+            A.thetaJoin(x,B).select(y).select(z),
+            A.thetaJoin(x&y&z,B)
+        )
+
+        self.assertEquals(
+            A.select(y).thetaJoin(x,B),
+            A.thetaJoin(x&y,B)
+        )
+
+
+
+
+
+
+
+
+
+
 
 
 TestClasses = (
