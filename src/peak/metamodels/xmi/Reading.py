@@ -26,9 +26,9 @@
 from peak.api import *
 from peak.util.SOX import Node, Document, load
 from kjbuckets import kjGraph
-import peak.metamodels.FeatureObjects
+import peak.model.api
 
-__bases__ = peak.metamodels.FeatureObjects,
+__bases__ = peak.model.api,
 
 
 
@@ -121,6 +121,47 @@ class XMIElement(XMINode):
 
 
 
+class FeatureTarget:
+
+    def __init__(self, element, featureName):
+        self.element = element
+        self.feature = getattr(self.element.__class__,featureName)
+        #self._XMIMap = self.feature._XMIMap
+
+    def addItem(self, obj):
+        self.feature.add(self.element,obj)
+
+    def _fromXMI(self, node):
+        return self.feature._fromXMI(self.element, node)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 class XMIFactory:
 
     def __init__(self,rootService):
@@ -134,7 +175,6 @@ class XMIFactory:
 
     def addForwardReference(self,key,target):
         self.forwards.add(key,target)
-
 
     def newItem(self,typeName,key):
 
@@ -153,13 +193,14 @@ class XMIFactory:
 
         return element
 
-
     def getSubtarget(self,target,name):
         featureName = getattr(target,'_XMIMap',{}).get(name)  
         if not featureName: return None
 
-        return getattr(target,featureName)
-
+        if isinstance(target,FeatureTarget):
+            return getattr(target,featureName)
+        else:
+            return FeatureTarget(target,featureName)
 
 
 class XMIMapMaker_Meta(type):
@@ -203,18 +244,17 @@ class XMIMapMaker:
 
 
 
-
 class StructuralFeature:
 
-    def _fromXMI(self,node):
+    def _fromXMI(feature,element,node):
     
         v = getattr(node,'xmi.value',None)
         if v is not None:
-            self.set(v)
+            feature.set(element, v)
         elif node._subNodes:
-            self.set(node._subNodes[0])
+            feature.set(element, node._subNodes[0])
         elif node._allNodes:
-            self.set(''.join(node._allNodes))
+            feature.set(element, ''.join(node._allNodes))
         else:
             return node
 
@@ -227,17 +267,17 @@ class Classifier(XMIMapMaker):
 
 
 class Reference:
-    def _fromXMI(self,node):
-        map(self.set,node._subNodes)
+    def _fromXMI(feature,element,node):
+        for n in node._subNodes:
+            feature.set(element,n)
 
 
 class Collection:
-    def _fromXMI(self,node):
-        add = self.addItem
+    def _fromXMI(feature,element,node):
+        add = feature.add
+        val = feature.get(element)
         for node in node._subNodes:
-            if not self.isReferenced(node): add(node)
-
-
+            if node not in val: add(element,node)
 
 
 

@@ -4,12 +4,12 @@ from peak.api import *
 
 import peak.metamodels.xmi.Reading
 import peak.metamodels.querying
-import peak.metamodels.FeatureObjects
+import peak.model.api
 
 __bases__ = (
     peak.metamodels.xmi.Reading,
     peak.metamodels.querying,
-    peak.metamodels.FeatureObjects,
+    peak.model.api,
 )
 
 config.setupModule()

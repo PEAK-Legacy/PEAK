@@ -44,7 +44,7 @@ class UMLClass(model.App):
     class ModelElement:
     
         def QualifiedName(self):
-            name = self.name()
+            name = self.name
             if not name:
                 return NodeList([])
                 
@@ -59,12 +59,12 @@ class UMLClass(model.App):
     class GeneralizableElement:
     
         def superclasses(self):
-            return self.generalizations.Get('parent')
+            return self.Get('generalizations').Get('parent')
 
         superclasses = ComputedFeature(superclasses)
         
         def subclasses(self):
-            return self.specializations.Get('child')
+            return self.Get('specializations').Get('child')
 
         subclasses = ComputedFeature(subclasses)
 

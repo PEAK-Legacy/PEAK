@@ -14,17 +14,16 @@ class UMLTest(TestCase):
 
     def checkNameSet(self):
         pkg=self.pkg
-        pkg.name.set('SomePackage')
-        assert pkg.name()=='SomePackage'
+        pkg.name = 'SomePackage'
+        assert pkg.name=='SomePackage'
         
     def checkAdd(self):
         pkg = self.pkg
-        oe = pkg.ownedElements
         Class = self.m.newElement('Class')
-        assert oe.isEmpty()
-        oe.addItem(Class)
-        assert not oe.isEmpty()
-        v = oe()
+        assert not pkg.ownedElements
+        pkg.addOwnedElements(Class)
+        v = pkg.ownedElements
+
         assert len(v)==1
         assert v[0] is Class
 
@@ -32,9 +31,10 @@ class UMLTest(TestCase):
         self.checkAdd()
         pkg = self.pkg
         oe = pkg.ownedElements
-        oe.removeItem(oe()[0])
-        assert oe.isEmpty()
-        assert len(oe())==0
+        pkg.removeOwnedElements(oe[0])
+
+        assert len(oe)==0
+
 
 
 
@@ -44,21 +44,21 @@ class QueryTests(TestCase):
     def setUp(self):
         self.m = m = UMLClass()
         self.pkg = pkg = m.newElement('Package')
-        pkg.name.set('SomePackage')
+        pkg.name = 'SomePackage'
         self.klass = klass = self.m.newElement('Class')
-        klass.name.set('FooClass')
-        pkg.ownedElements.addItem(klass)
+        klass.name = 'FooClass'
+        pkg.addOwnedElements(klass)
         
         
     def checkNameGet(self):
         for obj in self.pkg, self.klass:
             names = obj.Get('name')
             assert len(names)==1
-            assert names[0]==obj.name(), (names[0],obj.name())
+            assert names[0]==obj.name, (names[0],obj.name)
 
     def checkSelfWhere(self):
         for obj in self.pkg, self.klass:
-            where = obj.Where(ANY('name',Equals(obj.name())))
+            where = obj.Where(ANY('name',Equals(obj.name)))
             assert len(where)==1
 
     def checkContentsGet(self):
@@ -98,10 +98,10 @@ class XMITests(TestCase):
         from peak.metamodels.querying import NodeList
         self.roots = NodeList(m.roots)
         self.root = self.roots[0]
-        mm = self.mm = self.root.ownedElements.Where(ANY('name',Equals('Meta-MetaModel')))
+        mm = self.mm = self.root.Get('ownedElements').Where(ANY('name',Equals('Meta-MetaModel')))
 
     def checkModel(self):
-        assert self.root.name()=='Data'
+        assert self.root.name=='Data'
         
     def checkSubModel(self):
         assert self.mm

@@ -18,34 +18,35 @@ from UserList import UserList
 
 class ComputedFeature(object):
 
+    # XXX ComputedFeature is seriously kludged; it needs a lot of work before
+    # XXX it'll really look like a StructuralFeature, but it makes the tests
+    # XXX pass for now.
+
     def __init__(self,func):
         self.func = func
 
-    def __get__(self, obj, typ=None):
+    '''def __get__(self, obj, typ=None):
         if obj is not None:
             newSelf = self.__class__(self.func)
             newSelf.parent = obj
             return newSelf
-        return self
+        return self'''
         
-    def values(self):
-        return self.func(self.parent).data
+    def _getList(feature, element):
+        return feature.func(element).data
 
-    __call__ = values
-
-
-
-
+    #__call__ = values
 
 
 
 class StructuralFeature:
 
-    def Get(self,name,recurse=None):
-        return NodeList(self.values()).Get(name,recurse)
+    def Get(feature,element,name,recurse=None):
+        return NodeList(feature._getList(element)).Get(name,recurse)
         
-    def Where(self,criteria=None):
-        return NodeList(self.values()).Where(criteria)
+    def Where(feature,element,criteria=None):
+        return NodeList(feature._getList(element)).Where(criteria)
+
 
 class Classifier:
 
@@ -79,7 +80,6 @@ class App:
 
 
 
-
 class NodeList(UserList):
 
     def __init__(self,data=None):
@@ -99,7 +99,9 @@ class NodeList(UserList):
         while input:
             data = input.pop()
             for item in data:
-                values = getattr(item,name,empty).values()
+                values = getattr(item.__class__,name,None)
+                if values is not None:
+                    values=values._getList(item)
                 if values:
                     output.extend(list(values))
                     if recurse: input.append(values)
@@ -108,8 +110,6 @@ class NodeList(UserList):
 
     def Where(self,criteria=None):
         return self.__class__(filter(criteria,self.data))
-
-
 
 
 
