@@ -535,11 +535,6 @@ class Component(Base):
 
     """An implementation (solution-domain) component"""
 
-    def _componentName(self, dict, name):
-        return self.__class__.__name__.split('.')[-1]
-
-    _componentName = Once(_componentName)
-
     def __instance_provides__(self,d,a):
         from peak.config.config_components import PropertyMap
         pm=PropertyMap()
@@ -570,6 +565,11 @@ class Component(Base):
 
     def registerProvider(self, ifaces, provider):
         self.__instance_provides__.registerProvider(ifaces, provider)
+
+
+
+
+
 
 
 class AutoCreatable(OnceClass, Meta):

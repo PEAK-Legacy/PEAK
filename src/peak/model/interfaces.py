@@ -43,10 +43,6 @@ class ISEF(Interface.Base):
 
     """Basic interface supplied by all StructuralModel objects"""
 
-    _componentName = Interface.Attribute(
-        """Name of this component in its immediate context"""
-    )
-
     def lookupComponent(name):
         """Look up a name in context - see 'binding.lookupComponent()'"""
 
@@ -61,6 +57,10 @@ class ISEF(Interface.Base):
 
 class IService(ISEF):
     """A component instance compatible with the S-E-F framework"""
+
+
+
+
 
 
 

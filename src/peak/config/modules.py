@@ -98,10 +98,9 @@
 
         Note that some PEAK classes and metaclasses provide a "short
         form" of the class name for use when appropriate.  For example,
-        Feature classes have an 'attrName' class attribute, and instances
-        of most SEF types have a '_componentName' instance attribute.  In
-        a pinch, you can also use '__name__.split(".")[-1]' to get the undotted
-        form of a class' name.
+        Feature classes have an 'attrName' class attribute.  In a pinch, you
+        can also use '__name__.split(".")[-1]' to get the undotted form of
+        a class' name.
 
     Special Considerations for Mutables and Dynamic Initialization
 
@@ -201,6 +200,7 @@ def setupObject(obj, **attrs):
     for k,v in attrs.items():
         if not hasattr(obj,k):
             setattr(obj,k,v)
+
 
 
 def getCodeListForModule(module, code=None):
