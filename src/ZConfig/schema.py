@@ -462,6 +462,26 @@ class SchemaParser(BaseParser):
         keytype, valuetype, datatype = self.get_sect_typeinfo(attrs)
         self._schema = info.SchemaType(keytype, valuetype, datatype,
                                        handler, self._url, self._registry)
+
+        if attrs.has_key("extends"):
+            sources = attrs["extends"].split()
+            sources.reverse()
+            for src in sources:
+                src = url.urljoin(self._url, src)
+                src, fragment = url.urldefrag(src)
+                if fragment:
+                    self.error("schema extends many not include"
+                               " a fragment identifier")
+                base = self._loader.loadURL(src)
+                self._schema._attrmap.update(base._attrmap)
+                self._schema._keymap.update(base._keymap)
+                self._schema._children.extend(base._children)
+                self._schema._types.update(base._types)
+                datatype = base.datatype
+
+            if not attrs.has_key("datatype"):
+                self._schema.datatype = datatype
+
         self._localtypes = self._schema._types
         self._stack = [self._schema]
 
