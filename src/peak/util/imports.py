@@ -2,7 +2,7 @@
 
 __all__ = [
     'importString', 'importObject', 'importSequence', 'importSuite',
-    'lazyImport', 'lazyModule',
+    'lazyModule',
 ]
 
 import __main__
@@ -80,48 +80,47 @@ def importString(name, globalDict=defaultGlobalDict):
     return item
 
 
-class lazyImport:
+def lazyModule(modname, relativePath=None):
 
-    """Proxy standing in for something that shouldn't import until later
+    """Return module 'modname', but with its contents loaded "on demand"
 
-        Example::
-        
-            aModule = lazyImport('somePackage.aModule:')
-        
-        Usage is like 'importString()', it just doesn't actually import
-        the item until you try to access an attribute of it.  Note that
-        you can't use this in situations where you need the real object!
-        That is, if you need a real module (as is needed for a module's
-        '__bases__' list), you can't use this.  But if all you need is
-        to access attributes of the module, this will do just fine.
-    """
+    This function returns 'sys.modules[modname]', if present.  Otherwise
+    it creates a 'LazyModule' object for the specified module, caches it
+    in 'sys.modules', and returns it.
 
-    needsToImport = 1
+    'LazyModule' is a subclass of the standard Python module type, that
+    remains empty until an attempt is made to access one of its
+    attributes.  At that moment, the module is loaded into memory.
 
-    def __init__(self, what):
-        self.what = what
+    Note that calling 'lazyModule' with the name of a non-existent or
+    unimportable module will delay the 'ImportError' until the moment
+    access is attempted.  The 'ImportError' will occur every time an
+    attribute access is attempted, until the problem is corrected.
 
-    def __getattr__(self, attr):
+    This function also takes an optional second parameter, 'relativePath',
+    which will be interpreted as a '/'-separated path string relative to
+    'modname'.  If a 'relativePath' is supplied, the module found by
+    traversing the path will be loaded instead of 'modname'.  In the path,
+    '.' refers to the current module, and '..' to the current module's
+    parent.  For example::
 
-        if self.needsToImport:
-            self.what = importString(self.what)
-            self.needsToImport = 0
+        fooBaz = lazyModule('foo.bar','../baz')
 
-        return getattr(self.what, attr)
+    will return the module 'foo.baz'.  The main use of the 'relativePath'
+    feature is to allow relative imports in modules that are intended for
+    use with module inheritance.  Where an absolute import would be carried
+    over as-is into the inheriting module, an import relative to '__name__'
+    will be relative to the inheriting module, e.g.::
 
+        something = lazyModule(__name__,'../path/to/something')
 
-
-
-
-
-
-
-
-
+    The above code will have different results in each module that inherits
+    it."""
 
 
 
-def lazyModule(modname):
+
+
     class LazyModule(ModuleType):
 
         __slots__=()
@@ -133,7 +132,7 @@ def lazyModule(modname):
             if '.' in modname:
                 # ensure parent is in sys.modules and parent.modname=self
                 splitpos = modname.rindex('.')
-                mod = importString(modname[:splitpos])
+                mod = importString(modname[:splitpos]+':')
                 setattr(mod,modname[splitpos+1:],self)
                 
             oldGA = LazyModule.__getattribute__
@@ -158,9 +157,51 @@ def lazyModule(modname):
             # Finish off by returning what was asked for
             return modGA(self,attr)
 
+
+
+
+
+
+    if relativePath:
+        module = modname.split('.')
+
+        for p in relativePath.split('/'):
+
+            if p=='..':
+                module.pop()
+
+            elif p!='.':
+                module.append(p)
+
+        modname = '.'.join(module)
+
+
     if modname not in modules:
         modules[modname] = LazyModule(modname)
+
     return modules[modname]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 def importObject(spec, globalDict=defaultGlobalDict):
     """Convert a possible string specifier to an object
