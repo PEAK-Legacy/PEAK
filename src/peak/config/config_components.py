@@ -12,7 +12,7 @@ from Interface import Interface
 
 
 __all__ = [
-    'GlobalConfig', 'LocalConfig', 'PropertyMap', 'LazyLoader', 'ConfigReader',
+    'SystemConfig', 'AppConfig', 'PropertyMap', 'LazyLoader', 'ConfigReader',
     'loadConfigFile', 'loadMapping', 'PropertySet', 'fileNearModule',
     'Provider','CachingProvider','iterParents','findUtilities','findUtility',
 ]
@@ -55,7 +55,7 @@ def iterParents(component=None):
             last      = component
             component = getParentComponent(component)
 
-        component = config.getLocal(last)
+        component = config.getAppConfig(last)
 
 
 def findUtilities(iface, component=None):
@@ -408,7 +408,7 @@ class BasicConfig(Component):
 
 
 
-class GlobalConfig(BasicConfig):
+class SystemConfig(BasicConfig):
 
     def setup(self, propertyMap):
         loadConfigFile(propertyMap, fileNearModule('peak','peak.ini'))
@@ -416,18 +416,18 @@ class GlobalConfig(BasicConfig):
 
     def setParentComponent(self,parentComponent,componentName=None):
         if parentComponent is not None or componentName is not None:
-            raise TypeError("Global config can't have a parent or name")
+            raise TypeError("System config can't have a parent or name")
 
 
 
-class LocalConfig(BasicConfig):
+class AppConfig(BasicConfig):
 
     def setParentComponent(self,parentComponent,componentName=None):
 
-        assert isinstance(parentComponent,GlobalConfig), \
-            "LocalConfig parent must be GlobalConfig"
+        assert isinstance(parentComponent,SystemConfig), \
+            "AppConfig parent must be SystemConfig instance"
 
-        super(LocalConfig,self).setParentComponent(
+        super(AppConfig,self).setParentComponent(
             parentComponent,componentName
         )
 
@@ -500,10 +500,10 @@ def CachingProvider(callable, weak=False, local=False):
 
         if local:
 
-            foundIn = config.getLocal(forObj)
+            foundIn = config.getAppConfig(forObj)
 
             if foundIn is None:
-                foundIn = config.getGlobal()
+                foundIn = config.getSysConfig()
 
         else:
             # get the owner of the property map

@@ -6,8 +6,8 @@ from Interface import Interface
 
 class PropertyTest(TestCase):
 
-    def checkGlobalProp(self):
-        config.setGlobalProperty('peak.config.tests.foo',1)
+    def checkSystemProp(self):
+        config.setSystemProperty('peak.config.tests.foo',1)
         assert config.getProperty('peak.config.tests.foo')==1
 
 

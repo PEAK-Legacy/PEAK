@@ -7,63 +7,63 @@ from config_components import *
 from weakref import WeakKeyDictionary
 
 __all__ = [
-    'getGlobal','setGlobal', 'registerGlobalProvider',
-    'getLocal', 'setLocal',  'registerLocalProvider',
+    'getSysConfig', 'setSysConfig', 'registerSystemProvider',
+    'getAppConfig', 'setAppConfig', 'registerAppProvider',
 
     'getProperty',
 
-    'setGlobalProperty', 'setGlobalRule', 'setGlobalDefault',
+    'setSystemProperty', 'setSystemRule', 'setSystemDefault',
     'setPropertyFor',    'setRuleFor',    'setDefaultFor',
 ]
 
-_globalCfg = EigenCell()
+_systemCfg = EigenCell()
 
 
-def getGlobal():
+def getSysConfig():
 
-    """Return the global configuration object"""
+    """Return the system (per-interpreter) configuration object"""
 
-    if not hasattr(_globalCfg,'value'):
-        setGlobal(GlobalConfig())
+    if not hasattr(_systemCfg,'value'):
+        setSysConfig(SystemConfig())
 
-    return _globalCfg.get()
+    return _systemCfg.get()
 
 
-def setGlobal(cfg):
+def setSysConfig(cfg):
 
-    """Replace the global configuration, as long as it hasn't been used yet"""
+    """Replace the system configuration, as long as it hasn't been used yet"""
 
-    _globalCfg.set(cfg)
-    setLocal(cfg, None)     # force local config for global config to be None
+    _systemCfg.set(cfg)
+    setAppConfig(cfg, None)     # force app config for system config to be None
 
 
 
 
 _defaultCfg = EigenCell()
-_localCfgs = EigenDict()
-_localCfgs.data = WeakKeyDictionary()
+_appConfigs = EigenDict()
+_appConfigs.data = WeakKeyDictionary()
 
 
-def getLocal(forRoot=None):
+def getAppConfig(forRoot=None):
 
-    """Return a local configuration object for 'forRoot'"""
+    """Return app configuration object for 'forRoot'"""
 
     forRoot = binding.getRootComponent(forRoot)
 
     # Only weakref-able objects can have a root assigned
 
-    if type(forRoot).__weakrefoffset__ and forRoot in _localCfgs:
-        return _localCfgs[forRoot]
+    if type(forRoot).__weakrefoffset__ and forRoot in _appConfigs:
+        return _appConfigs[forRoot]
         
     if not hasattr(_defaultCfg,'value'):
-        setLocal(None, LocalConfig(getGlobal()))
+        setAppConfig(None, AppConfig(getSysConfig()))
         
     return _defaultCfg.get()
 
 
-def setLocal(forRoot, cfg):
+def setAppConfig(forRoot, cfg):
 
-    """Replace local config for 'forRoot', as long as it hasn't been used"""
+    """Replace app config for 'forRoot', as long as it hasn't been used"""
 
     forRoot = binding.getRootComponent(forRoot)
 
@@ -71,13 +71,13 @@ def setLocal(forRoot, cfg):
         _defaultCfg.set(cfg)
 
     elif type(forRoot).__weakrefoffset__:
-        _localCfgs[forRoot] = cfg
+        _appConfigs[forRoot] = cfg
 
     else:
         raise TypeError(
-            "Root objects w/custom LocalConfigs must be weak-referenceable"
+            "Root object w/custom AppConfig must be weak-referenceable",
+            forRoot
         )
-
 
 
 def getProperty(propName, obj=None, default=NOT_GIVEN):
@@ -121,25 +121,25 @@ def getProperty(propName, obj=None, default=NOT_GIVEN):
 
 
 
-def registerGlobalProvider(ifaces, provider):
-    getGlobal().registerProvider(ifaces, provider)
+def registerSystemProvider(ifaces, provider):
+    getSysConfig().registerProvider(ifaces, provider)
 
 
-def setGlobalProperty(propName, value):
+def setSystemProperty(propName, value):
 
-    pm = findUtility(IPropertyMap, getGlobal())
+    pm = findUtility(IPropertyMap, getSysConfig())
     pm.setValue(propName, value)
 
 
-def setGlobalRule(propName, ruleObj):
+def setSystemRule(propName, ruleObj):
 
-    pm = findUtility(IPropertyMap, getGlobal())
+    pm = findUtility(IPropertyMap, getSysConfig())
     pm.setRule(propName, ruleObj)
 
 
-def setGlobalDefault(propName, defaultObj):
+def setSystemDefault(propName, defaultObj):
 
-    pm = findUtility(IPropertyMap, getGlobal())
+    pm = findUtility(IPropertyMap, getSysConfig())
     pm.setDefault(propName, defaultObj)
 
 
@@ -162,8 +162,8 @@ def setGlobalDefault(propName, defaultObj):
 
 
 
-def registerLocalProvider(forRoot, ifaces, provider):
-    getLocal(forRoot).registerProvider(ifaces, provider)
+def registerAppProvider(forRoot, ifaces, provider):
+    getAppConfig(forRoot).registerProvider(ifaces, provider)
 
 
 def setPropertyFor(obj, propName, value):
