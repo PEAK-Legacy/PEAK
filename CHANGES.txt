@@ -1,5 +1,14 @@
 Fixes and Enhancements since Version 0.5 alpha 3
 
+ - The 'peak.util.SOX' module now uses only one parser, based directly on
+   'expat', instead of using SAX.  The new parser expects a new node interface,
+   'IXMLBuilder', but adapters from the previous interfaces ('ISOXNode' and
+   'ISOXNode_NS') are supplied for backward compatibility.  All of PEAK's
+   direct XML handling (currently just 'peak.storage.xmi' and
+   'peak.web.templates') have been refactored to use the new interface.  Some
+   parsing classes (such as 'ObjectMakingHandler', 'NSHandler', and
+   'DOMletParser') are no longer available.
+
  - 'peak.web' no longer uses Zope X3 for HTTP publishing support; it has been
    refactored to use a "simpler, more uniform architecture":http://www.eby-sarna.com/pipermail/peak/2004-May/001462.html
    See also "more on the architecture":http://www.eby-sarna.com/pipermail/peak/2004-June/001482.html

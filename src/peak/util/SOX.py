@@ -29,15 +29,15 @@
 """
 
 
-from xml.sax import ContentHandler, parse
 from xml.sax.saxutils import XMLGenerator
-from protocols import Interface, advise
+from protocols import Interface, advise, Adapter
 from kjbuckets import kjGraph
 
 __all__ = [
-    'load', 'ISOXNode', 'ISOXNode_NS', 'ObjectMakingHandler', 'NSHandler',
+    'load', 'ISOXNode', 'ISOXNode_NS', 'IXMLBuilder', 'ExpatBuilder',
     'Node', 'Node_NS', 'Document', 'Document_NS', 'IndentedXML',
 ]
+
 
 class ISOXNode(Interface):
 
@@ -67,7 +67,7 @@ class ISOXNode(Interface):
     def _addText(text):
         """Add text string 'text' to node"""
 
-    def _addNode(subObj):
+    def _addNode(name,subObj):
         """Add finished sub-node 'subObj' to node"""
 
     def _finish():
@@ -95,7 +95,7 @@ class ISOXNode_NS(Interface):
         """Add text string 'text' to node"""
 
 
-    def _addNode(subObj):
+    def _addNode(name,subObj):
         """Add finished sub-node 'subObj' to node"""
 
 
@@ -121,104 +121,22 @@ class ISOXNode_NS(Interface):
 
 
 
-class ObjectMakingHandler(ContentHandler):
+class IXMLBuilder(Interface):
 
-    """SAX handler that makes a pseudo-DOM"""
+    def addChild(data):
+        """Add 'data' to element's children"""
 
-    def __init__(self,documentRoot):
-        self.stack = [documentRoot]
-        ContentHandler.__init__(self)
+    def finish():
+        """Return finished value to be passed to parent's 'addChild()'"""
 
-    def startElement(self, name, atts):
-        top = self.stack[-1]
-        node = top._newNode(name,atts)
-        node._acquireFrom(top)
-        self.stack.append(node)
+    def newTag(name,attrs,stack,nsURI):
+        """Create and return a subnode for a tag"""
 
-    def characters(self, ch):
-        self.stack[-1]._addText(ch)
+    def addText(xml):
+        """Return a new subnode for text"""
 
-    def endElement(self, name):
-        stack = self.stack
-        top = stack.pop()
-
-        if top._name != name:
-            raise SyntaxError,"End tag '%s' found when '%s' was wanted" % (name, top._name)
-
-        out = top._finish()
-
-        if out is not None:
-            stack[-1]._addNode(name,out)
-
-    def endDocument(self):
-        self.document = self.stack[0]._finish()
-        del self.stack
-
-
-
-
-
-
-
-
-
-class NSHandler(ObjectMakingHandler):
-
-    """Namespace-handling SAX handler; uses newer interface"""
-
-    def __init__(self,documentRoot):
-
-        ObjectMakingHandler.__init__(self,documentRoot)
-
-        self.ns2uri = {}
-        self.uri2ns = kjGraph()
-        self.nsStack = []
-
-
-    def startElement(self, name, atts):
-
-        a = {}; prefix=None
-
-        for k,v in atts.items():
-            a[k]=v
-
-            if k.startswith('xmlns'):
-
-                rest = k[5:]
-
-                if rest:
-                    if rest[0]==':':
-                        prefix=rest[1:]
-                    else:
-                        continue
-                else:
-                    prefix=''
-
-                del a[k]
-                self.add_prefix(prefix,v)
-
-        top = self.stack[-1]
-        node = top._newNode(name,a)
-        self.stack.append(node)
-        if prefix is not None: node._setNS(self.ns2uri, self.uri2ns)
-
-
-    def add_prefix(self, prefix, uri):
-
-        while len(self.nsStack) <= len(self.stack):
-            self.nsStack.append( (self.ns2uri, self.uri2ns) )
-
-        self.ns2uri = self.ns2uri.copy()
-        self.ns2uri[prefix] = uri
-        self.uri2ns = ~kjGraph( self.ns2uri.items() )
-
-
-    def endElement(self, name):
-
-        while len(self.nsStack) >= len(self.stack):
-            self.ns2uri, self.uri2ns = self.nsStack.pop()
-
-        ObjectMakingHandler.endElement(self, name)
+    def addLiteral(xml):
+        """Return a new subnode for literals such as comments, PIs, etc."""
 
 
 
@@ -231,6 +149,88 @@ class NSHandler(ObjectMakingHandler):
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+class SoxNodeAsXMLBuilder(Adapter):
+
+    advise(
+        instancesProvide=[IXMLBuilder],
+        asAdapterForProtocols=[ISOXNode]
+    )
+
+    def addText(self,text):
+        self.subject._addText(text)
+
+    def addLiteral(self,text):
+        pass
+
+    def finish(self):
+        return self.subject._finish()
+
+    def addChild(self,node):
+        self.subject._addNode(self.lastName,node)    # XXX
+
+    def newTag(self,name,attrs,newPrefixes,nsURI):
+        node = self.subject._newNode(name,dict(attrs))
+        node._acquireFrom(self.subject)
+        self.lastName = name
+        return node
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class NSNodeAsXMLBuilder(Adapter):
+
+    advise(
+        instancesProvide=[IXMLBuilder],
+        asAdapterForProtocols=[ISOXNode_NS]
+    )
+
+    def addText(self,text):
+        self.subject._addText(text)
+
+    def addLiteral(self,text):
+        pass
+
+    def finish(self):
+        return self.subject._finish()
+
+    def addChild(self,node):
+        self.subject._addNode(self.lastName,node)    # XXX
+
+    def newTag(self,name,attrs,newPrefixes,nsURI):
+        node = self.subject._newNode(name,dict(attrs))
+        if newPrefixes:
+            ns2uri = dict(
+                [(prefix,stack[-1]) for prefix,stack in nsURI.items()]
+            )
+            node._setNS(ns2uri, ~kjGraph(ns2uri.items()))
+        self.lastName = name
+        return node
 
 
 
@@ -303,9 +303,9 @@ class Document(Node):
     def _newNode(self,name,atts):
         return Node(name,atts)
 
-
 class Node_NS(Node):
 
+    advise( instancesProvide = [ISOXNode_NS] )
     ns2uri = {}
     uri2ns = kjGraph()
 
@@ -335,18 +335,18 @@ def load(filename_or_stream, documentObject=None, namespaces=False):
         if documentObject is None:
             documentObject = Document_NS()
 
-        handler = NSHandler(documentObject)
-
     else:
         if documentObject is None:
             documentObject = Document()
 
-        handler = ObjectMakingHandler(documentObject)
 
-    parse(filename_or_stream, handler)
-    return handler.document
+    if isinstance(filename_or_stream,str):
+        filename_or_stream = open(filename_or_stream,'rt')
 
+    elif hasattr(filename_or_stream,'getByteStream'):
+        filename_or_stream = filename_or_stream.getByteStream()
 
+    return ExpatBuilder().parseFile(filename_or_stream,documentObject)
 
 
 
@@ -402,6 +402,129 @@ class IndentedXML(XMLGenerator):
 
 
 
+
+
+
+
+
+
+class ExpatBuilder:
+
+    """Parser that assembles a document"""
+
+    def __init__(self):
+        self.parser = self.makeParser()
+        self.stack   = []   # "object being assembled" stack
+        self.nsStack = []
+        self.nsUri   = {}   # URI stack for each NS prefix
+
+    def makeParser(self):
+        from xml.parsers.expat import ParserCreate
+        p = ParserCreate()
+        p.ordered_attributes = True
+        p.returns_unicode = True
+        p.specified_attributes = True
+        p.StartDoctypeDeclHandler = self.startDoctype
+        p.StartElementHandler = self.startElement
+        p.EndElementHandler = self.endElement
+        p.CommentHandler = self.comment
+
+        # We don't use:
+        # .StartNamespaceDeclHandler
+        # .EndNamespaceDeclHandler
+        # .XmlDeclHandler(version, encoding, standalone)
+        # .ElementDeclHandler(name, model)
+        # .AttlistDeclHandler(elname, attname, type, default, required)
+        # .EndDoctypeDeclHandler()
+        # .ProcessingInstructionHandler(target, data)
+        # .UnparsedEntityDeclHandler(entityN,base,systemId,publicId,notationN)
+        # .EntityDeclHandler(
+        #      entityName, is_parameter_entity, value, base,
+        #      systemId, publicId, notationName)
+        # .NotationDeclHandler(notationName, base, systemId, publicId)
+        # .StartCdataSectionHandler()
+        # .EndCdataSectionHandler()
+        # .NotStandaloneHandler()
+        return p
+
+
+
+    def parseFile(self, stream, rootNode):
+        self.__init__()
+        self.stack.append(IXMLBuilder(rootNode))
+        self.parser.CharacterDataHandler = self.stack[-1].addText
+        self.parser.ParseFile(stream)
+        return self.stack[0].finish()
+
+
+    def comment(self,data):
+        self.buildLiteral(u'<!--%s-->' % data)
+
+    def buildLiteral(self,xml):
+        self.stack[-1].addLiteral(xml)
+
+    def startDoctype(self, doctypeName, systemId, publicId, has_internal):
+        if self.chars:
+            self.stack[-1].addText(''.join(self.chars)); self.chars[:] = []
+
+        if publicId:
+            p = ' PUBLIC %s %s' % (quoteattr(publicId),quoteattr(systemId))
+        elif systemId:
+            p = ' SYSTEM %s' % quoteattr(systemId)
+        else:
+            p = ''
+
+        # we ignore internal DTD subsets; they're not useful for HTML
+        xml = u'<!DOCTYPE %s%s>\n' % (doctypeName, p)
+
+        self.buildLiteral(xml)
+
+
+
+
+
+
+
+
+
+
+
+
+    def startElement(self, name, attrs):
+
+        prefixes = []; a = []
+        pop = attrs.pop
+        append = a.append
+        
+        while attrs:
+            k = pop(0); v=pop(0)
+            append((k,v))
+
+            if not k.startswith('xmlns'):
+                continue
+
+            rest = k[5:]
+            if not rest:
+                ns = ''
+            elif rest.startswith(':'):
+                ns = rest[1:]
+            else:
+                continue
+
+            self.nsUri.setdefault(ns,[]).append(v)
+            prefixes.append(ns)
+
+        self.nsStack.append(prefixes)
+        element = self.stack[-1].newTag(name, a, prefixes, self.nsUri)
+        self.stack.append(IXMLBuilder(element))
+        self.parser.CharacterDataHandler = self.stack[-1].addText
+
+    def endElement(self, name):
+        last = self.stack.pop()
+        self.parser.CharacterDataHandler = self.stack[-1].addText
+        self.stack[-1].addChild(last.finish())
+        for prefix in self.nsStack.pop():
+            self.nsUri[prefix].pop()
 
 
 

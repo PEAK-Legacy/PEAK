@@ -246,13 +246,16 @@ type_tag_to_kind = dict([
 
 class XMINode(object):
 
+    protocols.advise(instancesProvide=[SOX.IXMLBuilder])
+
+    nodeClass = object.__dict__['__class__']
+
     indexAttrs = 'xmi.uuid', 'xmi.id'
 
     __slots__ = [
         '_name','subNodes','allNodes','attrs','index','document',
         '__weakref__','parent','isExtension','ns2uri','uri2ns'
     ]
-
 
     def __init__(self, parent=None, name='',atts={}):
         self._name = name
@@ -267,17 +270,31 @@ class XMINode(object):
             self.ns2uri = parent.ns2uri
             self.uri2ns = parent.uri2ns
 
-    def _addNode(self,name,node):
+
+    def addLiteral(self,text):
+        pass
+
+
+    def newTag(self,name,attrs,newPrefixes,nsURI):
+        node = self.nodeClass(self,name,dict(attrs))
+        if newPrefixes:
+            ns2uri = dict(
+                [(prefix,stack[-1]) for prefix,stack in nsURI.items()]
+            )
+            node._setNS(ns2uri, ~kjGraph(ns2uri.items()))
+        return node
+
+
+    def addChild(self,node):
         self.allNodes.append(node)
         self.subNodes.append(node)
 
-    def _newNode(self,name,atts):
-        return self.__class__(self,name,atts)
 
-    def _addText(self,text):
+    def addText(self,text):
         self.allNodes.append(text)
 
-    def _finish(self):
+
+    def finish(self):
         atts = self.attrs
         for a in self.indexAttrs:
             if atts.has_key(a):
@@ -304,6 +321,11 @@ class XMINode(object):
         return Id
 
 
+
+
+
+
+
     def getRef(self):
 
         atts = self.attrs
@@ -323,8 +345,27 @@ class XMINode(object):
 
         return self.index[ref].getId()
 
+
     def _setNS(self, ns2uri, uri2ns):
         self.ns2uri, self.uri2ns = ns2uri, uri2ns
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     def getValue(self, feature, dm):
 
@@ -629,11 +670,7 @@ class XMIDocument(binding.Component, XMINode):
     version = binding.Make(lambda self: self.attrs['xmi.version'])
 
 
-    def _newNode(self,name,atts):
-        return self.nodeClass(self,name,atts)
-
-
-    def _finish(self):
+    def finish(self):
 
         self.index[()] = root = self.findNode('XMI.content')
 
@@ -641,10 +678,14 @@ class XMIDocument(binding.Component, XMINode):
             sub.parent = None
         return self
 
+
     def writeTo(self, indStrm):
         indStrm.write('<?xml version="1.0" encoding="utf-8">\n')
         for node in self.subNodes:
             node.writeTo(indStrm)
+
+
+
 
 
 

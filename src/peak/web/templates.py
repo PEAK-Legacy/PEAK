@@ -22,9 +22,10 @@ from xml.sax.saxutils import quoteattr, escape
 from publish import TraversalPath
 from environ import getAbsoluteURL, getInteraction, getCurrent
 from environ import childContext, parentContext
+from peak.util import SOX
 
 __all__ = [
-    'TEMPLATE_NS', 'DOMLETS_PROPERTY', 'DOMletParser', 'TemplateDocument'
+    'TEMPLATE_NS', 'DOMLETS_PROPERTY', 'TemplateDocument'
 ]
 
 TEMPLATE_NS = 'http://peak.telecommunity.com/DOMlets/'
@@ -36,7 +37,6 @@ def infiniter(sequence):
     while 1:
         for item in sequence:
             yield item
-
 
 
 class DOMletState(binding.Component):
@@ -121,144 +121,22 @@ class DOMletAsHTTP(binding.Component):
 
 
 
-class DOMletParser(binding.Component):
+class ElementAsBuilder(protocols.Adapter):
 
-    """Parser that assembles a Document"""
-
-    def parser(self):
-
-        from xml.parsers.expat import ParserCreate
-        p = ParserCreate()
-
-        p.ordered_attributes = True
-        p.returns_unicode = True
-        p.specified_attributes = True
-
-        p.StartDoctypeDeclHandler = self.startDoctype
-        p.StartElementHandler = self.startElement
-        p.EndElementHandler = self.endElement
-        p.CharacterDataHandler = self.characters
-        p.StartNamespaceDeclHandler = self.startNS
-        p.EndNamespaceDeclHandler = self.endNS
-        p.CommentHandler = self.comment
-
-        # We don't use:
-        # .StartNamespaceDeclHandler
-        # .EndNamespaceDeclHandler
-        # .XmlDeclHandler(version, encoding, standalone)
-        # .ElementDeclHandler(name, model)
-        # .AttlistDeclHandler(elname, attname, type, default, required)
-        # .EndDoctypeDeclHandler()
-        # .ProcessingInstructionHandler(target, data)
-        # .UnparsedEntityDeclHandler(entityN,base,systemId,publicId,notationN)
-        # .EntityDeclHandler(
-        #      entityName, is_parameter_entity, value, base,
-        #      systemId, publicId, notationName)
-        # .NotationDeclHandler(notationName, base, systemId, publicId)
-        # .StartCdataSectionHandler()
-        # .EndCdataSectionHandler()
-        # .NotStandaloneHandler()
-        return p
-
-    parser = binding.Make(parser)
-
-    domlets = binding.Make(list) # "nearest explicit DOMlet" stack
-    stack   = binding.Make(list) # "DOMlet being assembled" stack
-    nsUri   = binding.Make(dict) # URI stack for each NS prefix
-
-    myNs = binding.Make(        # prefixes that currently map to TEMPLATE_NS
-        lambda self: dict(
-            [(p,1) for (p,u) in self.nsUri.items() if u and u[-1]==TEMPLATE_NS]
-        )
+    protocols.advise(
+        instancesProvide = [SOX.IXMLBuilder],
+        asAdapterForProtocols=[IDOMletElement]
     )
 
-
-    def parseFile(self, stream, document=None):
-        if document is None:
-            document = TemplateDocument(self.getParentComponent())
-        self.stack.append(document)
-        self.domlets.append(document)
-        self.parser.ParseFile(stream)
-
-
-    def comment(self,data):
-        self.buildLiteral(u'<!--%s-->' % data)
-
-
-    def startNS(self, prefix, uri):
-        self.nsUri.setdefault(prefix,[]).append(uri)
-        if uri==TEMPLATE_NS:
-            self._delBinding('myNs')
-
-
-    def endNS(self, prefix):
-        uri = self.nsUri[prefix].pop()
-        if uri==TEMPLATE_NS:
-            self._delBinding('myNs')
-
-
-
-
-
-
-
-
-    nsStack = binding.Make(list)
-
-    def pushNSinfo(self,attrs):
-
-        prefixes = []
-
-        for i in range(0,len(attrs),2):
-
-            k,v = attrs[i], attrs[i+1]
-
-            if not k.startswith('xmlns'):
-                continue
-
-            rest = k[5:]
-            if not rest:
-                ns = ''
-            elif rest.startswith(':'):
-                ns = rest[1:]
-            else:
-                continue
-
-            self.startNS(ns,v)
-            prefixes.append(ns)
-
-        self.nsStack.append(prefixes)
-
-
-    def popNSinfo(self):
-        map(self.endNS, self.nsStack.pop())
-
-
-
-
-
-
-
-
-
-
-
-
-    def startElement(self, name, attrs):
-
-        self.pushNSinfo(attrs)
-
-        a = []
-        append = a.append
+    def newTag(self, name,attrs,stack,nsURI):
+        self.nsUri = nsURI
         myNs = self.myNs or ('',)   # use unprefixed NS if no NS defined
-
-        top = self.stack[-1]
+        top = self.subject
         factory = top.tagFactory
         domletName = dataSpec = paramName = None
+        a = []; append = a.append
 
-        for i in range(0,len(attrs),2):
-
-            k,v = attrs[i], attrs[i+1]
+        for k,v in attrs:
 
             if ':' in k:
                 ns, n = k.split(':',1)
@@ -284,80 +162,38 @@ class DOMletParser(binding.Component):
             else:
                 append((k,v))
 
-
         element = factory(top, tagName=name, attribItems=a,
-            domletProperty = domletName or None,
-            dataSpec  = dataSpec or '',
+            domletProperty = domletName or None, dataSpec  = dataSpec or '',
             paramName = paramName or None,
-            # XXX nonEmpty=False
         )
 
         if paramName:
-            self.domlets[-1].addParameter(paramName,element)
+            top.addParameter(paramName,element)
 
-        if domletName:
-            # New explicit DOMlet, put it on the explicit DOMlet stack
-            self.domlets.append(element)
-        else:
-            # Push the previous "nearest enclosing explicit DOMlet"
-            self.domlets.append(self.domlets[-1])
-
-        self.stack.append(element)
+        return element
 
 
-    def endElement(self, name):
-        self.domlets.pop()
-        last = self.stack.pop()
-        self.stack[-1].addChild(last)
-        self.popNSinfo()
+    def addChild(self,data):
+        self.subject.addChild(data)
+
+    def finish(self):
+        return self.subject
+
+    def addText(self,xml):
+        top = self.subject
+        top.addChild(top.textFactory(top,xml=escape(xml)))
+
+    def addLiteral(xml):
+        top = self.subject
+        top.addChild(top.literalFactory(top,xml=xml))
 
 
-    def buildLiteral(self,xml):
-        top = self.stack[-1]
-        literal = top.literalFactory(top, xml=xml)
-        top.addChild(literal)
-
-
-    def characters(self, data):
-        top = self.stack[-1]
-        text = top.textFactory(top, xml=escape(data))
-        top.addChild(text)
-
-
-
-
-    def startDoctype(self, doctypeName, systemId, publicId, has_internal):
-
-        if publicId:
-            p = ' PUBLIC %s %s' % (quoteattr(publicId),quoteattr(systemId))
-        elif systemId:
-            p = ' SYSTEM %s' % quoteattr(systemId)
-        else:
-            p = ''
-
-        # we ignore internal DTD subsets; they're not useful for HTML
-        xml = u'<!DOCTYPE %s%s>\n' % (doctypeName, p)
-
-        self.buildLiteral(xml)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    myNs = binding.Make(        # prefixes that currently map to TEMPLATE_NS
+        lambda self: dict(
+            [(p,1) for (p,u) in self.nsUri.items() if u and u[-1]==TEMPLATE_NS]
+        ),
+        attrName = 'myNs'
+    )
 
 
 
@@ -424,7 +260,8 @@ class Element(binding.Component):
     domletProperty = None
     dataSpec       = binding.Make(lambda: '', adaptTo=TraversalPath)
     paramName      = None
-
+    acceptParams   = binding.Obtain('domletProperty')
+    
     # IDOMletNode
 
     def staticText(self):
@@ -444,7 +281,6 @@ class Element(binding.Component):
             return self._emptyTag
 
     staticText = binding.Make(staticText, suggestParent=False)
-
 
 
 
@@ -524,10 +360,10 @@ class Element(binding.Component):
 
     def addParameter(self, name, element):
         """Declare 'element' as part of parameter 'name'"""
-
-        self.params.setdefault(name,[]).append(element)
-
-
+        if self.acceptParams:
+            self.params.setdefault(name,[]).append(element)
+        else:
+            self.getParentComponent().addParameter(name,element)
 
 
 
@@ -583,12 +419,12 @@ class TemplateDocument(TaglessElement):
 
     """Document-level template element"""
 
-    parserClass = DOMletParser
+    parserClass = SOX.ExpatBuilder
+
+    acceptParams = True     # handle any top-level parameters
 
     def parseFile(self, stream):
-        parser = self.parserClass(self)
-        parser.parseFile(stream,self)
-
+        self.parserClass().parseFile(stream,self)
 
 
 
