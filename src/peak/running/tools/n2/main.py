@@ -3,9 +3,10 @@
 from peak.api import *
 from peak.running.commands import AbstractCommand, InvocationError
 from peak.util.readline_stack import *
+from peak.util.imports import importString
 
 import sys, os, code, __main__
-from getopt import getopt
+from getopt import getopt, GetoptError
 
 from interfaces import *
 import ns, sql
@@ -23,22 +24,23 @@ pwd\t\tinfo about c
 ls()\t\tshow contents of c
 """
 
-    usage = """usage: peak n2 [-e] [-p] [name]
+    usage = """usage: peak n2 [-e] [-p] [-I interface] [name]
 
 -e\tif name lookup fails, go into python interactor anyway
 -p\tuse python interactor even if there is a more specific interactor
+-I\tadapt looked-up object to interface specified as an import string
 \t(implies -e)"""
 
     idict = __main__.__dict__
     width = 80    # XXX screen width
 
 
-    def run(self):
+    def _run(self):
         try:
-            opts, args = getopt(self.argv[1:], 'ep')
+            opts, args = getopt(self.argv[1:], 'epI:')
             self.opts = dict(opts)
-        except:
-            raise InvocationError('illegal argument')
+        except GetoptError, msg:
+            raise InvocationError(msg)
 
         if len(args) > 1:
             raise InvocationError('too many arguments')
@@ -65,6 +67,11 @@ ls()\t\tshow contents of c
                 c = naming.lookup(self, args[0])
             else:
                 c = naming.InitialContext(self)
+
+            iface = self.opts.get('-I')
+            if iface is not None:
+                iface = importString(iface)
+                c = adapt(c, iface)
         except:
            if self.opts.has_key('-p') or self.opts.has_key('-e'):
                 c = None
