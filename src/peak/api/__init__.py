@@ -126,6 +126,8 @@ pnameValidChars = re.compile( r"([-+*?!:._a-z0-9]+)", re.I ).match
 
 class PropertyName(str):
 
+    """Name of a configuration property, usable as a configuration key"""
+
     def __new__(klass, *args):
 
         self = super(PropertyName,klass).__new__(klass,*args)
@@ -157,8 +159,6 @@ class PropertyName(str):
                     )
 
         return self
-
-
 
 
 
