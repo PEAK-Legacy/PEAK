@@ -6,11 +6,10 @@ cdef extern from "Python.h":
         void *ob_type
 
 cdef extern object GET_DICTIONARY(object o)
+cdef extern long get_ident "_get_py_thread_ident" ()
 
 cdef void *_lockType
 cdef object Py_None     # Avoid dictionary lookups for 'None'
-
-from peak.util.threads import get_ident
 
 
 cdef class bindingLock:
@@ -35,6 +34,7 @@ cdef int isOurs(void *obj):
     id = get_ident()
     lock = <bindingLock> obj
     return lock.id == id
+
 
 
 

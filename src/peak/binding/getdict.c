@@ -1,6 +1,10 @@
 #include "Python.h"
 #include "object.h"
 
+#ifdef WITH_THREAD
+#include "pythread.h"
+#endif
+
 PyObject *
 GET_DICTIONARY(PyObject *ob) {
 
@@ -28,3 +32,11 @@ GET_DICTIONARY(PyObject *ob) {
         return dict;
 }
 
+long
+_get_py_thread_ident() {
+#ifdef WITH_THREAD
+    return PyThread_get_thread_ident();
+#else
+    return 1;
+#endif
+}
