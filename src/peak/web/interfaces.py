@@ -71,7 +71,7 @@ class IWebInteraction(IInteraction, IPolicyInfo):
 
     def clientHas(lastModified=None, ETag=None):
         """Return true if no response need be sent, given the response data"""
-        
+
 
 
 
@@ -151,15 +151,15 @@ class ITraversalContext(Interface):
     def contextFor(name):
         """Return a new traversal context for 'name'"""
 
-    def isNull():
+    isNull = Attribute(
         """Return true if context location is not found/not authorized"""
+    )
 
     def render():
         """Return rendered value of underlying object"""
 
     def subcontext(name, ob):
         """Create a new subcontext named 'name', for 'ob'"""
-
 
 
 class IWebTraversable(Interface):

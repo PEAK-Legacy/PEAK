@@ -638,7 +638,7 @@ class Text(ContentReplacer):
 
         write(self._openTag)
 
-        if not data.isNull():
+        if not data.isNull:
             write(unicode(data.subject))
 
         write(self._closeTag)
@@ -668,7 +668,7 @@ class List(ContentReplacer):
         subcontext  = data.subcontext
         ct = 0
 
-        if not data.isNull():
+        if not data.isNull:
 
             # XXX this should probably use an iteration location, or maybe
             # XXX put some properties in execution context for loop vars?

@@ -218,8 +218,9 @@ class Interaction(security.Interaction):
 
             # Not renderable, try for default method
 
-            if not ob.contextFor(default).isNull():
-                # Traversal will succeed, so tell the request to proceed
+            if ob.contextFor(default).subject is not NOT_FOUND:
+                # Traversal will succeed (or be unauthorized), so tell the
+                # request to proceed
                 return ob, (default,)
 
         # object is renderable, default traversal will fail, or no default
@@ -243,7 +244,6 @@ class Interaction(security.Interaction):
 
 
 
-
     def handleException(self, object, request, exc_info, retry_allowed=1):
 
         """Convert exception to a handler, and invoke it"""
@@ -261,16 +261,6 @@ class Interaction(security.Interaction):
             exc_info = None
 
 
-    def notFound(self, ob, name):
-        from zope.publisher.interfaces import NotFound
-        raise NotFound(ob, name, self.request)          # XXX
-
-
-    def notAllowed(self, ob, name):
-        from zope.publisher.interfaces import Unauthorized
-        raise Unauthorized(name=name)   # XXX
-
-
     appURL = binding.Once(lambda s,d,a: s.request.getApplicationURL())
 
     def getAbsoluteURL(self, resource=None):
@@ -282,6 +272,16 @@ class Interaction(security.Interaction):
 
     def clientHas(self, lastModified=None, ETag=None):
         return False    # XXX
+
+
+
+
+
+
+
+
+
+
 
 
 

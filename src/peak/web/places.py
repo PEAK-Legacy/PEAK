@@ -2,12 +2,12 @@ from peak.api import *
 from interfaces import *
 from types import FunctionType, MethodType
 import posixpath
+from errors import NotFound, NotAllowed
 
 __all__ = [
     'Traversable', 'Decorator', 'ContainerAsTraversable',
     'MultiTraverser', 'TraversalContext', 'Traversal',
 ]
-
 
 
 
@@ -58,12 +58,19 @@ class TraversalContext(binding.Component):
         lambda s,d,a: adapt(s.subject, s.interaction.pageProtocol, None)
     )
 
-    def isNull(self):
+    def isNull(self,d,a):
         ob = self.subject
         return ob is NOT_FOUND or ob is NOT_ALLOWED
 
+    isNull = binding.Once(isNull)
+
     def checkPreconditions(self):
         """Invoked before traverse by web requests"""
+        if self.isNull:
+            if self.subject is NOT_FOUND:
+                raise NotFound(self)
+            else:
+                raise NotAllowed(self)
         self.traversable.preTraverse(self)
 
     def subcontext(self, name, ob):
@@ -71,14 +78,10 @@ class TraversalContext(binding.Component):
         binding.suggestParentComponent(self.traversable, name, ob)
         return self.__class__.newCtx(self, name, traversable = ob)
 
+
+
     # newCtx = "this class"
     newCtx = binding.classAttr(binding.bindTo('.'))
-
-
-
-
-
-
 
     def contextFor(self, name):
         """Return a new traversal context for 'name'"""
@@ -92,9 +95,6 @@ class TraversalContext(binding.Component):
             return self
 
         ob = self.traversable.traverseTo(name, self.interaction)
-        if ob is NOT_GIVEN or ob is NOT_FOUND:
-            ob = NullTraversable(ob)
-
         return self.subcontext(name, ob)
 
 
@@ -203,15 +203,16 @@ class Traversable(binding.Component):
 
 
 
-class NullTraversable(object):
+class SymbolAsTraversable(object):
 
     protocols.advise(
-        instancesProvide = [IWebTraversable]
+        instancesProvide = [IWebTraversable],
+        asAdapterForTypes = [type(NOT_FOUND)],
     )
 
     __slots__ = 'ob'
 
-    def __init__(self,ob):
+    def __init__(self,ob,protocol=None):
         self.ob = ob
 
     def getObject(self, interaction):
@@ -226,7 +227,6 @@ class NullTraversable(object):
 
     def preTraverse(self, ctx):
         pass
-
 
 
 
