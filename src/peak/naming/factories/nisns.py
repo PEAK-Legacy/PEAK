@@ -1,19 +1,18 @@
 from __future__ import generators
 from peak.api import *
 from peak.naming.contexts import AbstractContext
-from peak.naming.names import CompoundName
 import nis
 
-
 class nisURL(naming.ParsedURL):
+
     _defaultScheme = 'nis'
-    
     _supportedSchemes = ('nis', )
 
     pattern = "((?P<mapname>[^/]+)(/(?P<key>.+)?)?)?"
 
 
 class nisURLContext(AbstractContext):
+
     __implements__ = naming.IReadContext
 
     schemeParser = nisURL
@@ -29,7 +28,7 @@ class nisURLContext(AbstractContext):
         mapname = getattr(name, 'mapname', 'passwd.byname')
         key = getattr(name, 'key', None)
         
-        mapns = nisMapContext(mapname)
+        mapns = nisMapContext(mapname=mapname)
         if key:
             r = mapns.get(key, NOT_FOUND)
             if r:
@@ -39,14 +38,14 @@ class nisURLContext(AbstractContext):
         else:
             return mapns, None
 
-        
+
 class nisMapContext(AbstractContext):
+
     __implements__ = naming.IReadContext
 
-    nameClass = CompoundName
-    
-    def __init__(self, mapname):
-        self.mapname = mapname
+    nameClass = naming.CompoundName
+
+    mapname = binding.requireBinding('NIS mapname to use')
 
     def __iter__(self):
         return iter(nis.cat(self.mapname))
