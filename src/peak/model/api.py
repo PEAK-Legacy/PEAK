@@ -1,8 +1,8 @@
 """Basic, in-memory implementation of the Service-Element-Feature pattern"""
 
 from peak.api import *
-from interfaces import *
-from interfaces import __all__ as allInterfaces
+from peak.model.interfaces import *
+from peak.model.interfaces import __all__ as allInterfaces
 
 from types import FunctionType
 
@@ -228,7 +228,7 @@ class Specialist(Service):
 
     subtypeSpecialists = ()     # specialists to check for subtypes
 
-    from TW.Caching import WeakCache as cache
+    # XXX from TW.Caching import WeakCache as cache
 
 
 
