@@ -30,8 +30,90 @@ class ServerManager(object):
         return conn
 
     def __del__(self):
-        LOG_DEBUG("Shutting down DDE server for %s" % self.name)
-        self.server.Shutdown()
+        if self.server is not None:
+            LOG_DEBUG("Shutting down DDE server for %s" % self.name)
+            self.server.Shutdown()
+            self.server = None
+
+    close = __del__
+
+
+
+class ddeURL(naming.ParsedURL):
+
+    """PEAK Win32 DDE URL
+
+    Example::
+
+        "win32.dde:service::topic;file=c:\\foo;retries=5;sleep=5"
+
+    Syntax is 'service::topic' followed by semicolon-separated
+    parameters, which may be 'file' to designate a file to be launched
+    if the initial connection attempt is unsuccessful, 'retries' to
+    indicate how many retries should occur if the initial attempt is
+    unsuccessful, and 'sleep' to set the number of seconds to wait between
+    retry attempts.
+
+    These parameters are all available as attributes of the same names,
+    including 'service' and 'topic'."""
+
+    supportedSchemes = 'win32.dde',
+
+    def __init__(self, scheme=None, body=None,
+        service=None, topic=None, file=None, retries=10, sleep=1
+    ):
+        self.setup(locals())
+
+
+    def retrieve(self, refInfo, name, context, attrs=None):
+        return DDEConnection(
+            context.creationParent,
+            serviceName=self.service,
+            topicName=self.topic,
+            launchFile=self.file,
+            retries=self.retries,
+            sleepFor=self.sleep,
+        )
+
+
+
+
+
+
+    def parse(self, scheme, body):
+
+        _l = body.split(';')
+        _svct = _l[0].split('::',1)
+
+        if len(_svct)<2:
+            raise exceptions.InvalidName("Must contain 'service::topic'", body)
+
+        service, topic = _svct
+
+        _other = dict( [tuple(_x.split('=', 1)) for _x in _l[1:]] )
+
+        for _x in 'retries', 'sleep':
+            if _x in _other:
+                _other[_x] = int(_other[_x])
+
+        for _x in _other:
+            if _x not in ('file','retries','sleep'):
+                raise exceptions.InvalidName(
+                    "Unrecognized parameter %s=%s" % (_x,_other[_x])
+                )
+
+        _other.update(locals())
+
+        return _other
+
+
+
+
+
+
+
+
+
 
 
 
@@ -42,8 +124,6 @@ class ServerManager(object):
 class DDEConnection(storage.ManagedConnection):
 
     """Managed DDE connection"""
-
-    # XXX there really should be an address class for these parameters...
 
     serviceName = binding.requireBinding("Service name for DDE conversation")
     topicName   = binding.requireBinding("Topic name for DDE conversation")
@@ -70,6 +150,8 @@ class DDEConnection(storage.ManagedConnection):
     def poke(self, commandStr, data=None):
         """DDE Poke of command string and optional data buffer"""
         return self.connection.Poke(commandStr, data)
+
+
 
 
 
@@ -112,8 +194,8 @@ class DDEConnection(storage.ManagedConnection):
             )
 
     def _close(self):
+        self.ddeServer.close()
         del self.ddeServer  # force shutdown
-
 
 
 
