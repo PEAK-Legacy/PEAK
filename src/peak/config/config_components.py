@@ -174,7 +174,7 @@ class CreateViaFactory(object):
 
 
     def __init__(self,configKey):
-        self.configKey = configKey
+        self.configKey = adapt(configKey,IConfigKey)
 
 
     def __call__(self, propertyMap, configKey, targetObj):
@@ -191,9 +191,9 @@ class CreateViaFactory(object):
             binding.suggestParentComponent(serviceArea, None, instance)
             return instance
 
-        # We use our 'self' as a rule key, in case we're registered under
-        # more than one configuration key
-        return serviceArea.getService(self, create)
+        return serviceArea.getService(self.configKey, create)
+
+
 
 
 

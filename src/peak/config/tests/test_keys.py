@@ -26,6 +26,88 @@ class _A(object): pass
 class _B(_A): pass
 class _C(_B,_A): pass
 
+configI1asA = """
+[Component Factories]
+peak.config.tests.test_keys.I1 = "peak.config.tests.test_keys.A"
+"""
+configI1asB = """
+[Component Factories]
+peak.config.tests.test_keys.I1 = "peak.config.tests.test_keys.B"
+"""
+configI2asB = """
+[Component Factories]
+peak.config.tests.test_keys.I2 = "peak.config.tests.test_keys.B"
+"""
+
+class ServiceAreaTests(TestCase):
+
+    def setUp(self):
+        self.S = config.ServiceArea(testRoot())
+        self.A = binding.Component(self.S,'A')
+        self.B = binding.Component(self.S,'B')
+
+    def configure(self,component,text):
+        config.ConfigReader(component).readString(text)
+
+    def testSubcomponentRuleAliasing(self):
+        # Only configuration at the service area should affect the service area
+        self.configure(self.S,configI1asA)
+        self.configure(self.B,configI1asB)
+        self.failUnless(config.lookup(self.A,I1) is config.lookup(self.B,I1))
+        self.failUnless(config.lookup(self.S,I1).__class__ is A)
+
+    def testRaceCondition(self):
+        # Test that 'testSubcomponentRuleAliasing' isn't simply appearing to
+        # succeed, due to the order items are looked up in
+        self.configure(self.S,configI1asA)
+        self.configure(self.B,configI1asB)
+        self.failUnless(config.lookup(self.B,I1) is config.lookup(self.A,I1))
+        self.failUnless(config.lookup(self.S,I1).__class__ is A)
+
+    def testSubkeyRuleAliasing(self):
+        # Test that a single rule for multiple keys maps to one service
+        self.configure(self.S,configI2asB)
+        self.failUnless(config.lookup(self.A,I1) is config.lookup(self.B,I2))
+
+    def testMaskedSubkeyAliasing(self):
+        # Test that single-rule/multi-key works even if the factory rule is
+        # redefined in a subcomponent
+        self.configure(self.S,configI2asB)
+        self.configure(self.B,configI2asB)
+        self.failUnless(config.lookup(self.A,I1) is config.lookup(self.B,I2))
+
+
+
+
+
+    def testSubkeyDifferentiation(self):
+        # Test that providers for different interfaces are distinct
+        self.configure(self.S,configI1asA)
+        self.configure(self.S,configI2asB)
+        self.failIf(config.lookup(self.A,I1) is config.lookup(self.A,I2))
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -374,6 +456,7 @@ TestClasses = (
     ComponentWithBindingViaPlugin,
     ParentComponent, ChildComponent, InheritedComponent, InheritedComponentAPI,
     InheritedParent, InheritedChild,
+    ServiceAreaTests,
 )
 
 
@@ -383,9 +466,6 @@ def test_suite():
         s.append(makeSuite(t,'test'))
 
     return TestSuite(s)
-
-
-
 
 
 
