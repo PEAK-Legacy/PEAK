@@ -140,6 +140,7 @@ from weakref import WeakValueDictionary
 from Persistence import Persistent
 from xml.sax import saxutils
 from types import StringTypes
+from peak.model.datatypes import TCKind
 
 
 
@@ -149,6 +150,46 @@ from types import StringTypes
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+# These 18 CORBA typecode kinds are mapped to/from a single empty XML tag
+# with no attributes.
+
+simple_tc_mappings = [
+
+    (TCKind.tk_short, 'XMI.CorbaTcShort'),
+    (TCKind.tk_long, 'XMI.CorbaTcLong'),
+    (TCKind.tk_ushort, 'XMI.CorbaTcUshort'),
+    (TCKind.tk_ulong, 'XMI.CorbaTcUlong'),
+    (TCKind.tk_float, 'XMI.CorbaTcFloat'),
+    (TCKind.tk_double, 'XMI.CorbaTcDouble'),
+
+    (TCKind.tk_boolean, 'XMI.CorbaTcBoolean'),
+    (TCKind.tk_char, 'XMI.CorbaTcChar'),
+    (TCKind.tk_wchar, 'XMI.CorbaTcWchar'),
+    (TCKind.tk_octet, 'XMI.CorbaTcOctet'),
+
+    (TCKind.tk_any, 'XMI.CorbaTcAny'),
+    (TCKind.tk_TypeCode, 'XMI.CorbaTcTypeCode'),
+    (TCKind.tk_Principal, 'XMI.CorbaTcPrincipal'),
+    (TCKind.tk_null, 'XMI.CorbaTcNull'),
+    (TCKind.tk_void, 'XMI.CorbaTcVoid'),
+    
+    (TCKind.tk_longlong, 'XMI.CorbaTcLongLong'),
+    (TCKind.tk_ulonglong, 'XMI.CorbaTcUlongLong'),
+    (TCKind.tk_longdouble, 'XMI.CorbaTcLongDouble'),
+
+]
 
 
 
