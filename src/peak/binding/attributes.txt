@@ -1,0 +1,60 @@
+===============================
+Attribute Bindings and Metadata
+===============================
+
+    >>> from peak.api import *
+
+
+Descriptor Activation
+---------------------
+
+One peculiarity of the Python attribute descriptor model is that attribute
+descriptors do not know their names, or what class they were initially
+associated with.  This increases the amount of typing one has to do in order to
+define a "smart" attribute descriptor.  To work around this, ``peak.binding``
+allows one to "activate" descriptors, telling them what class and attribute
+name they have.  To be activated, a descriptor must implement the
+``binding.IActiveDescriptor`` interface, and have an ``activateInClass()``
+method::
+
+    >>> class DummyDescriptor(object):
+    ...     protocols.advise(instancesProvide=[binding.IActiveDescriptor])
+    ...     def activateInClass(self, klass, attrName):
+    ...         print "activated", klass, attrName
+    ...         return 42
+    
+When placed inside a class that has ``binding.activateClass()`` called on it,
+the descriptor's activation method will be called, and the descriptor's
+return value will be registered in a ``__class_descriptors__`` dictionary::
+
+    >>> class Test(object):
+    ...     foo = DummyDescriptor()
+    >>> Test.foo
+    <DummyDescriptor object at ...>
+    >>> Test = binding.activateClass(Test)
+    activated <class 'Test'> foo
+    >>> Test.__class_descriptors__
+    {'foo': 42}
+
+``activateClass()`` does nothing if the class already possesses a
+``__class_descriptors__`` mapping, so it is safe to call it more than once on
+the same class::
+
+    >>> binding.activateClass(Test)
+    <class 'Test'>
+
+``activateClass()`` also checks for any ``binding.classAttr`` instances in the
+class, and if any are present, it recreates the class as an instance of a new
+metaclass, with the appropriate class attributes::
+
+    >>> class Test:
+    ...     foo = binding.classAttr(42)
+    >>> type(Test)
+    <type 'class'>
+    >>> Test = binding.activateClass(Test)
+    >>> type(Test)
+    <class 'TestClass'>
+    >>> Test.foo
+    42
+
+

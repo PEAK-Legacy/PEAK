@@ -12,7 +12,7 @@ from interfaces import *
 from syntax import *
 from arithmetic import *
 
-from peak.binding.once import Activator, Make
+from peak.binding.once import Make
 from peak.util.imports import importObject
 from peak.binding.interfaces import IComponentKey
 

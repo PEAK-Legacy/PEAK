@@ -371,16 +371,16 @@ TestClasses = (
     AssemblyTests, ClassAttrTest, DescriptorTest,
 )
 
-
+def test_attributes():
+    from peak.util import doctest
+    return doctest.DocFileSuite(
+        'attributes.txt', optionflags=doctest.ELLIPSIS, package='peak.binding',
+    )
+    
 def test_suite():
-    s = []
-    for t in TestClasses:
-        s.append(makeSuite(t,'check'))
-
-    return TestSuite(s)
-
-
-
+    return TestSuite(
+        [makeSuite(t,'check') for t in TestClasses] + [test_attributes()]
+    )
 
 
 

@@ -5,6 +5,7 @@ from peak.api import *
 
 from once import *
 from interfaces import *
+from attributes import *
 from types import ModuleType
 from peak.naming.names import toName, AbstractName, COMPOUND_KIND, IName
 from peak.naming.syntax import PathSyntax
@@ -33,7 +34,6 @@ class _proxy(BaseDescriptor):
         raise AttributeError, self.attrName
 
     def computeValue(self,ob,d,a): raise AttributeError, a
-
 
 
 

@@ -1,5 +1,4 @@
 """'Once' objects and classes"""
-
 from __future__ import generators
 from peak.api import NOT_FOUND, protocols, adapt, dispatch
 from peak.util.imports import importObject, importString
@@ -11,33 +10,34 @@ from protocols import IOpenProvider, IOpenImplementor, NO_ADAPTER_NEEDED
 from protocols.advice import metamethod, getMRO
 from warnings import warn
 from types import ClassType
+from attributes import activateClass, classAttr, Activator, supertype
 
 __all__ = [
-    'Make', 'Activator', 'ActiveClass',
-    'getInheritedRegistries', 'classAttr', 'Singleton', 'metamethod',
+    'Make', 'ActiveClass',
+    'getInheritedRegistries', 'Singleton', 'metamethod',
     'Attribute', 'ComponentSetupWarning', 'suggestParentComponent'
 ]
 
 class ComponentSetupWarning(UserWarning):
     """Large iterator passed to suggestParentComponent"""
 
-def supertype(supertype,subtype):
 
-    """Workaround for 'super()' not handling metaclasses well
 
-    Note that this will *skip* any classic classes in the MRO!
-    """
 
-    mro = iter(subtype.__mro__)
 
-    for cls in mro:
-        if cls is supertype:
-            for cls in mro:
-                if hasattr(cls,'__mro__'):
-                    return cls
-            break
 
-    raise TypeError("Not sub/supertypes:", supertype, subtype)
+
+
+
+
+
+
+
+
+
+
+
+
 
 class Descriptor(BaseDescriptor):
 
@@ -230,9 +230,6 @@ def suggest_sequence(parent,name,child):
 [suggestParentComponent.when(object)]
 def suggest_nothing(parent,name,child):
     pass
-
-
-
 
 
 
@@ -616,86 +613,45 @@ class Make(Attribute):
 
 
 
-class classAttr(object):
+class ActiveClass(Activator):
 
-    """Class attribute binding
+    """Metaclass for classes that are themselves components"""
 
-    This wrapper lets you create bindings which apply to a class, rather than
-    to its instances.  This can be useful for creating bindings in a base
-    class that will summarize metadata about subclasses.  Usage example::
+    protocols.advise(
+        instancesProvide = [IActiveDescriptor]
+    )
 
-        class SomeClass(binding.Component):
+    def activateInClass(self,klass,attrName):
 
-            CLASS_NAME = binding.classAttr(
-                binding.Make(
-                    lambda self: self.__name__.upper()
-                )
-            )
+        if klass.__module__ == self.__module__:
 
-        class aSubclass(SomeClass):
-            pass
+            if '__parent__' not in self.__dict__ and attrName!='__metaclass__':
+                # We use a tuple, so that if our parent is a descriptor,
+                # it won't interfere when our instance tries to set *its*
+                # parent!
+                self.__parent__ = klass,
 
-        assert SomeClass.CLASS_NAME == "SOMECLASS"
-        assert aSubclass.CLASS_NAME == "ASUBCLASS"
-
-    Class attributes will only work in subclasses of classes like
-    'binding.Component', whose metaclass derives from 'binding.Activator'.
-
-    Implementation note: class attributes actually cause a new metaclass to
-    be created on-the-fly to contain them.  The generated metaclass is named
-    for the class that contained the class attributes, and has the same
-    '__module__' attribute value.  So continuing the above example::
-
-        assert SomeClass.__class__.__name__ == 'SomeClassClass'
-        assert aSubClass.__class__.__name__ == 'SomeClassClass'
-
-    Notice that the generated metaclass is reused for subsequent
-    subclasses, as long as they don't define any new class attributes."""
-
-    __slots__ = 'binding'
-
-    def __init__(self, binding): self.binding = binding
+        return self
 
 
-class Activator(type):
+    def __parent__(self,d,a):
 
-    """Descriptor metadata management"""
+        parent = self.__module__
+        name = self.__name__
 
-    __name__ = 'Activator'    # trick to make instances' __name__ writable
+        if '.' in name:
+            name = '.'.join(name.split('.')[:-1])
+            parent = '%s:%s' % (parent,name)
+
+        return importString(parent),
+
+    __parent__ = Make(__parent__, suggestParent=False)
 
 
-    def __new__(meta, name, bases, cdict):
+    def __cname__(self,d,a):
+        return self.__name__.split('.')[-1]
 
-        classAttrs = [
-            (k,v.binding) for (k, v) in cdict.items()
-                if adapt(v,classAttr,not v) is v
-        ]
-
-        if classAttrs:
-
-            cdict = cdict.copy(); d = {}
-            d = dict(classAttrs)
-            map(cdict.__delitem__, d.keys())
-
-            d['__module__'] = cdict.get('__module__')
-
-            meta = Activator( name+'Class', (meta,), d )
-
-            # The new metaclass' __new__ will finish up for us...
-            return meta(name,bases,cdict)
-
-        klass = supertype(Activator,meta).__new__(meta, name, bases, cdict)
-        klass.__name__ = name
-
-        cd = klass.__class_descriptors__ = {}
-
-        for k,v in cdict.items():
-            v = adapt(v, IActiveDescriptor, None)
-            if v is not None:
-                cd[k]=v.activateInClass(klass,k)
-
-        return klass
-
+    __cname__ = Make(__cname__, suggestParent=False)
 
 
     def __all_descriptors__(klass):
@@ -739,48 +695,7 @@ class Activator(type):
 
 
 
-class ActiveClass(Activator):
-
-    """Metaclass for classes that are themselves components"""
-
-    protocols.advise(
-        instancesProvide = [IActiveDescriptor]
-    )
-
-    def activateInClass(self,klass,attrName):
-
-        if klass.__module__ == self.__module__:
-
-            if '__parent__' not in self.__dict__ and attrName!='__metaclass__':
-                # We use a tuple, so that if our parent is a descriptor,
-                # it won't interfere when our instance tries to set *its*
-                # parent!
-                self.__parent__ = klass,
-
-        return self
-
-
-    def __parent__(self,d,a):
-
-        parent = self.__module__
-        name = self.__name__
-
-        if '.' in name:
-            name = '.'.join(name.split('.')[:-1])
-            parent = '%s:%s' % (parent,name)
-
-        return importString(parent),
-
-    __parent__ = Make(__parent__, suggestParent=False)
-
-
-    def __cname__(self,d,a):
-        return self.__name__.split('.')[-1]
-
-    __cname__ = Make(__cname__, suggestParent=False)
-
-
-_ignoreNames = {'__name__':1, '__new__':1, '__module__':1, '__return__':1}
+_ignoreNames = {'__name__':1, '__module__':1, '__return__':1}
 
 class SingletonClass(Activator):
 
@@ -813,11 +728,13 @@ class Singleton(object):
     that if you define an '__init__' method, it will be called with the
     singleton class object (or a subclass) when the class is created."""
 
-    __metaclass__ = SingletonClass
 
     def __new__(klass):
         return klass
 
-del _ignoreNames['__new__']     # we want this to be promoted, for subclasses
+Singleton.__class__ = SingletonClass
+
+
+
 
 

@@ -1,5 +1,12 @@
 Fixes and Enhancements since Version 0.5 alpha 3
 
+ - Added a new function, 'binding.activateClass()', that can be used to
+   activate any bindings in the class.  This can now be used in place of
+   subclassing a PEAK base class or using a PEAK metaclass.  In future, this
+   will be integrated into PEAK attribute descriptors such that defining a
+   descriptor within a class' body is sufficient to cause this function to be
+   invoked.
+   
  - 'binding.IBindingNode' was REMOVED, consolidated into 'binding.IComponent',
    as its various individual methods have been replaced with generic functions
    in the existing 'binding' API.  For example, 'binding.getParentComponent(x)'
