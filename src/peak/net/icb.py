@@ -1,11 +1,24 @@
+"""Internet CB protocol client.
+
+ICB is a mostly-obsolete chat protocol, still used in some circles.
+The ICB protocol is (partially) documented at:
+
+http://www.icb.net/_jrudd/icb/protocol.html
+
+TODO:
+implement many missing client methods, and add receive packet handling for
+packets they result in.
+"""
+
 from protocols import Interface, Attribute
 from peak.api import *
-import socket, time
+from peak.net.common import StreamProto
+import socket, time, os
 
 
 class ICB_URL(naming.URL.Base):
     supportedSchemes = {
-        'icb' : 'peak.network.icb.ICBConnection'
+        'icb' : 'peak.net.icb.ICBConnection'
     }
 
     defaultFactory = property(
@@ -34,39 +47,40 @@ class ICB_URL(naming.URL.Base):
 
 
 
+<<<<<<< icb.py
 class IICBListener(Interface):
     connection = Attribute("Connection we're listening to")
-
+    
     def loginOK(con):
         """Login was successful"""
-
+        
     def publicMessage(con, nick, message):
         """Public message was sent by nick"""
-
+        
     def privateMessage(con, nick, message):
         """Private message was sent to us by nick"""
-
+        
     def Status(con, category, message):
         """Status message in a given category"""
-
+        
     def Error(con, message):
         """Report an error message"""
-
+        
     def importantMessage(con, category, message):
         """Report an important message in category"""
-
+        
     def serverExit(con, self):
         """Server Exiting"""
-
+        
     def commandOutput(con, data):
-        """Output resulting (maybe) from a command"""
-
+        """Output resulting (con, maybe) from a command"""
+        
     def protocolLevel(con, protover, host, server):
         """Initial protocol information"""
-
+        
     def beepFrom(con, nick):
         """We got beeped by nick"""
-
+        
     def gotPing(con, message):
         """We were pinged by the server"""
 
@@ -75,7 +89,9 @@ class IICBListener(Interface):
 
 
 
-class ICBConnection(binding.Component):
+=======
+>>>>>>> 1.3
+class ICBConnection(StreamProto):
     address = binding.Require(
         "Address used to create the actual connection",
         suggestParent=False
@@ -84,15 +100,7 @@ class ICBConnection(binding.Component):
     target = binding.Require(
         "an IICBListener we'll tell what's happening")
 
-
-    def addToReactor(self, reactor):
-        reactor.addReader(self)
-        reactor.addWriter(self)
-
-
-    def setTarget(self, target):
-        self.target = adapt(target, IICBListener)
-        self.target.connection = self
+    _i_buf = ''
 
 
     def socket(self):
@@ -117,22 +125,20 @@ class ICBConnection(binding.Component):
 
         sock.setblocking(0)
 
-        self._i_buf = ''; self._i_queue = []; self._o_queue = []
-        self.sendPacket('a', self.address.user, self.address.nick,
-            '', 'login', self.address.passwd or '') # XXX group
+        user = self.address.user or os.getlogin()
+        nick = self.address.nick or user
+        
+        self.sendPacket('a', user, nick, self.address.group or '', 'login',
+            self.address.passwd or '')
 
         return sock
 
     socket = binding.Make(socket)
 
 
-    def fileno(self):
-        return self.socket.fileno()
-
-
     def sendPacket(self, cmd, *args):
         packet = cmd + '\x01'.join(args) + '\0'
-        self._o_queue.append(chr(len(packet)) + packet)
+        self.write(chr(len(packet)) + packet)
 
 
     def sendPing(self, message=''):
@@ -148,35 +154,36 @@ class ICBConnection(binding.Component):
 
 
     def publicMessage(self, msg):
+        while len(msg) > 253:
+            frag, msg = msg[:253], msg[253:]
+            try:
+                i = frag.rindex(' ')
+                frag, msg = frag[:i], frag[i+1:] + msg
+            except ValueError:
+                pass # just one big honkin' word...          
+            sendPacket('b', frag)
+        
         self.sendPacket('b', msg)
 
 
     def privateMessage(self, rcpt, msg):
+        ml = 253 - len(rcpt) - 1 
+        while len(msg) > ml:
+            try:
+                i = frag.rindex(' ')
+                frag, msg = frag[:i], frag[i+1:] + msg
+            except ValueError:
+                pass # just one big honkin' word...
+            self.sendPacket('c', rcpt, frag)
+
         self.sendPacket('c', rcpt, msg)
 
 
     def brick(self, rcpt):
         self.sendPacket('c', 'brick', rcpt)
-
-
-    def doWrite(self):
-        oq = self._o_queue
-        while oq:
-            d = oq.pop(0)
-            l = len(d)
-            sl = self.socket.send(d)
-            if sl < l:
-                # push back remainder of packet
-                oq.insert(0, d[sl:])
-                return
-
-
-    def doRead(self):
-        d = self.socket.recv(2048)
-        if not d:
-            # XXX Socket closed!
-            pass
-
+        
+       
+    def dataReceived(self, d):
         self._i_buf = self._i_buf + d
         pl = ord(self._i_buf[0])
         while self._i_buf and pl <= len(self._i_buf):
@@ -237,46 +244,90 @@ class ICBConnection(binding.Component):
 
 
 
+<<<<<<< icb.py
+=======
+class IICBListener(Interface):
+    connection = Attribute("Connection we're listening to")
+
+    def loginOK():
+        """Login was successful"""
+
+    def publicMessage(nick, message):
+        """Public message was sent by nick"""
+
+    def privateMessage(nick, message):
+        """Private message was sent to us by nick"""
+
+    def Status(category, message):
+        """Status message in a given category"""
+
+    def Error(message):
+        """Report an error message"""
+
+    def importantMessage(category, message):
+        """Report an important message in category"""
+
+    def serverExit(self):
+        """Server Exiting"""
+
+    def commandOutput(data):
+        """Output resulting (maybe) from a command"""
+
+    def protocolLevel(protover, host, server):
+        """Initial protocol information"""
+
+    def beepFrom(nick):
+        """We got beeped by nick"""
+
+    def gotPing(message):
+        """We were pinged by the server"""
+
+    def unknownPacket(kind, data):
+        """We got an unknown packet"""
+
+
+
+>>>>>>> 1.3
 class ICBListenerBase(binding.Component):
     connection = binding.Require(
         "Connection we're listening to",
         suggestParent=False
     )
 
-    def loginOK(self):
+    def loginOK(self, con):
         pass
 
-    def publicMessage(self, nick, message):
+    def publicMessage(self, con, nick, message):
         pass
 
-    def privateMessage(self, nick, message):
+    def privateMessage(self, con, nick, message):
         pass
 
-    def Status(self, category, message):
+    def Status(self, con, category, message):
         pass
 
-    def Error(self, message):
+    def Error(self, con, message):
         pass
 
-    def importantMessage(self, category, message):
+    def importantMessage(self, con, category, message):
         pass
 
-    def serverExit(self):
+    def serverExit(self, con):
         pass
 
-    def commandOutput(self, data):
+    def commandOutput(self, con, data):
         pass
 
-    def protocolLevel(self, protover, host, server):
+    def protocolLevel(self, con, protover, host, server):
         pass
 
-    def beepFrom(self, nick):
+    def beepFrom(self, con, nick):
         pass
 
-    def gotPing(self, message):
-        self.connection.sendPong(message)
+    def gotPing(self, con, message):
+        con.sendPong(message)
 
-    def unknownPacket(self, kind, data):
+    def unknownPacket(self, con, kind, data):
         pass
 
     protocols.advise(
@@ -290,44 +341,56 @@ class ICBCaptureToFile(ICBListenerBase):
 
     file = binding.Require("File to log to")
 
-    def loginOK(self):
+    def loginOK(self, con):
         self.file.write('Logged in.\n')
 
-    def publicMessage(self, nick, message):
+    def publicMessage(self, con, nick, message):
         self._logMessage('<%s>' % nick, message)
 
-    def privateMessage(self, nick, message):
+    def privateMessage(self, con, nick, message):
         self._logMessage('*%s*' % nick, message)
 
     def _logMessage(self, nick, msg):
-        msg = "%s %s %s" % (time.strftime("[%H:%M]"), nick, msg)
         w = self.file.write
-        while len(msg) > 79:
-            l, msg = msg[:79] + '\n', '+' + msg[79:]
-            w(l)
-        w(msg + '\n')
 
-    def Status(self, category, message):
+        maxwidth = 79 # XXX
+        prefix = "%s %s " % (time.strftime("[%H:%M]"), nick)
+        width = maxwidth - len(prefix)
+
+        while len(msg) > width:
+            frag, msg = msg[:width], msg[width:]
+            try:
+                i = frag.rindex(' ')
+                frag, msg = frag[:i], frag[i+1:] + msg
+            except ValueError:
+                pass
+
+            w(prefix + frag + '\n')
+            prefix = '        '; width = maxwidth - len(prefix)
+
+        w(prefix + msg + '\n')
+
+    def Status(self, con, category, message):
         self.file.write("*** info %s: %s\n" % (category, message))
 
-    def Error(self, message):
+    def Error(self, con, message):
         self.importantMessage("ERROR", message)
 
-    def importantMessage(self, category, message):
+    def importantMessage(self, con, category, message):
         self.file.write(">>> %s %s\n" % (category, message))
 
-    def serverExit(self):
+    def serverExit(self, con):
         self.importantMessage("SERVER", "Exiting")
 
-    def commandOutput(self, data):
+    def commandOutput(self, con, data):
         self.file.write("*** %s\n" % data)
 
-    def protocolLevel(self, protover, host, server):
+    def protocolLevel(self, con, protover, host, server):
         self.file.write("Protocol Version %d\nHost: %s\nServer: %s\n" \
             % (protover, host, server))
 
-    def beepFrom(self, nick):
+    def beepFrom(self, con, nick):
         self.Status("BEEP", "beeped by %s" % nick)
 
-    def unknownPacket(self, kind, data):
+    def unknownPacket(self, con, kind, data):
         self.importantMessage("UNKNOWN PACKET", `(kind, data)`)
