@@ -112,14 +112,14 @@ def resourceView(path):
         return ctx.childContext(qname,ctx.getResource(path))
     return handler
 
-
-
-
-
-
-
-
-
+def locationView(spec):
+    keyPath,locId = spec.split('@',1)
+    locId = '++id++'+locId
+    def handler(ctx, ob, namespace, name, qname, default=NOT_GIVEN):
+        path = str(ctx.clone(current=ob).traverseName(keyPath).current)
+        base = ctx.traverseName(locId).absoluteURL     
+        return ctx.childContext(qname,base+'/'[:not base.endswith('/')]+path)
+    return handler
 
 def registerView(name,handler,data,attrs):
     perm = acquirePermission(data,attrs)
@@ -245,19 +245,22 @@ def defineLocation(parser,data):
 
 
 content_req = ('type',)
-content_opt = ('permission','helper')    # ,'location'
+content_opt = ('permission','helper','location')
 
 def doContent(parser,data):
     attrs = SOX.validatedAttributes(parser,data,content_req,content_opt)
     acquirePermission(data,attrs)
     acquireHelper(data,attrs)
     data['sm.content_type'] = evalObject(data,attrs['type'])
-    
+    if 'location' in attrs:
+        registerView(
+            'peak.web.url',locationView(attrs['location']),data,attrs
+        )
+
 def defineContent(parser,data):
     assertNotTop(parser,data)
     assertOutsideContent(parser,data)
     data['start'] = doContent
-
 
 def doImport(parser,data):
     attrs = SOX.validatedAttributes(parser,data,('module',),('as',))
@@ -270,7 +273,6 @@ def defineImport(parser,data):
     data['start'] = doImport
     data['empty'] = True
 
-
 def doContainer(parser,data):
     attrs = SOX.validatedAttributes(parser,data,('object',),('permission',))
     prev = findComponentData(data)
@@ -282,8 +284,6 @@ def defineContainer(parser,data):
     assertOutsideContent(parser,data)
     data['start'] = doContainer
     data['empty'] = True
-
-
 
 view_required = 'name',
 view_one_of   = 'resource','attribute','object', 'function', 'expr'

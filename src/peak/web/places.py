@@ -3,7 +3,7 @@ from interfaces import *
 from types import FunctionType, MethodType, ClassType
 import posixpath
 from errors import NotFound, NotAllowed, WebException
-from environ import traverseAttr, traverseDefault
+from environ import traverseAttr, traverseDefault, traverseView
 from urlparse import urljoin
 
 __all__ = [
@@ -312,13 +312,13 @@ class Decorator(Traversable):
         return traverseDefault(ctx, self.ob, 'attr', name, name, default)
 
 
-
-
-
-
-
-
-
+    def getURL(self,ctx):
+        uctx = traverseView(
+            ctx, self.ob,'view','peak.web.url','peak.web.url', None
+        )
+        if uctx is not None:
+            return uctx.current
+        return ctx.traversedURL
 
 
 

@@ -205,8 +205,8 @@ class ParserTests(TestCase):
 
     def testBasicViews(self):
         end=self.endElement
-        self.startElement('location', [])
-        self.startElement('content', ['type','int'])
+        self.startElement('location', ['id','root'])
+        self.startElement('content', ['type','int', 'location','baz@root'])
         self.startElement('view',['name','foo','object','"xyz"']); end()
         self.startElement('view',['name','bar','attribute',"__class__"]); end()
         self.startElement('view',['name','baz','expr','ob','helper','repr'])
@@ -214,8 +214,7 @@ class ParserTests(TestCase):
         self.startElement('view',['name','fiz','function','nullHandler']);end()
         self.startElement('view',
             ['name','fuz','resource','peak.web.tests/template1']
-        );end()
-        end('content')
+        );end(); end('content')
         loc = end('location')
         ctx = self.policy.newContext(start=loc).childContext('test',123)
         ctx = loc.beforeHTTP(ctx)
@@ -223,6 +222,7 @@ class ParserTests(TestCase):
         self.assertEqual(ctx.traverseName("bar").current, int)
         self.assertEqual(ctx.traverseName("baz").current, "123")
         self.assertEqual(ctx.traverseName("fiz").current, 123)
+        self.assertEqual(ctx.url, "123")
         self.failUnless(isinstance(ctx.traverseName("fuz").current,
                 web.TemplateDocument)
         )
@@ -272,9 +272,7 @@ class ParserTests(TestCase):
         ctx = loc.beforeHTTP(ctx)
         self.assertEqual(ctx.traverseName("__doc__").current,(123).__doc__)
         self.assertEqual(ctx.traverseName("__class__").current,(123).__class__)
-        
 
-    # content [location]
 
     # location[configure]
 
@@ -283,6 +281,8 @@ class ParserTests(TestCase):
     # XXX Containers in extending are *after* those in extendee!
 
     # XXX Location should support direct permissions, and ignore redundant ones
+
+
 
 
 class TestLocation(web.Location):
