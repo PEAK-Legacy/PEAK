@@ -75,6 +75,8 @@ class NamingInteractor(binding.Component):
         else:
             ob = base[name]
 
+        binding.suggestParentComponent(shell, None, ob)
+
         if adaptTo is None:
             aob = ob
         else:
@@ -295,6 +297,27 @@ name\tlist object named, else current context"""
             c.bind(args[0], ob)
 
     cmd_bind = binding.New(cmd_bind)
+
+
+    class cmd_ln(ShellCommand):
+        """ln -s target name -- create LinkRef from name to target"""
+
+        args = ('s', 2, 2)
+
+        def cmd(self, cmd, stderr, args, **kw):
+            c = self.shell.get_pwd()
+            c = adapt(c, naming.IWriteContext, None)
+            if c is None:
+                print >>stderr, '%s: context is not writeable' % cmd
+                return
+
+            if '-s' not in args:
+                print >>stderr, '%s: only symbolic links (LinkRefs) are supported' % (cmd, args[1])
+                return
+                
+            c.bind(args[1], naming.LinkRef(args[2]))
+
+    cmd_ln = binding.New(cmd_ln)
 
 
     class cmd_mv(ShellCommand):

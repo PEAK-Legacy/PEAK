@@ -166,6 +166,7 @@ ls()\t\tshow contents of c
         if self.opts.has_key('-p'):
             interactor = self
         else:
+            binding.suggestParentComponent(self, None, c)
             interactor = adapt(c, IN2Interactor, self)
             binding.suggestParentComponent(self, None, interactor)
 
