@@ -107,7 +107,7 @@ class happy(Command):
             self.happy_options = [
                 '-t', 'PEAK Reference', '-d', self.doc_output_path,
                 '-i', 'examples', '-i', 'old', '-i', 'tests',
-                '-i', 'Interface', '.'
+                '-i', 'Interface', '-i', 'Persistence', '-i', 'kjbuckets', '.'
             ]
             if not self.verbose: self.happy_options.insert(0,'-q')
 

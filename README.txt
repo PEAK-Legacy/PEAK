@@ -46,9 +46,9 @@ PEAK Release 0.5 alpha 1
      please see the 'src/kjbuckets/COPYRIGHT.txt' file for details of its
      license.
 
-     The 'Interface' package is Copyright Zope Corporation and contributors;
-     please see the 'src/Interface/LICENSE.txt' file for details of its
-     license.
+     The 'Interface' and 'Persistence' packages are Copyright Zope Corporation
+     and contributors; please see the 'LICENSE.txt' files for details of their
+     licenses.
 
 
  Installation Instructions

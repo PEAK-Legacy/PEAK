@@ -1,2 +1,1 @@
-"""PEAK, the Python Enterprise Application toolKit
-"""
+"""PEAK, the Python Enterprise Application Kit"""
