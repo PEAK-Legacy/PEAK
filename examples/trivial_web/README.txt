@@ -11,6 +11,9 @@ Trivial 'peak.web' Example
  There is a sample file 'webapp.cgi', that you can edit to do this.  Note 
  that if PEAK itself is not installed in your Python's site-packages 
  directory, you'll need to add its location to the PYTHONPATH as well.
+ Also note that 'peak.web' uses packages from Zope X3, so you need to
+ have the Zope X3 milestone 3 release installed in site-packages, or on
+ the PYTHONPATH as well.
 
  To run the application as a FastCGI, you must have a web server that
  supports FastCGI.  For Apache, this means having 'mod_fastcgi' installed.
