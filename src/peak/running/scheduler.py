@@ -2,10 +2,8 @@
 
 from peak.api import *
 from interfaces import *
-from time import time, sleep
 from peak.util.EigenData import EigenCell, AlreadyRead
 from peak.util.imports import lazyModule
-select = lazyModule('select')
 
 from bisect import insort_right
 
@@ -39,27 +37,28 @@ __all__ = [
 
 
 
+
+
 class MainLoop(binding.Base):
 
     """Top-level application event loop, with timeout management"""
 
     __implements__ = IMainLoop
 
-
     reactor      = binding.bindTo(IBasicReactor)
+    time         = binding.bindTo('import:time.time')
 
     lastActivity = None
 
-
     def activityOccurred(self):
-        self.lastActivity = time()
+        self.lastActivity = self.time()
 
 
     def run(self, stopAfter=0, idleTimeout=0, runAtLeast=0):
 
         """Loop polling for IO or GUI events and calling scheduled funcs"""
 
-        self.lastActivity = time()
+        self.lastActivity = self.time()
 
         reactor = self.reactor
 
@@ -75,6 +74,7 @@ class MainLoop(binding.Base):
         finally:
             del self.lastActivity
 
+
         # XXX we should probably log start/stop events
 
 
@@ -83,7 +83,7 @@ class MainLoop(binding.Base):
     def _checkIdle(self, timeout):
 
         # Check whether we've been idle long enough to stop
-        idle = time() - self.lastActivity
+        idle = self.time() - self.lastActivity
 
         if idle >= timeout:
             self.reactor.stop()
@@ -172,11 +172,12 @@ class UntwistedReactor(binding.Base):
     writers = binding.New(list)
     readers = binding.New(list)
     laters  = binding.New(list)
+    time    = binding.bindTo('import:time.time')
+    sleep   = binding.bindTo('import:time.sleep')
+    select  = binding.bindTo('import:select.select')
 
     def run(self):
-
         self.running = True
-
         while self.running:
             self.iterate()
 
@@ -184,12 +185,11 @@ class UntwistedReactor(binding.Base):
         self._delBinding('readers')
         self._delBinding('writers')
 
-
     def stop(self):
         self.running = False
 
     def callLater(self, delay, callable, *args, **kw):
-        insort_right(self.laters, _Appt(time()+delay, callable, args, kw))
+        insort_right(self.laters, _Appt(self.time()+delay, callable, args, kw))
 
     def addReader(self, reader):
         if reader not in self.readers: self.readers.append(reader)
@@ -205,7 +205,7 @@ class UntwistedReactor(binding.Base):
 
     def iterate(self, delay=None):
 
-        now = time()
+        now = self.time()
 
         while self.laters and self.laters[0].time <= now:
             try:
@@ -216,7 +216,7 @@ class UntwistedReactor(binding.Base):
                 )
 
         if delay is None:
-            delay = self.laters and self.laters[0].time - time() or 0
+            delay = self.laters and self.laters[0].time - self.time() or 0
 
         delay = max(delay, 0)
 
@@ -225,13 +225,13 @@ class UntwistedReactor(binding.Base):
 
         if self.readers or self.writers:
 
-            r, w, e = select.select(self.readers, self.writers, [], delay)
+            r, w, e = self.select(self.readers, self.writers, [], delay)
 
             for reader in r: reader.doRead()
             for writer in w: writer.doWrite()
 
         elif delay:
-            sleep(delay)
+            self.sleep(delay)
 
 
 
