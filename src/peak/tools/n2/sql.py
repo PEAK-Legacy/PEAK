@@ -865,8 +865,7 @@ default for src is '!.', the current input buffer"""
 -m style\tuse specified format (see \\styles for a list)
 -h\t\tsuppress header
 -f\t\tsuppress footer
--v\t\tverbose; give more information
-        """
+-v\t\tverbose; give more information"""
 
         args = ('d:m:hfv', 0, 1)
 
@@ -882,6 +881,26 @@ default for src is '!.', the current input buffer"""
                     self.interactor.showResults(c, opts, stdout, stderr)
 
     cmd_describe = binding.Make(cmd_describe)
+
+
+
+    class cmd_extract(ShellCommand):
+        """\\extract name -- extract DDL for named object"""
+
+        args = ('', 1, 1)
+
+        def cmd(self, cmd, opts, args, stdout, stderr, **kw):
+            xi = adapt(self.interactor.con, storage.ISQLDDLExtractor, None)
+            if xi is None:
+                print >>stderr, "%s: database doesn't support extraction" % cmd
+            else:
+                ddl = xi.getDDLForObject(args[0])
+                if ddl is None:
+                    print >>stderr, "%s: can't extract DDL for %s" % (cmd, args[0])
+                else:
+                    stdout.write(ddl)
+                
+    cmd_extract = binding.Make(cmd_extract)
 
 
 
@@ -907,8 +926,7 @@ default for src is '!.', the current input buffer"""
         """\\htmldump [-f] [-x table[,table,...]] -- dump entire database as HTML document
 
 -f\t\t\tsuppress footer (rowcount)
--x table[,table,...]\texclude tables from result
-        """
+-x table[,table,...]\texclude tables from result"""
 
         args = ('fx:', 0, 0)
 
