@@ -39,3 +39,4 @@ class ArithmeticDemo(ddt.ColumnProcessor):
     def divide(self,cell):
         cell.assertEqual(self._x/float(self._y), model.Float)
 
+    floating = divide

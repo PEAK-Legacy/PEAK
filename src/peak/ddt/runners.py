@@ -2,6 +2,7 @@ from peak.api import *
 from interfaces import *
 from peak.naming.factories.openable import FileURL
 from html_doc import HTMLDocument
+from urllib import basejoin
 
 
 
@@ -38,6 +39,46 @@ from html_doc import HTMLDocument
 
 
 
+class WebRunner(binding.Component):
+    """Run tests in a web browser"""
+
+    usage="""Usage: peak ddt.web baseURL
+
+Launch a DDT viewer in a web browser, initially retrieving and displaying
+the specified base URL.
+"""
+
+    protocols.advise(
+        instancesProvide=[running.IRerunnableCGI]
+    )
+
+    argv    = binding.Require("Command line arguments")
+    baseURL = binding.Make(lambda self: self.argv[1])
+    
+    def runCGI(self,stdin,stdout,stderr,environ):
+        path = environ.get('PATH_INFO','/')
+        for suffix in ('/','.htm','.html','.HTM','.HTML'):
+            if path.endswith(suffix):
+                break
+        else:
+            print >>stdout,"Location:", basejoin(self.baseURL,path)
+            print >>stdout
+            return
+
+        sane_path = '/'.join([p for p in path.split('/') if p and p<>'..'])
+        print >>stdout, "Content-type: text/html"
+        print >>stdout
+                
+        HTMLRunner(
+            self,
+            argv = ['HTMLRunner', self.baseURL+'/'+sane_path],
+            stdin = stdin,
+            stdout = stdout,
+            stderr = stderr,
+            environ = environ
+        ).run()
+
+        # XXX error trapping
 
 class HTMLRunner(commands.AbstractCommand):
 

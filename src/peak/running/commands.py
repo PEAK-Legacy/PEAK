@@ -928,6 +928,7 @@ to invoke it.
 
         if factory is ob:   # XXX ???
             ob = factory(self, 'cgi')
+            ob.argv = self.argv[1:]
 
         cgi = adapt(ob, IRerunnableCGI, None)
 
@@ -937,7 +938,6 @@ to invoke it.
         raise InvocationError(
             "Can't convert", ob, "to CGI; found at", name
         )
-
 
 
 
