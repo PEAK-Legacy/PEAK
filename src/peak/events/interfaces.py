@@ -289,13 +289,14 @@ class IScheduler(protocols.Interface):
 
     """Time-based conditions"""
 
-    now = protocols.Attribute("""'IReadableSource' for the current time""")
-
     def spawn(iterator):
         """Return a new 'IScheduledThread' based on 'iterator'"""
 
+    def now():
+        """Return the current time"""
+
     def tick():
-        """Update 'now', and invoke scheduled callbacks"""
+        """Invoke scheduled callbacks whose time has arrived"""
 
     def sleep(secs=0):
         """'IEventSource' that fires 'secs' after each callback/task switch
@@ -335,19 +336,19 @@ class ISelector(protocols.Interface):
     seconds."""
 
     def readable(stream):
-        """'ISemaphore' that allows proceeding while 'stream' is readable"""
+        """'ICondition' that's true when 'stream' is readable"""
 
     def writable(stream):
-        """'ISemaphore' that allows proceeding while 'stream' is writable"""
+        """'ICondition' that's true when 'stream' is writable"""
+
+    def exceptional(stream):
+        """'ICondition' that's true when 'stream' is in error/out-of-band"""
+
+    def resolve(name, timeout=10):
+        """'ITask' that yields IP for 'name', or raises a timeout error"""
 
     def signal(signame):
         """Get 'IEventSource' that triggers whenever named signal occurs"""
-
-
-
-
-
-
 
 
 

@@ -128,20 +128,17 @@ class Scheduler(object):
     protocols.advise( instancesProvide=[IScheduler] )
 
     def __init__(self, time = time.time):
-        self._time = time
+        self.now = time
         self._appointments = []
-        self.now = Value(time())
 
 
     def time_available(self):
         if self._appointments:
-            return max(0, self._appointments[0][0] - self._time())
+            return max(0, self._appointments[0][0] - self.now())
 
 
     def tick(self):
-        now = self._time()
-        self.now.set(now)
-
+        now = self.now()
         while self._appointments and self._appointments[0][0] <= now:
             self._appointments.pop(0)[1](self,now)
 
@@ -149,17 +146,16 @@ class Scheduler(object):
     def sleep(self, secs=0):
         return _Sleeper(self,secs)
 
-
     def until(self,time):
         c = Condition()
-        if time <= self._time():
+        if time <= self.now():
             c.set(True)
         else:
             self._callAt(lambda s,e: c.set(True), time)
         return c
 
     def timeout(self,secs):
-        return self.until(self._time()+secs)
+        return self.until(self.now()+secs)
 
 
     def spawn(self, iterator):
@@ -198,8 +194,12 @@ class _Sleeper(object):
 
     def addCallback(self,func):
         self.scheduler._callAt(
-            lambda s,e: func(self,e), self.scheduler._time() + self.delay
+            lambda s,e: func(self,e), self.scheduler.now() + self.delay
         )
+
+
+
+
 
 
 
@@ -354,7 +354,7 @@ class _SThread(Thread):
                 return True
         finally:
             self.scheduler._callAt(
-                lambda e,s: condition.set(True), self.scheduler._time()
+                lambda e,s: condition.set(True), self.scheduler.now()
             )
 
 
@@ -362,7 +362,7 @@ class _SThread(Thread):
         """See 'events.IScheduledThread.step'"""
         self.scheduler._callAt(
             lambda e,s: super(_SThread,self).step(source,event),
-            self.scheduler._time()
+            self.scheduler.now()
         )
 
 

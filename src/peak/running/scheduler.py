@@ -162,6 +162,47 @@ def getTwisted():
     return peak_reactor
 
 
+class TwistedScheduler(binding.Component,events.Scheduler):
+
+    """'events.IScheduler' that uses a Twisted reactor for timing"""
+
+    reactor = binding.Obtain(ITwistedReactor)
+    now     = binding.Obtain('import:time.time')
+
+    def time_available(self):
+        return 0    # no way to find this out from a reactor :(
+
+    def tick(self):
+        self.reactor.runUntilCurrent()
+
+    def _callAt(self, what, when):
+        self.reactor.callLater(when-self.now(), what, self, when)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 class UntwistedReactor(binding.Component):
 
     """Primitive partial replacement for 'twisted.internet.reactor'"""
