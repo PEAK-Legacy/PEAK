@@ -72,7 +72,48 @@ class UMLClass:
                 return list(query([element])['specializations']['child'])
 
 
+
+
+
+
+
+
+
+
+    class Namespace:
+
+        def __getitem__(self,key):
+
+            if '.' in key:
+                ob = self
+                for k in key.split('.'):
+                    ob = ob[k]
+                return ob
+
+            for ob in self.ownedElements:
+                if getattr(ob,'name',None)==key:
+                    return ob
+
+            raise KeyError, key
+
+
+        def find(self,*criteria):
+            q = query(self.ownedElements)
+            for c in criteria:
+                q = q[c]
+            return q
+
+
 config.setupModule()
+
+
+
+
+
+
+
+
+
 
 
 
