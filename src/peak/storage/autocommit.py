@@ -116,10 +116,10 @@ class autocommitted(advice):
         with this issue to know what's most useful, we may add such an
         error handler to the 'AutoCommitter' default 'txnSvc' setup code.
 
-        Also note that wrapped methods should still use 'self.joinedTxn' to
-        ensure they have joined a transaction, since (for example) the object
-        might not have its 'autocommit' flag set.
-    """
+        Also note that wrapped methods should always use 'self.joinedTxn' to
+        ensure they have joined a transaction; this wrapper doesn't do it for
+        you.  (It can't, since it would then fail to work correctly when
+        autocommit is turned off.)"""
 
     __slots__ = ()
     
@@ -132,7 +132,6 @@ class autocommitted(advice):
             # progress, *and* the object is in autocommit mode.
 
             self.txnSvc.begin()
-            self.joinedTxn
 
             try:
                 retval = __advice._func(self, *__args, **__kw)
