@@ -12,55 +12,14 @@ Open Issues/To-Do Items
       - Make it possible to adapt from condition->value, so deriving from conds
         can still work, and implement events.AllOf() as a condition
 
-      - Replace IMainLoop activity monitoring with a plugin-based mechanism?
+    * peak.ddt
 
-    * peak.naming
-
-      - 'ILoadingService', 'IObjectLoader' and 'load:kind@URL' scheme
-
-    * peak.config
-
-      - "service zones" or "service groups" to do smarter service groupings
-
-      - plugin keys ordered by definition sequence, rather than randomly
-
-      - ZConfig factory support to allow "smart" interpretation of strings,
-        section names, etc.
-
-    * peak.running.logs
-
-      - Separate formatters from publishers
-
-      - ZConfig schema for logging plugins, allowing multiple handlers/category
-
-    * peak.binding
-
-      - Cleanup/document attribute binding interface
+      - Row and Action processors, better heading->property name translation
 
 
 
-    * peak.running.timers
 
-      - Factor out state into separate object so timers aren't shared state
 
-      - Look at possible integration of peak.query and cursor formatters, in
-        order to view stats as an in-memory mini-DB w/reporting.
-
-    * peak.running
-
-       - Add "error formatting" and "error reporting" services
-
-    * peak.web (some of this may get bumped to alpha 4)
-
-       - clean up DOMlet parse/build framework (e.g. add line number info)
-
-       - default error templates, w/useful info
-
-       - A set of simple, basic form controls that handle value rendering only
-         (form metadata, validation, etc. will be handled by peak.web.forms in
-         a later release)
-
-       - try/catch DOMlet (and related error rendering interface/framework)
 
 
 
@@ -82,6 +41,45 @@ Open Issues/To-Do Items
 
  Targeted for 0.5 Alpha 4
 
+    * 'ILoadingService', 'IObjectLoader' and 'load:kind@URL' scheme
+
+    * peak.config
+
+      - "service zones" or "service groups" to do smarter service groupings
+
+      - Replace IMainLoop activity monitoring with a plugin-based mechanism?
+
+      - plugin keys ordered by definition sequence, rather than randomly
+
+      - ZConfig factory support to allow "smart" interpretation of strings,
+        section names, etc.
+
+      - Writable and subscribable config sources, including editable .ini's
+
+    * peak.running.logs
+
+      - Separate formatters from publishers
+
+      - ZConfig schema for logging plugins, allowing multiple handlers/category
+
+    * peak.running.commands
+
+       - Add "error formatting" and "error reporting" services
+
+       - Add option parsing framework based on optparse (backported to 2.2)
+
+    * peak.binding
+
+      - Cleanup/document attribute binding interface
+
+    * peak.running.timers
+
+      - Factor out state into separate object so timers aren't shared state
+
+      - Look at possible integration of peak.query and cursor formatters, in
+        order to view stats as an in-memory mini-DB w/reporting.
+
+
     * Transaction/storage refactorings
 
       - transaction scopes for commands and tasks
@@ -92,15 +90,17 @@ Open Issues/To-Do Items
 
       - DM.find()/DM.get() queries
 
-    * peak.running.commands
-
-       - Add option parsing framework based on optparse (backported to 2.2)
-
-    * peak.config
-
-       - Writable and subscribable config sources, including editable .ini's
-
     * peak.web
+
+       - clean up DOMlet parse/build framework (e.g. add line number info)
+
+       - default error templates, w/useful info
+
+       - A set of simple, basic form controls that handle value rendering only
+         (form metadata, validation, etc. will be handled by peak.web.forms in
+         a later release)
+
+       - try/catch DOMlet (and related error rendering interface/framework)
 
        - allow use of // in DOMlets' data paths, to access resource space
 
@@ -164,6 +164,8 @@ Open Issues/To-Do Items
 
  Targeted for version 0.6
 
+   * Functional/acceptance tests that access "real" databases, LDAP, etc.
+
    * Get XMI writing in place, w/transaction support
 
    * Generate UML 1.5 and CWM 1.0 and 1.1, and add them to the
@@ -174,139 +176,14 @@ Open Issues/To-Do Items
 
    * Lock management interfaces/API for peak.storage
 
+   * Support for sending and receiving remote cache invalidation
+     messages between DataManagers.
+
    * Make 'cluster' parser complain about things that would cause
      the clusterit tools to choke or barf on the file, or which would
      produce ambiguous or unintended results.  (Or replace with ZConfig
      schema that can generate clusterit files.  And/or replace clusterit
      tools with PEAK ones.)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
- Future Releases
-
-  (Note: some of the below is held-over from TransWarp and may no longer be
-  relevant as written, they are being kept on this list as placeholders for
-  ideas or problem areas that may need to be re-considered in future.)
-
-  Miscellaneous
-
-    * Functional tests that access "real" databases, LDAP, etc.
-
-  Simulator/Module Inheritance
-
-    * Allow 'declareModule()' to bootstrap non-existent modules; this might
-      let us create "virtual packages" made by assembling other packages and
-      modules.
-
-    * Need a strategy for handling "del" operations; they are currently
-      untrapped.  This might be okay under most circumstances, but need to
-      consider edge cases.
-
-    * 'makeClass()' should probably become part of the core API, where
-      it can be used to resolve __metaclass__ conflicts during the first
-      pass of importing a module (prior to running 'setupModule()')
-
-
-  Messaging/ObjectSpaces
-
-    * Support for sending and receiving remote cache invalidation
-      messages between DataManagers.
-
-
-
-
-
-
-
-
-
-
-
-
-  peak.model
-
-    * Implement WarpCORE-oriented structural model, w/Querying support
-
-    * "Indexed" version of in-memory model?
-
-
-    Queries
-
-       * Refactor to use interfaces, if appropriate
-
-       * Incorporate into AbstractModel?
-
-         - Pros:
-
-           * Queries always available
-
-           * Each StructuralModel implementation can easily include its own
-             performance-tuned version of the basic items.
-
-         - Con: default implementation doesn't perform well on large datasets
-
-       * How much of framework needs extensibility?  Should the predicate
-         classes be placed in the StructuralModel's namespace so that predicates
-         have their meaning assigned by the StructuralModel implementation?
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  peak.metamodels.uml
-
-    * Helper methods in Elements & Services for marshalling, common queries, etc.
-
-    * Generator framework
-
-      - Tagged values in stereotypes vs. main values?
-
-      - Should tagged values be copied directly into templates?  Treated as
-        Python expressions?
-
-      - Should Services be generated using an Element class' "static"
-        (class-scope) methods/attributes?
-
-        - Are association-ends scoped?
-
-        - Would it be better to seperate them?
-
-      - What determines whether an implemented Service actually stores objects
-        or delegates this to its subclass services?
-
-    * Simple demo (browse XMI model via the web)
 
 
 

@@ -2,7 +2,7 @@ Installing PEAK
 
  PEAK Release 0.5 alpha 3
 
- Copyright (C) 1996-2003 by Phillip J. Eby and Tyler C. Sarna.
+ Copyright (C) 1996-2004 by Phillip J. Eby and Tyler C. Sarna.
  All rights reserved.  This software may be used under the same terms
  as Zope or Python.  THERE ARE ABSOLUTELY NO WARRANTIES OF ANY KIND.
  Code quality varies between modules, from "beta" to "experimental
@@ -143,9 +143,9 @@ Installing PEAK
 
    - 'ZConfig'
 
-   Also, if you are using a Python version that does not include the 'datetime'
-   package (i.e. versions < 2.3), a replacement 'datetime' package is installed
-   as well.  These packages are automatically installed alongside PEAK in your
+   (Also, if you are using a Python version that does not include the 'datetime'
+   or 'csv' packages (i.e. versions < 2.3), replacement versions are installed
+   as well.)  These packages are automatically installed alongside PEAK in your
    'site-packages' directory, unless you specify an alternate installation
    location to 'setup.py'.  Note that this will overwrite any existing
    installation of these packages.

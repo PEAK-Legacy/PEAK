@@ -1,6 +1,6 @@
 PEAK Release 0.5 alpha 3
 
- Copyright (C) 1996-2003 by Phillip J. Eby and Tyler C. Sarna.
+ Copyright (C) 1996-2004 by Phillip J. Eby and Tyler C. Sarna.
  All rights reserved.  This software may be used under the same terms
  as Zope or Python.  THERE ARE ABSOLUTELY NO WARRANTIES OF ANY KIND.
  Code quality varies between modules, from "beta" to "experimental
@@ -14,32 +14,15 @@ PEAK Release 0.5 alpha 3
     larger scale, and with fewer defects than ever before. The key is
     component-based development, on a reliable infrastructure.
 
-    PEAK is an application kit, and applications are made from components.
-    PEAK provides you with a component architecture, component infrastructure,
-    and various general-purpose components and component frameworks for
-    building applications.  As with J2EE, the idea is to let you stop
-    reinventing architectural and infrastructure wheels, so you can put more
-    time into your actual application.
-
-    But PEAK is different from J2EE: it's a single, free implementation of
-    simpler API's based on an easier-to-use language that can nonetheless
-    scale with better performance than J2EE.
-
-    PEAK is the successor to TransWarp, an experimental toolkit for software
-    automation in Python.  PEAK takes the best of the techniques and ideas
-    from TransWarp, and repackages them as an enterprise software toolkit.
-    Where TransWarp emphasized techniques like generative programming and
-    aspect-oriented programming, PEAK emphasizes enterprise applications,
-    and hides the computer science stuff "under the hood", so you can focus
-    on building your application.
-
     PEAK tools can be used with other "Python Enterprise" frameworks such as
     Zope, Twisted, and the Python DBAPI to construct web-based, GUI, or
     command-line applications, interacting with any kind of storage, or with
     no storage at all.  Whatever the application type, PEAK can help you put
     it together.
 
+
  Package Features
+
 
     As of version 0.5a3, PEAK features include:
 
@@ -56,6 +39,11 @@ PEAK Release 0.5 alpha 3
       format.  Properties and utilities are contextual and can be safely
       acquired from parent/context components automatically.
 
+    * A "document-driven testing" framework similar to "FIT":http://fit.c2.com/
+      that lets you automatically extract test data from design and requirements
+      documents created with popular word processors, then create HTML reports
+      on what passed or failed.
+     
     * Naming system/framework that's midway between J2EE's JNDI and CORBA's
       cosNaming in features, but much easier to use and extend than either
       of those systems.
@@ -86,6 +74,11 @@ PEAK Release 0.5 alpha 3
           and naming services framework.  DB Connections can be accessed
           by name or URL, and bound as default collaborators or utilities
           for access by other application components.
+
+
+
+
+
 
     * CASE/modelling tools: PEAK includes APIs to read object
       models created in the XML-based XMI format.  Many open-source and
@@ -121,6 +114,13 @@ PEAK Release 0.5 alpha 3
 
 
 
+
+
+
+
+
+
+
     * Application Runtime tools, including:
 
       - a "command objects" framework for creating command-line applications,
@@ -135,6 +135,10 @@ PEAK Release 0.5 alpha 3
 
       - a CGI/FastCGI publishing framework that uses 'zope.publisher' to
         publish a PEAK component tree and its associated transaction service
+
+      - An "event-driven" programming framework that supports ultralight
+        "microthreads" implemented via generators, and interacts with Twisted
+        or stands alone.
 
       - an event-driven "reactor" framework that seamlessly integrates with
         Twisted, but can also be used without Twisted for applications that are
@@ -151,6 +155,12 @@ PEAK Release 0.5 alpha 3
       - a "process supervisor" framework for multiprocess servers using
         long-running child processes (created via 'fork()') to take maximum
         advantage of multiprocessor machines for CPU-intensive services.
+
+
+
+
+
+
 
     * AOP and SOP: PEAK allows you to separate concerns as modules, then
       combine the modules via a "module inheritance" technique.  This
@@ -193,16 +203,6 @@ PEAK Release 0.5 alpha 3
 
 
 
-
-
-
-
-
-
-
-
-
-
  Third-Party Software Included with PEAK
 
      All third-party software included with PEAK are understood by PEAK's
@@ -214,6 +214,10 @@ PEAK Release 0.5 alpha 3
      The 'kjbuckets' module is Copyright Aaron Watters and contributors;
      please see the 'src/kjbuckets/COPYRIGHT.txt' file for details of its
      license.
+
+     The 'csv' module is part of Python 2.3 and above, and is included for
+     backward compatibility in Python 2.2.  See the Python license for license
+     details.
 
      The 'datetime', 'persistence' and 'ZConfig' packages are Copyright Zope
      Corporation and contributors; please see the 'LICENSE.txt' files in their
@@ -228,10 +232,6 @@ PEAK Release 0.5 alpha 3
  Installation Instructions
 
     Please see the INSTALL.txt file.
-
-
-
-
 
 
 

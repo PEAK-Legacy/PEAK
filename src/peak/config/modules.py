@@ -79,6 +79,7 @@
         can also use '__name__.split(".")[-1]' to get the undotted form of
         a class' name.
 
+
     Special Considerations for Mutables and Dynamic Initialization
 
         Both inheritance and patching are implemented by running hacked,
@@ -158,6 +159,9 @@
             from peak.api import config
             config.setupModule()
 
+
+
+
     Limitations of Package Inheritance
 
         Because "package inheritance" is effectively just a '__path__' hack,
@@ -191,6 +195,12 @@
             eggs = lazyModule(__name__, '../ni/eggs')
 
         which isn't possible with a regular 'import' statement.
+
+
+
+
+
+
 
 
     Import Paths
@@ -230,7 +240,38 @@
           there *does* need to be a reference-style explanation as well, that
           describes the precise semantics of interpretation for assignments,
           'def', and 'class', in modules running under simulator control.
+
+
+
+
+        * Allow 'declareModule()' to bootstrap non-existent modules; this might
+          let us create "virtual packages" made by assembling other packages
+          and modules.
+
+        * Need a strategy for handling "del" operations; they are currently
+          untrapped.  This might be okay under most circumstances, but need to
+          consider edge cases.
+
+        * 'makeClass()' should probably become part of the core API, where
+          it can be used to resolve __metaclass__ conflicts during the first
+          pass of importing a module (prior to running 'setupModule()')
 """
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
