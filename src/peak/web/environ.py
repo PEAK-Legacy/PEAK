@@ -138,7 +138,7 @@ class Context:
     getResource = binding.Delegate('skin')
 
     _clone_attrs = (
-        'user','policy','skin','rootURL','previous',
+        'user','policy','skin','rootURL','previous','viewHandler'
     )
 
     def __init__(self,name,current,environ,previous=None,**kw):
