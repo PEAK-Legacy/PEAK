@@ -136,7 +136,7 @@ class DDEConnection(storage.ManagedConnection):
     retries  = binding.Obtain("address/retries", default=10)
     sleepFor = binding.Obtain("address/sleep", default=1)
 
-    logger = binding.Obtain('logging.logger:dde')
+    logger = binding.Obtain('logger:dde')
 
     def ddeServer(self):
         return ServerManager(

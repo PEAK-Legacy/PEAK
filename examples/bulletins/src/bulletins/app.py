@@ -13,7 +13,7 @@ class BulletinsApp(binding.Component):
         offerAs = [PropertyName('bulletins.db')]
     )
 
-    log = binding.Obtain('logging.logger:bulletins.app')
+    log = binding.Obtain('logger:bulletins.app')
 
     Bulletins = binding.Make(
         'bulletins.storage:BulletinDM',

@@ -132,7 +132,7 @@
     <key name="logURL" attribute="logName" datatype="string">
 	 <description>
 	 The PEAK URL of the logger that this task should use to record events.
-     It defaults to 'logging.logger:daemons.TaskName', where TaskName is
+     It defaults to 'logger:daemons.TaskName', where TaskName is
      the task's section name in the ZConfig file.
 	 </description>
     </key>

@@ -41,7 +41,7 @@ def unquote(s):
 
 class ProcessSupervisor(EventDriven):
 
-    log           = binding.Obtain('logging.logger:supervisor')
+    log           = binding.Obtain('logger:supervisor')
 
     pidFile       = binding.Require("Filename where process ID is kept")
     minChildren   = 1

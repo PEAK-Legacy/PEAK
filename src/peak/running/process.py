@@ -86,7 +86,7 @@ class ChildProcess(binding.Component):
         instancesProvide = [IProcessProxy]
     )
 
-    log        = binding.Obtain('logging.logger:running.process')
+    log        = binding.Obtain('logger:running.process')
     pid        = None
     isStopped  = False
     isFinished = False

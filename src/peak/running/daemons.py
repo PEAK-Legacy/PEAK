@@ -224,7 +224,7 @@ class AdaptiveTask(binding.Component):
     _name = 'unnamed_task'    # Allow ZConfig to give us a '_name'
 
     logName = binding.Make(
-        lambda self: "logging.logger:daemons."+self._name
+        lambda self: "logger:daemons."+self._name
     )
 
     log = binding.Make(
