@@ -9,7 +9,7 @@ from weakref import ref, WeakValueDictionary
 
 from peak.naming.names import toName, Syntax, CompoundName
 from peak.naming.interfaces import NameNotFoundException
-from peak.util.EigenData import EigenRegistry
+from peak.util.EigenData import EigenRegistry, EigenCell
 
 from Interface import Interface
 from peak.api import config, NOT_FOUND
@@ -85,10 +85,13 @@ def getParentComponent(component):
     """Return parent of 'component', or 'None' if root or non-component"""
 
     try:
-        return component.parentComponent
+        gpc = component.getParentComponent
 
     except AttributeError:
-        return None
+        pass
+
+    else:
+        return gpc()
 
 
 def getRootComponent(component):
@@ -111,9 +114,6 @@ def globalLookup(name, component=None):
     from peak.naming.api import InitialContext
     
     return InitialContext(component).lookup(name)
-
-
-
 
 
 
@@ -543,26 +543,26 @@ class Base(object):
     # use the global lookupComponent + getParentComponent functions as methods
     
     lookupComponent = lookupComponent
-    getParentComponent = getParentComponent
 
-    parentComponent = None
 
     def setParentComponent(self,parent):
-    
-        if self.parentComponent is None:
-            if parent is not None:
-                self.parentComponent = parent
-            else:
-                raise ValueError("Can't unset parent")
+        self.__parentCell.set(parent)
 
-        else:
-            raise ValueError("Can't change parent once set")
+    def getParentComponent(self):
+        return self.__parentCell.get()
 
 
     def _getUtility(self, iface, forObj):
         pass
 
 
+    def __parentCell(s,d,a):
+        cell = EigenCell()
+        cell.set(None)
+        s.getParentComponent = cell.get
+        return cell
+
+    __parentCell = Once(__parentCell)
 
 
 
