@@ -247,8 +247,9 @@
 from __future__ import generators
 import sys
 from types import ModuleType
+from peak.util.EigenData import AlreadyRead
 from peak.util._Code import codeIndex
-from peak.util.imports import lazyModule, joinPath
+from peak.util.imports import lazyModule, joinPath, getModuleHooks
 
 # Make the default value of '__proceed__' a built-in, so that code written for
 # an inheriting module won't fail with a NameError if there's no base module
@@ -272,7 +273,6 @@ def setupObject(obj, **attrs):
     for k,v in attrs.items():
         if not hasattr(obj,k):
             setattr(obj,k,v)
-
 
 
 
@@ -503,17 +503,10 @@ def declareModule(name, relativePath=None, bases=(), patches=()):
             patches, declarations[name]
         )
 
-    elif name in sys.modules:
-        raise SpecificationError(
-            "%s has already been imported" % name
-        )
-        
     declarations[name] = bases, patches
 
 
     def load(module):
-
-        reload(module)
 
         if hasattr(module,'__codeList__'):  # first load might leave code
             del module.__codeList__
@@ -526,7 +519,14 @@ def declareModule(name, relativePath=None, bases=(), patches=()):
         buildModule(module)
 
 
-    return lazyModule(name, reloader=load)
+    # ensure that we are run before any other 'whenImported' hooks
+    getModuleHooks(name).insert(0, load) 
+
+    return lazyModule(name)
+
+
+
+
 
 
 
@@ -655,7 +655,7 @@ def patchModule(moduleName):
 
 
     if sys.modules.has_key(moduleName):
-        raise SpecificationError(
+        raise AlreadyRead(
             "%s is already imported and cannot be patched" % moduleName
         )
 

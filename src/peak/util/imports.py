@@ -2,15 +2,15 @@
 
 __all__ = [
     'importString', 'importObject', 'importSequence', 'importSuite',
-    'lazyModule', 'joinPath',
+    'lazyModule', 'joinPath', 'whenImported', 'getModuleHooks',
 ]
 
 import __main__
 defaultGlobalDict = __main__.__dict__
 
-
 from types import StringTypes, ModuleType
 from sys import modules
+from peak.util.EigenData import AlreadyRead
 
 
 def importSuite(specs, globalDict=defaultGlobalDict):
@@ -80,7 +80,7 @@ def importString(name, globalDict=defaultGlobalDict):
     return item
 
 
-def lazyModule(modname, relativePath=None, reloader=reload):
+def lazyModule(modname, relativePath=None):
 
     """Return module 'modname', but with its contents loaded "on demand"
 
@@ -90,7 +90,8 @@ def lazyModule(modname, relativePath=None, reloader=reload):
 
     'LazyModule' is a subclass of the standard Python module type, that
     remains empty until an attempt is made to access one of its
-    attributes.  At that moment, the module is loaded into memory.
+    attributes.  At that moment, the module is loaded into memory, and
+    any hooks that were defined via 'whenImported()' are invoked.
 
     Note that calling 'lazyModule' with the name of a non-existent or
     unimportable module will delay the 'ImportError' until the moment
@@ -118,14 +119,7 @@ def lazyModule(modname, relativePath=None, reloader=reload):
     it.
 
     (Note: 'relativePath' can also be an absolute path (starting with '/');
-    this is mainly useful for module '__bases__' lists.)
-
-    Finally, this function also accepts a third, optional parameter: a
-    function to be used in place of the Python 'reload()' built-in.
-    This can be used to trigger an action when the module is actually
-    loaded.  This only takes effect if the call to 'lazyModule()'
-    occurs is the first for the named module, and the module issn't
-    already in 'sys.modules'."""
+    this is mainly useful for module '__bases__' lists.)"""
 
     class LazyModule(ModuleType):
 
@@ -147,7 +141,7 @@ def lazyModule(modname, relativePath=None, reloader=reload):
 
             try:
                 # Get Python (or supplied 'reload') to do the real import!
-                reloader(self)
+                _loadAndRunHooks(self)
             except:
                 # Reset our state so that we can retry later
                 LazyModule.__getattribute__ = oldGA
@@ -162,26 +156,73 @@ def lazyModule(modname, relativePath=None, reloader=reload):
             # Finish off by returning what was asked for
             return modGA(self,attr)
 
+
     if relativePath:
         modname = joinPath(modname, relativePath)
+
+
 
     if modname not in modules:
         modules[modname] = LazyModule(modname)
 
-    elif reloader is not reload:
-        raise AssertionError(
-            "Custom reloader specified, but module already loaded",
-            modname
-        )
-
     return modules[modname]
 
 
+postLoadHooks = {}
+
+
+def _loadAndRunHooks(module):
+
+    """Load an unactivated "lazy" module object"""
+
+    # if this fails, we haven't called the hooks, so leave them in place
+    # for possible retry of import
+    
+    reload(module)  
+
+    try:
+        for hook in getModuleHooks(module.__name__):
+            hook(module)
+
+    finally:
+        # Ensure hooks are not called again, even if they fail
+        postLoadHooks[module.__name__] = None
 
 
 
+def getModuleHooks(moduleName):
+
+    """Get list of hooks for 'moduleName'; error if module already loaded"""
+
+    hooks = postLoadHooks.setdefault(moduleName,[])
+
+    if hooks is None:
+        raise AlreadyRead("Module already imported", moduleName)
+
+    return hooks
 
 
+
+def whenImported(moduleName, hook):
+
+    """Call 'hook(module)' when module named 'moduleName' is first used
+
+    The module must not have been previously imported, or 'AlreadyRead'
+    is raised.  'moduleName' is a string containing a fully qualified
+    module name.  'hook' must accept one argument: the imported module
+    object.
+
+    This function's name is a slight misnomer...  hooks are called when
+    a module is first *used*, not when it is imported.
+
+    This function returns 'lazyModule(moduleName)', in case you need
+    the module object for future use."""
+
+    if name in sys.modules and not name in postLoadHooks:
+        raise AlreadyRead("Module already imported", name)
+        
+    getModuleHooks(moduleName).append(hook)
+    return lazyModule(moduleName, reloader=_runHooks)
 
 
 
@@ -204,6 +245,7 @@ def lazyModule(modname, relativePath=None, reloader=reload):
 
 
 def importObject(spec, globalDict=defaultGlobalDict):
+
     """Convert a possible string specifier to an object
 
     If 'spec' is a string or unicode object, import it using 'importString()',
@@ -217,6 +259,7 @@ def importObject(spec, globalDict=defaultGlobalDict):
 
 
 def importSequence(specs, globalDict=defaultGlobalDict):
+
     """Convert a string or list specifier to a list of objects.
 
     If 'specs' is a string or unicode object, treat it as a
