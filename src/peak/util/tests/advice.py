@@ -59,15 +59,15 @@ class AdviceTests(TestCase):
             (3, [[Foo]]),
         ]
 
-
-
-
-
-
-
-
-
-
+    def checkOutside(self):
+        try:
+            ping([], 1)
+        except SyntaxError:
+            pass
+        else:
+            raise AssertionError(
+                "Should have detected advice outside class body"
+            )
 
 
 

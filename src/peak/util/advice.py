@@ -150,16 +150,16 @@ def addClassAdvisor(callback, depth=2):
     caller_locals = frame.f_locals
     caller_globals = frame.f_globals  
 
+    if (caller_locals is caller_globals
+        or '__module__' not in caller_locals
+        or '__name__' not in caller_globals
+        or caller_locals['__module__']<>caller_globals['__name__']):
+            raise SyntaxError(
+                "Advice must be in the body of a class statement"
+            )
+
     previousMetaclass = caller_locals.get('__metaclass__')    
     defaultMetaclass  = caller_globals.get('__metaclass__', ClassType)
-
-
-
-
-
-
-
-
 
 
     def advise(name,bases,cdict):
