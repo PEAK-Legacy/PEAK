@@ -64,10 +64,10 @@ High-level Package Status Information as of 1/24/04
  a 'peak.running.api', all it contains is a link to 'commands' for backward
  compatibility!
 
- security - seems quite solid, but it hasn't seen a lot of use yet, so it's
+ security -- seems quite solid, but it hasn't seen a lot of use yet, so it's
  really hard to say for certain.
 
- storage - big growth area, but mostly stable at the center. Likely areas of
+ storage -- big growth area, but mostly stable at the center. Likely areas of
  change include cursor metadata and how DM's work and are used.  Both are
  likely to be impacted significantly by 'peak.events' and 'peak.query', to
  support business rules and other observers as well as conceptual queries and
