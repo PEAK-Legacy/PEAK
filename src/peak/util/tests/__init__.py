@@ -13,6 +13,7 @@ allSuites = [
     'test_mockdb:test_suite',
     'test_mockets:test_suite',
     'test_signature:test_suite',
+    'test_conflict:test_suite',
 ]
 
 
