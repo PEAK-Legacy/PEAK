@@ -135,3 +135,9 @@ protocols.declareAdapterForType(
     fdURL
 )
 
+protocols.declareAdapterForType(
+    IListeningSocket,
+    lambda o,p: socket.fromfd(o.fileno, socket.AF_UNIX, socket.SOCK_STREAM),
+    fdURL
+)
+
