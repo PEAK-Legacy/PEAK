@@ -2,12 +2,12 @@
 
 from peak.api import *
 from peak.running.commands import AbstractCommand, InvocationError
+from peak.running import options
 from peak.util.readline_stack import *
 from peak.util.imports import importString
 from peak.util.columns import lsFormat
 
 import sys, os, code, __main__
-from getopt import getopt, GetoptError
 
 from interfaces import *
 import ns, sql
@@ -25,27 +25,32 @@ pwd\t\tinfo about c
 ls()\t\tshow contents of c
 """
 
-    usage = """usage: peak n2 [-e] [-p] [-I interface] [name]
-
--e\tif name lookup fails, go into python interactor anyway
--p\tuse python interactor even if there is a more specific interactor
--I\tadapt looked-up object to interface specified as an import string
-\t(implies -e)"""
+    usage = """usage: peak n2 [options] [name]"""
 
     idict = __main__.__dict__
     width = 80    # XXX screen width
 
+    py_anyway = binding.Make(lambda: False,
+        options.Set('-e', value=True,
+        help='if name lookup fails, go into python interactor anyway'
+    ))
+
+    force_py = binding.Make(lambda: False,
+        options.Set('-p', value=True,
+        help='use python interactor even if there is a more' + \
+            ' specific interactor'
+    ))
+
+    adapt_to = binding.Make(lambda: None,
+        options.Set('-I', type=str,
+        help='adapt looked-up object to interface specified as an' + \
+            ' import string (implies -e)'
+    ))
 
     def _run(self):
-        try:
-            opts, args = getopt(self.argv[1:], 'epI:')
-            self.opts = dict(opts)
-        except GetoptError, msg:
-            raise InvocationError(msg)
-
+        args = self.parsed_args
         if len(args) > 1:
             raise InvocationError('too many arguments')
-
 
         cprt = 'Type "copyright", "credits" or "license" for more information.'
         help = 'Type "help" or "help(n2)" for help.'
@@ -69,12 +74,12 @@ ls()\t\tshow contents of c
             else:
                 c = naming.InitialContext(self)
 
-            iface = self.opts.get('-I')
-            if iface is not None:
-                iface = importString(iface)
+            if self.adapt_to is not None:
+                iface = importString(self.adapt_to)
                 c = adapt(c, iface)
+                self.py_anyway = True
         except:
-           if self.opts.has_key('-p') or self.opts.has_key('-e'):
+           if self.force_py or self.py_anyway:
                 c = None
                 sys.excepthook(*sys.exc_info()) # XXX
                 print >>self.stderr
@@ -160,7 +165,7 @@ ls()\t\tshow contents of c
 
 
     def handle(self, c):
-        if self.opts.has_key('-p'):
+        if self.force_py:
             interactor = self
         else:
             binding.suggestParentComponent(self, None, c)
