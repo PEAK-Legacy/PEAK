@@ -179,7 +179,7 @@ class ParsedURL(OpaqueURL):
 
         if url.scheme.lower() in self._supportedSchemes:
         
-            m = klass.pattern.match(url.body)
+            m = self.pattern.match(url.body)
 
             if m:
                 self.__dict__.update(m.groupdict())
