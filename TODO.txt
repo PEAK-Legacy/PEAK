@@ -10,16 +10,27 @@ Open Issues/To-Do Items
          the value is computed by the binding, or if perhaps 'suggestParent'
          should be set to 'False' by default for some kinds of bindings.
 
+    * peak.running.logs
+
+      - Separate formatters from publishers
+
+      - Configurable EventClass
+
+      - Loggers know their names and pass that info to event constructor
+
+      - Events should use standard IComponentFactory constructor interface
 
     * peak.web (some of this may get bumped to alpha 4)
+
+       - fix 'text' DOMlet quoting (i.e., the lack thereof)
+
+       - clean up DOMlet parse/build framework (e.g. add line number info)
 
        - default error templates, w/useful info
 
        - Refactor skin/layer/resource machinery so that layers can be shared
          between skins (because i18n will probably want skins and that's going
          to greatly multiply memory requirements)
-
-       - clean up DOMlet parse/build framework (e.g. add line number info)
 
        - A set of simple, basic form controls that handle value rendering only
          (form metadata, validation, etc. will be handled by peak.web.forms in
@@ -28,15 +39,11 @@ Open Issues/To-Do Items
        - try/catch DOMlet (and related error rendering interface/framework)
 
 
+    * Misc.
 
+      - Namespace re-orgs?  (e.g. peak.running.tools -> peak.tools?)
 
-
-
-
-
-
-
-
+      - API consolidation? (some users only want core API's in peak.api)
 
 
  Targeted for 0.5 Alpha 4
@@ -70,13 +77,6 @@ Open Issues/To-Do Items
 
     * Implement "contextual protocols" (c.f. "object teams") and "parameterized
       protocols" (E.g. 'ListOf(IFoo)', 'MappingOf(keys=IBar,values=IBaz)')
-
-
-
-
-
-
-
 
 
 
