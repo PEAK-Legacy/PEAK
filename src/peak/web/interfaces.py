@@ -388,6 +388,26 @@ class IConfigurableLocation(IWebTraversable,IPlace):
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 class IDOMletState(IComponent):
 
     """A component representing a DOMlet's current execution state"""
@@ -402,6 +422,27 @@ class IDOMletState(IComponent):
         the state's parent components are searched and the first parent
         supporting the interface is returned.  'None' is returned if no parent
         supports the requested interface."""
+
+    def __getitem__(key):
+        """Return variable named 'key', or raise 'KeyError'"""
+
+    def withData(**data):
+        """Return a new child state, with 'data' added to its variables"""
+
+    def wrapContext(ctx):
+        """Wrap 'ctx' in a decorator that adds this state's variables"""
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

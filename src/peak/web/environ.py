@@ -370,6 +370,7 @@ def traverseDefault(ctx, ob, ns, name, qname, default=NOT_GIVEN):
 def traverseLocationId(ctx, ob, ns, name, qname, default=NOT_GIVEN):
 
     key = LOCATION_ID(name)
+    orig_ctx = ctx
 
     while ctx is not None:
         cob = ctx.current
@@ -388,8 +389,7 @@ def traverseLocationId(ctx, ob, ns, name, qname, default=NOT_GIVEN):
     if default is not NOT_GIVEN:
         return default
 
-    raise errors.NotFound(ctx,qname,ob)
-
+    raise errors.NotFound(orig_ctx,qname,ob)
 
 
 

@@ -113,7 +113,7 @@ def resourceView(path):
     return handler
 
 def locationView(spec):
-    keyPath,locId = spec.split('@',1)
+    keyPath,locId = str(spec).split('@',1)
     locId = '++id++'+locId
     def handler(ctx, ob, namespace, name, qname, default=NOT_GIVEN):
         path = str(ctx.clone(current=ob).traverseName(keyPath).current)
@@ -135,7 +135,7 @@ def registerView(name,handler,data,attrs):
 
     #if typ is None:
     #    pass # XXX register direct w/location?
-    loc.registerView(typ,name,handler)
+    loc.registerView(typ,str(name),handler)
 
 
 def doAllow(parser,data):
@@ -163,7 +163,7 @@ def defineAllow(parser,data):
 
 
 locRequired = ()
-locOptional = 'name','class','id','permission', 'extends', #config
+locOptional = 'name','class','id','permission', 'extends', 'config'
 
 def makeLocation(parser,data,attrs,parent,name):
 
@@ -173,10 +173,7 @@ def makeLocation(parser,data,attrs,parent,name):
         )
         return config.processXML(
             web.SITEMAP_SCHEMA(parent),
-            naming.lookup(parent,
-                # Might be a relative URL, so parse w/parser URL as base
-                naming.parseURL(parent, attrs['extends'], parser._url)
-            ),
+            relativeResource(parser,attrs['extends'],parent),
             parent=parent, sm_included_from=attrs, sm_globals=globals(), #XXX
         )
 
@@ -184,6 +181,13 @@ def makeLocation(parser,data,attrs,parent,name):
         return evalObject(data,attrs['class'])(parent,name)
 
     return Location(parent,name)
+    
+
+def relativeResource(parser, attr, parent):
+    return naming.lookup(parent,
+        # Might be a relative URL, so parse w/parser URL as base
+        naming.parseURL(parent, attr, parser._url)
+    )
     
 
 
@@ -199,12 +203,7 @@ def makeLocation(parser,data,attrs,parent,name):
 
 
 
-
-
-
-
 def startLocation(parser,data):
-
     attrs = SOX.validatedAttributes(parser,data,locRequired,locOptional)
     acquirePermission(data,attrs)
     prev = findComponentData(data)
@@ -224,10 +223,12 @@ def startLocation(parser,data):
         parser.err("Non-root locations must have a 'name'")
 
     loc = makeLocation(parser,data,attrs,parent,name)
-
     if 'id' in attrs:
-        loc.registerLocation(attrs['id'],'.')
-
+        loc.registerLocation(str(attrs['id']),'.')
+    if 'config' in attrs:
+        config.loadConfigFile(
+            loc,relativeResource(parser,attrs['config'],parent)
+        )
     data['sm.component'] = loc
     data['sm.sublocations'] = subloc = {}
     loc.addContainer(subloc)
@@ -241,7 +242,6 @@ def defineLocation(parser,data):
     def addLocation(loc):
         data['sm.sublocations'][loc.getComponentName()] = loc
     data['child'] = addLocation
-
 
 
 content_req = ('type',)
@@ -357,13 +357,13 @@ def setupDocument(parser,data):
     data['finish'] = finishComponent
     data['sm.component'] = data['parent']
 
-
-
-
-
-
-
-
-
+class SiteMap(binding.Singleton):
+    protocols.advise(classProvides=[naming.IObjectFactory])
+    def getObjectInstance(klass, context, refInfo, name, attrs=None):
+        url, = refInfo.addresses
+        return config.processXML(
+            web.SITEMAP_SCHEMA(context), str(url),
+            parent=context, sm_globals=globals(), #XXX
+        )
 
 

@@ -104,18 +104,59 @@ class NSTest2(NSTest):
 </div></ul>
 </body>""")
 
+class ListHeaderFooterTest(BasicTest):
+    template = "data:,"+quote("""<ul content:list="bar"
+    ><li this:is="header">Header</li><li this:is="listItem" content:replace="."
+    ></li><li this:is="footer">Footer</li></ul>""")
+
+    rendered = "<ul><li>Header</li><li>1</li><li>2</li><li>3</li>" \
+               "<li>Footer</li></ul>"
+
+
+
+
+
+
+
+
+
+
+class ParserTests(TestCase):
+
+    def setUp(self,**kw):
+        self.xml_parser = config.XMLParser(
+            web.TEMPLATE_SCHEMA(testRoot()),
+            pwt_document = web.TemplateDocument(testRoot()),
+            **kw
+        )
+        self.parse = self.xml_parser.parse
+        self.nparser = nparser = self.xml_parser.makeParser()
+        self.startElement = nparser.startElement
+        self.endElement = nparser.endElement
+        nparser._beforeParsing(self.xml_parser.parseFunctions())
+        self.finish = nparser._afterParsing
+        self.policy = web.TestPolicy(TestApp(testRoot()))
+
+    def testInvalidArgs(self):
+        self.startElement('ul',['content:list','bar'])
+
+        # Unrecognized argument for 'list'
+        self.startElement('li',['this:is','invalid'])
+        self.assertRaises(SyntaxError,self.endElement)
+
+        # Multiple 'header' definitions
+        self.startElement('li',['this:is','header'])
+        self.endElement()
+        self.startElement('li',['this:is','header'])
+        self.assertRaises(SyntaxError,self.endElement)
+
 
 TestClasses = (
-    BasicTest, NSTest, NSTest2
+    ParserTests, BasicTest, NSTest, NSTest2, ListHeaderFooterTest
 )
 
 def test_suite():
     return TestSuite([makeSuite(t,'test') for t in TestClasses])
-
-
-
-
-
 
 
 

@@ -273,16 +273,23 @@ class ParserTests(TestCase):
         self.assertEqual(ctx.traverseName("__doc__").current,(123).__doc__)
         self.assertEqual(ctx.traverseName("__class__").current,(123).__class__)
 
+    def testLocationConfigure(self):
+        self.startElement('location',
+            ['config','pkgfile:peak.web.tests/configure-test.ini'])
+        loc = self.endElement()
+        self.assertEqual(
+            config.lookup(loc,'peak.web.resource_packages.peak.web.tests'),
+            True
+        )
 
-    # location[configure]
+
+
 
     # Extending location's views should override extendee's
 
     # XXX Containers in extending are *after* those in extendee!
 
     # XXX Location should support direct permissions, and ignore redundant ones
-
-
 
 
 class TestLocation(web.Location):

@@ -3,12 +3,10 @@
 TODO
 
  - Address traversal nesting for referenced data
- 
+
  - Dynamic attributes, independent of element?
 
  - Phase out old PWT syntax
- 
- - implement interaction wrapper for "/skin", "/request", etc. data paths
 
  - implement sub-template support (convert doc->DOMlet in another doc)
 
@@ -27,6 +25,8 @@ from interfaces import *
 from xml.sax.saxutils import quoteattr, escape
 from publish import TraversalPath
 from peak.util import SOX
+from places import Decorator
+from environ import traverseItem, traverseDefault
 
 __all__ = [
     'TEMPLATE_NS', 'DOMLETS_PROPERTY', 'TemplateDocument'
@@ -45,6 +45,41 @@ def infiniter(sequence):
             yield item
 
 
+class DOMletVars(Decorator):
+
+    state = None
+
+    def traverseTo(self, name, ctx, default=NOT_GIVEN):
+        loc = traverseItem(ctx, self.state, 'item', name, name, NOT_FOUND)
+        if loc is not NOT_FOUND:
+            return loc
+
+        # attribute is absent or private, fall through to underlying object
+        return traverseDefault(ctx, self.ob, 'attr', name, name, default)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 class DOMletState(binding.Component):
 
     """Execution state for a DOMlet"""
@@ -55,6 +90,18 @@ class DOMletState(binding.Component):
 
     write = binding.Require("Unicode output stream write() method")
 
+    data = binding.Make(dict)
+
+    def __getitem__(self,key):
+        return self.data[key]
+
+    def withData(self,**kw):
+        data = self.data.copy()
+        data.update(kw)
+        return self.__class__(self,data=data,write=self.write)
+
+    def wrapContext(self,ctx):
+        return DOMletVars(ob=ctx, state=self)
 
     def findState(self, iface):
 
@@ -64,12 +111,6 @@ class DOMletState(binding.Component):
             state = adapt(c,iface,None)
             if state is not None:
                 return state
-
-
-
-
-
-
 
 
 
@@ -93,7 +134,7 @@ def startElement(parser,data):
         paramName = data.get('this.is'),
     )
 
-    inner = data.get('content.factory')
+    inner = data.get('content.factory') or ('content.register' in data and parent.tagFactory)
     if inner:
         data['pwt.this'] = outer
         data['pwt.content'] = inner(outer,
@@ -103,9 +144,9 @@ def startElement(parser,data):
             dataSpec=data.get('content.data',''),
             paramName = data.get('content.is'),
         )
-        
 
-def finishElement(parser,data):    
+
+def finishElement(parser,data):
     content = data['pwt.content']
     for f in data.get('content.register',()):
         f(content)
@@ -113,7 +154,7 @@ def finishElement(parser,data):
         this = data['pwt.this']
         this.addChild(content)
     else:
-        this = content        
+        this = content
     for f in data.get('this.register',()):
         f(this)
     if 'previous' in data:
@@ -130,7 +171,7 @@ def negotiateDomlet(parser, data, name, value):
         data['this.domlet'] = domlet = value
 
     factory = DOMLETS_PROPERTY.of(data['previous']['pwt.content'])[domlet]
-    if data.setdefault('this.factory',factory) is not factory: 
+    if data.setdefault('this.factory',factory) is not factory:
         parser.err('More than one "domlet" or "this:" replacement defined')
 
 
@@ -184,7 +225,7 @@ def setupElement(parser,data):
     data['finish'] = finishElement
     data['text'] = text
     data['literal'] = literal
-    
+
 
 def setupDocument(parser,data):
     setupElement(parser,data)
@@ -251,6 +292,8 @@ class Element(binding.Component):
         instancesProvide = [IDOMletElement],
     )
 
+    security.allow(security.Anybody)
+
     children       = binding.Make(list)
     params         = binding.Make(dict)
 
@@ -260,7 +303,8 @@ class Element(binding.Component):
     domletProperty = None
     dataSpec       = binding.Make(lambda: '', adaptTo=TraversalPath)
     paramName      = None
-    acceptParams   = binding.Obtain('domletProperty')
+    acceptParams   = ()
+    multiParams    = ()
 
     # IDOMletNode
 
@@ -281,9 +325,6 @@ class Element(binding.Component):
             return self._emptyTag
 
     staticText = binding.Make(staticText, suggestParent=False)
-
-
-
 
     def optimizedChildren(self):
 
@@ -314,7 +355,7 @@ class Element(binding.Component):
 
 
     def _traverse(self, data, state):
-        return self.dataSpec.traverse(data), state
+        return self.dataSpec.traverse(data,state.wrapContext), state
 
 
 
@@ -358,12 +399,53 @@ class Element(binding.Component):
         self.children.append(node)
 
 
+
+
+
+
+
+
+
+
+
     def addParameter(self, name, element):
         """Declare 'element' as part of parameter 'name'"""
-        if self.acceptParams:
-            self.params.setdefault(name,[]).append(element)
+
+        if not self.acceptParams:
+            return self.getParentComponent().addParameter(name,element)
+
+        if name not in self.acceptParams and '*' not in self.acceptParams:
+            # XXX need line info
+            raise SyntaxError("Unrecognized parameter: %r" % name)
+
+        is_multi = (
+            name in self.multiParams or
+            name not in self.acceptParams and '*' in self.multiParams
+        )
+
+        if name in self.params:
+
+            if not is_multi:
+                raise SyntaxError(
+                    "Multiple definitions for parameter: %r" % name
+                )   # XXX need line info
+
+            self.params[name].append(element)
+
+        elif is_multi:
+            self.params[name] = [element]
+
         else:
-            self.getParentComponent().addParameter(name,element)
+            self.params[name] = element
+
+
+
+
+
+
+
+
+
 
 
 
@@ -385,12 +467,12 @@ class Element(binding.Component):
         ) or ''
     )
 
+
     tagFactory     = None # real value is set below
     textFactory    = Literal
     literalFactory = Literal
 
 Element.tagFactory = Element
-
 
 
 
@@ -458,9 +540,8 @@ class TemplateDocument(TaglessElement):
         classProvides = [naming.IObjectFactory],
     )
 
-    security.allow(security.Anybody)
 
-    acceptParams = True     # handle any top-level parameters
+    acceptParams = '*',     # handle any top-level parameters
 
 
     def renderFor(self, ctx, state):
@@ -480,13 +561,55 @@ class TemplateDocument(TaglessElement):
 
 
     def getObjectInstance(klass, context, refInfo, name, attrs=None):
-        #print "loading template"; import pdb; pdb.set_trace()
         url, = refInfo.addresses
         return config.processXML(
             web.TEMPLATE_SCHEMA(context),str(url),pwt_document=klass(context),
         )
 
     getObjectInstance = classmethod(getObjectInstance)
+
+
+
+
+
+class Replace(Element):
+
+    staticText = None
+    acceptParams = '*',
+    escaped = True
+
+    def renderFor(self,data,state):
+
+        if self.dataSpec:
+            data, state = self._traverse(data, state)
+
+        if self.params:
+            state = state.withData(params=self.params)
+
+        current = data.current
+
+        domlet = IDOMletNode(current,None)
+        if domlet is not None:
+            return domlet.renderFor(data,state)
+
+        # XXX dyn var comp goes here
+        # XXX if NOT_FOUND -> return
+        # XXX if NOT_GIVEN -> render original content
+
+        current = unicode(current)
+        if self.escaped:
+            current = escape(current)
+
+        state.write(current)
+
+
+class ReplaceXML(Replace):
+    escaped = False
+
+            
+
+
+
 
 
 
@@ -656,6 +779,9 @@ protocols.adviseObject(URLTag, provides=[IDOMletElementFactory])
 
 class List(ContentReplacer):
 
+    acceptParams = 'listItem','header','emptyList','footer'
+    multiParams = 'listItem',
+
     def renderFor(self, data, state):
 
         if self.dataSpec:
@@ -675,8 +801,8 @@ class List(ContentReplacer):
                 continue
 
             if not ct:
-                for child in self.params.get('header',()):
-                    child.renderFor(data,state)
+                if 'header' in self.params:
+                    self.params['header'].renderFor(data,state)
 
             loc = data.childContext(str(ct), item)
             nextPattern().renderFor(loc, state)
@@ -684,14 +810,52 @@ class List(ContentReplacer):
 
         if not ct:
             # Handle list being empty
-            for child in self.params.get('emptyList',()):
-                child.renderFor(data, state)
+            if 'emptyList' in self.params:
+                self.params['emptyList'].renderFor(data,state)
         else:
-            for child in self.params.get('footer',()):
-                child.renderFor(data,state)
+            if 'footer' in self.params:
+                self.params['footer'].renderFor(data,state)
 
         state.write(self._closeTag)
 
 class TaglessList(List):
     _openTag = _closeTag = _emptyTag = ''
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 

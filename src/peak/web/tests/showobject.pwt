@@ -1,0 +1,10 @@
+<html>
+ <head>
+  <title>Python Object <span this:replace="@@repr"/></title>
+ </head>
+ <body>
+<h1>Python Object <span this:replace="@@repr"/></h1>
+<hr />
+My URL is <span this:replace="/absoluteURL"/>.
+<hr />
+</body></html>

@@ -220,7 +220,6 @@ class Location(Place,binding.Configurable):
             ctx = ctx.clone(view_protocol=VIEW_NAMES.of(self).get)
         return ctx
 
-
     def traverseTo(self, name, ctx, default=NOT_GIVEN):
         if self.have_views:
             ctx = ctx.clone(view_protocol=VIEW_NAMES.of(self).get)
@@ -235,13 +234,14 @@ class Location(Place,binding.Configurable):
                 context = ctx.clone(current=cont)
                 result = context.traverseName(name,NOT_FOUND)
                 if result is not NOT_FOUND:
+                    context = context.parentContext()
+                    if context.current is cont:
+                        context.current = self
                     return result
 
         if default is NOT_GIVEN:
             raise NotFound(ctx,name)
         return default
-
-
 
 
     def registerLocation(self,location_id,path):

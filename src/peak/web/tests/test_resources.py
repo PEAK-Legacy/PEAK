@@ -104,6 +104,9 @@ class LocationTests(TestCase):
         self.root.addContainer(c1,security.Anybody)
         self.assertEqual(self.ctx.traverseName('foo',None).current, 'bar')
         self.assertEqual(self.ctx.traverseName('bar',None).current, 'baz')
+        self.failUnless(
+            web.TraversalPath('bar/..').traverse(self.ctx).current is self.root
+        )
 
     def testOffers(self):
         self.root.addContainer({'bar':'baz'})
@@ -118,9 +121,6 @@ class LocationTests(TestCase):
         self.checkView(self.root,int,123)
         self.checkView(self.root,protocols.IOpenProtocol,web.IWebTraversable)
 
-
-
-
     def checkView(self,loc,tgt,src):
         bar_handler = lambda ctx,o,ns,nm,qn,d: ctx.childContext(qn,"baz")
         loc.registerView(tgt,'bar',bar_handler)
@@ -129,7 +129,7 @@ class LocationTests(TestCase):
             self.ctx.clone(current=loc)
         )
         self.assertEqual(ctx.current,'baz')
-        
+
     def testNestedViews(self):
         loc = web.Location(self.root)
         self.checkView(loc,int,123)
@@ -203,8 +203,49 @@ class ResourceTests(TestCase):
 
 
 
+class IntegrationTests(TestCase):
+    def setUp(self):
+        self.policy = web.TestPolicy(
+            testRoot().lookupComponent(
+                'ref:sitemap@pkgfile:peak.web.tests/test-sitemap.xml'
+            )
+        )
+        self.traverse = self.policy.simpleTraverse
+
+    def testIntView(self):
+        self.assertEqual(self.traverse('123/index_html'),
+            "<html>\n" " <head>\n" "  <title>Python Object 123</title>\n"
+            " </head>\n"
+            " <body>\n"
+            "<h1>Python Object 123</h1>\n" "<hr />\n"
+            "My URL is http://127.0.0.1/123.\n"
+            "<hr />\n" "</body></html>\n"
+        )
+
+    def testListView(self):
+        self.assertEqual(self.traverse('both/index_html'),
+            "<html>\n" " <head>\n"
+            "  <title>Python Object [123, 'abc']</title>\n"
+            " </head>\n"
+            " <body>\n" "<h1>Python Object [123, 'abc']</h1>\n" "<hr />\n"
+            "<table><tr>\n" "<td>Name</td><td>Last modified</td><td>Size</td>"
+            "<td>Description</td>\n" "</tr><tr>\n"
+            "<td><a href=\"../123\">123</a></td>\n" "<td /><td /><td />\n"
+            "</tr><tr>\n" "<td><a href=\"../abc\">'abc'</a></td>\n"
+            "<td /><td /><td />\n" "</tr></table>\n" "<hr />\n"
+            "</body></html>\n"
+        )
+
+
+
+
+
+
+
+
+
 TestClasses = (
-    LocationTests, MethodTest1, MethodTest2, ResourceTests,
+    LocationTests, MethodTest1, MethodTest2, ResourceTests, IntegrationTests
 )
 
 def test_suite():

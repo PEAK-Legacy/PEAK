@@ -48,7 +48,7 @@ class TraversalPath(naming.CompoundName):
         separator='/'
     )
 
-    def traverse(self, ctx):
+    def traverse(self, ctx, wrapper=lambda ctx:ctx):
 
         path = iter(self)
         part = path.next()
@@ -58,7 +58,7 @@ class TraversalPath(naming.CompoundName):
             # 'traversedURL' will break with a TypeError if you try
             # to access it; going to an "absolute" traversal path is
             # an "escape" reserved for template paths, not URLs
-            ctx = Context(None,ctx,ctx.environ,ctx,clone_from=ctx)
+            ctx = Context(None,wrapper(ctx),ctx.environ,ctx,clone_from=ctx)
         else:
             # reset to beginning
             path = iter(self)
