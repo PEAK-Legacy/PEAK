@@ -164,33 +164,32 @@ class QuietTask(ScheduleTestTask):
 
 class TestApp(binding.Component):
 
-    def reactor(self):
-        return UntwistedReactor( self,
-            time = self.clock.time,
-            sleep = self.clock.sleep,
-            select=self.clock.select
-        )
+    clock = binding.Make(lambda self: TestClock(log=self.append))
 
-    reactor = binding.Make(reactor, offerAs=[running.IBasicReactor])
+    reactor = binding.Make(
+        lambda self: UntwistedReactor(
+            sleep = self.clock.sleep, select=self.clock.select
+        ),
+        offerAs=[running.IBasicReactor]
+    )
+
     scheduler = binding.Make(
         lambda self: events.Scheduler(self.clock.time),
         offerAs=[events.IScheduler]
     )
-    def mainLoop(self):
-        return MainLoop(self, time = self.clock.time)
 
-    mainLoop = binding.Make(mainLoop, offerAs=[running.IMainLoop])
+    mainLoop = binding.Make(
+        lambda self: MainLoop(time=self.clock.time),
+        offerAs=[running.IMainLoop]
+    )
 
-    tq = binding.Make(TaskQueue, offerAs=[running.ITaskQueue])
+    tq = binding.Make(running.ITaskQueue, offerAs=[running.ITaskQueue])
 
     log = binding.Make(list)
 
     append = binding.Obtain('log/append')
 
-    def clock(self):
-        return TestClock(log=self.append)
 
-    clock = binding.Make(clock)
 
 ping = ('doing work','ping')
 pong = ('doing work','pong')
@@ -202,6 +201,7 @@ sleep = lambda n: ('Sleeping for',n)
 notWork = ('getting work',False)
 gotWork = ('getting work',True)
 didWork = ('doing work',True)
+
 
 class ReactiveTests(TestCase):
 

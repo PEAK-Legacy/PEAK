@@ -173,11 +173,10 @@ class UntwistedReactor(binding.Component):
     running = False
     writers = binding.Make(list)
     readers = binding.Make(list)
-    time    = binding.Obtain('import:time.time')
     sleep   = binding.Obtain('import:time.sleep')
     select  = binding.Obtain('import:select.select')
     _error  = binding.Obtain('import:select.error')
-    logger  = binding.Obtain('logging.logger:peak.reactor')
+    logger  = binding.Obtain('logger:peak.reactor')
     sigMgr  = binding.Obtain(ISignalManager)
     scheduler = binding.Obtain(events.IScheduler)
 
@@ -201,6 +200,7 @@ class UntwistedReactor(binding.Component):
 
     def removeWriter(self, writer):
         if writer in self.writers: self.writers.remove(writer)
+
 
 
     def run(self, installSignalHandlers=True):
@@ -246,7 +246,6 @@ class UntwistedReactor(binding.Component):
 
     def iterate(self, delay=None):
 
-        now = self.time()
         wasRunning = self.running
 
         try:
@@ -281,6 +280,7 @@ class UntwistedReactor(binding.Component):
 
         elif delay and self.running:
             self.sleep(delay)
+
 
 
 
