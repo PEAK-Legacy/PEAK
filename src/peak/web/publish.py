@@ -109,13 +109,13 @@ class BaseInteraction(security.Interaction):
             storage.abort(self.app)
             # XXX we should log the error here...
             self.response.reset()
+            self.response.setCharset('UTF-8') # set an initial default
+            self.response.setCharsetUsingRequest(self.request)
             self.response.handleException(exc_info)
         finally:
             # Don't allow exc_info to leak, even if the above resulted in
             # an error
             exc_info = None
-
-
 
 
 
