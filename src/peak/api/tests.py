@@ -11,6 +11,7 @@ allSuites = [
     'peak.running.tests:test_suite',
     'peak.security.tests:test_suite',
     'peak.storage.tests:test_suite',
+    'peak.web.tests:test_suite',
 ]
 
 

@@ -10,8 +10,7 @@ include_fcgiapp    = True   # edit this to stop installation of 'fcgiapp'
 
 # Metadata
 PACKAGE_NAME = "PEAK"
-PACKAGE_VERSION = "0.5a2"
-
+PACKAGE_VERSION = "0.5a3"
 HAPPYDOC_IGNORE = [
     '-i', 'examples',  '-i', 'old', '-i', 'tests', '-i', 'setup',
     '-i', 'kjbuckets', '-i', 'ZConfig', '-i', 'persistence',
@@ -52,7 +51,7 @@ if include_tests:
     packages += [
         'peak.tests', 'peak.binding.tests', 'peak.config.tests',
         'peak.model.tests', 'peak.naming.tests', 'peak.running.tests',
-        'peak.security.tests',
+        'peak.security.tests', 'peak.web.tests',
         'peak.storage.tests', 'peak.util.tests', 'protocols.tests',
     ]
 

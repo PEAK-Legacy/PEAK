@@ -70,13 +70,13 @@ class LocationPath(naming.CompoundName):
                 pass
 
             elif part:
-                ob = ob.getSublocation(part, interaction)
-                if (ob is NOT_FOUND or ob is NOT_ALLOWED):
-                    break
+                newOb = ob.getSublocation(part, interaction)
+                if (newOb is NOT_FOUND or newOb is NOT_ALLOWED):
+                    return newOb
+                binding.suggestParentComponent(ob,part,newOb)
+                ob = newOb
 
         return ob
-
-
 
 
 
@@ -192,9 +192,9 @@ class Interaction(security.Interaction):
 
 
     def callObject(self, request, ob):
-        return adapt(ob.getObject(), self.behaviorProtocol).render(self)
-
-
+        method = adapt(ob.getObject(), self.behaviorProtocol)
+        binding.suggestParentComponent(ob,None,method)
+        return method.render(self)
 
 
 
