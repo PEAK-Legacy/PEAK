@@ -10,7 +10,7 @@
     The module makes available many useful values; you can get any opcode as a
     constant from it by explicit import, such as::
     
-        from TW.Utils.Code import LOAD_NAME, STORE_NAME
+        from peak.util.Code import LOAD_NAME, STORE_NAME
 
     There's also an 'opcode' array that you can import that maps opcode names to
     values.

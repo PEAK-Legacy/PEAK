@@ -13,7 +13,7 @@
     so many levels of indirection here that it can make your head spin!
 """
 
-from TW.Utils.Import import interpretSpec, interpretSequence
+from peak.util.Import import interpretSpec, interpretSequence
 
 
 from Interfaces import *
@@ -49,13 +49,13 @@ def getInitialContext(environ={}):
     object.
 
     If the 'environ' does not contain a suitable entry, a default
-    implementation ('TW.Naming.InitialContext.DefaultInitialContext')
+    implementation ('peak.naming.providers.Initial:DefaultInitialContext')
     is used."""
     
     factory = interpretSpec(
         environ.get(
             'NAMING_INITIAL_CONTEXT_FACTORY',
-            'TW.Naming.Contexts:DefaultInitialContext'
+            'peak.naming.providers.Initial:DefaultInitialContext'
         )
     )
 
@@ -167,11 +167,12 @@ def getURLContext(scheme, context=None, environ=None, iface=IBasicContext):
     """Return a 'Context' object for the given URL scheme and interface.
 
     This works by walking the list of context factory objects supplied in
-    the 'NAMING_SCHEME_CONTEXT_FACTORIES' environment entry, and asking each
+    the 'NAMING_URL_CONTEXT_FACTORIES' environment entry, and asking each
     one for an initial context that supports the specified 'scheme'.  If no
-    'NAMING_SCHEME_CONTEXT_FACTORIES' entry is supplied, the default factory
-    is the 'TW.Naming.Schemes:getURLContext()' function.  (See the 'Schemes'
-    package for more information on the default lookup policy.)
+    'NAMING_URL_CONTEXT_FACTORIES' entry is supplied, the default factory
+    is the 'peak.naming.factories:getURLContext()' function.  (See the
+    'peak.naming.factories' package for more information on the default lookup
+    policy.)
 
     Each context factory in the context factory list must be a callable with
     the signature 'factory.getURLContext(scheme,ctx,environ,iface)', returning

@@ -1,9 +1,9 @@
 """Factories for objects, states, and URL scheme contexts"""
 
-from TW.Naming.Interfaces import *
-from TW.Naming.references import *
+from peak.naming.Interfaces import *
+from peak.naming.references import *
 
-from TW.Utils.Import import interpretSpec, importString
+from peak.util.Import import interpretSpec, importString
 
 __implements__ = IObjectFactory, IStateFactory, IURLContextFactory
 

@@ -45,7 +45,7 @@ class test(Command):
 
     description = "Run unit tests after installation"
 
-    user_options = [('test-module=','m','Test module (default=TW.tests)'),]
+    user_options = [('test-module=','m','Test module (default=peak.tests)'),]
 
     def initialize_options(self):
         self.test_module = None
@@ -53,7 +53,7 @@ class test(Command):
     def finalize_options(self):
 
         if self.test_module is None:
-            self.test_module = 'TW.tests'
+            self.test_module = 'peak.tests'
 
         self.test_args = [self.test_module+'.test_suite']
 
@@ -85,7 +85,7 @@ class happy(Command):
     """Command to generate documentation using HappyDoc
 
         I should probably make this more general, and contribute it to either
-        HappyDoc or the distutils, but this does the trick for TW for now...
+        HappyDoc or the distutils, but this does the trick for PEAK for now...
     """
 
     description = "Generate docs using happydoc"
@@ -105,7 +105,7 @@ class happy(Command):
 
         if self.happy_options is None:
             self.happy_options = [
-                '-t', 'TransWarp Reference', '-d', self.doc_output_path,
+                '-t', 'PEAK Reference', '-d', self.doc_output_path,
                 '-i', 'examples', '-i', 'old', '-i', 'tests', '.',
             ]
             if not self.verbose: self.happy_options.insert(0,'-q')
@@ -123,19 +123,22 @@ class happy(Command):
 
 setup(
 
-    name="TransWarp",
+    name="PEAK",
     version="0.2pre1",
-    description="The TransWarp Software Automation Toolkit",
+    description="The Python Enterprise Applications tool Kit",
     
     author="Phillip J. Eby",
     author_email="transwarp@eby-sarna.com",
     
-    url="http://www.telecommunity.com/TransWarp/",
+    url="http://telecommunity.com/TransWarp/",
     
     packages=[
-        'TW', 'TW.API', 'TW.Database', 'TW.MOF', 'TW.SEF', 'TW.UML', 'TW.XMI',
-        'TW.Utils', 'TW.API.tests', 'TW.Database.tests', 'TW.SEF.tests',
-        'TW.Utils.tests', 'TW.tests', 'TWX', 'TWX.Diagrams',
+        'peak', 'peak.api', 'peak.binding', 'peak.model', 'peak.metamodels',
+        'peak.metamodels.MOF', 'peak.metamodels.UML', 'peak.metamodels.XMI',
+        'peak.util',
+
+        'peak.api.tests', 'peak.binding.tests',
+        'peak.metamodels.tests', 'peak.util.tests', 'peak.tests', 
     ],
     
     package_dir = {'':'src'},
@@ -146,7 +149,7 @@ setup(
     },
     
     data_files = [
-        ('TW/SEF/tests', ['src/TW/SEF/tests/MetaMeta.xml']),
+        ('peak/metamodels/tests', ['src/peak/metamodels/tests/MetaMeta.xml']),
     ],
 )
 

@@ -53,7 +53,7 @@ def InterfaceChecker(anInterface):
 
 from Interface.Standard import Class as IPythonClass
 from Interface.iclass import _typeImplements
-from TW.Utils.ClassTypes import isClass
+from ClassTypes import isClass
 
 def cachedInterfaceChecker(anInterface):
 

@@ -7,24 +7,14 @@
     other metadata, etc.
 """
 
-from TW.API import *
-from TW.SEF.Interfaces import *
+from peak.api import *
+from peak.model.interfaces import *
 
 from Interface.Standard import Class as IClass
 
-import TW.SEF.Basic
+import peak.model.basic
 
-__bases__ = TW.SEF.Basic,
-
-
-class AutoCreated(object):
-    # We have to have this here in order to reference it, even though
-    # there's nothing to change
-    pass
-
-class Base(object):
-    # ditto for this...
-    pass
+__bases__ = peak.model.basic,
 
 
 
@@ -39,7 +29,17 @@ class Base(object):
 
 
 
-class StructuralFeature(AutoCreated):
+
+
+
+
+
+
+
+
+
+
+class StructuralFeature(binding.AutoCreated):
 
     __metaclasses__ = ()    # prevents us from being a 'FeatureMC' instance
 

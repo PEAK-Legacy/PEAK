@@ -1,4 +1,4 @@
-"""Functions directly usable from the TW.Naming package"""
+"""Functions directly usable from the peak.naming package"""
 
 __all__ = ['InitialContext', 'lookup']
 
@@ -9,7 +9,7 @@ def InitialContext(environ=None, **kw):
     """Get an initial naming context, based on 'environ' and keyword args
 
     If no environment or keyword arguments are supplied, a default
-    configuration from 'TW.Utils.AppConfig.getDefaultConfig()' is
+    configuration from 'peak.config.getDefaultConfig()' is
     used.  If an environment is supplied, it will be updated with any
     supplied keyword arguments.  If only keyword arguments are supplied,
     they will be used as the environment."""
@@ -18,7 +18,7 @@ def InitialContext(environ=None, **kw):
         if kw:
             environ, kw = kw, None
         else:
-            from TW.Utils.AppConfig import getDefaultConfig
+            from peak.config import getDefaultConfig
             environ = getDefaultConfig()
 
     if kw:

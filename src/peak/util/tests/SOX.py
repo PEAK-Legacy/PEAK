@@ -3,7 +3,7 @@
 from unittest import TestCase, makeSuite, TestSuite
 from cStringIO import StringIO
 from xml.sax import InputSource
-from TW.Utils import SOX
+from peak.util import SOX
 
 def stream(str):
     inpsrc = InputSource()

@@ -1,34 +1,34 @@
-"""Extend an SEF model with the ability to read XML Metadata Interchange files
+"""Extend a PEAK model with the ability to read XML Metadata Interchange files
 
     Usage::
 
-        import TW.XMI.Reading as SEF
+        import peak.metamodels.xmi.reading as model
 
-        class MyMetaModel(SEF.App):
+        class MyMetaModel(model.App):
 
-            class anElementOfMyMetaModel(SEF.Element):
+            class anElementOfMyMetaModel(model.Element):
 
                 ...
 
-    In other words, create a metamodel as you normally would with SEF classes,
-    but using the TW.XMI.Reading module instead of SEF.  Of course, you can
-    also create your own variant modules that combine other aspects with this
-    one over the base SEF module.  Also, you may choose to define your
-    metamodel in a module that does not import a specific variant of the SEF
+    In other words, create a metamodel as you normally would with 'peak.model'
+    classes, but using the 'peak.metamodels.xmi.reading' module instead of
+    'peak.model.basic'.  Of course, you can also create your own variant
+    modules that combine other aspects with this one over the base
+    'peak.model.basic' module.  Also, you may choose to define your metamodel
+    in a module that does not import a specific variant of the 'peak.model'
     module, but instead uses the default unless overridden in an inheriting
-    module.  (See, for example, 'TW.UML.MetaModel', which uses the default
-    SEF implementation, and 'TW.UML.Model', which adds domain logic to the
-    raw UML metamodel, and elects to use 'TW.SEF.SimpleModel' in place of the
-    default SEF module.
+    module.  (See, for example, 'peak.metamodels.uml.MetaModel', which uses
+    the default model implementation, and 'peak.metamodels.UML.Model', which
+    adds domain logic to the raw UML metamodel, and elects to use
+    'peak.metamodels.SimpleModel' in place of the default 'peak.model' module.
 """        
 
-from TW.API import *
-from TW.Utils.SOX import Node, Document, load
+from peak.api import *
+from peak.util.SOX import Node, Document, load
 from kjbuckets import kjGraph
-import TW.SEF.FeatureObjects
+import peak.metamodels.FeatureObjects
 
-__bases__ = TW.SEF.FeatureObjects
-
+__bases__ = peak.metamodels.FeatureObjects,
 
 
 
