@@ -6,7 +6,7 @@ from templates import DOMletAsWebPage, TemplateDocument
 from peak.naming.factories.openable import FileURL
 from peak.util.imports import importString
 import os.path, posixpath, sys
-from errors import UnsupportedMethod
+from errors import UnsupportedMethod, NotFound
 
 __all__ = [
     'Resource', 'FSResource', 'ResourceDirectory', 'FileResource',

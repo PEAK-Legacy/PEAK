@@ -48,7 +48,7 @@ class WebException(Exception):
         parent = ctx.getParentComponent()
         name   = ctx.getComponentName()
         newCtx = parent.subcontext(name, self)
-
+        return newCtx
 
     def handleException(self, interaction, thrower, exc_info, retry_allowed=1):
 
