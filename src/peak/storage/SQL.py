@@ -410,6 +410,10 @@ class SybaseConnection(ValueBasedTypeConn):
 
 class PGSQLConnection(ValueBasedTypeConn):
 
+    protocols.advise(
+        instancesProvide=[ISQLIntrospector]
+    )
+
     DRIVER = "pgdb"
 
     def _open(self):
@@ -432,6 +436,43 @@ class PGSQLConnection(ValueBasedTypeConn):
         'BINARY','BOOL','DATETIME','FLOAT','INTEGER',
         'LONG','MONEY','ROWID','STRING',
     )
+
+
+
+
+
+
+
+
+
+
+
+
+
+    def listObjects(self, full=False, obtypes=NOT_GIVEN):
+
+        pgclass = lambda k,v: (
+            """SELECT relname AS obname, '%s' AS obtype
+            FROM pg_class WHERE relkind='%s'""" % (k,v)
+        )
+
+        relkinds = Items(
+            table=pgclass('table','r'),
+            index=pgclass('index','i'),
+            view=pgclass('view','v'),
+            proc="SELECT proname AS obname, 'proc' AS obtype FROM pg_proc",
+            systable=pgclass('systable','s')
+        )
+
+        if obtypes is NOT_GIVEN:
+            items = [v for (k,v) in relkinds]
+        else:
+            items = [relkinds[k] for k in obtypes if k in relkinds]
+
+        if items:
+            return self(' UNION ALL '.join(items))
+        else:
+            return self(pgclass('table','r')+" LIMIT 0")    # XXX kludge
 
 
 class PsycopgConnection(PGSQLConnection):
@@ -613,7 +654,52 @@ class OracleURL(naming.URL.Base):
 
 
 
-class CXOracleConnection(SQLConnection):
+class OracleIntrospection(object):
+
+    """Mixin for Oracle ISQLIntrospector support"""
+
+    def listObjects(self, full=False, obtypes=NOT_GIVEN):
+        addsel = addwhere = ''
+
+        if full:
+            addsel = ', subobject_name, object_id, data_object_id, last_ddl_time, timestamp, status, temporary, generated, secondary'
+
+        if obtypes is not NOT_GIVEN:
+            addwhere = ' where object_type in (%s)' % \
+                ', '.join(["'%s'" %
+                    {'proc':'FUNCTION'}.get(s, s.upper()) for s in obtypes])
+
+        return self('''select lower(object_name) as "obname",
+        DECODE(object_type, 'FUNCTION', 'proc', lower(object_type))
+        as "obtype", created as "created"%s
+            from user_objects%s''' % (addsel, addwhere))
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class CXOracleConnection(SQLConnection,OracleIntrospection):
+
+    protocols.advise(
+        instancesProvide=[ISQLIntrospector]
+    )
 
     DRIVER = "cx_Oracle"
 
@@ -650,11 +736,7 @@ class CXOracleConnection(SQLConnection):
 
 
 
-
-
-
-
-class DCOracle2Connection(ValueBasedTypeConn):
+class DCOracle2Connection(ValueBasedTypeConn,OracleIntrospection):
 
     protocols.advise(
         instancesProvide=[ISQLIntrospector]
@@ -714,21 +796,21 @@ class DCOracle2Connection(ValueBasedTypeConn):
     typeMap = binding.Make(typeMap)
 
 
-    def listObjects(self, full=False, obtypes=NOT_GIVEN):
-        addsel = addwhere = ''
 
-        if full:
-            addsel = ', subobject_name, object_id, data_object_id, last_ddl_time, timestamp, status, temporary, generated, secondary'
 
-        if obtypes is not NOT_GIVEN:
-            addwhere = ' where object_type in (%s)' % \
-                ', '.join(["'%s'" %
-                    {'proc':'FUNCTION'}.get(s, s.upper()) for s in obtypes])
 
-        return self('''select lower(object_name) as "obname",
-        DECODE(object_type, 'FUNCTION', 'proc', lower(object_type))
-        as "obtype", created as "created"%s
-            from user_objects%s''' % (addsel, addwhere))
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
