@@ -37,11 +37,29 @@ import os, errno, time
 from peak.util.threads import allocate_lock
 
 
+from Interface import Interface
 
+class ILock(Interface):
+    def attempt():
+        """try to obtain the lock, return boolean success"""
+        
+    def obtain():
+        """wait to obtain the lock, returns None"""
+        
+    def release():
+        """release an obtained lock, returns None"""
+        
+    def locked():
+        """returns True if any thread IN THIS PROCESS
+        has obtained the lock, else False"""
+
+    
 
 class LockFileBase:
 
     """Common base for lockfiles"""
+    
+    __implements__ = ILock
     
     def __init__(self, fn):
         self.fn = os.path.abspath(fn)
