@@ -408,7 +408,7 @@ class Enumeration(PrimitiveType, HashAndCompare):
 
     __metaclass__ = EnumerationClass
     
-    __class_implements__ = IEnumClass
+    __class_implements__ = IEnumType
     __implements__       = IEnumValue
 
     __slots__ = 'name', '_hashAndCompare'

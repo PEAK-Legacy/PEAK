@@ -1,4 +1,4 @@
-from structural import PrimitiveType, structField, Immutable, Classifier
+from structural import PrimitiveType, structField, Immutable, Type
 from enumerations import Enumeration, enum
 from peak.api import binding
 
@@ -6,7 +6,7 @@ __all__ = [
     'TCKind', 'TypeCode', 'Short', 'Long', 'UShort', 'ULong', 'Float', 'Double',
     'Integer','UnlimitedInteger','Boolean','String','Name', 'WString', 'Char',
     'WChar', 'LongLong', 'ULongLong', 'LongDouble', 'PrimitiveTC', 'SimpleTC',
-    'Fixed','basicTypes',
+    'Fixed','basicTypes', 'Any'
 ]
 
 
@@ -80,6 +80,11 @@ class TCKind(SimpleTC):
 
 
 
+class Any(PrimitiveType):
+
+    def mdl_normalize(klass, value):
+        return value    # Accept any value...
+
 class Integer(PrimitiveType):
     mdl_fromString = int
 
@@ -101,7 +106,6 @@ class Float(PrimitiveType):
 class Double(PrimitiveType):
     pass
 
-
 class String(PrimitiveType):
 
     length = 0
@@ -109,16 +113,12 @@ class String(PrimitiveType):
     def mdl_fromString(klass,value):
         return value
 
-    mdl_fromString = classmethod(mdl_fromString)
-
     mdl_typeKind = TCKind.tk_string
 
     def mdl_typeCode(klass,d,a):
         return TypeCode(kind = klass.mdl_typeKind, length=klass.length)
 
     mdl_typeCode = binding.classAttr( binding.Once(mdl_typeCode) )
-
-
 
 
 class WString(String):
@@ -170,7 +170,7 @@ class UnlimitedInteger(Integer):
         if value=='*': return klass.UNBOUNDED
         return int(value)
 
-    mdl_fromString = classmethod(mdl_fromString)
+
 
 
 class Name(String):
@@ -304,14 +304,14 @@ basicTypes = {
     TCKind.tk_ulonglong: ULongLong,
     TCKind.tk_longdouble: LongDouble,
 
-    TCKind.tk_any: PrimitiveType,   # XXX ???
+    TCKind.tk_any: Any,
     TCKind.tk_TypeCode: TypeCode,
 
     # TCKind.tk_Principal: Principal,
     # TCKind.tk_null: Null,
     # TCKind.tk_void: Void,
 
-    TCKind.tk_objref: Classifier,
+    TCKind.tk_objref: Type,
 
     TCKind.tk_string: String,
     TCKind.tk_wstring: WString,

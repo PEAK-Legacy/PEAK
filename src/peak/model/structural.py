@@ -13,11 +13,12 @@ from peak.api import *
 from interfaces import *
 from method_exporter import MethodExporter
 from peak.util.hashcmp import HashAndCompare
+from types import FunctionType
 
 __all__ = [
     'Immutable', 'Package', 'Model',
     'StructuralFeature', 'Field', 'Collection', 'Reference', 'Sequence',
-    'Classifier','PrimitiveType','DataType', 'DerivedFeature',
+    'Type', 'PrimitiveType', 'DataType', 'DerivedFeature',
     'DerivedAssociation', 'structField', 'Attribute', 'Struct'
 ]
 
@@ -41,7 +42,7 @@ installIfChangeable = lambda f,m: f.isChangeable
 
 class Namespace(binding.Base):
 
-    """Abstract base class for packages and classifiers -- DEPRECATED
+    """Abstract base class for packages and types -- DEPRECATED
 
     This class currently exists only to mix in an '_XMIMap' registry.  It
     may not exist for long; don't use it directly or rely on its presence."""
@@ -145,9 +146,9 @@ class FeatureClass(HashAndCompare,MethodExporter):
         return rt
 
     typeObject = binding.Once(typeObject)
-
     fromString = binding.bindTo('typeObject/mdl_fromString')
     fromFields = binding.bindTo('typeObject/mdl_fromFields')
+    normalize  = binding.bindTo('typeObject/mdl_normalize')
 
     sortPosn   = None
 
@@ -184,13 +185,13 @@ class FeatureClass(HashAndCompare,MethodExporter):
     isReference = binding.Once(isReference)
 
 
+    def _defaultValue(self,d,a):
+        try:
+            return self.defaultValue
+        except AttributeError:
+            return self.typeObject.mdl_defaultValue
 
-
-
-
-
-
-
+    _defaultValue = binding.Once(_defaultValue)
 
 
 
@@ -218,10 +219,8 @@ class StructuralFeature(object):
     lowerBound    = 0
     upperBound    = None    # None means unbounded upper end
 
-    referencedEnd  = None    # and without an 'other end'
-    referencedType = None    # this actually is set to Classifier, later
-
-    defaultValue   = NOT_GIVEN
+    referencedEnd  = None
+    referencedType = None
 
     newVerbs = Items(
         get     = 'get%(initCap)s',
@@ -244,12 +243,14 @@ class StructuralFeature(object):
 
 
 
+
+
     def _get_one(feature, element):
 
         l = feature._getList(element)
 
         if not l:
-            value = feature.defaultValue
+            value = feature._defaultValue
             if value is NOT_GIVEN:
                 raise AttributeError,feature.attrName
             return value
@@ -278,7 +279,6 @@ class StructuralFeature(object):
 
     _unset_one.installIf = lambda f,m: f.isChangeable and not f.isMany
     _unset_one.verb      = 'unset'
-
 
 
 
@@ -420,7 +420,7 @@ class StructuralFeature(object):
 
     def _notifyLink(feature, element, item, posn=None):
 
-        feature._link(element,item,posn)
+        item = feature._link(element,item,posn)
         referencedEnd = feature.referencedEnd
 
         if referencedEnd:
@@ -458,10 +458,12 @@ class StructuralFeature(object):
         if ub and len(d)>=ub:
             raise ValueError("Too many items")
 
+        item = feature.normalize(item)
         feature._onLink(element,item,posn)
 
         if ub==1:
-            return element._setBinding(feature.implAttr, item, feature.useSlot)
+            element._setBinding(feature.implAttr, item, feature.useSlot)
+            return item
 
         element._setBinding(feature.implAttr, d, feature.useSlot)
 
@@ -469,9 +471,24 @@ class StructuralFeature(object):
             d.append(item)
         else:
             d.insert(posn,item)
+        return item
 
     _link.installIf = installIfChangeable
     _link.verb      = '_link'
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
     def _unlink(feature,element,item,posn=None):
@@ -491,6 +508,7 @@ class StructuralFeature(object):
     _unlink.installIf = installIfChangeable
     _unlink.verb      = '_unlink'
 
+
     def _onLink(feature,element,item,posn):
         pass
 
@@ -499,25 +517,48 @@ class StructuralFeature(object):
         pass
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     def _setup(feature,element,value):
 
         if feature.isChangeable:
             return feature.set(element,value)
 
         doLink = feature._onLink
-
+        normalize = feature.normalize
+        
         if feature.isMany:
             p = 0
-            value = tuple(value)
+            value = tuple(map(normalize,value))
 
             for v in value:
                 doLink(element,value,p)
                 p+=1
 
         else:
-            doLink(element,value,0)
+            doLink(element,normalize(value),0)
 
         element._setBinding(feature.implAttr,value,feature.useSlot)
+
+
+
+
+
+
+
 
 
 
@@ -614,9 +655,15 @@ DerivedAssociation = DerivedFeature # XXX backward compatibility...  deprecated
 
 
 
-class ClassifierClass(Namespace.__class__):
+class TypeClass(Namespace.__class__):
 
     """Basis for all flavors"""
+
+    def __new__(meta, name, bases, cdict):
+        for k,v in cdict.items():
+            if k.startswith('mdl_') and isinstance(v,FunctionType):
+                cdict[k]=classmethod(v)
+        return super(TypeClass,meta).__new__(meta,name,bases,cdict)
 
     def mdl_featuresDefined(self,d,a):
 
@@ -641,7 +688,7 @@ class ClassifierClass(Namespace.__class__):
         None, False, doc = 
         """Is this an abstract class?  Defaults to 'False'.
 
-            To make a 'model.Classifier' subclass abstract, set this
+            To make a 'model.Type' subclass abstract, set this
             to 'True' in the class definition.  Note that you don't
             ever need to set this to 'False', since it will default
             to that value in every new subclass, even the subclasses of
@@ -649,17 +696,11 @@ class ClassifierClass(Namespace.__class__):
         """
     )
 
-
-
-
-
-
-
     def mdl_features(self,d,a):
-        """All feature objects of this classifier, in monotonic order
+        """All feature objects of this type, in monotonic order
 
         The monotonic order of features is equivalent to the concatenation of
-        'mdl_featuresDefined' for all classes in the classifier's MRO, in
+        'mdl_featuresDefined' for all classes in the type's MRO, in
         reverse MRO order, with duplicates (i.e. overridden features)
         eliminated.  That is, if a feature named 'x' exists in more than one
         class in the MRO, the most specific definition of 'x' will be used
@@ -668,7 +709,7 @@ class ClassifierClass(Namespace.__class__):
         that, once a position has been defined for a feature name, it will
         continue to be used by all subclasses, if possible.  For example::
 
-            class A(model.Classifier):
+            class A(model.Type):
                 class foo(model.Attribute): pass
                 
             class B(A):
@@ -713,7 +754,7 @@ class ClassifierClass(Namespace.__class__):
 
     def mdl_sortedFeatures(self,d,a):
 
-        """All feature objects of this classifier, in sorted order"""
+        """All feature objects of this type, in sorted order"""
 
         fl = list(self.mdl_features)
         fl.sort
@@ -737,13 +778,16 @@ class ClassifierClass(Namespace.__class__):
 
 
 
-class Classifier(Namespace):
+class Type(Namespace):
 
-    __metaclass__ = ClassifierClass
+    __metaclass__ = TypeClass
 
-    __class_implements__ = IClassifier
+    __class_implements__ = IType
 
-    mdl_isAbstract = True   # Classifier itself is abstract
+    mdl_defaultValue = NOT_GIVEN
+
+    mdl_isAbstract = True   # 'model.Type' itself is abstract
+
 
     def __new__(klass,*__args,**__kw):
 
@@ -751,23 +795,20 @@ class Classifier(Namespace):
 
         if klass.mdl_isAbstract:
             raise TypeError, "Can't instantiate an abstract class!"
-        return super(Classifier,klass).__new__(klass,*__args,**__kw)
+        return super(Type,klass).__new__(klass,*__args,**__kw)
 
 
     def mdl_fromFields(klass,fieldSeq):
         """Return a new instance from a sequence of fields"""
         return klass(**dict(zip(klass.mdl_featureNames,fieldSeq)))
 
-    mdl_fromFields = classmethod(mdl_fromFields)
-
 
     def mdl_fromString(klass, value):
         raise NotImplementedError
 
-    mdl_fromString = classmethod(mdl_fromString)
 
-
-
+    def mdl_normalize(klass, value):
+        return value
 
 
 
@@ -780,7 +821,7 @@ class Classifier(Namespace):
 
     def __init__(self,*__args,**__kw):
 
-        super(Classifier,self).__init__(*__args)
+        super(Type,self).__init__(*__args)
 
         klass = self.__class__
 
@@ -802,7 +843,6 @@ class Classifier(Namespace):
 
 
 
-StructuralFeature.referencedType = Classifier
 
 
 
@@ -819,7 +859,8 @@ StructuralFeature.referencedType = Classifier
 
 
 
-class ImmutableClass(ClassifierClass):
+
+class ImmutableClass(TypeClass):
 
     def __init__(klass,name,bases,dict):
 
@@ -860,7 +901,7 @@ class ImmutableClass(ClassifierClass):
 
 
 
-class Immutable(Classifier, HashAndCompare):
+class Immutable(Type, HashAndCompare):
 
     __metaclass__  = ImmutableClass
     __implements__ = binding.IBindingAPI
@@ -901,7 +942,7 @@ class Immutable(Classifier, HashAndCompare):
 
 
 
-class PrimitiveTypeClass(ClassifierClass):
+class PrimitiveTypeClass(TypeClass):
 
     def __init__(klass,name,bases,cDict):
 
@@ -913,12 +954,12 @@ class PrimitiveTypeClass(ClassifierClass):
             )
 
     # Primitive types are not instantiable; they stand in for
-    # a type that isn't a model.Classifier
+    # a type that isn't derived from model.Type
 
     mdl_isAbstract = binding.Constant(None, True)
 
 
-class PrimitiveType(Classifier):
+class PrimitiveType(Type):
 
     """A primitive type (e.g. Boolean, String, etc.)"""
 
@@ -928,7 +969,7 @@ class PrimitiveType(Classifier):
         # primitive types don't have fields...
         raise NotImplementedError
 
-    mdl_fromFields = classmethod(mdl_fromFields)
+
 
 
 

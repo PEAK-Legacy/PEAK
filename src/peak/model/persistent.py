@@ -2,7 +2,7 @@
 
 from peak.api import *
 
-from structural import Classifier
+from structural import Type
 from interfaces import *
 
 from Persistence import Persistent
@@ -14,7 +14,7 @@ from peak.storage.lazy_loader import LazyLoader
 __all__ = [ 'Element' ]
 
 
-class ElementClass(Classifier.__class__, Persistent.__class__):
+class ElementClass(Type.__class__, Persistent.__class__):
     pass
 
 
@@ -39,7 +39,7 @@ class ElementClass(Classifier.__class__, Persistent.__class__):
 
 
 
-class Element(Classifier, Persistent):
+class Element(Type, Persistent):
 
     """A persistent domain element"""
 

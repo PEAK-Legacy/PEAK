@@ -4,9 +4,7 @@ from Interface import Interface
 from Interface.Attribute import Attribute
 
 __all__ = [
-    'IFeature','IFeatureSPI',
-    'IClassifier',
-    'IEnumClass', 'IEnumValue',
+    'IFeature','IFeatureSPI', 'IType', 'IEnumType', 'IEnumValue',
 ]
 
 
@@ -39,10 +37,11 @@ __all__ = [
 
 
 
-class IClassifier(Interface):
+
+
+class IType(Interface):
 
     """A model type"""
-
 
     def mdl_fromString(aString):
         """Return an instance of type created based on 'aString'"""
@@ -54,12 +53,17 @@ class IClassifier(Interface):
         are the values of the features named by 'mdl_featureNames',
         in that order."""
 
-
+    def mdl_normalize(value):
+        """Return 'value' normalized to the type, or raise error if invalid"""
 
     mdl_isAbstract = Attribute(
         """Is this an abstract class?  If so, instances can't be created."""
     )
 
+    mdl_defaultValue = Attribute(
+        """Default value for attributes of this type, or NOT_GIVEN"""
+    )
+    
     mdl_featuresDefined = Attribute(
         """Sorted tuple of feature objects defined/overridden by this class"""
     )
@@ -69,22 +73,18 @@ class IClassifier(Interface):
     )
 
     mdl_sortedFeatures = Attribute(
-        """All feature objects of this classifier, in sorted order"""
+        """All feature objects of this type, in sorted order"""
     )
 
     mdl_compositeFeatures = Attribute(
         """Ordered subset of 'mdl_features' that are composite"""
     )
 
-
-
-
-
     mdl_features = Attribute(
-        """All feature objects of this classifier, in monotonic order
+        """All feature objects of this type, in monotonic order
 
         The monotonic order of features is equivalent to the concatenation of
-        'mdl_featuresDefined' for all classes in the classifier's MRO, in
+        'mdl_featuresDefined' for all classes in the type's MRO, in
         reverse MRO order, with duplicates (i.e. overridden features)
         eliminated.  That is, if a feature named 'x' exists in more than one
         class in the MRO, the most specific definition of 'x' will be used
@@ -93,7 +93,7 @@ class IClassifier(Interface):
         that, once a position has been defined for a feature name, it will
         continue to be used by all subclasses, if possible.  For example::
 
-            class A(model.Classifier):
+            class A(model.Type):
                 class foo(model.Attribute): pass
                 
             class B(A):
@@ -121,7 +121,7 @@ class IClassifier(Interface):
 
 
 
-class IEnumClass(IClassifier):
+class IEnumType(IType):
 
     """An enumerated type"""
 
@@ -204,14 +204,14 @@ class IFeature(Interface):
 
 
     typeObject   = Attribute(
-        """'IClassifier' instance representing the type of the feature"""
+        """'IType' instance representing the type of the feature"""
     )
 
     def fromString(aString):
-        """See 'IClassifier.mdl_fromString()'"""
+        """See 'IType.mdl_fromString()'"""
         
     def fromFields(fieldSequence):
-        """See 'IClassifier.mdl_fromFields()'"""
+        """See 'IType.mdl_fromFields()'"""
 
     def __get__(element,type=None):
         """Retrieve value of the feature for 'element'"""
@@ -256,7 +256,7 @@ class IFeatureSPI(Interface):
     )
 
     referencedType = Attribute(
-        """The 'IClassifier' for 'typeObject', or a name to find it by"""
+        """The 'IType' for 'typeObject', or a name to find it by"""
     )
 
     def get(element):

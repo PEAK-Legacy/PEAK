@@ -29,7 +29,7 @@ class featureBase(object):
     get_multi.verb = 'get'
     get_multi.installIf = lambda feature,method: not feature.singular
 
-
+    referencedType = model.Any
     def set(feature,self,val):
         self.__dict__[feature.attrName]=[val]
 
@@ -207,17 +207,20 @@ class anElement1(model.Element):
 
     class field1(model.Attribute):
         defaultValue = 1
+        referencedType = model.Integer
 
     class simpleSeq(model.Sequence):
-        pass
+        referencedType = model.Integer
 
     class fwdRef(model.Attribute):
         referencedEnd = 'backColl'
+        referencedType = 'anElement2'
 
     class simpleRef(model.Attribute):
-        pass
+        referencedType = model.Integer
 
     class fwdColl(model.Collection):
+        referencedType = 'anElement2'
         referencedEnd = 'backRef'
         upperBound = 3
 
@@ -225,15 +228,12 @@ class anElement1(model.Element):
 class anElement2(model.Element):
 
     class backColl(model.Collection):
+        referencedType = 'anElement1'
         referencedEnd = 'fwdRef'
 
     class backRef(model.Attribute):
+        referencedType = 'anElement1'
         referencedEnd = 'fwdColl'
-
-
-
-
-
 
 
 
