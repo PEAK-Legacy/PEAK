@@ -310,6 +310,12 @@ Fixes and Enhancements since Version 0.5 alpha 2
 
  Corrected Problems
 
+  - Fixed some problems with the test suite when running under Python 2.3.
+    PEAK itself worked fine, but the test suite was bitten by two minor
+    semantic changes that took effect in 2.3, resulting in lots of error
+    messages about ModuleType needing a parameter, and a test failure for
+    'checkClassInfo' in the 'FrameInfoTest' test class.
+
   - Transaction participants that raised an error in their 'abortTransaction()'
     method, would not receive a 'finishTransaction()' call, the error was
     passed through to the transaction service's caller, and later participants
