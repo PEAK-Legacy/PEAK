@@ -81,15 +81,15 @@ class enum(object):
         self.value = value
 
     def __call__(self,name):
-        """Return dict of enumeration literals in context of 'name'"""
+        """Return dict of enumeration literals in context of 'name'
+
+        This method is used by Enumeration classes to set up their instances;
+        you do not need to call this yourself."""
+
         if self.value:
             return {name:self.value[0]}
         else:
             return {name:name}
-
-
-
-
 
 
 
@@ -127,9 +127,8 @@ class enumDict(enum):
 
     This is used in place of 'model.enum()' to specify an assortment of
     enumeration literals from a sequence of '(name,value)' pairs or
-    a dictionary.  It's useful in circumstances where an literal's
+    a dictionary.  It's useful in circumstances where a literal's
     name is a Python keyword or an illegal value for an identifier, e.g.::
-
 
         from keyword import kwlist
         
@@ -148,7 +147,7 @@ class enumDict(enum):
     Note that it doesn't matter what name you give the 'enumDict()' in the
     enumeration class definition; the name will not be used to name an
     enumeration instance.  It is suggested, however, that you use a "private"
-    attribute name to minimize namespace pollution."""
+    attribute name (as in the example above) to avoid namespace pollution."""
 
     __slots__ = ()
 
@@ -156,10 +155,11 @@ class enumDict(enum):
         self.value = dict(fromDict)
 
     def __call__(self,name):
+        """Return dict of enumeration literals in context of 'name'
+
+        This method is used by Enumeration classes to set up their instances;
+        you do not need to call this yourself."""
         return self.value
-
-
-
 
 
 def enums(*values):
@@ -327,12 +327,10 @@ class EnumerationClass(PrimitiveTypeClass):
 
 
 class Enumeration(PrimitiveType, HashAndCompare):
-
     """An enumeration type
 
     Defining an enumeration lets you specify a set of acceptable values
     of some other primitive type, each with its own name and representation.
-
     You can think of Python 2.3's new boolean type as an enumeration whose
     values are the integers 0 and 1, with names of 'False' and 'True'.
     PEAK 'model.Enumeration' classes work similarly.  For example::
@@ -344,6 +342,9 @@ class Enumeration(PrimitiveType, HashAndCompare):
 
         >>> print ThreeWay.Yes
         ThreeWay.Yes
+
+        >>> print `ThreeWay.Yes.name`
+        'Yes'
 
         >>> if ThreeWay.Yes == 1: print "yes!"
         yes!
@@ -360,12 +361,11 @@ class Enumeration(PrimitiveType, HashAndCompare):
     The above class will have attributes 'Yes', 'No', and 'Maybe', each
     of which is 'ThreeWay' instance that hashes and compares equal to
     the specified literal (1,0, or -1).  The 'str()' and 'repr()' of these
-    instances is a string identifying the enumeration class and instance
-    name.
+    instances is the enumeration class and instance names, separated by '.'.
 
-    Note: Enumeration values can be of any type.  See the docs on 'model.enum()',
-    'model.enums()' and 'model.enumDict()' for various ways to specify the
-    literals of an enumeration.
+    Note: Enumeration values may be of any type.  See the docs on
+    'model.enum()', 'model.enums()' and 'model.enumDict()' for various ways to
+    specify the literals of an enumeration.
     
     Enumeration Class Methods
     
@@ -374,7 +374,7 @@ class Enumeration(PrimitiveType, HashAndCompare):
         The first three methods work as if the class were a dictionary whose
         keys were all the names and values of the enumeration instances, mapped
         to the instances themselves.  '__iter__' iterates over all the
-        instances in order of the instances' values.  All of these methods are
+        instances sorted in order of their values.  All of these methods are
         available from any 'model.Enumeration' subclass you define.
 
     Subclassing and Instantiating Enumerations
@@ -431,9 +431,19 @@ class Enumeration(PrimitiveType, HashAndCompare):
         return "%s.%s" % (self.__class__.__name__,self.name)
 
     def fromString(klass, value):
+        """Return an enumeration instance for string 'value'"""
         return klass[value]
 
     fromString = classmethod(fromString)
+
+    def fromFields(klass, fieldSequence):
+        """Enumeration cannot be constructed from fields"""
+        raise TypeError(
+            "Enumeration cannot be constructed from fields",
+            klass, fieldSequence
+        )
+        
+    fromFields = classmethod(fromFields)
 
     def __reduce__(self):
         return self.__class__, (self._hashAndCompare,)
