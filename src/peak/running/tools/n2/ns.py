@@ -7,7 +7,7 @@ from commands import *
 from interfaces import *
 from rlhist import *
 
-import readline
+
 
 
 
@@ -491,6 +491,7 @@ An unspecified value sets varname to the current context."""
 
     def complete(self, s, state):
         if state == 0:
+            import readline
             lb = readline.get_line_buffer()
             lbl = lb.lstrip()
             bidx = readline.get_begidx()
