@@ -157,7 +157,7 @@ class ResourceDirectory(FSResource):
 
     filenames = binding.Make(filenames)
 
-    def getObject(self, interaction):
+    def getObject(self, ctx):
         return self
 
 
@@ -269,21 +269,21 @@ class ResourceProxy(object):
         self.path = path
         self.resourcePath = resourcePath
 
-    def getObject(self, interaction):
-        return interaction.getResource(self.path)
+    def getObject(self, ctx):
+        return ctx.interaction.getResource(self.path)
 
     def preTraverse(self, ctx):
-        interaction = ctx.interaction
-        ob = adapt(self.getObject(interaction),interaction.pathProtocol)
+        ob = adapt(self.getObject(ctx),ctx.interaction.pathProtocol)
         ob.preTraverse(ctx)
 
     def traverseTo(self, name, ctx):
-        interaction = ctx.interaction
-        ob = adapt(self.getObject(interaction),interaction.pathProtocol)
+        ob = adapt(self.getObject(ctx),ctx.interaction.pathProtocol)
         return ob.traverseTo(name, ctx)
 
     def getURL(self,ctx):
-        return self.getObject(ctx.interaction).getURL(ctx)
+        return self.getObject(ctx).getURL(ctx)
+
+
 
 def bindResource(path, pkg=None, **kw):
 
@@ -392,7 +392,7 @@ class TemplateResource(FSResource):
     theTemplate = binding.Make(theTemplate)
 
 
-    def getObject(self, interaction):
+    def getObject(self, ctx):
         return self.theTemplate
 
     def getURL(self, ctx):

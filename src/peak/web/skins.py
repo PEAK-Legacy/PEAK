@@ -32,8 +32,8 @@ class LayerService(Resource):
     def traverseTo(self, name, ctx):
         return ctx.interaction.resources.traverseTo(name,ctx)
 
-    def getObject(self,interaction):
-        return interaction.resources.getObject(interaction)
+    def getObject(self,ctx):
+        return ctx.interaction.resources.getObject(ctx)
 
 
 
@@ -117,8 +117,8 @@ class Skin(Traversable):
     resourcePath = ''  # skin is at root
 
 
-    def getObject(self,interaction):
-        return self.root.getObject(interaction)
+    def getObject(self,ctx):
+        return self.root.getObject(ctx)
 
 
     def getResource(self, path):

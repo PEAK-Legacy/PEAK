@@ -229,7 +229,7 @@ class IWebTraversable(Interface):
     def traverseTo(name, context):
         """Return named 'IWebTraversable', or raise 'NotAllowed'/'NotFound'"""
 
-    def getObject(interaction):
+    def getObject(context):
         """Return the underlying object that would be traversed"""
 
     def getURL(context):
