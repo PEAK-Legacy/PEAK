@@ -125,7 +125,7 @@ class ITemplateNode(Interface):
 
     """A component of a page template"""
 
-    def renderTo(interaction, writeFunc, currentModel, executionContext)
+    def renderTo(interaction, writeFunc, currentModel, executionContext):
         """Write template's output by calling 'writeFunc()' 0 or more times
 
         'interaction' is the current 'IWebInteraction'.  'currentModel' is
@@ -203,7 +203,7 @@ class ITemplateNodeFactory(Interface):
 
 
 
-class ITemplateElement(IWebMethod, ITemplateNode):
+class ITemplateElement(ITemplateNode):
 
     """A component representing an XML/HTML element"""
 
