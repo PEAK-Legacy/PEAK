@@ -19,6 +19,8 @@ def importString(name):
         use '":"' to seperate the attribute spec from the module name.  In
         other words, '"other.module:nested.attribute"' is equivalent
         to 'from other.module import nested; nested.attribute'.
+
+        If you want just the module itself, simply give its full dotted name.
     """
 
     if ':' in name:
@@ -27,10 +29,43 @@ def importString(name):
         path = name[1].split('.')
     else:
         name = name.split('.')
-        module = name[:-1].join('.')
+        module = '.'.join(name[:-1])
         path = name[-1:]
 
-    item = __import__(module,globals(),locals(),path[0])
-    for name in path: item = getattr(item,name)
+    item = __import__(module,globals(),locals(),path)
+    for name in path:
+        if name: item = getattr(item,name)
 
     return item
+
+
+class lazyImport:
+
+    """Proxy standing in for something that shouldn't import until later
+
+        Example::
+        
+            aModule = lazyImport('somePackage.aModule:')
+        
+        Usage is like 'importString()', it just doesn't actually import
+        the item until you try to access an attribute of it.  Note that
+        you can't use this in situations where you need the real object!
+        That is, if you need a real module (as is needed for a module's
+        '__bases__' list), you can't use this.  But if all you need is
+        to access attributes of the module, this will do just fine.
+    """
+
+    needsToImport = 1
+
+    def __init__(self, what):
+        self.what = what
+
+    def __getattr__(self, attr):
+
+        if self.needsToImport:
+            self.what = importString(self.what)
+            self.needsToImport = 0
+
+        return getattr(self.what, attr)
+
+

@@ -1,3 +1,25 @@
+"""Bytecode inspection and patching - like a simpler (faster!) bytecodehacks
+
+    Similar to the Python 'bytecodehacks' package, this module supplies 'Code'
+    and 'Function' objects which are mutable versions of the real things.  The
+    main difference between this module and 'bytecodehacks' is that this module
+    values speed above nearly all other considerations, and thus only offers
+    in-place bytecode patching, and eschews most of the higher-level facilities
+    offered by 'bytecodehacks'.  But it's plenty enough for what TransWarp needs.
+
+    The module makes available many useful values; you can get any opcode as a
+    constant from it by explicit import, such as::
+    
+        from TW.Utils.Code import LOAD_NAME, STORE_NAME
+
+    There's also an 'opcode' array that you can import that maps opcode names to
+    values.
+
+    Currently, this package still works on Python 2.1...  as long as you have
+    'ExtensionClass' installed.  But that's not officially supported, so don't
+    count on it staying that way forever.
+"""
+
 from array import array
 import new
 from types import CodeType, StringType
@@ -15,6 +37,8 @@ for code in range(256):
 globals().update(opcode) # opcodes are now importable at will
 
 
+
+
 try:
     x = object
     del x
@@ -25,6 +49,23 @@ except:
     from ComputedAttribute import ComputedAttribute as property
     StopIteration = 'StopIteration'
     def iter(x): return x.__iter__()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

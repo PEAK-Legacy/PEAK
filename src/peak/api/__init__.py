@@ -63,6 +63,9 @@ __all__.append('Meta')
 
 # Last, but very far from least, Service-Element-Feature support.
 
-import TW.SEF.Basic as SEF
+from TW.Utils.Import import lazyImport
+
+SEF = lazyImport('TW.SEF.Basic')
 __all__.append('SEF')
 
+del lazyImport

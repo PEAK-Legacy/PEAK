@@ -25,9 +25,9 @@
 from TW.API import *
 from TW.Utils.SOX import Node, Document, load
 from kjbuckets import kjGraph
+import TW.SEF.Basic
 
-__bases__ = SEF
-
+__bases__ = TW.SEF.Basic
 
 
 

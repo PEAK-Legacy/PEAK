@@ -1,5 +1,43 @@
+"""Simple Objects from XML - quick-and-dirty XML parsing without a DOM
+
+    This module implements most of the overhead needed for turning SAX
+    events into a hierarchy of objects.  E.g., stack handling,
+    delegation to node classes, etc.
+    
+    Note: I originally wrote this module because the Python default DOM
+    for XML (way back in the XML-SIG for Python 1.5.2 days) was horrendously
+    slow for processing (typically enormous) XMI files.  If 2.2 minidom
+    is fast enough and easy enough to use, this package may go away once
+    I've ported the XMI support to minidom.  So let me know if you're using
+    this module for anything;  I have some non-TransWarp uses for it myself,
+    but depending on how easy using minidom turns out to be...  I may switch
+    them over too!    
+"""
+
+
 from xml.sax import ContentHandler, parse
 import Interface
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 class ISOXNode(Interface.Base):
 
@@ -36,6 +74,9 @@ class ISOXNode(Interface.Base):
         """Return an object to be used in place of this node in call to the
             parent's '_addNode()' method.  Returning 'None' will result in
             nothing being added to the parent."""
+
+
+
 
 
 
@@ -145,6 +186,8 @@ class Document(Node):
 
 def load(filename_or_stream, documentObject=None):
 
+    """Build a tree from a filename/stream, rooted in a document object"""
+    
     if documentObject is None:
         documentObject = Document()
         
