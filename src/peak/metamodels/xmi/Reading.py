@@ -121,30 +121,30 @@ class XMIFactory:
 
 
 
-def _makeXMIMap(parents):
-
-    context,(container,rest) = parents
-
-    # Build a map from objects' XMI names to their "real" names
-    
-    m = {}
-    name = context.name
-
-    for base in container.bases:
-        m.update(getattr(base,name,{}))
-    
-    for k,v in container.output.items():
-        for xmi in getattr(v,'_XMINames',()):
-            m[xmi]=k
-
-    # And store it under the name we are assigned
-    
-    container.output[name] = m
+XMIMapMaker = RegistryBuilder(
+                keyFunc = lambda attName,attVal: getattr(attVal,'_XMINames',()),
+                valFunc = lambda oldEnt,newItem: newItem.__name__.split('.')[-1]
+              )
 
 
-XMIMapMaker = SimplePostProcessor(_makeXMIMap)
 
-XMIMapMaker.copyIntoSubclasses = 1
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

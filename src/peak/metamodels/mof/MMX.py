@@ -1,7 +1,7 @@
 from kjbuckets import *
 import TW.SOX
 
-from TW import Template, SimplePostProcessor
+from TW import Template
 from TW.Utilities import Pluralizer, upToDate, toString
 
 
