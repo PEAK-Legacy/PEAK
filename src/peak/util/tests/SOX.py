@@ -331,6 +331,7 @@ class NegotiationTests(TestCase):
             return self.n.parseStream(StringIO(data),root)
         return self.n.parseString(data,root)
 
+
     def testParses(self):
         for mode in True,False:
             self.setUp()    # ensure clean slate between parses           
@@ -346,16 +347,54 @@ class NegotiationTests(TestCase):
             self.check_log([True,'<!--x-->',True,99])
 
 
-    #def testNSLookups(self):
-    #    TODO
+    def testNSLookups(self):
+        
+        def lookup(ns,name):
+            self.log.append((ns,name))
 
-    #def testNSAdd(self):
-    #    TODO
+        self.n.setLookups(lookup,lookup)
+        self.n.startElement('foo',['xmlns:a','foobly','xmlns:b','do'])
+        self.check_log([('','foo')])
+
+        self.log = []
+        self.n.startElement('a:b',['b:c','foo','c:d','bar'])
+        self.check_log([('foobly','b'),('do','c'),(None,'c:d')])
+
+        
+
+
+
+
+
+
+    def testNSAddAndSplit(self):
+        self.n.startElement('foo',[])
+        self.n.addNamespace('a','foobly')
+        self.n.addNamespace('b','do')
+        self.assertEqual(self.n.ns_info, {'a':['foobly'],'b':['do']})
+        self.assertEqual(self.n.splitName('a:b'), ('foobly','b'))
+        self.assertEqual(self.n.splitName('b:c'), ('do','c'))
+        self.assertEqual(self.n.splitName('c:d'), (None,'c:d'))
+        self.assertEqual(self.n.splitName('de'), ('','de'))
+        self.n.endElement('foo')
+
+        self.assertEqual(self.n.splitName('a:b'), (None,'a:b'))
+        self.assertEqual(self.n.ns_info, {'a':[],'b':[]})
+
+        self.n.startElement('bar',[])
+        self.n.addNamespace('','foobly')
+        self.assertEqual(self.n.ns_info, {'':['foobly'],'a':[],'b':[]})
+        self.n.endElement('bar')
+
 
 
 
 
         
+
+
+
+
 
 
 
