@@ -7,7 +7,7 @@ __all__ = [
     'TCKind', 'TypeCode', 'Short', 'Long', 'UShort', 'ULong', 'Float', 'Double',
     'Integer','UnlimitedInteger','Boolean','String','Name', 'WString', 'Char',
     'WChar', 'LongLong', 'ULongLong', 'LongDouble', 'PrimitiveTC', 'SimpleTC',
-    'Fixed','basicTypes', 'Any'
+    'Fixed','basicTypes', 'Any', 'Repr'
 ]
 
 class PrimitiveTC(Enumeration):
@@ -171,6 +171,13 @@ class UnlimitedInteger(Integer):
         return int(value)
 
 
+class Repr(String):
+
+    def mdl_fromString(klass,value):
+        return eval(value)  # XXX should really use tokenize, for safety
+
+    def mdl_toString(klass,value):
+        return `value`
 
 
 class Name(String):
@@ -191,13 +198,6 @@ class _tcField(structField):
                 "%s may not be set for TypeCode of kind %r" %
                 (feature.attrName, element.kind)
             )
-
-
-
-
-
-
-
 
 
 

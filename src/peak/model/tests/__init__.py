@@ -5,6 +5,39 @@ from peak.api import *
 from peak.model.features import FeatureClass
 from peak.util import fmtparse
 
+class TestDatatypes(TestCase):
+
+    def checkReprFormat(self):
+        self.assertEqual(model.Repr.mdl_toString(27), "27")
+        self.assertEqual(model.Repr.mdl_toString("27"), "'27'")
+
+    def checkReprParse(self):
+        self.assertEqual(model.Repr.mdl_fromString("27"), 27)
+        self.assertEqual(model.Repr.mdl_fromString("'27'"), "27")
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 class Thing(model.Element):
 
@@ -37,6 +70,14 @@ class Term(model.Element):
         separator = '*'
 
     mdl_syntax = fmtparse.Sequence(factors)
+
+
+
+
+
+
+
+
 
 
 class Factor(model.Element):
@@ -392,6 +433,7 @@ class exerciseFeatures(TestCase):
 
 
 TestClasses = (
+    TestDatatypes,
     parseFmtTest, checkExport, checkMetaData, exerciseFeatures, EnumerationTests
 )
 
@@ -401,7 +443,6 @@ def test_suite():
     for t in TestClasses:
         s.append(makeSuite(t,'check'))
     return TestSuite(s)
-
 
 
 

@@ -681,18 +681,18 @@ class SQLChecker(RecordChecker):
     )
 
     testTable = binding.Require("Name of the table/view to check")
-
     testDB    = binding.Obtain(naming.Indirect('dbKey'))
-
     dbKey     = PropertyName('peak.ddt.testDB')
 
 
     def methodNameFor(self,text):
         return text.strip()
+
     
-
-
-
+    def getMapper(self,name):
+        mapper = super(SQLChecker,self).getMapper(name)
+        mapper.suggestType(model.Repr)
+        return mapper
 
 
 class ActionChecker(ModelChecker):

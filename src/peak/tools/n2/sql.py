@@ -937,7 +937,7 @@ default for src is '!.', the current input buffer"""
 
             for t in tl:
                 c = con('select * from %s' % t)
-                c.dumpTo(stdout, format="html",
+                c.dumpTo(stdout, format="ddt",
                     footer=(not opts.has_key('-f')),
                     title="Contents of table %s" % t
                 )

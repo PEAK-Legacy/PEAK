@@ -285,7 +285,9 @@ class cursorToHTML(AbstractCursorFormatter):
             print >>stdout, "<tr>"
 
             for r in c._cursor.description:
-                print >>stdout, "    <th>%s</th>" % self.toStr(r[0])
+                print >>stdout, "    <th>%s</th>" % self.htmlquote(
+                    str(r[0])
+                )
                 
             print >>stdout, "</tr>"
 
@@ -293,7 +295,9 @@ class cursorToHTML(AbstractCursorFormatter):
             nr += 1
             print >>stdout, "<tr>"
             for v in r:
-                print >>stdout, "    <td align=left>%s</td>" % self.toStr(v)
+                print >>stdout, "    <td align=left>%s</td>" % self.htmlquote(
+                    self.toStr(v)
+                )
             print >>stdout, "</tr>"
 
         print >>stdout, "</table>"
@@ -306,10 +310,18 @@ class cursorToHTML(AbstractCursorFormatter):
     def toStr(self, v):
         if v is None:
             return self.null
-        elif type(v) is unicode:
-            v = v.encode('utf8')
-        elif type(v) is not str:
-            v = str(v)
+        elif isinstance(v,unicode):
+            return v.encode('utf8')
+        elif not isinstance(v,str):
+            return str(v)
+        return v
 
+    def htmlquote(self,v):
         v = v.replace('&','&amp;').replace('"','&quot')
         return v.replace('<','&lt;').replace('>','&gt;')
+
+
+class cursorToDDT(cursorToHTML):
+
+    def toStr(self, v):
+        return  `v`
