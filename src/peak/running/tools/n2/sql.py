@@ -17,12 +17,12 @@ varpat = re.compile('\\$\\{((?:[a-zA-Z0-9_]+)|(?:=[^}]+))\\}')
 def bufname(s):
     """comvert buffer name to canonical form
     ignoring leading ! on user-defined buffers"""
-    
+
     if s in ('!.', '!!'):
         return s
     elif s.startswith('!'):
         return s[1:]
-    
+
     return s
 
 
@@ -30,7 +30,7 @@ EXPORTED = object() # indicates variable is exported to a python variable
 
 
 class SQLInteractor(binding.Component):
-    
+
     editor = binding.bindTo(PropertyName('__main__.EDITOR'), default='vi')
 
     shell = binding.bindTo('..')
@@ -42,7 +42,7 @@ class SQLInteractor(binding.Component):
     buf = ''
     line = 1
     semi = -1
-    
+
 
     def vars(self, d, a):
         return {
@@ -80,8 +80,8 @@ class SQLInteractor(binding.Component):
         self.con.connection # ensure it's opened immediately
 
         self.quit = False
-        
-        pushRLHistory('.n2sql_history', self.complete, 
+
+        pushRLHistory('.n2sql_history', self.complete,
             ' \t\n`~@#%^&*()=+[]|;:\'",<>/?', self.shell.environ)
 
         while not self.quit:
@@ -91,11 +91,11 @@ class SQLInteractor(binding.Component):
                 print >>shell.stdout
                 popRLHistory()
                 return
-                                
+
             sl = l.strip()
             if ';' in sl:
                 sl = sl.split(';', 1)[0].strip()
-                
+
             if sl:
                 cmd = sl.split(None, 1)[0].lower()
 
@@ -103,19 +103,19 @@ class SQLInteractor(binding.Component):
                     continue
 
             self.line += 1
-            
+
             self.updateState(l)
             semi = self.semi
-            
+
             if semi >= 0:
                 b = self.getBuf()
                 b, cmd = b[:semi] + '\n', b[semi+1:]
                 self.setBuf(b)
-                
+
                 self.handleCommand('go', 'go ' + cmd)
 
         popRLHistory()
-        
+
 
 
     def getVar(self, name):
@@ -124,26 +124,26 @@ class SQLInteractor(binding.Component):
             return self.shell.getvar(name, '')
 
         return v
-        
 
-        
+
+
     def setVar(self, name, val, export=False):
         if not export:
             if self.vars.get(name, '') is EXPORTED:
                 export = True
-        
+
         if export:
             self.vars[name] = EXPORTED
             self.shell.setvar(name, val)
         else:
             self.vars[name] = val
 
-            
+
 
     def importVar(self, name):
         self.vars[name] = EXPORTED
 
-        
+
 
     def exportVar(self, name):
         self.setVar(name, self.getVar(name), True)
@@ -164,9 +164,9 @@ class SQLInteractor(binding.Component):
             s[i] = str(v)
 
         return ''.join(s)
-        
 
-            
+
+
     def getBuf(self, name='!.'):
         name = bufname(name)
         if name.startswith('$'):
@@ -194,30 +194,30 @@ class SQLInteractor(binding.Component):
             self.bufs[name] = val
 
 
-    
+
     def resetBuf(self):
         self.state = ''; self.line = 1; self.semi = - 1
         self.setBuf('')
 
-    
-        
+
+
     def command(self, cmd):
         return getattr(self, 'cmd_' + cmd.replace('-', '_'), None)
-        
-       
-        
+
+
+
     def handleCommand(self, cmd, l):
         shell = self.shell
 
         r = NOT_FOUND
-        
+
         cmd = cmd.lower()
         if cmd[0] == '\\' or cmd in (
             'go','commit','abort','rollback','help'
         ):
             if cmd[0] == '\\':
                 cmd = cmd[1:]
-                
+
             cmdobj = self.command(cmd)
             if cmdobj is None:
                 print >>shell.stderr, "command '%s' not found. Try 'help'." % cmd
@@ -238,7 +238,7 @@ class SQLInteractor(binding.Component):
                 self.redraw(self.shell.stdout, True)
 
         return r
-        
+
 
 
     def toStr(self, v, w=None):
@@ -254,7 +254,7 @@ class SQLInteractor(binding.Component):
             return str(v).ljust(w)[:w]
 
 
-            
+
     def showResults(self, c, shower, opts, stdout):
         shower = self.showers.get(shower, 'showHoriz')
         shower = getattr(self, shower)
@@ -277,8 +277,8 @@ class SQLInteractor(binding.Component):
         'python' : 'showPython',
     }
 
-                                
-                               
+
+
     def showHoriz(self, c, opts, stdout):
         out = stdout.write
         t, d, l = [], [], []
@@ -287,13 +287,13 @@ class SQLInteractor(binding.Component):
         for r in c._cursor.description:
             w = r[2]
             if w <= 0: w = 20 # XXX
-            
+
             t.append(self.toStr(r[0], w)); d.append('-' * w); l.append(w)
 
         if '-h' not in opts:
             out(' '.join(t)); out('\n')
             out(' '.join(d)); out('\n')
-            
+
         for r in c:
             nr += 1
             i = 0
@@ -304,7 +304,7 @@ class SQLInteractor(binding.Component):
 
             out(' '.join(o))
             out('\n')
-        
+
         return nr
 
 
@@ -313,7 +313,7 @@ class SQLInteractor(binding.Component):
         h = [x[0] for x in c._cursor.description]
         w = max([len(x) for x in h])
         nr = 0
-        
+
         for r in c:
             i = 0
             nr += 1
@@ -321,15 +321,15 @@ class SQLInteractor(binding.Component):
                 print >>stdout, "%s %s" % (h[i].rjust(w), self.toStr(v))
                 i += 1
             print >>stdout
-            
+
         return nr
 
 
-            
+
     def showPlain(self, c, opts, stdout):
         d = opts.get('-d', '|')
         nr = 0
-        
+
         if not '-h' in opts:
             print >>stdout, d.join([x[0] for x in c._cursor.description])
         for r in c:
@@ -337,12 +337,12 @@ class SQLInteractor(binding.Component):
             print >>stdout, d.join([self.toStr(v) for v in r])
 
         return nr
-            
+
 
 
     def showPython(self, c, opts, stdout):
         nr = 0
-        
+
         if not '-h' in opts:
             print >>stdout, c._cursor.description
         for r in c:
@@ -352,7 +352,7 @@ class SQLInteractor(binding.Component):
         return nr
 
 
-            
+
     def command_names(self):
         l = [k for k in dir(self) if k.startswith('cmd_')]
         l2 = [k[4:].replace('_','-') for k in l
@@ -378,9 +378,9 @@ xacts\t\tnumber of times to repeat execution of the input. Only results
 \t\tfrom the last time are displayed."""
 
         noBackslash = True
-        
+
         args = ('d:m:hfs:n', 0, 1)
-        
+
         def cmd(self, cmd, opts, args, stdout, stderr, **kw):
             secs = opts.get('-s', '0')
             try:
@@ -398,7 +398,7 @@ xacts\t\tnumber of times to repeat execution of the input. Only results
                 except:
                     print >>stderr, "Invalid value for xacts: '%s'" % args[0]
                     return
-                       
+
             i = self.interactor.getBuf()
             if i.strip():
                 if self.interactor.state:
@@ -414,18 +414,18 @@ xacts\t\tnumber of times to repeat execution of the input. Only results
                 sql = i
             else:
                 sql = self.interactor.substVar(i)
-            
+
             try:
                 con = self.interactor.con
                 con.joinTxn()
                 if xacts > 1:
                     for j in range(xacts - 1):
                         c = con(sql)
-                        c.fetchall()
-                        
+                        c.fetchall()    # XXX doesn't handle multiresults!
+
                         time.sleep(secs)
-                        
-                c = con(sql)
+
+                c = con(sql,multiOK=True)
             except:
                 # currently the error is logged
                 # sys.excepthook(*sys.exc_info()) # XXX
@@ -450,43 +450,43 @@ rollback -- abort current transaction"""
         noBackslash = True
 
         args = ('', 0, 0)
-        
+
         def cmd(self, cmd, **kw):
             storage.abortTransaction(self)
             storage.beginTransaction(self)
-            
+
             self.interactor.resetBuf()
 
     cmd_rollback = binding.New(cmd_abort)
     cmd_abort = binding.New(cmd_abort)
 
 
-   
+
     class cmd_commit(ShellCommand):
         """commit -- commit current transaction"""
 
         noBackslash = True
 
         args = ('', 0, 0)
-        
+
         def cmd(self, cmd, stderr, **kw):
             if self.interactor.getBuf().strip():
                 print >>stderr, "Use GO or semicolon to finish outstanding input first"
             else:
                 storage.commitTransaction(self)
                 storage.beginTransaction(self)
-            
+
                 self.interactor.resetBuf()
 
     cmd_commit = binding.New(cmd_commit)
 
 
-   
+
     class cmd_reset(ShellCommand):
         """\\reset -- empty input buffer"""
-            
+
         args = ('', 0, 0)
-        
+
         def cmd(self, cmd, **kw):
             self.interactor.resetBuf()
 
@@ -497,9 +497,9 @@ rollback -- abort current transaction"""
     class cmd_exit(ShellCommand):
         """\\exit -- exit SQL interactor
 \\quit -- exit SQL interactor"""
-            
+
         args = ('', 0, 0)
-        
+
         def cmd(self, cmd, **kw):
             self.interactor.quit = True
 
@@ -510,9 +510,9 @@ rollback -- abort current transaction"""
 
     class cmd_python(ShellCommand):
         """\\python [code] -- enter python interactor or run code"""
-            
+
         args = ('', 0, sys.maxint)
-        
+
         def cmd(self, cmd, args, **kw):
             if args:
                 try:
@@ -530,16 +530,16 @@ rollback -- abort current transaction"""
         """\\buf-copy dest [src] -- copy buffer src to dest
 
 default for src is '!.', the current input buffer"""
-            
+
         args = ('', 1, 2)
-        
+
         def cmd(self, cmd, args, stdout, **kw):
             src = '!.'
             if len(args) == 2:
                 src = args[1]
-                
+
             self.interactor.setBuf(self.interactor.getBuf(src), name=args[0])
-            
+
             if args[0] == '!.':
                 return True
 
@@ -549,9 +549,9 @@ default for src is '!.', the current input buffer"""
 
     class cmd_buf_get(ShellCommand):
         """\\buf-get src -- like \buf-append !. src"""
-            
+
         args = ('', 1, 1)
-        
+
         def cmd(self, cmd, args, stdout, **kw):
             self.interactor.setBuf(self.interactor.getBuf(args[0]), append=True)
 
@@ -565,17 +565,17 @@ default for src is '!.', the current input buffer"""
         """\\buf-append dest [src] -- append buffer src to dest
 
 default for src is '!.', the current input buffer"""
-            
+
         args = ('', 1, 2)
-        
+
         def cmd(self, cmd, args, stdout, **kw):
             src = '!.'
             if len(args) == 2:
                 src = args[1]
-                
+
             self.interactor.setBuf(self.interactor.getBuf(src), name=args[0],
                 append=True)
-            
+
             if args[0] == '!.':
                 return True
 
@@ -587,14 +587,14 @@ default for src is '!.', the current input buffer"""
         """\\buf-save [-a] filename [src] -- save buffer src in a file
 
 -a\tappend to file instead of overwriting"""
-            
+
         args = ('a', 1, 2)
-        
+
         def cmd(self, cmd, opts, args, stderr, **kw):
             mode = 'w'
             if opts.has_key('-a'):
                 mode = 'a'
-                
+
             src = '!.'
             if len(args) == 2:
                 src = args[1]
@@ -614,9 +614,9 @@ default for src is '!.', the current input buffer"""
         """\\buf-load [-a] filename [dest] -- load buffer dest from file
 
 -a\tappend to buffer instead of overwriting"""
-            
+
         args = ('a', 1, 2)
-        
+
         def cmd(self, cmd, opts, args, stderr, **kw):
             try:
                 dest = '!.'
@@ -628,7 +628,7 @@ default for src is '!.', the current input buffer"""
                 self.interactor.setBuf(l, append=opts.has_key('-a'), name=dest)
 
                 f.close()
-                
+
                 l = self.interactor.getBuf(dest)
                 if l and not l.endswith('\n'):
                     self.interactor.setBuf('\n', append=True, name=dest)
@@ -636,9 +636,9 @@ default for src is '!.', the current input buffer"""
             except:
                 sys.excepthook(*sys.exc_info()) # XXX
 
-            if dest == '!.':                
+            if dest == '!.':
                 return True
-            
+
     cmd_buf_load = binding.New(cmd_buf_load)
 
 
@@ -646,9 +646,9 @@ default for src is '!.', the current input buffer"""
     class cmd_buf_show(ShellCommand):
         """\\buf-show -- show buffer list
 \\buf-show [buf] -- show named buffer"""
-            
+
         args = ('', 0, 1)
-        
+
         def cmd(self, cmd, args, stdout, **kw):
             if len(args) == 1:
                 stdout.write(self.interactor.getBuf(args[0]))
@@ -666,9 +666,9 @@ default for src is '!.', the current input buffer"""
 
     class cmd_buf_edit(ShellCommand):
         """\\buf-edit -- use external editor on current input buffer"""
-            
+
         args = ('r:w:', 0, 0)
-        
+
         def cmd(self, cmd, opts, stderr, **kw):
             t = mktemp()
             f = open(t, 'w')
@@ -687,7 +687,7 @@ default for src is '!.', the current input buffer"""
                     self.interactor.setBuf('\n', append=True, name=wr)
 
             os.unlink(t)
-                
+
             return True
 
     cmd_buf_edit = binding.New(cmd_buf_edit)
@@ -698,9 +698,9 @@ default for src is '!.', the current input buffer"""
         """\\source [-r] filename -- interpret input from file
 
 -r\treset input buffer before sourcing file"""
-            
+
         args = ('r', 1, 1)
-        
+
         def cmd(self, cmd, opts, args, stderr, **kw):
             try:
                 f = open(args[0], 'r')
@@ -711,7 +711,7 @@ default for src is '!.', the current input buffer"""
                 l.reverse()
                 self.interactor.pushbuf = l + self.interactor.pushbuf
                 f.close()
-                
+
                 return opts.has_key('-r')
             except:
                 sys.excepthook(*sys.exc_info()) # XXX
@@ -747,7 +747,7 @@ default for src is '!.', the current input buffer"""
         """\\reconnect -- abort current transaction and reconnect to database"""
 
         args = ('', 0, 0)
-        
+
         def cmd(self, cmd, **kw):
             self.interactor.con.closeASAP()
             storage.abortTransaction(self)
@@ -756,10 +756,10 @@ default for src is '!.', the current input buffer"""
                 del self.obnames
             except:
                 pass
-                
+
             self.interactor.con.connection
             storage.beginTransaction(self)
-            
+
             self.interactor.resetBuf()
 
     cmd_reconnect = binding.New(cmd_reconnect)
@@ -770,10 +770,10 @@ default for src is '!.', the current input buffer"""
         """\\redraw -- redraw current input buffer"""
 
         args = ('', 0, 0)
-        
+
         def cmd(self, cmd, **kw):
             self.interactor.redraw(self.shell.stdout)
-            
+
     cmd_redraw = binding.New(cmd_redraw)
 
 
@@ -782,7 +782,7 @@ default for src is '!.', the current input buffer"""
         """\\echo secs -- echo for 'secs' seconds"""
 
         args = ('-n', 0, sys.maxint)
-        
+
         def cmd(self, cmd, opts, args, stdout, **kw):
             stdout.write(' '.join(args))
             if not opts.has_key('-n'):
@@ -797,14 +797,14 @@ default for src is '!.', the current input buffer"""
         """\\sleep secs -- sleep for 'secs' seconds"""
 
         args = ('', 1, 1)
-        
+
         def cmd(self, cmd, args, stderr, **kw):
             try:
                 s = float(args[0])
             except:
                 print >>stderr, "%s: invalid number '%s'" % (cmd, args[0])
                 return
-                
+
             time.sleep(s)
 
     cmd_sleep = binding.New(cmd_sleep)
@@ -817,21 +817,21 @@ default for src is '!.', the current input buffer"""
 -x\texport variables to python"""
 
         args = ('x', 1, sys.maxint)
-        
+
         def cmd(self, cmd, opts, args, stderr, **kw):
             export = opts.has_key('-x')
             for x in args:
-                try:                
-                    k, v = x.split('=', 1)  
+                try:
+                    k, v = x.split('=', 1)
                 except:
                     print >>stderr, "%s: invalid syntax '%s'" % (cmd, x)
                     continue
-                
+
                 try:
                     self.interactor.setVar(k, v, export)
                 except KeyError:
                     print >>stderr, "%s: unable to set '%s'" % (cmd, args[0])
-                
+
     cmd_set = binding.New(cmd_set)
 
 
@@ -840,10 +840,10 @@ default for src is '!.', the current input buffer"""
         """\\import name -- import variable from python"""
 
         args = ('', 1, 1)
-        
+
         def cmd(self, cmd, args, stderr, **kw):
             self.interactor.importVar(args[0])
-                
+
     cmd_import = binding.New(cmd_import)
 
 
@@ -852,14 +852,14 @@ default for src is '!.', the current input buffer"""
         """\\export name -- export variable to python"""
 
         args = ('', 1, 1)
-        
+
         def cmd(self, cmd, args, stderr, **kw):
             try:
                 self.interactor.exportVar(args[0])
             except KeyError:
                 print >>stderr, "%s: unable to export '%s'" % (cmd, args[0])
                 return
-                
+
     cmd_export = binding.New(cmd_export)
 
 
@@ -875,7 +875,7 @@ default for src is '!.', the current input buffer"""
         """
 
         args = ('d:m:hfv', 0, 1)
-        
+
         def cmd(self, cmd, opts, args, stdout, stderr, **kw):
             if args:
                 pass # XXX
@@ -887,7 +887,7 @@ default for src is '!.', the current input buffer"""
                     shower = opts.get('-m', 'horiz')
                     c = si.listObjects('-v' in opts)
                     self.interactor.showResults(c, shower, opts, stdout)
-                
+
     cmd_describe = binding.New(cmd_describe)
 
 
@@ -907,13 +907,13 @@ default for src is '!.', the current input buffer"""
             l += '\n'
             stdout.write(self.prompt())
             stdout.write(l)
-            
+
             self.line += 1
-            
+
             self.updateState(l)
 
-         
-       
+
+
     def updateState(self, s):
         state = self.state
 
@@ -956,7 +956,7 @@ default for src is '!.', the current input buffer"""
         self.state = state
         self.setBuf(s, append=True)
 
-    
+
     def readline(self, prompt):
         if self.pushbuf:
             l = self.pushbuf.pop()
@@ -984,7 +984,7 @@ default for src is '!.', the current input buffer"""
 
             self.matches = [x for x in self.matches if x.startswith(s)]
 
-        try:        
+        try:
             return self.matches[state]
         except IndexError:
             return None

@@ -45,7 +45,7 @@ class SQLCursor(AbstractCursor):
 
     conn = binding.bindTo('..')
     typeMap = binding.bindTo('conn/typeMap')
-
+    multiOK = False
 
     def _cursor(self,d,a):
         return self._conn.cursor()
@@ -162,7 +162,7 @@ class SQLCursor(AbstractCursor):
 
 
 
-    def __iter__(self, onlyOneSet=True):
+    def __iter__(self):
 
         fetch = self._cursor.fetchmany
         rows = fetch()
@@ -191,7 +191,7 @@ class SQLCursor(AbstractCursor):
             rows = fetch()
 
 
-        if onlyOneSet and self.nextset():
+        if not self.multiOK and self.nextset():
             raise exceptions.TooManyResults
 
 
