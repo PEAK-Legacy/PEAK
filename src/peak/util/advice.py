@@ -1,5 +1,6 @@
-class advice(object):
+from new import instancemethod
 
+class advice(object):
     """advice(func) -- "around advice" wrapper base class
 
         This wrapper is a base class for "around" advice on a method.  Just
@@ -13,7 +14,6 @@ class advice(object):
                     print "Entering", self._func, __args, __kw
                     self._func(*__args,**__kw)
                     print "Leaving",self._func
-
 
             class someObject(object):
 
