@@ -7,13 +7,7 @@
 
     To Do (no particular ordering)
 
-        * create FederationContext, set up to handle '+:' URL scheme, whose
-          operations simply do a series of lookup/lookup_nns operations on the
-          composite name path in order to implement all the "standard" operations
-
-        * 'MappingContext', 'ConfigContext', 'FSContext', etc.
-
-        * Unit tests!!!!
+        * 'MappingContext', 'FSContext', etc.
 
         * Directory attribute support, and other remaining interface methods
 

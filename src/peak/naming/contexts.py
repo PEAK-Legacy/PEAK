@@ -4,7 +4,6 @@ from peak.api import *
 
 from interfaces import *
 from names import *
-from properties import *
 
 import spi
 
@@ -16,6 +15,7 @@ from peak.util.imports import importObject
 __all__ = [
     'NameContext', 'AddressContext', 'AbstractContext', 'GenericURLContext'
 ]
+
 
 
 
@@ -231,7 +231,7 @@ class NameContext(Component):
 
         # Delegate to the appropriate URL context
 
-        ctx = spi.getURLContext(name.scheme, self, iface)
+        ctx = spi.getURLContext(name.scheme, iface, self)
 
         if ctx is None:
             raise exceptions.InvalidName(
