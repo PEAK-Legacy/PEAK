@@ -52,7 +52,6 @@ class AbstractContext(Component):
     nameClass     = None
     defaultScheme = None
     
-    _allowCompositeNames = False    # XXX
     _acceptStringURLs    = True     # XXX
 
 
@@ -61,21 +60,22 @@ class AbstractContext(Component):
 
 
     def _resolveComposite(self, name, iface):
-        return self, name
+
+        if len(name)==1:
+            return self.resolve(name[0], iface)
+
+        elif name:
+            return self.lookup_nns(name[0]).resolve(name[1:], iface)
+
+        return self, name   # XXX this isn't very useful!
+
 
     def _resolveLocal(self, name, iface):
         return self, name
 
+
     def _resolveURL(self, name, iface):
         return self, name
-
-
-
-
-
-
-
-
 
 
 
@@ -86,10 +86,7 @@ class AbstractContext(Component):
         name = toName(name, self.nameClass, self._acceptStringURLs)
 
         if name.isComposite:        
-            if self._allowCompositeNames:
-                return self._resolveComposite(name,iface)
-            else:
-                name=ParsedURL('+',str(name))   # convert to URL
+            return self._resolveComposite(name, iface)
 
         if name.isURL:
 
@@ -102,6 +99,7 @@ class AbstractContext(Component):
                     )
 
             ctx = spi.getURLContext(name.scheme, self, iface)
+
             if ctx is None:
                 raise exceptions.InvalidName(
                     "Unknown scheme %s in %r" % (name.scheme,name)
@@ -120,6 +118,8 @@ class AbstractContext(Component):
         raise exceptions.InvalidName(
             "This context only supports URLs", name
         )
+
+
 
     def lookup_nns(self, name=None):
 
