@@ -1,14 +1,16 @@
 """
 Lockfiles
 
-These support an interface similar to thread.LockType locks, except they
-can be used to lock not only between threads in the same process, but
-ones in other processes as well. 
+These are used for synchronization between processes, unlike
+thread.LocKType locks.  The common use is non-blocking lock attempts. 
+For convenience and in order to reduce confusion with the (somewhat odd)
+thread lock interface, these locks have a different interface.
 
-One other difference is the locked() method.  The thread module's
-documentation says: "Return the status of the lock: 1 if it has been
-acquired by some thread, 0 if not." For lockfiles, locked() returns 1
-only if it has been locked by a thread *in the current process*.
+    attempt()   try to obtain the lock, return boolean success
+    obtain()    wait to obtain the lock, returns None
+    release()   release an obtained lock, returns None
+    locked()    returns True if any thread IN THIS PROCESS
+                has obtained the lock, else False
 """
 
 import os, errno, string, time
@@ -16,25 +18,35 @@ from peak.util.threads import allocate_lock
 
 
 class LockFileBase:
-    """Abstract Base for lockfiles"""
+    """Common base for lockfiles"""
     
     def __init__(self, fn):
         self.fn = os.path.abspath(fn)
         self._lock = allocate_lock()
         self._locked = False
 
-    def acquire(self, waitflag=False):
-        if self._lock.acquire(waitflag):
+    def attempt(self):
+        if self._lock.acquire(False):
             r = 0
             try:
-                r = self.do_acquire(waitflag)
+                r = self.do_acquire(0)
             finally:
                 if not r and self._lock.locked():
                     self._lock.release()
-                
             return r
         else:
             return False
+    
+    def obtain(self):
+        self._lock.acquire()
+        r = 0
+        try:
+            r = self.do_acquire(1)
+        finally:
+            if not r and self._lock.locked():
+                self._lock.release()
+        if not r:
+            raise RuntimeError, "lock obtain shouldn't fail!"
     
     def release(self):
         self.do_release()
@@ -135,12 +147,12 @@ class SHLockFile(LockFileBase):
     def do_acquire(self, waitflag):
         if waitflag:
             sleep = 1
-            locked = self.acquire(False)
+            locked = self.do_acquire(False)
 
             while not locked:
                 time.sleep(sleep)
                 sleep = min(sleep + 1, 15)
-                locked = self.acquire(False)
+                locked = self.do_acquire(False)
 
             self._locked = locked
             return locked
@@ -187,6 +199,8 @@ class FLockFile(LockFileBase):
       o Potentially compatible with NFS or other shared filesystem
         _if_ you trust their lockd (or equivalent) implemenation.
         Note that this is a *big* if!
+
+      o No false positives on stale locks
 
     Loses:
 
