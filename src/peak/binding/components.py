@@ -39,7 +39,6 @@ __all__ = [
 
 
 
-
 def getComponentPath(component, relativeTo=None):
 
     """Get 'ComponentName' that would traverse from 'relativeTo' to 'component'
@@ -458,13 +457,25 @@ class Base(object):
     __implements__       = IBindingAPI
     __metaclass__        = ActiveClass
 
+
     def __init__(self, parentComponent=None, componentName=None, **kw):
+
         self.setParentComponent(parentComponent,componentName)
+
         if kw:
+
             klass = self.__class__
+
             for k,v in kw.iteritems():
+
                 if hasattr(klass,k):
                     setattr(self,k,v)
+
+                else:
+                    raise TypeError(
+                        "%s constructor has no keyword argument %s" %
+                        (klass, k)
+                    )
 
     lookupComponent = _lookupComponent
 
@@ -473,7 +484,12 @@ class Base(object):
         self.__componentName = componentName
 
     __componentName = None
-    
+
+
+
+
+
+
     def getParentComponent(self):
         return self.__parentCell.get()
 
@@ -503,23 +519,6 @@ class Base(object):
     def _delBinding(self,attr):
         if attr in self.__dict__:
             del self.__dict__[attr]
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

@@ -228,7 +228,9 @@ class ManagedConnection(TransactionComponent):
 
     cursorClass = AbstractCursor
 
-
+    address = binding.requireBinding(
+        "Address used to create the actual connection"
+    )
 
 
 

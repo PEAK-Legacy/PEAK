@@ -109,11 +109,11 @@ class DescriptorTest(TestCase):
         assert thing4[1] is self.data.thing2
 
 
+    def checkConstructors(self):
+        self.assertRaises(TypeError, DescriptorData, nonExistentKeyword=1)
 
-
-
-
-
+        td = {}
+        assert DescriptorData(newDict = td).newDict is td
 
 
 
