@@ -86,6 +86,7 @@ class ChildProcess(binding.Component):
         instancesProvide = [IProcessProxy]
     )
 
+    log        = binding.Obtain('logging.logger:running.process')
     pid        = None
     isStopped  = False
     isFinished = False
@@ -120,7 +121,6 @@ class ChildProcess(binding.Component):
 
 
 
-
     def sendSignal(self, signal):
 
         if signal in signals:
@@ -145,16 +145,16 @@ class ChildProcess(binding.Component):
             self._checking = True   # prevent re-entrance via signal handler
 
             try:
-                p, s = self.os.waitpid(self.pid, self.os.WNOHANG)
-                if p==self.pid:
-                    self._setStatus(s)
-                    self._notify()
+                try:
+                    p, s = self.os.waitpid(self.pid, self.os.WNOHANG)
+                except OSError,v:
+                    self.log.exception("Unexpected error in waitpid()")
+                else:
+                    if p==self.pid:
+                        self._setStatus(s)
+                        self._notify()
             finally:
                 self._checking = False
-
-
-
-
 
 
 
