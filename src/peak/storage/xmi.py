@@ -271,30 +271,30 @@ class XMINode(object):
             self.uri2ns = parent.uri2ns
 
 
-    def addLiteral(self,text):
+    def _xml_addLiteral(self,text):
         pass
 
 
-    def newTag(self,name,attrs,newPrefixes,nsURI):
+    def _xml_newTag(self,name,attrs,newPrefixes,parser):
         node = self.nodeClass(self,name,dict(attrs))
         if newPrefixes:
             ns2uri = dict(
-                [(prefix,stack[-1]) for prefix,stack in nsURI.items()]
+                [(prefix,stack[-1]) for prefix,stack in parser.nsInfo.items()]
             )
             node._setNS(ns2uri, ~kjGraph(ns2uri.items()))
         return node
 
 
-    def addChild(self,node):
+    def _xml_addChild(self,node):
         self.allNodes.append(node)
         self.subNodes.append(node)
 
 
-    def addText(self,text):
+    def _xml_addText(self,text):
         self.allNodes.append(text)
 
 
-    def finish(self):
+    def _xml_finish(self):
         atts = self.attrs
         for a in self.indexAttrs:
             if atts.has_key(a):
@@ -670,7 +670,7 @@ class XMIDocument(binding.Component, XMINode):
     version = binding.Make(lambda self: self.attrs['xmi.version'])
 
 
-    def finish(self):
+    def _xml_finish(self):
 
         self.index[()] = root = self.findNode('XMI.content')
 

@@ -123,19 +123,19 @@ class ISOXNode_NS(Interface):
 
 class IXMLBuilder(Interface):
 
-    def addChild(data):
+    def _xml_addChild(data):
         """Add 'data' to element's children"""
 
-    def finish():
+    def _xml_finish():
         """Return finished value to be passed to parent's 'addChild()'"""
 
-    def newTag(name,attrs,stack,nsURI):
+    def _xml_newTag(name,attrs,newPrefixes,parser):
         """Create and return a subnode for a tag"""
 
-    def addText(xml):
+    def _xml_addText(xml):
         """Return a new subnode for text"""
 
-    def addLiteral(xml):
+    def _xml_addLiteral(xml):
         """Return a new subnode for literals such as comments, PIs, etc."""
 
 
@@ -169,19 +169,19 @@ class SoxNodeAsXMLBuilder(Adapter):
         asAdapterForProtocols=[ISOXNode]
     )
 
-    def addText(self,text):
+    def _xml_addText(self,text):
         self.subject._addText(text)
 
-    def addLiteral(self,text):
+    def _xml_addLiteral(self,text):
         pass
 
-    def finish(self):
+    def _xml_finish(self):
         return self.subject._finish()
 
-    def addChild(self,node):
+    def _xml_addChild(self,node):
         self.subject._addNode(self.lastName,node)    # XXX
 
-    def newTag(self,name,attrs,newPrefixes,nsURI):
+    def _xml_newTag(self,name,attrs,newPrefixes,parser):
         node = self.subject._newNode(name,dict(attrs))
         node._acquireFrom(self.subject)
         self.lastName = name
@@ -210,23 +210,23 @@ class NSNodeAsXMLBuilder(Adapter):
         asAdapterForProtocols=[ISOXNode_NS]
     )
 
-    def addText(self,text):
+    def _xml_addText(self,text):
         self.subject._addText(text)
 
-    def addLiteral(self,text):
+    def _xml_addLiteral(self,text):
         pass
 
-    def finish(self):
+    def _xml_finish(self):
         return self.subject._finish()
 
-    def addChild(self,node):
+    def _xml_addChild(self,node):
         self.subject._addNode(self.lastName,node)    # XXX
 
-    def newTag(self,name,attrs,newPrefixes,nsURI):
+    def _xml_newTag(self,name,attrs,newPrefixes,parser):
         node = self.subject._newNode(name,dict(attrs))
         if newPrefixes:
             ns2uri = dict(
-                [(prefix,stack[-1]) for prefix,stack in nsURI.items()]
+                [(prefix,stack[-1]) for prefix,stack in parser.nsInfo.items()]
             )
             node._setNS(ns2uri, ~kjGraph(ns2uri.items()))
         self.lastName = name
@@ -416,7 +416,7 @@ class ExpatBuilder:
         self.parser = self.makeParser()
         self.stack   = []   # "object being assembled" stack
         self.nsStack = []
-        self.nsUri   = {}   # URI stack for each NS prefix
+        self.nsInfo  = {}   # URI stack for each NS prefix
 
     def makeParser(self):
         from xml.parsers.expat import ParserCreate
@@ -452,20 +452,18 @@ class ExpatBuilder:
     def parseFile(self, stream, rootNode):
         self.__init__()
         self.stack.append(IXMLBuilder(rootNode))
-        self.parser.CharacterDataHandler = self.stack[-1].addText
+        self.parser.CharacterDataHandler = self.stack[-1]._xml_addText
         self.parser.ParseFile(stream)
-        return self.stack[0].finish()
+        return self.stack[-1]._xml_finish()
 
 
     def comment(self,data):
         self.buildLiteral(u'<!--%s-->' % data)
 
     def buildLiteral(self,xml):
-        self.stack[-1].addLiteral(xml)
+        self.stack[-1]._xml_addLiteral(xml)
 
     def startDoctype(self, doctypeName, systemId, publicId, has_internal):
-        if self.chars:
-            self.stack[-1].addText(''.join(self.chars)); self.chars[:] = []
 
         if publicId:
             p = ' PUBLIC %s %s' % (quoteattr(publicId),quoteattr(systemId))
@@ -478,6 +476,8 @@ class ExpatBuilder:
         xml = u'<!DOCTYPE %s%s>\n' % (doctypeName, p)
 
         self.buildLiteral(xml)
+
+
 
 
 
@@ -511,20 +511,20 @@ class ExpatBuilder:
             else:
                 continue
 
-            self.nsUri.setdefault(ns,[]).append(v)
+            self.nsInfo.setdefault(ns,[]).append(v)
             prefixes.append(ns)
 
         self.nsStack.append(prefixes)
-        element = self.stack[-1].newTag(name, a, prefixes, self.nsUri)
+        element = self.stack[-1]._xml_newTag(name, a, prefixes, self)
         self.stack.append(IXMLBuilder(element))
-        self.parser.CharacterDataHandler = self.stack[-1].addText
+        self.parser.CharacterDataHandler = self.stack[-1]._xml_addText
 
     def endElement(self, name):
         last = self.stack.pop()
-        self.parser.CharacterDataHandler = self.stack[-1].addText
-        self.stack[-1].addChild(last.finish())
+        self.parser.CharacterDataHandler = self.stack[-1]._xml_addText
+        self.stack[-1]._xml_addChild(last._xml_finish())
         for prefix in self.nsStack.pop():
-            self.nsUri[prefix].pop()
+            self.nsInfo[prefix].pop()
 
 
 

@@ -128,8 +128,8 @@ class ElementAsBuilder(protocols.Adapter):
         asAdapterForProtocols=[IDOMletElement]
     )
 
-    def newTag(self, name,attrs,stack,nsURI):
-        self.nsUri = nsURI
+    def _xml_newTag(self, name,attrs,stack,parser):
+        self.nsUri = parser.nsInfo
         myNs = self.myNs or ('',)   # use unprefixed NS if no NS defined
         top = self.subject
         factory = top.tagFactory
@@ -173,17 +173,17 @@ class ElementAsBuilder(protocols.Adapter):
         return element
 
 
-    def addChild(self,data):
+    def _xml_addChild(self,data):
         self.subject.addChild(data)
 
-    def finish(self):
+    def _xml_finish(self):
         return self.subject
 
-    def addText(self,xml):
+    def _xml_addText(self,xml):
         top = self.subject
         top.addChild(top.textFactory(top,xml=escape(xml)))
 
-    def addLiteral(xml):
+    def _xml_addLiteral(xml):
         top = self.subject
         top.addChild(top.literalFactory(top,xml=xml))
 
