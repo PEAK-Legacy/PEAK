@@ -14,7 +14,7 @@ from peak.util.imports import importString
 
 
 __all__ = [
-    'Base', 'Component','AutoCreated', 'TraversableClass', 'AutoCreatable',
+    'Base', 'Component','AutoCreated', 'AutoCreatable',
     'bindTo', 'requireBinding', 'bindSequence', 'bindToParent', 'bindToSelf',
     'getRootComponent', 'getParentComponent', 'lookupComponent',
     'acquireComponent', 'globalLookup', 'findUtility', 'findUtilities',
@@ -537,7 +537,7 @@ class Base(object):
 
     __class_implements__ = IBindingFactory
     __implements__       = IBindingAPI
-    __metaclass__        = ActiveDescriptors
+    __metaclass__        = ActiveClass
 
     def __init__(self, parentComponent=None, componentName=None, **kw):
         self.setParentComponent(parentComponent,componentName)
@@ -654,7 +654,7 @@ class Component(Base):
 
 
 
-class AutoCreatable(OnceClass, ActiveDescriptors):
+class AutoCreatable(OnceClass, ActiveClass):
 
     """Metaclass for components which auto-create when used"""
 
@@ -670,64 +670,5 @@ class AutoCreated(Component):
 
     __metaclass__ = AutoCreatable
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-class TraversableClass(ActiveDescriptors):
-
-    """Metaclass for classes that can be their own component hierarchy"""
-
-    __class_implements__ = IBindingSPI
-
-    def __parent__(self,d,a):
-
-        parent = self.__module__
-        name = self.__name__
-
-        if '.' in name:
-            name = '.'.join(name.split('.')[:-1])
-            parent = '%s:%s' % (parent,name)
-
-        return importString(parent)
-        
-    __parent__ = Once(__parent__)
-
-
-    def __cname__(self,d,a):
-        return self.__name__.split('.')[-1]
-        
-    __cname__ = Once(__cname__)
-
-
-    def getParentComponent(self):
-        return self.__parent__
-
-    def getComponentName(self):
-        return self.__cname__        
-
-    def _getConfigData(self, configKey, forObj):
-        return NOT_FOUND
 
 

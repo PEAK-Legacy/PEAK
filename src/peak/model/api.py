@@ -39,16 +39,12 @@ __all__ += allInterfaces
 
 
 
-class ServiceMeta(binding.AutoCreatable, binding.TraversableClass):
-    pass
-    
-
 class Service(binding.AutoCreated):
 
     """Well-known instances"""
 
     __implements__ = IService
-    __metaclass__  = ServiceMeta
+
 
 
 class App(Service):
@@ -58,6 +54,10 @@ class App(Service):
     def newElement(self,elementType,*args,**kw):
         element = apply(getattr(self,elementType),args,kw)  # XXX won't do dotted names
         return element
+
+
+
+
 
 
 
@@ -121,7 +121,7 @@ class XMIInjector(binding.ActiveDescriptor):
 
 
 
-class FeatureMC(XMIInjector, MethodExporter, binding.TraversableClass):
+class FeatureMC(XMIInjector, MethodExporter):
 
     """Method-exporting Property
     
@@ -143,7 +143,7 @@ class FeatureMC(XMIInjector, MethodExporter, binding.TraversableClass):
         more detail on how method templates are defined, the use of naming
         conventions, verbs, template variants, etc."""
 
-    __metaclass__ = binding.ActiveDescriptors
+    __metaclass__ = binding.ActiveClass
     
 
     def __get__(self, ob, typ=None):
@@ -490,7 +490,7 @@ class Sequence(Collection):
 
 
 
-class ClassifierMeta(XMIInjector, binding.TraversableClass):
+class ClassifierMeta(XMIInjector, binding.ActiveClass):
     pass
 
 

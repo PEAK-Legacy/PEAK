@@ -2,26 +2,14 @@
 
 from peak.api import NOT_FOUND
 from peak.util.EigenData import EigenRegistry
-from peak.util.imports import importObject
-from interfaces import IBindingFactory
+from peak.util.imports import importObject, importString
+from interfaces import IBindingFactory, IBindingSPI
 
 __all__ = [
-    'Once', 'New', 'Copy', 'OnceClass', 'ActiveDescriptors',
+    'Once', 'New', 'Copy', 'OnceClass', 'ActiveClass',
     'ActiveDescriptor',
 ]
 
-
-class ActiveDescriptors(type):
-
-    """Type which gives its descriptors a chance to find out their names"""
-    
-    def __init__(klass, name, bases, dict):
-
-        for k,v in dict.items():
-            if isinstance(v,ActiveDescriptor):
-                v.activate(klass,k)
-
-        super(ActiveDescriptors,klass).__init__(name,bases,dict)
 
 
 class ActiveDescriptor(object):
@@ -31,6 +19,18 @@ class ActiveDescriptor(object):
     def activate(self,klass,attrName):
         """Informs the descriptor that it is in 'klass' with name 'attrName'"""
         return self
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -276,5 +276,95 @@ class OnceClass(Once, type):
 
     def _copyWithName(self,attrName):
         return Once(self.computeValue, attrName)
+
+
+
+
+
+
+
+
+
+class ActiveClass(type, ActiveDescriptor):
+
+    """Type which gives its descriptors a chance to find out their names"""
+
+    __class_implements__ = IBindingSPI
+
+    __name__ = 'ActiveClass'    # trick to make instances' __name__ writable
+
+    def __init__(klass, name, bases, dict):
+
+        for k,v in dict.items():
+            if isinstance(v,ActiveDescriptor):
+                v.__class__.activate(v,klass,k)
+
+        super(ActiveClass,klass).__init__(name,bases,dict)
+
+
+    def activate(self,klass,attrName):
+
+        self = super(ActiveClass,self).activate(klass,attrName)
+
+        if klass.__module__ == self.__module__:
+
+            if '__parent__' not in self.__dict__:
+                # We use a tuple, so that if our parent is a descriptor,
+                # it won't interfere when our instance tries to set *its*
+                # parent!
+                self.__parent__ = klass,
+
+        return self
+        
+
+    def getParentComponent(self):
+        return self.__parent__[0]
+
+    def getComponentName(self):
+        return self.__cname__        
+
+    def _getConfigData(self, configKey, forObj):
+        return NOT_FOUND
+
+    def __parent__(self,d,a):
+
+        parent = self.__module__
+        name = self.__name__
+
+        if '.' in name:
+            name = '.'.join(name.split('.')[:-1])
+            parent = '%s:%s' % (parent,name)
+
+        return importString(parent),
+        
+    __parent__ = Once(__parent__)
+
+
+    def __cname__(self,d,a):
+        return self.__name__.split('.')[-1]
+        
+    __cname__ = Once(__cname__)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 

@@ -267,7 +267,7 @@ def setupModule():
 
     codelist = getCodeListForModule(module, code)
     
-    if codelist:
+    if len(codelist)>1:
         saved = {}
         for name in '__file__', '__path__', '__name__', '__codeList__':
             try:

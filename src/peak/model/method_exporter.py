@@ -7,7 +7,7 @@ __all__ = [
 
 from types import FunctionType
 from new import instancemethod
-from peak.binding.once import ActiveDescriptor
+from peak.binding.once import ActiveClass
 
 
 
@@ -39,7 +39,7 @@ from peak.binding.once import ActiveDescriptor
 
 
 
-class MethodExporter(ActiveDescriptor, type):
+class MethodExporter(ActiveClass):
 
     """Support for generating "verbSubject()" methods from template functions
 
@@ -349,7 +349,7 @@ class MethodExporter(ActiveDescriptor, type):
 
         """Install the feature's "verbSubject()" methods upon use in a class"""
 
-        self = super(MethodExporter,self).activate(self,attrName)
+        self = super(MethodExporter,self).activate(klass,attrName)
 
         if attrName != self.attrName:
             raise TypeError(
