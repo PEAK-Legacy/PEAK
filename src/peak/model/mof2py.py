@@ -20,8 +20,8 @@
           code generated for them.
 
         * If a model name conflicts with Python keywords, built-ins, or a
-          private/system ('__') name, the generated model may fail with no
-          warning from the generator.
+          private/system ('_'-prefixed) name, the generated model may fail
+          with no warning from the generator.
 
     - Docstring formatting is a bit "off"; notably, we're not wrapping
       paragraphs, and something seems wrong with linespacing, at least
@@ -162,7 +162,7 @@ class MOFGenerator(binding.Component):
 
 
 
-    def beginObject(self, element, metatype='__model.Element'):
+    def beginObject(self, element, metatype='_model.Element'):
 
         ns = element.container
         relName = self.getRelativeName
@@ -217,6 +217,20 @@ class MOFGenerator(binding.Component):
         return common, p1, p2
 
 
+    def getImportPath(self, package, element):
+
+        try:
+            path = self.getRelativePath(package,element,False)
+
+        except self.NameNotResolved:
+
+            path = ['..']*len(package.qualifiedName) + element.qualifiedName
+
+            if package.name == '__init__':
+                # remove one level of '..'
+                path = path[1:]
+
+        return str('/'.join(path))
 
 
 
@@ -230,21 +244,7 @@ class MOFGenerator(binding.Component):
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    def getRelativePath(self, e1, e2):
+    def getRelativePath(self, e1, e2, acquire=True):
 
         c,p1,p2 = self.comparePaths(e1,e2)
 
@@ -254,15 +254,19 @@ class MOFGenerator(binding.Component):
                 p2.insert(0,c[-1])
                 c.pop()
 
-            ob = self.acquire(e1,p2[0].name)
+            if acquire:
+                ob = self.acquire(e1,p2[0].name)
 
-            if ob is p2[0]:
-                p1=[]   # just acquire it
+                if ob is p2[0]:
+                    p1=[]   # just acquire it
 
             return ['..']*len(p1)+[e.name for e in p2]
 
         p1.reverse()    # Search all parents of the source
-        
+
+        if not acquire:
+            p1=[]
+
         for parent in p1:
 
             if not isinstance(parent,self.Package):
@@ -277,10 +281,6 @@ class MOFGenerator(binding.Component):
         raise self.NameNotResolved(
             "No path between objects", e1.qualifiedName, e2.qualifiedName
         )
-
-
-
-
 
 
 
@@ -313,9 +313,9 @@ class MOFGenerator(binding.Component):
 
         if element.container is not package:
             self.write(
-                '%-20s = __lazy(%r)\n' % (
+                '%-20s = _lazy(__name__, %r)\n' % (
                     str(element.name),
-                    self.getImportName(element)
+                    self.getImportPath(package,element)
                 )
             )
 
@@ -342,18 +342,18 @@ class MOFGenerator(binding.Component):
             self.writeDocString(package.annotation)
         self.write(self.sepLine)
         self.write("""
-from peak.util.imports import lazyModule as __lazy
+from peak.util.imports import lazyModule as _lazy
 
-__model              = __lazy('peak.model.api')
-__config             = __lazy('peak.config.api')
-__datatypes          = __lazy('peak.model.datatypes')
+_model               = _lazy('peak.model.api')
+_config              = _lazy('peak.config.api')
+_datatypes           = _lazy('peak.model.datatypes')
 
 """)
 
 
     def writeFileFooter(self, package):
         self.write(self.sepLine)
-        self.write('\n__config.setupModule()\n\n\n')
+        self.write('\n_config.setupModule()\n\n\n')
 
     def exposeImportDeps(self, package, target=None):
 
@@ -380,8 +380,8 @@ __datatypes          = __lazy('peak.model.datatypes')
         self.exposeImportDeps(package)
 
         for subPkg in package.findElementsByType(self.Package):
-            self.write('%-20s = __lazy(__name__ + %r)\n'
-                % (subPkg.name, '.'+str(subPkg.name))
+            self.write('%-20s = _lazy(__name__, %r)\n'
+                % (subPkg.name, str(subPkg.name))
             )
             
         self.write('\n%s\n' % self.sepLine)
@@ -442,8 +442,8 @@ __datatypes          = __lazy('peak.model.datatypes')
 
     def writeImport(self, imp):
 
-        pkgName = self.getImportName(imp.importedNamespace)
-        self.write('%-20s = __lazy(%r)\n' % (imp.name, pkgName))
+        pkgName = self.getImportPath(imp.container, imp.importedNamespace)
+        self.write('%-20s = _lazy(__name__, %r)\n' % (imp.name, pkgName))
 
     writeImport = oncePerObject(writeImport)
 
@@ -457,12 +457,13 @@ __datatypes          = __lazy('peak.model.datatypes')
             if c.container is myPkg:
                 self.writeClass(c)
 
-        self.beginObject(klass, '__model.Element')
-
-        if not klass.annotation:
-            self.write('\n')
+        self.beginObject(klass, '_model.Element')
 
         if klass.isAbstract:
+
+            if not klass.annotation:
+                self.write('\n')
+
             self.write('mdl_isAbstract = True\n')
             
         contentMap = {}
@@ -476,7 +477,6 @@ __datatypes          = __lazy('peak.model.datatypes')
         self.pop()
 
     writeClass = oncePerObject(writeClass)
-
 
 
 
@@ -505,14 +505,14 @@ __datatypes          = __lazy('peak.model.datatypes')
             base = basicTypes.get(tc.kind)
 
             if base is None:
-                self.beginObject(dtype,'__model.PrimitiveType')
+                self.beginObject(dtype,'_model.PrimitiveType')
                 self.write("pass   # XXX Don't know how to handle %s!!!\n\n"
                     % tc.kind
                 )
 
             else:
 
-                self.beginObject(dtype,'__datatypes.'+base.__name__)
+                self.beginObject(dtype,'_datatypes.'+base.__name__)
 
                 if hasattr(tc,'length'):
                     self.write('length = %d\n\n' % tc.length)
@@ -533,7 +533,7 @@ __datatypes          = __lazy('peak.model.datatypes')
 
     def writeStruct(self,dtype,memberInfo):
 
-        self.beginObject(dtype,'__model.DataType')
+        self.beginObject(dtype,'_model.DataType')
 
         posn = 0
         for mname, mtype in memberInfo:
@@ -546,7 +546,7 @@ __datatypes          = __lazy('peak.model.datatypes')
 
     def writeStructMember(self,mname,mtype,posn):
 
-        self.write('class %s(__model.structField):\n\n' % mname)
+        self.write('class %s(_model.structField):\n\n' % mname)
         self.push(1)
 
         self.write('referencedType = %r # XXX \n' % repr(mtype))
@@ -557,10 +557,10 @@ __datatypes          = __lazy('peak.model.datatypes')
 
     def writeEnum(self,dtype,members):
     
-        self.beginObject(dtype,'__model.Enumeration')
+        self.beginObject(dtype,'_model.Enumeration')
 
         for m in members:
-            self.write('%s = __model.enum()\n' % m)
+            self.write('%s = _model.enum()\n' % m)
 
         if members:
             self.write('\n')
@@ -615,7 +615,7 @@ __datatypes          = __lazy('peak.model.datatypes')
 
     def writeFeature(self,feature,posn):
 
-        self.beginObject(feature,'__model.StructuralFeature')
+        self.beginObject(feature,'_model.StructuralFeature')
 
         if not feature.isChangeable:
             self.write('isChangeable = False\n')
