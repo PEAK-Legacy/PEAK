@@ -10,7 +10,7 @@ __all__ = [
     'IDOMletState', 'IHTTPHandler', 'IHTTPApplication', 'INamespaceHandler',
     'IDOMletNode',    'IDOMletNodeFactory', 'IPlace', 'ITraversalContext',
     'IDOMletElement', 'IDOMletElementFactory', 'ISkin', 'IPolicyInfo',
-    'IViewTarget', 'IConfigurableLocation',
+    'IViewTarget', 'IConfigurableLocation', 'IViewProtocol',
     'VIEW_NAMES', 'TEMPLATE_SCHEMA', 'SITEMAP_SCHEMA', 'LOCATION_ID',
 ]
 
@@ -56,10 +56,10 @@ class IAuthService(Interface):
         """Return a user object for the given WSGI 'environ'"""
 
 
+class IViewProtocol(protocols.IOpenProtocol):
+    """A protocol used to register views of a particular name"""
 
-
-
-
+    view_name = Attribute("The name of the view this protoocol is for")
 
 
 
@@ -116,7 +116,7 @@ class IInteractionPolicy(IAuthService, IPolicyInfo):
         """Return an 'INamespaceHandler' for namespace 'ns', or 'default'"""
 
     def view_protocol(viewname,default=None):
-        """Return the protocol for views named 'viewname', or 'default'"""
+        """Return the 'IViewProtocol' for 'viewname', or 'default'"""
 
 
 
@@ -159,7 +159,7 @@ class ITraversalContext(IInteraction):
         """Return the named resource"""
 
     def view_protocol(viewname,default=None):
-        """Return the protocol for views named 'viewname', or 'default'"""
+        """Return the 'IViewProtocol' for 'viewname', or 'default'"""
 
 
     def shift():
@@ -373,8 +373,9 @@ class IConfigurableLocation(IWebTraversable,IPlace):
     def registerView(target,name,handler):
         """Register 'handler' to implement view 'name' for 'target'
 
-        'target' must be an 'IViewTarget', and 'handler' must be an
-        'INamespaceHandler'.
+        'target' must be an 'IViewTarget' or 'None', and 'handler' must be an
+        'INamespaceHandler'.  If 'target' is 'None', then the view is intended
+        to apply to the location itself, rather than to a content type.
         """
 
     def addContainer(container,permissionNeeded=None):
@@ -385,7 +386,6 @@ class IConfigurableLocation(IWebTraversable,IPlace):
 
         The registered location can then be accessed using the '++id++'
         namespace."""
-
 
 
 
