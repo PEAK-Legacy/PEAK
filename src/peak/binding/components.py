@@ -654,9 +654,11 @@ def bindToProperty(propName, default=NOT_GIVEN, provides=None, doc=None,
         provides=provides, doc=doc, activateUponAssembly = activateUponAssembly
     )
 
-class _Base(Adaptable):
+class _Base(object):
 
     """Basic attribute management and "active class" support"""
+
+    __metaclass__ = ActiveClass
 
     protocols.advise(
         instancesProvide = [IBindableAttrs]
@@ -689,8 +691,6 @@ class _Base(Adaptable):
                 return default
 
         return val
-
-
 
 
 

@@ -11,26 +11,26 @@ from peak.util.advice import metamethod
 __all__ = [
     'Once', 'New', 'Copy', 'Activator', 'ActiveClass', 'ActiveClasses',
     'getInheritedRegistries', 'classAttr', 'Singleton', 'metamethod',
-    'Adaptable',
 ]
 
 
 def supertype(supertype,subtype):
 
-    """Workaround for 'super()' not handling metaclasses well"""
+    """Workaround for 'super()' not handling metaclasses well
+
+    Note that this will *skip* any classic classes in the MRO!
+    """
 
     mro = iter(subtype.__mro__)
 
     for cls in mro:
         if cls is supertype:
-            return mro.next()
-    else:
-        raise TypeError("Not sub/supertypes:", supertype, subtype)
+            for cls in mro:
+                if hasattr(cls,'__mro__'):
+                    return cls
+            break
 
-
-
-
-
+    raise TypeError("Not sub/supertypes:", supertype, subtype)
 
 
 
@@ -285,15 +285,12 @@ class classAttr(object):
     def __init__(self, binding): self.binding = binding
 
 
-class Activator(type):
+class Activator(protocols.ProviderMixin, type):
 
     """Descriptor metadata management"""
 
     __name__ = 'Activator'    # trick to make instances' __name__ writable
 
-    protocols.advise(
-        instancesProvide=[IOpenProvider]
-    )
 
     def __new__(meta, name, bases, cdict):
 
@@ -326,6 +323,9 @@ class Activator(type):
         klass.__name__ = name
 
 
+
+
+
         d = klass.__class_descriptors__ = {}
         for k in class_descr:
             v = cdict[k]
@@ -335,36 +335,36 @@ class Activator(type):
         map(ad.update, getInheritedRegistries(klass, '__all_descriptors__'))
         ad.update(klass.__class_descriptors__)
         klass.__all_descriptors__ = ad
-        pp = {}
-        map(pp.update,getInheritedRegistries(klass, '__protocols_provided__'))
-        klass.__protocols_provided__ = pp
-        pi = {}
-        map(pi.update,
-            getInheritedRegistries(klass, '__protocols_implemented__')
-        )
-        klass.__protocols_implemented__ = pi
         return klass
 
-    def declareProvides(self,protocol,adapter=NO_ADAPTER_NEEDED,depth=1):
-        """This lets our instances support 'classProvides'"""
-        self.__protocols_provided__[protocol] = adapter
-        return adapter
 
-    declareProvides = metamethod(declareProvides)
 
-    def declareClassImplements(self, protocol,adapter=NO_ADAPTER_NEEDED,
-        depth=1
-    ):
-        self.__protocols_implemented__[protocol] = adapter
-        for sc in self.__subclasses__():
-            protocols.declareAdapterForType(protocol, adapter, sc, depth)
 
-    def __conform__(self,protocol):
-        adapter = self.__protocols_provided__.get(protocol)
-        if adapter is not None:
-            return adapter(self,protocol)
 
-    __conform__ = metamethod(__conform__)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 class ActiveClass(Activator):
@@ -429,47 +429,6 @@ class ActiveClass(Activator):
 
 
 ActiveClasses = (Once, ActiveClass, classAttr)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-class Adaptable(object):
-
-    """Base class for adaptable objects"""
-
-    __metaclass__ = ActiveClass
-
-    protocols.advise(
-        classProvides=[IOpenImplementor]
-    )
-
-    def __conform__(self,protocol):
-        adapter = self.__class__.__protocols_implemented__.get(protocol)
-        if adapter is not None:
-            return adapter(self,protocol)
-
-
-
-
-
-
-
 
 
 
