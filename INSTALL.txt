@@ -39,7 +39,7 @@ Installing PEAK
 
   (Note: for the Win32 installer release, just run the .exe file.)
 
- SCRIPTS
+ SCRIPTS, BATCH FILES, AND '#!'
 
   PEAK installs a Python script named 'peak'.  'peak' is an application
   bootstrap script that can invoke any object that is referenceable via
@@ -80,6 +80,22 @@ Installing PEAK
 
 
 
+  The interpretation of '#!' lines is highly OS-dependent.  Some operating
+  systems limit the length of '#!' lines to 32, 80, 127, or 255 characters.
+  Some operating systems require a space after '#!', and or require the path
+  that follows to be absolute.  Some operating systems will search the 'PATH'
+  environment variable for the specified interpreter, others will not.  When
+  creating programs that use '#!' lines, or using such programs written by
+  others, be sure to adjust the line as appropriate for your operating system.
+  For more information on this subject, you can visit the
+  "shebang site":http://homepages.cwi.nl/~aeb/std/shebang/, which lists useful
+  '#!' line information for various operating systems.
+
+  Note that Windows does not support '#!' lines at all, so programs that use
+  them must be run using batch files when run on Windows, unless you have a
+  Unix-like shell available (e.g. Cygwin).
+
+
  TESTING YOUR INSTALLATION
 
   PEAK comes with a moderately-sized built-in test suite.  If you wish to
@@ -102,22 +118,6 @@ Installing PEAK
   tests like this::
 
     python C:\Python22\Scripts\peak test
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
