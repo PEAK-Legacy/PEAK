@@ -507,3 +507,11 @@ class BasicInitialContext(AbstractContext):
     creationParent = Once(creationParent,            provides=CREATION_PARENT)
     objectFactories= bindToUtilities(IObjectFactory, provides=OBJECT_FACTORIES)
     stateFactories = bindToUtilities(IStateFactory,  provides=STATE_FACTORIES)
+
+
+    __class_implements__ = IInitialContextFactory
+
+    def getInitialContext(klass, parentComponent=None, **options):
+        return klass(parentComponent, **options)
+
+    getInitialContext = classmethod(getInitialContext)

@@ -1,12 +1,10 @@
 """Factories for objects, states, and URL scheme contexts"""
 
-from peak.naming.interfaces import *
-from peak.naming.references import *
-from peak.naming.properties import *
+from peak.naming.interfaces import IObjectFactory, IAddress
+from peak.naming.references import NNS_Reference
+from peak.naming.properties import SCHEMES_PREFIX
 
-__implements__ = (
-    IObjectFactory, IInitialContextFactory
-)
+__implements__ = IObjectFactory
 
 
 schemeParsers = {
@@ -26,23 +24,6 @@ def register(propertyMap):
     for k,v in schemeParsers.items():
         propertyMap.setValue(SCHEMES_PREFIX+k, 'peak.naming.factories.'+v)
     
-
-
-
-
-
-
-
-
-
-
-
-
-
-def getInitialContext(parentComponent=None, **options):
-    from peak.naming.contexts import BasicInitialContext
-    return BasicInitialContext(parentComponent, **options)
-
 
 def getObjectInstance(refInfo, name, context, attrs=None):
 
