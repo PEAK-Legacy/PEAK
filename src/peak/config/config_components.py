@@ -15,7 +15,7 @@ from Interface import Interface
 
 __all__ = [
     'GlobalConfig', 'LocalConfig', 'PropertyMap', 'LazyLoader', 'ConfigReader',
-    'loadConfigFile', 'loadMapping', 'PropSet', 'fileNearModule',
+    'loadConfigFile', 'loadMapping', 'PropertySet', 'fileNearModule',
 ]
 
 
@@ -266,7 +266,26 @@ class LocalConfig(BasicConfig):
 
 
 
-class PropSet(object):
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class PropertySet(object):
 
     def __init__(self, prefix, targetObj=None):
         self.prefix = PropertyName(prefix).asPrefix()
@@ -277,3 +296,16 @@ class PropSet(object):
 
     def get(self, key, default=None):
         return config.getProperty(self.prefix+key,self.target,default)
+
+    def __getattr__(self,attr):
+        return self.__class__(self.prefix+attr, self.target)
+
+    def of(self, target):
+        return self.__class__(self.prefix, target)
+    
+    def __call__(self, default=None, forObj=NOT_GIVEN):
+
+        if forObj is NOT_GIVEN:
+            forObj = self.target
+
+        return config.getProperty(self.prefix[:-1], forObj, default)

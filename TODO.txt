@@ -8,6 +8,12 @@ Open Issues/To-Do Items
 
         * Up-to-date and complete Persistence package
 
+        * Review possible cross-locational or "root" things like
+          'PropertyName' -- should these things move to the API?
+          Or where?  They're not 'util' things, certainly.  Perhaps
+          there should be a 'peak.core' module or package for things
+          that are foundational to all the packages?
+
     peak.storage
 
         - URLs and drivers for gadfly, Sybase, and postgres
@@ -51,6 +57,8 @@ Open Issues/To-Do Items
         - docstrings for reference
 
     peak.running
+
+        - more docs for new 'cluster' tools
 
         - create a basic LogFile logging provider
 

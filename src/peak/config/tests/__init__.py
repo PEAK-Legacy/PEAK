@@ -16,7 +16,7 @@ class PropertyTest(TestCase):
 
         # retry multiple times to verify re-get is safe...
         
-        ps = config.PropSet('environ.*')
+        ps = config.PropertySet('environ.*')
 
         for r in range(3):
             for k,v in environ.items():

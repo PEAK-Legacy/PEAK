@@ -7,6 +7,7 @@ from interfaces import *
 from types import StringTypes
 from peak.util.Struct import struct, structType
 from peak import exceptions
+from peak.api import NOT_GIVEN
 
 __all__ = [
     'Name', 'toName', 'CompositeName', 'CompoundName', 'OpaqueURL',
@@ -24,7 +25,6 @@ class UnspecifiedSyntax(object):
 
     def format(self,name):
         return "%s(%r)" % (name.__class__.__name__, list(name))
-
 
 
 
@@ -699,13 +699,41 @@ class PropertyName(str):
 
         p = self
 
-        if p.endswith('*'):
+        if not self.isPlain():
             p=p[:-1]
 
         if p and not p.endswith('.'):
             p=p+'.'
 
         return p
+
+
+    def __call__(self, forObj=None, default=NOT_GIVEN):
+        from peak.config.api import getProperty
+        return getProperty(self, forObj, default)
+
+
+    def of(self, forObj):
+        from peak.config.config_components import PropertySet
+        return PropertySet(self, forObj)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 class LinkRef(object):

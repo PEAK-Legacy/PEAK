@@ -2,4 +2,8 @@
 
 Please see the individual modules for useful classes, etc."""
 
-CLUSTER = 'peak.running.cluster.'
+from peak.naming.names import PropertyName
+
+CLUSTER = PropertyName('peak.running.cluster').of(None)
+
+del PropertyName
