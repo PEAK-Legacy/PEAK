@@ -45,15 +45,15 @@ Imagine a car.  It's composed from a variety of parts: the wheels, engine,
 battery, frame, and so on.  Some of these parts are also composed of parts:
 the engine has a block, cylinders, pistons, spark plugs, and so on.
 
-Each part in this "component assembly" can be a part of only one larger part:
+Each part in this ``component assembly" can be a part of only one larger part:
 its \strong{parent component}.  The hubcaps are part of the wheels,
 and so they can't also be part of the engine.  (They wouldn't fit there in 
 any case, but that's beside the point.)  Consider that screws or bolts may
 be used in many parts of the car: each is part of only one other part of
 the car, although more than one of the same \emph{kind} of part may be used
 in other places.  In the UML (Unified Modelling Language) and in PEAK, this
-kind of parent-child "assembly" relationship  is called \strong{composition}:
-a component is being "composed" by assembling other components.
+kind of parent-child ``assembly" relationship  is called \strong{composition}:
+a component is being ``composed" by assembling other components.
 
 But in the UML and in real life, this isn't the only way of building things
 with components.  It would be very inefficient if every light and accessory
@@ -64,8 +64,8 @@ the places where they are needed.  Note that such connections may be between
 components at any level: wires carry electricity to every electrical part, no
 matter how big or small.  In some cases, wires go to a major subsystem, which
 then has internal wires to carry electricity inward to its parts, or to carry
-signals between its parts.  In  the UML, these kind of "shared", "peer-to-peer"
-connections are called \strong{associations}.
+signals between its parts.  In  the UML, these kind of ``shared" or
+``peer-to-peer" connections are called \strong{associations}.
 
 
 
@@ -90,24 +90,24 @@ objects  will be referenced (via association) by each attribute of a component.
 
 Of course, there are some important differences between software and the real
 world.  In the real world, we have to actually build every part of the car
-"ahead of time", and we must have one screw for every place a screw is needed.
-In software, classes let us define the concept of a "screw" once and then use
+``ahead of time", and we must have one screw for every place a screw is needed.
+In software, classes let us define the concept of a ``screw" once and then use
 it as many times as we want, anywhere that we want.
 
-Also, with PEAK, bindings are "lazy".  What this means is that we can define
-an "engine" class whose parts aren't actually created until they're needed.
+Also, with PEAK, bindings are ``lazy".  What this means is that we can define
+an ``engine" class whose parts aren't actually created until they're needed.
 We just list the parts that are needed and what attributes they'll be bound
 to, and when the attribute is used, the part is automatically created or
 connected, according to our definition.
 
-Since each part "magically" appears the first time we want to use it, it's
+Since each part ``magically" appears the first time we want to use it, it's
 as though it was always there.  It's as if your car was an empty shell until
 you opened the door or looked in the window, at which point all the contents
 magically appeared.  And then when you got into the car, the radio was just
 an empty shell until you tried to turn it on, at which point all of its
 internal components sprang into being and wired themselves together.
 
-This "lazy" construction technique can speed startup times for applications
+This ``lazy" construction technique can speed startup times for applications
 which are built from large numbers of components, by not creating all the
 objects right away, and by never creating objects that don't get used during
 that application run.
@@ -124,11 +124,11 @@ that application run.
 \subsubsection{Component Interfaces}
 
 You can't just hook wires between random parts of your car and expect good
-results.  In the same way, software components can only be "wired" together
+results.  In the same way, software components can only be ``wired" together
 if they have compatible interfaces.  A software component that expects to
-send data to a "file" component must be connected to a component that
+send data to a ``file" component must be connected to a component that
 provides the same services a file would provide, even if the component is not
-actually a "real" disk file.
+actually a ``real" disk file.
 
 A specific set of services that a component provides is called an
 \strong{interface}.  Interfaces can denote a component's requirements, as well
@@ -148,8 +148,7 @@ components, and even define security restrictions based on interfaces.
 \vfill
 \begin{seealso}\begin{itemize}
 
-\item Remember, if you haven't already done so, be sure to check out
-\citetitle{A Quick Introduction to Python Interfaces} at 
+\item \citetitle{A Quick Introduction to Python Interfaces} at 
 \url{http://www.zope.org/Wikis/Interfaces/InterfaceUserDocumentation}.  
 
 \item And, if you're interested in developing Zope 3 applications and want to
@@ -160,6 +159,7 @@ Architecture} at \url{http://dev.zope.org/Wikis/DevSite/Projects/ComponentArchit
 
 \end{itemize}\end{seealso}
 \vfill
+
 
 
 \subsection{Applications = Components + Bindings}
@@ -178,17 +178,17 @@ separating the work of an application or system into components.
 
 Is it realistic to expect to be able to define an application entirely in
 terms of components?  And why would you want to do it in the first place?
-Can't we just write an application the "old-fashioned way"?  That is,
+Can't we just write an application the ``old-fashioned way"?  That is,
 import the exact components we want, and use them wherever and whenever
-we want, instead of creating bindings to link them to a master "application"
+we want, instead of creating bindings to link them to a master ``application"
 component?
 
 Well, you could, but one of PEAK's goals is to improve reusability.  Consider
 this: all cars have engines, but different models of car have different goals
-or requirements for their engines.  If we are creating a "Car" application,
-wouldn't it be nice if we could switch out the "engine" component when we
+or requirements for their engines.  If we are creating a ``Car" application,
+wouldn't it be nice if we could switch out the ``engine" component when we
 get a new project, without having to maintain multiple versions of the code?
-Perhaps for this project we need the "car" to be compact, or perhaps we need
+Perhaps for this project we need the ``car" to be compact, or perhaps we need
 a bigger engine for a station wagon this time.
 
 How can we achieve such reusability?  It actually requires only a simple
@@ -196,14 +196,14 @@ coding convention: never write code in a function or method that directly
 references another class.  Instead, define \emph{all} collaborations with
 other classes by way of instance attributes.  This means that collaborating
 component classes can be easily substituted in a derived class, substituting
-a new "engine" class, for example.
+a new ``engine" class, for example.
 
 
 
 
 
 
-While you can apply this technique of "hiding collaborators" in any
+While you can apply this technique of ``hiding collaborators" in any
 object-oriented language, PEAK takes the approach to a new level.  Because
 PEAK attribute bindings can be used to programmatically define connections in
 context, components can actually seek out their collaborators dynamically at
@@ -212,11 +212,11 @@ and ubiquitous as looking up what database to connect to, or as complex as
 specifying strategy components to select algorithms that are optimal
 for a specific deployment environment.
 
-We're back to the "ilities" again: reusability, composability, extensibility,
+We're back to the ``ilities" again: reusability, composability, extensibility,
 and flexibility, in this case.  (Maybe portability, too.)  We even get a bit
 of understandability and maintainability: when we isolate collaborations in
 attribute bindings, it becomes a lot easier to implement the \citetitle{Law
-of Demeter} and write "adaptive programs".
+of Demeter} and write ``adaptive programs".
 
 \vfill
 
@@ -225,10 +225,10 @@ of Demeter} and write "adaptive programs".
 \url{http://www.ccs.neu.edu/home/lieber/LoD.html} has lots of links about the 
 \citetitle{Law of Demeter}, and you can also see
 \url{http://www.ccs.neu.edu/research/demeter/demeter-method/LawOfDemeter/object-formulation.html
-} for its "object-oriented" version, if you'd like to know more about this
-software quality technique.  PEAK takes this "Law" very seriously, insisting
+} for its ``object-oriented" version, if you'd like to know more about this
+software quality technique.  PEAK takes this ``Law" very seriously, insisting
 that code which references even a collaborator class must do so via an
-instance attribute or other "neighbor" as defined by the Law.
+instance attribute or other ``neighbor" as defined by the Law.
 
 You don't have to know or follow the \citetitle{Law of Demeter} to use PEAK.
 (Your programs just won't be as flexible.)  But all of our example programs 
@@ -250,40 +250,40 @@ So what's an application made of?  The PEAK approach describes application
 components in terms of their lifecycles and roles, as follows:
 
 \begin{description}
-
 \item[Services] \hfill \\ 
-Similar in concept to "singletons", Services are "well-known" instance objects
+Similar in concept to ``singletons", Services are ``well-known" instance objects
 which exist for the lifetime of the application.  For example, a database
 connection object in an application could be a service component, and so could
-a top-level window in a GUI application.  J2EE "session beans" and
-"message-driven beans" are also good examples of service components.
+a top-level window in a GUI application.  J2EE ``session beans" and
+``message-driven beans" are also good examples of service components.
 
 \item[Elements] \hfill \\ 
-Elements are typically "problem-domain" objects or their proxies in
+Elements are typically ``problem-domain" objects or their proxies in
 the user interface.  They are created and destroyed by other Elements or
-by the application's Services.  Typical Elements might be "business objects"
+by the application's Services.  Typical Elements might be ``business objects"
 such as customers and sales, but of course any object that is the actual
 subject of the application's purpose would be considered an Element.  In a
-spam filtering program, for example, e-mail messages, mailboxes, and
-"sender whitelist" objects would be considered Elements.
+mail filtering program, for example, e-mail messages, mailboxes, and
+``sender whitelist" objects would be considered Elements.
 
 \item[Features] \hfill \\
-Features are "solution-domain" objects used to compose Elements, and less
+Features are ``solution-domain" objects used to compose Elements, and less
 often, to compose Services.  Features are typically used to represent 
 the properties, methods, associations, user interface views, database fields,
-and other "features" of a problem-domain Element.  Feature objects are often
-defined as an Element class' class attribute, and shared between instances.
+and other ``features" of a problem-domain Element.  Feature objects are often
+used as a class attribute in an Element's class, and shared between instances.
 PEAK makes extensive use of feature objects to implement labor-saving
 techniques such as generative programming.
 
 \end{description}
 
-This breakdown is called the \strong{Service-Element-Feature (SEF) Pattern}.
-PEAK makes it easy to create components of each kind, but this pattern 
-certainly isn't limited to PEAK.  You'll find Services, Elements, and Features
-in almost any object-based application, regardless of language or platform.
-But, the pattern is often implemented in a rather haphazard fashion, and
-without the benefit of explicit "wiring" between components.
+This breakdown of application components is called the
+\strong{Service-Element-Feature (SEF) Pattern}.  PEAK makes it easy to create 
+components of each kind, but this pattern certainly isn't limited to PEAK.
+You'll find Services, Elements, and Features in almost any object-based
+application, regardless of language or platform.  But, the pattern is often
+implemented in a rather haphazard fashion, and without the benefit of explicit
+``wiring" between components.
 
 When you design an application using the SEF Pattern, your top-level 
 application object is itself a Service.  You construct that service from
@@ -293,10 +293,10 @@ application is to be web-based, or you're constructing a middle-tier
 subsystem, perhaps it will be composed of web services or the equivalent
 of J2EE session beans.
 
-The top-level application object may provide various methods or "value-added"
+The top-level application object may provide various methods or ``value-added"
 services on top of its subcomponents' services, or it may just serve to start
 them up in an environment that defines their mutual collaborators.  You may
-find later that what you thought was an "application" component, is really 
+find later that what you thought was an ``application" component, is really 
 just another service that you want to use as part of a larger application.
 Fortunately, it's easy to change a PEAK component's bindings and
 incorporate it into a larger system.
@@ -314,7 +314,7 @@ allow mapping Element properties to input fields in a window.
 
 While PEAK does or will provide many Element and Feature base classes you can
 use to build your applications, these facilities are outside the scope of
-this tutorial, which focuses on assembling an application's Service
+this tutorial, which focuses primarily on assembling an application's Service
 components.  However, many of the techniques you'll learn here will be as
 applicable to Element and Feature objects as they are to Service components.
 
@@ -332,7 +332,7 @@ components, shall we?
 
 PEAK is installed as a set of Python packages, such as \module{peak.binding},
 \module{peak.naming}, and so on, within the top-level \module{peak} package
-space.  To help distinguish between the "public" and "private" portions of
+space.  To help distinguish between the ``public" and ``private" portions of
 the code, each subpackage includes an \module{api} module or subpackage, which
 exports all of the commonly-used classes, functions, and constants that form
 that package's public API.
@@ -358,7 +358,7 @@ convention: major subpackage followed by a dot and the class or function name.
 Experienced Python programmers may wonder whether using
 \samp{from peak.api import *} will cause all of PEAK to be imported.  In
 fact, it won't, because the \module{peak.api} subpackage uses a 
-"lazy import" mechanism.  Individual API subpackages like \module{peak.binding}
+``lazy import" mechanism.  Individual API subpackages like \module{peak.binding}
 won't be imported until they're actually used by your code, to prevent wasteful
 up-front loading of all the modules and classes.  See the source for
 \module{peak.api.__init__} and the \class{lazyImport} class in
@@ -371,7 +371,7 @@ up-front loading of all the modules and classes.  See the source for
 
 \subsection{Binding Fundamentals}
 
-It's time to write some code!  Our objective: create a "car" class 
+It's time to write some code!  Our objective: create a ``car" class 
 that keeps track of its passengers.
 
 \begin{verbatim}
@@ -379,8 +379,8 @@ that keeps track of its passengers.
 >>> class Car:
         passengers = binding.New(dict, 'passengers')
 	
->>> mazda=Car()
->>> print mazda.passengers
+>>> aCar=Car()
+>>> print aCar.passengers
 {}
 
 \end{verbatim}
@@ -434,12 +434,12 @@ class, and print its dictionary before and after referencing the
 \member{passengers} attribute:
 
 \begin{verbatim}
->>> saturn=Car()
->>> print saturn.__dict__
+>>> anotherCar=Car()
+>>> print anotherCar.__dict__
 {}
->>> print saturn.passengers
+>>> print anotherCar.passengers
 {}
->>> print saturn.__dict__
+>>> print anotherCar.__dict__
 {'passengers': {}}
 
 \end{verbatim}
@@ -451,15 +451,15 @@ it had always been there, and it acts like a normal attribute thereafter.
 
 If you're familiar with the Eiffel programming language, you'll notice that
 PEAK attribute bindings are quite similar to Eiffel's \strong{once functions},
-except that they're for instances rather than for classes.  A "once function"
+except that they're for instances rather than for classes.  A ``once function"
 is computed at most once, the first time its value is referenced.  In PEAK,
 virtually all attribute bindings are based on \class{binding.Once}, a class
-that handles most of the mechanics that make these "once attributes" work.
+that handles most of the mechanics needed to make these ``once attributes" work.
 
 \subsubsection{Deriving from \class{binding.Base}}
 
 As we've already seen, attribute bindings can be made to work with 
-"old-style" or "classic" Python classes.  There are some drawbacks to that,
+``old-style" or ``classic" Python classes.  There are some drawbacks to that,
 however.  Most visibly, it's necessary to specify an attribute binding's
 name in its definition, as we saw in our example, i.e. 
 \samp{passengers = binding.New(dict, 'passengers')}.
@@ -471,8 +471,8 @@ to do this:
 >>> class Car(binding.Base):
         passengers = binding.New(dict)
 	
->>> mazda=Car()
->>> print mazda.passengers
+>>> aCar=Car()
+>>> print aCar.passengers
 {}
 
 \end{verbatim}
@@ -494,11 +494,11 @@ What would happen if we did this \emph{without} \class{binding.Base}?
 >>> class Car:
         passengers = binding.New(dict)
 	
->>> mazda=Car()
->>> print mazda.passengers
+>>> aCar=Car()
+>>> print aCar.passengers
 Traceback (most recent call last):
   File "<pyshell#15>", line 1, in ?
-    print mazda.passengers
+    print aCar.passengers
   File "C:\PYTHON22\Lib\site-packages\peak\binding\once.py", line 137, in __get__
     self.usageError()
   File "C:\PYTHON22\Lib\site-packages\peak\binding\once.py", line 151, in usageError
@@ -510,12 +510,13 @@ TypeError: <peak.binding.once.Once object at 0x01491EE0> was used in a type whic
 \end{verbatim}
 
 Ouch!  It doesn't work, because PEAK can't tell what name the attribute
-has without help from either you, or the base class (actually the metaclass,
-but that's not important right now).  There are some circumstances where PEAK
-will try to guess the attribute name, such as when you use a class or a 
-function to define an attribute binding, but for the most part you must either
-have a metaclass that supports \class{binding.ActiveDescriptors} (such as 
-\class{binding.Base}), or supply the attribute name yourself.
+has without help from either you or the base class.  (Actually, it's the
+metaclass, not the base class, but that's not important right now).  There
+are some circumstances where PEAK will try to guess the attribute name for you,
+such as when you use a class or a  function to define an attribute binding, but
+for the most part you must either have a base class that supports
+\class{binding.ActiveDescriptors} (such as \class{binding.Base}), or supply
+the attribute name yourself when defining the binding..
 
 So, if you plan to use attribute bindings in your program, it's probably best
 to subclass \class{binding.Base}; it'll save you a lot of typing!

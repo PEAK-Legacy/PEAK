@@ -2,8 +2,8 @@
 
 \section{What is PEAK?}
 
-PEAK is the "Python Enterprise Application Kit". If you develop
-"enterprise" applications with Python, or indeed almost any sort of
+PEAK is the ``Python Enterprise Application Kit". If you develop
+``enterprise" applications with Python, or indeed almost any sort of
 application with Python, PEAK may help you do it faster, easier, on a
 larger scale, and with fewer defects than ever before. The key is
 component-based development, on a reliable infrastructure. 
@@ -12,14 +12,14 @@ PEAK is based on several years of hard-won experience developing and
 managing mission-critical Python enterprise applications. Its authors
 have had to use and administer for some time, virtually all of the
 technologies present in PEAK. Although nearly all of PEAK is being
-written "from scratch", it was created to replace existing tools that
+written ``from scratch", it was created to replace existing tools that
 we've enjoyed -- or struggled with -- over the years. 
 
 Our apps require 24x7 availability for thousands of employees worldwide.
-So anything we build has to be "stone-axe reliable." We want debugging
+So anything we build has to be ``stone-axe reliable." We want debugging
 to be a simple and painless process, so we've designed PEAK to make
-applications "easy to reason about". We use techniques like "lazy
-immutability" to prevent unintended side-effects, and "complain early
+applications ``easy to reason about". We use techniques like ``lazy
+immutability" to prevent unintended side-effects, and ``complain early
 and often" to ensure that broken code announces itself as broken
 \emph{before} it causes bugs or data corruption to creep in.  We've learned
 our reliability lessons from several previous generations of (mostly
@@ -42,11 +42,11 @@ this new, best-of-breed framework.
 \section{What PEAK is for: Enterprise Applications} 
 
 Enterprise applications are complex, reflecting the complexity of the
-environments they exist in and support. The "enterprise" is often a
+environments they exist in and support. The ``enterprise" is often a
 large corporation with many subsidiaries, each of which may have been
 acquired as a previously-independent company with its own product lines
 and business processes. With each acquisition, an enterprise inherits
-new "legacy" systems, which must be integrated or phased out. Databases
+new ``legacy" systems, which must be integrated or phased out. Databases
 and applications are legion, system administration is vital. There are
 multiple developers, some inside the company, some outside, some from
 different divisions. Repetition is everywhere, but also variation. For
@@ -55,14 +55,14 @@ London, but the data model is slightly different, and the time zones on
 stored dates are different. One thing doesn't vary, however: the users
 want new functionality, and they want it yesterday. 
 
-In such an environment, non-functional requirements -- the "ilities" of
+In such an environment, non-functional requirements -- the ``ilities" of
 development -- reign supreme. Reusability, configurability, flexibility,
 extensibility, reliability, portability: these are the stuff
-"enterprise" applications must be made of. The authors of PEAK have
+``enterprise" applications must be made of. The authors of PEAK have
 built their professional reputations not only on their applications'
 reliabilty, but on their speed of development as well. So PEAK
 incorporates their best ideas for making application components highly
-reusable, extensible, and configurable, "right out of the box". 
+reusable, extensible, and configurable, ``right out of the box". 
 
 
 
@@ -84,7 +84,7 @@ reusable, extensible, and configurable, "right out of the box".
 
 The value proposition of J2EE is that you can have industry standards,
 whose implementations are supplied by competing vendors, to address
-the "ilities" across a variety of concerns, such as data storage,
+the ``ilities" across a variety of concerns, such as data storage,
 component assembly, messaging systems, and so on.  But J2EE encompasses
 over a dozen technologies of varying complexity and immense APIs.  Java
 is also not a compact language, nor is it especially suited to rapid
@@ -94,8 +94,8 @@ maintain, especially for the smaller enterprise, or small department
 within a larger enterprise.  If you wish to do more with less, J2EE is
 probably not for you. 
 
-Python, on the other hand, is an easy-to-use language that "fits your
-brain", and comes with "batteries included".  Often an idea that takes
+Python, on the other hand, is an easy-to-use language that ``fits your
+brain", and comes with ``batteries included".  Often an idea that takes
 half a dozen classes and several hundred lines of convoluted code to
 express in Java, can be expressed in two classes and less than a hundred
 lines of crystal-clear Python.  Indeed, Python is so expressive that it
@@ -111,17 +111,17 @@ And so, there is an increasing movement in the Python world to develop
 and/or promote serious alternatives to J2EE technologies for use with
 Python, so that developers can leverage Python's lower total cost of
 ownership in application development and maintenance. The authors of
-PEAK see PEAK as part of this larger "Python Enterprise" movement, along
-with the Zope 3 application server, and other Python API's and
+PEAK see PEAK as part of this larger ``Python Enterprise" movement, along
+with the Zope 3 application server, and other Python APIs and
 technologies. Zope 3 can be seen as an alternative to Java servlets,
-JSP, and EJB containers for "session beans" and "message-driven beans".
-PEAK supplies tools for creating "managed beans", "entity beans", and
-for implementing parallels to other J2EE technologies such as JNDI and
-JMS.  It is designed to integrate well with the Zope 3 object publishing
-architecture, and with other Python Enterprise technologies. (A detailed
-comparison of all the technologies in the J2EE and Python Enterprise
-worlds is outside the scope of this tutorial, but may be addressed later
-in a separate white paper.) 
+JSP, and EJB containers for ``session beans" and ``message-driven beans".
+PEAK supplies tools for creating the equivalents of ``managed beans" and
+``entity beans", and for implementing parallels to other J2EE technologies
+such as JNDI and JMS.  It is designed to integrate well with the Zope 3 
+object publishing architecture, and with other Python Enterprise
+technologies. (A detailed comparison of all the technologies in the J2EE
+and Python Enterprise worlds is outside the scope of this tutorial, but
+may be addressed later in a separate white paper.) 
 
 
 \section{What PEAK is made of: Application Kit} 
@@ -135,14 +135,14 @@ architectural and infrastructure wheels, so you can put more time into
 your actual application. 
 
 The most basic part of PEAK is the component binding package: a set of
-tools for constructing components out of other components, and "binding"
+tools for constructing components out of other components, and ``binding"
 separate components together. Then, PEAK supplies a component naming
 package that provides a common API for associating names with
-components, looking them up by name, and handling "addresses" of objects
+components, looking them up by name, and handling ``addresses" of objects
 like database connections, mail servers, log or lockfiles, and other
 infrastructure components. Third, PEAK supplies a component
 configuration package, which makes it easy to provide utilities and
-configuration data that "trickle down" through the components of an
+configuration data that ``trickle down" through the components of an
 application. 
 
 PEAK also supplies, or will supply, several other packages dealing with
@@ -153,8 +153,8 @@ core packages of binding, naming, and configuration, which are the
 subject of this tutorial.  Understanding how to use these core packages
 is essential for building PEAK applications. 
 
-Luckily, PEAK is compact. At the time of this writing, the binding,
-naming, and config packages consist of only about 4,000 lines of Python
+Luckily, PEAK is compact. At the time we started writing this, the binding,
+naming, and config packages consisted of only about 4,000 lines of Python
 (including docstrings, comments, and whitespace, but not counting unit
 test modules or shared utility modules). So it won't take you long to
 master their use, with the help of this tutorial. 
@@ -172,17 +172,34 @@ components. To get the best results from this tutorial, you should:
 \begin{itemize}
 
 \item Have a solid grasp of the Python language, version 2.2 (we
-recommend checking out 
-\citetitle[http://www.amk.ca/python/2.2/]{What's New in Python 2.2} 
-if you are familiar with earlier versions, but not 2.2).
+recommend checking out \citetitle{What's New in Python 2.2} at
+\url{http://www.amk.ca/python/2.2/} if you are familiar with earlier 
+versions, but not 2.2).
 
 \item Have some familiarity with Zope's \module{Interface} package, or at least
-have read \citetitle[http://www.zope.org/Wikis/Interfaces/InterfaceUserDocumentation]{A
-Quick Introduction to Python Interfaces}.
+have read \citetitle{A Quick Introduction to Python Interfaces} at 
+\url{http://www.zope.org/Wikis/Interfaces/InterfaceUserDocumentation}.
 
 \item Have Python 2.2.1 or greater installed on your computer, along
 with PEAK, so that you can try out the sample code and exercises in this
 tutorial.
+
+\end{itemize}
+
+\subsection{Formatting Conventions}
+
+This document uses the following formatting conventions:
+
+\begin{itemize}
+
+\item Code samples and the names of actual classes, functions, will be in a
+\code{fixed pitch font}.
+
+\item Text intended to be typed at a Python interpreter prompt is prefixed 
+with the interpreter prompt, \samp{>>>}.
+
+\item When a new, important term is first introduced, it will be marked
+in \strong{boldface text}.
 
 \end{itemize}
 
