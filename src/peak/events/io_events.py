@@ -131,7 +131,7 @@ class SimpleSelector(binding.Component):
         error = self._error
 
         while True:
-
+            yield sleep; resume()   # Give other threads a chance to proceed
             yield count; resume()   # wait until there are selectables
 
             delay = time_available()
@@ -139,7 +139,7 @@ class SimpleSelector(binding.Component):
                 delay = self.checkInterval
 
             try:
-                rwe = self.select(r,w,e,delay)
+                rwe = self.select(r.keys(),w.keys(),e.keys(),delay)
             except error, v:
                 if v.args[0]==EINTR:
                     continue    # signal received during select, try again
@@ -150,11 +150,10 @@ class SimpleSelector(binding.Component):
                 for stream in fired:
                     events[stream]().send(True)
 
-            # Give other threads a chance to proceed
-            yield sleep; resume()
-
 
     monitor = binding.Make(threaded(monitor), uponAssembly=True)
+
+
 
 
 
@@ -171,7 +170,7 @@ class SimpleSelector(binding.Component):
             key = int(stream)
 
         try:
-            return self.rwe[rwe][key]
+            return self.rwe[rwe][key]()
         except KeyError:
             e = sources.Broadcaster()
             self.rwe[rwe][key] = ref(
