@@ -499,7 +499,7 @@ class Element(Type, Persistent):
         def _doGet(ob):
             value = oldGet(ob)
             if isinstance(value,LazyLoader):
-                d.__delete__(ob)
+                oldDel(ob)
                 value.load(ob,attr)
                 return oldGet(ob)
             return value
