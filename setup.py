@@ -121,6 +121,18 @@ if not zope_installed:
 
 
 
+import os
+
+if os.name=='posix':
+
+    # install 'peak' script on Unix-like OS's (including cygwin)
+    scripts = ['scripts/peak']
+
+else:
+    # Nothing to see here, move along...
+    scripts = []
+
+
 execfile('src/setup/common.py')
 
 setup(
@@ -143,8 +155,8 @@ setup(
     cmdclass = SETUP_COMMANDS,
 
     data_files = data_files,
-
     ext_modules = extensions,
+    scripts = scripts,
 )
 
 

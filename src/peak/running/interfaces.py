@@ -9,7 +9,7 @@ __all__ = [
 
     'CLUSTER',
 
-    'ICmdLineAppFactory', 'ICmdLineApp', 'IRerunnable',
+    'IExecutable', 'ICmdLineAppFactory', 'ICmdLineApp', 'IRerunnable',
 
     'IPeriodicTask', 'ITaskQueue', 'IMainLoop',
 
@@ -39,7 +39,48 @@ __all__ = [
 
 
 
-class ICmdLineAppFactory(IBindingFactory):
+class IExecutable(Interface):
+
+    """Object which can be executed as a "main program" or "subcommand"
+
+    Certain 'peak.running' facilities require the use of an "executable"
+    object.  Executable objects are objects which implement one of the
+    following interfaces (listed in descending preference order):
+
+    * 'ICmdLineAppFactory' - supports I/O redirection, environment override,
+      command line arguments, and returned exit level
+
+    * 'IRerunnable' - supports I/O redirection, environment override,
+      command line arguments, and returned exit level
+      
+    * 'ICmdLineApp' - redirection and overrides are attempted via 'sys' and
+      'os' but not guaranteed to work; 'run()' return value is used as
+      exit level.
+
+    * Any object callable with no arguments; redirection and overrides are
+      attempted via 'sys' and 'os' but not guaranteed to work; return value
+      of called object used as exit level.
+
+    Objects which implement any of these interfaces can be invoked as
+    subcommands by 'peak.running.commands' classes like 'Bootstrap' and
+    'IniInterpreter'.  Notice that callables and 'ICmdLineApp' instances
+    can't be completely controlled by their invoker, so if you want to
+    create a component that can have its I/O redirected by a controlling
+    component, you should create an 'IRerunnable' or 'ICmdLineAppFactory'.
+
+    Note that 'IExecutable' is an "abstract interface" for documentation
+    purposes only.  Declaring that you implement 'IExecutable' directly
+    is meaningless; you must implement one of the three explicit
+    sub-interfaces or be a callable object to be "executable".
+    """
+
+
+
+
+
+
+
+class ICmdLineAppFactory(IBindingFactory, IExecutable):
 
     """Class interface for creating ICmdLineApp components
 
@@ -66,7 +107,7 @@ class ICmdLineAppFactory(IBindingFactory):
 
 
 
-class ICmdLineApp(IComponent):
+class ICmdLineApp(IComponent, IExecutable):
 
     """Encapsulate a "commandline-style" app for reusability/composability"""
 
@@ -80,7 +121,7 @@ class ICmdLineApp(IComponent):
 
 
 
-class IRerunnable(Interface):
+class IRerunnable(IExecutable):
 
     """Like a command-line app, but serially reusable
 

@@ -1,25 +1,25 @@
-"""Base classes for Main Programs (i.e. processes invoked from the OS)
-
-TODO:
-
-    * "Usage" mechanism; i.e. we need a way to trap usage errors (e.g.
-      bad/missing arguments) and report them along with a help message.
-      Currently, supplying bad arguments to an interpreter will just
-      barf up a traceback.
-
-"""
+"""Base classes for Main Programs (i.e. processes invoked from the OS)"""
 
 from peak.api import *
 from interfaces import *
 from peak.util.imports import importObject
+from os.path import isfile
+import sys, os
+
 
 __all__ = [
-    'AbstractCommand', 'AbstractInterpreter', 'IniInterpreter',
+    'AbstractCommand', 'AbstractInterpreter', 'IniInterpreter', 'EventDriven',
     'ZConfigInterpreter', 'Bootstrap', 'rerunnableAsFactory',
-
-    'EventDriven', 'CGICommand', 'CGIPublisher',
-    'FastCGIAcceptor',
+    'callableAsFactory', 'appAsFactory', 'executableAsFactory',
+    'InvocationError',
 ]
+
+
+class InvocationError(Exception):
+    """Problem with command arguments or environment"""
+
+
+
 
 
 
@@ -56,9 +56,40 @@ class AbstractCommand(binding.Component):
     def run(self):
         raise NotImplementedError
 
-    def getSubcommand(self, cmdFactory, **kw):
 
-        """Return a 'ICmdLineApp' with our environment as its defaults"""
+    usage = """
+Either this is an abstract command class, or somebody forgot to
+define a usage message for their subclass.
+"""
+
+    def showHelp(self):
+        """Display usage message on stderr"""
+        print >>self.stderr, self.usage
+        return 0
+    
+
+    def isInteractive(self, d, a):
+        """True if 'stdin' is a terminal"""
+        try:
+            isatty = self.stdin.isatty
+        except AttributeError:
+            return False
+        else:
+            return isatty()
+
+    isInteractive = binding.Once(isInteractive)
+
+
+    def getSubcommand(self, executable, **kw):
+
+        """Return a 'ICmdLineApp' with our environment as its defaults
+
+        Any 'IExecutable' may be supplied as the basis for creating
+        the 'ICmdLineApp'.  'NotImplementedError' is raised if the
+        supplied object is not an 'IExecutable'.
+        """
+
+        factory = executableAsFactory(executable)
 
         for k in 'argv stdin stdout stderr environ'.split():
             if k not in kw:
@@ -67,7 +98,20 @@ class AbstractCommand(binding.Component):
         if 'parentComponent' not in kw:
             kw['parentComponent'] = self.getCommandParent()
 
-        return cmdFactory(**kw)
+        return factory(**kw)
+
+
+    def invocationError(self, msg):
+    
+        """Write msg and usage to stderr if interactive, otherwise re-raise"""
+
+        if self.isInteractive:
+            self.showHelp()
+            print >>self.stderr, '\n%s: %s\n' % (self.argv[0], msg)
+            # XXX output last traceback frame?  
+            return 1    # exit errorlevel
+        else:
+            raise
 
 
     def getCommandParent(self):
@@ -77,16 +121,19 @@ class AbstractCommand(binding.Component):
 
 
 
-
-
-
 class AbstractInterpreter(AbstractCommand):
 
     """Creates and runs a subcommand by interpreting the file in 'argv[1]'"""
 
     def run(self):
         """Interpret argv[1] and run it as a subcommand"""
-        return self.interpret(self.argv[1]).run()
+        try:
+            if len(self.argv)<2:
+                raise InvocationError("missing argument(s)")
+            return self.interpret(self.argv[1]).run()
+
+        except InvocationError, msg:
+            return self.invocationError(msg)
 
 
     def interpret(self, filename):
@@ -94,13 +141,13 @@ class AbstractInterpreter(AbstractCommand):
         raise NotImplementedError
 
 
-    def getSubcommand(self, cmdFactory, **kw):
+    def getSubcommand(self, executable, **kw):
         """Same as for AbstractCommand, but with shifted 'argv'"""
 
         if 'argv' not in kw:
             kw['argv'] = self.argv[1:]
 
-        return super(AbstractInterpreter,self).getSubcommand(cmdFactory, **kw)
+        return super(AbstractInterpreter,self).getSubcommand(executable, **kw)
         
 
     def commandName(self,d,a):
@@ -115,19 +162,20 @@ class AbstractInterpreter(AbstractCommand):
 
 
 
-
-
-
-
-
-
 class IniInterpreter(AbstractInterpreter):
 
-    """Interpret an '.ini' file as a command-line app"""
+    """Interpret an '.ini' file as a command-line app
+
+    The supplied '.ini' file must supply a 'running.IExecutable' as the
+    value of its 'peak.running.app' property.  The supplied 'IExecutable'
+    will be run with the remaining command line arguments."""
 
     def interpret(self, filename):
 
         """Interpret file as an '.ini' and run the command it specifies"""
+
+        if not isfile(filename):
+            raise InvocationError("Not a file:", filename)
 
         parent = self.getCommandParent()
 
@@ -135,12 +183,17 @@ class IniInterpreter(AbstractInterpreter):
 
         # Set up a command factory based on the configuration setting
 
-        factory = importObject(
-            config.getProperty('peak.running.appFactory', parent)
+        executable = importObject(
+            config.getProperty('peak.running.app', parent, None)
         )
 
+        if executable is None:
+            raise InvocationError(
+                "%s doesn't specify a 'peak.running.app'"% filename
+            )
+
         # Now create and return the subcommand
-        return self.getSubcommand(factory,
+        return self.getSubcommand(executable,
             parentComponent=parent, componentName = self.commandName
         )
 
@@ -150,15 +203,15 @@ class IniInterpreter(AbstractInterpreter):
 
 
 
+    usage="""
+Usage: peak runIni CONFIG_FILE arguments...
 
-
-
-
-
-
-
-
-
+CONFIG_FILE should be a file in the format used by 'peak.ini'.  (Note that
+it does not have to be named with an '.ini' extension.)  The file should
+define a 'running.IExecutable' for the value of its 'peak.running.app'
+property.  The specified 'IExecutable' will then be run with the remaining
+command-line arguments.
+"""
 
 
 
@@ -191,16 +244,28 @@ class ZConfigInterpreter(AbstractInterpreter):
 
 
 
+class _caller(AbstractCommand):
 
+    """Adapts callables to 'ICmdLineApp'"""
 
+    callable = binding.requireBinding("Any callable")
 
+    def run(self):
 
+        old = sys.stdin, sys.stdout, sys.stderr, os.environ, sys.argv
 
+        try:
+            # Set the global environment to our local environment
+            for v in 'stdin stdout stderr argv'.split():
+                setattr(sys,v,getattr(self,v))
 
+            os.environ = self.environ
+            
+            return self.callable()
 
-
-
-
+        finally:
+            # Ensure it's back to normal when we leave
+            sys.stdin, sys.stdout, sys.stderr, os.environ, sys.argv = old
 
 
 class _runner(AbstractCommand):
@@ -215,6 +280,35 @@ class _runner(AbstractCommand):
         )
 
 
+
+
+
+
+
+def callableAsFactory(callable):
+
+    """Convert a callable object to an 'ICmdLineAppFactory'"""
+
+    def factory(**kw):
+        kw.setdefault('callable',callable)
+        return _caller(**kw)
+
+    factory.__implements__ = ICmdLineAppFactory
+    return factory
+
+
+def appAsFactory(app):
+
+    """Convert an 'ICmdLineApp' to an 'ICmdLineAppFactory'"""
+
+    def factory(**kw):
+        kw.setdefault('callable',app.run)
+        return _caller(**kw)
+
+    factory.__implements__ = ICmdLineAppFactory
+    return factory
+
+
 def rerunnableAsFactory(runnable):
 
     """Convert an 'IRerunnable' to an 'ICmdLineAppFactory'"""
@@ -226,6 +320,35 @@ def rerunnableAsFactory(runnable):
     factory.__implements__ = ICmdLineAppFactory
     return factory
 
+
+
+
+
+
+
+def executableAsFactory(executable):
+
+    """Convert any 'IExecutable' to an 'ICmdLineAppFactory'
+
+    Any 'IExecutable' may be supplied as the basis for creating
+    the 'ICmdLineAppFactory'.  'NotImplementedError' is raised if the
+    supplied object is not an 'IExecutable'."""
+
+
+    if ICmdLineAppFactory.isImplementedBy(executable):
+        return executable    # okay as is
+
+    elif ICmdLineApp.isImplementedBy(executable):
+        return appAsFactory(executable)
+        
+    elif IRerunnable.isImplementedBy(executable):
+        return rerunnableAsFactory(executable)
+
+    elif callable(executable):
+        return callableAsFactory(executable)
+
+    else:
+        raise NotImplementedError("Not an IExecutable", executable)
 
 
 
@@ -246,32 +369,27 @@ def rerunnableAsFactory(runnable):
 
 class Bootstrap(AbstractInterpreter):
 
-    """Invoke and use an arbitrary object
+    """Invoke and use an arbitrary 'IExecutable' object
 
     This class is designed to allow specification of an arbitrary
-    component name or URL on the command line to serve as an application
-    instance.
+    name or URL on the command line to retrieve and invoke the
+    designated object.
 
-    The name is looked up as a component name; that is, first relative
-    to the 'Bootstrap' instance, and then in the default naming service,
-    unless it is a scheme-prefixed URL, in which case 'naming.lookup()'
-    will be used.  The relative lookup takes place so that 'Bootstrap'
-    classes can offer shortcuts to commonly used classes or URLs.  For
-    example, the 'Bootstrap' class offers a shortcut, '"runIni"', for
-    referring to the 'IniInterpreter' class.  This is easier to type than
-    the full URL, '"import:peak.running.commands:IniInterpreter"'.  You
-    can easily implement additional shortcuts in a subclass using
-    'shortcutName = binding.bindTo("fullURL")' in the class body.
+    If the name is not a scheme-prefixed URL, it is first converted to
+    a name in the 'peak.running.shortcuts' configuration property namespace,
+    thus allowing simpler names to be used.  For example, 'runIni' is a
+    shortcut for '"import:peak.running.commands:IniInterpreter"'.  If you
+    use a sitewide PEAK_CONFIG file, you can add your own shortcuts to
+    the 'peak.running.shortcuts' namespace.  (See the 'peak.ini' file for
+    current shortcuts, and examples of how to define them.)
+    
+    The object designated by the name or URL in 'argv[1]' must be an
+    'IExecutable'; that is to say it must implement one of the 'IExecutable'
+    sub-interfaces, or else be callable without arguments.  (See the
+    'running.IExecutable' interface for more details.)
 
-    The object designated by the name or URL in 'argv[1]' must implement
-    either 'ICmdLineAppFactory' (e.g. an 'AbstractCommand' subclass),
-    'ICmdLineApp' (an actual command instance), or 'IRerunnable'.  It will
-    then be invoked with the 'Bootstrap' instance's command parameters
-    (unless it is an 'ICmdLineApp' instance, in which case it will
-    simply be 'run()').
-
-    Here's an example bootstrap script (that will probably become part
-    of the PEAK distribution)::
+    Here's an example bootstrap script (which is installed as the 'peak'
+    script by the PEAK distribution on 'posix' operating systems)::
 
         #!/usr/bin/env python2.2
         import sys; from peak.running.commands import Bootstrap
@@ -282,27 +400,31 @@ class Bootstrap(AbstractInterpreter):
     command line arguments.
     """
 
-    runIni = IniInterpreter
+
+
+
+
+
+
 
 
     def interpret(self, name):
 
-        factory = binding.lookupComponent(name, self)
+        if not naming.URLMatch(name):
+            name = "config:peak.running.shortcuts.%s/" % name
+            
+        try:
+            factory = naming.lookup(name, self)
+        except exceptions.NameNotFound, v:
+            raise InvocationError(v)
 
-        if IRerunnable.isImplementedBy(factory):
-            # Invoke via adapter
-            return self.getSubcommand(rerunnableAsFactory(factory))
-
-        elif ICmdLineAppFactory.isImplementedBy(factory):
-            # It's a factory, make an instance
+        try:
             return self.getSubcommand(factory)
-                
-        elif ICmdLineApp.isImplementedBy(factory):
-            # It's an app in its own right, just run it
-            return factory
 
-        raise TypeError("Invalid command object", factory)
-
+        except NotImplementedError:
+            raise InvocationError(
+                "Invalid command object", factory, "found at", name
+            )
 
 
 
@@ -324,7 +446,49 @@ class Bootstrap(AbstractInterpreter):
 
 
 
-        
+
+
+
+    usage = """
+Usage: peak NAME_OR_URL arguments...
+
+The 'peak' script bootstraps and runs a specified command object or command
+class.  The NAME_OR_URL argument may be a shortcut name defined by the
+'peak.running.commands.Bootstrap' class, or a URL of a type
+supported by 'peak.naming'.  For example, if you have a class 'MyAppClass'
+defined in 'MyPackage', you can use:
+
+    peak import:MyPackage.MyAppClass
+
+to invoke it.  Arguments to the found object are shifted left one position,
+so in the example above it will see 'import:MyPackage.MyAppClass' as its
+'argv[0]'.
+
+The named object must implement one of the 'peak.running' command interfaces,
+or be callable.  See the 'Bootstrap' class in 'peak.running.commands' for
+more details, and the list of available shortcut names.
+"""
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 class EventDriven(AbstractCommand):
 
@@ -360,334 +524,6 @@ class EventDriven(AbstractCommand):
         )
 
         # XXX we should probably log start/stop events
-
-
-
-
-
-
-
-class CGIPublisher(binding.Component):
-
-    """Use 'zope.publisher' to run an application as CGI/FastCGI
-
-    For basic use, this just needs an 'app' parameter, and it will publish
-    that application using the default publication classes supplied by
-    'peak.running.zpublish' and default request classes supplied by
-    'zope.publisher'.
-
-    Three HTTP variants are supported: "generic" HTTP, "browser" HTTP, and
-    XML-RPC.  They are distinguished from one another by the CGI
-    'REQUEST_METHOD' and 'CONTENT_TYPE' environment variables.  A "POST"
-    of 'text/xml' is considered XML-RPC, while all other "POST", "GET",
-    and "HEAD" methods are considered "browser" HTTP.  Any other methods
-    ("PUT", "DELETE", etc.) are considered "generic" HTTP (e.g. WebDAV).
-
-    You can override specific publication or request types as follows::
-
-        HTTP Variant    KW for Request Class    KW for Publication Class
-        ------------    --------------------    ------------------------
-        "Generic"       mkHTTP                  httpPubClass
-        "XML-RPC"       mkXMLRPC                xmlrpcPubClass
-        "Browser"       mkBrowser               browserPubClass
-
-    So, for example, to change the XML-RPC request class, you might do this::
-
-        myPublisher = CGIPublisher( mkXMLRPC = MyXMLRPCRequestClass )
-
-    In practice, you're more likely to want to change the publication classes,
-    since the default request classes provided by 'zope.publisher' are likely
-    to suffice for most applications.  A publication is a policy object that
-    controls how 'zope.publisher' processes a request; see 'IPublication' in
-    'zope.publisher.interfaces' for information on what a publication object
-    needs to do.
-
-    There are two ways to customize the publication objects used by a
-    'CGIPublisher': you can set the publication class (e.g. 'httpPubClass')
-    or you can supply a prepared publication instance.  The two examples
-    below produce the same result::
-
-
-        myPublisher = CGIPublisher( app=anApp, httpPubClass=MyHTTPPubClass )
-
-        myPublisher = CGIPublisher( httpPublication=MyHTTPPubClass(app=anApp) )
-
-    If you supply publication objects ('httpPublication', 'xmlrpcPublication',
-    and 'browserPublication'), 'CGIPublisher' does not need the publication
-    classes or even an 'app' object, as it only uses these in order to generate
-    its default publication instances.
-
-    'CGIPublisher' isn't intended for standalone use; it's effectively a
-    configurable subcomponent of 'CGICommand'.  If you need to control the
-    behavior it supplies, you can create a customized 'CGIPublisher' and
-    use it to create a 'CGICommand' that behaves the way you want.  See
-    'CGICommand' on how to set up and run a CGI publishing application."""
-
-    __implements__ = IRerunnable
-
-    app       = binding.requireBinding("Application root to publish")
-    publish   = binding.bindTo("import:zope.publisher.publish:publish")
-
-    mkXMLRPC  = binding.bindTo("import:zope.publisher.xmlrpc:XMLRPCRequest")
-    mkBrowser = binding.bindTo("import:zope.publisher.browser:BrowserRequest")
-    mkHTTP    = binding.bindTo("import:zope.publisher.http:HTTPRequest")
-
-    xmlrpcPubClass  = binding.bindTo("import:peak.running.zpublish:XMLRPC")
-    browserPubClass = binding.bindTo("import:peak.running.zpublish:Browser")
-    httpPubClass    = binding.bindTo("import:peak.running.zpublish:HTTP")
-
-    _browser_methods = binding.Copy( {'GET':1, 'POST':1, 'HEAD':1} )
-
-
-
-
-
-
-
-
-
-
-
-
-    def run(self, input, output, errors, env, argv=[]):
-
-        """Process one request"""
-
-        method = env.get('REQUEST_METHOD', 'GET').upper()
-
-        if method in self._browser_methods:
-            if (method == 'POST' and
-                env.get('CONTENT_TYPE', '').lower().startswith('text/xml')
-                ):
-                request = self.mkXMLRPC(input, output, env)
-                request.setPublication(self.xmlrpcPublication)
-            else:
-                request = self.mkBrowser(input, output, env)
-                request.setPublication(self.browserPublication)
-        else:
-            request = self.mkHTTP(input, output, env)
-            request.setPublication(self.httpPublication)
-        
-        return self.publish(request)
-
-
-    xmlrpcPublication = binding.Once(
-        lambda self,d,a: self.xmlrpcPubClass(app=self.app)
-    )
-
-
-    browserPublication = binding.Once(
-        lambda self,d,a: self.browserPubClass(app=self.app)
-    )
-
-
-    httpPublication = binding.Once(
-        lambda self,d,a: self.httpPubClass(app=self.app)
-    )
-
-
-
-
-
-
-class FastCGIAcceptor(binding.Base):
-
-    """Accept FastCGI connections"""
-
-    command  = binding.requireBinding("IRerunnable command")
-
-    mainLoop = binding.bindTo(IMainLoop)
-    ping     = binding.bindTo('mainLoop/activityOccurred')
-
-    fcgi     = binding.bindTo('import:fcgiapp')
-    accept   = binding.bindTo('fcgi/Accept')
-    finish   = binding.bindTo('fcgi/Finish')
-
-
-    def fileno(self):
-        return 0    # FastCGI is always on 'stdin'
-
-
-    def doRead(self):
-
-        self.ping()
-        
-        i,o,e,env = self.accept()
-
-        try:
-            self.command.run(i,o,e,dict(env))
-
-        finally:
-            self.finish()
-            self.ping()
-
-
-
-
-
-
-
-
-
-
-
-class CGICommand(EventDriven):
-    """Run CGI/FastCGI in an event-driven loop
-
-    If the 'fcgiapp' module is available and 'sys.stdin' is a socket, this
-    command will listen for FastCGI connections and process them as they
-    arrive.  Otherwise, it will assume that it is being run as a CGI, and
-    use its environment attributes as the environment for the CGI command.
-
-    Note that if running in CGI mode, a 'CGICommand' will exit its reactor
-    loop immediately upon completion of the request, without running any
-    subsequent scheduled events, unless 'os.fork()' is available and
-    the 'forkAfterCGI' parameter is true (it defaults to false), in which
-    case the process will fork and finish out one reactor iteration.
-
-    Here's a "dirt simple" CGI/FastCGI script example::
-
-        from peak.running.commands import CGICommand
-        from my.app import myAppClass
-        
-        myApp = myAppClass()
-        
-        sys.exit(
-            CGICommand(app=myApp).run()
-        )
-
-    Yes, that's the whole script.  'myAppClass' needs to be suitable for
-    publishing with the default publication objects, otherwise you need
-    a slightly more advanced usage scenario, e.g.::
-
-        sys.exit(
-            CGICommand(publisher=myPublisher).run()
-        )
-
-    where you've first defined 'myPublisher' as an appropriately tweaked
-    'CGIPublisher' object, e.g.::
-
-        from peak.running.commands import CGIPublisher
-
-        myPublisher = CGIPublisher(
-            app = myApp,
-            httpPubClass = MyHTTPPublicationClass
-        )
-
-    See the 'CGIPublisher' class for more info on how to create customized
-    'CGIPublisher' instances.  Note that 'CGICommand' only uses the 'app'
-    parameter to create a default 'publisher' object; if you supply a
-    'publisher', as in the above examples, you do not need to also give
-    the 'CGICommand' an 'app'."""
-
-    app          = binding.requireBinding("Application to publish")
-    forkAfterCGI = False
-
-    reactor      = binding.bindTo(IBasicReactor)
-    newAcceptor  = FastCGIAcceptor
-
-    publisher    = binding.Once(
-        lambda self,d,a: CGIPublisher(app = self.app)
-    )
-
-    def isFastCGI(self):
-
-        """Check for 'fcgiapp' and whether 'sys.stdin' is a listener socket"""
-
-        try:
-            import fcgiapp
-        except ImportError:
-            return False    # Assume no FastCGI if module not present
-
-        import socket, sys
-
-        for family in (socket.AF_UNIX, socket.AF_INET):
-            try:
-                s=socket.fromfd(sys.stdin.fileno(),family,socket.SOCK_STREAM)
-                s.getsockname()
-            except:
-                pass
-            else:
-                return True
-
-        return False
-
-
-    def detatchAfterCGI(self):
-
-        try:
-            from os import fork
-        except ImportError:
-            # We can't fork; force an immediate shutdown
-            self.reactor.stop()
-            return
-
-        # Flush output to web server
-        self.stdout.flush()
-        self.stderr.flush()
-        
-        if fork():
-            # Parent process; shutdown and exit
-            self.reactor.stop()
-
-        else:
-            # Child process; close file handles and proceed
-            self.stdin.close()
-            self.stdout.close()
-            self.stderr.close()
-
-            # Schedule to exit after next iteration
-            self.reactor.callLater(0, self.reactor.stop)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    def setup(self, parent=None):
-
-        if self.isFastCGI():
-
-            self.reactor.addReader(
-                self.newAcceptor(command=self.publisher)
-            )
-
-        else:
-            # Setup CGI
-            self.reactor.callLater(
-                0, self.publisher.run,
-                self.stdin, self.stdout, self.stderr, self.environ, self.argv
-            )
-
-            if self.forkAfterCGI:
-                # Schedule fork
-                self.reactor.callLater(0, self.detatchAfterCGI)
-
-            else:
-                # Schedule straight shutdown
-                self.reactor.callLater(0, self.reactor.stop)
-
-
-        # Cause periodic tasks, etc., to be scheduled for setup *after* the
-        # main CGI process, if applicable.  This means that if
-        # you want a periodic task to be executed *before* the first
-        # I/O check or CGI execution, you will need to subclass this
-        # to change it.  XXX this may change after we reconsider setup() API
-
-        self.reactor.callLater(0, super(CGICommand, self).setup, parent)
-
-
-
 
 
 
