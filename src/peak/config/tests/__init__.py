@@ -2,7 +2,7 @@
 
 from unittest import TestCase, makeSuite, TestSuite
 from peak.api import *
-from peak.interface import Interface
+from peak.interface import Interface, adapt
 from peak.config.interfaces import *
 from peak.tests import testRoot
 
@@ -204,8 +204,12 @@ class ModuleTest(TestCase):
         ), self.M2.RebindSub.__bases__
 
     def checkImplements(self):
-        assert self.M1.FooThing.__implements__ == (IConfigKey,)
-        assert self.M2.FooThing.__implements__ == (IRule,)
+        m1Foo = self.M1.FooThing()
+        m2Foo = self.M2.FooThing()
+        assert adapt(m1Foo,IConfigKey) is m1Foo
+        assert adapt(m2Foo,IRule) is m2Foo
+        assert adapt(m1Foo,IRule, None) is None
+        assert adapt(m2Foo,IConfigKey,None) is None
 
 
 class AdviceTest(ModuleTest):
@@ -227,10 +231,6 @@ def test_suite():
         s.append(makeSuite(t,'check'))
 
     return TestSuite(s)
-
-
-
-
 
 
 
