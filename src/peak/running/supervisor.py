@@ -159,8 +159,8 @@ class ProcessSupervisor(EventDriven):
                 )
             delay = self.nextStart-self.time()
             self.log.debug("Scheduling child start in %.1d seconds",delay)
+            self.mainLoop.activityOccurred()
             self.reactor.callLater(delay, self._doStart)
-
 
     def _doStart(self):
 
@@ -173,6 +173,7 @@ class ProcessSupervisor(EventDriven):
             self.mainLoop.childForked(stub)
             return
 
+        self.mainLoop.activityOccurred()
         self.log.debug("Spawned new child process (%d)", proxy.pid)
         proxy.addListener(self._childChange)
         self.processes[proxy.pid] = proxy
@@ -202,8 +203,9 @@ class ProcessSupervisor(EventDriven):
 
 
 
-
     def _childChange(self,proxy):
+
+        self.mainLoop.activityOccurred()
 
         if proxy.isFinished:
 
@@ -234,8 +236,6 @@ class ProcessSupervisor(EventDriven):
 
         elif proxy.isStopped:
             self.log.error("Child process %d has stopped", proxy.pid)
-
-
 
 
 
