@@ -45,7 +45,6 @@ class SchemaLoader(BaseLoader, ZConfig.loader.SchemaLoader):
     _cache   = binding.New(dict)
     __init__ = binding.Component.__init__.im_func
 
-
 class ConfigRunner(AbstractInterpreter,BaseLoader,ZConfig.loader.ConfigLoader):
 
     """Config-file interpreter"""
@@ -76,9 +75,10 @@ command-line arguments.
             # lowercase version of os.environ; ZConfig lowercases its lookups
             dict([(k.lower(),v) for k,v in os.environ.items()])
         )
-        result = sm.finish(), CompositeHandler(sm.handlers, self.schema)
+        result = sm.finish(), ZConfig.loader.CompositeHandler(
+            sm.handlers, self.schema
+        )
         return result
-
 
 class ZConfigSchemaURL(naming.URL.Base):
 
