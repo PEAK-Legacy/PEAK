@@ -526,8 +526,8 @@ def CachingProvider(callable, weak=False, local=False):
 
 def instancePerApp(factorySpec):
     """Provider that returns an instance per application"""
-    factory = importObject(factorySpec)
-    return CachingProvider(lambda foundIn: factory(foundIn), local=True)
-    
+    return CachingProvider(
+        lambda foundIn: importObject(factorySpec)(foundIn), local=True
+    )
     
 
