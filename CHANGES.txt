@@ -2,6 +2,27 @@ Fixes and Enhancements since Version 0.5 alpha 1
 
  Changed, Enhanced, or Newly Deprecated Features
 
+ - You can now define adapters from arbitrary types to 'binding.IBindingNode',
+   and thus be able to use them as part of a component hierarchy - without
+   needing to directly add 'getParentComponent()' or 'getComponentName()'
+   methods to them.
+
+ - Added experimental 'invoke.c' script for POSIX-ish platforms with funky
+   '#!' support, or lack thereof.  'invoke' is designed to be used like this::
+
+     #!/usr/local/bin/invoke peak somearg otherarg...
+
+   This should work on most sane platforms with a long-enough commandline.
+   (See http://homepages.cwi.nl/~aeb/std/hashexclam-1.html for details on the
+   insanely incompatible ways different Unixes interpret #! lines.)
+
+   The script is not currently built or installed by setup.py.  On the
+   platforms it's targeted at, you should be able to build it with::
+
+     gcc -o invoke invoke.c
+
+   (Yes, it really is that simple of a script.)
+
  - Added a ZConfig schema for 'running.commands.EventDriven' applications,
    a ZConfig component definition for adaptive tasks, and a running shortcut
    called 'EventDriven'.  It should now be possible to do this::
@@ -46,7 +67,13 @@ Fixes and Enhancements since Version 0.5 alpha 1
 
  - Added support in the mof2py code generator for "unprefixing" enumerated
    values, so that UML and other metamodels' enumerations work correctly
-   when loading from XMI.
+   when loading from XMI.  Also, mof2py no longer emits 'config.setupModule()'
+   calls in generated code, as in practice they are not needed.
+
+ - Running 'peak test' from the command line is roughly equivalent to running
+   'unittest.py', except that the test suite defaults to the PEAK test suite.
+   You can, however run any test suite from the command line with a dotted
+   module/attribute path, e.g 'peak test foo.bar.test_suite'.
 
  - 'binding.Acquire()' now accepts a 'default' value argument, and
    'binding.New()' no longer accepts the 'bindToOwner' flag.
@@ -203,14 +230,21 @@ Fixes and Enhancements since Version 0.5 alpha 1
  - Fixed a problem in ZConfig 'schema.dtd'; I used 'PCDATA' where I should've
    used 'CDATA'.
 
+ - Fixed a problem with 'binding.supertype()' not working correctly if the MRO
+   it was searching contained a "classic" class.  Now 'supertype()' skips any
+   classic classes it finds.  (It probably should be rewritten entirely.)
+
  - Fixed misc. problems with 'fromZConfig()' component constructor
- 
+
  - Fixed source distributions missing essential setup files
 
  - Fixed a problem with assembly events, where a parent component that didn't
    need assembly notification, wouldn't ever notify its children of assembly
    if they requested the notification after the parent had already received
    it.
+
+ - Fixed a bug in automatic metaclass generation that caused extra unneeded
+   metaclasses to be generated.
 
  - Fixed 'naming.lookup()' and related APIs not setting the parent component
    of created objects without an explicitly supplied 'creationParent' keyword
