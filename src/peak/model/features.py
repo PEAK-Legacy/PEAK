@@ -589,10 +589,10 @@ class StructuralFeature(object):
                 p+=1
 
         else:
-            doLink(element,normalize(value),0)
+            value = normalize(value)
+            doLink(element,value,0)
 
         feature._doSet(element,value)
-
 
 
 
