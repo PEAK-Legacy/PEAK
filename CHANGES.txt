@@ -1,5 +1,9 @@
 Fixes and Enhancements since Version 0.5 alpha 3
 
+ - Added a 'value' property to 'model.Enumeration', so that you can access
+   an enumeration instance's value (i.e., the value it hashes and compares
+   equal to)
+
  - Added a 'binding.hasParent(component,parent)' API function, which is
    specially optimized for use with generic functions, so that you can
    define generic function methods that apply only within some part of a

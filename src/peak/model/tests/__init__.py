@@ -267,24 +267,24 @@ class EnumerationTests(TestCase):
             assert repr(anyColor(v.name)) == ('anyColor.%s' % v.name)
 
     def checkSeq(self):
-
         for name in anyColor:
             assert name in basicColor or name in ('green','purple','orange')
 
         assert list(anyColor) == [
             'blue','green','orange','purple','red','yellow'
         ]
-
         assert list(basicColor)==['blue','red','yellow']
-
         assert list(basicColor)==[
             basicColor.blue,
             basicColor.red,
             basicColor.yellow
         ]
 
+    def checkValues(self):
+        self.assertEqual(anyColor.green.value, 'green')
 
 
+        
 class aBase(model.Element):
     mdl_isAbstract = True
     class f1(model.Attribute): pass

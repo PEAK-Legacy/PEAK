@@ -441,7 +441,7 @@ class Enumeration(PrimitiveType, HashAndCompare):
     def __reduce__(self):
         return self.__class__, (self._hashAndCompare,)
 
-
+    value = property(lambda self: self._hashAndCompare)
 
 
 
