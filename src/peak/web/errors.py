@@ -8,7 +8,7 @@ class WebException(Exception):
 
     protocols.advise( instancesProvide = [IWebException,IHTTPHandler] )
 
-    security.allow(
+    binding.metadata(
         httpStatus = security.Anybody,
         args = security.Anybody,
         template = security.Anybody,

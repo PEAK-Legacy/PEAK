@@ -93,30 +93,30 @@ class ShipmentViewer(security.Permission): pass
 
 class Facility:
 
-    security.allow(
+    binding.metadata(
         viewShipments = ShipmentViewer,
         manageWorkers = Manager,
     )
 
 class Batch:
-    security.allow(
+    binding.metadata(
         edit = ManageBatch,
         delete = Owner,
     )
 
 class Shipment(Batch):
-    security.allow(
+    binding.metadata(
         receiveShipment = Receiver,
         cancelShipment = Shipper
     )
 
 class Asset(object):
-    security.allow(
+    binding.metadata(
         edit = ManageAsset
     )
 
 class Person(object):
-    security.allow(
+    binding.metadata(
         edit = SelfOrManager
     )
 

@@ -333,7 +333,7 @@ class Element(binding.Component):
         instancesProvide = [IDOMletElement],
     )
 
-    security.allow(security.Anybody)
+    binding.metadata(security.Anybody)
 
     children       = binding.Make(list)
     params         = binding.Make(dict)

@@ -54,7 +54,7 @@ class FSResource(Resource):
         classProvides=[naming.IObjectFactory],
     )
 
-    security.allow(security.Anybody, basename=security.Anybody) # XXX
+    binding.metadata(security.Anybody, basename=security.Anybody) # XXX
 
     filename = binding.Require("OS-specific full filename")
 

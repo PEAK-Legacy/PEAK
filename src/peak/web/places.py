@@ -214,7 +214,7 @@ class Location(Place,binding.Configurable):
     containers = binding.Make(list)
     have_views = False
     local_views = binding.Make(dict)
-    security.allow(security.Anybody)    # XXX
+    binding.metadata(security.Anybody)    # XXX
 
     def traverseTo(self, name, ctx, default=NOT_GIVEN):
 

@@ -16,19 +16,19 @@ __all__ = [
 
 def allow(basePerm=None, **nameToPerm):
 
-    """Use in the body of a class to declare permissions for attributes"""
+    """DEPRECATED: Use 'binding.metadata()' to declare permissions instead"""
+
+    import warnings
+    warnings.warn(
+        "'security.allow()' is deprecated; use 'binding.metadata()' instead",
+        DeprecationWarning, stacklevel=2
+    )
 
     def callback(klass):
-        gc = adapt(klass,IGuardedClass)
-        gc.declarePermissions(basePerm,**nameToPerm)
+        binding.declareMetadata(klass, basePerm, **nameToPerm)
         return klass
 
     addClassAdvisor(callback)
-
-
-
-
-
 
 
 
@@ -359,9 +359,9 @@ class Permission:
 def declare_permission(classobj,attrname,metadata):
     IGuardedClass(classobj).declarePermissions(**{attrname:metadata})
 
-
-
-
+[binding.declareClassMetadata.when(IAbstractPermission)]
+def declare_permission(classobj,metadata):
+    IGuardedClass(classobj).declarePermissions(metadata)
 
 
 

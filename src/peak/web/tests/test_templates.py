@@ -20,7 +20,7 @@ from urllib import quote
 
 class TestApp(web.Location):
 
-    security.allow(
+    binding.metadata(
         foo = security.Anybody,
         bar = security.Anybody,
         someXML = security.Anybody,

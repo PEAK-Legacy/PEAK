@@ -257,7 +257,7 @@ class Context:
     default = NOT_GIVEN
     nothing = None
 
-    allow(default=Anybody,nothing=Anybody)
+    binding.metadata(default=Anybody, nothing=Anybody)
 
 
 
