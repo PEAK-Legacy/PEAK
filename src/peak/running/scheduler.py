@@ -105,7 +105,7 @@ class MainLoop(binding.Component):
 
         if self.stopOnSignals:
             handler = self.signalSource.signals(*self.stopOnSignals)
-            handler.addCallback(lambda s,e: self.reactor.stop)
+            handler.addCallback(lambda s,e: self.reactor.stop())
 
         try:
             if stopAfter:

@@ -1,3 +1,4 @@
+from __future__ import generators
 from peak.api import *
 from interfaces import *
 from weakref import WeakValueDictionary, ref
@@ -32,7 +33,6 @@ else:
     )
 
     signal = signal.signal
-
 
 
 

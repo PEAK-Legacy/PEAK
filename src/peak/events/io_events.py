@@ -45,13 +45,13 @@ class SignalEvents(binding.Singleton):
 
     protocols.advise( classProvides = [ISignalSource] )
 
-    _events = {}
+    _events = {None: lambda x=sources.Broadcaster(): x }
 
     def signals(self,*signames):
         """'IEventSource' that triggers whenever any of named signals occur"""
 
         if len(signames)==1:
-            signum = signals[signames[0]]
+            signum = signals.get(signames[0])
             try:
                 return self._events[signum]()
             except KeyError:
