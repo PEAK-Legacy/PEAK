@@ -51,10 +51,7 @@ PEAK Release 0.5 alpha 1
       and utilities can be loaded or computed on demand, supplied by rules,
       defined in configuration files or code, in a supplied or custom
       format.  Properties and utilities are contextual and can be safely
-      acquired from parent/context components automatically.  System-wide
-      (per Python interpreter), application-wide (per running application
-      within an interpreter) and per-component configuration settings
-      are available.
+      acquired from parent/context components automatically.
 
     * Naming system/framework that's midway between J2EE's JNDI and CORBA's
       cosNaming in features, but much easier to use and extend than either
@@ -90,11 +87,12 @@ PEAK Release 0.5 alpha 1
     * CASE/modelling tools: PEAK includes APIs to read object
       models created in the XML-based XMI format.  Many open-source and
       commercial modelling tools support XMI, inlcuding Argo/Poseidon and
-      MagicDraw UML.  PEAK includes pre-built support for UML versions 1.3
-      through 1.5, CWM 1.1, and MOF 1.3.1, using XMI versions 1.0 through 1.2.
-      Also included, a MOF->Python code generator, which was used to generate
-      the UML and CWM support, and which you can use to generate support for
-      other modelling languages based on the MOF.
+      MagicDraw UML.  PEAK includes pre-built support for UML version 1.3
+      and MOF 1.3.1, using XMI versions 1.0 and 1.1. (UML 1.4, UML 1.5,
+      CWM 1.0, CWM 1.1, and XMI 1.2 are anticipated for 0.5a2, and possibly
+      XMI 2.0 by 0.5 final.)  Also included is a MOF->Python code generator,
+      which was used to generate the UML and CWM support, and which you can
+      use to generate support for other modelling languages based on the MOF.
 
       For the specifications of XMI, MOF, CWM, and UML, visit:
       http://www.omg.org/technology/documents/modeling_spec_catalog.htm
@@ -112,6 +110,19 @@ PEAK Release 0.5 alpha 1
       from PEAK models (and vice versa) is possible (although
       not yet implemented for anything but MOF->PEAK).
 
+    * Application Runtime tools, including:
+
+      - a "command objects" framework for creating command-line applications
+
+      - a "periodic tasks" framework for executing tasks that perform "as
+        needed", scheduling themselves in response to their available workloads
+
+      - a CGI/FastCGI publishing framework that uses 'zope.publisher' to
+        publish a PEAK component tree and its associated transaction service
+
+      - an event-driven "reactor" framework that can be used with Twisted,
+        or in place of it for many simpler "mostly scheduling" applications.
+
     * AOP and SOP: PEAK allows you to separate concerns as modules, then
       combine the modules via a "module inheritance" technique.  This
       lets you define a generated business object model as a
@@ -128,16 +139,11 @@ PEAK Release 0.5 alpha 1
    in areas not covered by the test suites.  Also, many system interfaces
    are still subject to change.
 
-   PEAK includes early copies of Zope X3's 'Interface' and 'Persistence'
-   packages, which have since changed names in their official releases,
-   and have had - and will continue to have - significant implementation
-   changes.  Complete interoperability with Zope X3 is therefore currently
-   at risk.  We are waiting until the pending refactoring of Zope 3's
-   interface package is complete before upgrading from 'Interface' to
-   'zope.interface'.  Also, the ZODB persistence package is undergoing
-   some changes that may make it less useful for PEAK, and we may be
-   forced to "fork" and/or create our own C-level persistence support.
-   This may be clearer once ZODB4 and/or Zope 3 reach their next release.
+   PEAK includes early copies of Zope X3's 'zope.interface' and 'persistence'
+   packages, which have had - and will continue to have - significant
+   implementation changes.  We will be tracking Zope X3 periodically, but
+   can't guarantee compatibility with arbitrary (e.g. CVS) versions of
+   Zope X3.
 
    Documentation at present is limited, and scattered.  The principal
    documentation is an API reference generated from the code's lengthy
@@ -154,9 +160,9 @@ PEAK Release 0.5 alpha 1
      please see the 'src/kjbuckets/COPYRIGHT.txt' file for details of its
      license.
 
-     The 'Interface' and 'Persistence' packages are Copyright Zope Corporation
-     and contributors; please see the 'LICENSE.txt' files for details of their
-     licenses.
+     The 'zope.interface', 'persistence', and 'ZConfig' packages are
+     Copyright Zope Corporation and contributors; please see the 'LICENSE.txt'
+     files in their directories for details of their licenses.
 
 
  Installation Instructions
