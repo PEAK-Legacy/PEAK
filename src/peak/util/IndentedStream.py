@@ -132,8 +132,9 @@ class IndentedStream:
             indent = self._indent
         
             for l in lines[:-1]:
-                indent()
-                write(l)
+                if l:
+                    indent()
+                    write(l)
                 write('\n')
                 self.needSpaces = 1
             
