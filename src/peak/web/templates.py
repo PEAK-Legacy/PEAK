@@ -92,7 +92,7 @@ class DOMletAsHTTP(binding.Component):
 
     templateNode = binding.Require("""Node to render""")
 
-    def fromNode(klass, subject, protocol):
+    def fromNode(klass, subject):
         return klass(templateNode = subject)
 
     fromNode = classmethod(fromNode)
@@ -261,7 +261,7 @@ class Element(binding.Component):
     dataSpec       = binding.Make(lambda: '', adaptTo=TraversalPath)
     paramName      = None
     acceptParams   = binding.Obtain('domletProperty')
-    
+
     # IDOMletNode
 
     def staticText(self):

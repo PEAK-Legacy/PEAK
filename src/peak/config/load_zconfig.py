@@ -108,7 +108,7 @@ command-line arguments.
         return self.getSubcommand(ob)
 
 
-def loaderAsRunner(ob,proto):
+def loaderAsRunner(ob):
     schema, parent = ob.schema, ob.getParentComponent()
 
     def factory(**kw):

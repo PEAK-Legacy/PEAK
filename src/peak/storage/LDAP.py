@@ -392,7 +392,7 @@ class ldapURL(URL.Base):
 
 
 protocols.declareAdapter(
-    lambda url, proto: LDAPConnection(address=url),
+    lambda url: LDAPConnection(address=url),
     provides = [ILDAPConnection],
     forTypes = [ldapURL],
 )

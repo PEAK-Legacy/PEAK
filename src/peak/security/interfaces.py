@@ -307,7 +307,7 @@ whenImported(
 
 protocols.declareAdapter(
     # Functions can be guarded descriptors if they define 'permissionsNeeded'
-    lambda o,p: (getattr(o,'permissionNeeded',None) is not None) and o or None,
+    lambda o: (getattr(o,'permissionNeeded',None) is not None) and o or None,
     provides = [IGuardedDescriptor],
     forTypes = [FunctionType]
 )

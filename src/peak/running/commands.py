@@ -80,7 +80,7 @@ def runMain(factory):
         # Ensure that commands don't leak
         result = factory = None
 
-def appAsMainFactory(ob,proto):
+def appAsMainFactory(ob):
     """Build 'IMainCmdFactory' that just returns an existing app object"""
     factory = lambda: ob
     protocols.adviseObject(factory, provides=[IMainCmdFactory])
@@ -93,7 +93,7 @@ protocols.declareAdapter(
 )
 
 
-def factoryAsMainFactory(ob,proto):
+def factoryAsMainFactory(ob):
     """Build 'IMainCmdFactory' that creates a config root per-invocation"""
     factory = lambda: ob(config.makeRoot())
     protocols.adviseObject(factory, provides=[IMainCmdFactory])
@@ -449,7 +449,7 @@ class RerunnableAsCommand(AbstractCommand):
 
 
 
-def callableAsFactory(ob,proto=None):
+def callableAsFactory(ob):
 
     """Convert a callable object to an 'ICmdLineAppFactory'"""
 
@@ -468,7 +468,7 @@ def callableAsFactory(ob,proto=None):
     return factory
 
 
-def appAsFactory(app,proto=None):
+def appAsFactory(app):
 
     """Convert an 'ICmdLineApp' to an 'ICmdLineAppFactory'"""
 
@@ -490,7 +490,7 @@ def appAsFactory(app,proto=None):
 
 
 
-def rerunnableAsFactory(runnable,proto=None):
+def rerunnableAsFactory(runnable):
 
     """Convert an 'IRerunnable' to an 'ICmdLineAppFactory'"""
 

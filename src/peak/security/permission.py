@@ -151,7 +151,7 @@ class NamePermissionsAdapter(object):
         asAdapterForTypes = [_Base] # base for binding.Component and model.Type
     )
 
-    def __init__(self,ob,proto):
+    def __init__(self,ob):
         self.getPermissionForName = adapt(
             ob.__class__,IGuardedClass
         ).getAttributePermission
@@ -295,7 +295,7 @@ class PermissionType(binding.ActiveClass):
 
     __cache = binding.Make(WeakKeyDictionary, attrName='_PermissionType__cache')
     __classic = binding.Make(dict,attrName='_PermissionType__classic')
-    
+
     def of(self,protectedObjectType):
         if self.abstractBase is not None:
             return self.abstractBase.of(protectedObjectType)
@@ -391,7 +391,7 @@ class RuleSet(binding.Singleton):
         )
 
 
-    def asAdapter(klass, permType, protocol):
+    def asAdapter(klass, permType):
         return klass
 
 

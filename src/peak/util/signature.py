@@ -46,7 +46,7 @@ class MethodAsSignature(FunctionAsSignature):
         asAdapterForTypes=[MethodType]
     )
 
-    def __init__(self, ob, proto):
+    def __init__(self, ob):
         self.funcSig = adapt(ob.im_func, ISignature)
         self.offset = ob.im_self is not None
         self.subject = ob

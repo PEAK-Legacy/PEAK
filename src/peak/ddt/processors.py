@@ -909,7 +909,7 @@ class PropertyAsCellMapper(object):
         asAdapterForTypes=[property]
     )
 
-    def __init__(self,ob,proto):
+    def __init__(self,ob):
         self.subject = ob
         self.extract = ob.__get__
         self._set = ob.__set__
@@ -991,7 +991,7 @@ class CallableAsCellMapper(PropertyAsCellMapper):
         asAdapterForProtocols=[ISignature]
     )
 
-    def __init__(self,ob,proto):
+    def __init__(self,ob):
         self.subject = ob
         self.extract = self._set = ob.getCallable()
 
@@ -1003,9 +1003,9 @@ class CallableAsCellMapper(PropertyAsCellMapper):
             cell.exception()
 
 
-def descriptorAsCellMapper(ob,proto):
+def descriptorAsCellMapper(ob):
     if hasattr(ob,'__set__') and hasattr(ob,'__get__'):
-        return PropertyAsCellMapper(ob,proto)
+        return PropertyAsCellMapper(ob)
 
 
 protocols.declareAdapter(
@@ -1032,10 +1032,10 @@ class FeatureAsCellMapper(PropertyAsCellMapper):
         asAdapterForProtocols=[model.IFeature]
     )
 
-    def __init__(self,ob,proto):
+    def __init__(self,ob):
         self._parse = ob.parse
         self._format = ob.format
-        super(FeatureAsCellMapper,self).__init__(ob,proto)
+        super(FeatureAsCellMapper,self).__init__(ob)
 
     def suggestType(self,dataType):
         pass    # we know our datatype, so we don't care about this

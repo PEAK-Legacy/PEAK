@@ -368,7 +368,7 @@ class Task(Observable):
 
 
 
-    def fromProcedure(klass,ob,proto):
+    def fromProcedure(klass,ob):
         return klass(ob)
 
     fromProcedure = classmethod(fromProcedure)

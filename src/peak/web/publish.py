@@ -88,9 +88,11 @@ class InteractionPolicy(binding.Component, protocols.StickyAdapter):
         factoryMethod = 'fromComponent',
     )
 
-    def fromComponent(klass, ob, proto):
+    attachForProtocols = (IInteractionPolicy,)
+
+    def fromComponent(klass, ob):
         ip = klass(ob)
-        protocols.StickyAdapter.__init__(ip, ob, proto)
+        protocols.StickyAdapter.__init__(ip, ob)
         return ip
 
     fromComponent = classmethod(fromComponent)
@@ -114,8 +116,6 @@ class InteractionPolicy(binding.Component, protocols.StickyAdapter):
 
     def newInteraction(self,**options):
         return self._mkInteraction(self,None,**options)
-
-
 
 
 

@@ -211,7 +211,7 @@ class FeatureClass(HashAndCompare,MethodExporter):
 
 
 protocols.declareAdapter(
-    lambda o,p: o._syntax,
+    lambda o: o._syntax,
     provides = [fmtparse.IRule],
     forTypes = [FeatureClass]
 )

@@ -41,11 +41,10 @@ def permuteReg(seq, prev=None):
 
 class Wrapper(object):
 
-    __slots__ = 'subject','protocol'
+    __slots__ = 'subject'
 
-    def __init__(self, ob, proto):
+    def __init__(self, ob):
         self.subject = ob
-        self.protocol = proto
 
     def __hash__(self):
         return hash(self.subject)
@@ -79,6 +78,7 @@ class ClassAsConfigKey(Wrapper):
 
     def parentKeys(self):
         return ()   # XXX maybe use modules?
+
 
 class UnionOf(object):
 

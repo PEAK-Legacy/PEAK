@@ -204,7 +204,7 @@ class TypeClass(Namespace.__class__):
 
 
 protocols.declareAdapter(
-    lambda o,p: o.mdl_asSyntax(),
+    lambda o: o.mdl_asSyntax(),
     provides=[fmtparse.IRule], forTypes=[TypeClass]
 )
 

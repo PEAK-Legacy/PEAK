@@ -100,16 +100,16 @@ class IRule(protocols.Interface):
 
 
 protocols.declareAdapter(
-    lambda o,p: StringConstant(o),
-    provides=[IRule],
-    forTypes=[str]
-)
-
-protocols.declareAdapter(
-    lambda o,p: Optional(*o),
+    lambda o: Optional(*o),
     provides=[IRule],
     forTypes=[tuple]
 )
+
+
+
+
+
+
 
 
 
@@ -180,11 +180,11 @@ class IInput(protocols.Interface):
         """"""
 
 
-protocols.declareAdapter(
-    lambda o,p: StringInput(o),
-    provides=[IInput],
-    forTypes=[str]
-)
+
+
+
+
+
 
 
 
@@ -410,6 +410,8 @@ class Optional(Sequence):
 
 class StringConstant(Rule, str):
 
+    protocols.advise(instancesProvide=[IRule], asAdapterForTypes=[str])
+
     def __new__(klass, value, caseSensitive=True):
         self=super(StringConstant,klass).__new__(klass,value)
         self.caseSensitive = caseSensitive
@@ -445,8 +447,6 @@ class StringConstant(Rule, str):
             else:
                 return self[0].lower()+self[0].upper()+self[0]
         return closing
-
-
 
 
 class Repeat(Rule):
@@ -567,22 +567,6 @@ class Repeat(Rule):
         if 'rule' not in self.__dict__:
             self.rule = self._computeRule(memo)
         return self.rule.getOpening(closing,memo)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -1000,6 +984,10 @@ class Set(Alternatives):
 
 class StringInput(Input, str):
 
+    protocols.advise(
+        instancesProvide=[IInput], asAdapterForTypes=[str]
+    )
+
     def startState(self):
         return 0
 
@@ -1030,10 +1018,6 @@ def format(aDict, syntax):
     out = []
     syntax.format(aDict, out.append)
     return ''.join(out)
-
-
-
-
 
 
 

@@ -503,7 +503,7 @@ class ReadableAsCondition(AbstractConditional):
 
     singleFire   = False
 
-    def __init__(self,subject,protocol=None):
+    def __init__(self,subject):
         self.value = subject
         super(ReadableAsCondition,self).__init__()
         subscribe(subject, self._set)
@@ -638,7 +638,7 @@ class Condition(WritableAsCondition):
     def __init__(self,value=NOT_GIVEN):
         if value is NOT_GIVEN:
             value = self.defaultValue
-        super(Condition,self).__init__(Value(value),IConditional)
+        super(Condition,self).__init__(Value(value))
 
 
 
@@ -678,7 +678,7 @@ class DerivedCondition(ReadableAsCondition):
 
     def __init__(self,formula,*values):
         super(DerivedCondition,self).__init__(
-            DerivedValue(formula,*values),IConditional
+            DerivedValue(formula,*values)
         )
 
 

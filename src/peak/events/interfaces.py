@@ -293,7 +293,7 @@ class IConditional(IReadableSource):
 
 
 protocols.declareAdapter(
-    lambda o,p: o.value, provides=[IValue], forProtocols=[IConditional]
+    lambda o: o.value, provides=[IValue], forProtocols=[IConditional]
 )
 
 

@@ -148,10 +148,10 @@ class IRerunnableCGI(Interface):
         """Perform function and return exit code"""
 
 
-def CGIFromComponent(ob,proto):
+def CGIFromComponent(ob):
     """Turn PEAK components into publishable web apps"""
     from peak.web.publish import CGIPublisher
-    return CGIPublisher.fromApp(ob,proto)
+    return CGIPublisher.fromApp(ob)
 
 declareAdapter(CGIFromComponent,
     provides=[IRerunnableCGI], forProtocols=[IComponent]

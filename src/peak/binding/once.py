@@ -458,7 +458,7 @@ class _MultiRecipe:
         asAdapterForProtocols = [protocols.sequenceOf(IRecipe)]
     )
 
-    def __init__(self,ob,proto):
+    def __init__(self,ob):
         self.subject = ob
         self.__doc__ = getattr(ob,'__doc__',None)
 
@@ -478,7 +478,7 @@ class _TypeAsRecipe:
         asAdapterForTypes = [type, ClassType]
     )
 
-    def __init__(self,ob,proto):
+    def __init__(self,ob):
         self.subject = ob
         self.__doc__ = None   # Don't use the type's docstring as our docstring
 
@@ -490,7 +490,7 @@ class _TypeAsRecipe:
 
 
 
-def _callableAsRecipe(func, protocol):
+def _callableAsRecipe(func):
     args, func = func.getPositionalArgs(), func.getCallable()
     if len(args)==3:
         return func
@@ -522,7 +522,7 @@ class _StringAsRecipe(_TypeAsRecipe):
     def __repr__(self):
         return self.subject
 
-def _configKeyAsRecipe(ob,proto):
+def _configKeyAsRecipe(ob):
     from peak.api import config; from components import lookupComponent
     return lambda self,d,a: \
         lookupComponent(self,config.FactoryFor(ob),adaptTo=IRecipe)(self,d,a)

@@ -92,7 +92,7 @@ class Decorator(Traversable):
 
     ob = None
 
-    def asTraversableFor(klass, ob, proto):
+    def asTraversableFor(klass, ob):
         return klass(ob = ob)
 
     asTraversableFor = classmethod(asTraversableFor)

@@ -128,7 +128,7 @@ class ModuleAsNode(object):
         asAdapterForTypes=[ModuleType],
     )
 
-    def __init__(self,ob,protocol):
+    def __init__(self,ob):
         self.module = ob
 
     def getParentComponent(self):
@@ -412,7 +412,7 @@ def lookupComponent(component, name, default=NOT_GIVEN, adaptTo=None,
 # of ComponentName), in order to use them as component keys
 #
 protocols.declareAdapter(
-    lambda ob, proto: toName(ob, ComponentName, 1),
+    lambda ob: toName(ob, ComponentName, 1),
     provides = [IComponentKey],
     forTypes = [str, unicode],
 )
@@ -429,7 +429,7 @@ class ConfigFinder(object):
         asAdapterForProtocols = [IConfigKey]
     )
 
-    def __init__(self, ob, proto):
+    def __init__(self, ob):
         self.ob = ob
 
     def findComponent(self, component, default=NOT_GIVEN):
@@ -583,7 +583,7 @@ class SequenceFinder(object):
         asAdapterForProtocols = [protocols.sequenceOf(IComponentKey)]
     )
 
-    def __init__(self, ob, proto):
+    def __init__(self, ob):
         self.ob = ob
 
     def findComponent(self, component, default=NOT_GIVEN):

@@ -333,7 +333,7 @@ class StreamFactoryAsCheckableResource(object):
         asAdapterForProtocols = [IStreamFactory]
     )
 
-    def __init__(self, ob, proto):
+    def __init__(self, ob):
         self.sf = ob
 
     def checkResource(self):
@@ -349,7 +349,7 @@ class ManagedConnectionAsCheckableResource(object):
         asAdapterForProtocols = [IManagedConnection]
     )
 
-    def __init__(self, ob, proto):
+    def __init__(self, ob):
         self.mc = ob
 
     def checkResource(self):

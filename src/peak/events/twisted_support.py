@@ -41,12 +41,13 @@ Reactor = getTwisted  # for easy reference in peak.ini
 
 class DeferredAsEventSource(sources.Value,protocols.StickyAdapter):
 
+    attachForProtocols = (IWritableSource,IValue,IPausableSource)
+
     protocols.advise(
-        instancesProvide=[IWritableSource,IValue,IPausableSource],
-        asAdapterForTypes=[defer.Deferred],
+        instancesProvide=attachForProtocols, asAdapterForTypes=[defer.Deferred],
     )
 
-    def __init__(self,ob,proto):
+    def __init__(self,ob,proto=None):
         protocols.StickyAdapter.__init__(self,ob,proto)
         sources.Value.__init__(self)
 
@@ -78,7 +79,6 @@ class DeferredAsEventSource(sources.Value,protocols.StickyAdapter):
             return self.subject.result
         else:
             return NOT_GIVEN
-
 
     def derive(self,func):
         b = sources.Value()

@@ -186,14 +186,14 @@ def ClientConnect(addr):
 
 
 protocols.declareAdapter(
-    lambda o,p: ClientConnect(o),
+    ClientConnect,
     provides=[IClientSocket],
     forProtocols=[IClientSocketAddr]
 )
 
 
 protocols.declareAdapter(
-    lambda o,p: o.listen_sockets(maxsocks=1)[0],
+    lambda o: o.listen_sockets(maxsocks=1)[0],
     provides=[IListeningSocket],
     forProtocols=[IListenSocketAddr]
 )
@@ -258,7 +258,7 @@ class fdURL(naming.URL.Base):
 
 
 protocols.declareAdapter(
-    lambda o,p: o.asSocket(),
+    lambda o: o.asSocket(),
     provides=[IClientSocket,IListeningSocket],
     forTypes=[fdURL]
 )
