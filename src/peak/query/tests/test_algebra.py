@@ -4,8 +4,40 @@ from unittest import TestCase, makeSuite, TestSuite
 from peak.api import *
 from peak.tests import testRoot
 from peak.query.api import *
-from peak.query.algebra import BasicJoin, Not, And, Or, Table, PhysicalDB, function, aggregate
+from peak.query.algebra import BasicJoin, Not, And, Or, Table, PhysicalDB, \
+     function, aggregate, Parameter
 from kjbuckets import kjSet
+
+
+def getSQL(rv):
+    return rv.sqlSelect()[0]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 class SimpleFixtures(TestCase):
 
@@ -38,6 +70,15 @@ class SimpleFixtures(TestCase):
             LangUse = ('languagename','country'),
         )
     )
+
+
+
+
+
+
+
+
+
 
 class SimplificationAndEquality(SimpleFixtures):
 
@@ -496,8 +537,8 @@ class DatabaseTests(SimpleFixtures):
         Branch = db.Branch
         Employee = db.Employee
 
-        self.assertEqual(Branch.simpleSQL(), "SELECT * FROM Branch")
-        self.assertEqual(Employee.simpleSQL(), "SELECT * FROM Employee")
+        self.assertEqual(getSQL(Branch), "SELECT * FROM Branch")
+        self.assertEqual(getSQL(Employee), "SELECT * FROM Employee")
 
         EmployeesByBranch = Branch(
             join=[Employee],
@@ -505,31 +546,31 @@ class DatabaseTests(SimpleFixtures):
         )
 
         self.assertEqual(
-            EmployeesByBranch.simpleSQL(),
+            getSQL(EmployeesByBranch),
             "SELECT B1.*, E2.* FROM Branch AS B1, Employee AS E2"
             " WHERE B1.branchnr=E2.branchnr"
         )
 
         self.assertEqual(
-            Branch(where=Branch.branchnr.eq(42)).simpleSQL(),
+            getSQL(Branch(where=Branch.branchnr.eq(42))),
             "SELECT B1.* FROM Branch AS B1 WHERE B1.branchnr=42"
         )
 
         self.assertEqual(
-            Employee(where=Employee.empnr.eq(42),keep=['empname']).simpleSQL(),
+            getSQL(Employee(where=Employee.empnr.eq(42),keep=['empname'])),
             "SELECT E1.empname FROM Employee AS E1 WHERE E1.empnr=42"
         )
 
         self.assertEqual(
-            Employee(
-                where=Employee.empnr.eq(42), keep=['empname','salary'],
-                rename=Items(empname='Name')
-            ).simpleSQL(),
+            getSQL(
+                Employee(
+                    where=Employee.empnr.eq(42), keep=['empname','salary'],
+                    rename=Items(empname='Name')
+                )
+            ),
             "SELECT E1.empname AS Name, E1.salary"
             " FROM Employee AS E1 WHERE E1.empnr=42"
         )
-
-
 
     def testFunctions(self):
 
@@ -538,24 +579,24 @@ class DatabaseTests(SimpleFixtures):
         sqrtSal = SQRT(Employee.salary)
 
         self.assertEqual(
-            Employee(calc=Items(salroot=sqrtSal)).simpleSQL(),
+            getSQL(Employee(calc=Items(salroot=sqrtSal))),
             "SELECT E1.*, SQRT(E1.salary) AS salroot FROM Employee AS E1"
         )
 
         self.assertEqual(
-            Employee(where=sqrtSal.gt(200)).simpleSQL(),
+            getSQL(Employee(where=sqrtSal.gt(200))),
             "SELECT E1.* FROM Employee AS E1 WHERE SQRT(E1.salary)>200"
         )
 
         self.assertEqual(
-            Employee(
-                calc=Items(salroot=sqrtSal), where=sqrtSal.lt(300)
-            ).simpleSQL(),
+            getSQL(
+                Employee(
+                    calc=Items(salroot=sqrtSal), where=sqrtSal.lt(300)
+                )
+            ),
             "SELECT E1.*, SQRT(E1.salary) AS salroot FROM Employee AS E1"
             " WHERE SQRT(E1.salary)<300"
         )
-
-
 
 
 
@@ -627,30 +668,30 @@ class DatabaseTests(SimpleFixtures):
         )
 
         self.assertEqual(
-            EmpByBranch.simpleSQL(),
+            getSQL(EmpByBranch),
             "SELECT COUNT(E1.empnr) AS employees, E1.branchnr"
             " FROM Employee AS E1 GROUP BY E1.branchnr"
         )
 
         self.assertEqual(
-            EmpByBranch(where=empCount.gt(10)).simpleSQL(),
+            getSQL(EmpByBranch(where=empCount.gt(10))),
             "SELECT COUNT(E1.empnr) AS employees, E1.branchnr"
             " FROM Employee AS E1 GROUP BY E1.branchnr"
             " HAVING COUNT(E1.empnr)>10"
         )
 
         self.assertEqual(
-            EmpByBranch(
-                join=[Branch],
-                where=Branch.branchnr.eq(EmpByBranch.branchnr)
-            ).simpleSQL(),
+            getSQL(
+                EmpByBranch(
+                    join=[Branch],
+                    where=Branch.branchnr.eq(EmpByBranch.branchnr)
+                )
+            ),
             "SELECT B2.*, x1.*"
             " FROM (SELECT COUNT(E1.empnr) AS employees, E1.branchnr"
             " FROM Employee AS E1 GROUP BY E1.branchnr"
             ") AS x1, Branch AS B2 WHERE B2.branchnr=x1.branchnr"
         )
-
-
 
 
 
@@ -662,26 +703,26 @@ class DatabaseTests(SimpleFixtures):
         )
 
 
+    def testParameters(self):
+        param = Parameter('test_param')
+        Employee = self.db.Employee
+        COMPLEX = function('COMPLEX')
 
+        salary = self.db.Employee.salary
 
+        self.assertEqual(
+            Employee(where=Employee.empnr.eq(param)).sqlSelect(),
+            ("SELECT E1.* FROM Employee AS E1 WHERE E1.empnr=?", [param])
+        )
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+        self.assertEqual(
+            Employee(
+                calc=Items(crazy=COMPLEX(Employee.empnr,param))
+            ).sqlSelect(),
+            ("SELECT COMPLEX(E1.empnr,?) AS crazy, E1.* FROM Employee AS E1",
+                [param]
+            )
+        )
 
 
 

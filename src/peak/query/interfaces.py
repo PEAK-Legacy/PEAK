@@ -5,7 +5,7 @@ from protocols import Interface
 __all__ = [
     'IRelationVariable', 'IRelationCondition', 'IBooleanExpression',
     'IRelationAttribute', 'IRelationComparison', 'ISQLDriver',
-    'IDomainVariable',
+    'IDomainVariable', 'ISQLGenerator',
 ]
 
 class IBooleanExpression(Interface):
@@ -78,6 +78,47 @@ class IRelationAttribute(IDomainVariable):
 class IRelationComparison(IRelationCondition):
     """A comparison operator in relational algebra"""
     # XXX Don't know what we need here yet
+
+
+class ISQLGenerator(Interface):
+
+    """Object that can generate SQL for itself"""
+
+    def sqlCondition(driver):
+        """Return self as a SQL boolean expression"""
+
+    def sqlExpression(driver):
+        """Return self as a SQL expression"""
+
+    def sqlSelect(driver):
+        """Return self as an SQL 'SELECT' statement"""
+
+    def sqlTableRef(driver):
+        """Return self as an SQL table reference, suitable for aliasing"""
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 class IRelationVariable(Interface):

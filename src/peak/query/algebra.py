@@ -20,6 +20,51 @@ _deepcopy_dispatch[type(kjGraph())] = _dc_kjGraph
 
 
 
+def split(l):
+    strs = []
+    params = []
+    for s,p in l:
+        strs.append(s)
+        params.extend(p)
+    return strs,params
+
+def join(s,l):
+    strs,params = split(l)
+    return s.join(strs), params
+
+def fmt(s,l):
+    strs,params = split(l)
+    return (s % tuple(strs)), params
+
+def ps(s,p=()):
+    return s,p
+
+class AbstractSQLGenerator:
+
+    protocols.advise(
+        instancesProvide = [ISQLGenerator],
+    )
+
+    def sqlCondition(self,driver):
+        raise TypeError("Not a condition",self)
+
+    def sqlExpression(self,driver):
+        raise TypeError("Not an condition",self)
+
+    def sqlSelect(self,driver):
+        raise TypeError("Not SELECT-able",self)
+
+    def sqlTableRef(self,driver=None):
+        return fmt("(%s)", [self.sqlSelect(driver)])
+
+
+class Parameter(AbstractSQLGenerator):
+
+    def __init__(self,name):
+        self.name = name
+
+    def sqlExpression(self,driver):
+        return "?", (self,)
 
 
 
@@ -35,11 +80,7 @@ _deepcopy_dispatch[type(kjGraph())] = _dc_kjGraph
 
 
 
-
-
-
-
-class _expr:
+class _expr(AbstractSQLGenerator):
 
     protocols.advise(
         instancesProvide = [IBooleanExpression],
@@ -101,8 +142,8 @@ class EMPTY(binding.Singleton):
     def __or__(self,other):
         return other
 
-    def simpleSQL(self,driver):
-        return ''
+    def sqlCondition(self,driver):
+        return ps('')
 
 
 
@@ -166,9 +207,10 @@ class SQLDriver:
 
     def __init__(self,query):
         d = {}; ct=1
-        rvs = [(rv.asFromClause(),rv) for rv in query.getInnerRVs()]  # XXX outer, nested
+        # XXX outer, nested, plus fix None
+        rvs = [(rv.sqlTableRef(None),rv) for rv in query.getInnerRVs()]
         rvs.sort()
-        for name,rv in rvs:
+        for (name,params),rv in rvs:
             if name[0].isalpha():
                 ltr = name[0].upper()
             else:
@@ -181,18 +223,16 @@ class SQLDriver:
         return self.aliases[RV]
 
     def getFromDef(self,RV):
-        # XXX should handle RV being non-table
-        return "%s AS %s" % (RV.asFromClause(),self.getAlias(RV))
+        # XXX Fix None
+        return fmt("%s AS %s", [RV.sqlTableRef(None),ps(self.getAlias(RV))])
 
     def sqlize(self,arg):
-        v = adapt(arg,IDomainVariable,None)
+        v = adapt(arg,ISQLGenerator,None)
 
         if v is not None:
-            return v.simpleSQL(self)
+            return v.sqlExpression(self)
 
-        return `arg`
-
-
+        return ps(`arg`)
 
 
 
@@ -203,7 +243,8 @@ class SQLDriver:
 
 
 
-class AbstractRV(object):
+
+class AbstractRV(AbstractSQLGenerator,object):
 
     protocols.advise(
         instancesProvide = [IRelationVariable]
@@ -301,11 +342,11 @@ class Table(AbstractRV, HashAndCompare):
     def getDB(self):
         return self.db
 
-    def simpleSQL(self,driver=None):
-        return "SELECT * FROM %s" % self.name
+    def sqlSelect(self,driver=None):
+        return ps("SELECT * FROM %s" % self.name)
 
-    def asFromClause(self):
-        return self.name
+    def sqlTableRef(self,driver):
+        return ps(self.name)
 
     def __deepcopy__(self,memo):
         # Avoid deepcopying self.db
@@ -344,16 +385,16 @@ class GroupBy(AbstractRV, HashAndCompare):
     def getDB(self):
         return self.rv.getDB()
 
-    def simpleSQL(self,driver=None):
+    def sqlSelect(self,driver=None):
         if driver is None:
             driver = SQLDriver(self.rv)
-        groupBys = [self.rv[col].simpleSQL(driver) for col in self.groupBy]
-        sql = self.rv.simpleSQL(driver) + " GROUP BY "+ ", ".join(groupBys)
+        groupBys = [self.rv[col].sqlExpression(driver) for col in self.groupBy]
+        sql = self.rv.sqlSelect(driver)
+        sql = fmt("%s GROUP BY %s",[sql, join(", ",groupBys)])
 
-        condSQL = self.condition.simpleSQL(driver)
-        if condSQL:
-            sql += " HAVING " + condSQL
-
+        condSQL = self.condition.sqlCondition(driver)
+        if condSQL[0]:
+            sql = fmt("%s HAVING %s", [sql,condSQL])
         return sql
 
     def __call__(self, where=None,**kw):
@@ -364,10 +405,10 @@ class GroupBy(AbstractRV, HashAndCompare):
             return GroupBy(self.rv,self.groupBy,self.condition&where)
         return self
 
-    def asFromClause(self):
-        return "(%s)" % self.simpleSQL()
 
-class AbstractDV:
+
+
+class AbstractDV(AbstractSQLGenerator):
 
     protocols.advise(
         instancesProvide = [IDomainVariable]
@@ -426,8 +467,8 @@ class Column(AbstractDV,HashAndCompare):
     def getDB(self):
         return self.table.getDB()
 
-    def simpleSQL(self,driver):
-        return driver.getAlias(self.table)+'.'+self.name
+    def sqlExpression(self,driver):
+        return ps(driver.getAlias(self.table)+'.'+self.name)
 
 
 
@@ -475,9 +516,9 @@ class Func(AbstractDV):
         self._agg = agg or self.isAggFunc
 
 
-    def simpleSQL(self,driver):
-        return "%s(%s)" % (
-            self.fname, ",".join([driver.sqlize(arg) for arg in self.args])
+    def sqlExpression(self,driver):
+        return fmt("%s(%s)",
+            [ps(self.fname), join(",",[driver.sqlize(arg) for arg in self.args])]
         )
 
 class Aggregate(Func):
@@ -572,9 +613,11 @@ class BasicJoin(AbstractRV, HashAndCompare):
 
 
 
-    def simpleSQL(self,driver=None):
+    def sqlSelect(self,driver=None):
+
         if driver is None:
             driver = SQLDriver(self)
+
         columnNames = []
         remainingColumns = self.columns
 
@@ -586,31 +629,37 @@ class BasicJoin(AbstractRV, HashAndCompare):
 
             if outputSubset==tblCols:
                 # All names in table are kept as-is, so just use '*'
-                columnNames.append(driver.getAlias(tbl)+".*")
+                columnNames.append(ps(driver.getAlias(tbl)+".*"))
                 continue
 
             # For all output columns that are in this table...
             for name,col in outputSubset.items():
-                sql = col.simpleSQL(driver)
+                sql = col.sqlExpression(driver)
                 if name<>col.name:
-                    sql='%s AS %s' % (sql,name)
+                    sql=fmt('%s AS %s',[sql,ps(name)])
                 columnNames.append(sql)
 
         for name,col in remainingColumns.items():
-            columnNames.append('%s AS %s' % (col.simpleSQL(driver),name))
+            sql = col.sqlExpression(driver)
+            columnNames.append(fmt('%s AS %s',[sql,ps(name)]))
 
         tablenames = [driver.getFromDef(tbl) for tbl in self.relvars]
+
         tablenames.sort()
-
         columnNames.sort()
-        sql = "SELECT "+", ".join(columnNames)+" FROM "+", ".join(tablenames)
 
-        condSQL = self.condition.simpleSQL(driver)
-        if condSQL:
-            sql += " WHERE " + condSQL
+        sql = fmt("SELECT %s FROM %s",
+            [join(", ",columnNames),join(", ",tablenames)]
+        )
+
+
+
+        condSQL = self.condition.sqlCondition(driver)
+
+        if condSQL[0]:
+            sql = fmt("%s WHERE %s", [sql,condSQL])
 
         return sql
-
 
 
 class _compound(_expr,HashAndCompare):
@@ -646,16 +695,7 @@ class _compound(_expr,HashAndCompare):
 
 
 
-
-
-
-
-
-
-
-
 class And(_compound):
-
     def _getPromotable(self,op):
         return adapt(op,IBooleanExpression).conjuncts()
 
@@ -665,11 +705,10 @@ class And(_compound):
     def __invert__(self):
         return Or(*tuple([~op for op in self.operands]))
 
-    def simpleSQL(self,driver):
-        return ' AND '.join([op.simpleSQL(driver) for op in self.operands])
+    def sqlCondition(self,driver):
+        return join(' AND ',[op.sqlCondition(driver) for op in self.operands])
 
 class Or(_compound):
-
     def _getPromotable(self,op):
         return adapt(op,IBooleanExpression).disjuncts()
 
@@ -679,11 +718,12 @@ class Or(_compound):
     def __invert__(self):
         return And(*tuple([~op for op in self.operands]))
 
-    def simpleSQL(self,driver):
-        return '('+' OR '.join([op.simpleSQL(driver) for op in self.operands])+')'
+    def sqlCondition(self,driver):
+        return fmt( '(%s)',
+            [join(' OR ',[op.sqlCondition(driver) for op in self.operands])]
+        )
 
 class Not(_compound):
-
     def __init__(self,operand):
         self.operands = operand,
         self._hashAndCompare = self.__class__.__name__, self.operands
@@ -691,8 +731,9 @@ class Not(_compound):
     def __invert__(self):
         return self.operands[0]
 
-    def simpleSQL(self,driver):
-        return 'NOT (%s)' % self.operands[0].simpleSQL(driver)
+    def sqlCondition(self,driver):
+        return fmt('NOT (%s)', [self.operands[0].sqlCondition(driver)])
+
 
 
 class Cmp(_expr, HashAndCompare):
@@ -718,9 +759,9 @@ class Cmp(_expr, HashAndCompare):
     def __repr__(self):
         return 'Cmp%r' % ((self.arg1,self.op,self.arg2),)
 
-    def simpleSQL(self,driver):
-        return '%s%s%s' % (
-            driver.sqlize(self.arg1),self.op,driver.sqlize(self.arg2)
+    def sqlCondition(self,driver):
+        return fmt('%s%s%s',
+            [driver.sqlize(self.arg1), ps(self.op), driver.sqlize(self.arg2)]
         )
 
 
