@@ -6,6 +6,6 @@ class WebApp(binding.Component):
         index_html = security.Anybody
     )
      
-    def index_html(self, environ, input, errors):
-        return "200 OK", ["Content-type: text/plain"], ["Hello world!"]
+    def index_html(self, ctx):
+        return "200 OK", [("Content-type","text/plain")], ["Hello world!"]
 
