@@ -57,6 +57,29 @@ class NameContext(Component):
     nameInContext   = Once( lambda s,d,a: s.compoundParser(()) )
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     def _resolveComposite(self, name, iface):
 
         # You should override this method if you want dynamic weak NNS
@@ -74,11 +97,18 @@ class NameContext(Component):
             if len(name)==1:
                 return self.resolveToInterface(local, iface)
 
-            return self.lookup_nns(local).resolveToInterface(name[1:], iface)
+            ctx = self.lookup_nns(local)
 
+            if isResolver(ctx):
+                return ctx.resolveToInterface(name[1:], iface)
 
+            if len(name)==2 and not name[1]:
+                return self[local], self.compoundParser(())
 
-
+            raise exceptions.NotAContext(
+                "Unsupported interface", iface,
+                resolvedObj=ctx, remainingName=name[1:]
+            )
 
     def _checkSupported(self, name, iface):
 
@@ -98,11 +128,20 @@ class NameContext(Component):
             return self, name
             
         try:
-            return self[name[:1]].resolveToInterface(name[1:],iface)
+            ctx = self[name[:1]]
+
+            if isResolver(ctx):
+                return ctx.resolveToInterface(name[1:],iface)
 
         except exceptions.NotAContext:
-            self._checkSupported(name, iface)
-            return self, name
+            pass
+
+        # It wasn't a resolver, or didn't support the target interface,
+        # so fall back to self and name, if possible.
+
+        self._checkSupported(name, iface)
+        return self, name
+
 
 
     def _resolveURL(self, name, iface):
@@ -117,6 +156,8 @@ class NameContext(Component):
         else:
             ctx = self.__class__(self, namingAuthority=auth)
             return ctx.resolveToInterface(nic, iface)
+
+
 
 
 
