@@ -15,6 +15,7 @@ __all__ = [
     'SystemConfig', 'AppConfig', 'PropertyMap', 'LazyLoader', 'ConfigReader',
     'loadConfigFile', 'loadMapping', 'PropertySet', 'fileNearModule',
     'Provider','CachingProvider','iterParents','findUtilities','findUtility',
+    'instancePerApp',
 ]
 
 
@@ -36,7 +37,6 @@ _emptyRuleCell.exists()
 def fileNearModule(moduleName,filename):
     filebase = importString(moduleName+':__file__')
     import os; return os.path.join(os.path.dirname(filebase), filename)
-
 
 
 def iterParents(component=None):
@@ -524,4 +524,10 @@ def CachingProvider(callable, weak=False, local=False):
     return provider
 
 
+def instancePerApp(factorySpec):
+    """Provider that returns an instance per application"""
+    factory = importObject(factorySpec)
+    return CachingProvider(lambda foundIn: factory(foundIn), local=True)
+    
+    
 
