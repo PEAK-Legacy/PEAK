@@ -89,6 +89,8 @@ class TaskQueue(binding.Component):
             # But don't run from within 'addTask' call, wait till next moment
             yield self.eventLoop.sleep(); events.resume()
 
+            if not self._enabled():
+                continue    # We were disabled while sleeping, so wait again
 
             didWork = cancelled = False
 
@@ -118,8 +120,6 @@ class TaskQueue(binding.Component):
     _processNextTask = binding.Make(
         events.threaded(_processNextTask), uponAssembly=True
     )
-
-
 
 class AdaptiveTask(binding.Component):
 
