@@ -166,17 +166,10 @@ class SybaseConnection(SQLConnection):
 
     API = binding.bindTo("import:Sybase")
 
-    hostname = binding.bindToProperty('Sybase.client.hostname',
-        default=None)
-    
-    appname = binding.bindToProperty('Sybase.client.appname',
-        default=None)
-
-    textlimit = binding.bindToProperty('Sybase.client.textlimit',
-        default=None)
-
-    textsize = binding.bindToProperty('Sybase.client.textsize',
-        default=None)
+    hostname  = binding.bindToProperty('Sybase.client.hostname',  default=None)
+    appname   = binding.bindToProperty('Sybase.client.appname',   default=None)
+    textlimit = binding.bindToProperty('Sybase.client.textlimit', default=None)
+    textsize  = binding.bindToProperty('Sybase.client.textsize',  default=None)
 
 
     def _open(self):
@@ -203,9 +196,11 @@ class SybaseConnection(SQLConnection):
                               
         return db
             
+
     def onJoinTxn(self, txnService):
         # Sybase doesn't auto-chain transactions...
         self.connection.begin()
+
 
 
     def txnTime(self,d,a):
@@ -280,7 +275,7 @@ class GadflyURL(naming.ParsedURL):
     def retrieve(self, refInfo, name, context, attrs=None):
 
         return GadflyConnection(
-            context.creationParent,
+            context.creationParent, context.creationName,
             address = self
         )
 
@@ -310,7 +305,7 @@ class GenericSQL_URL(naming.ParsedURL):
     def retrieve(self, refInfo, name, context, attrs=None):
 
         return drivers[self.scheme](
-            context.creationParent,
+            context.creationParent, context.creationName,
             address = self
         )
 

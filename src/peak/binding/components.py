@@ -8,9 +8,7 @@ from weakref import WeakValueDictionary
 
 from peak.naming.names import toName, Syntax, CompoundName, PropertyName
 from peak.util.EigenData import EigenRegistry, EigenCell
-
 from peak.api import config, NOT_FOUND, NOT_GIVEN, exceptions
-
 from peak.config.interfaces import IConfigKey, IPropertyMap
 
 
@@ -20,23 +18,25 @@ __all__ = [
     'getRootComponent', 'getParentComponent', 'lookupComponent',
     'acquireComponent', 'globalLookup', 'findUtility', 'findUtilities',
     'bindToUtilities', 'bindToProperty', 'iterParents', 'Constant',
+    'getComponentName', 'getComponentPath', 'Acquire',
 ]
 
 
+def getComponentPath(component, relativeTo=None):
 
+    path = []; root=None
+    if relativeTo is None:
+        root = getRootComponent(component)
 
+    for c in iterParents(component):
+        if c is root:
+            path.append(''); break
+        elif c is relativeTo:
+            break
+        path.append(getComponentName(c) or '*')
 
-
-
-
-
-
-
-
-
-
-
-
+    path.reverse()
+    return ComponentName(path)
 
 
 def Provider(callable):
@@ -86,12 +86,22 @@ def getParentComponent(component):
 
     try:
         gpc = component.getParentComponent
-
     except AttributeError:
         pass
-
     else:
         return gpc()
+
+
+def getComponentName(component):
+
+    """Return parent of 'component', or 'None' if root or non-component"""
+
+    try:
+        gcn = component.getComponentName
+    except AttributeError:
+        pass
+    else:
+        return gcn()
 
 
 def getRootComponent(component):
@@ -107,13 +117,19 @@ def getRootComponent(component):
     return component
 
 
-def globalLookup(name, component=None):
+
+
+
+
+def globalLookup(name, component=None, targetName=None):
 
     """Lookup 'name' in global 'InitialContext', relative to 'component'"""
 
-    from peak.naming.api import InitialContext
+    from peak.naming.api import lookup
     
-    return InitialContext(component, creationParent=component).lookup(name)
+    return lookup(name, component,
+        creationParent=component, creationName=targetName
+    )
 
 
 
@@ -121,7 +137,7 @@ def globalLookup(name, component=None):
 
 
 
-def acquireComponent(name, component=None):
+def acquireComponent(name, component=None, targetName=None):
 
     """Acquire 'name' relative to 'component', w/fallback to globalLookup()"""
 
@@ -137,23 +153,7 @@ def acquireComponent(name, component=None):
         target = getParentComponent(target)
 
     else:
-        return globalLookup(name, component)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+        return globalLookup(name, component, targetName)
 
 
 
@@ -178,7 +178,6 @@ def iterParents(component=None):
         component = config.getLocal(last)
 
 
-
 def findUtilities(iface, component=None):
 
     forObj = component
@@ -194,6 +193,7 @@ def findUtilities(iface, component=None):
 
         if utility is not NOT_FOUND:
             yield utility
+
 
 
 
@@ -285,7 +285,7 @@ def lookupComponent(name, component=None):
 
 
 
-def _lookupComponent(component, name):
+def _lookupComponent(component, name, targetName=None):
 
     if IConfigKey.isImplementedBy(name):
         return findUtility(name, component)
@@ -294,7 +294,7 @@ def _lookupComponent(component, name):
 
     if not parsedName.isCompound:
         # URL's and composite names must be handled globally
-        return globalLookup(name, component)
+        return globalLookup(name, component, targetName)
 
     if not parsedName:  # empty name refers to self
         return component
@@ -304,7 +304,7 @@ def _lookupComponent(component, name):
     pc = _getFirstPathComponent(attr)
 
     if pc:  ob = pc(component)
-    else:   ob = acquireComponent(attr,component)
+    else:   ob = acquireComponent(attr, component, targetName)
 
     resolved = []
     append = resolved.append
@@ -352,7 +352,7 @@ class bindTo(Once):
     def computeValue(self, obj, instanceDict, attrName):
 
         names = self.targetNames
-        obs   = [_lookupComponent(obj,n) for n in names]
+        obs   = [_lookupComponent(obj,n,attrName) for n in names]
 
         for name,newOb in zip(names, obs):
 
@@ -392,12 +392,12 @@ class bindSequence(bindTo):
         self.__doc__ = kw.get('doc',("binding.bindSequence%s" % `targetNames`))
 
 
+def Acquire(key,doc=None):
 
+    if not IConfigKey.isImplementedBy(key):
+        raise exceptions.InvalidName("Not a configuration key:", key)
 
-
-
-
-
+    return bindTo(key,key,doc)
 
 
 
@@ -494,26 +494,28 @@ class Base(object):
 
     """Thing that can be composed into a component tree, w/binding & lookups"""
 
-    __implements__ = IBindingAPI
-    __metaclass__  = ActiveDescriptors
+    __class_implements__ = IBindingFactory
+    __implements__       = IBindingAPI
+    __metaclass__        = ActiveDescriptors
 
-    def __init__(self, parent=None, **kw):
+    def __init__(self, parentComponent=None, componentName=None, **kw):
+        self.setParentComponent(parentComponent,componentName)
         if kw:
             self.__dict__.update(kw)
-        if parent is not None:
-            self.setParentComponent(parent)
 
     lookupComponent = _lookupComponent
 
-    def setParentComponent(self,parent):
-        self.__parentCell.set(parent)
+    def setParentComponent(self, parentComponent, componentName=None):
+        self.__parentCell.set(parentComponent)
+        self.__componentName = componentName
 
+    __componentName = None
+    
     def getParentComponent(self):
         return self.__parentCell.get()
 
-
-    def _getConfigData(self, configKey, forObj):
-        return NOT_FOUND
+    def getComponentName(self):
+        return self.__componentName
 
     def __parentCell(s,d,a):
         cell = EigenCell()
@@ -523,13 +525,8 @@ class Base(object):
 
     __parentCell = Once(__parentCell)
 
-
-
-
-
-
-
-
+    def _getConfigData(self, configKey, forObj):
+        return NOT_FOUND
 
     def _hasBinding(self,attr):
         return attr in self.__dict__
@@ -543,6 +540,9 @@ class Base(object):
     def _delBinding(self,attr):
         if attr in self.__dict__:
             del self.__dict__[attr]
+
+
+
 
 
 
@@ -618,7 +618,7 @@ class AutoCreatable(OnceClass, ActiveDescriptors):
     """Metaclass for components which auto-create when used"""
 
     def computeValue(self,owner,_d,_a):
-        return self(owner)
+        return self(owner,_a)
 
 
 

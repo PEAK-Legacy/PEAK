@@ -5,7 +5,7 @@ from names import *
 from properties import *
 from peak.util.imports import importObject
 
-from peak.binding.components import Component, bindToProperty, Once
+from peak.binding.components import Component, Once, Acquire
 
 from peak import exceptions
 
@@ -43,9 +43,10 @@ class AbstractContext(Component):
 
     __implements__ = IBasicContext
 
-    creationParent = bindToProperty(CREATION_PARENT, provides=CREATION_PARENT)
-    objectFactories= bindToProperty(OBJECT_FACTORIES,provides=OBJECT_FACTORIES)
-    stateFactories = bindToProperty(STATE_FACTORIES, provides=STATE_FACTORIES)
+    creationName    = Acquire(CREATION_NAME)
+    creationParent  = Acquire(CREATION_PARENT)
+    objectFactories = Acquire(OBJECT_FACTORIES)
+    stateFactories  = Acquire(STATE_FACTORIES)
 
     schemeParser  = None
     nameClass     = None
@@ -57,7 +58,6 @@ class AbstractContext(Component):
 
     def close(self):
         pass
-
 
 
 

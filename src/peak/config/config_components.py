@@ -250,22 +250,22 @@ class GlobalConfig(BasicConfig):
         loadConfigFile(propertyMap, fileNearModule('peak','peak.ini'))
             
 
-    def setParentComponent(self,parent):
-        raise TypeError("Global config can't have a parent")
+    def setParentComponent(self,parentComponent,componentName=None):
+        if parentComponent is not None or componentName is not None:
+            raise TypeError("Global config can't have a parent or name")
 
 
 
 class LocalConfig(BasicConfig):
 
-    def setParentComponent(self,parent):
+    def setParentComponent(self,parentComponent,componentName=None):
 
-        assert isinstance(parent,GlobalConfig), \
+        assert isinstance(parentComponent,GlobalConfig), \
             "LocalConfig parent must be GlobalConfig"
 
-        super(LocalConfig,self).setParentComponent(parent)
-
-
-
+        super(LocalConfig,self).setParentComponent(
+            parentComponent,componentName
+        )
 
 
 

@@ -46,14 +46,14 @@ class AbstractCursor(binding.Component):
     _conn = binding.bindTo('../connection')
 
 
-    def __init__(self,parent,**kw):
+    def __init__(self,parentComponent,componentName=None,**kw):
 
-        self.setParentComponent(parent)
+        self.setParentComponent(parentComponent,componentName)
 
         for k,v in kw.items():
             setattr(self,k,v)
 
-        parent.registerCursor(self)
+        parentComponent.registerCursor(self)
 
 
     def close(self):

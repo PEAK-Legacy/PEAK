@@ -52,9 +52,9 @@ class App(Service):
 
     def newElement(self,elementType,*args,**kw):
         element = apply(getattr(self,elementType),args,kw)  # XXX won't do dotted names
-        element._fData = {}
-        element.setParentComponent(self)
         return element
+
+
 
 
 
@@ -424,7 +424,33 @@ class ElementMeta(DataType.__class__, Persistent.__class__):
     pass
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 class Element(DataType, Persistent):
+
     """A (potentially persistent) domain element"""
 
     __implements__ = IElement
@@ -438,6 +464,17 @@ class Element(DataType, Persistent):
         if attr in self.__dict__:
             self._p_changed = True
             del self.__dict__[attr]
+
+    def setParentComponent(self, parentComponent, componentName=None):
+        if parentComponent is not None:
+            self._p_jar = parentComponent
+        self._p_oid = componentName
+
+    def getParentComponent(self):
+        return self._p_jar
+
+    def getComponentName(self):
+        return self._p_oid
 
 
 config.setupModule()

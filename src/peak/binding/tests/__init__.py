@@ -1,4 +1,4 @@
-"""Module inheritance and metaclass tests"""
+"""Binding tests"""
 
 from unittest import TestCase, makeSuite, TestSuite
 from peak.api import *
@@ -46,15 +46,12 @@ class IS2U(Interface): pass
 class DescriptorData(binding.Component):
 
     thing1 = "this is my thing"
-
     thing2 = binding.bindTo('thing1')
-
     thing3 = binding.requireBinding('This is required')
-
     thing4 = binding.bindSequence('thing1','thing2')
 
     underflow = binding.bindToParent(50)
-
+    
     class aService(binding.AutoCreated):
 
         thing5 = binding.bindToParent(provides=IS1U)
@@ -65,6 +62,8 @@ class DescriptorData(binding.Component):
             thing6 = binding.bindToParent(2)
 
             deep = binding.bindTo('deep')
+
+            namedThing = binding.New(binding.Component)
 
             acquired = binding.bindTo('thing1')
 
@@ -80,6 +79,7 @@ class DescriptorData(binding.Component):
 
     testImport = binding.bindTo('import:unittest:TestCase')
 
+
 class ISampleUtility1(Interface): pass
 class ISampleUtility2(Interface): pass
 
@@ -92,7 +92,7 @@ class DescriptorTest(TestCase):
 
     def setUp(self):
 
-        self.data = DescriptorData()
+        self.data = DescriptorData(None, 'data')
 
         self.data.aService.registerProvider(
             ISampleUtility1,
@@ -109,17 +109,17 @@ class DescriptorTest(TestCase):
 
         data = self.data
         ns   = data.aService.nestedService
-
         assert binding.findUtility(IS1U,ns) is data
         assert binding.findUtility(IS2U,ns) is ns
 
 
-
-
-
-
-
-
+    def checkNaming(self):
+        svc = self.data.aService
+        gcn = binding.getComponentName
+        assert gcn(svc)=='aService'
+        assert gcn(svc.nestedService)=='nestedService'
+        assert gcn(svc.nestedService.namedThing)=='namedThing'
+        assert gcn(self.data)=='data'
 
     def checkAcquireInst(self):
 
@@ -242,6 +242,28 @@ class DescriptorTest(TestCase):
     def checkImport(self):
         assert self.data.testImport is TestCase
 
+
+
+    def checkPaths(self):
+        svc = self.data.aService
+        gcp = binding.getComponentPath
+
+        assert str(gcp(svc,self.data))=='aService'
+        assert str(gcp(svc.nestedService,self.data))=='aService/nestedService'
+        assert str(
+            gcp(svc.nestedService.namedThing,self.data)
+        )=='aService/nestedService/namedThing'
+
+
+    def checkAbsPaths(self):
+        svc = self.data.aService
+        gcp = binding.getComponentPath
+
+        assert str(gcp(svc))=='/aService'
+        assert str(gcp(svc.nestedService))=='/aService/nestedService'
+        assert str(
+            gcp(svc.nestedService.namedThing)
+        )=='/aService/nestedService/namedThing'
 
 
 TestClasses = (

@@ -308,7 +308,7 @@ class ldapURL(naming.ParsedURL):
     def retrieve(self, refInfo, name, context, attrs=None):
 
         return LDAPConnection(
-            context.creationParent,
+            context.creationParent, context.creationName,
             address = self
         )
 

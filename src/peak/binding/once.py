@@ -3,6 +3,7 @@
 from peak.api import NOT_FOUND
 from peak.util.EigenData import EigenRegistry
 from peak.util.imports import importObject
+from interfaces import IBindingFactory
 
 __all__ = [
     'Once', 'New', 'Copy', 'OnceClass', 'ActiveDescriptors',
@@ -38,8 +39,7 @@ class ActiveDescriptor(object):
 
 
 
-
-def New(obtype, name=None, provides=None, doc=None):
+def New(obtype, bindToOwner=None, name=None, provides=None, doc=None):
 
     """One-time binding of a new instance of 'obtype'
 
@@ -62,17 +62,17 @@ def New(obtype, name=None, provides=None, doc=None):
     such as when you're not deriving from a standard PEAK base class.)
     """
 
-    return Once( (lambda s,d,a: importObject(obtype)()), name, provides, doc)
+    def mkNew(s,d,a):
+        factory = importObject(obtype)
 
+        if bindToOwner or (
+            bindToOwner is None and IBindingFactory.isImplementedBy(factory)
+        ):
+            return factory(s,a)
+        else:
+            return factory()
 
-
-
-
-
-
-
-
-
+    return Once( mkNew, name, provides, doc)
 
 
 
