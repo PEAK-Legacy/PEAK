@@ -257,7 +257,7 @@ class FileFactory(binding.Component):
 
     def getObjectInstance(klass, context, refInfo, name, attrs=None):
         url, = refInfo.addresses
-        return klass(context, filename = url.getFilename())
+        return klass(filename = url.getFilename())
 
     getObjectInstance = classmethod(getObjectInstance)
 
@@ -272,6 +272,88 @@ class FileFactory(binding.Component):
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+class FileDescriptor(model.ExtendedEnum):
+
+    stdin = model.enum(0)
+    stdout = model.enum(1)
+    stderr = model.enum(2)
+
+
+class fdURL(URL.Base):
+
+    """fd.file:fileno
+
+    'fileno' can be an integer, or one of 'stdin', 'stdout', 'stderr'
+
+    Example::
+
+        fd.file:stdout
+    """
+
+    supportedSchemes = 'fd.file',
+
+    defaultFactory = 'peak.naming.factories.openable.FDFactory'
+
+    class fileno(naming.URL.Field):
+        referencedType = FileDescriptor
+
+    syntax = naming.URL.Sequence(fileno)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class FDFactory(FileFactory):
+
+    """Stream factory for a local file object"""
+
+    protocols.advise(
+        classProvides=[naming.IObjectFactory],
+        instancesProvide=[naming.IStreamFactory],
+    )
+
+    fd = binding.Require("File descriptor to open/modify")
+    filename = binding.Require("Operation not possible for file descriptors")
+
+    def _open(self, mode, flags, ac):
+
+        if mode not in ('t','b','U'):
+            raise TypeError("Invalid open mode:", mode)
+
+        if not ac and flags<>'r':
+            self._acRequired()
+
+        return os.fdopen(self.fd, flags+mode)
+
+
+    def getObjectInstance(klass, context, refInfo, name, attrs=None):
+        url, = refInfo.addresses
+        return klass(fd = url.fileno)
+
+    getObjectInstance = classmethod(getObjectInstance)
 
 
 

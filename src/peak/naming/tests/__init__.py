@@ -117,7 +117,7 @@ validNames = {
     'fd.socket:stderr': Items(fileno=2),
     'fd.socket:27/inet/dgram': Items(fileno=27),
     'fd.socket:27//dgram': Items(fileno=27),
-
+    'fd.file:stderr': Items(fileno=2),
 
 
 
