@@ -2,6 +2,9 @@ Fixes and Enhancements since Version 0.5 alpha 2
 
  Changed, Enhanced, or Newly Deprecated Features
 
+ - It's no longer necessary to provide a '_defaultState()' implementation
+   for an EntityDM: a default implementation is now supplied.
+
  - Added automatic installation of 'datetime' package for Python < 2.3.
 
  - CGI support has been moved from 'peak.running.zpublish' into

@@ -1,6 +1,6 @@
 from peak.api import *
 
-from peak.running.commands import AbstractCommand, Bootstrap
+from peak.running.commands import AbstractCommand, Bootstrap, InvocationError
 
 from bulletins.app import BulletinsApp
 
@@ -14,8 +14,10 @@ Usage: bulletins command arguments...
 
 Available commands:
 
-  createdb -- create an empty bulletins database
-  purge    -- purge expired bulletins
+  createdb  -- create an empty bulletins database
+  purge     -- purge expired bulletins
+  showusers -- list current users
+  adduser   -- add a user to the database
 """
 
 
@@ -30,6 +32,44 @@ class CreateDB(BulletinsApp, AbstractCommand):
             if not ddl.strip(): continue
             self.db(ddl)
         storage.commitTransaction(self)
+
+
+
+
+
+
+
+class ShowUsers(BulletinsApp, AbstractCommand):
+
+    def run(self):
+        print "User          Name"
+        print "------------  -----------------------------------"
+        storage.beginTransaction(self)
+        for user in self.Users.getAll():
+            print "%-12s  %s" % (user.loginId, user.fullName)
+        storage.commitTransaction(self)
+
+
+class AddUser(BulletinsApp, AbstractCommand):
+
+    usage = """Usage: bulletins adduser login password [full name]"""
+
+    def run(self):
+        try:
+            if len(self.argv)<3:
+                raise InvocationError("missing argument(s)")
+
+            storage.beginTransaction(self)
+            user = self.Users.newItem()
+            user.loginId, user.password = self.argv[1:3]
+            user.fullName = ' '.join(self.argv[3:]) or user.loginId
+            storage.commitTransaction(self)
+
+        except SystemExit, v:
+            return v.args[0]
+
+        except InvocationError, msg:
+            return self.invocationError(msg)
 
 
 class PurgeDB(BulletinsApp, AbstractCommand):

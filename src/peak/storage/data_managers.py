@@ -460,7 +460,7 @@ class EntityDM(QueryDM):
         raise NotImplementedError
 
     def _defaultState(self, ob):
-        raise NotImplementedError
+        return ob.__getstate__()
 
     def _thunk(self, ob):
         raise NotImplementedError
