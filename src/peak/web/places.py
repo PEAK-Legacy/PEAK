@@ -213,6 +213,7 @@ class Location(Place,binding.Configurable):
     containers = binding.Make(list)
     have_views = False
 
+    security.allow(security.Anybody)    # XXX
 
     def beforeHTTP(self,ctx):
         if self.have_views:
@@ -239,7 +240,6 @@ class Location(Place,binding.Configurable):
         if default is NOT_GIVEN:
             raise NotFound(ctx,name)
         return default
-
 
 
 
