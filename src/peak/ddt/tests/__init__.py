@@ -305,9 +305,9 @@ class BasicTests(TestCase):
             )
             runner.run()
             self.assertEqual(
-                runner.stdout.getvalue().replace('\r\n','\n'), output
+                runner.stdout.getvalue().replace('\r\n','\n'),
+                output.replace('\r\n','\n')
             )
-
 
 
 
