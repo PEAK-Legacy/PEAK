@@ -256,11 +256,40 @@ class MethodExporter(ActiveDescriptor, type):
             The keys are verb (inner method) names, and the values are format
             strings that are used to generate the outer method names.
             
-            The format strings are applied to a dictionary supplied by
-            MethodExporter's 'subjectNames()' method; see that method's code
-            for more details.  'initCap' is the most commonly used name in that
-            dictionary: it supplies the MethodExporter instance's name, with
-            the first character capitalized.
+            The format strings are applied to a 'nameMapping' object supplied
+            by MethodExporter's 'subjectNames()' method.  The format strings
+            are normal Python '%' formatting strings as applied to a mapping.
+            The names in parentheses, such as '"initCap"' in
+            '"slap%(initCap)s"', are looked up in the mapping object.
+
+            'initCap' is the most commonly used name in a format string: it
+            supplies the MethodExporter instance's name, with the first
+            character capitalized.  But there are many other options.  For
+            example, any attribute of the MethodExporter being defined can
+            be used, like this::
+
+                class Collection(someFeature):
+                    single = 'item'
+                    newVerbs = Items(add='add%(single)s')
+
+            The above example will generate an 'additem()' method, unless a
+            subclass changes the 'single' attribute to a different string.
+            This lets you have subclasses change the name of what kind of
+            objects are in a collection, and have the exported method names
+            change accordingly.  (Notice also that you can use the TW.API
+            'Items()' function to create a 'newVerbs' list; you don't have to
+            do it by hand.)
+
+            You can also use more complex formatting, using dotted names::
+
+                class Collection(someFeature):
+                    single = 'item'
+                    newVerbs = Items(add='add%(single.initCap)s')
+
+            This will apply the 'nameMapping.initCap()' method to the 'single'
+            attribute before formatting, resulting in an 'addItem()' method.
+            See the 'nameMapping' documentation for more details on how names
+            used in format strings are interpreted.
 
         The 'installIf' function attribute
 
@@ -373,38 +402,9 @@ class MethodExporter(ActiveDescriptor, type):
             to understand the actual implementation.  :)"""
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    def subjectNames(self):
+        """Return a nameMapping object for this feature"""
+        return nameMapping(self)
 
 
 
@@ -490,45 +490,52 @@ class MethodExporter(ActiveDescriptor, type):
                 setattr(self,verb,classmethod(func))
 
 
-    def subjectNames(self):
+class nameMapping(object):
 
-        """Return a dictionary for formatting outer method names"""
+    """A mapping used for formatting outer method names
 
-        names = self.__dict__.copy()
-        className = self.attrName
+        This class implements a mapping object with a few special
+        tricks.  Names to be looked up are split on '.', and then
+        each name part is looked up first as a method of the
+        nameMapping object itself.  If a method is found, it's called
+        on the result of the previous lookup, or the default name
+        if there was no previous lookup.  If a method isn't found,
+        the name part is looked up in the dictionary of the
+        MethodExporter the nameMapping was created for.
 
-        names.update(
-            {
-                'name':    className,
-                'upper':   className.upper(),
-                'lower':   className.lower(),
-                'capital': className.capitalize(),
-                'initCap': className[:1].upper()+className[1:]
-            }
-        )
-        return names
+        See the documentation for individual method names to see what
+        special names are available."""
+
+    def __init__(self, exporter): self.names = exporter.__dict__.copy()
+
+    def name(self, name=None):
+        """name - returns the feature name"""
+        return self.names['attrName']
+
+    def upper(self, name):
+        """upper - equivalent to previousName.upper()"""
+        return name.upper()
+
+    def lower(self, name):
+        """lower - equivalent to previousName.lower()"""
+        return name.lower()
+        
+    def capitalize(self, name):
+        """capitalize - equivalent to previousName.capitalize()"""
+        return name.capitalize()
+        
+    def initCap(self, name):
+        """initCap - previous name with first character capitalized"""
+        return name[:1].upper()+name[1:]
 
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    def __getitem__(self,key):
+        name=self.name()
+        for part in key.split('.'):
+            name = getattr(self,part,lambda n: self.names[part])(name)
+        return name
 
 
 class Singleton(type):

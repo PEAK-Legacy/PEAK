@@ -177,6 +177,17 @@ class X(SEF.Element):
     def OverwriteDoubled(self):
         return self.__class__.Overwrite.doubled(self) * 3
 
+    class aCollection(featureBase):
+        singular = 0
+        singularForm = 'item'
+
+        newVerbs = Items(
+            add='add%(singularForm.initCap)s'
+        )
+
+        def add(feature,self,val):
+            self.__dict__[feature.attrName].append(val)
+
 
 class SubclassOfX(X):
 
@@ -185,17 +196,6 @@ class SubclassOfX(X):
         # the old OverwriteDoubled method in the class
         # should apply...
         singular = 0
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -233,10 +233,10 @@ class checkExport(TestCase):
         e2.Overwrite = 1
         assert e2.OverwriteDoubled()==[1,1,1,1,1,1]
 
-
-
-
-
+    def checkFancyNames(self):
+        self.el.aCollection = 1
+        self.el.addItem(9)
+        assert self.el.aCollection==[1,9]
 
 
 
