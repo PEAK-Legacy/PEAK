@@ -11,11 +11,11 @@ application by assembling components.
 
 The promised benefits of component-based development architectures include
 reusability (and therefore less repetitive work), reliability (if each part
-works separately, and they are assembled correctly, the whole should work),
-and ease of understanding/maintenance (because parts can be understood
-separately.
+works separately, and they are assembled correctly, the whole assembly should
+work), and ease of understanding/maintenance (because parts can be understood
+separately).
 
-To be effective, a component architecture must include ways of:
+To be useful, a component architecture must include ways of:
 
 \begin{itemize}
 
@@ -30,6 +30,15 @@ To be effective, a component architecture must include ways of:
 Let's look at how PEAK addresses these issues.
 
 
+
+
+
+
+
+
+
+
+
 \subsection{Composing and Connecting}
 
 Imagine a car.  It's composed from a variety of parts: the wheels, engine, 
@@ -37,14 +46,14 @@ battery, frame, and so on.  Some of these parts are also composed of parts:
 the engine has a block, cylinders, pistons, spark plugs, and so on.
 
 Each part in this "component assembly" can be a part of only one larger part:
-its "parent component", so to speak.  The hubcaps are part of the wheels,
+its \strong{parent component}.  The hubcaps are part of the wheels,
 and so they can't also be part of the engine.  (They wouldn't fit there in 
 any case, but that's beside the point.)  Consider that screws or bolts may
 be used in many parts of the car: each is part of only one other part of
 the car, although more than one of the same \emph{kind} of part may be used
 in other places.  In the UML (Unified Modelling Language) and in PEAK, this
-kind of parent-child "assembly" relationship  is called "composition": a
-component is being "composed" by assembling other components.
+kind of parent-child "assembly" relationship  is called \strong{composition}:
+a component is being "composed" by assembling other components.
 
 But in the UML and in real life, this isn't the only way of building things
 with components.  It would be very inefficient if every light and accessory
@@ -56,13 +65,28 @@ components at any level: wires carry electricity to every electrical part, no
 matter how big or small.  In some cases, wires go to a major subsystem, which
 then has internal wires to carry electricity inward to its parts, or to carry
 signals between its parts.  In  the UML, these kind of "shared", "peer-to-peer"
-connections are called "associations".
+connections are called \strong{associations}.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+\subsubsection{Implementing Components in Python and PEAK}
 
 In the Python language, components are Python objects, and composition and
 association relationships are represented using objects' attributes.  Using
-the \module{peak.binding} package, you'll create "attribute bindings" that 
-define what sub-objects will be created (via composition) or external objects 
-will be referenced (via association) by each attribute of a component.
+the \module{peak.binding} package, you'll create \strong{attribute bindings}
+that  define what sub-objects will be created (via composition) or external
+objects  will be referenced (via association) by each attribute of a component.
 
 Of course, there are some important differences between software and the real
 world.  In the real world, we have to actually build every part of the car
@@ -88,13 +112,75 @@ which are built from large numbers of components, by not creating all the
 objects right away, and by never creating objects that don't get used during
 that application run.
 
+
+
+
+
+
+
+
+
+
+\subsubsection{Component Interfaces}
+
+You can't just hook wires between random parts of your car and expect good
+results.  In the same way, software components can only be "wired" together
+if they have compatible interfaces.  A software component that expects to
+send data to a "file" component must be connected to a component that
+supplies the services a file supplies, even if the component is not actually
+a "real" disk file.
+
+The definition of a set of services provided by a component is called an
+\strong{interface}.  In PEAK, interfaces are defined and declared using the 
+Zope \module{Interface} package (bundled with PEAK for your convenience). 
+This means that components you create with PEAK's component architecture should
+also work in Zope 3's component architecture.  (Which is important if you
+plan to build Zope 3-based applications and web services with PEAK.)
+
+Interfaces in PEAK are used primarily as documentation and as a way of finding
+compatible components and services.  When used with the Zope 3 component
+architecture, interfaces can also be used to register adapters (which convert
+a component from one interface to another), declare web views of application
+components, and even define security restrictions based on interfaces.  
+
+\begin{seealso}
+
+\begin{itemize}
+
+\item Remember, if you haven't already done so, be sure to check out
+\citetitle[http://www.zope.org/Wikis/Interfaces/InterfaceUserDocumentation]{A
+Quick Introduction to Python Interfaces} at 
+\url{http://www.zope.org/Wikis/Interfaces/InterfaceUserDocumentation}.  
+
+\item And, if you're interested in developing Zope 3 applications and want to
+learn more about what you can do with interfaces in the Zope 3 component
+architecture, see \citetitle[http://dev.zope.org/Wikis/DevSite/Projects/ComponentArchitecture/Zope3PythonProgrammerTutorialChapter1/
+]{Programming with the Zope 3 Component Architecture} at \url{http://dev.zope.org/Wikis/DevSite/Projects/ComponentArchitecture/Zope3PythonProgrammerTutorialChapter1/
+}.
+
+\end{itemize}
+
+\end{seealso}
+
 \subsection{Composing Applications}
 
 \subsection{Connecting Components}
+
 
 
 \section{Getting Started with PEAK}
 
 \subsection{Package layout/API Conventions}
 
+
+
+\section{Specifying Attributes Using Bindings}
+
+
+
+\section{Composing Hierarchies with binding.Components}
+
+
+
+\section{Connecting Components by Name or Interface}
 
