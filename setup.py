@@ -137,7 +137,7 @@ setup(
 
         'peak.binding.tests', 'peak.config.tests', 'peak.storage.tests',
         'peak.metamodels.tests', 'peak.util.tests', 'peak.naming.tests',
-        'peak.tests',
+        'peak.model.tests', 'peak.tests',
 
         'Interface', 'Interface.tests',
         'Interface.Common', 'Interface.Common.tests',

@@ -6,10 +6,11 @@ from peak.model.interfaces import __all__ as allInterfaces
 
 from Persistence import Persistent
 
+from peak.model.method_exporter import MethodExporter
 
 
 __all__ = [
-    'App','Service',
+    'App','Service', 'MethodExporter', 'FeatureMC',
     'StructuralFeature', 'Field', 'Collection', 'Reference', 'Sequence',
     'Classifier','PrimitiveType','Enumeration','DataType','Element',
 ]
@@ -18,7 +19,6 @@ __all__ = [
 # We export the interfaces too, so people don't have to dig for them...
 
 __all__ += allInterfaces
-
 
 
 
@@ -80,7 +80,7 @@ class App(Service):
 
 
 
-class FeatureMC(binding.MethodExporter):
+class FeatureMC(MethodExporter):
 
     """Method-exporting Property
     

@@ -1,11 +1,42 @@
 """'Once' objects and classes"""
 
-from meta import ActiveDescriptor
 from peak.api import NOT_FOUND
 from peak.util.EigenData import EigenRegistry
 from peak.util.imports import importObject
 
-__all__ = ['Once', 'New', 'Copy', 'OnceClass']
+__all__ = [
+    'Once', 'New', 'Copy', 'OnceClass', 'ActiveDescriptors',
+    'ActiveDescriptor',
+]
+
+
+class ActiveDescriptors(type):
+
+    """Type which gives its descriptors a chance to find out their names"""
+    
+    def __init__(klass, name, bases, dict):
+
+        for k,v in dict.items():
+            if isinstance(v,ActiveDescriptor):
+                v.activate(klass,k)
+
+        super(ActiveDescriptors,klass).__init__(name,bases,dict)
+
+
+class ActiveDescriptor(object):
+
+    """This is just a (simpler sort of) interface assertion class""" 
+
+    def activate(self,klass,attrName):
+        """Informs the descriptor that it is in 'klass' with name 'attrName'"""
+        raise NotImplementedError
+
+
+
+
+
+
+
 
 
 def New(obtype, name=None, provides=None, doc=None):
@@ -32,6 +63,16 @@ def New(obtype, name=None, provides=None, doc=None):
     """
 
     return Once( (lambda s,d,a: importObject(obtype)()), name, provides, doc)
+
+
+
+
+
+
+
+
+
+
 
 
 

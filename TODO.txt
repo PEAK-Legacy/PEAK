@@ -1,5 +1,20 @@
 Open Issues/To-Do Items
 
+ Targeted for 0.5 Alpha 1
+
+    * Object name/path support in 'peak.binding'
+
+    * Review possible cross-locational or "root" things like
+      'PropertyName' -- should these things move to the API?
+      Or where?  They're not 'util' things, certainly.  Perhaps
+      there should be a 'peak.core' module or package for things
+      that are foundational to all the packages?
+
+    * Updated reference docstrings for 'peak.api', 'peak.binding',
+      'peak.config', 'peak.exceptions', and 'peak.naming'.
+
+    * Additional content for the tutorial's chapter on binding
+
  Targeted for 0.5 Final Release
 
     General
@@ -7,12 +22,6 @@ Open Issues/To-Do Items
         * Update tutorial documentation
 
         * Up-to-date and complete Persistence package
-
-        * Review possible cross-locational or "root" things like
-          'PropertyName' -- should these things move to the API?
-          Or where?  They're not 'util' things, certainly.  Perhaps
-          there should be a 'peak.core' module or package for things
-          that are foundational to all the packages?
 
     peak.storage
 
@@ -30,27 +39,11 @@ Open Issues/To-Do Items
 
         - docstrings for reference
 
-    peak.binding
-
-        - object names/paths
-
-        - docstrings for reference
-
     peak.model
 
         - add support for lazy-loaded attributes
 
         - clean up TW docstrings & interfaces
-
-    peak.config
-
-        - docstrings for reference
-
-    peak.naming
-
-        - review URL hooks/hacks
-
-        - docstrings for reference
 
     peak.running
 
@@ -69,7 +62,6 @@ Open Issues/To-Do Items
         - docstrings for reference
 
         - more unit tests?
-
 
 
 

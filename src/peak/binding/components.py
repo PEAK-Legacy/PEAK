@@ -1,10 +1,8 @@
 """Basic binding tools"""
 
 from __future__ import generators
-from once import Once, New, OnceClass
+from once import Once, New, OnceClass, ActiveDescriptors
 from interfaces import *
-
-import meta
 
 from weakref import WeakValueDictionary
 
@@ -23,6 +21,8 @@ __all__ = [
     'acquireComponent', 'globalLookup', 'findUtility', 'findUtilities',
     'bindToUtilities', 'bindToProperty', 'iterParents', 'Constant',
 ]
+
+
 
 
 
@@ -495,7 +495,7 @@ class Base(object):
     """Thing that can be composed into a component tree, w/binding & lookups"""
 
     __implements__ = IBindingAPI
-    __metaclass__  = meta.ActiveDescriptors
+    __metaclass__  = ActiveDescriptors
 
     def __init__(self, parent=None, **kw):
         if kw:
@@ -613,7 +613,7 @@ class Component(Base):
 
 
 
-class AutoCreatable(OnceClass, meta.ActiveDescriptors):
+class AutoCreatable(OnceClass, ActiveDescriptors):
 
     """Metaclass for components which auto-create when used"""
 

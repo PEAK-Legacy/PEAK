@@ -1,35 +1,35 @@
-"""Frequently Useful Metaclasses (And Friends)"""
+"""MethodExporter"""
 
 __all__ = [
-    'ActiveDescriptors', 'ActiveDescriptor', 'MethodExporter'
+    'MethodExporter'
 ]
 
 
-from kjbuckets import *
 from types import FunctionType
 from new import instancemethod
+from peak.binding.once import ActiveDescriptor
 
 
-class ActiveDescriptors(type):
-
-    """Type which gives its descriptors a chance to find out their names"""
-    
-    def __init__(klass, name, bases, dict):
-
-        for k,v in dict.items():
-            if isinstance(v,ActiveDescriptor):
-                v.activate(klass,k)
-
-        super(ActiveDescriptors,klass).__init__(name,bases,dict)
 
 
-class ActiveDescriptor(object):
 
-    """This is just a (simpler sort of) interface assertion class""" 
 
-    def activate(self,klass,attrName):
-        """Informs the descriptor that it is in 'klass' with name 'attrName'"""
-        raise NotImplementedError
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
