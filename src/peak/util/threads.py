@@ -87,7 +87,7 @@ class LockType(object):
     def __init__(self):
         self._lockCount = 0
         
-    def acquire(self):
+    def acquire(self, waitflag=0):
         self._lockCount += 1
 
     def release(self):
