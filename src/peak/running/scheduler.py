@@ -272,8 +272,9 @@ class UntwistedReactor(binding.Component):
             try:
                 r, w, e = self.select(self.readers, self.writers, [], delay)
             except self._error,v:
-                if v.args[0]!=EINTR:    # signal received during select
-                    raise
+                if v.args[0]==EINTR:    # signal received during select
+                    return
+                raise
 
             for reader in r: reader.doRead()
             for writer in w: writer.doWrite()
