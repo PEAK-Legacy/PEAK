@@ -11,7 +11,7 @@ from environ import clientHas, traverseItem
 
 __all__ = [
     'Resource', 'FSResource', 'ResourceDirectory', 'FileResource',
-    'ImageResource', 'DefaultLayer', 'bindResource', 'TemplateResource',
+    'ImageResource', 'DefaultLayer', 'bindResource',
 ]
 
 RESOURCE_BASE     = 'peak.web.file_resource.'
@@ -158,7 +158,7 @@ class ResourceDirectory(FSResource, binding.Configurable):
         # create a reference, and dereference it
         ref = naming.Reference(factory, addresses=[FileURL.fromFilename(path)])
         obj = ref.restore(self,None)
-        obj.setParentComponent(self, filename)
+        obj.setParentComponent(self, filename, True)
         self.cache[name] = obj
         return obj
 
@@ -283,47 +283,6 @@ class DefaultLayer(Resource):
             return default
 
         return ctx.childContext(name,result)
-
-
-class TemplateResource(FSResource):
-
-    """Template used as a method (via 'bindResource()')"""
-
-    protocols.advise(
-        instancesProvide = [IHTTPHandler]
-    )
-
-    def handle_http(self, ctx):
-        name = ctx.shift()
-        if name is not None:
-            raise NotFound(ctx,name,self)   # No traversal to subobjects!
-        s,h,b = IHTTPHandler(self.theTemplate).handle_http(ctx)
-        # XXX replace content-type header w/self.mime_type
-        return s,h,b
-
-    def beforeHTTP(self, ctx):
-        # Templates may not be accessed directly via URL!
-        raise NotFound(ctx,name)
-
-    theTemplate = binding.Make(
-        lambda self: config.processXML(
-            web.TEMPLATE_SCHEMA(self), self.filename, parent=self
-        ),
-        doc="""Load and parse the template on demand"""
-    )
-
-    def traverseTo(self, name, ctx, default=NOT_GIVEN):
-        return IWebTraversable(self.theTemplate).traverseTo(name, ctx, default)
-
-    def getURL(self, ctx):
-        # We're a method, so use our context URL, not container URL
-        return ctx.traversedURL
-
-
-
-
-
-
 
 
 class FileResource(FSResource):

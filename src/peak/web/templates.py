@@ -80,47 +80,6 @@ class DOMletState(binding.Component):
 
 
 
-class DOMletAsHTTP(binding.Component):
-
-    """Render a template component"""
-
-    protocols.advise(
-        instancesProvide = [IHTTPHandler],
-        asAdapterForProtocols = [IDOMletNode],
-        factoryMethod = 'fromNode'
-    )
-
-    templateNode = binding.Require("""Node to render""")
-
-    def fromNode(klass, subject):
-        return klass(templateNode = subject)
-
-    fromNode = classmethod(fromNode)
-
-    def handle_http(self, ctx):
-        ctx = ctx.parentContext()
-        data = []
-        self.templateNode.renderFor(
-            ctx,
-            DOMletState(ctx.current, write=data.append)
-        )
-        return '200 OK', [], [str(unicodeJoin(data))]    # XXX content-type
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 def startElement(parser,data):
 
     parent = data['previous']['pwt.content']
@@ -229,7 +188,7 @@ def setupElement(parser,data):
 
 def setupDocument(parser,data):
     setupElement(parser,data)
-    data['pwt.content'] = TemplateDocument(data['parent'])
+    data['pwt.content'] = data['pwt_document']
 
 
 
@@ -456,37 +415,78 @@ class TaglessElement(Element):
     _openTag = _closeTag = _emptyTag = ''
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 class TemplateDocument(TaglessElement):
 
     """Document-level template element"""
 
+    protocols.advise(
+        instancesProvide = [IHTTPHandler],
+        classProvides = [naming.IObjectFactory],
+    )
+
+    security.allow(security.Anybody)
+
     acceptParams = True     # handle any top-level parameters
 
 
+    def renderFor(self, ctx, state):
+        return super(TemplateDocument,self).renderFor(ctx.parentContext(),state)
 
 
+    def handle_http(self, ctx):
+        name = ctx.shift()
+        if name is not None:
+            raise web.NotFound(ctx,name,self)   # No traversal to subobjects!
+        data = []
+        self.renderFor(
+            ctx, DOMletState(self, write=data.append)
+        )
+        # XXX set content-type header
+        return '200 OK', [], [str(unicodeJoin(data))]    # XXX encoding
 
 
+    def getObjectInstance(klass, context, refInfo, name, attrs=None):
+        #print "loading template"; import pdb; pdb.set_trace()
+        url, = refInfo.addresses
+        return config.processXML(
+            web.TEMPLATE_SCHEMA(context),str(url),pwt_document=klass(context),
+        )
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    getObjectInstance = classmethod(getObjectInstance)
 
 
 

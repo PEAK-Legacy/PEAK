@@ -60,16 +60,16 @@ class BasicTest(TestCase):
         self.policy = web.TestPolicy(app)
 
     def mkTemplate(self):
-        schema = web.TEMPLATE_SCHEMA(testRoot())
-        return config.processXML(schema,self.template,parent=testRoot())
+        return config.processXML(
+            web.TEMPLATE_SCHEMA(testRoot()), self.template,
+            pwt_document=web.TemplateDocument(testRoot())
+        )
 
     def render(self):
         return self.policy.simpleTraverse('show')
 
     def testRendering(self):
         self.assertEqual(self.render(),self.rendered)
-
-
 
 
 
