@@ -43,17 +43,20 @@ def importString(name, globalDict=defaultGlobalDict):
 
     """Import an item specified by a string
 
-        Example Usage::
+    Example Usage::
 
-            attribute1 = importString('some.module.attribute1')
-            attribute2 = importString('other.module.nested.attribute2')
+        attribute1 = importString('some.module:attribute1')
+        attribute2 = importString('other.module:nested.attribute2')
 
-        'importString' imports an object from a module, according to an
-        import specification string: a dot-delimited path to an object
-        in the Python package namespace.  For example, the string
-        '"some.module.attribute"' is equivalent to the result of
-        'from some.module import attribute'.
-    """
+    'importString' imports an object from a module, according to an
+    import specification string: a dot-delimited path to an object
+    in the Python package namespace.  For example, the string
+    '"some.module.attribute"' is equivalent to the result of
+    'from some.module import attribute'.
+
+    For readability of import strings, it's sometimes helpful to use a ':' to
+    separate a module name from items it contains.  It's optional, though,
+    as 'importString' will convert the ':' to a '.' internally anyway."""
 
     if ':' in name:
         name = name.replace(':','.')
@@ -76,9 +79,6 @@ def importString(name, globalDict=defaultGlobalDict):
         item = __import__('.'.join(path), globalDict, globalDict, [part])
 
     return item
-
-
-
 
 def lazyModule(modname, relativePath=None):
 
