@@ -1,5 +1,6 @@
 from peak.api import *
-from peak.naming import URL
+import sys
+URL = naming.URL    # XXX can't import an un-loaded lazy module from its parent
 
 class GenericPathURL(URL.Base):
 
@@ -38,7 +39,6 @@ class GenericPathURL(URL.Base):
         )
     )
 
-
 class OpenableURL(GenericPathURL):
     defaultFactory = 'peak.naming.factories.openable.URLStreamFactory'
 
@@ -70,7 +70,7 @@ class FileURL(OpenableURL):
 
     def fromFilename(klass, aName):
         m = naming.URLMatch(aName)
-        if m:
+        if m and (m.end()>2 or sys.platform<>'win32'):    # XXX ugh!
             return klass(m.group(1), aName[m.end():])
         else:
             from os.path import abspath
