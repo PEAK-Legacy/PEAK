@@ -234,9 +234,9 @@ class ComponentName(AbstractName):
         separator = '/',
     )
 
-    implements(IComponentKey)
-
-
+    protocols.advise(
+        instancesProvide=[IComponentKey]
+    )
 
 
 
@@ -617,7 +617,9 @@ class _Base(Adaptable):
 
     """Basic attribute management and "active class" support"""
 
-    implements(IBindableAttrs)
+    protocols.advise(
+        instancesProvide = [IBindableAttrs]
+    )
 
     def _setBinding(self, attr, value, useSlot=False):
 
@@ -646,8 +648,6 @@ class _Base(Adaptable):
                 return default
 
         return val
-
-
 
 
 
@@ -699,9 +699,10 @@ class Component(_Base):
 
     """Thing that can be composed into a component tree, w/binding & lookups"""
 
-    classProvides(IComponentFactory)
-    implements(IComponent)
-
+    protocols.advise(
+        classProvides = [IComponentFactory],
+        instancesProvide = [IComponent]
+    )
 
     def __init__(self, parentComponent=NOT_GIVEN, componentName=None, **kw):
         # Set up keywords first, so state is sensible
@@ -728,7 +729,6 @@ class Component(_Base):
             self.setParentComponent(parentComponent,componentName)
 
     lookupComponent = lookupComponent
-
 
     def fromZConfig(klass, section):
         """Classmethod: Create an instance from a ZConfig 'section'"""

@@ -5,7 +5,6 @@ from interfaces import *
 from peak.util.imports import importObject
 from os.path import isfile
 import sys, os
-from peak.interface import declareAdapterForType, declareAdapterForProtocol
 from types import ClassType, FunctionType
 
 __all__ = [
@@ -39,12 +38,15 @@ class InvocationError(Exception):
 
 
 
+
 class AbstractCommand(binding.Component):
 
     """Simple, commandline-driven process"""
 
-    implements(ICmdLineApp)
-    classProvides(ICmdLineAppFactory)
+    protocols.advise(
+        instancesProvide = [ICmdLineApp],
+        classProvides    = [ICmdLineAppFactory]
+    )
 
     argv    = binding.bindTo('import:sys:argv')
     stdin   = binding.bindTo('import:sys:stdin')
@@ -77,8 +79,6 @@ define a usage message for their subclass.
             return isatty()
 
     isInteractive = binding.Once(isInteractive)
-
-
 
     def getSubcommand(self, executable, **kw):
 
@@ -296,7 +296,7 @@ def callableAsFactory(ob,proto=None):
         kw.setdefault('callable',ob)
         return _caller(**kw)
 
-    directlyProvides(factory, ICmdLineAppFactory)
+    protocols.adviseObject(factory, provides=[ICmdLineAppFactory])
     return factory
 
 def appAsFactory(app,proto=None):
@@ -307,7 +307,7 @@ def appAsFactory(app,proto=None):
         kw.setdefault('callable',app.run)
         return _caller(**kw)
 
-    directlyProvides(factory, ICmdLineAppFactory)
+    protocols.adviseObject(factory, provides=[ICmdLineAppFactory])
     return factory
 
 def rerunnableAsFactory(runnable,proto=None):
@@ -318,13 +318,54 @@ def rerunnableAsFactory(runnable,proto=None):
         kw.setdefault('runnable',runnable)
         return _runner(**kw)
 
-    directlyProvides(factory, ICmdLineAppFactory)
+    protocols.adviseObject(factory, provides=[ICmdLineAppFactory])
     return factory
 
 
-declareAdapterForType(ICmdLineAppFactory,callableAsFactory,object)
-declareAdapterForProtocol(ICmdLineAppFactory,appAsFactory,ICmdLineApp)
-declareAdapterForProtocol(ICmdLineAppFactory,rerunnableAsFactory,IRerunnable)
+
+
+
+
+protocols.declareAdapter(
+    callableAsFactory,
+    provides=[ICmdLineAppFactory],
+    forTypes=[object]
+)
+
+protocols.declareAdapter(
+    appAsFactory,
+    provides=[ICmdLineAppFactory],
+    forProtocols=[ICmdLineApp]
+)
+
+protocols.declareAdapter(
+    rerunnableAsFactory,
+    provides=[ICmdLineAppFactory],
+    forProtocols=[IRerunnable]
+)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 class Bootstrap(AbstractInterpreter):
 

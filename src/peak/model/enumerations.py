@@ -408,8 +408,10 @@ class Enumeration(PrimitiveType, HashAndCompare):
 
     __metaclass__ = EnumerationClass
 
-    classProvides(IEnumType)
-    implements(IEnumValue)
+    protocols.advise(
+        classProvides=[IEnumType],
+        instancesProvide=[IEnumValue]
+    )
 
     __slots__ = 'name', '_hashAndCompare'
 
@@ -438,8 +440,6 @@ class Enumeration(PrimitiveType, HashAndCompare):
 
     def __reduce__(self):
         return self.__class__, (self._hashAndCompare,)
-
-
 
 
 

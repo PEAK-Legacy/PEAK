@@ -12,12 +12,9 @@ __all__ = [
 from peak.util.Struct import struct
 
 class RowBase(struct):
-    implements(IRow)
-
-
-
-
-
+    protocols.advise(
+        instancesProvide = [IRow]
+    )
 
 
 
@@ -44,7 +41,9 @@ class RowBase(struct):
 
 class AbstractCursor(binding.Component):
 
-    implements(ICursor)
+    protocols.advise(
+        instancesProvide = [ICursor]
+    )
 
     _conn = binding.bindTo('../connection')
 
@@ -70,8 +69,6 @@ class AbstractCursor(binding.Component):
 
     def nextset(self):
         raise NotImplementedError
-
-
 
 
 
@@ -126,7 +123,9 @@ class AbstractCursor(binding.Component):
 
 class ManagedConnection(TransactionComponent):
 
-    implements(IManagedConnection)
+    protocols.advise(
+        instancesProvide=[IManagedConnection]
+    )
 
     connection = binding.Once(lambda s,d,a: s._open())
     _closeASAP = False
@@ -153,7 +152,6 @@ class ManagedConnection(TransactionComponent):
 
 
     def finishTransaction(self, txnService, committed):
-
         super(ManagedConnection,self).finishTransaction(txnService, committed)
 
         if self._closeASAP:
@@ -163,7 +161,6 @@ class ManagedConnection(TransactionComponent):
     def _open(self):
         """Return new "real" connection to be saved as 'self.connection'"""
         raise NotImplementedError
-
 
     def _close(self):
         """Actions to take before 'del self.connection', if needed."""

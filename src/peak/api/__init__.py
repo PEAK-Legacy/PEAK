@@ -33,9 +33,9 @@ from protocols import adapt
 __all__ = [
     'NOT_GIVEN', 'NOT_FOUND', 'Items', 'PropertyName',
     'binding', 'naming', 'model', 'config', 'running', 'logs', 'storage',
-    'exceptions', 'implements', 'classProvides', 'directlyProvides',
-    'moduleProvides', 'adapt', 'protocols',
+    'exceptions', 'adapt', 'protocols',
 ]
+
 
 
 

@@ -1,7 +1,6 @@
 """Base classes for naming contexts"""
 
 from peak.api import *
-from peak.interface import adapt
 
 from interfaces import *
 from names import *
@@ -39,10 +38,13 @@ __all__ = [
 
 
 
+
 class NameContext(Component):
 
-    implements(IBasicContext)
-    classProvides(IURLContextFactory)
+    protocols.advise(
+        instancesProvide = [IBasicContext],
+        classProvides    = [IURLContextFactory]
+    )
 
     parseURLs       = True
     creationName    = Acquire(CREATION_NAME)
@@ -62,8 +64,6 @@ class NameContext(Component):
             return adapt(klass(parent, componentName, **options), iface, None)
 
     getURLContext = classmethod(getURLContext)
-
-
 
 
 

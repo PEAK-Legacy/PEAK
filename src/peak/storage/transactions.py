@@ -43,8 +43,9 @@ class BasicTxnErrorHandler(object):
 
     """Simple error handling policy, w/simple logging, no retries"""
 
-    implements(ITransactionErrorHandler)
-
+    protocols.advise(
+        instancesProvide=[ITransactionErrorHandler]
+    )
 
     def voteFailed(self, txnService, participant):
 
@@ -77,7 +78,6 @@ class BasicTxnErrorHandler(object):
         # remove and retry after fail
         txnService.removeParticipant(participant)
         raise
-
 
 
     def finishFailed(self, txnService, participant, committed):
@@ -137,7 +137,9 @@ class TransactionService(binding.Component):
 
     """Basic transaction service component"""
 
-    implements(ITransactionService)
+    protocols.advise(
+        instancesProvide=[ITransactionService]
+    )
 
     state          = binding.New(TransactionState)
     errorHandler   = binding.New(BasicTxnErrorHandler)
@@ -158,8 +160,6 @@ class TransactionService(binding.Component):
 
         else:
             raise exceptions.TransactionInProgress
-
-
 
 
     def _prepare(self):
@@ -328,7 +328,9 @@ class TransactionService(binding.Component):
 
 class AbstractParticipant(object):
 
-    implements(ITransactionParticipant)
+    protocols.advise(
+        instancesProvide = [ITransactionParticipant]
+    )
 
     def readyToVote(self, txnService):
         return True
@@ -344,8 +346,6 @@ class AbstractParticipant(object):
 
     def finishTransaction(self, txnService, committed):
         pass
-
-
 
 
 

@@ -207,7 +207,7 @@ class Type(Namespace):
 
     __metaclass__ = TypeClass
 
-    classProvides(ITypeInfo)
+    protocols.advise( classProvides = [ITypeInfo] )
 
     mdl_defaultValue = NOT_GIVEN
 
@@ -453,7 +453,7 @@ class Struct(Immutable):
 
     """An immutable data structure type"""
 
-    classProvides(ITypeInfo, IStructType)
+    protocols.advise(classProvides=[ITypeInfo, IStructType])
 
     def mdl_typeCode(klass, d, a):
 

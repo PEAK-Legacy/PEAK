@@ -125,7 +125,9 @@ class PropertyMap(Component):
 
     rules = New(dict)
 
-    implements(IPropertyMap)
+    protocols.advise(
+        instancesProvide=[IPropertyMap]
+    )
 
     def setRule(self, propName, ruleObj):
         _setCellInDict(self.rules, PropertyName(propName), ruleObj)
@@ -148,8 +150,6 @@ class PropertyMap(Component):
             _setCellInDict(self.rules, ifaces, provider)
             for i in ifaces.getBases():
                 self.registerProvider(i, provider)
-
-
 
 
 
@@ -255,7 +255,7 @@ def loadMapping(pMap, mapping, prefix='*', includedFrom=None):
     for k,v in mapping.items():
         pMap.registerProvider(PropertyName(prefix+k), _value(v))
 
-directlyProvides(loadMapping, ISettingLoader)
+protocols.adviseObject(loadMapping, provides=[ISettingLoader])
 
 
 def loadConfigFile(pMap, filename, prefix='*', includedFrom=None):
@@ -263,7 +263,7 @@ def loadConfigFile(pMap, filename, prefix='*', includedFrom=None):
     if filename:
         ConfigReader(pMap,prefix).readFile(filename)
 
-directlyProvides(loadConfigFile, ISettingLoader)
+protocols.adviseObject(loadConfigFile, provides=[ISettingLoader])
 
 
 

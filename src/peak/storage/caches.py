@@ -1,4 +1,4 @@
-from peak.api import binding, implements
+from peak.api import binding, protocols
 from interfaces import *
 from weakref import WeakValueDictionary
 
@@ -9,7 +9,9 @@ __all__ = [
 
 
 class CacheBase(binding.Component):
-    implements(ICache)
+    protocols.advise(
+        instancesProvide=[ICache]
+    )
 
 
 class WeakCache(CacheBase, WeakValueDictionary):
@@ -27,8 +29,6 @@ class PermanentCache(CacheBase, dict):
 
     def __new__(klass, parent=None):
         return super(PermanentCache,klass).__new__(klass)
-
-
 
 
 

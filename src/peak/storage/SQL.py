@@ -205,7 +205,9 @@ class SQLCursor(AbstractCursor):
 
 class SQLConnection(ManagedConnection):
 
-    implements(ISQLConnection)
+    protocols.advise(
+        instancesProvide=[ISQLConnection]
+    )
 
     def commitTransaction(self, txnService):
         self.connection.commit()
@@ -228,11 +230,9 @@ class SQLConnection(ManagedConnection):
     DateFromTicks       = binding.bindTo("API/DateFromTicks")
     TimeFromTicks       = binding.bindTo("API/TimeFromTicks")
     TimestampFromTicks  = binding.bindTo("API/TimestampFromTicks")
-
     supportedTypes      = 'STRING','BINARY','NUMBER','DATETIME','ROWID'
 
     def typeMap(self, d, a):
-
         tm = {}
         ps = PropertyName('peak.sql_types').of(self)
         api = self.API

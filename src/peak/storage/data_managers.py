@@ -1,4 +1,4 @@
-from peak.api import binding, model, implements
+from peak.api import binding, model, protocols
 from interfaces import *
 from transactions import TransactionComponent
 from peak.persistence import Persistent, isGhost
@@ -43,7 +43,9 @@ class FacadeDM(binding.Component):
 
     """DM that just returns objects from other DM(s) via a different key"""
 
-    implements(IKeyableDM)
+    protocols.advise(
+        instancesProvide=[IKeyableDM]
+    )
 
     def __getitem__(self, oid, state=None):
 
@@ -66,7 +68,6 @@ class FacadeDM(binding.Component):
 
         raise KeyError, oid
 
-
     preloadState = __getitem__
 
     cache = binding.New('peak.storage.caches:WeakCache')
@@ -78,7 +79,6 @@ class FacadeDM(binding.Component):
     def oidFor(self, ob):
         """Return this DM's OID for 'ob'; used to validate consistency"""
         raise NotImplementedError
-
 
 class PersistentQuery(Persistent, ListProxy):
 
@@ -248,7 +248,9 @@ class QueryDM(TransactionComponent):
 
     resetStatesAfterTxn = True
 
-    implements(IDataManager)
+    protocols.advise(
+        instancesProvide=[IDataManager]
+    )
 
     def __getitem__(self, oid, state=None):
 
@@ -277,8 +279,6 @@ class QueryDM(TransactionComponent):
         return ob
 
     preloadState = __getitem__
-
-
 
 
 
@@ -369,8 +369,9 @@ class QueryDM(TransactionComponent):
 
 class EntityDM(QueryDM):
 
-    implements(IWritableDM)
-
+    protocols.advise(
+        instancesProvide=[IWritableDM]
+    )
 
     def oidFor(self, ob):
 
@@ -405,7 +406,6 @@ class EntityDM(QueryDM):
 
         self.register(ob)
         return ob
-
 
 
     # Set/state management
@@ -536,10 +536,6 @@ class StorableDMClass(EntityDM.__class__, Persistent.__class__):
 
 class StorableDM(EntityDM,Persistent):
     __metaclass__ = StorableDMClass
-
-
-
-
 
 
 

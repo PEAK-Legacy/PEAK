@@ -207,7 +207,7 @@ class StructuralFeature(object):
 
     __metaclass__ = FeatureClass
 
-    classProvides(IFeature, IFeatureSPI)
+    protocols.advise(classProvides =[IFeature, IFeatureSPI])
 
     isDerived     = False
     isComposite   = False

@@ -43,7 +43,9 @@ class MainLoop(binding.Component):
 
     """Top-level application event loop, with timeout management"""
 
-    implements(IMainLoop)
+    protocols.advise(
+        instancesProvide=[IMainLoop]
+    )
 
     reactor      = binding.bindTo(IBasicReactor)
     time         = binding.bindTo('import:time.time')
@@ -76,8 +78,6 @@ class MainLoop(binding.Component):
 
 
         # XXX we should probably log start/stop events
-
-
 
 
     def _checkIdle(self, timeout):
@@ -166,7 +166,9 @@ class UntwistedReactor(binding.Component):
 
     """Primitive partial replacement for 'twisted.internet.reactor'"""
 
-    implements(IBasicReactor)
+    protocols.advise(
+        instancesProvide=[IBasicReactor]
+    )
 
     running = False
     writers = binding.New(list)
@@ -199,6 +201,7 @@ class UntwistedReactor(binding.Component):
 
     def removeReader(self, reader):
         if reader in self.readers: self.readers.remove(reader)
+
 
     def removeWriter(self, writer):
         if writer in self.writers: self.writers.remove(writer)
@@ -234,9 +237,6 @@ class UntwistedReactor(binding.Component):
 
         elif delay:
             self.sleep(delay)
-
-
-
 
 
 

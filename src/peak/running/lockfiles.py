@@ -35,7 +35,7 @@ __all__ = ['LockFile', 'NullLockFile']
 
 import os, errno, time
 from peak.util.threads import allocate_lock
-from peak.api import naming, implements
+from peak.api import naming, protocols
 from peak.interface import Interface
 
 
@@ -83,7 +83,9 @@ class ILock(Interface):
 class LockFileBase:
     """Common base for lockfiles"""
 
-    implements(ILock)
+    protocols.advise(
+        instancesProvide=[ILock]
+    )
 
     def __init__(self, fn):
         self.fn = os.path.abspath(fn)
@@ -117,6 +119,7 @@ class LockFileBase:
         self.do_release()
         self._locked = False
         self._lock.release()
+
 
     def locked(self):
         return self._locked
@@ -154,9 +157,6 @@ def pid_exists(pid):
             raise
 
     return exist
-
-
-
 
 
 

@@ -41,7 +41,9 @@ __all__ = [
 
 class TaskQueue(binding.Component):
 
-    implements(ITaskQueue)
+    protocols.advise(
+        instancesProvide=[ITaskQueue]
+    )
 
     reactor     = binding.bindTo(IBasicReactor)
     loop        = binding.bindTo(IMainLoop)
@@ -73,8 +75,6 @@ class TaskQueue(binding.Component):
 
         self.reactor.callLater(0, self._processNextTask)
         self._scheduled = True
-
-
 
 
 
@@ -125,7 +125,9 @@ class AdaptiveTask(binding.Component):
 
     """Periodic task that adapts its polling interval based on its workload"""
 
-    implements(IAdaptiveTask)
+    protocols.advise(
+        instancesProvide=[IAdaptiveTask]
+    )
 
     pollInterval = binding.bindTo('minimumIdle')
 
@@ -155,8 +157,6 @@ class AdaptiveTask(binding.Component):
         lambda self,d,a:
             self.lookupComponent(ITaskQueue).addTask(self),
     )
-
-
 
 
 

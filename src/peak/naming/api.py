@@ -34,10 +34,10 @@ def InitialContext(parent, componentName=None, **options):
     return spi.getInitialContext(parent, componentName, **options)
 
 from peak.binding.interfaces import IComponentFactory
-from peak.api import directlyProvides
-directlyProvides(InitialContext, IComponentFactory)
+from protocols import adviseObject
 
-del IComponentFactory, directlyProvides
+adviseObject(InitialContext, provides=[IComponentFactory])
+del IComponentFactory, adviseObject
 
 def lookup(parent, name, **options):
 
