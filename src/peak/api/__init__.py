@@ -128,23 +128,25 @@ class PropertyName(str):
 
     """Name of a configuration property, usable as a configuration key"""
 
-    def __new__(klass, *args):
-
-        self = super(PropertyName,klass).__new__(klass,args[0])
-
-        valid = pnameValidChars(self)
-
-        if not valid or valid.end()<len(self):
-            raise exceptions.InvalidName(
-                "Invalid characters in property name", self
-            )
+    def __new__(klass, value, force=False):
+        while 1:
+            self = super(PropertyName,klass).__new__(klass,value)
+            valid = pnameValidChars(self)
+            vend = valid and valid.end() or 0
+            if vend<len(self):
+                if not force:
+                    raise exceptions.InvalidName(
+                        "Invalid characters in property name", self
+                    )
+                # Force-fit the character and loop
+                value = self[:vend] + '_'+ self[vend:]
+            else:
+                break
 
         parts = self.split('.')
 
         if '' in parts or not parts:
-            raise exceptions.InvalidName(
-                "Empty part in property name", self
-            )
+            raise exceptions.InvalidName("Empty part in property name", self)
 
         if '*' in self:
             if '*' not in parts or parts.index('*') < (len(parts)-1):
@@ -159,8 +161,6 @@ class PropertyName(str):
                     )
 
         return self
-
-
 
     def isWildcard(self):
         return self.endswith('*')

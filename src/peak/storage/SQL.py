@@ -263,7 +263,7 @@ class ValueBasedTypeConn(SQLConnection):
                     tm[v] = c
                 else:
                     # We support either '.int4' or '.INTEGER' style properties
-                    tm[v] = importObject(ps.get(v.replace(' ','_'),c))
+                    tm[v] = importObject(ps.get(PropertyName(v,force=True),c))
 
         return tm
 
@@ -590,7 +590,7 @@ class DCOracle2Connection(ValueBasedTypeConn):
         a = self.address
 
         return self.API.connect(
-            user=a.user, password=a.passwd, database=a.server, 
+            user=a.user, password=a.passwd, database=a.server,
         )
 
 
