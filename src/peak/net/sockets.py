@@ -1,7 +1,7 @@
 from protocols import Interface, Attribute
 from peak.api import *
 from interfaces import *
-import sys, os, socket
+import sys, socket
 
 class socketURL(naming.URL.Base):
     def listen_sockets(self, maxsocks=sys.maxint):
@@ -118,26 +118,36 @@ protocols.declareAdapterForProtocol(
 )
 
 
+fd_map = {'stdin': '0', 'stdout': '1', 'stderr': '2'}
+fd_fmt = {0: 'stdin', 1: 'stdout', 2: 'stderr'}
+
 class fdURL(naming.URL.Base):
+    """
+    fd:fileno
+    
+    fileno can be an integer, or one of "stdin", "stdout", "stderr"
+    """
+
     supportedSchemes = 'fd',
     
-    class fileno(naming.URL.IntField): pass
+    class fileno(naming.URL.IntField):
+        syntax = naming.URL.Conversion(
+            converter = lambda x: int(fd_map.get(x.lower(), x)),
+            formatter = lambda x: fd_fmt.get(x, str(x)),
+        )
 
     syntax = naming.URL.Sequence(
         fileno
     )
 
+    def asSocket(self):
+        return socket.fromfd(self.fileno, socket.AF_UNIX, socket.SOCK_STREAM)
 
 
 protocols.declareAdapterForType(
-    IClientSocket,
-    lambda o,p: socket.fromfd(o.fileno, socket.AF_UNIX, socket.SOCK_STREAM),
-    fdURL
+    IClientSocket, lambda o,p: o.asSocket(), fdURL
 )
 
 protocols.declareAdapterForType(
-    IListeningSocket,
-    lambda o,p: socket.fromfd(o.fileno, socket.AF_UNIX, socket.SOCK_STREAM),
-    fdURL
+    IListeningSocket, lambda o,p: o.asSocket(), fdURL
 )
-
