@@ -123,12 +123,18 @@ class happy(Command):
 
 setup(
     name="PEAK",
-    version="0.5a1",
+    version="0.5a0",
+
     description="The Python Enterprise Application Kit",
+
     author="Phillip J. Eby",
     author_email="transwarp@eby-sarna.com",
+
     url="http://www.telecommunity.com/PEAK/",
-    
+
+    license="PSF or ZPL",
+    platforms=['UNIX','Windows'],
+
     packages=[
         'peak', 'peak.api', 'peak.binding', 'peak.model', 'peak.metamodels',
         'peak.metamodels.mof', 'peak.metamodels.uml', 'peak.metamodels.xmi',
@@ -144,22 +150,29 @@ setup(
         'Interface.Registry', 'Interface.Registry.tests',
         'Persistence',
     ],
+
     package_dir = {'':'src'},
+
     ext_modules = [
         Extension("kjbuckets", ["src/kjbuckets/kjbucketsmodule.c"]),
         Extension("Persistence.cPersistence",
             ["src/Persistence/cPersistence.c"]
         )
     ],
+
+
+
     cmdclass = {
         'install_data': install_data, 'sdist': sdist, 'happy': happy,
         'test': test, 'sdist_nodoc': old_sdist,
     },
+
     data_files = [
         ('peak', ['src/peak/peak.ini']),
         ('peak/running/tests', ['src/peak/running/tests/test_cluster.txt']),
         ('peak/metamodels/tests', ['src/peak/metamodels/tests/MetaMeta.xml']),
     ],
+
 )
 
 
