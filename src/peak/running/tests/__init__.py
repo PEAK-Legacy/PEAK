@@ -423,7 +423,6 @@ def _suite():
 allSuites = [
     'peak.running.tests:_suite',
     'test_logs:test_suite',
-    'test_timers:test_suite',
 ]
 
 

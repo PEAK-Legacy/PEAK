@@ -29,12 +29,12 @@
 
       - Cleanup/document attribute binding interface
 
-    * peak.running.timers
 
-      - Factor out state into separate object so timers aren't shared state
 
-      - Look at possible integration of peak.query and cursor formatters, in
-        order to view stats as an in-memory mini-DB w/reporting.
+
+
+
+
 
 
 

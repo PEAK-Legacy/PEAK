@@ -6,7 +6,6 @@ an individual module to get just those tests."""
 
 allSuites = [
     'EigenData:test_suite',
-    'dispatch:test_suite',
     'FileParsing:test_suite',
     'SOX:test_suite',
     'uuid:test_suite',
