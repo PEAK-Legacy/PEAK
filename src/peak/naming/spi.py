@@ -12,7 +12,6 @@
     objects are created, based on component properties.
 """
 
-from peak.api import config
 from peak.util.imports import importObject
 
 from interfaces import *
@@ -29,6 +28,7 @@ __all__ = [
 __implements__ = (
     IURLContextFactory, IInitialContextFactory, IObjectFactory
 )
+
 
 
 
