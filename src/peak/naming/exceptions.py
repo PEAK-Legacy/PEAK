@@ -7,10 +7,10 @@ __all__ = [
 
     'IName', 'ISyntax', 'IOpaqueURL',
 
-    'IBasicContext', 'IReadContext', 'IWriteContext',
+    'IResolver', 'IBasicContext', 'IReadContext', 'IWriteContext',
 
     'NamingException', 'InvalidNameException', 'NameNotFoundException',
-    'CannotProceedException',
+    'CannotProceedException', 'NotContextException',
 
 ]
 
@@ -66,7 +66,7 @@ class NamingException(Exception):
     """
 
     formattables = ('resolvedName', 'remainingName', 'rootException',)
-    otherattrs   = ('resolvedObj', 'args', )
+    otherattrs   = ('resolvedObj', 'rootTraceback', 'args', )
 
     __slots__ = list( formattables + otherattrs )
 
@@ -104,8 +104,8 @@ class InvalidNameException(NamingException):
 class NameNotFoundException(NamingException, LookupError):
     """A name could not be found"""
 
-
-
+class NotContextException(NamingException):
+    """Continuation is not a context/does not support required interface"""
 
 
 
@@ -172,12 +172,12 @@ class IOpaqueURL(IName):
     """Opaque URL (scheme+body only)"""
 
 
+class IResolver(Interface.Base):
 
+    """Bare minimum context support"""
 
-
-
-
-
+    def resolveToInterface(compositeName, opInterface, newName=None):
+        """Resolve compositeName to find a context supporting opInterface"""
 
 
 

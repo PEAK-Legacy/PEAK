@@ -81,40 +81,40 @@ def getInitialContext(environ={}):
 
 
 def getContinuationContext(cpe, opInterface=IBasicContext):
-    pass    # XXX
+
+    if opInterface.isImplementedBy(cpe.resolvedObj):
+        return cpe.resolvedObj
+
+    cctx = getObjectInstance(
+        cpe.resolvedObj,
+        cpe.altName,
+        cpe.altNameCtx,
+        cpe.environment
+    )
+
+    if opInterface.isImplementedBy(cctx):
+        return cctx
+
+    elif IResolver.isImplementedBy(cctx):
+        cctx, cpe.remainingName, cpe.remainingNewName = \
+            cctx.resolveToInterface(
+                cpe.remainingName, opInterface, cpe.remainingNewName
+            )
+        return cctx
+        
+    else:
+        raise NotContextException(
+            "Continuation object does not support required interface",
+            opInterface, resolvedObj=cctx, rootException=cpe
+        )
+
+    
 
 def getStateToBind(obj, name, context, environment, attrs=None):
     pass    # XXX
 
 def getObjectInstance(refInfo, name, context, environment, attrs=None):
     pass    # XXX
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
