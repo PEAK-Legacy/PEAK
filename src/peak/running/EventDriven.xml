@@ -1,5 +1,5 @@
 <?xml version = '1.0' encoding = 'ISO-8859-1' ?>
-<!DOCTYPE schema SYSTEM '../../ZConfig/doc/schema.dtd' >
+<!-- DOCTYPE schema SYSTEM '../../ZConfig/doc/schema.dtd' -->
 
 <schema datatype=".commands.EventDriven.fromZConfig" prefix="peak.running">
 

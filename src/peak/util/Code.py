@@ -191,7 +191,7 @@ class Code(object):
 
         if arg is not None:
 
-            if (arg & 0xFFFF0000) not in (0xFFFF0000, 0):
+            if (arg & 0xFFFF0000L) not in (0xFFFF0000L, 0):
                 append(EXTENDED_ARG)
                 append(arg>>16 & 255)
                 append(arg>>24 & 255)
@@ -338,10 +338,10 @@ class codeIter(object):
         if arg is not None:
             bytes = [op, arg & 0xFF, (arg & 0xFF00)>>8]
             bl=3
-            if (arg & 0xFFFF0000) not in (0xFFFF0000, 0):
+            if (arg & 0xFFFF0000L) not in (0xFFFF0000L, 0):
                 bl=6
                 bytes[0:0] = [
-                    EXTENDED_ARG, (arg & 0xFF0000)>>16, (arg & 0xFF000000)>>24
+                    EXTENDED_ARG, (arg & 0xFF0000)>>16, (arg & 0xFF000000L)>>24
                 ]
 
             if start==len(ca):
