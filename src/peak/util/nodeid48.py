@@ -1,4 +1,5 @@
-"""
+"""Get a unique Node ID for use in generating UUIDS.
+
 Get a unique 48 bit identifier for the current machine, suitable for use
 in generating UUIDS. The result of getnodeid48() is a 12 character
 lowercase hexadecimal string.
@@ -8,8 +9,7 @@ ethernet address of the host if possible, but there is no guarantee that
 we can do so.  Do *NOT* assume that you will get the ethernet address. 
 The host may not have one, or may have more than one.  In fact, if the
 host has more than one, there is no guarantee that you will get the same
-one every time. 
-"""
+one every time. """
 
 import sys, os, time, re
 try:
@@ -25,7 +25,6 @@ _hid48 = None
 r = ':'.join(["([0-9a-f]{2})"]*6)
 r = re.compile(r, re.IGNORECASE)
 
-
 def from_ifconfig():
     try:
         f = os.popen('/sbin/ifconfig -a')
@@ -39,7 +38,6 @@ def from_ifconfig():
         pass
     
     return None
-
 
 def from_random():
     from peak.util.random import randbytes
@@ -75,6 +73,10 @@ if sys.platform == 'win32':
     methods = [from_win32] + methods
 
 # Add others here...
+
+
+
+
 
 
 

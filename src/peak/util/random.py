@@ -1,7 +1,5 @@
-"""
-Obtain bytes of random data with varying degrees of quality, using
-OS facilities for high-quality entropy if available.
-"""
+"""Obtain bytes of random data with varying degrees of quality,
+using OS facilities for high-quality entropy if available."""
 
 __all__ = ['randbytes', 'rand16']
 
@@ -19,6 +17,25 @@ try:
     from sha import sha as hashfunc
 except:
     from md5 import md5 as hashfunc
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -54,6 +71,13 @@ def prng_some():
 prng_some()
 seedhash = prng_some()
 prng_some()
+
+
+
+
+
+
+
 
 
 def prng(nbytes):
@@ -93,6 +117,10 @@ def devurandom(nbytes):
         return None
 
 
+
+
+
+
 funcs = {
     #(prng, wait) : function
 
@@ -118,6 +146,20 @@ if sys.platform != 'win32' and posix is not None:
 
 # Does windows have an API to get at hardware RNG? If you can get at one
 # through python, it should be added here. XXX
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 def randbytes(nbytes, prng=1, wait=0):

@@ -118,7 +118,7 @@ class struct(tuple):
     Note: if you define custom properties, they only determine the *attributes*
     of the instance.  All other behaviors including string representation,
     iteration, item retrieval, etc., will be unaffected.  It's probably best
-    to define a 'defaultCreate' classmethod to manage the initial construction
+    to redefine the 'fromArgs' classmethod to manage the initial construction
     of the fields instead."""
 
     __metaclass__ = structType

@@ -1,2 +1,2 @@
-"""Runtime environment tools for configuration, process control, etc.
+"""Runtime environment tools for logging, locking, process control, etc.
 """

@@ -1,1 +1,1 @@
-"""Tools for applying the Service-Element-Feature pattern in TransWarp apps"""
+"""A framework for creating persistent, application domain objects"""

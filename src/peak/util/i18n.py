@@ -1,8 +1,8 @@
+"""Miscellaneous Unicode and internationalization utilities"""
+
 import codecs
 
 __all__ = [ 'utf8orlatin1', 'utrunc', 'uopen', 'UnicodeO']
-
-
 
 def utf8orlatin1(aStr):
     """
@@ -10,14 +10,13 @@ def utf8orlatin1(aStr):
     but if it doesn't seem to be, assume it was latin1.
     """
     
-    if type(aStr) is unicode:
+    if isinstance(aStr,unicode):
         return astr
 
     try:
         return aStr.decode('utf8')
     except:
         return aStr.decode('latin1')
-
     
 
 def utrunc(s, l):
@@ -29,7 +28,7 @@ def utrunc(s, l):
     form in database fields that put an upper limit on length.
     """
 
-    if type(s) is str:
+    if isinstance(s,str):
         return s[:l]
     else:
         while l:
@@ -38,10 +37,7 @@ def utrunc(s, l):
                 return s
             else:
                 l -= 1
-
         return s
-
-
 
 def uopen(fn, mode='rb', encoding='utf8', errors='strict', buffering=1):
     """
@@ -64,7 +60,7 @@ class UnicodeO:
         self.encoding = encoding
 
     def write(self, data):
-        if type(data) is str:
+        if isinstance(data,str):
             data = data.decode(self.encoding)
 
         self.l.append(data)
