@@ -29,7 +29,7 @@
 """
 
 
-from xml.sax.saxutils import XMLGenerator
+from xml.sax.saxutils import XMLGenerator, quoteattr, escape
 from protocols import Interface, advise, Adapter
 from kjbuckets import kjGraph
 
@@ -424,12 +424,12 @@ class ExpatBuilder:
         p.ordered_attributes = True
         p.returns_unicode = True
         p.specified_attributes = True
-        p.StartDoctypeDeclHandler = self.startDoctype
         p.StartElementHandler = self.startElement
         p.EndElementHandler = self.endElement
         p.CommentHandler = self.comment
-
+        p.DefaultHandler = self.buildLiteral
         # We don't use:
+        # .StartDoctypeDeclHandler
         # .StartNamespaceDeclHandler
         # .EndNamespaceDeclHandler
         # .XmlDeclHandler(version, encoding, standalone)
@@ -463,19 +463,19 @@ class ExpatBuilder:
     def buildLiteral(self,xml):
         self.stack[-1]._xml_addLiteral(xml)
 
-    def startDoctype(self, doctypeName, systemId, publicId, has_internal):
 
-        if publicId:
-            p = ' PUBLIC %s %s' % (quoteattr(publicId),quoteattr(systemId))
-        elif systemId:
-            p = ' SYSTEM %s' % quoteattr(systemId)
-        else:
-            p = ''
 
-        # we ignore internal DTD subsets; they're not useful for HTML
-        xml = u'<!DOCTYPE %s%s>\n' % (doctypeName, p)
 
-        self.buildLiteral(xml)
+
+
+
+
+
+
+
+
+
+
 
 
 

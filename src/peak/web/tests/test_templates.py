@@ -51,7 +51,8 @@ class BasicTest(TestCase):
 <ul><li>1</li><li>2</li><li>3</li></ul>
 <ul><li>This has &lt;xml/&gt; in it</li></ul>
 <ul><li>This has &lt;xml/&gt; in it</li></ul>
-</body></html>"""
+</body></html>
+"""
 
     def setUp(self):
         r = testRoot()

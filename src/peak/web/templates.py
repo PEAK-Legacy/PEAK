@@ -183,7 +183,7 @@ class ElementAsBuilder(protocols.Adapter):
         top = self.subject
         top.addChild(top.textFactory(top,xml=escape(xml)))
 
-    def _xml_addLiteral(xml):
+    def _xml_addLiteral(self,xml):
         top = self.subject
         top.addChild(top.literalFactory(top,xml=xml))
 

@@ -60,7 +60,8 @@ The EventDriven.xml file, found at
 http://127.0.0.1/++resources++/peak.running/EventDriven.xml
 </a>
 
-</body>"""
+</body>
+"""
 
 TestClasses = (
     MethodTest1, MethodTest2
@@ -68,7 +69,6 @@ TestClasses = (
 
 def test_suite():
     return TestSuite([makeSuite(t,'check') for t in TestClasses])
-
 
 
 
