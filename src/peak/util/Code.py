@@ -12,10 +12,7 @@ for code in range(256):
     if name.startswith('<'): continue
     opcode[name]=code
 
-LOAD_NAME = opcode['LOAD_NAME']
-LOAD_GLOBAL = opcode['LOAD_GLOBAL']
-LOAD_CONST = opcode['LOAD_CONST']
-SET_LINENO = opcode['SET_LINENO']
+globals().update(opcode) # opcodes are now importable at will
 
 
 try:
@@ -28,6 +25,9 @@ except:
     from ComputedAttribute import ComputedAttribute as property
     StopIteration = 'StopIteration'
     def iter(x): return x.__iter__()
+
+
+
 
 
 
@@ -174,8 +174,8 @@ class Code(object):
         for op in cursor:
             cursor.write(SET_LINENO, cursor.arg + offset)
 
-
-
+    def index(self):
+        return codeIndex(self)
 
 
 
@@ -294,10 +294,10 @@ class codeIter(object):
         findOps = self.findOps
         end = self.end
         l = len(ca)
+        start = end
 
         while end < l:
             
-            start = end
             op = ca[start]
             
             if op>=HAVE_ARGUMENT:
@@ -315,12 +315,12 @@ class codeIter(object):
                 self.op = op
                 return op
 
+            start = end
+
         self.op = None
         self.start = start
         self.end = end
         raise StopIteration
-
-
 
 
 
@@ -421,14 +421,90 @@ def copy_func(func):
 
 # And now, as a demo... self-modifying code!
 
-bid = getattr(__builtins__,'__dict__',__builtins__)
+builtIns   = getattr(__builtins__,'__dict__',__builtins__)
+globalDict = globals()
+
+def _bindAll(f):
+    b = FunctionBinder(f)
+    b._rebind(globalDict)
+    f.func_code = b.boundCode(**builtIns)
+    return f
 
 for f in (
-        codeIter.next, codeIter.write,
+        codeIter.next, codeIter.write, Code.renumberLines,
         FunctionBinder.__init__, FunctionBinder._rebind,
     ):
-    bind_func(f.im_func, **globals())
-    bind_func(f.im_func, **bid)
+    _bindAll(f.im_func)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class codeIndex(object):
+
+    def __init__(self, codeObject):
+
+        self.code = codeObject
+        
+        opcodeLocations = self.opcodeLocations = [[] for x in range(256)]
+        addLoc = [x.append for x in opcodeLocations]
+        opcode = self.opcode = [];  addOp = opcode.append
+        operand = self.operand = []; addArg = operand.append
+        offset = self.offset = [];   addOfs = offset.append
+
+        p=0; cursor = iter(codeObject)
+
+        for op in cursor:
+            addOp(op); addArg(cursor.arg); addOfs(cursor.start); addLoc[op](p)
+            p += 1
+            
+    _bindAll(__init__)
+
+    def byteLine(self):
+        """Not every app needs line numbers, so this is calc-on-demand"""
+        code = self.code; lnotab = array('B', code.co_lnotab)
+        table  = []; extend = table.extend
+        line   = code.co_firstlineno
+        byte   = 0
+
+        for i in range(0,len(lnotab),2):
+            extend( [line] * lnotab[i] )
+            line += lnotab[i+1]
+
+        codeLen = len(code.co_code)
+        tblLen  = len(table)
+        if tblLen<codeLen:
+            extend( [line] * (codeLen-tblLen) )
+
+        self.__dict__['byteLine'] = table
+        return table
+
+    byteLine = property(_bindAll(byteLine))
+
+    def byteIndex(self):
+
+        """Not every app needs a reverse index, so this is calc-on-demand"""
+
+        index = []; extend = index.extend
+        offset = self.offset[:]
+        offset.append(len(self.code.co_code))
+
+        for i in range(len(offset)-1):
+            extend([i] * (offset[i+1]-offset[i]))
+
+        self.__dict__['byteIndex'] = index
+        return index
+
+    byteIndex = property(_bindAll(byteIndex))
 
 
 
@@ -447,6 +523,15 @@ for f in (
 
 
 
+
+
+
+
+
+
+
+
+del builtIns, globalDict
 
 
 def visit(code, visitFunc=lambda code,path,newconsts: code, path=()):
