@@ -255,7 +255,10 @@ Similar in concept to ``singletons", Services are ``well-known" instance objects
 which exist for the lifetime of the application.  For example, a database
 connection object in an application could be a service component, and so could
 a top-level window in a GUI application.  J2EE ``session beans" and
-``message-driven beans" are also good examples of service components.
+``message-driven beans" are also good examples of service components.  (Note:
+don't confuse this general concept of services with the Zope 3 concept of a
+``Service"; the latter is an example of the former, but not the other way 
+around.)
 
 \item[Elements] \hfill \\ 
 Elements are typically ``problem-domain" objects or their proxies in
@@ -323,9 +326,6 @@ components, shall we?
 
 
 
-
-
-
 \section{Specifying Attributes Using Bindings}
 
 \subsection{Binding Fundamentals}
@@ -354,8 +354,8 @@ dictionary.  If you're new to Python, you might wonder why we don't place a
 dictionary directly in the class, like this:
 
 \begin{verbatim%
-}>>> class Car:
-        passengers = {}
+}class Car:
+    passengers = {}
 \end{verbatim}
 
 The problem is that attributes defined in a Python class body are shared, so
@@ -368,9 +368,9 @@ method to initialize the structure, like so:
 
 
 \begin{verbatim%
-}>>> class Car:
-        def __init__(self):
-            self.passengers = {}
+}class Car:
+    def __init__(self):
+	self.passengers = {}
 \end{verbatim}
 
 This works alright for simple situations, but gets more complex when you use
@@ -736,10 +736,148 @@ message if the expected attribute is never defined.
 
 
 
-\section{Composing Hierarchies with \class{binding.Component} Objects}
+\section{Composing Hierarchies with Bindable Components}
 
-XXX Base, Component, bindToParent, getParentComponent, setParentComponent,
-getRootComponent, iterParents, ...
+So far, we've only looked at binding various kinds of ``helper" attributes
+into components, but not assembling components themselves into larger
+components or applications.
+
+One issue that arises quite a bit in the assembly of components is the notion
+of \strong{context}.  A component often needs to know ``where" it is located,
+in the sense of its placement in a larger component.  While components will
+typically have many connections to other components, the connection between
+a component and its container or \strong{parent component} is particularly
+important.  Let's look at an example:
+
+\begin{verbatim%
+}>>> class Wheel(binding.Base):
+	def spin(self):
+		print "I'm moving at %d mph" % self.getParentComponent().speed
+
+>>> class Car(binding.Base):
+	wheel = binding.New(Wheel)
+	speed = 50
+
+	
+>>> c = Car()
+>>> c.wheel.spin()
+I'm moving at 50 mph
+\end{verbatim}
+
+The \class{binding.Base} class defines two methods for dealing with parent
+components: \function{getParentComponent} and \function{setParentComponent}.
+\function{setParentComponent} is automatically called for you when you
+create an instance via \function{binding.New}, which is why our \class{Wheel}
+instance above was able to access its parent component with \function{%
+getParentComponent}.  Let's look at a slightly different version of that
+example:
+
+
+
+
+
+
+\begin{verbatim%
+}>>> class Wheel(binding.Base):
+	def spin(self):
+		print "I'm moving at %d mph" % self.speed
+	speed = binding.bindTo('../speed')
+	
+>>> class Car(binding.Base):
+	wheel = binding.New(Wheel)
+	speed = 50
+	
+>>> c = Car()
+>>> c.wheel.spin()
+I'm moving at 50 mph
+\end{verbatim}
+
+By now, perhaps the wheels in your brain will be spinning as well, thinking
+about the possibilities here.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+\subsection{Inspecting Component Hierarchies}
+
+The \module{peak.binding} package supplies several useful functions for
+examining relationships between components.  Let's run through a few examples,
+continuing the previous example above:
+
+\begin{verbatim%
+}>>> print c
+<__main__.Car object at 0x00F7BCB0>
+
+>>> print binding.getParentComponent(c.wheel)
+<__main__.Car object at 0x00F7BCB0>
+
+>>> class Transport(Car):
+	cargo = binding.New(Car)
+
+>>> t=Transport()
+>>> print t
+<__main__.Transport object at 0x00FA1670>
+
+>>> print binding.getRootComponent(t.cargo.wheel)
+<__main__.Transport object at 0x00FA1670>
+
+>>> print binding.getComponentName(t.cargo.wheel)
+wheel
+
+>>> print binding.getComponentPath(t.cargo.wheel)
+/cargo/wheel
+
+>>> print t.cargo
+<__main__.Car object at 0x00FABB70>
+
+>>> print binding.getParentComponent(t.cargo.wheel)
+<__main__.Car object at 0x00FABB70>
+
+>>> binding.lookupComponent('/cargo/wheel',t)
+<__main__.Wheel object at 0x00FAB900>
+\end{verbatim}
+
+
+
+As you can see, \function{binding.getParentComponent}, \function{binding.%
+getRootComponent}, \function{binding.lookupComponent}, \function{binding.%
+getComponentName}, and \function{binding.getComponentPath} do pretty much as
+you would expect from their names.  (One thing we didn't show, however, was
+that \function{binding.getComponentPath}  doesn't actually return a string,
+but a special path object that just looks like a string when printed.  More
+about this later.)
+
+\subsubsection{How Hierarchies Are Assembled}
+
+XXX how do things know their parents?  Do you have to use binding.Base? (no)
+Examples with non-Base objects.  IBindingAPI, IBindingSPI, and IBindingFactory
+interfaces.
+
+\subsubsection{Names and Paths}
+
+\subsection{Hierarchy-Building Tools}
+
+XXX Base, Component, bindToParent, iterParents, ...
 
 XXX AutoCreated, OnceClass?
 
