@@ -39,6 +39,88 @@ class _expr:
 
 
 
+class PhysicalDB(binding.Component):
+
+    tables = binding.Make(list)
+
+    tableMap = binding.Make(
+        lambda self: dict(
+            [(name,Table(name,cols,self)) for (name,cols) in self.tables]
+        )
+    )
+
+    def table(self,name):
+        return self.tableMap[name]
+
+
+class Projection(HashAndCompare):
+
+    def __init__(self,relvar,columns):
+        self.relvar = relvar
+        self.columns = tuple([c for c in relvar.attributes() if c in columns])
+        self._hashAndCompare = self.__class__.__name__,relvar,self.columns
+
+    def thetaJoin(self,condition,*relvars):
+        return BasicJoin(condition,(self,)+relvars)
+
+    def starJoin(self,condition,*relvars):
+        return BasicJoin(condition,(self,),relvars)
+
+    def attributes(self):
+        return self.columns
+
+    select = thetaJoin      # XXX
+
+    def __repr__(self):
+        return "%s(%r,%r)" % self._hashAndCompare
+
+    def getDB(self):
+        return self.relvar.getDB()
+
+
+
+
+class Table:
+
+    def __init__(self,name,columns,db=None):
+        self.name = name
+        self.columns = columns
+        self.db = db
+
+    def attributes(self):
+        return self.columns
+
+    def thetaJoin(self,condition,*relvars):
+        return BasicJoin(condition,(self,)+relvars)
+
+    def starJoin(self,condition,*relvars):
+        return BasicJoin(condition,(self,),relvars)
+
+    select = thetaJoin      # XXX
+
+    def __repr__(self):
+        return self.name
+
+    def project(self,columns):
+        return Projection(self,columns)
+
+    def getDB(self):
+        return self.db
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 class BasicJoin(HashAndCompare):
 
     protocols.advise(
@@ -68,6 +150,10 @@ class BasicJoin(HashAndCompare):
             self.__class__.__name__, condition, self.relvars, self.outers
         )
 
+    def project(self,columns):
+        rvs = [rv.project(columns) for rv in self.relvars] #XXX outerjoins too
+        return BasicJoin(self.condition, tuple(rvs), self.outers)
+
     def starJoin(self,condition,*relvars):
         return BasicJoin(condition & self.condition, self.relvars, relvars+self.outers)
 
@@ -79,6 +165,43 @@ class BasicJoin(HashAndCompare):
     def __repr__(self):
         parms=(self.condition,list(self.relvars),list(self.outers))
         return '%s%r' % (self._hashAndCompare[0], parms)
+
+    def attributes(self):
+        cols = []
+        for rv in self.relvars:
+            cols.extend(rv.attributes())
+        return cols
+
+    def getDB(self):
+        db = self.relvars[0].getDB()
+        for rv in self.relvars[1:]:
+            if rv.getDB() is not db:
+                return None
+        return db
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 class _compound(_expr,HashAndCompare):
 
@@ -176,26 +299,26 @@ class ExpressionWrapper(protocols.Adapter, _expr, HashAndCompare):
         return `self.subject`
 
 
-class RelvarWrapper(protocols.Adapter, HashAndCompare):
 
-    protocols.advise(
-        instancesProvide = [IRelationVariable],
-        asAdapterForTypes = [object],
-    )
 
-    def __init__(self,subject,protocol):
-        self.subject = self._hashAndCompare = subject
 
-    def __repr__(self):
-        return `self.subject`
 
-    def thetaJoin(self,condition,*relvars):
-        return BasicJoin(condition,(self,)+relvars)
 
-    def starJoin(self,condition,*relvars):
-        return BasicJoin(condition,(self,),relvars)
 
-    select = thetaJoin      # XXX
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

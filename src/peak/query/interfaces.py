@@ -118,10 +118,47 @@ class IRelationVariable(Interface):
     def attributes():
         """Return a sequence of names of the relvar's columns (attributes)"""
 
+    def getDB():
+        """Return an object indicating the responsible DB, or None if mixed"""
+
     def __cmp__(other):
         """Relation variables must be comparable to each other"""
 
     def __hash__(other):
         """Relation variables must be hashable"""
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
