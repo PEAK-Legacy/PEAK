@@ -1,5 +1,47 @@
 Fixes and Enhancements since Version 0.5 alpha 3
 
+ - Security permissions can now be declared as attribute metadata.
+
+   That is, instead of doing declarations like this::
+
+        class Foo:
+            bar = binding.Require("Something", permissionNeeded=SomePerm)
+
+        class AnElement(model.Element):
+            class someFeature(model.Attribute):
+                permissionNeeded = SomePerm
+                
+   you can (and should) now do them like this::
+
+        class Foo:
+            bar = binding.Require("Something", [SomePerm])
+ 
+        class AnElement(model.Element):
+            class someFeature(model.Attribute):
+                metadata = [SomePerm]
+
+   or this::
+
+        class Foo:
+            binding.metadata(bar = [SomePerm])
+
+        class AnElement(model.Element):
+
+            binding.metadata(someFeature = [SomePerm])
+            
+            class someFeature(model.Attribute):
+                # ...
+
+   It isn't necessary to enclose metadata in brackets, but it helps to
+   emphasize its annotational nature.  Also note that e.g. 'web.bindResource()'
+   needs 'metadata' to be a keyword argument.
+
+ - The 'permissionNeeded' attribute of 'model.Feature' and 'binding.Attribute'
+   objects is now DEPRECATED.  See examples above for how to upgrade, and please
+   switch to using metadata as soon as practical.  In addition the
+   'security.IGuardedDescriptor' interface has been removed, because it was
+   only used in connection with the 'permissionNeeded' attribute mechanism.
+   
  - Added a new "attribute metadata" mini-framework to 'peak.binding'.  This
    framework makes it possible to declare arbitrary metadata about attributes,
    using either a class advisor ('binding.metadata()', similar in form and

@@ -43,6 +43,13 @@ the latter re-invokes ``declareAttribute()`` on the sequence contents::
     test2 (Foo.baz)
     >>> binding.declareAttribute(Foo, 'spam', None)     # no-op
 
+You can also use ``binding.declareAttributes()`` to define more than one
+attribute at once::
+
+    >>> binding.declareAttributes(Foo, bar=Message("a"), baz=Message("b"))
+    a (Foo.bar)
+    b (Foo.baz)
+
 
 Declaring Metadata
 ------------------
@@ -60,9 +67,9 @@ containing metadata to be declared for the named attributes::
     ...         bar = Message("Ahoy!"),
     ...         baz = [Message("foo"), Message("bar")],
     ...     )
+    Ahoy! (Foo.bar)
     foo (Foo.baz)
     bar (Foo.baz)
-    Ahoy! (Foo.bar)
 
 Also, all of the standard attribute bindings (``Make``, ``Obtain``,
 ``Require``, and ``Delegate``) will accept metadata as their second positional
@@ -76,13 +83,18 @@ parameter or as a ``metadata`` keyword argument::
     ...     ping = binding.Delegate('spam', Message("Ni"))
     ...     whee = binding.Attribute(metadata=Message("tickity"))
     Ahoy! (Foo.bar)
-    Voila! (Foo.spam)
     foo (Foo.baz)
     bar (Foo.baz)
-    tickity (Foo.whee)
     Ni (Foo.ping)
+    Voila! (Foo.spam)
+    tickity (Foo.whee)
 
+Last, but not least, model features will also publish their metadata::
 
+    >>> class Foo(model.Element):
+    ...     class bar(model.Attribute):
+    ...         metadata = Message("It works")
+    It works (Foo.bar)
 
 Descriptor Activation
 ---------------------

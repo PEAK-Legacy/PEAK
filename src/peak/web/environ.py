@@ -128,16 +128,16 @@ class Context:
     protocols.advise(instancesProvide=[ITraversalContext])
 
     # Public attributes
-    current = binding.Require("Current object",permissionNeeded=Anybody)
-    previous = binding.Require("Parent context",permissionNeeded=Anybody)
+    current = binding.Require("Current object", [security.Anybody])
+    previous = binding.Require("Parent context",[security.Anybody])
 
     environ = interaction = policy = skin = rootURL = \
-        binding.Delegate('previous', permissionNeeded=Anybody)
+        binding.Delegate('previous', [security.Anybody])
 
-    user = binding.Delegate('interaction', permissionNeeded=Anybody)
+    user = binding.Delegate('interaction', [security.Anybody])
 
     # Private attrs
-    allows = permissionNeeded = binding.Delegate('interaction')
+    allows = permissionProtocol = binding.Delegate('interaction')
     getResource = binding.Delegate('skin')
 
     _clone_attrs = (
@@ -167,12 +167,12 @@ class Context:
 
     absoluteURL = binding.Make(
         lambda self: IWebTraversable(self.current).getURL(self),
-        permissionNeeded=Anybody
+        [security.Anybody]
     )
 
     traversedURL = binding.Make(
         lambda self: posixpath.join(self.previous.absoluteURL, self.name),
-        permissionNeeded=Anybody
+        [security.Anybody]
     )
 
     def renderHTTP(self):
@@ -239,9 +239,9 @@ class Context:
     url = binding.Make(
         lambda self: relativeURL(
             request_uri(self.environ,False), self.absoluteURL
-        ), permissionNeeded = Anybody
+        ),
+        [security.Anybody]
     )
-
 
 
     def viewHandler(self):

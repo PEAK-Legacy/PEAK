@@ -133,7 +133,7 @@ class Descriptor(BaseDescriptor):
     separate base class: to make it possible to use descriptors as part of the
     definition of descriptor classes."""
 
-    permissionNeeded = None    # IGuardedDescriptor; declared in peak.security
+    permissionNeeded = None    # DEPRECATED!
 
     def __init__(self,**kw):
 
@@ -143,6 +143,7 @@ class Descriptor(BaseDescriptor):
         attributes defined by the 'Descriptor' class (or subclass, if
         this constructor is used by the subclass)."""
 
+        _warnIfPermission(kw)
         klass = self.__class__
 
         for k,v in kw.items():
@@ -150,6 +151,32 @@ class Descriptor(BaseDescriptor):
                 setattr(self,k,v)
             else:
                 raise TypeError("%r has no keyword argument %r" % (klass,k))
+
+
+
+
+
+
+
+
+
+
+
+# XXX Set up a deprecation warning for 'permissionNeeded'
+def _warnIfPermission(kw,level = 4):
+    if kw.get('permissionNeeded') is not None:
+        import warnings
+        warnings.warn(
+            "'permissionNeeded' keyword is deprecated; use 'metadata' instead",
+            DeprecationWarning, stacklevel=level
+        )
+        if 'metadata' in kw:
+            kw['metadata'] = kw['metadata'], kw['permissionNeeded']
+        else:
+            kw['metadata'] = kw['permissionNeeded']
+            
+        del kw['permissionNeeded']
+        
 
 # XXX Set up noCache to set the 'isVolatile' attribute inherited from
 # BaseDescriptor.  This should be changed by changing BaseDescriptor to define
@@ -161,6 +188,20 @@ Descriptor.noCache = Descriptor(
     onSet = lambda o,a,v: setattr(o,'isVolatile',v and 1 or 0) or v,
     computeValue = lambda o,d,a: False
 )
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 def getInheritedRegistries(klass, registryName):
 
@@ -356,7 +397,7 @@ class Attribute(Descriptor):
 
     protocols.advise(
         instancesProvide = [IActiveDescriptor]
-    )   # also IGuardedDescriptor; declared in peak.security
+    )
 
     # XXX Set up 'activateUponAssembly' to set the 'uponAssembly' attribute
     # XXX This is for backward compatibility only, and should go away in a4
@@ -377,8 +418,8 @@ class Attribute(Descriptor):
     def activateInClass(self,klass,attrName):
         setattr(klass, attrName, self._copyWithName(attrName))
         declareAttribute(klass,attrName,self.metadata)
+        declareAttribute(klass,attrName,self.permissionNeeded)  # XXX
         return self
-
 
     def _copyWithName(self, attrName):
         return Descriptor(
@@ -567,8 +608,8 @@ class Make(Attribute):
             getattr(recipe,'__doc__',None)
         )
         kw['metadata']=metadata
+        _warnIfPermission(kw)
         super(Make,self).__init__(**kw)
-
 
 
 

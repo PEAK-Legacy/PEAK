@@ -209,28 +209,28 @@ class FeatureClass(HashAndCompare,MethodExporter):
     def format(self,value):
         return fmtparse.format({self.attrName:value},self._syntax)
 
+    def activateInClass(self, klass, attrName):
+        binding.declareAttribute(klass,attrName,self.metadata)
+        if self.permissionNeeded is not None:
+            import warnings
+            warnings.warn(
+                "'permissionNeeded' attribute is deprecated; use 'metadata'"
+                " instead for %s in %s" % (attrName,klass),            
+                DeprecationWarning, stacklevel=5
+            )
+            binding.declareAttribute(klass,attrName,self.permissionNeeded)
+            
+        return MethodExporter.activateInClass(self,klass,attrName)
+
+    metadata = None
+    permissionNeeded = None    # DEPRECATED
+
 
 protocols.declareAdapter(
     lambda o: o._syntax,
     provides = [fmtparse.IRule],
     forTypes = [FeatureClass]
 )
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -280,8 +280,8 @@ class StructuralFeature(object):
 
     offerAs = ()
     uponAssembly = False
-    permissionNeeded = None    # IGuardedDescriptor, declared in peak.security
-
+    permissionNeeded = None    # DEPRECATED
+    metadata = None
 
 
 

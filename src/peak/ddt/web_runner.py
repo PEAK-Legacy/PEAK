@@ -42,7 +42,7 @@ class TestDocument(web.FileResource):
 class IndexedDirectory(web.ResourceDirectory):
 
     index_html = web.bindResource(
-        'directoryIndex', permissionNeeded=security.Anybody
+        'directoryIndex', metadata=[security.Anybody]
     )
 
     def contents(self):
@@ -59,7 +59,7 @@ class IndexedDirectory(web.ResourceDirectory):
 
         return contents
 
-    contents = binding.Make(contents, permissionNeeded=security.Anybody)
+    contents = binding.Make(contents, [security.Anybody])
 
 
 class PublishedDirectory(IndexedDirectory):

@@ -35,7 +35,7 @@ class TestApp(web.Location):
 
     show = binding.Require(
         "Template to dump this out with",
-        permissionNeeded = security.Anybody
+        [security.Anybody]
     )
 
 

@@ -105,11 +105,6 @@ class GuardedClassAdapter(protocols.Adapter):
             )
         )
 
-        for k,v in klass.__dict__.items():
-            v = adapt(v,IGuardedDescriptor,None)
-            if v is not None and v.permissionNeeded is not None:
-                m[k] = v.permissionNeeded
-
         if m:
             klass._peak_nameToPermissions_map = m
 
@@ -117,9 +112,14 @@ class GuardedClassAdapter(protocols.Adapter):
 
     nameToPermissionsMap = binding.Make(nameToPermissionsMap)
 
+
     def getAttributePermission(self, name):
         """Return (abstract) permission needed to access 'name', or 'None'"""
         return self.nameToPermissionsMap.get(name)
+
+
+
+
 
     def declarePermissions(self, objectPerm=None, **namePerms):
 
@@ -355,9 +355,9 @@ class Permission:
     __metaclass__ = PermissionType
 
 
-
-
-
+[binding.declareAttribute.when(IAbstractPermission)]
+def declare_permission(classobj,attrname,metadata):
+    IGuardedClass(classobj).declarePermissions(**{attrname:metadata})
 
 
 

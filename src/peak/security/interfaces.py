@@ -6,7 +6,7 @@ from types import FunctionType
 __all__ = [
     'IAuthorizedPrincipal', 'IInteraction', 'IAccessAttempt',
     'IAbstractPermission', 'IAbstractPermission', 'IPermissionChecker',
-    'IGuardedObject', 'IGuardedClass', 'IGuardedDescriptor',
+    'IGuardedObject', 'IGuardedClass',
 ]
 
 class IAccessAttempt(Interface):
@@ -265,52 +265,11 @@ class IGuardedClass(Interface):
         """Return (abstract) permission needed to access 'name', or 'None'"""
 
 
-class IGuardedDescriptor(Interface):
-
-    """Descriptor that knows the permission required to access it"""
-
-    permissionNeeded = Attribute(
-        "Sequence of abstract permissions needed, or 'None' to keep default"
-    )
 
 
 
 
 
-
-
-
-
-
-
-
-
-whenImported(
-    'peak.binding.once',
-    lambda once:
-        protocols.declareAdapter(
-            protocols.NO_ADAPTER_NEEDED,
-            provides = [IGuardedDescriptor],
-            forTypes = [once.Descriptor, once.Attribute]
-        )
-)
-
-whenImported(
-    'peak.model.features',
-    lambda features:
-        protocols.declareAdapter(
-            protocols.NO_ADAPTER_NEEDED,
-            provides = [IGuardedDescriptor],
-            forTypes = [features.FeatureClass]
-        )
-)
-
-protocols.declareAdapter(
-    # Functions can be guarded descriptors if they define 'permissionsNeeded'
-    lambda o: (getattr(o,'permissionNeeded',None) is not None) and o or None,
-    provides = [IGuardedDescriptor],
-    forTypes = [FunctionType]
-)
 
 
 

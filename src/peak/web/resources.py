@@ -203,7 +203,7 @@ class ResourceProxy(object):
 
 
 
-def bindResource(path, pkg=None, **kw):
+def bindResource(path, pkg=None, metadata=None, **kw):
 
     """Attribute binding to look up a resource"""
 
@@ -221,7 +221,7 @@ def bindResource(path, pkg=None, **kw):
         path = TraversalPath('/'+pkg) + path
 
     proxy = ResourceProxy(path)
-    return binding.Make(lambda: proxy, **kw)
+    return binding.Make(lambda: proxy, metadata, **kw)
 
 
 

@@ -44,7 +44,7 @@ class ResourceApp2(ResourceApp1):
     show = web.bindResource('template2')
 
     xml = web.bindResource(
-        '/peak.running/EventDriven', permissionNeeded=security.Anybody
+        '/peak.running/EventDriven', metadata=[security.Anybody]
     )
 
 class MethodTest2(MethodTest1):

@@ -4,21 +4,60 @@ from types import ClassType
 import dispatch,protocols
 
 __all__ = [
-    'activateClass','classAttr','Activator','declareAttribute','metadata'
+    'activateClass','classAttr','Activator','declareAttribute','metadata',
+    'declareAttributes',
 ]
 
 
-def metadata(**kw):
+def metadata(**__kw):
     """Declare metadata for attributes of containing class
 
     Usage::
 
         class Foo:
-            binding.metadata(
-                some_attr=[security.Anybody, options.Set('-v',value=True)],
-                other_attr=syntax("foo|bar"),
+            binding.metadata(a=b, x=y)
+
+    is a shortcut for::
+
+        class Foo:
+            pass
+
+        binding.declareAttributes(Foo, a=b, x=y)
+
+    See 'binding.declareAttributes()' for more details.
+    """
+    def callback(klass):
+        declareAttributes(klass,**__kw)
+        return klass
+
+    advice.addClassAdvisor(callback)
+
+
+
+
+
+
+
+
+try:
+    sorted
+except NameError:
+    def sorted(seq):
+        tmp = list(seq)
+        tmp.sort()
+        return tmp
+
+
+def declareAttributes(classobj,**__kw):
+    """Declare metadata for attributes of specified class
+
+    Usage::
+
+        binding.declareAttributes(SomeClass,
+            some_attr=[security.Anybody, options.Set('-v',value=True)],
+            other_attr=syntax("foo|bar"),
                 # etc...
-            )
+        )
 
     Keyword argument names are treated as attribute names, and the values are
     passed to 'binding.declareAttribute()' in order to declare the given
@@ -26,12 +65,14 @@ def metadata(**kw):
     documentation for information about what metadata they need or provide,
     and what that metadata's semantics are.
     """
-    def callback(klass):
-        for k,v in kw.items():
-            declareAttribute(klass,k,v)
-        return klass
+    for k,v in sorted(__kw.iteritems()):
+        declareAttribute(classobj,k,v)
 
-    advice.addClassAdvisor(callback)
+
+
+
+
+
 
 
 
@@ -269,7 +310,7 @@ def activateClass(klass):
 
     klass.__class_descriptors__ = cd = {}
 
-    for k,v in d.items():
+    for k,v in sorted(d.items()):
         v = IActiveDescriptor(v,None)
         if v is not None:
             cd[k] = v.activateInClass(klass,k)

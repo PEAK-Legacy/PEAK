@@ -97,11 +97,11 @@ class InteractionPolicy(binding.Configurable, protocols.StickyAdapter):
 
     fromComponent = classmethod(fromComponent)
 
-    app            = binding.Obtain('./subject', permissionNeeded=Anybody)
+    app            = binding.Obtain('./subject', [security.Anybody])
     log            = binding.Obtain(APPLICATION_LOG)
 
-    defaultMethod  = binding.Obtain(DEFAULT_METHOD, permissionNeeded=Anybody)
-    resourcePrefix = binding.Obtain(RESOURCE_PREFIX, permissionNeeded=Anybody)
+    defaultMethod  = binding.Obtain(DEFAULT_METHOD, [security.Anybody])
+    resourcePrefix = binding.Obtain(RESOURCE_PREFIX, [security.Anybody])
 
     _authSvc       = binding.Make(IAuthService, adaptTo=IAuthService)
     _mkInteraction = binding.Obtain(config.FactoryFor(security.IInteraction))
