@@ -2,15 +2,15 @@ from __future__ import generators
 from peak.api import *
 from interfaces import *
 from peak.util.Struct import makeStructType
+from connections import ManagedConnection, AbstractCursor
 
 __all__ = [
-    'SQLCursor',
+    'SQLCursor', 'GenericSQL_URL', 'SQLConnection', 'SybaseConnection'
 ]
 
 
 def _nothing():
     pass
-
 
 
 
@@ -121,4 +121,88 @@ class SQLCursor(AbstractCursor):
             raise exceptions.TooManyResults
 
 
+class SQLConnection(ManagedConnection):
 
+    def commitTransaction(self, txnService):
+        self.connection.commit()
+
+    def abortTransaction(self, txnService):
+        self.connection.rollback()
+
+    cursorClass = SQLCursor
+
+
+class SybaseConnection(SQLConnection):
+
+    def _open(self):
+        user,pass,server,db = self.address[:4]
+        from Sybase import Connection
+        return Connection(server, user, pass, db)
+            
+    def onJoinTxn(self, txnService):
+        # Sybase doesn't auto-chain transactions...
+        self.connection.begin()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class GenericSQL_URL(naming.ParsedURL):
+
+    _supportedSchemes = ('sybase',)
+
+    pattern = """(?x)
+
+    (   # optional user:pass@
+    
+        (?P<user>[^:]+)
+        (:(?P<pass>[^@]+))?
+        @
+    )?  
+
+    (?P<server>[^/]+)
+    (/(?P<db>).+)?
+    """
+
+    __fields__ = tuple('user pass server db scheme body'.split())
+
+    
+    def fromArgs(klass,
+                 user=None, pass=None, server=None, db=None,
+                 scheme=None, body=None
+        ):
+
+        # XXX we should really url-unquote the fields first...
+
+        return tuple.__new__(
+            map(locals().get, klass.__fields__)
+        )
+
+
+    def retrieve(self, refInfo, name, context, attrs=None):
+
+        return drivers[self.scheme](
+            context.creationParent,
+            address = self
+        )
+
+
+
+drivers = {
+    'sybase': SybaseConnection
+}
