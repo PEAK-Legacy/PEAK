@@ -7,6 +7,9 @@ from commands import *
 from interfaces import *
 from rlhist import *
 
+import readline
+
+
 
 class NamingInteractor(binding.Component):
 
@@ -20,11 +23,11 @@ class NamingInteractor(binding.Component):
 
         self.run = 1
 
-        pushRLHistory('.n2ns_history', None, None, self.shell.environ)
+        pushRLHistory('.n2ns_history', self.complete, None, self.shell.environ)
         
         while self.run:
             try:
-                cl = raw_input('n2> ')
+                cl = raw_input('[n2] ')
             except:
                 print >>shell.stdout
                 popRLHistory()
@@ -73,7 +76,7 @@ class NamingInteractor(binding.Component):
         if name is None:
             ob = base
         elif name[0] == '$':
-            o = self.shell.getvar(name[1:])
+            o = shell.getvar(name[1:])
             if type(o) is str:
                 ob = base[name]
             else:
@@ -170,18 +173,19 @@ name\tlist object named, else current context"""
                 return
 
             if '-l' in opts:
+                w = self.shell.width
                 l = [(str(k), `v`) for k, v in ctx.items()]
                 if '-s' not in opts: l.sort()
                 if '-r' in opts: l.reverse()
                 kl = max([len(x[0]) for x in l])
                 vl = max([len(x[1]) for x in l])
-                if kl+vl >= self.width:
+                if kl+vl >= w:
                     if kl < 40:
-                        vl = self.width - kl - 2
+                        vl = w - kl - 2
                     elif vl < 40:
-                        kl = self.width - vl - 2
+                        kl = w - vl - 2
                     else:
-                        kl = 30; vl = self.width - kl - 2
+                        kl = 30; vl = w - kl - 2
 
                 for k, v in l:
                     print >>stdout, k.ljust(kl)[:kl] + ' ' + v.ljust(vl)[:vl]
@@ -482,6 +486,31 @@ An unspecified value sets varname to the current context."""
                 print >>stderr, '%s: %s may not be set' % (cmd, args[0])
 
     cmd_set = binding.New(cmd_set)
+
+
+
+    def complete(self, s, state):
+        if state == 0:
+            lb = readline.get_line_buffer()
+            lbl = lb.lstrip()
+            bidx = readline.get_begidx()
+            if bidx <= (len(lb) - len(lbl)):
+                self.matches = self.command_names()
+            else:
+                c = adapt(self.shell.get_pwd(), naming.IReadContext, None)
+                if c is None:
+                    self.matches = []
+                else:
+                    self.matches = [str(x) for x in c.keys()]
+
+            self.matches = [x for x in self.matches if x.startswith(s)]
+
+        try:
+            return self.matches[state]
+        except IndexError:
+            return None
+
+
 
 
 protocols.declareAdapter(
