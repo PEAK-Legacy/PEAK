@@ -1,5 +1,15 @@
 Fixes and Enhancements since Version 0.5 alpha 3
 
+ - SQL transaction semantics have changed.  Now, issuing an SQL statement
+   *always* causes the connection to join the active PEAK transaction, even if
+   you request that the SQL be issued "outside" a transaction.  Such SQL will
+   be issued outside of the *database* transaction, but not outside of the
+   PEAK transaction.  This simplifies the overall processing model for dealing
+   with "untransacted" SQL such as Sybase DDL or read-only Oracle transactions.
+   (In particular, the requirement that triggered this change was to allow
+   Oracle read-only transactions to be released at the end of the current PEAK
+   transaction.)  Also, got rid of the now-meaningless 'begin' command in n2.
+
  - The 'events.IEventSource' interface now returns a 'canceller' function from
    the 'addCallback()' method, allowing you to cancel a previously-scheduled
    callback.  This fixes a memory leak and performance problem with

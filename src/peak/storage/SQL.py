@@ -87,39 +87,7 @@ class SQLCursor(AbstractCursor):
             pass
 
 
-    def _setOutsideTxn(self,value):
-        self._delBinding('setTxnState')
-        self._setBinding('outsideTxn',value)
-
-    def _getOutsideTxn(self):
-        return self._getBinding('outsideTxn',False)
-
-    outsideTxn = property(_getOutsideTxn,_setOutsideTxn)
-
-
-    def setTxnState(self):
-        if self.outsideTxn:
-            return self.conn.assertUntransacted
-        else:
-            return self.conn.joinTxn
-
-    setTxnState = binding.Make(setTxnState)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    outsideTxn = False
 
     logger = binding.Obtain('logger:sql')
 
@@ -127,7 +95,7 @@ class SQLCursor(AbstractCursor):
 
     def execute(self, *args):
 
-        self.setTxnState()
+        self.conn.setTxnState(self.outsideTxn)
 
         try:
 
@@ -149,15 +117,6 @@ class SQLCursor(AbstractCursor):
 
             self.conn.closeASAP()    # close connection after error
             raise
-
-
-
-
-
-
-
-
-
 
 
 
@@ -289,7 +248,6 @@ class SQLConnection(ManagedConnection):
         """See ISQLConnection.getRowConverter()"""
 
         typeMap = self.typeMap
-
         converters = [
             instancemethod(
                 typeMap.get(d[1],NullConverter), d, None
@@ -310,21 +268,22 @@ class SQLConnection(ManagedConnection):
         else:
             return post     # No conversions other than postprocessor
 
+    dbTxnStarted = True
+    txnAttrs = ManagedConnection.txnAttrs + ('dbTxnStarted',)
 
+    def setTxnState(self,outsideTxn):
+        self.joinedTxn          # ALWAYS join the PEAK transaction
+        if outsideTxn:
+            if self.dbTxnStarted:
+                raise exceptions.TransactionInProgress(
+                    """Database connection already has an active transaction"""
+                )       
+        elif outsideTxn is not None:
+            if not self.dbTxnStarted:
+                self.dbTxnStarted = self._startDBTxn()
 
-
-
-
-
-
-
-
-
-
-
-
-
-
+    def _startDBTxn(self):
+        raise NotImplementedError("DB doesn't support explicit transactions")
 
 class MockSQLConnection(SQLConnection):
 
@@ -408,10 +367,11 @@ class SybaseConnection(ValueBasedTypeConn):
 
 
 
-    def onJoinTxn(self, txnService):
-        # Sybase doesn't auto-chain transactions...
-        self.connection.begin()
+    dbTxnStarted = False    # Sybase doesn't auto-chain transactions...
 
+    def _startDBTxn(self):
+        self.connection.begin()
+        return True
 
     def txnTime(self):
         # Retrieve the server's idea of the current time
@@ -437,7 +397,7 @@ class SybaseConnection(ValueBasedTypeConn):
         ])
 
         return self('''select name as obname, obtype = CASE %s END, crdate%s
-            from sysobjects%s''' % (typecase, addsel, addwhere))
+            from sysobjects%s''' % (typecase, addsel, addwhere), outsideTxn=None)
 
     protocols.advise(
         instancesProvide=[ISQLObjectLister]
@@ -446,7 +406,6 @@ class SybaseConnection(ValueBasedTypeConn):
 
     def _prepare(self):
         self('PREPARE TRAN')
-
 
 
 class PGSQLConnection(ValueBasedTypeConn):
@@ -705,14 +664,24 @@ class OracleBase(SQLConnection):
     txnId = binding.Make('peak.util.uuid:UUID')
     txnBranch = "main"
 
-    def onJoinTxn(self, txnService):
+    dbTxnStarted = dbTxnReadOnly = False
+    txnAttrs = SQLConnection.txnAttrs + ('dbTxnReadOnly',)
 
-        self.connection.rollback()  # throw away the read-only txn
 
+    def setTxnState(self,outsideTxn):
+        super(OracleBase,self).setTxnState(outsideTxn)
+        if not self.dbTxnStarted and not self.dbTxnReadOnly:
+            self._readOnly()
+
+
+    def _startDBTxn(self):
+        self.connection.rollback()  # throw away the read-only txn, if any
         if self.twoPhase:
             self._begin()
         elif self.serializable:
-            self('SET TRANSACTION ISOLATION LEVEL SERIALIZABLE')
+            self.dbTxnStarted = True
+            self('SET TRANSACTION ISOLATION LEVEL SERIALIZABLE',outsideTxn=None)
+        return True
 
 
     def commitTransaction(self, txnService):
@@ -726,22 +695,12 @@ class OracleBase(SQLConnection):
             if self._errCode(v)<>'ORA-24756':
                 raise
 
-    def finishTransaction(self, txnService, committed):
-
-        super(OracleBase,self).finishTransaction(txnService,committed)
-
-        if self._hasBinding('connection'):
-            # Since we set read-only on new connections, we only need to do
-            # this if the connection is still open (and super() might close it)
-            self._readOnly()
-
-
     def _prepare(self):
         self.connection.prepare()
 
-
     def _readOnly(self):
-        self('SET TRANSACTION READ ONLY', outsideTxn=True)
+        self.dbTxnReadOnly = True
+        self('SET TRANSACTION READ ONLY',outsideTxn=None)
 
 
     def txnTime(self):
@@ -766,7 +725,7 @@ class OracleBase(SQLConnection):
         return self('''select lower(object_name) as "obname",
         DECODE(object_type, 'FUNCTION', 'proc', lower(object_type))
         as "obtype", created as "created"%s
-            from user_objects%s''' % (addsel, addwhere))
+            from user_objects%s''' % (addsel, addwhere), outsideTxn=None)
 
 
 
@@ -783,9 +742,7 @@ class CXOracleConnection(OracleBase):
 
     def _open(self):
         a = self.address
-        self.connection = self.API.connect(a.user, a.passwd, a.server)
-        self._readOnly()
-        return self.connection
+        return self.API.connect(a.user, a.passwd, a.server)
 
 
     supportedTypes = (
@@ -807,6 +764,7 @@ class CXOracleConnection(OracleBase):
     def _readOnly(self):
         if self.twoPhase and hasattr(self.API,'TRANS_NEW'):
             self._doBegin(self.API.TRANS_NEW+self.API.TRANS_READONLY)
+            self.dbTxnReadOnly = True
         else:
             super(CXOracleConnection,self)._readOnly()
 
@@ -818,17 +776,16 @@ class CXOracleConnection(OracleBase):
 
 
 
+
 class DCOracle2Connection(OracleBase):
 
     DRIVER = "DCOracle2"
 
     def _open(self):
         a = self.address
-        self.connection = self.API.connect(
+        return self.API.connect(
             user=a.user, password=a.passwd, database=a.server,
         )
-        self._readOnly()
-        return self.connection
 
     supportedTypes = ('BINARY','DATETIME','NUMBER','ROWID','STRING')
 
@@ -858,4 +815,6 @@ class DCOracle2Connection(OracleBase):
         return tm
 
     typeMap = binding.Make(typeMap)
+
+
 

@@ -352,17 +352,17 @@ class IManagedConnection(IComponent,ITransactionParticipant):
         connection joins the current transaction, if it hasn't already"""
     )
 
-    def joinTxn():
-        """Join the current transaction, if not already joined"""
-
-    def assertUntransacted():
-        """Raise 'TransactionInProgress' if transaction already joined"""
-
     def closeASAP():
         """Close the connection as soon as it's not in a transaction"""
 
     def close():
         """Close the connection immediately"""
+
+
+
+
+
+
 
 
 
@@ -441,6 +441,13 @@ class ISQLConnection(IManagedConnection):
     appConfig = Attribute(
         """A config.Namespace() pointing to 'DRIVER.appConfig'"""
     )
+
+    def setTxnState(outsideTxn):
+        """Set the connection's PEAK and DB transaction state to match"""
+
+
+
+
 
 class ILDAPConnection(IManagedConnection):
     """A ManagedConnection that talks LDAP"""

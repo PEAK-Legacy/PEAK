@@ -29,7 +29,7 @@ def bufname(s):
 EXPORTED = object() # indicates variable is exported to a python variable
 
 
-class SQLInteractor(binding.Component):
+class SQLInteractor(storage.TransactionComponent):
 
     editor = binding.Obtain(PropertyName('__main__.EDITOR'), default='vi')
 
@@ -43,7 +43,9 @@ class SQLInteractor(binding.Component):
     buf = ''
     line = 1
     semi = -1
-
+    
+    is_outside = False
+    txnAttrs = storage.TransactionComponent.txnAttrs + ('is_outside',)
 
     vars = binding.Make(lambda: {'prompt':'$S$L$T> '})
 
@@ -66,7 +68,7 @@ class SQLInteractor(binding.Component):
         p = self.getVar('prompt')
         p = p.replace('$L', str(self.line))
         p = p.replace('$S', self.state)
-        p = p.replace('$T', (not self.txnSvc.isActive()) and 'U' or '')
+        p = p.replace('$T', self.is_outside and 'U' or '')
         return p
 
 
@@ -210,7 +212,7 @@ class SQLInteractor(binding.Component):
 
         cmd = cmd.lower()
         if cmd[0] == '\\' or cmd in (
-            'go','commit','abort','begin','rollback','help'
+            'go','commit','abort','rollback','help'
         ):
             if cmd[0] == '\\':
                 cmd = cmd[1:]
@@ -347,22 +349,15 @@ xacts\t\tnumber of times to repeat execution of the input. Only results
 
             try:
                 con = self.interactor.con
-                act = self.interactor.txnSvc.isActive()
                 
                 if xacts > 1:
                     for j in range(xacts - 1):
-                        if act:
-                            c = con(sql)
-                        else:
-                            c = con(sql, outsideTxn=True)
+                        c = con(sql, outsideTxn=self.is_outside)
                         c.fetchall()    # XXX doesn't handle multiresults!
 
                         time.sleep(secs)
 
-                if act:
-                    c = con(sql, multiOK=True)
-                else:
-                    c = con(sql, multiOK=True, outsideTxn=True)
+                c = con(sql, multiOK=True, outsideTxn=self.is_outside)
             except:
                 # currently the error is logged
                 # sys.excepthook(*sys.exc_info()) # XXX
@@ -426,25 +421,6 @@ rollback -- abort current transaction"""
 
 
 
-    class cmd_begin(ShellCommand):
-        """begin -- begin a new transaction"""
-
-        noBackslash = True
-
-        args = ('', 0, 0)
-
-        def cmd(self, cmd, stderr, **kw):
-            if self.interactor.txnSvc.isActive():
-                print >>stderr, "Already in a transaction."
-            else:
-                storage.beginTransaction(self)
-
-            self.interactor.resetBuf()
-
-    cmd_begin = binding.Make(cmd_begin)
-
-
-
     class cmd_commit(ShellCommand):
         """commit -- commit current transaction"""
 
@@ -480,15 +456,15 @@ rollback -- abort current transaction"""
 
 
     class cmd_outside(ShellCommand):
-        """\\outside -- begin execution outside a transaction"""
+        """\\outside -- begin execution outside a database transaction"""
 
         args = ('', 0, 0)
 
         def cmd(self, cmd, stderr, **kw):
-            if self.interactor.con in self.interactor.txnSvc:
+            if self.interactor.con.dbTxnStarted:
                 print >>stderr, "Already active in a transaction; commit or abort first."
             else:
-                storage.abortTransaction(self)
+                self.is_outside = True
 
             self.interactor.resetBuf()
 
