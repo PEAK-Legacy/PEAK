@@ -89,6 +89,13 @@ class socketURL(naming.URL.Base):
             af, socktype, proto, canonname, sa = res
             try:
                 s = socket.socket(af, socktype, proto)
+                if 'unix' in SocketFamily and af==SocketFamily.unix:
+                    import os,errno
+                    try:
+                        os.unlink(sa)   # remove the existing unix socket
+                    except OSError,v:
+                        if v<>errno.ENOENT: # ignore if socket doesn't exist
+                            raise
                 s.bind(sa)
                 s.listen(5) # should will be made configurable
                 sockets.append(s)
@@ -101,13 +108,6 @@ class socketURL(naming.URL.Base):
             raise socket.error, msg
 
         return sockets
-
-
-
-
-
-
-
 
 
 
