@@ -43,7 +43,7 @@ def importString(name, globalDict=None):
     """Import an item specified by a string
 
         Example Usage::
-        
+
             attribute1 = importString('some.module.attribute1')
             attribute2 = importString('other.module:nested.attribute2')
 
@@ -60,15 +60,17 @@ def importString(name, globalDict=None):
 
         If you want just the module itself, simply give its full dotted name.
     """
-        
+
     if ':' in name:
         name = name.split(':',1)
         module = name[0]
         path = name[1].split('.')
-    else:
+    elif '.' in name:
         name = name.split('.')
         module = '.'.join(name[:-1])
         path = name[-1:]
+    else:
+        module, path = name, []
 
     item = __import__(module, globalDict or globals(), locals(), path)
 
@@ -76,8 +78,6 @@ def importString(name, globalDict=None):
         if name: item = getattr(item,name)
 
     return item
-
-
 
 
 class lazyImport:
