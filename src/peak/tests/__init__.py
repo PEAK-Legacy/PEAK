@@ -6,6 +6,7 @@ tests.
 
 allSuites = [
     'peak.binding.tests:test_suite',
+    'peak.config.tests:test_suite',
     'peak.metamodels.tests:test_suite',
     'peak.util.tests:test_suite',
 ]
