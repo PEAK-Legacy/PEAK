@@ -49,7 +49,7 @@ class AbstractContext(Component):
     stateFactories  = Acquire(STATE_FACTORIES)
 
     schemeParser  = None
-    nameClass     = None
+    nameClass     = CompositeName
     defaultScheme = None
     
     _acceptStringURLs    = True     # XXX
@@ -66,18 +66,18 @@ class AbstractContext(Component):
         # names and figure out dynamically when you've crossed over into
         # another naming system.  
 
-        if len(name)==1:
-            return self.resolve(name[0], iface)
+        if not name:
+            return self, name   # XXX this isn't very useful!
 
-        elif name:
-            return self.lookup_nns(name[0]).resolve(name[1:], iface)
+        else:
+            local = name[0]
+            if self.nameClass and self.nameClass.isComposite:
+                local = CompoundName(local)
 
-        return self, name   # XXX this isn't very useful!
+            if len(name)==1:
+                return self.resolve(local, iface)
 
-
-
-
-
+            return self.lookup_nns(local).resolve(name[1:], iface)
 
 
     def _checkSupported(self, name, iface):
@@ -148,7 +148,7 @@ class AbstractContext(Component):
 
             return ctx.resolve(name,iface)
 
-        if self.nameClass:
+        if self.nameClass and not self.nameClass.isComposite:
             return self._resolveLocal(name,iface)
 
         elif parser:
