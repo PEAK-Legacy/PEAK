@@ -1,0 +1,189 @@
+Open Issues/To-Do Items
+
+ Targeted for 0.2 Final Release
+
+    API.Modules
+
+      * Add tests for 'adviseModule()' API
+
+    Database
+
+      * Create test suite to check proper transactional functioning, cache
+        consistency, queueing behavior, and typemap management.
+
+      * Update Interfaces to reflect current API, and document internals
+
+    General
+
+      * Update tutorial documentation
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ Future Releases
+
+  Simulator/Module Inheritance
+
+    * Need a strategy for handling "del" operations; they are currently
+      untrapped.  This might be okay under most circumstances, but need to
+      consider edge cases.
+
+    * 'makeClass()' should probably become part of the core API, where
+      it can be used to resolve __metaclass__ conflicts during the first
+      pass of importing a module (prior to running 'setupModule()')
+
+    * Test "advice" functionality, add more docs.
+
+
+  Database
+
+    * Create configurable caching mixins/plugins for time/size-limited
+      caching within Specialists
+
+    * Create virtual sequence classes to implement association collections
+
+
+  Documentation/Tests/General
+
+    * Create tutorials/examples based on actual uses
+
+    * Include dependencies in packaging?  Need to ask copyright owners first.
+
+
+
+
+
+
+
+
+
+
+
+
+
+  SEF
+
+    * Review other-end-notification protocols in the light of managed storage
+      models (e.g. database Records using virtual sequence objects as fields)
+
+    * Marshalling interface in Services; implementations for Enumeration, etc.
+
+    * More S-E-F metadata: features, subclasses, svc.<->class, nested services
+
+    * Implement WarpCORE-oriented structural model, w/Querying support
+
+    InMemory
+
+      * "Indexed" version
+
+      * "WeakRefs" version (no acquisition, use w/Python 2.1 weakrefs)
+
+      * "Circular" version (suitable for use w/2.1 GC or Jython)
+
+      * "Persistent" StructuralModel (indexes w/BTrees?  Catalog?)
+
+    Queries
+
+       * Refactor to use interfaces, if appropriate
+
+       * Incorporate into AbstractModel?
+
+         - Pros:
+
+           * Queries always available
+
+           * Each StructuralModel implementation can easily include its own
+             performance-tuned version of the basic items.
+
+         - Con: default implementation doesn't perform well on large datasets
+
+       * How much of framework needs extensibility?  Should the predicate
+         classes be placed in the StructuralModel's namespace so that predicates
+         have their meaning assigned by the StructuralModel implementation?
+
+
+  UML
+
+    * Need to write an MMX or XMI -> Python generator, and hook it back up into
+      the UML package, since we're right now relying on a module generated
+      by code that depends on stuff which is going away.
+
+    * Helper methods in Elements & Services for marshalling, common queries, etc.
+
+    * Generator framework
+
+      - Tagged values in stereotypes vs. main values?
+
+      - Should tagged values be copied directly into templates?  Treated as
+        Python expressions?
+
+      - Should Services be generated using an Element class' "static"
+        (class-scope) methods/attributes?
+
+        - Are association-ends scoped?
+
+        - Would it be better to seperate them?
+
+      - What determines whether an implemented Service actually stores objects
+        or delegates this to its subclass services?
+
+    * Simple Zope product demo (upload XMI, then browse the model via the web)
+
+    * Reporting mixins?  Graphviz visualization?
+
+
+
+
+
+
+
+
+
+
+
+
+
+  XMI
+
+    * Re-org to self-contain all XMI stuff inside an _XMI sub-component/service
+
+    * Refactoring to pure S-E-F model
+
+    * Document version of standard used
+
+    * Metamodel identity/version checking
+
+    * XMI.Writing
+
+    * Strict parsing and/or diagnostics on files that don't match the metamodel?
+
+    * UUID/GUID support
+
+    * Support for advanced references, external references?
+
+    * XML Namespaces (do any current XMI tools need this?  Which spec version
+      requires this?)
+
+    * DOM StructuralModel (so files can be edited without affecting vendor XMI
+      extensions)
+
+ 
