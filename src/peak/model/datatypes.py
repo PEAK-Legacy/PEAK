@@ -103,7 +103,7 @@ class ULong(Integer):
 class Float(PrimitiveType):
     mdl_fromString = float
 
-class Double(PrimitiveType):
+class Double(Float):
     pass
 
 class String(PrimitiveType):
