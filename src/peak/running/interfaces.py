@@ -17,7 +17,7 @@ __all__ = [
 
     'IBasicReactor', 'ITwistedReactor', 'ILogger', 'ICheckableResource',
 
-    'ISignalManager', 'IProcessProxy', 'IMainCmdFactory'
+    'ISignalManager', 'IProcessProxy', 'IMainCmdFactory', 'IProcessTemplate',
 
 ]
 
@@ -121,7 +121,7 @@ class ICmdLineApp(IComponent, IExecutable):
 
 
 
-class IMainCmdFactory(Interface):
+class IMainCmdFactory(IExecutable):
 
     """Callable that can create a "main" 'ICmdLineApp' w/out further input"""
 
@@ -285,6 +285,15 @@ class IMainLoop(Interface):
                         may occur any time after the run starts.")
         """
 
+    def setExitCode(exitCode):
+        """Set 'exitCode' as return value for current 'run()' invocation"""
+
+
+    def childForked(self, stub):
+        """Exit the mainloop immediately, returning 'stub'"""
+
+
+
 class IAdaptiveTask(IPeriodicTask):
 
     """Periodic task with tunable polling interval"""
@@ -308,15 +317,6 @@ class IAdaptiveTask(IPeriodicTask):
     minimumIdle = Attribute(
         """'pollInterval' used when daemon has work to do"""
     )
-
-
-
-
-
-
-
-
-
 
 
 
@@ -576,11 +576,14 @@ class IProcessProxy(Interface):
 
     """Object that represents a child process"""
 
-    def setStatus(waitcode):
-        """Set status flags according to 'waitcode' and invoke listeners"""
+    def checkStatus():
+        """Check for changes in process status, and notify listeners if any"""
 
     def addListener(func):
         """'func' will be called with the proxy when process status changes"""
+
+    def sendSignal(signal):
+        """Send 'signal' (name or number) to process"""
 
     isFinished = Attribute(
         """Has the process exited? (WIFSIGNALED or WIFEXITED)"""
@@ -605,6 +608,44 @@ class IProcessProxy(Interface):
     exitedBecause  = Attribute(
         """Signal that killed the process, or None (WTERMSIG)"""
     )
+
+
+
+
+
+class IProcessTemplate(Interface):
+
+    """Object that is used to spawn a particular type of child process"""
+
+    def spawn(parentComponent):
+        """Return 'proxy,stub' pair after forking child process
+
+        In the parent process, this method returns 'proxy,None', where 'proxy'
+        is an 'IProcessProxy' for the child process.  The 'proxy' object is
+        given 'parentComponent' as its component context.
+
+        In the child process, this method returns 'None,stub', where 'stub' is
+        the command that should be returned from the current command's 'run()'
+        method, in order to start up the child process.
+
+        Note that the parent component for a process template should usually be
+        a new configuration root, so that the parent and child process do not
+        share any components unintentionally.  Example usage::
+
+            template = SomeProcessTemplate(config.makeRoot())
+            proxy, stub = template.spawn(self)
+            if proxy is None:
+                self.mainLoop.childForked(stub)
+            else:
+                proxy.addListener(self.newChildStatus)
+            # ...
+        """
+
+
+
+
+
+
 
 
 

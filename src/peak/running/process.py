@@ -2,6 +2,7 @@ from peak.api import *
 from interfaces import *
 import os
 from weakref import WeakValueDictionary, ref
+from commands import EventDriven
 
 try:
     import signal
@@ -27,7 +28,6 @@ else:
     )
 
     signal = signal.signal
-
 
 
 
@@ -80,43 +80,371 @@ class SignalManager(binding.Singleton):
 
     def __call__(self,*args): return self
 
-class ProcessManager(binding.Component):
+class ChildProcess(binding.Component):
 
-    processes     = binding.Make(dict)
+    protocols.advise(
+        instancesProvide = [IProcessProxy]
+    )
+
+    isStopped  = False
+    isFinished = False
+    isRunning  = True
+
+    exitStatus     = None
+    stoppedBecause = None
+    exitedBecause  = None
+
+    listeners     = binding.Make(list)
     signalManager = binding.Obtain(ISignalManager)
 
-    fork    = binding.Obtain('import:os.fork')
-    waitpid = binding.Obtain('import:os.waitpid')
-    WNOHANG = binding.Obtain('import:os.WNOHANG')
+    import os
 
-    def invoke(self,cmd):
+    __onStart = binding.Make(
+        lambda self: self.signalManager.addHandler(self),
+        uponAssembly = True
+    )
 
-        factory = adapt(cmd,IProcessFactory)
-        pid     = self.fork()
+    def SIGCHLD(self, signum, frame):
+        self.checkStatus()
+
+
+    def sendSignal(self, signal):
+
+        if signal in signals:
+            # convert signal name to numeric signal
+            signal = signals[signal]
+
+        elif signal not in signal_names:
+            raise ValueError,"Unsupported signal", signal
+
+        self.os.kill(self.pid, signal)
+
+
+
+    def checkStatus(self):
+        # Check for process exited
+        p, s = self.os.waitpid(self.pid, self.os.WNOHANG)
+        if p==self.pid:
+            self._setStatus(s)
+
+
+    def _setStatus(self,status):
+
+        self.exitStatus = None
+        self.exitedBecause = None
+        self.stoppedBecause = None
+
+        self.isStopped = self.os.WIFSTOPPED(status)
+
+        if self.os.WIFEXITED(status):
+            self.exitStatus = self.os.WEXITSTATUS(status)
+
+        if self.isStopped:
+            self.stoppedBecause = self.os.WSTOPSIG(status)
+
+        if self.os.WIFSIGNALED(status):
+            self.exitedBecause = self.os.WTERMSIG(stauts)
+
+        self.isFinished = (
+            self.exitedBecause is not None or self.exitStatus is not None
+        )
+        if self.isFinished:
+            self.signalmanager.removeHandler(self)
+
+        self.isRunning = not self.isFinished and not self.isStopped
+
+        # Notify listeners of status change
+        for listener in self.listeners:
+            listener(self)
+
+
+    def addListener(self,func):
+        self.listeners.append(func)
+
+
+class ProcessSupervisor(EventDriven):
+
+    # log     = logger (to where?)
+    # lock    = lock for startup
+    # pidLock = lock for pid file
+    # pidFile = filename where pid is written
+
+    minChildren   = 1
+    maxChildren   = 4
+    startInterval = 15      # seconds between forks
+    lastStart     = None    # last time a fork occurred
+    nextStart     = None    # next scheduled fork
+
+    processes = binding.Make(dict)
+    plugins   = binding.Make(list)
+
+    template = binding.Require(
+        "IProcessTemplate for child processes", adaptTo=IProcessTemplate,
+        offerAs=[IProcessTemplate], suggestParent=False
+    )
+
+    reactor = binding.Make(
+        'peak.running.scheduler:UntwistedReactor', offerAs=[IBasicReactor]
+    )
+
+    taskQueue = binding.Make(
+        'peak.running.daemons.TaskQueue', offerAs=[ITaskQueue]
+    )
+
+    _no_twisted = binding.Require(
+        "ProcessSupervisor subcomponents may not depend on Twisted",
+        offerAs = [ITwistedReactor]
+    )
+
+
+    import os
+    from time import time
+
+
+
+
+    def _run(self):
+
+        if not self.lock.attempt():
+            # self.log.warn("Another process is starting")
+            return 1
+
+        try:
+            self.template   # ensure template is ready first
+            self.killPredecessor()
+            self.writePidFile()
+        finally:
+            self.lock.release()
+
+        self.requestStart()
+
+        retcode = super(ProcessSupervisor,self)._run()
+
+        if adapt(retcode,IExecutable,None) is not None:
+            # child process, drop out to the trampoline
+            return retcode
+
+        self.killProcesses()
+        self.removePidFile()
+
+        return retcode
+
+
+    def requestStart(self):
+
+        if self.nextStart is None:
+
+            if self.lastStart is None:
+                self.nextStart = self.time()
+            else:
+                self.nextStart = max(
+                    self.lastStart + self.startInterval, self.time()
+                )
+
+            self.reactor.callLater(self.nextStart-self.time(), self._doStart)
+
+
+    def _doStart(self):
+
+        if len(self.processes)>=self.maxChildren:
+            return
+
+        self.lastStart = self.time()
+        self.nextStart = None
+
+        proxy, stub = self.template.spawn(self)
+        if proxy is None:
+            self.mainLoop.childForked(stub)
+            return
+
+        # XXX log started
+        proxy.addListener(self._childChange)
+        self.processes[proxy.pid] = proxy
+
+        for plugin in self.plugins:
+            plugin.processStarted(proxy)
+
+        if len(self.processes)<self.minChildren:
+            self.requestStart()
+
+
+    def _childChange(self,proxy):
+        if proxy.isFinished:
+            # XXX log exited
+            del self.processes[proxy.pid]
+
+
+    def killProcesses(self):
+        for pid,proxy in self.processes.items():
+            proxy.sendSignal('SIGTERM')
+
+
+
+
+
+
+
+
+    def writePidFile(self):
+        self.pidLock.acquire()
+        try:
+            pf = open(self.pidFile,'w')
+            pf.write('%d\n', self.os.getpid())
+            pf.close()
+        finally:
+            self.pidLock.release()
+
+
+    def readPidFile(self, func):
+        self.pidLock.acquire()
+        try:
+            if self.os.path.exists(self.pidFile):
+                pf = open(self.pidFile,'r')
+                func(int(pf.readline().strip()))
+                pf.close()
+        finally:
+            self.pidLock.release()
+
+
+    def removePidFile(self):
+
+        def removeIfMe(pid):
+            if pid==self.os.getpid():
+                self.os.unlink(self.pidFile)
+
+        self.readPidFile(removeIfMe)
+
+
+    def killPredecessor(self):
+
+        def doKill(pid):
+            try:
+                self.os.kill(pid,signals['SIGTERM'])
+            except:
+                pass # XXX
+
+        self.readPidFile(doKill)
+
+
+class AbstractProcessTemplate(binding.Component):
+
+    protocols.advise(
+        instancesProvide = [IProcessTemplate],
+        asAdapterForProtocols = [IExecutable],
+        factoryMethod = 'templateForCommand'
+    )
+
+    import os
+
+    proxyClass = ChildProcess   # default factory for proxy
+    readPipes  = ()             # sequence of attribute names for p<-c pipes
+    writePipes = ()             # sequence of attribute names for p->c pipes
+
+    def spawn(self, parentComponent):
+
+        parentPipes, childPipes = {}, {}
+
+        for name in self.readPipes:
+            parentPipes[name], childPipes[name] = self._mkPipe()
+        for name in self.writePipes:
+            childPipes[name], parentPipes[name] = self._mkPipe()
+
+        pid = self.os.fork()
 
         if pid:
             # Parent process
-            proxy = factory.makeProxy(self, pid)
-            self.processes[pid] = proxy
-            self.signalManager.addHandler(self)
-            return proxy
+            [f.close() for f in childPipes.values()]
+            del childPipes
+            return self._makeProxy(parentComponent,pid,parentPipes), None
+
         else:
             # Child process
-            sys.exit( factory.runChild() )
+            [f.close() for f in parentPipes.values()]
+            del parentPipes
+            self.__dict__.update(childPipes)    # set named attrs w/pipes
+            return None, self._redirectWrapper(self._makeStub())
 
 
-    def SIGCHLD(self, signum, frame):
-        self.reap()
 
 
-    def reap(self):
-        """Scan for terminated child processes"""
-        for pid, proxy in self.processes.items():
-            p, s = self.waitpid(pid, self.WNOHANG)
-            if p==pid:
-                proxy.setStatus(s)
-                if proxy.isFinished:
-                    del self.processes[pid]
+    def _mkPipe(self):
+        r,w = self.os.pipe()
+        return self.os.fdopen(r,'r',0), self.os.fdopen(w,'w',0)
+
+
+    def _makeProxy(self,parentComponent,pid,pipes):
+
+        proxy = self.proxyClass(pid=pid)
+
+        for name, stream in pipes.items():
+            setattr(proxy, name, stream)
+
+        # Set parent component *after* the pipes are set up, in case
+        # the proxy has assembly events that make use of the pipes.
+        proxy.setParentComponent(parentComponent)
+
+
+    def _redirect(self):
+        pass
+
+
+    def _redirectWrapper(self, cmd):
+        """Wrap 'cmd' so that it's run after doing our redirects"""
+
+        def runner():
+            self._redirect()
+            return cmd
+
+        return runner
+
+
+
+
+
+
+
+
+
+
+
+
+    def _makeStub(self):
+        return self.command
+
+
+    command = binding.Require(
+        "Command to run in subprocess", suggestParent=False
+    )
+
+
+    def templateForCommand(klass, ob, proto):
+        return klass(ob, command = ob)
+
+    templateForCommand = classmethod(templateForCommand)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

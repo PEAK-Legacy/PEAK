@@ -45,7 +45,7 @@ class MainLoop(binding.Component):
     protocols.advise(
         instancesProvide=[IMainLoop]
     )
-
+    exitCode      = 0
     reactor       = binding.Obtain(IBasicReactor)
     time          = binding.Obtain('import:time.time')
     lastActivity  = None
@@ -58,21 +58,21 @@ class MainLoop(binding.Component):
         self.lastActivity = self.time()
 
     def run(self, stopAfter=0, idleTimeout=0, runAtLeast=0):
-
         """Loop polling for IO or GUI events and calling scheduled funcs"""
 
         self.lastActivity = self.time()
-        reactor = self.reactor
         self.signalManager.addHandler(self.signalHandler)
+        self.exitCode = 0
 
         try:
             if stopAfter:
-                reactor.callLater(stopAfter, reactor.stop)
+                self.reactor.callLater(stopAfter, self.reactor.stop)
 
             if idleTimeout:
-                reactor.callLater(runAtLeast, self._checkIdle, idleTimeout)
+                self.reactor.callLater(runAtLeast,self._checkIdle,idleTimeout)
 
-            reactor.run(False)
+            self.reactor.run(False)
+            return self.exitCode
 
         finally:
             del self.lastActivity
@@ -94,13 +94,13 @@ class MainLoop(binding.Component):
             self.reactor.callLater(timeout - idle, self._checkIdle, timeout)
 
 
+    def setExitCode(self, exitCode):
+        self.exitCode = exitCode
 
 
-
-
-
-
-
+    def childForked(self, stub):
+        self.setExitCode(stub)
+        self.reactor.crash()
 
 
 

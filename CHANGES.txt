@@ -2,6 +2,9 @@ Fixes and Enhancements since Version 0.5 alpha 2
 
  Changed, Enhanced, or Newly Deprecated Features
 
+ - Added 'IMainLoop.setExitCode()' and 'IMainLoop.childForked()' methods, to
+   allow reactor-driven components to control the mainloop's exit code.
+
  - DEPRECATED 'peak.util.signal_stack'.  Instead, bind to a
    'running.ISignalManager' and use its 'addHandler()/removeHandler()' methods.
    This has the same effect as 'pushSignals()' and 'popSignals()', except that

@@ -759,7 +759,7 @@ class EventDriven(AbstractCommand):
 
         """Perform setup, then run the event loop until done"""
 
-        self.mainLoop.run(
+        return self.mainLoop.run(
             self.stopAfter,
             self.idleTimeout,
             self.runAtLeast
