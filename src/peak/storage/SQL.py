@@ -655,6 +655,7 @@ class CXOracleConnection(SQLConnection):
 
 
 class DCOracle2Connection(ValueBasedTypeConn):
+
     protocols.advise(
         instancesProvide=[ISQLIntrospector]
     )
@@ -679,6 +680,40 @@ class DCOracle2Connection(ValueBasedTypeConn):
         'BINARY','DATETIME','NUMBER','ROWID','STRING',
     )
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    def typeMap(self):
+
+        tm = {}
+        ps = self.TYPES_NS.of(self)
+        api = self.API
+
+        for k in self.supportedTypes:
+
+            c = importObject(ps.get(k,NullConverter))
+
+            for v in getattr(api,k).values:
+                v = api.Type(v) # needed to get usable typemap keys
+                tm[v] = importObject(ps.get(PropertyName.fromString(v),c))
+
+        return tm
+
+    typeMap = binding.Make(typeMap)
+
+
     def listObjects(self, full=False, obtypes=NOT_GIVEN):
         addsel = addwhere = ''
 
@@ -694,4 +729,10 @@ class DCOracle2Connection(ValueBasedTypeConn):
         DECODE(object_type, 'FUNCTION', 'proc', lower(object_type))
         as "obtype", created as "created"%s
             from user_objects%s''' % (addsel, addwhere))
+
+
+
+
+
+
 
