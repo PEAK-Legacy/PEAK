@@ -68,7 +68,7 @@ class BaseInteraction(security.Interaction):
 
     def traverseName(self, request, ob, name, check_auth=1):
 
-        if not name or name='.':
+        if not name or name=='.':
             return ob
 
         if name=='..':
