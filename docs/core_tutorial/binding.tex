@@ -464,9 +464,8 @@ Traceback (most recent call last):
     self.usageError()
   File "C:\cygwin\home\pje\PEAK\src\peak\binding\once.py", line 177, in usageError
     raise TypeError(
-TypeError: <peak.binding.once.Once object at 0x01301B60> was used in a type
-    which does not support active bindings, but a valid attribute name was
-    not supplied
+TypeError: Once binding: mkNew was used in a type which does not support active
+bindings, but a valid attribute name was not supplied
 \end{verbatim}
 
 Ouch!  It doesn't work, because PEAK can't tell what name the attribute
@@ -484,6 +483,7 @@ PEAK framework classes for ``service" components derive from \class{%
 binding.Component} alredy.
 
 \newpage
+
 
 
 
