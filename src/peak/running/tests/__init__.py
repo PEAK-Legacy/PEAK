@@ -9,7 +9,9 @@ from peak.running.scheduler import UntwistedReactor, MainLoop
 
 test = binding.Component()
 
-loadCluster(test, config.fileNearModule(__name__,'test_cluster.txt'))
+loadCluster(test.__instance_offers__,
+    config.fileNearModule(__name__,'test_cluster.txt')
+)
 
 pm = running.CLUSTER.of(test)
 
@@ -34,8 +36,6 @@ groupToHosts = Items(
         'frob.baz.com'
     ),
 )
-
-
 
 
 

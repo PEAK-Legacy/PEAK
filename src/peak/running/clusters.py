@@ -169,8 +169,8 @@ def parseCluster(prefix, fn):
     return props
 
 
-def _value(v):
-    return lambda *x: v
+
+
 
 
 def loadCluster(propertyMap, filename=None, prefix='peak.running.cluster.*',
@@ -182,8 +182,8 @@ def loadCluster(propertyMap, filename=None, prefix='peak.running.cluster.*',
     r = parseCluster(prefix, filename)
 
     for k,v in r.items():
-        propertyMap.registerProvider(
-            PropertyName(k), _value(v)
+        propertyMap.setValue(
+            PropertyName(k), v
         )
 
     if propertyName:
