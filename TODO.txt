@@ -28,9 +28,9 @@ Open Issues/To-Do Items
 
        - Update tutorial for current kwargs
 
-
-
-
+       - Investigate whether suggestParentComponent() should be suppressed when
+         the value is computed by the binding, or if perhaps 'suggestParent'
+         should be set to 'False' by default for some kinds of bindings.
 
 
 
@@ -105,6 +105,7 @@ Open Issues/To-Do Items
 
        - the return of the Specialist
 
+    * "Pre-forking event driven services":http://www.eby-sarna.com/pipermail/transwarp/2003-August/000697.html
 
     * Have a way to easily in-line custom component usage (e.g. automatically
       create a subclass component with specified 'bindTo' bindings to get its
@@ -112,7 +113,6 @@ Open Issues/To-Do Items
 
     * Implement "contextual protocols" (c.f. "object teams") and "parameterized
       protocols" (E.g. 'ListOf(IFoo)', 'MappingOf(keys=IBar,values=IBaz)')
-
 
 
 
@@ -147,6 +147,8 @@ Open Issues/To-Do Items
 
         - rework smtp: to return a factory object that supports open().
           Also think about whether smtp should move to peak.net?
+
+
 
 
 
