@@ -127,8 +127,15 @@ Open Issues/To-Do Items
   relevant as written, they are being kept on this list as placeholders for
   ideas or problem areas that may need to be re-considered in future.)
 
+  Miscellaneous
+
+    * Functional tests that access "real" databases, LDAP, etc.
 
   Simulator/Module Inheritance
+
+    * Allow 'declareModule()' to bootstrap non-existent modules; this might
+      let us create "virtual packages" made by assembling other packages and
+      modules.
 
     * Need a strategy for handling "del" operations; they are currently
       untrapped.  This might be okay under most circumstances, but need to
@@ -143,13 +150,6 @@ Open Issues/To-Do Items
 
     * Support for sending and receiving remote cache invalidation
       messages between RecordManagers.
-
-
-
-
-
-
-
 
 
 

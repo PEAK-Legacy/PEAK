@@ -7,113 +7,87 @@ __all__ = [
 
     'CLUSTER',
 
-    'IDaemon', 'IDaemonScheduler', 'IDaemonicApp', 'IEventLoop',
-    'IBaseDaemon', 'IBaseDaemonSPI',
-    
+    'IPeriodicTask', 'ISystemScheduler', 'IAdaptiveTask', 'IAdaptiveTaskSPI',
+
 ]
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-class IDaemon(Interface):
+class IPeriodicTask(Interface):
 
     """Thing that does work periodically"""
 
     def __call__():
-        """Do whatever work is required, and update pollInterval"""
+        """Do whatever work is required; return truth if useful work done
+        
+        This method should update the task's 'pollInterval' if needed.  To
+        request that the task should no longer be recurrently scheduled,
+        raise 'exceptions.StopRunning'."""
 
     pollInterval = Attribute(
         """Number of seconds till next desired invocation"""
     )
 
-    priority = Attribute("""Integer priority value""")
+    priority = Attribute("""Integer priority value; higher=more important""")
 
     def __cmp__(other):
         """Compare to another daemon on the basis of priority"""
 
 
-class IDaemonScheduler(Interface):
 
-    """Thing that schedules daemons; must have an IEventLoop available"""
 
-    def addDaemon(daemon):
-        """Add 'daemon' to the schedule and ensure processing is scheduled"""
+
+
+
+
+class ISystemScheduler(Interface):
+
+    """System-wide task and I/O scheduler
+
+        There should be only one instance per interpreter.  This is our
+        access point to Twisted or a replacement thereof, with some additions
+        for better managing periodic tasks and "transient" servers such as an
+        all-daemon worker process or a webserver-invoked FastCGI process."""
+
+    def addPeriodic(ptask):
+        """Add 'ptask' to the prioritized processing schedule"""
 
     def run():
-        """Run daemons indefinitely"""
+        """Loop polling for IO or GUI events and calling scheduled funcs"""
 
     def stop():
-        """Stop running daemons and return from 'run()'"""
+        """Cause 'run()' to exit at the earliest practical moment"""
 
     def activityOccurred():
         """Automatically called when daemons perform useful
         activities, but may also be called by protocol handlers
         such as servers to flag activity."""
 
+    lastActivity = Attribute(
+        """The 'time()' that 'activityOccurred' was last called, or 'None'
+        if not currently running."""
+    )
 
-
-
-
-
-
-class IDaemonicApp(IDaemonScheduler):
-
-    """An application that just runs daemons/servers"""
-
-    # XXX this should also subclass some kind of 'app' interface
+    runningSince = Attribute(
+        """The time that 'run()' was called, or 'None' if not running"""
+    )
 
     stayAliveFor = Attribute(
-        """Daemons will run at least this many seconds"""
+        """'run()' will run at least this many seconds"""
     )
 
     shutDownAfter = Attribute(
-        """No daemons will be invoked after this many seconds; 
-        the application will exit soon afterward."""
+        """No scheduled actions will be invoked after this many seconds;
+        'run()' will exit soon afterward."""
     )
 
     shutDownIfIdleFor = Attribute(
-        """If 'activityOccurred()' is not called for this many 
+        """If 'activityOccurred()' is not called for this many
         seconds, and the 'stayAliveFor' time has passed, shut down."""
     )
-     
-
-class IEventLoop(Interface):
-
-    """Per-interpreter event loop manager; 'twisted.internet.reactor'
-       implements this for us."""
 
     def callLater(delay, callable, *args, **kw):
         """Invoke 'callable' after 'delay' seconds with '*args, **kw'"""
 
-    def run():
-        """Loop polling for IO or GUI events and calling scheduled funcs"""
-
-    def stop():
-        """Cause 'run()' to exit at the earliest practical moment"""    
 
 
 
@@ -121,9 +95,35 @@ class IEventLoop(Interface):
 
 
 
-class IBaseDaemon(IDaemon):
 
-    """Extra goodies to be supplied by BaseDaemon"""
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class IAdaptiveTask(IPeriodicTask):
+
+    """Periodic task with tunable polling interval"""
 
     runEvery = Attribute(
        """Base value for 'pollInterval' when daemon has no work waiting"""
@@ -144,7 +144,6 @@ class IBaseDaemon(IDaemon):
     minimumIdle = Attribute(
         """'pollInterval' used when daemon has work to do"""
     )
-    
 
 
 
@@ -162,9 +161,10 @@ class IBaseDaemon(IDaemon):
 
 
 
-class IBaseDaemonSPI(Interface):
 
-    """Things you implement when subclassing BaseDaemon"""
+class IAdaptiveTaskSPI(Interface):
+
+    """Things you implement when subclassing the AdaptiveTask abstract base"""
 
     def getWork():
         """Return a "job" (true value) for 'doWork()', or a false value"""
@@ -181,4 +181,25 @@ class IBaseDaemonSPI(Interface):
 
     def unlockMe():
         """Override this for custom locking: ensure lock released"""
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 

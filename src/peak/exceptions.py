@@ -8,15 +8,15 @@ class NamingException(Exception):
         become attributes of the exception object:
 
             rootException -- Exception that caused this exception to be thrown.
-        
+
             rootTraceback -- Traceback of the root exception.
-        
+
             resolvedName -- The portion of the name that was successfully
                 resolved.
 
             resolvedObj -- The object through which resolution was successful,
                 i.e., the object to which 'resolvedName' is bound.
-            
+
             remainingName -- The remaining portion of the name which could not
                 be resolved.
 
@@ -44,7 +44,7 @@ class NamingException(Exception):
         """Format the exception"""
 
         txt = Exception.__str__(self)
-        
+
         extras = [
             '%s=%r' % (k,getattr(self,k))
             for k in self.formattables if getattr(self,k,None) is not None
@@ -52,7 +52,7 @@ class NamingException(Exception):
 
         if extras:
             return "%s [%s]" % (txt, ','.join(extras))
-            
+
         return txt
 
 
@@ -63,7 +63,7 @@ class NamingException(Exception):
 
 class InvalidName(NamingException):
     """Unparseable string or non-name object"""
-   
+
 
 class NameNotFound(NamingException, LookupError):
     """A name could not be found"""
@@ -115,5 +115,11 @@ class TooManyResults(Exception):
 
 class TooFewResults(Exception):
     """Exactly one row was expected, but no rows were returned."""
+
+# Running
+
+class StopRunning(Exception):
+    """Task doesn't want to be rescheduled"""
+
 
 
