@@ -21,7 +21,7 @@ Installing PEAK
 
   In general, it is best to uninstall previous versions of PEAK before
   installing new ones, since some modules may have moved or been renamed.
-  Also, if you have Zope X3 installed on your Python path, you should ensure 
+  Also, if you have Zope X3 installed on your Python path, you should ensure
   that it is an up-to-date CVS version: "Milestone 2" is no longer supported.
 
  BASIC INSTALLATION
@@ -55,6 +55,30 @@ Installing PEAK
   followed by the appropriate arguments.  You should of course substitute the
   correct path to your Python installation's "scripts" directory.
 
+  The 'peak' script is designed for use as a '#!' command interpreter for
+  certain file types, such as ZConfig configuration files.  Some Unixes,
+  however, do not support using scripts as '#!' interpreters.  To work around
+  this, there is a (currently experimental) 'invoke' program you can build.  To
+  build the 'invoke' program, go to the directory you unpacked the PEAK source
+  in, and type::
+
+    gcc -o invoke scripts/invoke.c
+
+  This will build an 'invoke' executable, which you can then place on your
+  system's path or other appropriate location.  You can then use '#!' lines
+  like this (replacing '/usr/local/bin' with the directory where you installed
+  'invoke', of course)::
+
+    #!/usr/local/bin/invoke peak EventDriven
+    ...rest of config file goes here
+
+  'invoke' allows an arbitrary number of space-separated arguments to be passed
+  to the command it invokes, thus working around various Unixes' '#!' parsing
+  problems, as well as the "can't use a script as an interpreter" problem.  It
+  also searches the system PATH for the specified command.  You may find this
+  useful for non-PEAK script interpreters as well.
+
+
 
  TESTING YOUR INSTALLATION
 
@@ -78,6 +102,23 @@ Installing PEAK
   tests like this::
 
     python C:\Python22\Scripts\peak test
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
  THIRD PARTY SOFTWARE INCLUDED WITH PEAK

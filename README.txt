@@ -116,6 +116,11 @@ PEAK Release 0.5 alpha 2
       from PEAK models (and vice versa) is possible (although
       not yet implemented for anything but MOF->PEAK).
 
+
+
+
+
+
     * Application Runtime tools, including:
 
       - a "command objects" framework for creating command-line applications,
@@ -153,6 +158,10 @@ PEAK Release 0.5 alpha 2
       designed independently from) the "MixJuice" tool for AOP in Java.
 
 
+
+
+
+
  Known Issues and Risks of this Version
 
    This is ALPHA software.  Although much of the system is extensively
@@ -173,6 +182,20 @@ PEAK Release 0.5 alpha 2
    provide a wealth of information on actual usage scenarios,
    recommended approaches, etc.  There is also the beginnings of a
    tutorial on using the component binding package.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
