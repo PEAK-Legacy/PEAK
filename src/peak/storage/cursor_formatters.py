@@ -4,15 +4,15 @@ from peak.api import *
 
 class AbstractCursorFormatter(binding.Component):
     cursor = binding.Obtain('..')
-    header = binding.Make(lambda: True)
-    footer = binding.Make(lambda: True)
-    delim  = binding.Make(lambda: '|')
-    null   = binding.Make(lambda: 'NULL')
+    header = True
+    footer = True
+    delim  = '|'
+    null   = 'NULL'
 
     def __call__(self, stdout):
         c = self.cursor
         
-        if c._cursor.description:
+        if c._cursor.description is not None:
             self.formatSet(c, stdout)
 
         while c.nextset():
@@ -137,8 +137,8 @@ class cursorToRepr(AbstractCursorFormatter):
 
 
 class cursorToLDIF(AbstractCursorFormatter):
-    header = binding.Make(lambda: False)
-    footer = binding.Make(lambda: False)
+    header = False
+    footer = False
 
     def formatRows(self, c, stdout):
         nr = 0
@@ -195,9 +195,9 @@ class cursorToLDIF(AbstractCursorFormatter):
 class cursorToCopy(AbstractCursorFormatter):
     """PostgreSQL/SQLite "COPY FROM" compatible format"""
     
-    delim = binding.Make(lambda: '\t')
-    null  = binding.Make(lambda: '\\N')
-    footer = binding.Make(lambda: False)
+    delim  = '\t'
+    null   = '\\N'
+    footer = False
    
     _map = {
         '\\' : '\\\\',  '\b' : '\\b',   '\f' : '\\f',
@@ -240,10 +240,10 @@ class cursorToCopy(AbstractCursorFormatter):
 
 class cursorToCSV(AbstractCursorFormatter):
     csv = binding.Obtain('import:csv')
-    dialect = binding.Make(lambda: 'excel')
-    footer  = binding.Make(lambda: False)
-    delim   = binding.Make(lambda: None)
-    null    = binding.Make(lambda: None)
+    dialect = 'excel'
+    footer  = False
+    delim   = None
+    null    = None
 
     def formatRows(self, c, stdout):
         nr = 0
@@ -269,12 +269,19 @@ class cursorToCSV(AbstractCursorFormatter):
 
 
 class cursorToHTML(AbstractCursorFormatter):
+    title = None
+
     def formatRows(self, c, stdout):
         nr = 0
 
         print >>stdout, "<table border>"
 
         if self.header:
+            if self.title is not None:
+                print >>stdout, "<tr><th colspan=%d>%s</th></tr>" % (
+                    len(c._cursor.description), self.title
+                )
+
             print >>stdout, "<tr>"
 
             for r in c._cursor.description:

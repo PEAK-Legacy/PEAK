@@ -909,6 +909,43 @@ default for src is '!.', the current input buffer"""
 
 
 
+    class cmd_htmldump(ShellCommand):
+        """\\htmldump [-f] -- dump entire database as HTML document
+
+-f\t\tsuppress footer (rowcount)
+        """
+
+        args = ('f', 0, 0)
+
+        def cmd(self, cmd, opts, args, stdout, stderr, **kw):
+            con = self.interactor.con
+            si = adapt(con, storage.ISQLObjectLister, None)
+            if si is None:
+                print >>stderr, "%s: database doesn't support object listing" % cmd
+                return
+
+            tl = si.listObjects(obtypes=['table'])
+            tl = [r.obname for r in tl]
+            tl.sort()
+
+            print >>stdout, "<html><body>"
+
+            for t in tl:
+                c = con('select * from %s' % t)
+                c.dumpTo(stdout, format="html",
+                    footer=(not opts.has_key('-f')),
+                    title="Contents of table %s" % t
+                )
+
+                print >>stdout
+
+            print >>stdout, "</body></html>"
+                            
+
+    cmd_htmldump = binding.Make(cmd_htmldump)
+
+
+
     def redraw(self, stdout, add_hist=False):
         b = self.getBuf()
         self.resetBuf()
