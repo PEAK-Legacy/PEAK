@@ -11,7 +11,7 @@ include_fcgiapp    = True   # edit this to stop installation of 'fcgiapp'
 PACKAGE_NAME = "PEAK"
 PACKAGE_VERSION = "0.5a3"
 HAPPYDOC_IGNORE = [
-    '-i', 'datetime',  '-i', 'old', '-i', 'tests', '-i', 'setup',
+    '-i','datetime', '-i','old', '-i','tests', '-i','setup', '-i','examples',
     '-i', 'kjbuckets', '-i', 'ZConfig', '-i', 'persistence', '-i', 'csv',
 ]
 
