@@ -112,13 +112,13 @@
 """
 
 
-from TW.Utils.Simulator import Simulator, prepForSimulation
 import sys
 from types import ModuleType
 __proceed__ = None
 __all__ = ['adviseModule', 'setupModule', '__proceed__']
 
 adviceMap = {}
+
 
 
 def getCodeListForModule(module, code=None):
@@ -131,8 +131,12 @@ def getCodeListForModule(module, code=None):
     name = module.__name__
     code = prepForSimulation(code)
     codeList = module.__codeList__ = adviceMap.get(name,[])+[code]
-    
-    for baseModule in getattr(module,'__bases__',()):
+
+    bases = getattr(module,'__bases__',())
+    if isinstance(bases,ModuleType):
+        bases = bases,
+        
+    for baseModule in bases:
         if type(baseModule) is not ModuleType:
             raise TypeError (
                 "%s is not a module in %s __bases__" % (m,name)
@@ -143,10 +147,6 @@ def getCodeListForModule(module, code=None):
             codeList.append(c)
 
     return codeList
-
-
-
-
 
 
 
@@ -244,3 +244,386 @@ def adviseModule(moduleName):
 
 
 
+from TW.Utils.Code import *
+
+from TW.Utils.Code import BUILD_CLASS, STORE_NAME, MAKE_CLOSURE, \
+    MAKE_FUNCTION, LOAD_CONST, STORE_GLOBAL, CALL_FUNCTION, IMPORT_STAR, \
+    IMPORT_NAME, JUMP_ABSOLUTE, POP_TOP, ROT_FOUR, LOAD_ATTR, LOAD_GLOBAL, \
+    LOAD_CONST, ROT_TWO, LOAD_LOCALS
+
+from TW.Utils.Meta import makeClass
+from sys import _getframe
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class Simulator:
+
+    def __init__(self, dict):
+
+        self.defined   = {}
+        self.locked    = {}
+        self.funcs     = {}
+        self.lastFunc  = {}
+        self.classes   = {}
+        self.classPath = {}
+        self.dict      = dict
+
+
+    def execute(self, code):
+        
+        d = self.dict
+        
+        try:
+            d['__TW_Simulator__'] = self
+            exec code in d
+
+        finally:
+            del d['__TW_Simulator__']
+            self.locked.update(self.defined)
+            self.defined.clear()
+            self.classPath.clear()
+
+    def finish(self):
+        for k,v in self.lastFunc.items():
+            bind_func(v,__proceed__=None)
+    
+
+    def ASSIGN_VAR(self, value, qname):
+        locked = self.locked
+        if locked.has_key(qname):
+            return locked[qname]
+        self.defined[qname] = value
+        return value
+
+
+
+    def DEFINE_FUNCTION(self, value, qname):
+
+        lastFunc, locked, funcs = self.lastFunc, self.locked, self.funcs
+
+        if lastFunc.has_key(qname):
+            bind_func(lastFunc[qname],__proceed__=value); del lastFunc[qname]
+            
+        if '__proceed__' in value.func_code.co_names:
+            lastFunc[qname] = value
+
+        if locked.has_key(qname):
+            return locked[qname]
+
+        if funcs.has_key(qname):
+            return funcs[qname]
+
+        funcs[qname] = value
+        return value
+
+
+    def IMPORT_STAR(self, module, locals, prefix):
+        locked = self.locked
+        have = locked.has_key
+        defined = self.defined
+        
+        all = getattr(module,'__all__',None)
+        
+        if all is None:
+            for k,v in module.__dict__.items():
+                if not k.startswith('_'):
+                    qname = prefix+k
+                    if not have(qname):
+                        locals[k] = defined[qname] = v
+        else:
+            for k in all:
+                qname = prefix+k
+                if not have(qname):
+                    locals[k] = defined[qname] = getattr(module,k)
+
+
+
+    def DEFINE_CLASS(self, name, bases, dict, qname):
+
+        classes = self.classes
+        get = self.classPath.get
+        basePaths = tuple([get(id(base)) for base in bases])
+        
+        if classes.has_key(qname):
+            
+            oldBases, oldPaths, oldDict = classes[qname]
+            addBases = []; addBase = addBases.append
+            addPaths = []; addPath = addPaths.append
+            
+            for i in range(len(oldBases)):
+                if oldPaths[i] not in basePaths:
+                    addBase(oldBases[i])
+                    addPath(oldPaths[i])
+            
+            bases = tuple(addBases) + bases
+            basePaths = tuple(addPaths) + basePaths
+
+            have = dict.has_key
+            for k,v in oldDict.items():
+                if not have(k): dict[k]=v
+
+        classes[qname] = bases, basePaths, dict.copy()
+        newClass = makeClass(name,bases,dict)
+
+        try:
+            newClass.__module__ = self.dict['__name__']
+        except:
+            pass
+
+        self.classPath[id(newClass)] = qname
+
+        locked = self.locked
+        if locked.has_key(qname):
+            return locked[qname]
+
+        return newClass
+        
+
+def prepForSimulation(code, path='', depth=0):
+
+    code = Code(code)
+
+    idx = code.index()
+    opcode, operand, lineOf = idx.opcode, idx.operand, idx.byteLine
+    offset = idx.offset
+
+    name_index = code.name_index
+    const_index = code.const_index
+
+    Simulator = name_index('__TW_Simulator__')
+    DefFunc   = name_index('DEFINE_FUNCTION')
+    DefClass  = name_index('DEFINE_CLASS')
+    Assign    = name_index('ASSIGN_VAR')
+    ImpStar   = name_index('IMPORT_STAR')
+
+    names   = code.co_names
+    consts  = code.co_consts
+    co_code = code.co_code
+    
+    emit = code.append
+    patcher = code.iterFromEnd(); patch = patcher.write; go = patcher.go
+
+    spc = '    ' * depth
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    ### Fix up IMPORT_STAR operations
+
+    for i in idx.opcodeLocations[IMPORT_STAR]:
+
+        backpatch = offset[i]
+        line = lineOf[backpatch]
+        
+        assert opcode[i-1]== IMPORT_NAME, (
+            "Unrecognized 'import *' at line %(line)d" % locals()
+        )
+
+        patchTarget = len(co_code)
+        go(offset[i-1])
+        patch(JUMP_ABSOLUTE, patchTarget, 0)
+        
+        # rewrite the IMPORT_NAME
+        emit(IMPORT_NAME, operand[i-1])
+
+        # Call __TW_Simulator__.IMPORT_STAR(module, locals, prefix)
+        emit(LOAD_GLOBAL, Simulator)
+        emit(LOAD_ATTR, ImpStar)
+        emit(ROT_TWO)
+        emit(LOAD_LOCALS)
+        emit(LOAD_CONST, const_index(path))
+        emit(CALL_FUNCTION, 3)
+        emit(JUMP_ABSOLUTE, backpatch)
+
+        # Replace IMPORT_STAR w/remove of the return val from IMPORT_STAR()
+        co_code[offset[i]] = POP_TOP
+
+        #print "%(line)04d import * (into %(path)s)" % locals()
+
+
+
+
+
+
+
+
+
+
+    ### Fix up all other operation types
+
+    for i in idx.opcodeLocations[STORE_NAME]+idx.opcodeLocations[STORE_GLOBAL]:
+
+        op     = opcode[i]
+        arg    = operand[i]
+        prevOp = opcode[i-1]
+        qname = name = names[arg]
+
+        backpatch = offset[i]
+        patchTarget = len(co_code)
+
+        line = lineOf[backpatch]
+
+        if path and opcode[i]==STORE_NAME:
+            qname = path+name
+
+        namArg = const_index(qname)
+        
+        # common prefix - get the simulator object
+        emit(LOAD_GLOBAL, Simulator)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        ### Handle class operations
+        
+        if prevOp == BUILD_CLASS:
+
+            bind = "class"
+            
+            assert opcode[i-2]==CALL_FUNCTION and \
+               opcode[i-3] in (MAKE_CLOSURE, MAKE_FUNCTION) and \
+               opcode[i-4]==LOAD_CONST, (
+                    "Unrecognized class %(qname)s at line %(line)d" % locals()
+            )
+            const = operand[i-4]
+            suite = consts[const]
+            consts[const] = prepForSimulation(suite, qname+'.', depth+1)
+
+            backpatch -= 1  # back up to the BUILD_CLASS instruction...
+            nextI = offset[i+1]
+            
+            # and fill up the space to the next instruction with POP_TOP, so
+            # that if you disassemble the code it looks reasonable...
+            
+            for j in range(backpatch,nextI):
+                co_code[j] = POP_TOP
+                
+            # get the DEFINE_CLAS method
+            emit(LOAD_ATTR, DefClass)
+            
+            # Move it before the (name,bases,dict) args
+            emit(ROT_FOUR)
+
+            # Get the absolute name, and call method w/4 args
+            emit(LOAD_CONST, namArg)
+            emit(CALL_FUNCTION, 4)
+
+
+
+
+
+
+
+
+        ### Non-class definition
+
+        else:
+            if prevOp in (MAKE_FUNCTION, MAKE_CLOSURE):
+                bind = "def"
+                # get the DEFINE_FUNCTION method
+                emit(LOAD_ATTR, DefFunc)
+            else:
+                bind = "assign"
+                # get the ASSIGN_VAR method
+                emit(LOAD_ATTR, Assign)
+            
+            # Move it before the value, get the absolute name, and call method
+            emit(ROT_TWO)
+            emit(LOAD_CONST, namArg)
+            emit(CALL_FUNCTION, 2)
+            
+
+
+        # Common patch epilog
+        
+        go(backpatch)
+        patch(JUMP_ABSOLUTE, patchTarget, 0)
+        
+        emit(op, arg)
+        emit(JUMP_ABSOLUTE, offset[i+1])
+        
+        #print "%(line)04d %(spc)s%(bind)s %(qname)s" % locals()
+
+    code.co_stacksize += 5  # add a little margin for error
+    return code.code()
+
+
+bind_func(prepForSimulation, **globals())
+bind_func(prepForSimulation, **getattr(__builtins__,'__dict__',__builtins__))
+
+
+
+
+
+
+if __name__=='__main__':
+    from glob import glob
+    for file in glob('ick.py'):
+        print
+        print "File: %s" % file,
+        source = open(file,'r').read().rstrip()+'\n'
+        try:
+            code = compile(source,file,'exec')
+        except SyntaxError:
+            print "Syntax Error!"
+        else:
+            print
+        code = prepForSimulation(code)
+    print
