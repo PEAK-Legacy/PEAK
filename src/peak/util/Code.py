@@ -14,10 +14,6 @@
 
     There's also an 'opcode' array that you can import that maps opcode names to
     values.
-
-    Currently, this package still works on Python 2.1...  as long as you have
-    'ExtensionClass' installed.  But that's not officially supported, so don't
-    count on it staying that way forever.
 """
 
 from array import array
@@ -39,48 +35,12 @@ globals().update(opcode) # opcodes are now importable at will
 
 
 
-try:
-    x = object
-    del x
-
-except:
-    # XXX 2.1 backport
-    from ExtensionClass import Base as object
-    from ComputedAttribute import ComputedAttribute as property
-    StopIteration = 'StopIteration'
-    def iter(x): return x.__iter__()
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
 
 class Code(object):
+    """Editable version of Python 'code' objects"""
 
     def __init__(self, code=None):
         if code is None:
@@ -117,9 +77,8 @@ class Code(object):
         return codeIter(self)
 
     def code(self):
+        """Return a true Python bytecode object based on this code object"""
         return new.code(*self.code_as_tuple())
-
-
 
     def init_code_tuple(self,tup):
         ( self.co_argcount, self.co_nlocals, self.co_stacksize, self.co_flags,
@@ -127,9 +86,9 @@ class Code(object):
           self.co_name, self.co_firstlineno, self.co_lnotab, self.co_freevars,
           self.co_cellvars
         ) = tup
-        self.co_consts = list(co_consts)
-        self.co_names = list(co_names)
-        self.co_varnames = list(co_varnames)
+        self.co_consts = list(co_consts)[:]
+        self.co_names = list(co_names)[:]
+        self.co_varnames = list(co_varnames)[:]
         self.co_code = array('B',co_code)
 
 
@@ -152,61 +111,62 @@ class Code(object):
         )
 
 
-    def iterFromEnd(self):
-        return codeIter(self,len(self.co_code))
-
     def name_index(self,name):
+        """Return an offset for 'name', extending 'co_names' if needed"""
         if name not in self.co_names:
             self.co_names.append(name)
         return self.co_names.index(name)
 
 
 
+
+
     def const_index(self,const):
+        """Return the offset for 'const', extending 'co_consts' if needed"""
         if const not in self.co_consts:
             self.co_consts.append(const)
         return self.co_consts.index(const)
 
     def local_index(self,name):
+        """Return the offset for 'name', extending 'co_varnames' if needed"""
         if name not in self.co_varnames:
             self.co_varnames.append(name)
         return self.co_varnames.index(name)
 
     def free_index(self,name):
+        """Return the offset for 'name', extending 'co_freevars' if needed"""
         if name not in self.co_freevars:
             self.co_freevars.append(name)
         return self.co_freevars.index(name)
 
     def cell_index(self,name):
+        """Return the offset for 'name', extending 'co_cellvars' if needed"""
         if name not in self.co_cellvars:
             self.co_cellvars.append(name)
         return self.co_cellvars.index(name)
 
-
     def findOp(self,op):
+        """Return an iterator which will find instances of opcode 'op'"""
         return codeIter(self,0,[op])
 
     def findOps(self,oplist):
+        """Return an iterator which will find opcodes in 'oplist'"""
         return codeIter(self,0,oplist)
 
-
     def namesUsed(self):
-        used = {}
+        """Return the names which are loaded by 'LOAD_NAME' in this code"""
         names = self.co_names
-        cursor = self.findOp(LOAD_NAME)
-
-        for op in cursor:
-            used[names[cursor.arg]]=1
-
-        return used.keys()
-
-
+        used = [0] * len(names)
+        cursor = self.findOps(LOAD_NAME)
+        for op in cursor: used[cursor.arg]=1
+        return [name for (name,wasUsed) in zip(names,used) if wasUsed]
 
 
     def renumberLines(self, toLine):
 
-        self.co_firstlineno = toLine
+        """Renumber code's line numbers so that it starts at 'toLine'"""
 
+        self.co_firstlineno = toLine
         cursor = self.findOp(SET_LINENO)
         cursor.next()
         offset = (toLine - cursor.arg)
@@ -215,12 +175,16 @@ class Code(object):
         for op in cursor:
             cursor.write(SET_LINENO, cursor.arg + offset)
 
+
     def index(self):
+        """Return a 'codeIndex' object for this code"""
         return codeIndex(self)
 
 
     def append(self, op, arg=None):
-    
+
+        """Append opcode 'op', w/optional argument 'arg'; arg can be 32 bit"""
+
         if isinstance(op,StringType): op = opcode[op]
 
         append = self.co_code.append
@@ -239,12 +203,9 @@ class Code(object):
         else:
             append(op)
 
-
-
-
-
-
 class Function(Code):
+
+    """Editable version of Python 'function' objects; includes code editing"""
     
     def __init__(self, func=None):
         if func is None:
@@ -271,6 +232,7 @@ class Function(Code):
         self.init_code(func.func_code)    
 
     def func(self):
+        """Return a true Python function based on this function/code object"""
         c = self.code()
         f = new.function(c, self.func_globals, self.func_name, self.func_defaults or ())
         f.func_dict = self.func_dict
@@ -282,31 +244,32 @@ class Function(Code):
 
 
 
-
-
-
 allOps = [1]*256
 
 class codeIter(object):
+    """Iterator for stepping through bytecode"""
     
     op = None
 
-    def __init__(self, codeObject, startAt=0, findOps=None):
-        self.code = codeObject
-        self.codeArray = codeObject.co_code
+    def __init__(self, code, startAt=0, findOps=None):
+        """Iterator for 'code', starting at 'startAt', finding 'findOps'"""
+        self.code = code
+        self.codeArray = code.co_code
         self.end = self.start = startAt
         self.setMask(findOps)
 
-    def setMask(self,opList):
-        if opList:
+    def setMask(self,findOps=None):
+        """Set the list of opcodes this iterator will iterate over"""
+        if findOps:
             opmap = self.findOps = [0]*256
-            for f in opList:
+            for f in findOps:
                 if isinstance(f,StringType): f = opcode[f]
                 opmap[f]=1
         else:
             self.findOps = allOps
             
     def arg(self):
+        """Argument value of current opcode, accessed as a property"""
         s, e = self.start, self.end
         l = e-s
         if l>=3:
@@ -318,19 +281,17 @@ class codeIter(object):
             return arg
 
     arg = property(arg)
-    
+
     def __iter__(self):
         return self
 
-    def __getitem__(self,x):    # XXX 2.1 backport
-        try: return self.next()
-        except StopIteration: raise IndexError, x
-
     def go(self,offset):
+        """Go to 'offset' in the code, returning the next matching opcode"""
         self.end = offset
         return self.next()
 
     def next(self):
+        """Return the next matching opcode or raise 'StopIteration'"""
         ca = self.codeArray
         findOps = self.findOps
         end = self.end
@@ -365,9 +326,9 @@ class codeIter(object):
 
 
 
-
-
     def write(self, op, arg=None, sameSize=1):
+
+        """Write 'op' (w/optional 'arg') at current position"""
 
         if isinstance(op,StringType): op = opcode[op]
     
@@ -403,8 +364,6 @@ class codeIter(object):
                 raise ValueError
 
             ca[self.start]=op
-
-
 
 
 
@@ -492,6 +451,25 @@ for f in (
 
 class codeIndex(object):
 
+    """Useful indexes over a code object
+
+        opcodeLocations[op] -- list of instruction numbers with 'op' as opcode
+
+        opcode[i] -- the i'th instruction's opcode
+
+        operand[i] -- the i'th instruction's operand (or None)
+
+        offset[i]  -- location of the i'th instruction
+
+        byteIndex[b] -- instruction number 'i' for byte 'b'
+        
+        byteLine[b] -- source line number that generated byte 'b'
+
+        nextLine[b] -- offset of next line number change following byte 'b'
+
+        nextSplit[b] -- offset of next "safe code split point" following 'b'
+    """
+
     def __init__(self, codeObject):
 
         self.code = codeObject
@@ -510,16 +488,17 @@ class codeIndex(object):
             
     _bindAll(__init__)
 
+
+
     def byteLine(self):
-        """Not every app needs line numbers, so this is calc-on-demand"""
+        """Property: line number for each byte"""
+
         code = self.code; lnotab = array('B', code.co_lnotab)
         table  = []; extend = table.extend
         line   = code.co_firstlineno
-        byte   = 0
 
         for i in range(0,len(lnotab),2):
-            extend( [line] * lnotab[i] )
-            line += lnotab[i+1]
+            extend( [line] * lnotab[i] ); line += lnotab[i+1]
 
         codeLen = len(code.co_code)
         tblLen  = len(table)
@@ -531,9 +510,10 @@ class codeIndex(object):
 
     byteLine = property(_bindAll(byteLine))
 
+
     def byteIndex(self):
 
-        """Not every app needs a reverse index, so this is calc-on-demand"""
+        """Property: instruction sequence number by byte"""
 
         index = []; extend = index.extend
         offset = self.offset[:]
@@ -551,52 +531,143 @@ class codeIndex(object):
 
 
 
+    def nextLine(self):
+        """Property: offset of next line number change for each byte"""
+        code = self.code; lnotab = array('B', code.co_lnotab)
+        table  = []; extend = table.extend
+        byte   = 0
+
+        for i in range(0,len(lnotab),2):
+            bytes = lnotab[i]; byte+=bytes
+            extend( [byte] * bytes )
+
+        codeLen = len(code.co_code)
+        tblLen  = len(table)
+
+        if tblLen<codeLen:
+            extend( [codeLen] * (codeLen-tblLen) )
+
+        self.__dict__['nextLine'] = table
+        return table
+
+    nextLine = property(_bindAll(nextLine))
 
 
+    def nextSplit(self):
+        """Property: next safe code split offset by byte"""
 
+        offsets = self.nextLine[:]  # start with offsets of next lines
+        
+        fwd_jump = [0] * 256
+        isCleanup  = fwd_jump[:]
 
+        for j in (
+            FOR_LOOP, SETUP_LOOP, SETUP_EXCEPT, SETUP_FINALLY, FOR_ITER,
+            JUMP_IF_TRUE, JUMP_IF_FALSE, JUMP_FORWARD
+        ):
+            fwd_jump[j] = 1
 
+        for c in (POP_TOP, POP_BLOCK, END_FINALLY): isCleanup[c] = 1
+        
+        i = 0; opcode=self.opcode; codeLen = len(opcode); operand=self.operand
+        bi = self.byteIndex; ofs = self.offset
 
+        while i<codeLen:
+            if not fwd_jump[opcode[i]]:
+                i += 1
+                continue
 
+            # Save location and opcode
+            op = opcode[i]; startLoc = ofs[i]
 
+            # Follow the jump forward
+            i = bi[ofs[i+1] + operand[i]]
 
+            if op==SETUP_EXCEPT:
+                # back up to the jump to the "else" block
+                i -= 1  
+                
+                # jump forward again
+                i = bi[ofs[i+1] + operand[i]]
 
+                # check for END_FINALLY before this point
+                assert opcode[i-1]==END_FINALLY and fwd_jump[opcode[i-2]]
+                i -= 2
 
+            elif op==SETUP_FINALLY:
+                # find the END_FINALLY 
+                while opcode[i] != END_FINALLY:
+                    i += 1
+            
+            while fwd_jump[opcode[i]]:
+                i = bi[ofs[i+1] + operand[i]]
 
+            while isCleanup[opcode[i]]:
+                i += 1
 
+            endLoc = ofs[i]
+            offsets[startLoc:endLoc] = [endLoc] * (endLoc-startLoc)
 
+        self.__dict__['nextSplit'] = offsets
+        return offsets
 
-
-
-
-
-
+    nextSplit = property(_bindAll(nextSplit))
 
 del builtIns, globalDict
 
-
-def visit(code, visitFunc=lambda code,path,newconsts: code, path=()):
-
-    consts = list(code.co_consts)
-
-    for i in range(len(consts)):
-
-        co = consts[i]
-
-        if type(co) is CodeType:
-            consts[i]=visit(co,visitFunc,path+(co.co_name,))
-
-    return visitFunc(code, path, tuple(consts))
-
-
-def show(code, path, newconsts):
-    print path
-    return code
-
-
-
 if __name__ == '__main__':
+
+    s = """
+for x in 27,35,51:
+    y = x * 2
+else:
+    z = 999
     
+try:
+    a = 1
+    try:
+        a=10
+    finally:
+        b=20
+finally:
+    b = 2
+
+while 1:
+    c = 3
+    if c==3:
+        break
+    continue
+
+if a:
+    d = 4
+elif c:
+    e = 5
+else:
+    f = 6
+
+class Foo:
+    g = 7
+
+try:
+    h = 8
+except (NameError,ValueError):
+    i = 9
+except:
+    j = 10
+#else:
+#    k = 11
+"""
+
+    co = Code(compile(s,"<string>","exec"))
+    ix = co.index()
+    for i in ix.opcodeLocations[STORE_NAME]:
+        ns = ix.nextSplit[ix.offset[i]]
+        print co.co_names[ix.operand[i]], ns,
+        if ns<len(ix.byteLine): print ix.byteLine[ns],
+        print
+    
+
+'''    
     foo = "foo"
 
     def bar():
@@ -609,4 +680,4 @@ if __name__ == '__main__':
     foo = "it worked!"
     
     bar(); baz()
-
+'''

@@ -553,7 +553,7 @@ def prepForSimulation(code, path='', depth=0):
     co_code = code.co_code
     
     emit = code.append
-    patcher = code.iterFromEnd(); patch = patcher.write; go = patcher.go
+    patcher = iter(code); patch = patcher.write; go = patcher.go
 
     spc = '    ' * depth
 

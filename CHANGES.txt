@@ -1,5 +1,10 @@
 New Features and Bug Fixes since v0.2, preview 1
 
+ * Added more docs to TW.Utils.Code, and removed 'iterFromEnd()' method
+   from code objects.  Added experimental 'nextSplit' index to codeIndex
+   objects that does top-level block analysis to allow splitting a code
+   object into smaller routines.
+
  * Fixed the "reference to rebound class within another class" problem
    with module inheritance, as reported by (who else?) Ulrich Eck.  :)
 
