@@ -615,39 +615,138 @@ consider the object ``changed" when an attribute is computed.
 
 \subsection{Creating Attribute Bindings}
 
-\subsubsection{Binding API conventions}
+The \module{peak.binding} package offers many kinds of attribute bindings for
+constructing your components.  In this section, we'll look at the conventions
+for how these bindings are created, and at the details of several of the basic
+binding types.
 
-name, provides, doc
+\subsubsection{API Conventions}
+
+There are three standard parameters that almost all attribute binding
+constructors accept.  They always use the same parameter names, so you can
+supply them as keyword arguments.
+
+\begin{description}
+
+\item[\var{name}] \hfill \\
+The \var{name} parameter specifies the attribute name that the binding will
+have.  As mentioned previously, this is only needed when the binding is being
+used in a class that doesn't support \class{ActiveDescriptors}.  If you're using
+a class that inherits from \class{binding.Base}, you don't need to supply this
+parameter.
+
+\item[\var{provides}] \hfill \\
+The \var{provides} parameter is a (possibly nested) tuple of
+\strong{configuration keys}, which are either interfaces or \class{PropertyName}
+objects.  This is used for integration with the configuration system, so we'll 
+explore it in more detail later on.  For now, you can just ignore it.
+
+\item[\var{doc}] \hfill \\
+The \var{doc} parameter is an optional docstring which will be used for the
+attribute.  This is useful for documenting your class so that tools like
+\citetitle{pydoc} and the Python \function{help} function will display the
+docstring for the attribute as part of the class' documentation.
+
+\end{description}
+
+
+
+
+
 
 \subsubsection{Basic Binding Classes/Functions}
 
+The following functions and classes can be used as-is to create attribute
+bindings, or you can subclass the classes to create custom binding types
+of your own:
+
 \begin{funcdesc}{Once}{func, name=None, provides=None, doc=None}
+The most basic of all binding types, the \class{binding.Once} class requires
+only a callable object such as a function or lambda.  If you don't supply a
+\var{name}, the \samp{__name__} attribute of the \var{func} parameter is used,
+if available.  Similarly, if you don't supply a \var{doc}, the \samp{__doc__} 
+attribute of the \var{func} parameter is used, if available.
 \end{funcdesc}
 
 \begin{funcdesc}{New}{obtype, bindToOwner=None, name=None, provides=None,
 doc=None}
+As we've already seen, the \function{binding.New} function just needs a class or
+type object as its \var{obtype} parameter, and it creates a new instance of that
+type.  The optional \var{bindToOwner} flag, if specified, tells
+\function{binding.New} whether it should pass the owning object and 
+attribute name into the type's constructor.  If you don't specify a value for
+this parameter, the \function{binding.New} function will ``guess" by checking
+whether the constructor supports the \class{binding.IBindingFactory} interface.
+Ordinarily, you can ignore this parameter, and the ``right thing" will happen.
+
+\function{binding.New} will also accept a string for its \var{obtype} parameter,
+in which case it will interpret the string as an \strong{import specification},
+using the \function{peak.util.imports.importString} function to load it.  We'll
+talk more about import specifications in the chapter on the
+\module{peak.config} package.
 \end{funcdesc}
 
 \begin{funcdesc}{Copy}{obj, name=None, provides=None, doc=None}
+The \function{binding.Copy} function does just what it says.  When accessed, it
+will create a copy of its \var{obj} parameter, using the \function{copy}
+function from the Python standard library's \module{copy} module.
 \end{funcdesc}
 
-\begin{funcdesc}{requireBinding}{description="", provides=None, doc=None}
+
+
+
+\begin{funcdesc}{bindToSelf}{name=None, provides=None, doc=None}
+This one is pretty self-explanatory, no pun intended.  This class supplies
+the owning object itself as an instance attribute.  What good is that?  Well,
+it's handy for objects that provide default support for various interfaces
+in the absence of an object to delegate the implementation to.  The object
+to.  The object can refer to \samp{self.delegateForInterfaceX.someMethod()},
+and have the \samp{delegateForInterfaceX} attribute be a
+\class{binding.bindToSelf} instance by default.
 \end{funcdesc}
 
-\begin{funcdesc}{bindToSelf}{provides=None, doc=None}
+\begin{funcdesc}{requireBinding}{description="", name=None, provides=None,
+doc=None}
+The \function{binding.requireBinding} class is the odd one out in this group.
+It doesn't compute a value at all!  Instead, it raises an error when the 
+attribute is accessed.  This is so that you can easily define an attribute that
+you expect a subclass or instance to provide, and thus get a clearer error
+message if the expected attribute is never defined.
 \end{funcdesc}
-
-XXX AutoCreated, OnceClass
 
 
 \newpage
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 \section{Composing Hierarchies with \class{binding.Component} Objects}
 
-XXX bindToParent
+XXX Base, Component, bindToParent, getParentComponent, setParentComponent,
+getRootComponent, iterParents, ...
+
+XXX AutoCreated, OnceClass?
 
 
 \section{Connecting Components by Name or Interface}
 
-XXX bindSequence, bindTo, bindToProperty, bindToUtilities, Constant, Acquire
+XXX bindSequence, bindTo, bindToProperty, bindToUtilities, Constant, Acquire,
+findUtility, findUtilities, ... getComponentName, getComponentPath,
+ComponentName, 
 
