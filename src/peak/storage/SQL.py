@@ -696,12 +696,14 @@ class OracleURL(naming.URL.Base):
 
 
 class OracleBase(SQLConnection):
-
     """Base class for Oracle connection drivers"""
 
     protocols.advise(
         instancesProvide=[ISQLObjectLister]
     )
+
+    txnId = binding.Make('peak.util.uuid:UUID')
+    txnBranch = "main"
 
     def onJoinTxn(self, txnService):
 
@@ -732,8 +734,6 @@ class OracleBase(SQLConnection):
             # Since we set read-only on new connections, we only need to do
             # this if the connection is still open (and super() might close it)
             self._readOnly()
-
-
 
 
     def _prepare(self):
