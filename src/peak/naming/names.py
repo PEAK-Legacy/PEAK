@@ -16,9 +16,9 @@ from peak.binding.once import Activator, Once
 __all__ = [
     'AbstractName', 'toName', 'CompositeName', 'CompoundName',
     'Syntax', 'UnspecifiedSyntax', 'NNS_NAME', 'ParsedURL', 'URLMatch',
-    'LinkRef', 'NNS_Reference', 'FlatSyntax',
+    'LinkRef', 'NNS_Reference', 'FlatSyntax', 'isBoundary',
+    'crossesBoundaries',
 ]
-
 
 class UnspecifiedSyntax(object):
 
@@ -31,13 +31,13 @@ class UnspecifiedSyntax(object):
         return "%s(%r)" % (name.__class__.__name__, list(name))
 
 
+def isBoundary(name):
+    return name and name.nameKind==COMPOSITE_KIND and len(name)<3 \
+           and not name[-1]
 
-
-
-
-
-
-
+def crossesBoundaries(name):
+    return name and name.nameKind==COMPOSITE_KIND and ( len(name)>1
+        or name and not name[0] )
 
 def any_plus_url(n1,n2):
     return n2
@@ -58,6 +58,9 @@ def composite_plus_composite(n1,n2):
         l.append(last + n2[0])
         l.extend(list(n2)[1:])
 
+    if len(l)==1 and l[0]:
+        return l[0]
+
     return CompositeName(l)
 
 
@@ -71,13 +74,10 @@ def composite_plus_compound(n1,n2):
     else:
         l.append(last+n2)
 
+    if len(l)==1 and l[0]:
+        return l[0]
+
     return CompositeName(l)
-
-
-
-
-
-
 
 
 def compound_plus_composite(n1,n2):
@@ -90,8 +90,10 @@ def compound_plus_composite(n1,n2):
     else:
         l[0] = n1
         
-    return CompositeName(l)
+    if len(l)==1 and l[0]:
+        return l[0]
 
+    return CompositeName(l)
 
 def url_plus_other(n1,n2):
     return n1.addName(n2)
@@ -118,8 +120,6 @@ def _name_radd(self, other):
     if self and other:
         return _name_addition[other.nameKind,self.nameKind](other,self)
     return self or other
-
-
 
 def same_minus_same(n1,n2):
     if n1.startswith(n2):
@@ -772,7 +772,7 @@ class CompositeName(AbstractName):
 
         if firstPartType is not None:
             parts[0] = firstPartType(parts[0])
-
+            if len(parts)==1: return parts[0]
         return klass(parts)
 
     parse = classmethod(parse)
@@ -816,7 +816,7 @@ def toName(aName, nameClass=CompoundName, acceptURL=1):
         raise exceptions.InvalidName(aName)
 
 
-NNS_NAME = CompositeName('/')
+NNS_NAME = CompositeName.parse('/',CompoundName)
 
 class LinkRef(object):
 

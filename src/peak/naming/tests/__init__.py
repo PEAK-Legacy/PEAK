@@ -13,19 +13,19 @@ validNames = {
 
     'ldap://cn=root:somePw@localhost:9912/cn=monitor':
         Items(
-            host='localhost', port=9912, basedn=(('cn=monitor',),),
+            host='localhost', port=9912, basedn=('cn=monitor',),
             extensions={'bindname':(1,'cn=root'), 'x-bindpw':(1,'somePw')}    
         ),
 
     'ldap://localhost/cn=Bar,ou=Foo,o=eby-sarna.com':
         Items(
             host='localhost', port=389,
-            basedn=(('o=eby-sarna.com','ou=Foo','cn=Bar'),),
+            basedn=('o=eby-sarna.com','ou=Foo','cn=Bar'),
         ),
 
     'ldap:///cn="A \\"quoted\\", and obscure thing",ou=Foo\\,Bar':
         Items(
-            basedn=(('ou=Foo\\,Bar','cn="A \\"quoted\\", and obscure thing"'),),
+            basedn=('ou=Foo\\,Bar','cn="A \\"quoted\\", and obscure thing"'),
         ),
 
     'uuid:6ba7b810-9dad-11d1-80b4-00c04fd430c8':
@@ -49,10 +49,14 @@ validNames = {
 
     'lockfile:c:\\spam.lock':
         Items(body='c:\\spam.lock'),
+
+    'config:environ.TMP/':
+        Items(scheme='config', body=(('environ','TMP'),'') ),
 }
 
 
-parse = naming.InitialContext(objectFactories=[]).lookup
+parse = naming.parseURL
+
 
 class NameParseTest(TestCase):
 
@@ -64,10 +68,6 @@ class NameParseTest(TestCase):
             obj = parse(name)
             for (k,v) in values:
                 assert getattr(obj,k)==v, (k,getattr(obj,k),v)
-
-
-
-
 
 
 

@@ -92,23 +92,34 @@ class NameContext(Component):
             return self._resolveLocal(self.compoundParser(()), iface)
 
         else:
-            local = toName(name[0], self.compoundParser, self.parseURLs)
-            
-            if len(name)==1:
-                return self.resolveToInterface(local, iface)
 
-            ctx = self.lookup_nns(local)
+            if isBoundary(name):    # /, x/
+                self._checkSupported(name, iface)
+                return self, name
+                
+            local = toName(name[0], self.compoundParser, self.parseURLs)
+
+            if len(name)==1:    # 'x'
+                # Single element composite name doesn't change namespaces
+                return self.resolveToInterface(local,iface)
+
+
+            # '/y', 'x/y' -- lookup the part through the '/' and continue
+
+            ctx = self[CompositeName((local,''))]
 
             if isResolver(ctx):
                 return ctx.resolveToInterface(name[1:], iface)
-
-            if len(name)==2 and not name[1]:
-                return self[local], self.compoundParser(())
 
             raise exceptions.NotAContext(
                 "Unsupported interface", iface,
                 resolvedObj=ctx, remainingName=name[1:]
             )
+
+
+
+
+
 
     def _checkSupported(self, name, iface):
 
@@ -119,7 +130,37 @@ class NameContext(Component):
             "Unsupported interface", iface,
             resolvedObj=self, remainingName=name
         )
-    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     def _resolveLocal(self, name, iface):
 
@@ -147,7 +188,6 @@ class NameContext(Component):
     def _resolveURL(self, name, iface):
 
         auth, nic = name.getAuthorityAndName()
-        nic = self.compositeParser(nic)
         diff = nic - self.nameInContext
 
         if self.namingAuthority == auth and diff is not None:
@@ -156,6 +196,7 @@ class NameContext(Component):
         else:
             ctx = self.__class__(self, namingAuthority=auth)
             return ctx.resolveToInterface(nic, iface)
+
 
 
 
@@ -203,41 +244,41 @@ class NameContext(Component):
 
 
 
-    def lookup_nns(self, name=None):
+    def _contextNNS(self, attrs=None):
+        return NNS_Reference( self ), attrs
 
-        """Find the next naming system after resolving local part"""
 
-        if not name:    # empty name means "this context"
+    def _get_nns(self, name, retrieve=1):
 
-            return self._deref(
-                NNS_Reference( self ), name, None
-            )
+        if not name:
+            return self._contextNNS()
 
-        obj = self[name]
+        ob = self._get(name, retrieve)
 
-        if isinstance(obj,self.__class__):
-          
+        if ob is NOT_FOUND or not retrieve:
+            return ob
+
+        state, attrs = ob
+
+        ob = self._deref(state, name, attrs)
+        
+        if isinstance(ob, self.__class__):
             # Same or subclass, must not be a junction;
             # so delegate the NNS lookup to it
-            
-            return obj.lookup_nns()
+            return ob._contextNNS(attrs)
 
+        elif isResolver(ob):
+            # it's a context, so let it go as-is
+            return state, attrs
 
-        elif not IBasicContext.isImplementedBy(obj):
-            
-            # Not a context?  make it an NNS reference
-
-            return self._deref(
-                NNS_Reference( obj ), name, None
-            )
-
-        else:
-            # It's a context, so just return it
-            return obj
+        # Otherwise, wrap it in an NNS_Reference
+        return NNS_Reference( ob ), attrs
 
 
     def close(self):
         pass
+
+
 
 
 
@@ -292,8 +333,11 @@ class NameContext(Component):
         ctx, name = self.resolveToInterface(name)
         if ctx is not self: return ctx.lookupLink(name)
 
-        info = self._get(name)
-        
+        if isBoundary(name):
+            info = self._get_nns(name[0])
+        else:
+            info = self._get(name)
+
         if info is NOT_FOUND:
             raise exceptions.NameNotFound(name)
 
@@ -323,11 +367,8 @@ class NameContext(Component):
 
 
 
-
-
-
     def get(self, name, default=None):
-    
+
         """Lookup 'name' and return an object, or 'default' if not found"""
         
         ctx, name = self.resolveToInterface(name)
@@ -335,16 +376,16 @@ class NameContext(Component):
 
         return self._getOb(name, default)
 
-
     def _getOb(self, name, default=NOT_FOUND):
 
-        info = self._get(name)
+        if isBoundary(name):
+            info = self._get_nns(name[0])
+        else:
+            info = self._get(name)
+
         if info is NOT_FOUND: return default
-
         state, attrs = info
-
         return self._deref(state, name, attrs)
-
 
     def __contains__(self, name):
         """Return a true value if 'name' has a binding in context"""
@@ -354,8 +395,10 @@ class NameContext(Component):
         if ctx is not self:
             return name in ctx
 
-        return self._get(name, retrieve=False) is not NOT_FOUND
+        if isBoundary(name):
+            return self._get_nns(name[0], False) is not NOT_FOUND
 
+        return self._get(name, False) is not NOT_FOUND
 
     def lookup(self, name):
         """Lookup 'name' --> object; synonym for __getitem__"""
@@ -365,27 +408,29 @@ class NameContext(Component):
         """Synonym for __contains__"""
         return name in self
 
-
-
     def keys(self):
         """Return a sequence of the names present in the context"""
         return [name for name in self]
         
+
     def items(self):
         """Return a sequence of (name,boundItem) pairs"""
         return [ (name,self._getOb(name, None)) for name in self ]
 
+
     def info(self):
         """Return a sequence of (name,refInfo) pairs"""
-        return [ (name,self._get(name,retrieve=False))
+        return [ (name,self._get(name,False))
                     for name in self
         ]
+
 
     def bind(self, name, object, attrs=None):
 
         """Synonym for __setitem__, with attribute support"""
 
         self.__setitem__(name,object,attrs)
+
 
     def unbind(self, name, object):
 
@@ -394,19 +439,56 @@ class NameContext(Component):
         del self[name]
 
 
+
+
+
+
+
+
+
+
+
+
     def rename(self, oldName, newName):
 
         """Rename 'oldName' to 'newName'"""
 
-        ctx, name = self.resolveToInterface(oldName,IWriteContext)
-        
-        if ctx is not self:
-            ctx.rename(oldName,newName)
-            return
-            
-        ctx, newName = self.resolveToInterface(newName)
-       
-        self._rename(name,newName)
+        oldCtx, n1 = self.resolveToInterface(oldName,IResolver)
+        newCtx, n2 = self.resolveToInterface(newName,IResolver)
+
+        if oldCtx.namingAuthority <> newCtx.namingAuthority or \
+            crossesBoundaries(n1) or crossesBoundaries(n2):
+                raise exceptions.InvalidName(
+                    "Can't rename across naming systems", oldName, newName
+                )
+
+        n1 = oldCtx.nameInContext + n1
+        n2 = newCtx.nameInContext + n2
+
+        common = []
+        for p1, p2 in zip(n1,n2):
+            if p1!=p2: break
+            common.append(p1)
+
+        common = self.compoundParser(common)
+        n1 = n1 - common
+        n2 = n2 - common
+
+        if self.namingAuthority<>oldCtx.namingAuthority or \
+            (common-self.nameInContext) is None:
+
+            ctx, base = self.resolveToInterface(
+                oldCtx.namingAuthority + common, IWriteContext
+            )
+
+            if ctx is not self:
+                ctx.rename(base+n1,base+n2)
+                return
+
+        else:    
+            base = common - self.nameInContext
+
+        self._rename(base+n1, base+n2)
 
     def __setitem__(name, object, attrs=None):
 
@@ -417,8 +499,13 @@ class NameContext(Component):
         if ctx is not self:
             ctx[name]=object
 
+        elif isBoundary(name):
+            name = name[0]
+            state,bindAttrs = self._mkref(object,name,attrs)
+            self._bind_nns(name, state, bindAttrs)
+
         else:
-            state,bindattrs = self._mkref(object,name,attrs)
+            state,bindAttrs = self._mkref(object,name,attrs)
             self._bind(name, state, bindAttrs)
 
 
@@ -429,6 +516,8 @@ class NameContext(Component):
         
         if ctx is not self:
             del ctx[name]
+        elif isBoundary(name):
+            self._unbind_nns(name[0])
         else:
             self._unbind(name)
 
@@ -442,16 +531,9 @@ class NameContext(Component):
 
 
 
-
-
-
-
-
-
-
     # The actual implementation....
 
-    def _get(self, name, retrieve=1):
+    def _get(self, name, retrieve=True):
 
         """Lookup 'name', returning 'NOT_FOUND' if not found
         
@@ -475,27 +557,27 @@ class NameContext(Component):
         """        
         raise NotImplementedError
 
-
     def _bind(self, name, state, attrs=None):
         raise NotImplementedError
 
+    def _bind_nns(self, name, state, attrs=None):
+        raise NotImplementedError
 
     def _unbind(self, name):
         raise NotImplementedError
 
+    def _unbind_nns(self, name):
+        raise NotImplementedError
 
     def _rename(self, old, new):
         raise NotImplementedError
-
-
-
 
 class AddressContext(NameContext):
 
     """Handler for address-only URL namespaces"""
 
 
-    def _get(self, name, retrieve=1):
+    def _get(self, name, retrieve=True):
         return (name, None)     # refInfo, attrs
 
 
