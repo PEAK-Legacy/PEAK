@@ -24,7 +24,7 @@ Open Issues/To-Do Items
 
     peak.model
 
-        - make Element Persistent; add support for lazy-loaded attributes
+        - add support for lazy-loaded attributes
 
         - review XMI/Querying extensions for forward compatibility planning
 

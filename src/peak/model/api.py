@@ -4,7 +4,7 @@ from peak.api import *
 from peak.model.interfaces import *
 from peak.model.interfaces import __all__ as allInterfaces
 
-from types import FunctionType
+from Persistence import Persistent
 
 
 
@@ -410,7 +410,7 @@ class Sequence(Collection):
 
 class Classifier(binding.Base):
     """Basis for all flavors"""
-            
+
 class PrimitiveType(Classifier):
     """A primitive type (e.g. Boolean, String, etc.)"""
 
@@ -420,9 +420,18 @@ class Enumeration(Classifier):
 class DataType(Classifier):
     """A complex datatype"""
 
-class Element(DataType):
+class ElementMeta(Persistent.__class__, DataType.__class__):
+    """XXX
+    The order of the bases here should be reversed, but this currently
+    breaks w/Python 2.2 and the current Persistent implementation.
+    Luckily, this has no adverse effects for binding.Base.__class__,
+    but mixing in other metaclasses might do strange things here.  :(
+    """
+
+class Element(DataType, Persistent):
     """An element in its own right"""
     __implements__ = IElement
+    __metaclass__  = ElementMeta
 
 
 config.setupModule()
