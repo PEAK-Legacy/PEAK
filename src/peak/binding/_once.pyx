@@ -9,6 +9,7 @@ cdef extern object GET_DICTIONARY(object o)
 
 cdef void *_NOTFOUND
 cdef void *_lockType
+cdef object Py_None     # Avoid dictionary lookups for 'None'
 
 from peak.api import NOT_FOUND
 from peak.util.threads import get_ident
@@ -24,10 +25,12 @@ cdef class bindingLock:
 
 _NOTFOUND = <void *> NOT_FOUND
 _lockType = <void *> bindingLock
+Py_None   = None        # Avoid dictionary lookups for 'None'
 
 
 cdef int isLock(void *obj):
     return (<_object *>obj).ob_type == _lockType
+
 
 cdef int isOurs(void *obj):
     cdef int id
@@ -36,42 +39,39 @@ cdef int isOurs(void *obj):
     lock = <bindingLock> obj
     return lock.id == id
 
-
-
-
 cdef class OnceDescriptor:
 
     """Data descriptor base class for 'Once' bindings"""
     
     cdef object attrName
 
-    def __set__(self, obj, void *value):
+    def __set__(self, obj, value):
 
         d = GET_DICTIONARY(obj)
-
-        if value:
-            d[self.attrName] = <object>value
-
-        else:
-            del d[self.attrName]
+        d[self.attrName] = value
 
 
+    def __delete__(self, obj):
+        d = GET_DICTIONARY(obj)
+        del d[self.attrName]
 
 
-    def __get__(self, void *obj, void *typ):
+
+
+    def __get__(self, ob, typ):
     
         # Compute the attribute value and cache it
 
         # Note: fails if attribute name not supplied or doesn't reference
         # this descriptor!
 
-        if not obj:
+        cdef void *obj
+        
+        if ob is Py_None:
             return self
 
-        ob = <object> obj
         n = self.attrName
         d = GET_DICTIONARY(ob)
-
         obj = PyDict_GetItem(d, n)
 
 
@@ -126,19 +126,19 @@ cdef class __attrName_Descriptor:
     """The attribute name this descriptor will handle."""
 
 
-    def __get__(self, void *obj, void *typ):
+    def __get__(self, obj, typ):
 
-        if not obj:
+        if obj is Py_None:
             return self
 
         return (<OnceDescriptor>obj).attrName
             
 
-    def __set__(self, OnceDescriptor obj, void *value):
-        if not value:
-            obj.attrName = None
-        else:
-            obj.attrName = <object>value
+    def __set__(self, OnceDescriptor obj, value):
+        obj.attrName = value
+
+    def __delete__(self, OnceDescriptor obj):
+        obj.attrName = None
 
 
 OnceDescriptor_attrName = __attrName_Descriptor()
