@@ -14,7 +14,7 @@ PACKAGE_NAME = "PEAK"
 PACKAGE_VERSION = "0.5a1"
 
 HAPPYDOC_IGNORE = [
-    '-i', 'examples',  '-i', 'old', '-i', 'tests', '-i', 'zope', '-i', 'setup',
+    '-i', 'examples',  '-i', 'old', '-i', 'tests', '-i', 'setup',
     '-i', 'kjbuckets', '-i', 'ZConfig', '-i', 'persistence',
 ]
 

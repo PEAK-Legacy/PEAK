@@ -44,8 +44,9 @@ class AbstractCommand(binding.Component):
     """Simple, commandline-driven process"""
 
     implements(ICmdLineApp)
-
     classProvides(ICmdLineAppFactory)
+
+    XXX = binding.classAttr("This is a kludge so classProvides works")
 
     argv    = binding.bindTo('import:sys:argv')
     stdin   = binding.bindTo('import:sys:stdin')
@@ -78,7 +79,6 @@ define a usage message for their subclass.
             return isatty()
 
     isInteractive = binding.Once(isInteractive)
-
 
     def getSubcommand(self, executable, **kw):
 
