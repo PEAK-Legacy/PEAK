@@ -145,7 +145,7 @@ class PropertyMap(Component):
 
         if isinstance(ifaces,tuple):
             for iface in ifaces:
-                self.register(iface,provider)
+                self.registerProvider(iface,provider)
         elif self.depth.get(ifaces,depth)>=depth:
             # ifaces is a configKey
             _setCellInDict(self.rules, ifaces, provider)
