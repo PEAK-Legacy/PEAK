@@ -2,8 +2,4 @@
 
 Please see the individual modules for useful classes, etc."""
 
-from peak.api import PropertyName
-
-CLUSTER = PropertyName('peak.running.cluster').of(None)
-
-del PropertyName
+from interfaces import *
