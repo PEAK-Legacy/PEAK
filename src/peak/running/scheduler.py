@@ -3,7 +3,6 @@
 from peak.api import *
 from interfaces import *
 from peak.util.EigenData import EigenCell, AlreadyRead
-from bisect import insort_right
 from errno import EINTR
 
 __all__ = [
@@ -24,7 +23,8 @@ class StopOnStandardSignals(binding.Component):
     SIGTERM = SIGBREAK = SIGINT
 
 
-
+class ReactorCrash(Exception):
+    """Signal that the reactor needs to crash/exit NOW"""
 
 
 
@@ -173,20 +173,22 @@ class UntwistedReactor(binding.Component):
     running = False
     writers = binding.Make(list)
     readers = binding.Make(list)
-    laters  = binding.Make(list)
     time    = binding.Obtain('import:time.time')
     sleep   = binding.Obtain('import:time.sleep')
     select  = binding.Obtain('import:select.select')
     _error  = binding.Obtain('import:select.error')
     logger  = binding.Obtain('logging.logger:peak.reactor')
     sigMgr  = binding.Obtain(ISignalManager)
+    scheduler = binding.Obtain(events.IScheduler)
 
     checkInterval = binding.Obtain(
         PropertyName('peak.running.reactor.checkInterval')
     )
 
     def callLater(self, delay, callable, *args, **kw):
-        insort_right(self.laters, _Appt(self.time()+delay, callable, args, kw))
+        self.scheduler.sleep(delay).addCallback(
+            lambda s,e: callable(*args,**kw) or True
+        )
 
     def addReader(self, reader):
         if reader not in self.readers: self.readers.append(reader)
@@ -199,8 +201,6 @@ class UntwistedReactor(binding.Component):
 
     def removeWriter(self, writer):
         if writer in self.writers: self.writers.remove(writer)
-
-
 
 
     def run(self, installSignalHandlers=True):
@@ -234,7 +234,7 @@ class UntwistedReactor(binding.Component):
 
     def crash(self):
         self.running = False
-
+        raise ReactorCrash
 
     def SIGINT(self, num, frame):
         self.stop()
@@ -249,24 +249,22 @@ class UntwistedReactor(binding.Component):
         now = self.time()
         wasRunning = self.running
 
-        while (
-            (self.running or not wasRunning)
-            and self.laters and self.laters[0].time <= now
-        ):
-            try:
-                self.laters.pop(0)()
-            except:
-                self.logger.exception(
-                    "%s: error executing scheduled callback:", self
-                )
+        try:
+            self.scheduler.tick()
+        except ReactorCrash:
+            return
+        except:
+            self.logger.exception(
+                "%s: error executing scheduled callback:", self
+            )
 
         if delay is None:
             if not self.running:
                 delay = 0
-            elif self.laters:
-                delay = self.laters[0].time - self.time()
             else:
-                delay = self.checkInterval
+                delay = self.scheduler.time_available()
+                if delay is None:
+                    delay = self.checkInterval
 
         delay = max(delay, 0)
 
@@ -283,45 +281,6 @@ class UntwistedReactor(binding.Component):
 
         elif delay and self.running:
             self.sleep(delay)
-
-
-class _Appt(object):
-
-    """Simple "Appointment" for doing 'callLater()' invocations"""
-
-    __slots__ = 'time','func','args','kw'
-
-    def __init__(self,t,f,a,k):
-        self.time = t; self.func = f; self.args = a; self.kw = k
-
-    def __call__(self):
-        return self.func(*self.args, **self.kw)
-
-    def __cmp__(self, other):
-        return cmp(self.time, other.time)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

@@ -172,7 +172,10 @@ class TestApp(binding.Component):
         )
 
     reactor = binding.Make(reactor, offerAs=[running.IBasicReactor])
-
+    scheduler = binding.Make(
+        lambda self: events.Scheduler(self.clock.time),
+        offerAs=[events.IScheduler]
+    )
     def mainLoop(self):
         return MainLoop(self, time = self.clock.time)
 
@@ -189,7 +192,6 @@ class TestApp(binding.Component):
 
     clock = binding.Make(clock)
 
-
 ping = ('doing work','ping')
 pong = ('doing work','pong')
 spam = ('doing work','spam')
@@ -200,8 +202,6 @@ sleep = lambda n: ('Sleeping for',n)
 notWork = ('getting work',False)
 gotWork = ('getting work',True)
 didWork = ('doing work',True)
-
-
 
 class ReactiveTests(TestCase):
 
