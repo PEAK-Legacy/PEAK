@@ -175,7 +175,7 @@ class Protocol:
         try:
             mro = typ.__mro__
         except AttributeError:
-            mro = type('tmp',(typ,),{}).__mro__
+            mro = type('tmp',(typ,object),{}).__mro__
 
         for klass in mro:
             factory=get(klass)
