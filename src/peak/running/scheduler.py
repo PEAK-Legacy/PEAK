@@ -3,27 +3,27 @@
 from peak.api import *
 from interfaces import *
 from peak.util.EigenData import EigenCell, AlreadyRead
-
 from bisect import insort_right
+from peak.util.signal_stack import pushSignals, popSignals
 
 
 __all__ = [
     'setReactor', 'getReactor', 'getTwisted',
-    'MainLoop', 'UntwistedReactor',
+    'MainLoop', 'UntwistedReactor', 'DefaultSignalManager'
 ]
 
+class DefaultSignalManager(binding.Component):
 
+    # We hook up to the reactor as soon as possible (i.e. activate upon
+    # assembly), to avoid having to do the lookup during signal handling.
 
+    reactor = binding.bindTo(IBasicReactor, activateUponAssembly=True)
 
+    def SIGINT(self, num, frame):
+        self.reactor.callLater(0, self.reactor.stop)
 
-
-
-
-
-
-
-
-
+    SIGTERM = SIGBREAK = SIGINT
+    
 
 
 
@@ -50,6 +50,8 @@ class MainLoop(binding.Component):
     reactor       = binding.bindTo(IBasicReactor)
     time          = binding.bindTo('import:time.time')
     lastActivity  = None
+    signalManager = binding.bindTo(PropertyName('peak.running.signalManager'))
+
 
     def activityOccurred(self):
         self.lastActivity = self.time()
@@ -61,6 +63,7 @@ class MainLoop(binding.Component):
 
         self.lastActivity = self.time()
         reactor = self.reactor
+        pushSignals(self.signalManager)
 
         try:
             if stopAfter:
@@ -73,12 +76,9 @@ class MainLoop(binding.Component):
 
         finally:
             del self.lastActivity
+            popSignals()
 
         # XXX we should probably log start/stop events
-
-
-
-
 
     def _checkIdle(self, timeout):
 
@@ -183,8 +183,6 @@ class UntwistedReactor(binding.Component):
         PropertyName('peak.running.reactor.checkInterval')
     )
 
-    signalManager = binding.bindTo(PropertyName('peak.running.signalManager'))
-
     def callLater(self, delay, callable, *args, **kw):
         insort_right(self.laters, _Appt(self.time()+delay, callable, args, kw))
 
@@ -203,14 +201,12 @@ class UntwistedReactor(binding.Component):
 
 
 
+
+
     def run(self, installSignalHandlers=True):
 
-        from peak.util.signal_stack import pushSignals, popSignals
-
         if installSignalHandlers:
-            pushSignals(self.signalManager)
-        else:
-            pushSignals(None)
+            pushSignals(self)
 
         try:
             self.running = True
@@ -224,7 +220,9 @@ class UntwistedReactor(binding.Component):
 
         finally:
             self.running = False
-            popSignals()
+
+            if installSignalHandlers:
+                popSignals()
 
             # clear selectables (XXX why???)
             self._delBinding('readers')
@@ -235,8 +233,10 @@ class UntwistedReactor(binding.Component):
         self.running = False
 
 
+    def SIGINT(self, num, frame):
+        self.callLater(0, self.stop)
 
-
+    SIGTERM = SIGBREAK = SIGINT
 
 
 
