@@ -47,9 +47,9 @@ class SchemaLoader(BaseLoader, ZConfig.loader.SchemaLoader):
 
 
 
-class ConfigLoader(AbstractInterpreter,BaseLoader,ZConfig.loader.ConfigLoader):
+class ConfigRunner(AbstractInterpreter,BaseLoader,ZConfig.loader.ConfigLoader):
 
-    """Combination config-file loader and interpreter"""
+    """Config-file interpreter"""
 
     usage="""
 Usage: peak SCHEMA_URL ZCONFIG_FILE arguments...
@@ -99,21 +99,21 @@ class ZConfigSchemaContext(naming.AddressContext):
     def _get(self, name, retrieve=1):
 
         url = naming.toName(name.body, FileURL.fromFilename)
-
         ob = adapt(naming.lookup(self,url), naming.IStreamFactory)
 
-        return ConfigLoader(
-            self.creationParent,
-            schema = SchemaLoader(self.creationParent).loadFile(
-                ob.open('t'), str(url)
-            )
+        loader = SchemaLoader(self.creationParent).loadFile(
+            ob.open('t'), str(url)
         )
+        parent = self.creationParent
 
+        def factory(**kw):
+            kw.setdefault('schema', loader)
+            kw.setdefault('parentComponent', parent)
+            return ConfigRunner(**kw)
 
+        protocols.adviseObject(factory, provides=[running.ICmdLineAppFactory])
 
-
-
-
+        return factory
 
 
 

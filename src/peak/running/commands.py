@@ -203,6 +203,47 @@ class AbstractInterpreter(AbstractCommand):
 
 
 
+    def __call__(klass, *__args, **__kw):
+
+        """(Meta)class method: try to return the interpreted subcommand"""
+
+        # First, create the instance we'd ordinarily return:
+        cmd = klass.__new__(klass, *__args, **__kw)
+        cmd.__init__(*__args, **__kw)
+
+        if len(cmd.argv)<2:
+            # No args, we can't do this.  Return the actual
+            # command instance, which will then fail at _run()
+            # time.  A bit kludgy, but it works.
+            return cmd
+
+        # Return the subcommand instance in place of the interpreter instance
+        return cmd.interpret(cmd.argv[1])
+
+    __call__ = binding.classAttr(__call__)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 class IniInterpreter(AbstractInterpreter):
 
     """Interpret an '.ini' file as a command-line app
