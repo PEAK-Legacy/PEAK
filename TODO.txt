@@ -1,6 +1,53 @@
 Open Issues/To-Do Items
 
- Short Term Project Support
+ Targeted for 0.5 Alpha 3
+
+    * peak.events migration
+
+      - Implement "Twisted-compatibility plan":http://www.eby-sarna.com/pipermail/peak/2004-January/001125.html
+
+      - 'running.IProcessProxy' should use conditions/values instead of
+        listeners, and drop 'checkStatus()' method
+
+      - 'running.IMainLoop' should have a value for 'lastActivity', and combine
+        'setExitCode' and 'childForked' as 'exitWith()'.
+
+      - 'ISignalManager' should offer events and ability to check signal name
+
+      - Implement basic 'events.ISelector'
+
+      - 'UntwistedReactor' should use an 'events.ISelector' to implement
+        I/O functions
+
+      - Add 'events.twisted_support', with 'TwistedScheduler',
+       'TwistedSelector', and 'DeferredAsTaskSwitch'
+
+
+    * peak.naming
+
+      - 'ILoadingService', 'IObjectLoader' and 'load:kind@URL' scheme
+
+    * peak.config
+
+      - 'iif()' function for use in .ini files
+
+      - plugin keys ordered by definition sequence, rather than randomly
+
+      - ZConfig factory support to allow "smart" interpretation of strings,
+        section names, etc.
+
+
+
+
+    * peak.running.logs
+
+      - Separate formatters from publishers
+
+      - ZConfig schema for logging plugins, allowing multiple handlers/category
+
+    * peak.binding
+
+      - Cleanup/document attribute binding interface
 
     * peak.running.timers
 
@@ -8,50 +55,6 @@ Open Issues/To-Do Items
 
       - Look at possible integration of peak.query and cursor formatters, in
         order to view stats as an in-memory mini-DB w/reporting.
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
- Targeted for 0.5 Alpha 3
-
-    * peak.binding
-
-      - Cleanup/document attribute binding interface
-
-    * peak.running.logs
-
-      - Separate formatters from publishers
-
-    * peak.config
-
-      - 'ZConfigSchemaService' and 'zconfig:schema@streamURL' scheme
 
     * peak.web (some of this may get bumped to alpha 4)
 
@@ -65,12 +68,9 @@ Open Issues/To-Do Items
 
        - try/catch DOMlet (and related error rendering interface/framework)
 
+    * Misc.
 
-
-
-
-
-
+      - 'csv' output format for cursor dumps
 
 
 
