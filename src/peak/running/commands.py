@@ -625,13 +625,13 @@ class Bootstrap(AbstractInterpreter):
         except exceptions.InvalidName:
             factory = InvalidSubcommandName
 
-        try:
-            return self.getSubcommand(factory)
-
-        except NotImplementedError:
+        executable = ICmdLineAppFactory(factory,None)
+        if executable is None:
             raise InvocationError(
                 "Invalid command object", factory, "found at", name
             )
+        return self.getSubcommand(factory)
+
 
 
 
