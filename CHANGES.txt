@@ -1,5 +1,43 @@
 Fixes and Enhancements since Version 0.5 alpha 3
 
+ - 'config.fileNearModule()' is DEPRECATED, in favor of 'config.packageFile()'.
+   The latter returns a 'naming.IStreamFactory', which is more suitable for
+   working with e.g. module data files compressed in a zipfile.  Uses of
+   'fileNearModule()' that were being passed to 'config.loadConfigFile()' can
+   be safely changed to 'config.packageFile()' without needing any other code
+   changes, but if you were directly using 'fileNearModule()' as a filename,
+   you will need to rewrite appropriately.  
+
+ - 'config.loadConfigFile()' and 'config.loadConfigFiles()' now accept URLs,
+   'naming.IStreamFactory' objects, and 'config.IStreamSource' objects as well
+   as filenames.  This was primarily added to support use of
+   'config.packageFile()' or 'pkgfile:' URLs, in place of using
+   'config.fileNearModule()'.
+
+ - There is a new 'config.IStreamSource' protocol, to make it easy to accept
+   URLs, filenames, or 'naming.IStreamFactory' objects as the source of a
+   "file".
+
+   Its typical usage is just::
+
+       factory = config.IStreamSource(data).getFactory(self)
+       stream = factory.open('t')  # open for reading in text mode
+
+   where 'data' is a string or a 'naming.IStreamFactory', and 'self' is a
+   component to be used as lookup context.  The returned 'factory' is a
+   'naming.IStreamFactory' that can then be '.open()'-ed for reading, or used
+   in other ways as needed.
+
+   Wherever practical, as we encounter them, we'll be changing PEAK API's that
+   take filenames to also accept stream sources.
+
+ - The 'naming.IStreamFactory' interface now has an 'address' attribute, which
+   is the string form of the canonical URL of the target stream.  This was
+   added to make it easier to e.g. report errors in a stream that's being
+   parsed, since the parser only needs the factory in order to report the
+   location of an error.  (Note: if you implement 'naming.IStreamFactory', be
+   sure to add this attribute to your implementations.)
+
  - The 'peak.util.WSGIServer' module has been moved to the
    'wsgiref.simple_server' module.  The 'wsgiref' reference library for WSGI
    (aka PEP 333) is now distributed with PEAK.

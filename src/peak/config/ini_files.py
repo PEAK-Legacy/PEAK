@@ -50,9 +50,16 @@ protocols.adviseObject(loadMapping, provides=[ISettingLoader])
 
 
 def loadConfigFile(pMap, filename, prefix='*', includedFrom=None):
-    globalDict = getattr(includedFrom,'globalDict',None)
     if filename:
-        ConfigReader(pMap,prefix,globalDict).readFile(filename)
+        factory = IStreamSource(filename).getFactory(pMap)
+        if factory.exists():
+            stream = factory.open('t')
+            try:
+                globalDict = getattr(includedFrom,'globalDict',None)
+                reader = ConfigReader(pMap,prefix,globalDict)
+                reader.readStream(stream,factory.address)
+            finally:
+                stream.close()       
 
 protocols.adviseObject(loadConfigFile, provides=[ISettingLoader])
 
@@ -62,15 +69,13 @@ def loadConfigFiles(pMap, filenames, prefix='*', includedFrom=None):
     if not filenames:
         return
 
-    import os.path
-
-    globalDict = getattr(includedFrom,'globalDict',None)
-
     for filename in filenames:
-        if filename and os.path.exists(filename):
-            ConfigReader(pMap,prefix,globalDict).readFile(filename)
+        if filename:
+            loadConfigFile(pMap,filename,prefix,includedFrom)
 
 protocols.adviseObject(loadConfigFiles, provides=[ISettingLoader])
+
+
 
 
 

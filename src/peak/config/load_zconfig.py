@@ -1,7 +1,6 @@
 from peak.api import *
 import ZConfig.loader
 from peak.running.commands import AbstractInterpreter, ICmdLineAppFactory
-from peak.naming.factories.openable import FileURL
 import os
 
 class BaseLoader(ZConfig.loader.BaseLoader, binding.Component):
@@ -15,7 +14,7 @@ class BaseLoader(ZConfig.loader.BaseLoader, binding.Component):
     def openResource(self, url):
         url = str(url)
         try:
-            factory = adapt(naming.lookup(self, url), naming.IStreamFactory)
+            factory = config.IStreamSource(url).getFactory(self)
             file = factory.open('t')
         except (IOError, OSError), e:
             # Python 2.1 raises a different error from Python 2.2+,
@@ -35,9 +34,10 @@ class BaseLoader(ZConfig.loader.BaseLoader, binding.Component):
 
     def getObjectInstance(self, context, refInfo, name, attrs=None):
         url, = refInfo.addresses
-        url = naming.toName(url, FileURL.fromFilename)
-        ob = adapt(naming.lookup(context,url), naming.IStreamFactory)
+        ob = config.IStreamSource(url).getFactory(self)
         return self.loadFile(ob.open('t'), str(url))
+
+
 
 class SchemaLoader(BaseLoader, ZConfig.loader.SchemaLoader):
 
@@ -80,11 +80,6 @@ class ConfigLoader(BaseLoader,ZConfig.loader.ConfigLoader):
 
 
 
-
-
-
-
-
 class ConfigRunner(AbstractInterpreter,ConfigLoader):
 
     """Config-file interpreter"""
@@ -101,8 +96,7 @@ command-line arguments.
 """
 
     def interpret(self, filename):
-        url = naming.toName(filename, FileURL.fromFilename)
-        factory = adapt(self.lookupComponent(url), naming.IStreamFactory)
+        factory = config.IStreamSource(filename).getFactory(self)
         ob, handler = self.loadFile(factory.open('t'), str(url))
         binding.suggestParentComponent(self.getCommandParent(),None,ob)
         return self.getSubcommand(ob)
@@ -124,6 +118,7 @@ protocols.declareAdapter(
     provides = [ICmdLineAppFactory],
     forTypes = [ConfigLoader]
 )
+
 
 
 class ZConfigSchemaURL(naming.URL.Base):

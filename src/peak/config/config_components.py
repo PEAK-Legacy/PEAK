@@ -1,10 +1,10 @@
 from __future__ import generators
-
 from peak.api import *
 from peak.util.imports import importString, importObject, whenImported
 from peak.binding.components import Component, Make, getParentComponent
 from peak.binding.components import iterParents, Configurable
 from peak.binding.interfaces import IAttachable, IRecipe
+from peak.naming.interfaces import IStreamFactory
 from peak.util.EigenData import EigenCell,AlreadyRead
 from peak.util.FileParsing import AbstractConfigParser
 from registries import FactoryFor
@@ -12,7 +12,7 @@ from interfaces import *
 from protocols.advice import getMRO, determineMetaclass
 
 __all__ = [
-    'ConfigMap', 'LazyRule', 'fileNearModule',
+    'ConfigMap', 'LazyRule', 'fileNearModule', 'packageFile',
     'Value', 'iterKeys', 'Namespace', 'iterValues',
     'CreateViaFactory', 'parentsProviding', 'parentProviding', 'lookup',
     'ServiceArea',
@@ -34,8 +34,90 @@ _emptyRuleCell.exists()
 
 
 def fileNearModule(moduleName,filename):
+    """DEPRECATED: please switch to 'config.packageFile()' or a URL"""
     filebase = importString(moduleName+':__file__')
     import os; return os.path.join(os.path.dirname(filebase), filename)
+
+
+def packageFile(moduleName,filename):
+
+    """Return 'naming.IStreamFactory' for 'filename' in 'moduleName' package"""
+
+    module = importString(moduleName)
+
+    if hasattr(module,'__loader__') and hasattr(module.__loader__,'get_data'):
+        from peak.naming.factories.openable import ImportLoaderFactory
+        return ImportLoaderFactory(module.__loader__,moduleName,filename)
+
+    from peak.naming.factories.openable import FileFactory
+    import os.path
+    return FileFactory(
+        filename=os.path.join(
+            os.path.dirname(module.__file__), *filename.split('/')
+        )
+    )
+
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class StreamSource(protocols.Adapter):
+
+    protocols.advise(
+        instancesProvide=[IStreamSource],
+        asAdapterForTypes=[str,unicode]
+    )
+
+    def getFactory(self, context):
+        from peak.naming.factories.openable import FileFactory,FileURL
+        try:
+            url = FileURL.fromFilename(self.subject)
+        except exceptions.InvalidName:
+            url = naming.toName(self.subject, FileURL.fromFilename)
+        if isinstance(url,FileURL):
+            return FileFactory(filename=url.getFilename())
+        return naming.lookup(context,url)
+        
+
+class FactorySource(protocols.Adapter):
+
+    protocols.advise(
+        instancesProvide=[IStreamSource],
+        asAdapterForProtocols=[IStreamFactory]
+    )
+
+    def getFactory(self, context):
+        return self.subject
+        
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -63,23 +145,6 @@ def iterValues(component, configKey):
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 def lookup(component, configKey, default=NOT_GIVEN):
 
     """Return value for 'configKey' in context of 'component', or 'default'"""
@@ -91,6 +156,10 @@ def lookup(component, configKey, default=NOT_GIVEN):
         raise exceptions.NameNotFound(configKey, resolvedObj = component)
 
     return default
+
+
+
+
 
 
 def parentsProviding(component, protocol):
@@ -115,12 +184,6 @@ def parentProviding(component, protocol, default=NOT_GIVEN):
     return default
 
 
-
-
-
-
-
-
 def iterKeys(component, configKey):
 
     """Iterate sub-keys of 'configKey' that are available from 'component'"""
@@ -133,28 +196,6 @@ def iterKeys(component, configKey):
                 continue
             yielded[key] = 1
             yield key
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -475,7 +516,7 @@ class ConfigurationRoot(ServiceArea):
 
         for file in self.iniFiles:
             if isinstance(file,tuple):
-                file = fileNearModule(*file)
+                file = packageFile(*file)
             config.loadConfigFile(propertyMap, file)
 
 

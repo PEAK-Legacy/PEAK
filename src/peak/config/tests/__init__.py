@@ -66,7 +66,7 @@ class PropertyTest(TestCase):
         obj = binding.Configurable(app)
 
         config.loadConfigFile(obj,
-            config.fileNearModule(__name__,'test_links.ini')
+            config.packageFile(__name__,'test_links.ini')
         )
 
         for k in '.spew,.blue,.knew'.split(','):
