@@ -18,18 +18,18 @@ import ns
 class N2(AbstractCommand):
 
     # We put this here so help(n2) will work in the interpreter shell
-   
+
     """PEAK and pdb are already imported for you.
 c is bound to the object you looked up, or the initial context.
-  
+
 cd(x)\t\tlike c = c[x]
 cd()\t\tsets c back to the original value
 pwd\t\tinfo about c
 ls()\t\tshow contents of c
 """
- 
+
     usage = """usage: peak n2 [-e] [-p] [name]
-    
+
 -e\tif name lookup fails, go into python interactor anyway
 -p\tuse python interactor even if there is a more specific interactor
 \t(implies -e)"""
@@ -52,18 +52,18 @@ ls()\t\tshow contents of c
 
         cprt = 'Type "copyright", "credits" or "license" for more information.'
         help = 'Type "help" or "help(n2)" for help.'
-            
+
         self.banner = 'PEAK N2 (Python %s on %s)\n%s\n%s' % (
             sys.version.split(None, 1)[0], sys.platform, cprt, help)
 
         self.idict['n2'] = self
-    
+
         exec 'from peak.api import *' in self.idict
         exec 'import pdb' in self.idict
-                    
+
         for cmd in ('cd','ls'):
             self.idict[cmd] = getattr(self, 'py_' + cmd)
-                 
+
         if readline:
             history = os.path.join(self.environ.get('HOME', os.getcwd()),
                 '.n2_history')
@@ -73,7 +73,7 @@ ls()\t\tshow contents of c
                 pass
 
         storage.begin(self)
-    
+
         try:
             if args:
                 c = naming.lookup(self, args[0])
@@ -105,12 +105,40 @@ ls()\t\tshow contents of c
 
     def get_pwd(self):
         return self.idict['c']
-        
+
 
     def get_home(self):
         return self.idict['__c__']
-        
-       
+
+
+    def getvar(self, var, default=NOT_GIVEN):
+        v = self.idict.get(var, default)
+        if v is NOT_GIVEN:
+            raise KeyError, var
+        else:
+            return v
+
+
+    def setvar(self, var, val):
+        if var == 'c':
+            raise KeyError, "can't change protected variable"
+
+        self.idict[var] = val
+
+
+    def unsetvar(self, var):
+        if var == 'c':
+            raise KeyError, "can't change protected variable"
+
+        try:
+            del self.idict[var]
+        except:
+            pass
+
+    def listvars(self):
+        return self.idict.keys()
+
+
     def do_cd(self, c):
         self.idict['c'] = c
         self.idict['pwd'] = r = `c`
@@ -123,17 +151,17 @@ ls()\t\tshow contents of c
     def interact(self, c=NOT_GIVEN, n2=NOT_GIVEN):
         if c is NOT_GIVEN:
             c = self.get_pwd()
-            
+
         if n2 is NOT_GIVEN:
             n2 = self
-            
+
         b = self.banner
         if c is not None:
             b += '\n\nc = %s\n' % `c`
-           
+
         code.interact(banner=b, local=self.idict)
 
-       
+
     def handle(self, c):
         if self.opts.has_key('-p'):
             interactor = self
@@ -154,7 +182,7 @@ ls()\t\tshow contents of c
             c = c[arg]
 
         self.do_cd(c)
-      
+
         print >>self.stdout, 'c = %s' % self.idict['pwd']
 
 
@@ -170,11 +198,11 @@ ls()\t\tshow contents of c
 
     def printColumns(self, stdout, l, sort=1, rev=0):
         """utility for things that want to print ls-like columnar output"""
-        
+
         if not l: return
         if sort: l.sort()
         if rev: l.reverse()
-        
+
         l = [
             len(x) >= self.width and x[:self.width-4]+'...' or x
             for x in l
