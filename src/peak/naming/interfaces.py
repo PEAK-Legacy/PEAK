@@ -305,8 +305,19 @@ class IStreamFactory(Interface):
         the Python manual)."""
 
 
+    def exists():
+        """Return true if the resource exists (i.e. if 'open()' would succeed)
+
+        For remote resources, this should verify the resource's existence
+        without actually downloading it.  However, this should include
+        authentication if the protocol requires it.
+
+        This method is specifically intended to be able to be used to verify
+        that a remote service is up and running."""
 
 
+    def delete(autocommit=False):
+        """Delete the resource"""
 
 
 
