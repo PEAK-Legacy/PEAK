@@ -258,11 +258,11 @@ class DescriptorTest(TestCase):
 
         for item in self.data, self.data.aService.thing5, self.data.thing8:
             self.failUnless(strategy.Pointer(item) in data)
-            self.assertEqual(dispatch_by_hierarchy(item,table),"pass")
+            self.assertEqual(dispatch_by_hierarchy(table, item),"pass")
 
         for item in self.data.getParentComponent(), self.data.thing1, None:
             self.failIf(strategy.Pointer(item) in data)
-            self.assertEqual(dispatch_by_hierarchy(item,table),"fail")
+            self.assertEqual(dispatch_by_hierarchy(table, item),"fail")
 
         table[svc.ptr] = "pass"
         self.assertEqual(Set(data.matches(table)), Set([svc.ptr,data.ptr]))

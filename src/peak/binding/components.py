@@ -83,7 +83,7 @@ def hasParent(component,parent):
 def _setupCriterion(strategy):
     global HasParentCriterion, dispatch_by_hierarchy
 
-    def dispatch_by_hierarchy(ob,table):
+    def dispatch_by_hierarchy(table, ob):
         for comp in iterParents(ob):
             oid = id(comp)
             if oid in table:
