@@ -2,11 +2,11 @@ from __future__ import generators
 from peak.api import *
 import nis
 
+
 class nisURL(naming.ParsedURL):
 
     supportedSchemes = 'nis',
-
-    pattern = "((?P<mapname>[^/]+)(/(?P<key>.+)?)?)?"
+    nameAttr = 'body'
 
 
 class nisURLContext(naming.NameContext):
@@ -15,26 +15,26 @@ class nisURLContext(naming.NameContext):
 
     schemeParser = nisURL
 
+
     def __iter__(self):
         for map in nis.maps():
-            yield nisURL(body=map)
-            
+            yield self.compoundParser(map)
+
+
     def _get(self, name, retrieve=1):
-        if not name.body:
+
+        if not name:
             return self, None
 
-        mapname = getattr(name, 'mapname', 'passwd.byname')
-        key = getattr(name, 'key', None)
-        
-        mapns = nisMapContext(mapname=mapname)
-        if key:
-            r = mapns.get(key, NOT_FOUND)
-            if r:
-                return r, None
-            else:
-                return NOT_FOUND
+        elif name in nis.maps():
+            return nisMapContext(
+                namingAuthority = self.namingAuthority,
+                nameInContext   = self.nameInContext + name,
+            ), None
+            
         else:
-            return mapns, None
+            return NOT_FOUND
+
 
 
 
@@ -43,13 +43,18 @@ class nisMapContext(naming.NameContext):
 
     __implements__ = naming.IReadContext
 
-    mapname = binding.requireBinding('NIS mapname to use')
+    mapname = binding.Once(lambda s,d,a: str(s.nameInContext))
+
 
     def __iter__(self):
-        return iter(nis.cat(self.mapname))
+        for key in nis.cat(self.mapname):
+            yield self.compoundParser(key)
+
 
     def _get(self, name, retrieve=1):
+
         try:
             return nis.match(str(name), self.mapname), None
+
         except nis.error:
             return NOT_FOUND

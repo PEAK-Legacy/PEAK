@@ -10,6 +10,7 @@ from urllib import quote,unquote
 
 from interfaces import *
 from syntax import *
+from arithmetic import *
 
 from peak.util.Struct import struct, structType
 from peak.binding.once import Activator, Once
@@ -32,130 +33,6 @@ def crossesBoundaries(name):
 
 
 
-
-
-
-
-
-
-
-def any_plus_url(n1,n2):
-    return n2
-
-
-def compound_plus_compound(n1,n2):
-    return n1.__class__(list(n1)+list(n2))
-
-
-def composite_plus_composite(n1,n2):
-
-    l = list(n1)
-    last = l.pop()
-    
-    if not last:
-        l.extend(list(n2))
-    else:
-        l.append(last + n2[0])
-        l.extend(list(n2)[1:])
-
-    if len(l)==1 and l[0]:
-        return l[0]
-
-    return CompositeName(l)
-
-
-def composite_plus_compound(n1,n2):
-
-    l = list(n1)
-    last = l.pop()
-
-    if not last:
-        l.append(n2)
-    else:
-        l.append(last+n2)
-
-    if len(l)==1 and l[0]:
-        return l[0]
-
-    return CompositeName(l)
-
-
-def compound_plus_composite(n1,n2):
-
-    l = list(n2)
-    first = l[0]
-
-    if first:
-        l[0] = n1+first
-    else:
-        l[0] = n1
-        
-    if len(l)==1 and l[0]:
-        return l[0]
-
-    return CompositeName(l)
-
-def url_plus_other(n1,n2):
-    return n1.addName(n2)
-
-_name_addition = {
-    (COMPOSITE_KIND,      URL_KIND): any_plus_url,
-    (COMPOUND_KIND,       URL_KIND): any_plus_url,
-    (URL_KIND,            URL_KIND): any_plus_url,
-    (URL_KIND,       COMPOUND_KIND): url_plus_other,
-    (URL_KIND,      COMPOSITE_KIND): url_plus_other,
-
-    (COMPOSITE_KIND,COMPOSITE_KIND): composite_plus_composite,
-    (COMPOUND_KIND,  COMPOUND_KIND): compound_plus_compound,
-    (COMPOSITE_KIND, COMPOUND_KIND): composite_plus_compound,
-    (COMPOUND_KIND, COMPOSITE_KIND): compound_plus_composite,
-}
-
-def _name_add(self, other):
-    if self and other:
-        return _name_addition[self.nameKind,other.nameKind](self,other)
-    return self or other
-
-def _name_radd(self, other):
-    if self and other:
-        return _name_addition[other.nameKind,self.nameKind](other,self)
-    return self or other
-
-def same_minus_same(n1,n2):
-    if n1.startswith(n2):
-        return n1[len(n2):]
-
-
-def compound_minus_composite(n1,n2):
-    if len(n2)==1:
-        return n1-n2[0]
-
-
-def composite_minus_compound(n1,n2):
-    if n1:
-        p = n1[0]-n2
-        if p is not None:
-            return CompositeName([p]+list(n1)[1:])
-
-
-_name_subtraction = {
-    (COMPOSITE_KIND,COMPOSITE_KIND): same_minus_same,
-    (COMPOUND_KIND,  COMPOUND_KIND): same_minus_same,
-    (COMPOSITE_KIND, COMPOUND_KIND): composite_minus_compound,
-    (COMPOUND_KIND, COMPOSITE_KIND): compound_minus_composite,
-}
-
-
-def _name_sub(self, other):
-    if other:
-        return _name_subtraction[self.nameKind,other.nameKind](self,other)
-    return self
-
-
-def _name_rsub(self, other):
-    if self:
-        return _name_subtraction[other.nameKind,self.nameKind](other,self)
-    return other
 
 
 
@@ -188,18 +65,18 @@ class AbstractName(tuple):
     def __repr__(self):
         return "%s(%r)" % (self.__class__.__name__, list(self))
 
-    __add__  = _name_add
-    __sub__  = _name_sub
-    __radd__ = _name_radd
-    __rsub__ = _name_rsub
+    __add__  = name_add
+    __sub__  = name_sub
+    __radd__ = name_radd
+    __rsub__ = name_rsub
 
     def __getslice__(self, *args):
         return self.__class__(
             super(AbstractName,self).__getslice__(*args)
         )
 
-    def startswith(self, ob):
-        return not ob or self[:len(ob)] == ob
+
+
 
 
 
@@ -326,9 +203,10 @@ class ParsedURL(object):
 
 
 
-    __add__  = _name_add
-
-    __radd__ = _name_radd
+    __add__  = name_add
+    __sub__  = name_sub
+    __radd__ = name_radd
+    __rsub__ = name_rsub
 
 
     def addName(self,other):
@@ -358,7 +236,6 @@ class ParsedURL(object):
         res.__dict__.update(d)
 
         return res
-
 
 
 

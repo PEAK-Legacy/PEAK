@@ -85,14 +85,14 @@ class IResolver(Interface):
     """Thing which can participate in name resolution"""
 
     def resolveToInterface(name,iface):
-        """Find nearest ctx to 'name' supporting 'iface', return rest of name
+        """Find nearest context to 'name' that supports 'iface'
         
-        Return a tuple of the form '(ctx,remainingName)', where 'ctx' is
-        the context nearest to 'name' that supports interface 'iface', and
+        Return a tuple of the form '(context, remainingName)', where 'context'
+        is the context nearest to 'name' that supports interface 'iface', and
         'remainingName' is the portion of 'name' that is relative to
-        'ctx'.  That is, 'remainingName' interpreted relative to 'ctx'
-        should be the same name as 'name' relative to the context this
-        method is called on.
+        'context'.  That is, 'remainingName' interpreted relative to 'context'
+        should be the same name as 'name' relative to the context this method
+        is called on.
         """
 
 isResolver = IResolver.isImplementedBy
