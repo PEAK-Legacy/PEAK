@@ -206,12 +206,6 @@
 
     To-do Items
 
-        * Create a way to pre-specify mixins for submodules/subpackages, using
-          a ModuleType subclass similar to 'lazyModule()', but with support
-          for module inheritance.  This would let us make subpackage specs
-          much easier, and also allow module patching of "legacy" modules as
-          long as they hadn't been loaded yet.
-
         * The simulator should issue warnings for a variety of questionable
           situations, such as...
 
@@ -244,10 +238,17 @@
 
 
 
+
+
+
+
+
+
+from __future__ import generators
 import sys
 from types import ModuleType
 from peak.util._Code import codeIndex
-from peak.util.imports import lazyModule
+from peak.util.imports import lazyModule, joinPath
 
 # Make the default value of '__proceed__' a built-in, so that code written for
 # an inheriting module won't fail with a NameError if there's no base module
@@ -257,7 +258,8 @@ import __builtin__; __builtin__.__proceed__ = None
 
 
 __all__ = [
-    'patchModule', 'setupModule', 'setupObject', 'ModuleInheritanceWarning'
+    'patchModule', 'setupModule', 'setupObject', 'ModuleInheritanceWarning',
+    'declareModule', 'SpecificationError',
 ]
 
 patchMap = {}
@@ -270,6 +272,45 @@ def setupObject(obj, **attrs):
     for k,v in attrs.items():
         if not hasattr(obj,k):
             setattr(obj,k,v)
+
+
+
+
+
+
+
+
+
+
+
+
+
+def toBases(bases,name=''):
+
+    if isinstance(bases,(str,ModuleType)):
+        bases = bases,
+
+    for b in bases:
+
+        if isinstance(b,str):
+            b = lazyModule(name,b)
+
+        yield b
+
+
+def moduleBases(module, name=''):
+    return tuple(toBases(getattr(module,'__bases__',()), name))
+
+
+class SpecificationError(Exception):
+    pass
+
+
+
+
+
+
+
 
 
 
@@ -337,17 +378,12 @@ def getCodeListForModule(module, code=None):
     name = module.__name__
     code = prepForSimulation(code)
     codeList = module.__codeList__ = patchMap.get(name,[])+[code]
-    bases = getattr(module,'__bases__',())
 
-    if isinstance(bases,(str,ModuleType)):
-        bases = bases,
+    bases = moduleBases(module, name)
 
     path = getattr(module,'__path__',[])
 
     for baseModule in bases:
-
-        if isinstance(baseModule, str):
-            baseModule = lazyModule(name, baseModule)
 
         if not isinstance(baseModule,ModuleType):
             raise TypeError (
@@ -366,6 +402,134 @@ def getCodeListForModule(module, code=None):
         module.__path__ = path
 
     return codeList
+
+
+
+
+
+
+declarations = {}   # just keeps track
+
+def declareModule(name, relativePath=None, bases=(), patches=()):
+
+    """Package Inheritance Shortcut and Third-party Patches
+
+    This function lets you "pre-declare" that a module should have
+    some set of bases or "patch modules" applied to it.  This lets
+    you work around the single-inheritance limitation of package
+    inheritance, and it also lets you apply "patch modules" to
+    third-party code that doesn't call 'setupModule()'.
+
+    To use this, you must call it *before* the module has been
+    imported, even lazily.  You can call it again as many times
+    as you like, as long as the base and patch lists remain the
+    same for a given module.
+
+    'bases' are placed in the target module's '__bases__', *after*
+    any bases declared in the package.  'patches' are applied as
+    though they were the first modules to call 'patchModule()'.
+    So the overall "MRO" for the resulting module looks like this:
+
+        1. patches by modules calling 'patchModule()'
+
+        2. modules specified by 'declareModule(patches=)'
+
+        3. the module itself
+
+        4. any '__bases__' declared by the module
+
+        5. base modules supplied by 'declareModule(bases=)'
+
+    Note that both 'bases' and 'patches' may be modules,
+    relative paths to modules (relative to the declared module,
+    *not* the 'name' parameter), or tuples of modules or paths.
+
+    Using 'declareModule()' makes it easier to do multiple inheritance
+    with packages.  For example, suppose you have packages 'square'
+    and 'circle', and want to make a package 'curvyBox' that inherits
+    from both.
+
+    Further suppose that the 'square' package contains a 'square.rect'
+    module, and a 'square.fill' module, and 'circle' contains a
+    'circle.curve' module, and a 'circle.fill' module.  Because of
+    the way the Python package '__path__' attribute works, package
+    inheritance won't combine the '.fill' modules; instead, it will
+    pick the first '.fill' module found.
+
+    To solve this, we could create a 'curvyBox.fill' module that inherited
+    from both 'square.fill' and 'circle.fill'.  But if there are many such
+    modules or subpackages, and they will be empty but for '__bases__', we
+    can use 'declareModule()' to avoid having to create individual
+    subdirectories and '.py' files.
+
+    This can be as simple as creating 'curvyBox.py' (or
+    'curvybox/__init__.py'), and writing this code::
+
+        from peak.api import *
+
+        __bases__ = '../square', '../circle'
+
+        config.declareModule(__name__, 'fill',
+            bases = ('../../circle/fill',)  # relative to 'curvyBox.fill'
+        )
+
+        config.setupModule()
+
+    This will add 'circle.fill' to the '__bases__' of 'curvyBox.fill' (which
+    will be the inherited 'square.fill' module.
+
+    Another usage of 'declareModule()' is to patch a third-party module::
+    
+        import my_additions
+        config.declareModule('third.party.module', patches=(my_additions,))
+
+    """
+
+    if relativePath:
+        name = joinPath(name, relativePath)
+
+
+
+    if name in declarations:
+
+        if declarations[name]==(bases,patches):
+            return lazyModule(name)  # already declared it this way
+
+        raise SpecificationError(
+            ("%s has already been declared differently" % name),
+            patches, declarations[name]
+        )
+
+    elif name in sys.modules:
+        raise SpecificationError(
+            "%s has already been imported" % name
+        )
+        
+    declarations[name] = bases, patches
+
+
+    def load(module):
+
+        reload(module)
+
+        if hasattr(module,'__codeList__'):  # first load might leave code
+            del module.__codeList__
+
+        plist = patchMap.setdefault(name, [])
+        for patch in toBases(patches, name):
+            plist.extend(getCodeListForModule(patch))
+
+        module.__bases__ = moduleBases(module,name) + tuple(toBases(bases,name))
+        buildModule(module)
+
+
+    return lazyModule(name, reloader=load)
+
+
+
+
+
+
 
 def setupModule():
 
@@ -388,23 +552,64 @@ def setupModule():
     name = dict['__name__']
     module = sys.modules[name]
 
+    buildModule(module, code)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+def buildModule(module, code=None):
+
     codelist = getCodeListForModule(module, code)
-    
+    d = module.__dict__
+
     if len(codelist)>1:
         saved = {}
         for name in '__file__', '__path__', '__name__', '__codeList__':
             try:
-                saved[name] = dict[name]
+                saved[name] = d[name]
             except KeyError:
                 pass
 
-        dict.clear(); dict.update(saved)    
-        sim = Simulator(dict)   # Must happen after!
+        d.clear()
+        d.update(saved)
 
-        map(sim.execute, codelist); sim.finish()
+        sim = Simulator(d)   # Must happen after!
+
+        map(sim.execute, codelist)
+        sim.finish()
     
-    if dict.has_key('__init__'):
-        dict['__init__']()
+    if '__init__' in d:
+        d['__init__']()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

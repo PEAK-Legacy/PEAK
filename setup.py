@@ -60,7 +60,6 @@ if include_metamodels:
     packages += [
         'peak.metamodels',
         'peak.metamodels.UML13',
-        'peak.metamodels.UML13.Foundation',
         'peak.metamodels.UML13.model',
         'peak.metamodels.UML13.model.Foundation',
         'peak.metamodels.UML13.model.Behavioral_Elements',
@@ -77,6 +76,7 @@ if include_metamodels:
                 ['src/peak/metamodels/tests/MetaMeta.xml']
             ),
         ]
+
 
 
 

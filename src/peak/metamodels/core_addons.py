@@ -1,19 +1,19 @@
-"""Domain logic and convenience features for manipulating UML Models
+"""Domain logic and convenience features for manipulating OMG Models
 
-    This module adds a couple of domain logic features to the UML structural
-    model defined by 'peak.metamodels.UML13.model'.  Specifically,
+    This module supplies domain logic add-on features for the common
+    structural core of CWM, UML, and other OMG metamodels.  Specifically,
     it adds some computed features, such as the notion of a "qualified name"
-    of a UML model element, and the "superclasses" and "subclasses" of UML
+    of a model element, and the "superclasses" and "subclasses" of
     generalizable elements.  It also gives namespaces a '__getitem__' method
     for easy retrieval of object contents, and a 'find' operation for running
-    queries over a UML model.
-"""
+    queries over a model.
 
-__bases__ = '/peak/metamodels/UML13/model/Foundation/Core',
+    This is basically a pure "advice" module; it should be placed in the
+    patch list of an appropriately declared module.
+"""
 
 from peak.api import *
 from peak.model.queries import query
-
 
 
 
@@ -116,5 +116,5 @@ class Namespace:
         return q
 
 
-config.setupModule()
+
 

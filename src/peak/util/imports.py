@@ -2,7 +2,7 @@
 
 __all__ = [
     'importString', 'importObject', 'importSequence', 'importSuite',
-    'lazyModule',
+    'lazyModule', 'joinPath',
 ]
 
 import __main__
@@ -23,21 +23,21 @@ def importSuite(specs, globalDict=defaultGlobalDict):
         [t() for t in importSequence(specs,globalDict)]
     )
 
+def joinPath(modname, relativePath):
 
+    """Adjust a module name by a '/'-separated, relative or absolute path"""
 
+    module = modname.split('.')
+    for p in relativePath.split('/'):
 
+        if p=='..':
+            module.pop()
+        elif not p:
+            module = []
+        elif p!='.':
+            module.append(p)
 
-
-
-
-
-
-
-
-
-
-
-
+    return '.'.join(module)
 
 def importString(name, globalDict=defaultGlobalDict):
     """Import an item specified by a string
@@ -80,7 +80,7 @@ def importString(name, globalDict=defaultGlobalDict):
     return item
 
 
-def lazyModule(modname, relativePath=None):
+def lazyModule(modname, relativePath=None, reloader=reload):
 
     """Return module 'modname', but with its contents loaded "on demand"
 
@@ -118,8 +118,14 @@ def lazyModule(modname, relativePath=None):
     it.
 
     (Note: 'relativePath' can also be an absolute path (starting with '/');
-    this is mainly useful for module '__bases__' lists.)"""
+    this is mainly useful for module '__bases__' lists.)
 
+    Finally, this function also accepts a third, optional parameter: a
+    function to be used in place of the Python 'reload()' built-in.
+    This can be used to trigger an action when the module is actually
+    loaded.  This only takes effect if the call to 'lazyModule()'
+    occurs is the first for the named module, and the module issn't
+    already in 'sys.modules'."""
 
     class LazyModule(ModuleType):
 
@@ -137,12 +143,11 @@ def lazyModule(modname, relativePath=None):
                 
             oldGA = LazyModule.__getattribute__
             modGA = ModuleType.__getattribute__
-            
             LazyModule.__getattribute__ = modGA
 
             try:
-                # Get Python to do the real import!
-                reload(self)
+                # Get Python (or supplied 'reload') to do the real import!
+                reloader(self)
             except:
                 # Reset our state so that we can retry later
                 LazyModule.__getattribute__ = oldGA
@@ -157,30 +162,25 @@ def lazyModule(modname, relativePath=None):
             # Finish off by returning what was asked for
             return modGA(self,attr)
 
-
-
-
-
-
     if relativePath:
-        module = modname.split('.')
-
-        for p in relativePath.split('/'):
-
-            if p=='..':
-                module.pop()
-            elif not p:
-                module = []
-            elif p!='.':
-                module.append(p)
-
-        modname = '.'.join(module)
-
+        modname = joinPath(modname, relativePath)
 
     if modname not in modules:
         modules[modname] = LazyModule(modname)
 
+    elif reloader is not reload:
+        raise AssertionError(
+            "Custom reloader specified, but module already loaded",
+            modname
+        )
+
     return modules[modname]
+
+
+
+
+
+
 
 
 
