@@ -11,7 +11,7 @@ import sys
 sample_input = """
     <body>
     <table>
-        <tr><td>test parser</td></tr>
+        <tr><th>test parser</th></tr>
         <tr><td>one</td><td>two</td></tr>
         <tr><td>buckle</td><td>your</td><td>shoe</td></tr>
     </table>
@@ -27,16 +27,57 @@ except:
     dummy_exc = sys.exc_info()
 
 ERROR = HTMLDocument.exception(dummy_exc)
-    
+
 sample_output = """
     <body>
     <table>
-        <tr><td%(GREY)s>TESTED</td><td%(GREY)s>extra</td></tr>
+        <tr><th%(GREY)s>TESTED</th><td%(GREY)s>extra</td></tr>
         <tr><td%(GREEN)s>a one</td><td%(RED)s>&amp; a two</td></tr>
         <tr><td>buckle</td><td%(RED)s>your%(MY)s</td><td>shoe%(SANDAL)s</td></tr>
     <tr><td>extra</td><td%(YELLOW)s>stuff%(ERROR)s</td></tr></table>
     </body>
 """ % locals()  #<td>extra</td>
+
+
+def rowTexts(row):
+    return [cell.text for cell in row.cells]
+
+def tableTexts(table):
+    return [rowTexts(row) for row in table.rows]
+
+def docTexts(doc):
+    return [tableTexts(table) for table in doc.tables]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 class BasicTests(TestCase):
@@ -87,30 +128,71 @@ class BasicTests(TestCase):
         storage.beginTransaction(dm)
 
         try:
-            doc = dm.document
-            self.assertEqual(len(dm.document.tables),1)
-            table = doc.tables[0]
-            self.assertEqual(len(table.rows),3)
-            rows = table.rows
-            self.assertEqual(len(rows[0].cells),1)
-            self.assertEqual(len(rows[1].cells),2)
-            self.assertEqual(len(rows[2].cells),3)
             self.assertEqual(
-                [c.text for c in table.rows[0].cells],
-                ['test parser']
-            )
-
-            self.assertEqual(
-                [c.text for c in table.rows[1].cells],
-                ['one','two']
-            )
-            self.assertEqual(
-                [c.text for c in table.rows[2].cells],
-                ["buckle","your","shoe"]
+                docTexts(dm.document),
+                [# doc
+                    [# table 1
+                        ['test parser'],
+                        ['one','two'],
+                        ["buckle","your","shoe"]
+                    ]
+                ]
             )
 
         finally:
             storage.abortTransaction(dm)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    def testWord(self):
+
+        dm = HTMLDocument(
+            testRoot(),
+            text=open(
+                config.fileNearModule(__name__,'word_test.html')
+            ).read(),
+        )
+
+        storage.beginTransaction(dm)
+
+        try:
+            self.assertEqual(
+                docTexts(dm.document),
+                [# doc
+                    [# table 1
+                        ['sample.fixture1'],
+                        ["one","buckle","shoe","four"],
+                        ["two","your","three","je t'adore"]
+                    ]
+                ]
+            )
+
+        finally:
+            storage.abortTransaction(dm)
+
+
+
+
+
+
 
 
 

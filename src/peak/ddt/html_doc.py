@@ -39,6 +39,47 @@ def parseTags(text,tag,startAt,startBy,contentProcessor):
 
 
 
+def findText(text,startAt,endBy):
+
+    """Find the longest plain-text run (not counting whitespace)"""
+
+    s = e = endBy
+    foundLen = 0
+
+    while startAt<endBy:
+
+        ts = text.find('<',startAt)
+        if ts<0:
+            ts=endBy
+
+        textLen = len(text[startAt:ts].strip())
+        if textLen>foundLen:
+            s=startAt
+            e=ts
+            foundLen=textLen
+
+        startAt = text.find('>',ts)
+        if startAt<0:
+            break
+
+        startAt += 1
+
+    return s,e
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 class HTMLDocument(storage.EntityDM):
 
     text = binding.Require("Text of the HTML document to be processed")
@@ -164,16 +205,18 @@ class HTMLDocument(storage.EntityDM):
 
     def _saveCell(self,cell,tag,content,close):
 
+        ts,te = findText(self.text,content,close)
+
         tagText = self._tagAdditions(cell)
         if tagText:
             self._insertText(content-1,tagText)
 
-        if self.escape(cell.text)<>self.text[content:close]:
+        if cell.text<>self.unescape(self.text[ts:te]):
             insort(self.edits, (content,close,self.escape(cell.text)))
 
         bodyText = self._bodyAdditions(cell)
         if bodyText:
-            self._insertText(close,bodyText)
+            self._insertText(te,bodyText)
 
 
     def _saveChildren(self,ob,tag,content,close,children,toText):
@@ -201,8 +244,6 @@ class HTMLDocument(storage.EntityDM):
 
 
 
-
-
     def makeTable(self,tag,content,close):
 
         pos, rows = parseTags(
@@ -217,11 +258,17 @@ class HTMLDocument(storage.EntityDM):
         for row in rows: row.__dict__['table'] = table
         return pos, table
 
+
     def makeRow(self,tag,content,close):
 
         pos, cells = parseTags(
             self.lctext, "td", content, close, self.makeCell
         )
+
+        if not cells:
+            pos, cells = parseTags(
+                self.lctext, "th", content, close, self.makeCell
+            )
 
         row = self.preloadState(
             (Row,tag,content,close),
@@ -231,16 +278,51 @@ class HTMLDocument(storage.EntityDM):
         for cell in cells: cell.__dict__['row'] = row
         return pos, row
 
+
+
+
+
+
+
+
     def makeCell(self,tag,content,close):
+
         pos, subTables = parseTags(
             self.lctext, "table", content, close, self.makeTable
         )
+
+        ts,te = findText(self.text,content,close)
+
         return pos, self.preloadState(
             (Cell,tag,content,close),
             {'document':self.document,
-             'text':self.unescape(self.text[content:close])
+             'text':self.unescape(self.text[ts:te])
             }
         )
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -280,7 +362,8 @@ class HTMLDocument(storage.EntityDM):
     def unescape(text):
         return text.replace(
             '&quot;','"'
-        ).replace('&gt;','>').replace('&lt;','<').replace('&amp;', '&')
+        ).replace('&gt;','>').replace('&lt;','<'
+        ).replace('&nbsp;',' ').replace('&amp;', '&')
     unescape = staticmethod(unescape)
 
 
