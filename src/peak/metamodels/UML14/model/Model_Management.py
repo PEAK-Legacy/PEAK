@@ -6,7 +6,7 @@
 from peak.util.imports import lazyModule as _lazy
 
 _model               = _lazy('peak.model.api')
-_config              = _lazy('peak.config.api')
+#_config             = _lazy('peak.config.api')
 
 Data_Types           = _lazy(__name__, '../Data_Types')
 Core                 = _lazy(__name__, '../Core')
@@ -70,6 +70,6 @@ class ElementImport(_model.Element):
 
 # ------------------------------------------------------------------------------
 
-_config.setupModule()
+#_config.setupModule()
 
 

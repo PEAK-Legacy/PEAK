@@ -6,7 +6,7 @@
 from peak.util.imports import lazyModule as _lazy
 
 _model               = _lazy('peak.model.api')
-_config              = _lazy('peak.config.api')
+#_config             = _lazy('peak.config.api')
 
 Core                 = _lazy(__name__, '../Core')
 Common_Behavior      = _lazy(__name__, '../Common_Behavior')
@@ -266,6 +266,6 @@ class FinalState(State):
 
 # ------------------------------------------------------------------------------
 
-_config.setupModule()
+#_config.setupModule()
 
 

@@ -6,7 +6,7 @@
 from peak.util.imports import lazyModule as _lazy
 
 _model               = _lazy('peak.model.api')
-_config              = _lazy('peak.config.api')
+#_config             = _lazy('peak.config.api')
 
 Core                 = _lazy(__name__, '../Core')
 Data_Types           = _lazy(__name__, '../Data_Types')
@@ -117,6 +117,6 @@ class ClassifierInState(Core.Classifier):
 
 # ------------------------------------------------------------------------------
 
-_config.setupModule()
+#_config.setupModule()
 
 

@@ -345,14 +345,14 @@ class MOFGenerator(binding.Component):
 from peak.util.imports import lazyModule as _lazy
 
 _model               = _lazy('peak.model.api')
-_config              = _lazy('peak.config.api')
+#_config             = _lazy('peak.config.api')
 
 """)
 
 
     def writeFileFooter(self, package):
         self.write(self.sepLine)
-        self.write('\n_config.setupModule()\n\n\n')
+        self.write('\n#_config.setupModule()\n\n\n')
 
     def exposeImportDeps(self, package, target=None):
 

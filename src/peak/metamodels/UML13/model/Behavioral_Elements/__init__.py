@@ -6,7 +6,7 @@
 from peak.util.imports import lazyModule as _lazy
 
 _model               = _lazy('peak.model.api')
-_config              = _lazy('peak.config.api')
+#_config             = _lazy('peak.config.api')
 
 Foundation           = _lazy(__name__, '../Foundation')
 Common_Behavior      = _lazy(__name__, 'Common_Behavior')
@@ -19,6 +19,6 @@ Activity_Graphs      = _lazy(__name__, 'Activity_Graphs')
 
 # ------------------------------------------------------------------------------
 
-_config.setupModule()
+#_config.setupModule()
 
 
