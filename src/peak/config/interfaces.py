@@ -139,8 +139,8 @@ class IIniParser(Interface):
         """
 
     prefix = Attribute("""Prefix that should be added to all property names""")
-
-    pMap = Attribute("""IPropertyMap that the parser is loading""")
+    pMap       = Attribute("""IPropertyMap that the parser is loading""")
+    globalDict = Attribute("""Globals dictionary used for eval()ing rules""")
 
 
 class ISettingParser(Interface):
