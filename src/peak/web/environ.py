@@ -11,7 +11,6 @@
 """
 
 __all__ = [
-    'shift_path_info',
     'traverseAttr', 'newEnvironment', 'Context', 'StartContext',
     'simpleRedirect', 'clientHas',
 ]
@@ -22,6 +21,7 @@ from cStringIO import StringIO
 from peak.api import binding, adapt, NOT_GIVEN, NOT_FOUND
 import errors
 from peak.security.interfaces import IInteraction
+
 
 
 
@@ -56,6 +56,9 @@ class Context:
         self.environ = environ
         if previous is not None:
             self.previous = previous
+        if 'rootURL' in kw and self.previous is not None \
+            and kw['rootURL']<>self.previous.rootURL:
+                self.previous = self.previous.clone(rootURL=self.rootURL)
 
     def childContext(self,name,ob):
         return Context(name,ob,self.environ,self)
@@ -75,6 +78,7 @@ class Context:
             self.previous.absoluteURL, self.name
         )
     )
+
 
     def renderHTTP(self):
         return IHTTPHandler(self.current).handle_http(self)
@@ -117,6 +121,43 @@ class Context:
                 )
 
 
+    def shift(self):
+        environ = self.environ
+        path_info = environ.get('PATH_INFO','')
+
+        if not path_info:
+            return None
+
+        path_parts = path_info.split('/')
+        path_parts[1:-1] = [p for p in path_parts[1:-1] if p and p<>'.']
+        name = path_parts[1] or self.policy.defaultMethod
+        del path_parts[1]
+
+        script_name = environ.get('SCRIPT_NAME','')
+        script_name = posixpath.normpath(script_name+'/'+name)
+        if script_name.endswith('/'):
+            script_name = script_name[:-1]
+
+        environ['SCRIPT_NAME'] = script_name
+        environ['PATH_INFO']   = '/'.join(path_parts)
+
+        # Special case: '/.' on PATH_INFO doesn't get stripped,
+        # because we don't strip the last element of PATH_INFO
+        # if there's only one path part left.  Instead of fixing this
+        # above, we fix it here so that PATH_INFO gets normalized to
+        # an empty string in the environ.
+
+        if name=='.':
+            name = None
+
+        return name
+
+
+
+
+
+
+
 
 
 
@@ -134,9 +175,8 @@ class StartContext(Context):
     interaction = binding.Require("Security interaction",
         adaptTo=IInteraction
     )
-    rootURL    = binding.Make(
-        lambda self: self.environ['peak.web.root_url']
-    )
+
+    rootURL    = binding.Require("Application root URL")
 
     traversedURL = absoluteURL = binding.Obtain('rootURL')
 
@@ -144,21 +184,22 @@ class StartContext(Context):
         return self
 
 
-
 def newEnvironment(environ={}):
 
     new_env = dict(os.environ)     # First the OS
-    new_env.update(environ)   # Then the server
+    new_env.update(environ)        # Then the server
 
-    new_env.setdefault('HTTP_HOST','127.0.0.1')   # XXX
-    new_env.setdefault('SCRIPT_NAME','/')   # XXX
-    new_env.setdefault('peak.web.root_url', # XXX
-        "http://%(HTTP_HOST)s%(SCRIPT_NAME)s" % new_env
+    # Defaults for testing trivial environments
+
+    new_env.setdefault('HTTP_HOST',
+        new_env.setdefault('SERVER_NAME','127.0.0.1')
     )
+
+    if 'SCRIPT_NAME' not in new_env and 'PATH_INFO' not in new_env:
+        new_env.setdefault('SCRIPT_NAME','')
+        new_env.setdefault('PATH_INFO','/')
+
     return new_env
-
-
-
 
 
 
@@ -172,35 +213,6 @@ def simpleRedirect(environ,location):
 
 def clientHas(environ, lastModified=None, ETag=None):
     return False    # XXX
-
-
-def shift_path_info(ctx):
-    environ = ctx.environ
-    path_info = environ.get('PATH_INFO','').split('/')
-
-    if len(path_info)==1:
-        return None
-
-    name = path_info[1]
-
-    if len(path_info)>2:
-        path_info = '/'+'/'.join(path_info[2:])
-    else:
-        path_info = ''
-
-    script_name = environ.get('SCRIPT_NAME','/')
-    name = name or ctx.policy.defaultMethod
-
-    if name=='..':
-        script_name = posixpath.dirname(script_name)
-    elif name != '.':
-        script_name = posixpath.join(script_name,name)
-
-    environ['SCRIPT_NAME'] = script_name
-    environ['PATH_INFO']   = path_info
-    return name
-
-
 
 
 def traverseAttr(ctx, ob, name):
@@ -232,18 +244,6 @@ def traverseAttr(ctx, ob, name):
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
 class TraversableAsHandler(protocols.Adapter):
 
     protocols.advise(
@@ -254,7 +254,7 @@ class TraversableAsHandler(protocols.Adapter):
     def handle_http(self,ctx):
 
         self.subject.preTraverse(ctx)
-        name = shift_path_info(ctx)
+        name = ctx.shift()
 
         if name is None:
 

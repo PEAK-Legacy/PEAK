@@ -121,6 +121,26 @@ class ITraversalContext(IInteraction):
 
 
 
+    def shift():
+        """Shift a path component from 'PATH_INFO' to 'SCRIPT_NAME'
+
+        This modifies the context's (possibly shared) environment such that
+        one path component is moved from the beginning of 'PATH_INFO' to the
+        end of 'SCRIPT_NAME'.  The shifted path component is returned, or
+        'None' if 'PATH_INFO' is empty.
+
+        Before the shift, 'PATH_INFO' is normalized to eliminate empty path
+        components and path components that contain a single dot, so these
+        should never be returned.  Double-dot components, however, *are*
+        returned, and 'SCRIPT_NAME' is adjusted accordingly (i.e., the trailing
+        path component of 'SCRIPT_NAME' is stripped, if one is present).
+
+        Note that this changes the 'environ' being used by this context and
+        any parent or child contexts that share it.  Thus, it's usually only
+        safe to use this method from within a 'handle_http()' method, such as
+        when determining the next object to traverse to, if any.
+        """
+
     def clone(**kw):
         """Create a duplicate context, using supplied keyword arguments
         
@@ -140,26 +160,6 @@ class ITraversalContext(IInteraction):
          'interaction' -- a 'security.IInteraction' that will be used as
            the basis for the new context's security attributes and methods.
         """
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 class IWebTraversable(Interface):

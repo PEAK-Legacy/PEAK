@@ -133,8 +133,10 @@ class InteractionPolicy(binding.Component, protocols.StickyAdapter):
         if start is NOT_GIVEN:
             start = skin
 
+        root_url = "http://%(HTTP_HOST)s%(SCRIPT_NAME)s" % new_env  # XXX
+
         return StartContext('', start, new_env,
-            policy=self, skin=skin, interaction=interaction
+            policy=self, skin=skin, interaction=interaction, rootURL=root_url
         )
 
 
@@ -146,6 +148,18 @@ class InteractionPolicy(binding.Component, protocols.StickyAdapter):
     def afterCall(self, ctx):
         """Commit transaction after successful hit"""
         storage.commitTransaction(self.app)
+
+
+
+
+
+
+
+
+
+
+
+
 
 
     def handleException(self, ctx, exc_info, retry_allowed=1):
@@ -161,7 +175,6 @@ class InteractionPolicy(binding.Component, protocols.StickyAdapter):
             exc_info = None
 
 
-
     layerMap = binding.Make( config.Namespace('peak.web.layers') )
 
     def getLayer(self,layerName):
@@ -169,12 +182,24 @@ class InteractionPolicy(binding.Component, protocols.StickyAdapter):
         binding.suggestParentComponent(self,layerName,ob)
         return ob
 
+
     skinMap = binding.Make( config.Namespace('peak.web.skins') )
 
     def getSkin(self, name):
         ob = getattr(self.skinMap,name)
         binding.suggestParentComponent(self,name,ob)
         return ob
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -199,6 +224,22 @@ class TestPolicy(InteractionPolicy):
             return ''.join(body)
 
         return ctx
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
