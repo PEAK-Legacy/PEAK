@@ -3,7 +3,7 @@
 from peak.api import *
 from interfaces import *
 from errors import NotFound, NotAllowed
-from environ import traverseName, renderHTTP, getPolicy, getSkin
+from environ import getPolicy,getSkin, newEnvironment, Context
 from cStringIO import StringIO
 import os,sys
 
@@ -15,9 +15,9 @@ __all__ = [
 
 class DefaultExceptionHandler(binding.Singleton):
 
-    def handleException(self,environ,error_stream,exc_info,retry_allowed=1):
+    def handleException(self,ctx,exc_info,retry_allowed=1):
 
-        policy = getPolicy(environ)
+        policy = getPolicy(ctx.environ)
 
         try:
             storage.abortTransaction(policy.app)
@@ -51,22 +51,22 @@ class TraversalPath(naming.CompoundName):
         separator='/'
     )
 
-    def traverse(self, environ, getRoot = lambda environ: environ):
+    def traverse(self, ctx, getRoot = lambda environ: environ):
 
         path = iter(self)
         part = path.next()
 
         if not part:
-            environ = getRoot(environ)
+            ctx = getRoot(ctx)
         else:
             # reset to beginning
             path = iter(self)
 
         for part in path:
             if part:
-                environ = traverseName(environ,part)
+                ctx = ctx.traverseName(part)
 
-        return environ
+        return ctx
 
 
 class NullAuthenticationService:
@@ -113,28 +113,12 @@ class InteractionPolicy(binding.Component, protocols.StickyAdapter):
     def newInteraction(self,**options):
         return self._mkInteraction(self,None,**options)
 
+    def newContext(self,environ={}):
+        new_env = newEnvironment(self, environ)
+        return Context(None, '', getSkin(new_env), new_env)
+        
 
 
-
-
-
-
-
-
-    def newEnvironment(self,environ={}):
-
-        new_env = dict(os.environ)     # First the OS
-        new_env.update(environ)        # Then the server
-
-        new_env.setdefault('HTTP_HOST','127.0.0.1')   # XXX
-        new_env.setdefault('SCRIPT_NAME','/')   # XXX
-
-        new_env['peak.web.rootURL']     = \
-            "http://%(HTTP_HOST)s%(SCRIPT_NAME)s" % new_env   # XXX
-        new_env['peak.web.policy']      = self
-        new_env['peak.web.current'] = getSkin(new_env)
-
-        return new_env
 
 
     def beforeTraversal(self, environ):
@@ -142,24 +126,22 @@ class InteractionPolicy(binding.Component, protocols.StickyAdapter):
         storage.beginTransaction(self.app)
 
 
-    def afterCall(self, environ):
+    def afterCall(self, ctx):
         """Commit transaction after successful hit"""
         storage.commitTransaction(self.app)
 
 
-    def handleException(self, environ, error_stream, exc_info, retry_allowed=1):
+    def handleException(self, ctx, exc_info, retry_allowed=1):
         """Convert exception to a handler, and invoke it"""
         try:
             handler = IWebException(exc_info[1], DefaultExceptionHandler)
             return handler.handleException(
-                environ, error_stream, exc_info, retry_allowed
+                ctx, exc_info, retry_allowed
             )
         finally:
             # Don't allow exc_info to leak, even if the above resulted in
             # an error
             exc_info = None
-
-
 
 
     layerMap = binding.Make( config.Namespace('peak.web.layers') )
@@ -178,6 +160,8 @@ class InteractionPolicy(binding.Component, protocols.StickyAdapter):
 
 
 
+
+
 class TestPolicy(InteractionPolicy):
 
     """Convenient interaction to use for tests, experiments, etc."""
@@ -187,18 +171,34 @@ class TestPolicy(InteractionPolicy):
     def simpleTraverse(self, path, run=True):
 
         path = adapt(path, TraversalPath)
-        env = self.newEnvironment()
+        ctx = self.newContext()
 
         for part in path:
-            env = traverseName(env,part)
+            ctx = ctx.traverseName(part)
 
         if run:
-            status, headers, body = renderHTTP(
-                env, StringIO(''), StringIO()
-            )
+            ctx.environ['wsgi.input'] = StringIO('')
+            ctx.environ['wsgi.errors'] = StringIO()
+            status, headers, body = ctx.renderHTTP()
             return ''.join(body)
 
-        return env
+        return ctx
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -249,14 +249,20 @@ class CGIPublisher(binding.Component):
         """Process one request"""
 
         try:
-            s,h,b = self.handle_http(env,input,errors)
+            env['wsgi.input'] = input
+            env['wsgi.errors'] = errors
+            s,h,b = self._handle_http(env)
         except:
             self.policy.log.exception("Unexpected error")
-            s,h,b = '500',['Content-type: text/plain'],['An error occurred']
+            s,h,b = (
+                '500 Unexpected Error',
+                [('Content-type','text/plain')],
+                ['An error occurred']
+            )
 
         print >>output, "Status: %s" % s
         for header in h:
-            print >>output, header
+            print >>output, "%s: %s" % header
         print >>output
 
         for data in b:
@@ -279,25 +285,19 @@ class CGIPublisher(binding.Component):
 
 
 
-
-
-
-
-
-
-    def handle_http(self,environ,input,errors):
+    def _handle_http(self,environ):
 
         policy  = self.policy
-        environ = policy.newEnvironment(environ)
-
-        policy.beforeTraversal(environ)
+        ctx = policy.newContext(environ)
 
         try:
-            s,h,b = renderHTTP(environ,input,errors)
-            policy.afterCall(environ)
-            return s,h,b
+            policy.beforeTraversal(ctx)
+            result = ctx.renderHTTP()
+            policy.afterCall(ctx)
+            return result
         except:
-            return policy.handleException(environ, errors, sys.exc_info())
+            return policy.handleException(ctx, sys.exc_info())
+
 
 
 

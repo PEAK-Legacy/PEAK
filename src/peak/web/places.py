@@ -3,12 +3,12 @@ from interfaces import *
 from types import FunctionType, MethodType
 import posixpath
 from errors import NotFound, NotAllowed, WebException
-from environ import allows, getTraversedURL, defaultTraversal, pathSplit
 from environ import traverseAttr
 
 __all__ = [
     'Traversable', 'Decorator', 'ContainerAsTraversable', 'MultiTraverser',
 ]
+
 
 
 
@@ -47,14 +47,14 @@ class Traversable(binding.Component):
         instancesProvide = [IWebTraversable]
     )
 
-    def traverseTo(self, name, environ):
-        return traverseAttr(environ, self, name)
+    def traverseTo(self, name, ctx):
+        return traverseAttr(ctx, self, name)
 
-    def preTraverse(self, environ):
+    def preTraverse(self, ctx):
         pass    # Should do any traversal requirements checks
 
-    def getURL(self,environ):
-        return getTraversedURL(environ)
+    def getURL(self,ctx):
+        return ctx.getTraversedURL()
 
 
 
@@ -98,9 +98,9 @@ class Decorator(Traversable):
     asTraversableFor = classmethod(asTraversableFor)
 
 
-    def traverseTo(self, name, environ):
+    def traverseTo(self, name, ctx):
         try:
-            return traverseAttr(environ, self, name)
+            return traverseAttr(ctx, self, name)
         except NotFound:
             # Not recognized, try the un-decorated object
             pass           
@@ -110,10 +110,10 @@ class Decorator(Traversable):
 
             if guard is not None and guard.getPermissionForName(name):
                 # We have explicit permissions defined, so reject access
-                raise NotAllowed(environ, result.message)
+                raise NotAllowed(ctx, result.message)
 
         # attribute is absent or private, fall through to underlying object
-        return traverseAttr(environ, self.ob, name)
+        return traverseAttr(ctx, self.ob, name)
 
 
 
@@ -132,7 +132,7 @@ class ContainerAsTraversable(Decorator):
         asAdapterForTypes = [dict],
     )
 
-    def traverseTo(self, name, environ):
+    def traverseTo(self, name, ctx):
 
         if name.startswith('@@'):
             name = name[2:]
@@ -142,13 +142,13 @@ class ContainerAsTraversable(Decorator):
             except KeyError:
                 pass
             else:
-                result = allows(environ, ob)
+                result = ctx.allows(ob)
                 if result:
                     return ob
 
-                raise NotAllowed(environ, result.message)
+                raise NotAllowed(ctx, result.message)
                 
-        return super(ContainerAsTraversable,self).traverseTo(name, environ)
+        return super(ContainerAsTraversable,self).traverseTo(name, ctx)
 
 
 
@@ -203,19 +203,6 @@ class MultiTraverser(Traversable):
 
 
 
-    def handle_http(self,environ,input,errors):
-
-        self.subject.preTraverse(environ)
-        
-        name, environ = pathSplit(environ)
-
-        if name is None:
-            return defaultTraversal(environ)
-
-        return renderHTTP(traverseName(environ,name), input, errors)
-
-
-
 class CallableAsHTTP(protocols.Adapter):
 
     """Make functions/methods callable"""
@@ -225,9 +212,22 @@ class CallableAsHTTP(protocols.Adapter):
         asAdapterForTypes = [FunctionType, MethodType]
     )
 
-    def handle_http(self, environ, input, errors):
+    def handle_http(self, ctx):
         # XXX this should return to mapply-like functionality someday
-        return self.subject(environ, input, errors)
+        return self.subject(ctx)
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

@@ -11,16 +11,13 @@
 """
 
 __all__ = [
-    'getUser', 'getSkin', 'getResource', 'getInteraction', 'getPolicy',
-    'getRootURL', 'getCurrent', 'allows', 'traverseName', 'traverseAttr',
-    'getAbsoluteURL', 'getTraversedURL',
-    'childContext', 'peerContext', 'dupContext', 'parentContext',
-    'renderHTTP', 'defaultTraversal', 'simpleRedirect', 'pathSplit',
-    'clientHas',
+    'getUser', 'getSkin', 'getInteraction', 'getPolicy', 'shift_path_info',
+    'getRootURL', 'traverseAttr', 'newEnvironment', 'Context',
+    'simpleRedirect', 'clientHas',
 ]
 
-from interfaces import IHTTPHandler, IWebTraversable, IResource
-import protocols, posixpath
+from interfaces import *
+import protocols, posixpath, os
 from cStringIO import StringIO
 from peak.api import binding, adapt, NOT_GIVEN, NOT_FOUND
 import errors
@@ -31,6 +28,91 @@ import errors
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+class Context:
+
+    protocols.advise(instancesProvide=[ITraversalContext])
+
+    def __init__(self,previous,name,ob,environ):
+        self.previous = previous
+        self.current = ob
+        self.name = name
+        self.environ = environ
+
+    def childContext(self,name,ob):
+        return self.__class__(self,name,ob,self.environ)
+
+    def peerContext(self,name,ob):
+        return self.__class__(self.previous,name,ob,self.environ)
+
+    def parentContext(self):
+        if self.previous is None:
+            return self
+        return self.previous
+
+    def getAbsoluteURL(self):
+        if self.previous is not None:
+            return IWebTraversable(self.current).getURL(self)
+        else:
+            return getRootURL(self.environ)
+
+    def getTraversedURL(self):
+        if self.previous is not None:
+            base = IWebTraversable(self.current).getURL(self.previous)
+            return posixpath.join(base, self.name)   # handles empty parts OK
+        else:
+            return getRootURL(self.environ)
+
+    def allows(self,*args,**kw):
+        return getInteraction(self.environ).allows(*args,**kw)
+
+
+
+
+
+    def traverseName(self,name):
+        if name=='..':
+            return self.parentContext()
+        elif not name or name=='.':
+            return self
+        else:
+            # XXX error handling?
+            ob = IWebTraversable(self.current).traverseTo(name,self)
+            return self.childContext(name,ob)
+
+
+    def renderHTTP(self):
+        return IHTTPHandler(self.current).handle_http(self)
+
+
+    def getResource(self,path):
+        return getSkin(self.environ).getResource(path)
+
+
+
+def newEnvironment(policy,environ={},root_url=None):
+
+    new_env = dict(os.environ)     # First the OS
+    new_env.update(environ)   # Then the server
+
+    new_env.setdefault('HTTP_HOST','127.0.0.1')   # XXX
+    new_env.setdefault('SCRIPT_NAME','/')   # XXX
+
+    new_env['peak.web.rootURL'] = root_url or \
+        "http://%(HTTP_HOST)s%(SCRIPT_NAME)s" % new_env   # XXX
+
+    new_env['peak.web.policy']  = policy
+    return new_env
 
 
 
@@ -54,15 +136,7 @@ def getSkin(environ):
         )
         return skin
 
-def getResource(environ,path):
-    return getSkin(environ).getResource(path)
-
-def allows(environ, *args, **kw):
-    return getInteraction(environ).allows(*args,**kw)
-
-
 def getInteraction(environ):
-
     try:
         return environ['peak.web.interaction']
 
@@ -70,7 +144,6 @@ def getInteraction(environ):
         interaction = getPolicy(environ).newInteraction(user=getUser(environ))
         environ['peak.web.interaction'] = interaction
         return interaction
-
 
 def getRootURL(environ):
     return environ['peak.web.rootURL']
@@ -80,89 +153,28 @@ def getRootURL(environ):
 
 
 
-def getCurrent(environ, adaptTo=None):
-
-    current = environ['peak.web.current']
-
-    if adaptTo is not None:
-        return adapt(current,adaptTo)
-
-    return current
 
 
-def traverseName(environ,name):
-    """Return a new 'environ' after traversing to 'name'"""
-
-    if name == '..':
-        return environ.get('peak.web.previous',environ)
-    elif name=='.' or not name:
-        return environ
-
-    return childContext(
-        environ, name,
-        getCurrent(environ,IWebTraversable
-            ).traverseTo(name,environ)  # XXX error handling?
-    )
 
 
-def getAbsoluteURL(environ):
-    if 'peak.web.previous' in environ:
-        return getCurrent(environ,IWebTraversable).getURL(environ)
-    else:
-        return getRootURL(environ)
 
 
-def getTraversedURL(environ):
-    if 'peak.web.previous' in environ:
-        base = getAbsoluteURL(environ['peak.web.previous'])
-        name = environ['peak.web.name']
-        return posixpath.join(base, name)   # handles empty parts OK
-    else:
-        return getRootURL(environ)
+
 
 
 def simpleRedirect(environ,location):
-    location = 'Location: %s' % location
     if (environ.get("SERVER_PROTOCOL","HTTP/1.0")<"HTTP/1.1"):
-        status=302
+        status="302 Found"
     else:
-        status=303
-    return status,[location],()
+        status="303 See Other"
+    return status,[('Location',location)],()
 
 
 def clientHas(environ, lastModified=None, ETag=None):
     return False    # XXX
 
 
-def childContext(environ, name, new_object):
-    return dupContext(environ,
-        ('peak.web.previous',environ), ('peak.web.name', name),
-        ('peak.web.current', new_object)
-    )
-
-
-def peerContext(environ, ob):
-    """Return a dupContext of 'environ' that has 'ob' as its current object"""
-    return dupContext(environ,('peak.web.current',ob))
-
-
-def defaultTraversal(environ):
-
-    if environ['REQUEST_METHOD'] in ('GET','HEAD'):
-        # Redirect to current location + '/'
-        url = getTraversedURL(environ)+'/'
-        if environ.get('QUERY_STRING'):
-            url = '%s?%s' % (url,environ['QUERY_STRING'])
-
-        return simpleRedirect(environ,url)
-
-    from errors import UnsupportedMethod
-    raise UnsupportedMethod(environ)
-
-
-
-
-def pathSplit(environ):
+def shift_path_info(environ):
 
     path_info = environ.get('PATH_INFO','').split('/')
 
@@ -184,41 +196,29 @@ def pathSplit(environ):
     elif name != '.':
         script_name = posixpath.join(script_name,name)
 
-    return name, dupContext(
-        environ, ('SCRIPT_NAME',script_name), ('PATH_INFO',path_info)
-    )
-
-def renderHTTP(environ,input,errors):
-    return getCurrent(environ, IHTTPHandler).handle_http(environ,input,errors)
-
-def dupContext(environ,*items):
-    new_environ = environ.copy()
-    if items:
-        new_environ.update(dict(items))
-    return new_environ
-
-def parentContext(environ,default=NOT_GIVEN):
-    if default is NOT_GIVEN:
-        default = environ
-    return environ.get('peak.web.previous',default)
+    environ['SCRIPT_NAME'] = script_name
+    environ['PATH_INFO']   = path_info
+    return name
 
 
-def traverseAttr(environ, ob, name):
+
+
+def traverseAttr(ctx, ob, name):
 
     loc = getattr(ob, name, NOT_FOUND)
 
     if loc is not NOT_FOUND:
 
-        result = allows(environ,ob, name)
+        result = ctx.allows(ob, name)
 
         if result:
             return loc
 
         raise errors.NotAllowed(
-            environ,getattr(result,'message',"Permission Denied")
+            ctx, getattr(result,'message',"Permission Denied")
         )
 
-    raise errors.NotFound(environ,name,ob)
+    raise errors.NotFound(ctx,name,ob)
 
 
 
@@ -251,29 +251,29 @@ class TraversableAsHandler(protocols.Adapter):
         asAdapterForProtocols=[IWebTraversable]
     )
 
-    def handle_http(self,environ,input,errors):
+    def handle_http(self,ctx):
 
-        self.subject.preTraverse(environ)
-        name, environ = pathSplit(environ)
+        self.subject.preTraverse(ctx)
+        name = shift_path_info(ctx.environ)
 
         if name is None:
-            return defaultTraversal(environ)
 
-        environ = traverseName(environ,name)
+            if ctx.environ['REQUEST_METHOD'] in ('GET','HEAD'):
+                # Redirect to current location + '/'
+                url = ctx.getTraversedURL()+'/'
+                if ctx.environ.get('QUERY_STRING'):
+                    url = '%s?%s' % (url,ctx.environ['QUERY_STRING'])
+        
+                return simpleRedirect(ctx.environ,url)
+        
+            from errors import UnsupportedMethod
+            raise UnsupportedMethod(ctx)
 
-        return IHTTPHandler(getCurrent(environ)).handle_http(
-            environ, input, errors
-        )
+        return ctx.traverseName(name).renderHTTP()
+
 
 def _get_skin_name(environ):
     return "default"    # XXX
-
-
-
-
-
-
-
 
 
 

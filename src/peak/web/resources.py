@@ -8,7 +8,7 @@ from peak.naming.factories.openable import FileURL
 from peak.util.imports import importString
 import os.path, posixpath, sys
 from errors import UnsupportedMethod, NotFound, NotAllowed
-from environ import allows, getTraversedURL, clientHas, getResource, getRootURL
+from environ import clientHas, getRootURL
 
 __all__ = [
     'Resource', 'FSResource', 'ResourceDirectory', 'FileResource',
@@ -50,13 +50,13 @@ class Resource(Traversable):
 
     def preTraverse(self, ctx):
         perm = self.permissionNeeded
-        if not allows(ctx, self, permissionNeeded = perm):
+        if not ctx.allows(self, permissionNeeded = perm):
             raise NotAllowed(ctx)
 
 
     def getURL(self, ctx):
         # We want an absolute URL based on the interaction
-        return posixpath.join(getRootURL(ctx),self.resourcePath)
+        return posixpath.join(getRootURL(ctx.environ),self.resourcePath)
 
 
     def _getResourcePath(self):
@@ -267,19 +267,19 @@ class ResourceProxy(object):
         self.path = path
         self.resourcePath = resourcePath
 
-    def handle_http(self, environ, input, errors):
-        return IHTTPHandler(getResource(environ,self.path)).handle_http(
-            environ, input, errors
-        )
+    def handle_http(self, ctx):
+        return IHTTPHandler(ctx.getResource(self.path)).handle_http(ctx)
 
     def preTraverse(self, ctx):
-        IWebTraversable(getResource(ctx,self.path)).preTraverse(ctx)
+        IWebTraversable(ctx.getResource(self.path)).preTraverse(ctx)
 
     def traverseTo(self, name, ctx):
-        return IWebTraversable(getResource(ctx,self.path)).traverseTo(name,ctx)
+        return IWebTraversable(ctx.getResource(self.path)).traverseTo(name,ctx)
 
     def getURL(self,ctx):
-        return IWebTraversable(getResource(ctx,self.path)).getURL(ctx)
+        return IWebTraversable(ctx.getResource(self.path)).getURL(ctx)
+
+
 
 
 
@@ -375,10 +375,8 @@ class TemplateResource(FSResource):
         instancesProvide = [IHTTPHandler]
     )
 
-    def handle_http(self, environ, input, errors):
-        s,h,b = IHTTPHandler(self.theTemplate).handle_http(
-            environ, input, errors
-        )
+    def handle_http(self, ctx):
+        s,h,b = IHTTPHandler(self.theTemplate).handle_http(ctx)
         # XXX replace content-type header w/self.mime_type
         return s,h,b
 
@@ -400,12 +398,14 @@ class TemplateResource(FSResource):
 
     theTemplate = binding.Make(theTemplate)
 
-    def traverseTo(self, name, environ):
-        return IWebTraversable(self.theTemplate).traverseTo(name, environ)
+    def traverseTo(self, name, ctx):
+        return IWebTraversable(self.theTemplate).traverseTo(name, ctx)
 
     def getURL(self, ctx):
         # We're a method, so use our context URL, not container URL
-        return getTraversedURL(ctx)
+        return ctx.getTraversedURL()
+
+
 
 
 class FileResource(FSResource):
@@ -419,9 +419,9 @@ class FileResource(FSResource):
     def getStreamAndSize(self):
         return open(self.filename, 'rb'), os.stat(self.filename).st_size
 
-    def handle_http(self, environ, input, errors):
+    def handle_http(self, ctx):
 
-        method = environ['REQUEST_METHOD'].upper()
+        method = ctx.environ['REQUEST_METHOD'].upper()
 
         if method not in ('GET','HEAD'):
             raise UnsupportedMethod(ctx)
@@ -440,9 +440,9 @@ class FileResource(FSResource):
                     yield data
             stream.close()
 
-        return '200', [
-            ('Content-Type: %s' % self.mime_type),
-            ('Content-Length: %d' % size)
+        return '200 OK', [
+            ('Content-Type', self.mime_type),
+            ('Content-Length', str(size))
         ],  dump_data()
 
 

@@ -1,14 +1,14 @@
 from protocols import Interface, Attribute
 from peak.security.interfaces import IAuthorizedPrincipal, IInteraction
 import protocols
-from peak.api import PropertyName
+from peak.api import PropertyName, NOT_GIVEN
 from peak.binding.interfaces import IComponent
 
 __all__ = [
     'IWebTraversable', 'IInteractionPolicy', 'IAuthService', 'IWebException',
     'RESOURCE_PREFIX', 'DEFAULT_METHOD', 'APPLICATION_LOG',
     'IDOMletState', 'IHTTPHandler', 'IHTTPApplication',
-    'IDOMletNode',    'IDOMletNodeFactory', 'IResource',
+    'IDOMletNode',    'IDOMletNodeFactory', 'IResource', 'ITraversalContext',
     'IDOMletElement', 'IDOMletElementFactory', 'ISkin', 'IPolicyInfo'
 ]
 
@@ -52,8 +52,8 @@ class IInteractionPolicy(IAuthService, IPolicyInfo):
     def newInteraction(**options):
         """Create a new 'IInteraction' with given arguments"""
 
-    def newEnvironment(self,environ={}):
-        """Create an initialized environment, starting w/'environ'"""
+    def newContext(self,environ={}):
+        """Create an initial 'ITraversalContext' based on 'environ'"""
 
     def beforeTraversal(environ):
         """Begin transaction before traversal"""
@@ -61,7 +61,7 @@ class IInteractionPolicy(IAuthService, IPolicyInfo):
     def afterCall(environ):
         """Commit transaction after successful hit"""
 
-    def handleException(environ, error_stream, exc_info, retry_allowed=1):
+    def handleException(environ, exc_info, retry_allowed=1):
         """Convert exception to a handler, and invoke it"""
 
 
@@ -75,6 +75,47 @@ class IInteractionPolicy(IAuthService, IPolicyInfo):
 
 
 
+
+
+
+
+
+class ITraversalContext(Interface):
+
+    """A traversed-to location"""
+    
+    current = Attribute("""Current object location""")
+    environ = Attribute("""WSGI (PEP 333) 'environ' mapping""")
+    name    = Attribute("""Name of 'current'""")
+
+    def childContext(name,ob):
+        """Return a new child context with name 'name' and current->'ob'"""
+
+    def peerContext(name,ob):
+        """Return a new peer context with name 'name' and current->'ob'"""
+
+    def parentContext():
+        """Return this context's parent, or self if no parent"""
+
+    def getAbsoluteURL():
+        """Return current object's absolute URL"""        
+
+    def getTraversedURL():
+        """Return URL traversed to this point"""        
+
+    def traverseName(name):
+        """Return a new context obtained by traversing to 'name'"""
+
+    def renderHTTP():
+        """Equivalent to 'IHTTPHandler(self.current).handle_http()'"""
+
+    def getResource(path):
+        """Return the named resource"""
+
+    def allows(subject,name=None,permissionNeeded=NOT_GIVEN,user=NOT_GIVEN):
+        """Return true if 'user' has 'permissionNeeded' for 'subject'
+
+        (See 'security.IInteraction.allows()' for full details)"""
 
 
 
@@ -125,8 +166,12 @@ class IHTTPHandler(Interface):
 
     """A component for rendering an HTTP response"""
 
-    def handle_http(self, environ, input, errors):
-        """Return '(status,headers,output_iterable)' tuple"""
+    def handle_http(ctx):
+        """Return '(status,headers,output_iterable)' tuple
+
+        For the definition of 'status', 'headers', and 'output_iterable',
+        see PEP 333.
+        """
 
 
 class IHTTPApplication(IHTTPHandler):
@@ -138,7 +183,7 @@ class IWebException(Interface):
 
     """An exception that knows how it should be handled for a web app"""
 
-    def handleException(environ,error_stream,exc_info,retry_allowed=1):
+    def handleException(environ,exc_info,retry_allowed=1):
         """Perform necessary recovery actions"""
 
 
@@ -152,10 +197,6 @@ class IResourceService(Interface):
 
 class ISkin(IResource, IResourceService):
     """A resource container, and the root resource for its contents"""
-
-
-
-
 
 
 

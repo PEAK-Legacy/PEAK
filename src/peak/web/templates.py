@@ -20,8 +20,7 @@ from peak.api import *
 from interfaces import *
 from xml.sax.saxutils import quoteattr, escape
 from publish import TraversalPath
-from environ import getAbsoluteURL, getInteraction, getCurrent
-from environ import childContext, parentContext
+from environ import getInteraction
 from peak.util import SOX
 
 __all__ = [
@@ -37,6 +36,7 @@ def infiniter(sequence):
     while 1:
         for item in sequence:
             yield item
+
 
 
 class DOMletState(binding.Component):
@@ -97,17 +97,17 @@ class DOMletAsHTTP(binding.Component):
 
     fromNode = classmethod(fromNode)
 
-    def handle_http(self, environ, input, errors):
-        myOwner = parentContext(environ)
-
+    def handle_http(self, ctx):
+        ctx = ctx.parentContext()
         data = []
-
         self.templateNode.renderFor(
-            myOwner,
-            DOMletState(myOwner, write=data.append)
+            ctx,
+            DOMletState(ctx.current, write=data.append)
         )
-
         return '200 OK', [], [unicodeJoin(data)]    # XXX content-type
+
+
+
 
 
 
@@ -471,7 +471,7 @@ class Text(ContentReplacer):
 
         write = state.write
         write(self._openTag)
-        write(escape(unicode(getCurrent(data))))
+        write(escape(unicode(data.current)))
         write(self._closeTag)
 
 
@@ -485,7 +485,7 @@ class XML(ContentReplacer):
 
         write = state.write
         write(self._openTag)
-        write(unicode(getCurrent(data)))
+        write(unicode(data.current))
         write(self._closeTag)
 
 
@@ -542,7 +542,7 @@ class URLAttribute(Element):
         if self.dataSpec:
             data, state = self._traverse(data, state)
 
-        url = unicode(getAbsoluteURL(data))
+        url = unicode(data.getAbsoluteURL())
 
         if not self.optimizedChildren and not self.nonEmpty:
             state.write(self._emptyTag % locals())
@@ -566,7 +566,7 @@ class URLText(ContentReplacer):
         write = state.write
 
         write(self._openTag)
-        write(unicode(getAbsoluteURL(data)))
+        write(unicode(data.getAbsoluteURL()))
         write(self._closeTag)
 
 
@@ -623,13 +623,13 @@ class List(ContentReplacer):
         state.write(self._openTag)
 
         nextPattern = infiniter(self.params['listItem']).next
-        allowed     = getInteraction(data).allows
+        allowed     = getInteraction(data.environ).allows
         ct = 0
 
         # XXX this should probably use an iteration location, or maybe
         # XXX put some properties in execution context for loop vars?
 
-        for item in getCurrent(data):
+        for item in data.current:
 
             if not allowed(item):
                 continue
@@ -638,7 +638,7 @@ class List(ContentReplacer):
                 for child in self.params.get('header',()):
                     child.renderFor(data,state)
 
-            loc = childContext(data, str(ct), item)
+            loc = data.childContext(str(ct), item)
             nextPattern().renderFor(loc, state)
             ct += 1
 

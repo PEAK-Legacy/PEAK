@@ -3,7 +3,7 @@ from interfaces import *
 from places import Traversable, MultiTraverser
 from publish import TraversalPath
 from resources import Resource
-from environ import traverseName, getCurrent, getSkin, getPolicy
+from environ import getSkin, getPolicy
 
 __all__ = [
     'Skin',
@@ -63,7 +63,7 @@ class Skin(Traversable):
 
     def traverseTo(self, name, ctx):
 
-        if name == getPolicy(ctx).resourcePrefix:
+        if name == getPolicy(ctx.environ).resourcePrefix:
             return self.resources
 
         return self.root.traverseTo(name, ctx)
@@ -87,17 +87,17 @@ class Skin(Traversable):
         if path in self.cache:
             return self.cache[path]
 
-        start = self.policy.newEnvironment(
+        start = self.policy.newContext(
             {   'peak.web.skin':self,
                 'peak.web.interaction':self.dummyInteraction
             }
         )
 
         # start at ++resources++
-        start = traverseName(start,self.policy.resourcePrefix)
+        start = start.traverseName(self.policy.resourcePrefix)
 
         resourceCtx = path.traverse(start, getRoot = lambda ctx: start)
-        self.cache[path] = subject = getCurrent(resourceCtx)
+        self.cache[path] = subject = resourceCtx.current
         return subject
 
 
