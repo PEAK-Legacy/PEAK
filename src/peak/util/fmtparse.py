@@ -757,7 +757,10 @@ class Conversion(Rule):
             return state
 
         out, = out
-        value = self.converter(out)
+        if out=='' and self.canBeEmpty and self.defaultValue is not NOT_GIVEN:
+            value = self.defaultValue
+        else:
+            value = self.converter(out)
 
         produce(value)
         return state
@@ -772,9 +775,6 @@ class Conversion(Rule):
 
     def getOpening(self,closing,memo):
         return self.rule.getOpening(closing,memo)
-
-
-
 
 
     def format(self, data, write):
