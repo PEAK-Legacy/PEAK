@@ -8,7 +8,7 @@
 
 from peak.binding.components import Component, Once, New, requireBinding
 from peak.naming import URL
-from peak.api import NOT_GIVEN, protocols, naming
+from peak.api import NOT_GIVEN, protocols, naming, config, NOT_FOUND
 from peak.naming.factories.openable import FileURL
 from interfaces import ILogger
 
@@ -301,7 +301,7 @@ class peakLoggerContext(naming.AddressContext):
         prop = 'peak.logs'
 
         if name.body:
-            prop = '%s.%s' % prop, name.body
+            prop = '%s.%s' % (prop, name.body)
 
         ob = config.getProperty(self.creationParent, prop, default=NOT_FOUND)
         if ob is NOT_FOUND:

@@ -1,6 +1,16 @@
 #!invoke peak runIni
 
 [Load Settings From]
-# This loads the general program settings
+# This loads the general program settings - don't change:
 file = config.fileNearModule('bulletins', 'bulletins.ini')
+
+# From this point on, you can modify as appropriate:
+
+[bulletins]
+databaseURL = 'sqlite:///tmp/bulletins.db'
+databaseDDL = config.fileNearModule('bulletins', 'sqlite-ddl.sql')
+
+[peak.logs]
+# Set default logging to stderr, DEBUG level
+* = logs.LogStream(stream=importString('sys.stderr'), level=logs.DEBUG)
 
