@@ -1,0 +1,81 @@
+TransWarp Release 0.2 preview 1
+
+ Copyright (C) 2001,2002 by Phillip J. Eby, All rights reserved.
+ This software may be used under the same terms as Zope or Python.
+ THERE IS ABSOLUTELY NO WARRANTY.  Code quality varies from "alpha"
+ to "experimental pre-alpha".  :)
+
+
+ SYSTEM REQUIREMENTS
+
+  Basic installation requires Python 2.2, and the Zope 'Interface' package.
+  If you want to run the test suite or use any of TransWarp's frameworks
+  (e.g. database interaction, UML/XMI processing, etc.), you will also need
+  Aaron Watters' 'kjbuckets' library for your version of Python.  See
+  "Obtaining and Installing Dependencies" below if you do not already have
+  the 'Interface' package or the 'kjbuckets' module.
+
+  Note: if you have installed previous versions of TransWarp, be sure to
+  remove them before installing this one.  A lot of things have moved,
+  been removed, or just plain ain't the same.
+
+
+ BASIC INSTALLATION
+
+  TransWarp is distributed using the now-standard Python 'distutils' protocol.
+  Just unpack the archive, go to the directory containing 'setup.py', and run::
+
+    python setup.py install
+
+  TransWarp will be installed in the "site-packages" directory of your Python
+  installation.  (Unless directed elsewhere; see the "Installing Python 
+  Modules" section of the Python manuals for details on customizing
+  installation locations, etc.).
+
+
+ OBTAINING AND INSTALLING DEPENDENCIES
+
+  Aaron Watters' 'kjbuckets' Module
+
+   See "http://phd.pp.ru/Software/Python/#kjbuckets":http://phd.pp.ru/Software/Python/#kjbuckets
+   for information on downloading and installing kjbuckets for various
+   platforms and versions of Python.  Note that if you're on Windows, all you
+   need to do is copy the '2.2/kjbuckets.pyd' to
+   '/Python22/Lib/site-packages/kjbuckets.pyd', and you're done.  On other
+   platforms, install as you would any other Python module, with::
+
+    python setup.py install
+
+   Note: if you aren't on Windows, and for some reason can't compile the
+   kjbuckets module, you can as a last resort download this file:
+
+     "http://www.chordate.com/kwParsing/kjbuckets0.py":http://www.chordate.com/kwParsing/kjbuckets0.py
+
+   Rename it to "kjbuckets.py", and place it in your Python path.  This runs
+   slower than the C version, but it'll do in a pinch.
+ 
+
+  The Zope 'Interface' Package
+
+   The easiest place to find a copy of the Interface package is in the
+   'lib/python' directory of a Zope installation.  Just copy it over to your
+   main Python path, or add the 'lib/python' directory to your Python path.
+
+   Failing that, you can download a copy direct from Zope.org's CVS repository:
+
+    "http://cvs.zope.org/Packages/Interface/Interface.tar.gz?tarball=1":http://cvs.zope.org/Packages/Interface/Interface.tar.gz?tarball=1
+
+
+ TESTING YOUR INSTALLATION
+
+  TransWarp comes with a moderately-sized built-in test suite.  If you have
+  the Python "unittest" module installed in your Python path, you can use
+  it to run the test suites, like this::
+
+   python unittest.py TW.tests.suite
+
+  This will run about 53 tests on various parts of TransWarp.  If you have
+  installed everything correctly, 100% of the tests should succeed.  If
+  you're missing any needed parts, you will probably be unable to run the
+  tests at all.
+
