@@ -7,12 +7,15 @@ lasttime = 0
 
 __all__ = [
     'UUID',
-    'DNS_NS', 'URL_NS', 'OID_NS', 'X500_NS'
+    'DNS_NS', 'URL_NS', 'OID_NS', 'X500_NS', 'NIL_UUID'
 ]
+
 
 try:
     from pywintypes import CreateGuid
+
 except ImportError:
+
     try:
         from pythoncom import CreateGuid
     except ImportError:
@@ -26,11 +29,25 @@ def getClockSeq():
 clock_seq = getClockSeq()
 
 
+
+
+
+
+
+
+
+
+
+
 class UUID(str):
+
     __slots__ = []
 
-    def __new__(klass, from_string=None, name=None, ns=None, \
-      version=None, nodeid=None):
+    def __new__(klass,
+        from_string=None,
+        name=None, ns=None, version=None, nodeid=None
+        ):
+        
         other_all_none = (name is None) and (ns is None) \
             and (version is None) and (nodeid is None)
         
@@ -61,7 +78,10 @@ class UUID(str):
             if not ok:
                 raise ValueError, "Illegal syntax for UUID: " + from_string
 
+
+
         else:
+
             if version is None:
                 if name or ns:
                     version = 3
@@ -99,6 +119,8 @@ class UUID(str):
                     ut[7:], ut[3:7], ut[:3], clock_seq, nodeid
                 )
 
+
+
             elif version == 3:
                 if not name or not ns:
                     raise ValueError, "Both ns and name must be specified"
@@ -133,6 +155,13 @@ class UUID(str):
         return super(UUID, klass).__new__(klass, from_string)
 
 
+
+
+
+
+
+
+
     def bytes(self):
         x = ''.join(self.split('-'))
         return ''.join([chr(int(x[i:i+2], 16)) for i in range(0, len(x), 2)])
@@ -140,11 +169,6 @@ class UUID(str):
 
     def __repr__(self):
         return "UUID('%s')" % str(self)
-
-
-"""
-def genUUID():
-"""
 
 
 

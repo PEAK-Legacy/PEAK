@@ -6,7 +6,8 @@ those tests.
 
 allSuites = [
     'SOX:test_suite',
-    'EigenData:test_suite'
+    'EigenData:test_suite',
+    'uuid:test_suite',
 ]
 
 def test_suite():
