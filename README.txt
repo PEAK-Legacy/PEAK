@@ -120,16 +120,19 @@ PEAK Release 0.5 alpha 1
       - a CGI/FastCGI publishing framework that uses 'zope.publisher' to
         publish a PEAK component tree and its associated transaction service
 
-      - an event-driven "reactor" framework that can be used with Twisted,
-        or in place of it for many simpler "mostly scheduling" applications.
+      - an event-driven "reactor" framework that seamlessly integrates with
+        Twisted, but can also be used without Twisted for applications that are
+	mostly scheduling-oriented, or which use only third-party protocol
+	implementations such as FAM, FastCGI, ReadyExec, etc.
 
     * AOP and SOP: PEAK allows you to separate concerns as modules, then
       combine the modules via a "module inheritance" technique.  This
       lets you define a generated business object model as a
       "structural" concern, and then combine it with a "behavioral"
-      concern.  This is as simple as writing classes that just contain
+      concern.  This is as simple as writing classes that contain only
       what you want to add, and then telling PEAK that your new module
-      "inherits" from the generated module.
+      "inherits" from the generated module.  This is similar to (but
+      designed independently from) the "MixJuice" tool for AOP in Java.
 
 
  Known Issues and Risks of this Version

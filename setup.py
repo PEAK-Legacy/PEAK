@@ -11,7 +11,7 @@ include_metamodels = True   # edit this to stop installation of MOF, UML, etc.
 # Metadata
 
 PACKAGE_NAME = "PEAK"
-PACKAGE_VERSION = "0.5a0"
+PACKAGE_VERSION = "0.5a1"
 
 HAPPYDOC_IGNORE = [
     '-i', 'examples',  '-i', 'old', '-i', 'tests',
@@ -87,7 +87,7 @@ try:
     import zope.component
     zope_installed = True
 
-except ImportError: 
+except ImportError:
     zope_installed = False
 
 
@@ -158,5 +158,7 @@ setup(
     ext_modules = extensions,
     scripts = scripts,
 )
+
+
 
 

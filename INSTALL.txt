@@ -1,4 +1,4 @@
-Installing PEAK 
+Installing PEAK
 
  PEAK Release 0.5 alpha 1
 
@@ -11,7 +11,7 @@ Installing PEAK
 
  SYSTEM REQUIREMENTS
 
-  Python 2.2.2 is required.  Some portions of PEAK may support only
+  Python 2.2.2 or better is required.  Some portions of PEAK may support only
   POSIX-like and/or Windows operating systems.
 
   Note: if you have installed previous versions of PEAK or TransWarp, be
@@ -27,17 +27,17 @@ Installing PEAK
     python setup.py install
 
   PEAK will be installed in the 'site-packages' directory of your Python
-  installation.  (Unless directed elsewhere; see the "Installing Python 
+  installation.  (Unless directed elsewhere; see the "Installing Python
   Modules" section of the Python manuals for details on customizing
   installation locations, etc.).
 
+ SCRIPTS
 
-
-
-
-
-
-
+  On operating systems where 'os.name == "posix"', PEAK installs a Python
+  script named 'peak'.  'peak' is an application bootstrap script that
+  can invoke any object that is referenceable via the PEAK naming system.
+  Run the 'peak' script for usage info, or see the 'Bootstrap' class in
+  'peak.running.commands' for more on how to make objects bootable via 'peak'.
 
  THIRD PARTY SOFTWARE INCLUDED WITH PEAK
 
@@ -51,35 +51,35 @@ Installing PEAK
    'kjbuckets' is copyright Aaron Watters and contributors; please see
    the 'src/kjbuckets/COPYRIGHT.txt' file for details of its license.
 
-
   The Zope 3 'Interface' and 'Persistence' Packages
 
-   PEAK now includes a copy of the Zope 3 'Interface' package, and a portion
-   of the Zope 3 'Persistence' package.  They are automatically installed
-   alongside PEAK in your 'site-packages' directory, unless you specify an
-   alternate installation location to 'setup.py'.  (Note that this will
-   overwrite any existing installation of these packages.)  The 'Interface'
-   and 'Persistence' packages are copyright Zope Corporation and Contributors;
-   please see the 'LICENSE.txt' files in each directory for details.
+   PEAK includes a copy of the following packages from the Zope X3 Milestone 2
+   release, and will install them unless Zope X3 is available on 'sys.path'
+   at the time 'setup.py' is run:
 
+   - 'zope.interface'
 
+   - 'persistence'
 
+   - 'ZConfig'
 
+   These packages are automatically installed alongside PEAK in your
+   'site-packages' directory, unless you specify an alternate installation
+   location to 'setup.py'.  Note that this will overwrite any existing
+   installation of these packages.
 
+   To prevent overwriting versions of these packages that were installed
+   separately, 'setup.py' attempts to detect the presence of Zope X3 by
+   importing 'zope.component' (which is not distributed with PEAK).  If you
+   have a 'zope.component' package on your 'sys.path' when 'setup.py' runs,
+   'setup.py' will assume you have a complete Zope X3 installation, and it
+   will not install any of the Zope packages listed above, in order to avoid
+   overwriting newer versions from your Zope installation.
 
+   The 'zope.interface', 'persistence', and 'ZConfig' packages are
+   Copyright Zope Corporation and contributors; please see the 'LICENSE.txt'
+   files in their directories for details of their licenses.
 
-
-
-
-
-
-
-
-
-
-
-
-   
  TESTING YOUR INSTALLATION
 
   PEAK comes with a moderately-sized built-in test suite.  If you wish to
@@ -87,10 +87,9 @@ Installing PEAK
 
    python setup.py test
 
-  This will run several dozen tests on various parts of PEAK.  If you have
+  This will run over 120 tests on various parts of PEAK.  If you have
   installed everything correctly, 100% of the tests should succeed.  If
-  you're missing any needed parts, you will probably be unable to run the
-  tests at all.
+  anything is broken, you will probably be unable to run the tests at all.
 
   If you'd like to run only a portion of the test suite, you can supply
   the '--test-module' or '-m' option to the test command as follows::
@@ -102,9 +101,23 @@ Installing PEAK
   And so on.  You can also use 'python setup.py -q test' to make the tests
   run more "quietly".
 
-  By default, 'python setup.py test' only runs 'peak.api.tests', which cover
-  the basic, currently supported functionality of PEAK.  If you specify
-  the 'peak.tests' module (as in the second example above), the full suite of
-  100+ tests will be run.  These tests will take longer to run, as they perform
-  some rather complex XMI and UUID tests.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
