@@ -1,7 +1,5 @@
-from peak.naming.names import ParsedURL
+from peak.naming import *
 from peak.naming.contexts import AbstractContext
-from peak.naming.references import RefAddr
-from peak.naming.interfaces import IObjectFactory
 import re, smtplib
 
 
