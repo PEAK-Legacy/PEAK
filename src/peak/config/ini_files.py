@@ -50,7 +50,7 @@ protocols.adviseObject(loadMapping, provides=[ISettingLoader])
 
 
 def loadConfigFile(pMap, filename, prefix='*', includedFrom=None):
-    globalDict = getattr(includedFrom,'gloablDict',None)
+    globalDict = getattr(includedFrom,'globalDict',None)
     if filename:
         ConfigReader(pMap,prefix,globalDict).readFile(filename)
 
@@ -64,7 +64,7 @@ def loadConfigFiles(pMap, filenames, prefix='*', includedFrom=None):
 
     import os.path
 
-    globalDict = getattr(includedFrom,'gloablDict',None)
+    globalDict = getattr(includedFrom,'globalDict',None)
 
     for filename in filenames:
         if filename and os.path.exists(filename):
