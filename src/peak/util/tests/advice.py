@@ -2,6 +2,7 @@
 
 from unittest import TestCase, makeSuite, TestSuite
 from peak.util.advice import *
+import sys
 
 def ping(log, value):
 
@@ -10,7 +11,6 @@ def ping(log, value):
         return [klass]
 
     addClassAdvisor(pong)
-
 
 
 
@@ -70,6 +70,8 @@ class AdviceTests(TestCase):
             )
 
     def checkDoubleType(self):
+        if sys.hexversion >= 0x02030000:
+            return  # you can't duplicate bases in 2.3
         class aType(type,type):
             ping([],1)
         aType, = aType
