@@ -2,6 +2,19 @@ Fixes and Enhancements since Version 0.5 alpha 2
 
  Changed, Enhanced, or Newly Deprecated Features
 
+ - Added 'peak.ddt' framework for Document-Driven Testing.  DDT can parse HTML
+   files to extract test descriptions from HTML tables, run the tests, and then
+   output an annotated version of the input document, illustrating the results
+   by e.g. coloring cells to highlight good/bad results.  To use it, you must
+   implement 'ddt.ITableProcessor' components that know how to interpret the
+   table contents.
+
+ - Added 'fd.file:' URL scheme, for URLs like 'fd.file:stdin' that can be used
+   in place of 'file:' URLs for many purposes.
+
+ - Added 'model.ExtendedEnum', for enumerations that also support arbitrary
+   integers.
+
  - Added 'events.IEventLoop' implementation and refactored 'UntwistedReactor'
    to use it.  'UntwistedReactor' is now nothing more than an adapter from
    'events.IEventLoop' to 'running.IBasicReactor'.  Added 'twisted_support'

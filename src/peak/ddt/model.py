@@ -96,6 +96,18 @@ class Item(model.Element):
     class document(model.Attribute):
         referencedType = 'Document'
 
+    def newRow(self,**kw):
+        row = self.getParentComponent().newItem(Row)
+        row.document = self.document
+        for k,v in kw.items(): setattr(row,k,v)
+        return row
+
+    def newCell(self,**kw):
+        cell = self.getParentComponent().newItem(Cell)
+        cell.document = self.document
+        for k,v in kw.items(): setattr(cell,k,v)
+        return cell
+
 
 class children(model.Collection):
     """An attribute that manages child nodes' document links"""
@@ -106,18 +118,6 @@ class children(model.Collection):
     def _onUnlink(feature,element,item,posn):
         if item.document is element:
             item.document = None
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -204,7 +204,6 @@ class Row(Item):
 
 
 class Cell(Item):
-
     """An individual data value or action, with concrete results"""
 
     class row(model.Attribute):
@@ -236,6 +235,7 @@ class Cell(Item):
 
     class actual(model.Attribute):
         """The actual output for this cell, as opposed to expected"""
+        referencedType = model.String
 
     class annotation(model.Attribute):
         referencedType = model.String
@@ -244,12 +244,22 @@ class Cell(Item):
     def getParent(self):
         return self.row
 
+    def assertEqual(self,value,modelType=model.String):
+        """Check that text matches 'value', using 'modelType' for conversions
+
+        If the value doesn't match, the cell will be flagged as "wrong",
+        and the actual value is added to the cell."""
+
+        if value<>modelType.mdl_fromString(self.text):
+            self.wrong(modelType.mdl_toString(value))
+        else:
+            self.right()
+
     def right(self):
         """Flag the cell as correct"""
 
         self._assertUnscored()
         self.score = Right
-
 
     def wrong(self,*actual):
         """Flag the cell as incorrect, w/optional actual value"""
@@ -260,28 +270,59 @@ class Cell(Item):
         if actual:
             self.actual, = actual
 
-
     def ignore(self):
         """Flag the cell as ignored"""
         self._assertUnscored()
         self.score = Ignored
 
-
     def exception(self, exc_info=None):
         """Flag the cell as producing an error, w/traceback info"""
 
-        self._assertUnscored()
-        self.score = Error
-
         if exc_info is None:
             exc_info = sys.exc_info()
-
+        self._assertUnscored()
+        self.score = Error
         self.exc_info = exc_info
 
 
     def _assertUnscored(self):
         if self.score!=Zeros:
             raise ValueError("Cell already scored", self)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

@@ -90,8 +90,10 @@ class HTMLDocument(storage.EntityDM):
         "Output stream, as a stream factory", adaptTo=naming.IStreamFactory
     )
 
+    useAC = False
+
     stream = binding.Make(
-        lambda self: self.output.create('t')
+        lambda self: self.output.create('t',autocommit=self.useAC)
     )
 
     document = binding.Make(lambda self: self[Document])
@@ -113,11 +115,9 @@ class HTMLDocument(storage.EntityDM):
             pos, items = parseTags(
                 self.lctext, "table", 0, len(self.text), self.makeTable
             )
-            return {'tables':items}
+            return {'tables':items,'summary':{}}
 
         raise AssertionError("Can't load state for anything but Document")
-
-
 
 
 
@@ -328,8 +328,8 @@ class HTMLDocument(storage.EntityDM):
 
     def exception(exc_info):
         from traceback import format_exception
-        return "<hr><pre><font size=-2>%s</font></pre>" % format_exception(
-            *exc_info
+        return "<hr><pre><font size=-2>%s</font></pre>" % ''.join(
+            format_exception(*exc_info)
         )
     exception = staticmethod(exception)
 
@@ -365,6 +365,5 @@ class HTMLDocument(storage.EntityDM):
         ).replace('&gt;','>').replace('&lt;','<'
         ).replace('&nbsp;',' ').replace('&amp;', '&')
     unescape = staticmethod(unescape)
-
 
 

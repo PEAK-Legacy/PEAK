@@ -218,7 +218,8 @@ class BasicTests(TestCase):
             r1.cells[0].text = 'TESTED'
             r2.cells[0].right(); r2.cells[0].text="a one"
             r2.cells[1].wrong(); r2.cells[1].text="& a two"
-            r3.cells[1].wrong('my'); r3.cells[2].annotation="(or sandal)"
+            r3.cells[1].assertEqual('my');
+            r3.cells[2].annotation="(or sandal)"
             r1.addCell(dm.newItem(Cell))
             r1.cells[-1].text = 'extra'
             r1.cells[-1].ignore()
@@ -234,7 +235,6 @@ class BasicTests(TestCase):
             raise
 
         self.assertEqual(s.getvalue(), sample_output)
-
 
 
 
