@@ -84,10 +84,13 @@ class SQLDriver:
 
     def __init__(self,query):
         d = {}; ct=1
-        rvs = [(rv.name,rv) for rv in query.getInnerRVs()]  # XXX outer, nested
+        rvs = [(rv.asFromClause(),rv) for rv in query.getInnerRVs()]  # XXX outer, nested
         rvs.sort()
         for name,rv in rvs:
-            ltr = name[0].upper()
+            if name[0].isalpha():
+                ltr = name[0].upper()
+            else:
+                ltr="x"
             d[rv] = "%s%d" % (ltr,ct)
             ct+=1
         self.aliases = d
@@ -97,10 +100,10 @@ class SQLDriver:
 
     def getFromDef(self,RV):
         # XXX should handle RV being non-table
-        return "%s AS %s" % (RV.name,self.getAlias(RV))
+        return "%s AS %s" % (RV.asFromClause(),self.getAlias(RV))
 
     def sqlize(self,arg):
-        v = adapt(arg,IRelationAttribute,None)
+        v = adapt(arg,IDomainVariable,None)
 
         if v is not None:
             return v.simpleSQL(self)
@@ -118,10 +121,7 @@ class SQLDriver:
 
 
 
-
-
-
-class Table:
+class AbstractRV(object):
 
     protocols.advise(
         instancesProvide = [IRelationVariable]
@@ -130,34 +130,37 @@ class Table:
     condition = EMPTY
     outers = ()
 
-    def __init__(self,name,columns,db=None):
-        self.name = name
-        self.columns = kjGraph([(c,Column(c,self)) for c in columns])
-        self.db = db
-
-    def __call__(self,where=None,join=(),outer=(),rename=(),keep=None):
+    def __call__(self,
+        where=None,join=(),outer=(),rename=(),keep=None,calc=(),groupBy=()
+    ):
         cols = kjGraph(self.columns)
-        rename = kjGraph(rename)
+        rename = ~kjGraph(rename)
+        groupBy = kjSet(groupBy)
+
         for rv in tuple(join)+tuple(outer):
             cols = cols + rv.attributes()
+
         if keep:
-            cols = (kjSet(keep)+kjSet(rename)) * cols
+            kjSet(~(rename * groupBy))
+            cols = (kjSet(keep)+kjSet(~rename)+groupBy) * cols
+
         if rename:
-            cols = ~rename * cols + (cols-cols.restrict(rename))
+            cols = rename * cols + (cols-cols.restrict(~rename))
+
         if where is None:
             where = EMPTY
-        return BasicJoin(
-            self.condition & where, (self,)+tuple(join), tuple(outer), cols
+
+        rv = BasicJoin(
+            self.condition & where, (self,)+tuple(join), tuple(outer),
+            cols+kjGraph(calc)
         )
 
-    def __repr__(self):
-        return self.name
+        if groupBy:
+            return GroupBy(rv, groupBy.items())
+        return rv
 
     def attributes(self):
         return self.columns
-
-    def getDB(self):
-        return self.db
 
     def getInnerRVs(self):
         return (self,)
@@ -181,9 +184,43 @@ class Table:
     def keys(self):
         return self.columns.keys()
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class Table(AbstractRV):
+
+    def __init__(self,name,columns,db=None):
+        self.name = name
+        self.columns = kjGraph([(c,Column(c,self)) for c in columns])
+        self.db = db
+
+    def __repr__(self):
+        return self.name
+
+    def getDB(self):
+        return self.db
+
     def simpleSQL(self,driver=None):
         return "SELECT * FROM %s" % self.name
 
+    def asFromClause(self):
+        return self.name
 
 
 
@@ -203,24 +240,58 @@ class Table:
 
 
 
-class Column:
 
-    protocols.advise(
-        instancesProvide = [IRelationAttribute]
-    )
 
-    def __init__(self,name,table):
-        self.name = name
-        self.table = table
 
-    def getRV(self):
-        return self.table
+
+class GroupBy(AbstractRV):
+
+    def __init__(self,rv,groupBy,cond=EMPTY):
+        self.condition = cond
+        groupBy = list(groupBy); groupBy.sort()
+        self.rv = rv
+        self.groupBy = groupBy
+        self.columns = kjGraph([(c,Column(c,self)) for c in rv.keys()])
+        for k in rv.keys():
+            if k not in groupBy and not rv[k].isAggregate():
+                raise TypeError("Non-aggregate column in groupBy",k,rv[k])
 
     def getDB(self):
-        return self.table.getDB()
+        return self.rv.getDB()
 
-    def simpleSQL(self,driver):
-        return driver.getAlias(self.table)+'.'+self.name
+    def simpleSQL(self,driver=None):
+        if driver is None:
+            driver = SQLDriver(self.rv)
+        groupBys = [self.rv[col].simpleSQL(driver) for col in self.groupBy]
+        sql = self.rv.simpleSQL(driver) + " GROUP BY "+ ", ".join(groupBys)
+
+        condSQL = self.condition.simpleSQL(driver)
+        if condSQL:
+            sql += " HAVING " + condSQL
+
+        return sql
+
+    def __call__(self, where=None,**kw):
+        if kw:
+            kw['where']=where
+            return super(GroupBy,self).__call__(**kw)
+        if where is not None:
+            return GroupBy(self.rv,self.groupBy,self.condition&where)
+        return self
+
+    def asFromClause(self):
+        return "(%s)" % self.simpleSQL()
+
+
+
+
+class AbstractDV:
+
+    protocols.advise(
+        instancesProvide = [IDomainVariable]
+    )
+
+    _agg = False
 
     def eq(self,dv):
         return Cmp(self,'=',dv)
@@ -240,8 +311,101 @@ class Column:
     def le(self,dv):
         return Cmp(self,'<=',dv)
 
+    def isAggregate(self):
+        return self._agg
 
 
+
+
+
+
+
+
+
+
+
+
+
+class Column(AbstractDV):
+
+    protocols.advise(
+        instancesProvide = [IRelationAttribute]
+    )
+
+    def __init__(self,name,table):
+        self.name, self.table = name, table
+
+    def getRV(self):
+        return self.table
+
+    def getDB(self):
+        return self.table.getDB()
+
+    def simpleSQL(self,driver):
+        return driver.getAlias(self.table)+'.'+self.name
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class Func(AbstractDV):
+
+    isAggFunc = False
+
+    def __init__(self,name,*args):
+
+        self.fname = name
+        self.args = args
+        agg = None
+
+        for arg in args:
+            arg = adapt(arg,IDomainVariable,None)
+            if arg is not None:
+                if agg is None:
+                    agg = arg.isAggregate()
+                elif agg<>arg.isAggregate():
+                    raise TypeError(
+                        "Mixed aggregate/non-aggregate arguments",args
+                    )
+
+        if agg and self.isAggFunc:
+            raise TypeError("Can't aggregate an aggregate",args)
+
+        self._agg = agg or self.isAggFunc
+
+
+    def simpleSQL(self,driver):
+        return "%s(%s)" % (
+            self.fname, ",".join([driver.sqlize(arg) for arg in self.args])
+        )
+
+class Aggregate(Func):
+    isAggFunc = True
+
+def function(name):
+    return lambda *args: Func(name,*args)
+
+def aggregate(name):
+    return lambda *args: Aggregate(name,*args)
 
 
 class BasicJoin(Table, HashAndCompare):
@@ -351,8 +515,7 @@ class BasicJoin(Table, HashAndCompare):
                 columnNames.append(sql)
 
         for name,col in remainingColumns.items():
-            raise NotImplementedError("Leftover (computed) columns")
-            # XXX columnNames.append('%s AS %s' % (col.simpleSQL(driver),name))
+            columnNames.append('%s AS %s' % (col.simpleSQL(driver),name))
 
         tablenames = [driver.getFromDef(tbl) for tbl in self.relvars]
         tablenames.sort()
@@ -365,6 +528,7 @@ class BasicJoin(Table, HashAndCompare):
             sql += " WHERE " + condSQL
 
         return sql
+
 
 
 class _compound(_expr,HashAndCompare):
@@ -470,7 +634,7 @@ class Cmp(_expr, HashAndCompare):
             return self.__class__(self.arg1,revOp,self.arg2)
 
     def __repr__(self):
-        return 'Cmp%r' % (self.arg1,self.op,self.arg2)
+        return 'Cmp%r' % ((self.arg1,self.op,self.arg2),)
 
     def simpleSQL(self,driver):
         return '%s%s%s' % (

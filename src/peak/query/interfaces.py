@@ -5,8 +5,8 @@ from protocols import Interface
 __all__ = [
     'IRelationVariable', 'IRelationCondition', 'IBooleanExpression',
     'IRelationAttribute', 'IRelationComparison', 'ISQLDriver',
+    'IDomainVariable',
 ]
-
 
 class IBooleanExpression(Interface):
 
@@ -56,9 +56,14 @@ class IRelationCondition(IBooleanExpression):
 
     # XXX need some way to return renamed version
 
+class IDomainVariable(Interface):
+    """A domain variable in relational algebra"""
 
-class IRelationAttribute(Interface):
-    """A column variable in relational algebra"""
+    def isAggregate():
+        """Return true if DV represents an aggregate function"""
+
+class IRelationAttribute(IDomainVariable):
+    """A domain variable that's a simple column reference"""
 
     def getName():
         """Return this column's original name in its containing table"""
@@ -75,16 +80,11 @@ class IRelationComparison(IRelationCondition):
     # XXX Don't know what we need here yet
 
 
-
-
-
-
-
 class IRelationVariable(Interface):
 
     """A relation variable (RV) in relational algebra"""
 
-    def __call__(where=None,join=(),outer=(),rename=(),keep=()):
+    def __call__(where=None,join=(),outer=(),rename=(),keep=(),calc=(),groupBy=()):
         """Return a new RV based on select/project/join operations as follows:
 
         'where' -- specify a condition that all rows of the new RV must meet
@@ -104,7 +104,22 @@ class IRelationVariable(Interface):
         to be renamed.  The old columns are automatically "kept", so if you
         mix 'rename' and 'keep', you do not need to list renamed columns in the
         'keep' argument.
+
+        'calc' -- a sequence of '(name,DV)' pairs specifying computed columns
+        to include in the new RV.  These columns are always added under the
+        given names, so 'keep' and 'rename' have no effect on the new columns.
+
+        'groupBy' -- a sequence of the names of the columns that the resulting
+        RV should be summarized on.  These columns will be automatically
+        "kept", so if you mix 'groupBy' and 'keep', you do not need to list
+        group-by columns in the 'keep' argument.  Note that when using
+        'groupBy', you should only keep or calculate columns that represent
+        aggregates, or else an error will occur.
         """
+
+
+
+
 
     def keys():
         """Return a sequence of column names"""
@@ -142,25 +157,6 @@ class ISQLDriver(Interface):
 
     def getAlias(RV):
         """Get an alias name for the specified RV"""
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

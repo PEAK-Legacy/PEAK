@@ -4,7 +4,7 @@ from unittest import TestCase, makeSuite, TestSuite
 from peak.api import *
 from peak.tests import testRoot
 from peak.query.api import *
-from peak.query.algebra import BasicJoin, Not, And, Or, Table, PhysicalDB
+from peak.query.algebra import BasicJoin, Not, And, Or, Table, PhysicalDB, function, aggregate
 from kjbuckets import kjSet
 
 class SimplificationAndEquality(TestCase):
@@ -327,6 +327,7 @@ class SimplificationAndEquality(TestCase):
 
 
     def testRename(self):
+
         x,y,z = self.condX, self.condY, self.condZ
         A,B,C,D = self.rvA, self.rvB, self.rvC, self.rvD
 
@@ -355,7 +356,6 @@ class SimplificationAndEquality(TestCase):
                 kjSet([n.upper() for n in abcd.keys()]),
                 kjSet(ABCD.keys())
             )
-
 
 
 
@@ -487,6 +487,170 @@ class DatabaseTests(TestCase):
             "SELECT E1.empname AS Name, E1.salary"
             " FROM Employee AS E1 WHERE E1.empnr=42"
         )
+
+
+
+    def testFunctions(self):
+
+        Employee = self.db['Employee']
+        SQRT = function('SQRT')
+        sqrtSal = SQRT(Employee['salary'])
+
+        self.assertEqual(
+            Employee(calc=Items(salroot=sqrtSal)).simpleSQL(),
+            "SELECT E1.*, SQRT(E1.salary) AS salroot FROM Employee AS E1"
+        )
+
+        self.assertEqual(
+            Employee(where=sqrtSal.gt(200)).simpleSQL(),
+            "SELECT E1.* FROM Employee AS E1 WHERE SQRT(E1.salary)>200"
+        )
+
+        self.assertEqual(
+            Employee(
+                calc=Items(salroot=sqrtSal), where=sqrtSal.lt(300)
+            ).simpleSQL(),
+            "SELECT E1.*, SQRT(E1.salary) AS salroot FROM Employee AS E1"
+            " WHERE SQRT(E1.salary)<300"
+        )
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    def testAggregates(self):
+
+        MIN = aggregate('MIN')
+        MAX = aggregate('MAX')
+        SQRT = function('SQRT')
+        COMPLEX = function('COMPLEX')
+
+        salary = self.db['Employee']['salary']
+
+        # An aggregate function of a non-aggregate, is an aggregate expression
+        self.failUnless( MIN(salary).isAggregate() )
+        self.failUnless( MAX(SQRT(salary)).isAggregate() )
+
+        # A non-aggregate function of aggregate(s), is an aggregate expression
+        self.failUnless( SQRT(MAX(salary)).isAggregate() )
+        self.failUnless( COMPLEX(MAX(salary),MIN(salary)).isAggregate() )
+
+        # A non-aggregate function of a non-aggregate, is a non-aggregate
+        self.failIf( SQRT(salary).isAggregate() )
+        self.failIf( COMPLEX(salary,SQRT(salary)).isAggregate() )
+
+        # An aggregate of an aggregate is an error
+        self.assertRaises(TypeError, MAX, MAX(salary))
+
+        # Function of mixed aggregate and non-aggregates is an error
+        self.assertRaises(TypeError, COMPLEX, salary, MAX(salary))
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    def testGroupBy(self):
+
+        Employee = self.db['Employee']
+        Branch = self.db['Branch']
+        AVG = aggregate('AVG')
+        COUNT = aggregate('COUNT')
+
+        empCount = COUNT(Employee['empnr'])
+        EmpByBranch = Employee(
+            calc=Items(employees=empCount),
+            groupBy=['branchnr'], keep=['branchnr']
+        )
+
+        self.assertEqual(
+            EmpByBranch.simpleSQL(),
+            "SELECT COUNT(E1.empnr) AS employees, E1.branchnr"
+            " FROM Employee AS E1 GROUP BY E1.branchnr"
+        )
+
+        self.assertEqual(
+            EmpByBranch(where=empCount.gt(10)).simpleSQL(),
+            "SELECT COUNT(E1.empnr) AS employees, E1.branchnr"
+            " FROM Employee AS E1 GROUP BY E1.branchnr"
+            " HAVING COUNT(E1.empnr)>10"
+        )
+
+        self.assertEqual(
+            EmpByBranch(
+                join=[Branch],
+                where=Branch['branchnr'].eq(EmpByBranch['branchnr'])
+            ).simpleSQL(),
+            "SELECT B2.*, x1.*"
+            " FROM (SELECT COUNT(E1.empnr) AS employees, E1.branchnr"
+            " FROM Employee AS E1 GROUP BY E1.branchnr"
+            ") AS x1, Branch AS B2 WHERE B2.branchnr=x1.branchnr"
+        )
+
+
+
+
+
+        # All non-groupby columns of a grouping must be aggregates
+
+        self.assertRaises(TypeError,Employee,
+            calc=Items(employees=COUNT(Employee['empnr'])),
+            groupBy=['branchnr']
+        )
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
