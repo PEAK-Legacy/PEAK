@@ -873,16 +873,16 @@ class CGICommand(EventDriven):
         for family in (socket.AF_UNIX, socket.AF_INET):
             try:
                 s=socket.fromfd(sys.stdin.fileno(),family,socket.SOCK_STREAM)
-                s.getsockname()
+                if not s.getsockname():
+                    # Socket doesn't have an address; it might be a BSD-style
+                    # socketpair() pipe, as used on Mac OS/X and others
+                    continue
             except:
                 pass
             else:
                 return True
 
         return False
-
-
-
 
 
 

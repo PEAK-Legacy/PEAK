@@ -359,6 +359,11 @@ Fixes and Enhancements since Version 0.5 alpha 2
 
  Corrected Problems
 
+  - 'peak.running.commands.CGICommand' could become confused on certain BSD
+    variants (such as Mac OS/X), and assume it was running under FastCGI, even
+    if it wasn't.  (Because the operating systems in question use socket pairs
+    to implement pipes.)
+
   - Fixed some problems with the test suite when running under Python 2.3.
     PEAK itself worked fine, but the test suite was bitten by two minor
     semantic changes that took effect in 2.3, resulting in lots of error
