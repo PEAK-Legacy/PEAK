@@ -47,7 +47,7 @@ class Untransactable(binding.Base):
         might be used interchangeably with similar 'AutoCommitter' objects.
         This ensures that an attempt to create an instance of your class
         will raise an exception if a true setting for 'autocommit' isn't
-        supplied, thus warning the caller in the even that they mistakenly
+        supplied, thus warning the caller in the event that they mistakenly
         used the wrong implementation for their desired semantics.  For
         example, if they used an SMTP messaging class instead of a queue-based
         messaging class, but wanted the message send to wait until transaction
