@@ -4,7 +4,7 @@ from unittest import TestCase, makeSuite, TestSuite
 from peak.api import *
 from peak.util.MiniTable import Table
 from peak.persistence import Persistent
-
+from peak.tests import testApp
 
 class TxnStateTest(TestCase):
 
@@ -288,12 +288,12 @@ class Harness(binding.Component):
 class TableTest(TestCase):
 
     def setUp(self):
-        self.harness = Harness()
+        self.harness = Harness(testApp())
         self.table = self.harness.sampleTable
 
     def tearDown(self):
-        if storage.getTransaction().isActive():
-            storage.abort()
+        if storage.getTransaction(self.harness).isActive():
+            storage.abort(self.harness)
     
     def checkNoChangeOutsideTxn(self):
         self.assertRaises(exceptions.OutsideTransaction,
@@ -303,42 +303,42 @@ class TableTest(TestCase):
     def checkRollback(self):
         assert self.table.dump()==[]
 
-        storage.begin()
+        storage.begin(self.harness)
         self.table.INSERT(Items(a=1,b=2))
         assert self.table.dump()==[(1,2)]
-        storage.abort()
+        storage.abort(self.harness)
 
         assert self.table.dump()==[]
 
     def checkCommit(self):
         assert self.table.dump()==[]
 
-        storage.begin()
+        storage.begin(self.harness)
         self.table.INSERT(Items(a=1,b=2))
         assert self.table.dump()==[(1,2)]
-        storage.commit()
+        storage.commit(self.harness)
 
         assert self.table.dump()==[(1,2)]
 
-        storage.begin()
+        storage.begin(self.harness)
         self.table.INSERT(Items(a=3,b=4))
         assert self.table.dump()==[(1,2),(3,4)]
-        storage.abort()
+        storage.abort(self.harness)
         assert self.table.dump()==[(1,2)]
 
 class DMTest(TestCase):
 
     def setUp(self):
-        self.harness = Harness()
+        self.harness = Harness(testApp())
         self.table = self.harness.sampleTable
         self.dm  = self.harness.testDM
 
     def tearDown(self):
-        if storage.getTransaction().isActive():
-            storage.abort()
+        if storage.getTransaction(self.harness).isActive():
+            storage.abort(self.harness)
 
     def _addData(self):
-        storage.begin()
+        storage.begin(self.harness)
         self.table.INSERT(Items(a=1,b=2))
     
     def checkExistence(self):
@@ -347,24 +347,24 @@ class DMTest(TestCase):
 
         ob = self.dm[1]
         assert ob.b==2
-        storage.abort()
+        storage.abort(self.harness)
 
-        storage.begin()
+        storage.begin(self.harness)
         self.assertRaises(KeyError, lambda: ob.b)
 
     def checkFlush(self):
 
         self._addData()
         assert self.table.dump()==[(1,2)]
-        storage.commit()
+        storage.commit(self.harness)
         
-        storage.begin()
+        storage.begin(self.harness)
         ob = self.dm[1]
         ob.b = 4
         self.dm.flush()
         assert self.table.dump()==[(1,4)]
 
-        storage.abort()
+        storage.abort(self.harness)
         assert self.table.dump()==[(1,2)]
 
     def checkModify(self):
@@ -372,17 +372,17 @@ class DMTest(TestCase):
         ob = self.dm[1]
         ob.b = 4
         assert self.table.dump()==[(1,2)]
-        storage.commit()
+        storage.commit(self.harness)
         assert self.table.dump()==[(1,4)]
 
 
     def checkNew(self):
-        storage.begin()
+        storage.begin(self.harness)
         ob = self.dm.newItem()
         ob.a = 1
         ob.b = 2
         assert self.table.dump()==[]
-        storage.commit()
+        storage.commit(self.harness)
         assert self.table.dump()==[(1,2)]
 
 
@@ -447,3 +447,5 @@ def test_suite():
 
 
 
+    
+    

@@ -2,7 +2,7 @@
 
 from unittest import TestCase, makeSuite, TestSuite
 from peak.api import *
-
+from peak.tests import testApp
 
 class baseWithClassAttr(binding.Base):
 
@@ -83,7 +83,7 @@ class DescriptorData(binding.Component):
 class DescriptorTest(TestCase):
 
     def setUp(self):
-        self.data = DescriptorData(None, 'data')
+        self.data = DescriptorData(testApp(), 'data')
 
 
     def checkNaming(self):
@@ -130,7 +130,7 @@ class DescriptorTest(TestCase):
         try:
             assert p1 is p2
             assert p1 is self.data
-            assert p3 is p2
+            assert p3 is binding.getParentComponent(self.data)
         finally:
             del self.data.aService.thing5
             del self.data.aService.nestedService.thing6
@@ -182,7 +182,7 @@ class DescriptorTest(TestCase):
 
         assert nested.deep is thing
         assert nested.acquired is thing
-        assert nested.getRoot is data
+        assert nested.getRoot is binding.getParentComponent(data)
         assert nested.getUp is data.aService
 
 
@@ -207,11 +207,11 @@ class DescriptorTest(TestCase):
         svc = self.data.aService
         gcp = binding.getComponentPath
 
-        assert str(gcp(svc))=='/aService'
-        assert str(gcp(svc.nestedService))=='/aService/nestedService'
+        assert str(gcp(svc))=='/data/aService'
+        assert str(gcp(svc.nestedService))=='/data/aService/nestedService'
         assert str(
             gcp(svc.nestedService.namedThing)
-        )=='/aService/nestedService/namedThing'
+        )=='/data/aService/nestedService/namedThing'
 
 
     def checkSuggestions(self):

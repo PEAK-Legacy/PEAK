@@ -39,7 +39,7 @@ __implements__ = (
 
 
 
-def getInitialContext(parentComponent=None, componentName=None, **options):
+def getInitialContext(parentComponent, componentName=None, **options):
 
     """Create initial context for parent, w/component name and options
 

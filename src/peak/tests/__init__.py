@@ -15,3 +15,16 @@ def test_suite():
     from peak.util.imports import importSuite
     return importSuite(allSuites)
 
+
+# config.Application for testing
+_app = None
+
+def testApp():
+
+    global _app
+
+    if _app is None:
+        from peak.api import config
+        _app = config.Application()
+        
+    return _app

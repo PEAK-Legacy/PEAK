@@ -8,7 +8,7 @@ from contexts   import *
 import spi
 
 
-def InitialContext(parent=None, componentName=None, **options):
+def InitialContext(parent, componentName=None, **options):
 
     """Get an initial naming context, based on 'parent' and keyword options
 
@@ -39,7 +39,7 @@ del IBindingFactory
 
 
 
-def lookup(name, parent=None, **options):
+def lookup(name, parent, **options):
 
     """Look up 'name' in the default initial context for 'parent', w/'options'
 
@@ -53,7 +53,7 @@ def lookup(name, parent=None, **options):
 
 
 
-def parseURL(name, parent=None):
+def parseURL(name, parent):
 
     """Return a parsed URL for 'name', based on schemes available to 'parent'
 
@@ -79,3 +79,4 @@ def parseURL(name, parent=None):
 
     return ctx.schemeParser(scheme, body)
 
+    

@@ -747,7 +747,7 @@ class DM(storage.StorableDM):
 
         return target.stateForClass(ob.__class__, self)
 
-def fromFile(filename_or_stream, parentComponent=None, **kw):
+def fromFile(filename_or_stream, parentComponent, **kw):
     document = XMIDocument(parentComponent)
     SOX.load(filename_or_stream, document, namespaces=True)
     return DM(parentComponent, document=document,**kw)[()]

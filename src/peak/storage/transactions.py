@@ -10,16 +10,16 @@ __all__ = [
 ]
 
 
-def getTransaction(subject=None):
+def getTransaction(subject):
     return config.findUtility(ITransactionService, subject)
 
-def beginTransaction(subject=None, **info):
+def beginTransaction(subject, **info):
     getTransaction(subject).begin(**info)
 
-def commitTransaction(subject=None):
+def commitTransaction(subject):
     getTransaction(subject).commit()
 
-def abortTransaction(subject=None):
+def abortTransaction(subject):
     getTransaction(subject).abort()
 
 

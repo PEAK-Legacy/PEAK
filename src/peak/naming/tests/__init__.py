@@ -2,6 +2,7 @@
 
 from unittest import TestCase, makeSuite, TestSuite
 from peak.api import *
+from peak.tests import testApp
 
 validNames = {
 
@@ -36,6 +37,8 @@ validNames = {
               quals=(('ext1','1'), ('ext2','2'))
         ),
         
+        
+        
     'sybase:foo:bar@baz/spam':
         Items(server='baz', db='spam', user='foo', passwd='bar'),
 
@@ -55,7 +58,8 @@ validNames = {
 }
 
 
-parse = naming.parseURL
+def parse(url):
+    return naming.parseURL(url,testApp())
 
 
 class NameParseTest(TestCase):
@@ -68,10 +72,6 @@ class NameParseTest(TestCase):
             obj = parse(name)
             for (k,v) in values:
                 assert getattr(obj,k)==v, (k,getattr(obj,k),v)
-
-
-
-
 
 
 
@@ -117,34 +117,6 @@ def test_suite():
         s.append(makeSuite(t,'check'))
 
     return TestSuite(s)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

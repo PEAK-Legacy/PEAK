@@ -342,7 +342,7 @@ class IStreamFactory(Interface):
 class IInitialContextFactory(Interface):
     """Get access to an initial naming context"""
 
-    def getInitialContext(parentComponent=None, componentName=None, **options):
+    def getInitialContext(parentComponent, componentName=None, **options):
         """Return a naming context for 'parentComponent' with 'options'"""
 
 

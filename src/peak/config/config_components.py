@@ -46,7 +46,7 @@ def iterParents(component):
 
     last = component
         
-    for part in "..":
+    for part in ".":
 
         while component is not None:
 
@@ -369,7 +369,7 @@ class ConfigReader(AbstractConfigParser):
 
 class BasicConfig(Component):
 
-    implements(IConfigurationRoot)
+    implements(IConfigurationRoot, Component.__implements__)
 
     def __instance_provides__(self,d,a):
         pm=PropertyMap()
@@ -451,7 +451,7 @@ class AppConfig(BasicConfig):
 
 class PropertySet(object):
 
-    def __init__(self, prefix, targetObj=None):
+    def __init__(self, prefix, targetObj):
         self.prefix = PropertyName(prefix).asPrefix()
         self.target = targetObj
 

@@ -4,13 +4,16 @@ from unittest import TestCase, makeSuite, TestSuite
 from peak.api import *
 from peak.interface import Interface
 from peak.config.interfaces import *
+from peak.tests import testApp
+
+
 
 
 class PropertyTest(TestCase):
 
-    def checkSystemProp(self):
-        app = config.getSysConfig() #Application()
-        config.setSystemProperty('peak.config.tests.foo',1)
+    def checkSetProp(self):
+        app = testApp()
+        config.setPropertyFor(app,'peak.config.tests.foo',1)
         assert config.getProperty('peak.config.tests.foo',app)==1
 
 
@@ -18,16 +21,12 @@ class PropertyTest(TestCase):
         from os import environ
 
         # retry multiple times to verify re-get is safe...
-        
-        ps = config.PropertySet('environ.*')
+        app = testApp()
+        ps = config.PropertySet('environ.*', app)
 
         for r in range(3):
             for k,v in environ.items():
                 assert ps[k] is v
-
-        
-
-
 
 
 
@@ -85,7 +84,7 @@ class UtilityTest(TestCase):
 
     def setUp(self):
 
-        self.data = UtilityData(None, 'data')
+        self.data = UtilityData(testApp(), 'data')
 
         self.data.aService.registerProvider(
             ISampleUtility1,
@@ -172,7 +171,7 @@ class ModuleTest(TestCase):
     def checkBase(self):
         assert self.M1.BaseClass.foo==1
         assert self.M2.BaseClass.foo==2
-        
+
     def checkSub(self):
         assert self.M1.Subclass.foo==1
         assert self.M2.Subclass.foo==2
@@ -201,7 +200,7 @@ class ModuleTest(TestCase):
         assert self.M2.RebindSub.M1=='M1'
         assert self.M2.RebindSub.M2=='M2'
         assert self.M2.RebindSub.__bases__ == (
-            self.M2.UnusedBase, UserList.UserList, object  
+            self.M2.UnusedBase, UserList.UserList, object
         ), self.M2.RebindSub.__bases__
 
     def checkImplements(self):
@@ -210,7 +209,7 @@ class ModuleTest(TestCase):
 
 
 class AdviceTest(ModuleTest):
-    
+
     def setUp(self):
         import testM2a, testM1a, testM1
         self.M1 = testM1
