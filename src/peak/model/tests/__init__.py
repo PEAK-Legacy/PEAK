@@ -121,6 +121,47 @@ class checkExport(TestCase):
 
 
 
+class basicColor(model.Enumeration):
+    __keys__ = 'red','yellow','blue'
+
+class anyColor(basicColor):
+    __keys__ = 'green','purple','orange'
+
+
+class EnumerationTests(TestCase):
+
+    def checkIdentityAndEquality(self):
+        for name in basicColor.__keys__:
+            assert basicColor(name) is basicColor(name)
+            assert anyColor(name) is not basicColor(name)
+            assert anyColor(name) == basicColor(name)
+            assert `anyColor(name)` == ('anyColor.%s' % name)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 class aBase(model.Element):
     mdl_isAbstract = True
     class f1(model.Field): pass

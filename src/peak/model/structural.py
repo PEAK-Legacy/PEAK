@@ -664,19 +664,52 @@ class PrimitiveType(Immutable):
     fromString = classmethod(fromString)
 
 
-class Enumeration(Immutable):
 
-    """An enumeration type"""
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class EnumerationClass(ImmutableClass):
+
+    """Metaclass for enumeration types"""
 
     def __value_map__(klass,d,a):
-
-        values = {}
-
+    
+        d[a] = values = {}
         map(values.update,
             binding.getInheritedRegistries(klass,'__value_map__')
         )
 
         values.update(klass.__dict__.get('__values__',{}))
+        values.update(
+            dict( [ (k,k) for k in klass.__dict__.get('__keys__',()) ] )
+        )
 
         for k,v in klass.__dict__.items():
             if not k.startswith('__') or not k.endswith('__'):
@@ -684,7 +717,68 @@ class Enumeration(Immutable):
 
         return values
 
-    __value_map__ = binding.classAttr(binding.Once(__value_map__))
+    __value_map__ = binding.Once(__value_map__)
+
+
+    def __enumsByName__(klass,d,a):
+    
+        # Ensure that there are no collisions...
+        klass.__enumsByName__ = klass.__enumsByValue__ = {}
+
+        byName = {}
+        byValue = {}
+        for name,value in klass.__value_map__.items():
+            byName[name] = byValue[value] = klass(name,value)
+
+        klass.__enumsByName__  = byName
+        klass.__enumsByValue__ = byValue
+        return d[a]
+
+    __enumsByName__ = __enumsByValue__ = binding.Once(__enumsByName__)
+
+class Enumeration(Immutable):
+
+    """An enumeration type"""
+
+    __metaclass__ = EnumerationClass
+
+    _hashAndCompare = binding.Once(lambda s,d,a: s.value)
+
+    def __new__(klass,nameOrValue,*value):
+
+        inst = NOT_GIVEN
+
+        if isinstance(nameOrValue,str):
+            inst = klass.__enumsByName__.get(nameOrValue, NOT_GIVEN)
+
+        if inst is NOT_GIVEN:
+            inst = klass.__enumsByValue__.get(nameOrValue, NOT_GIVEN)
+
+        if inst is not NOT_GIVEN:
+            if value:
+                raise TypeError(
+                    "Attempt to specify value for existing enum instance",
+                    inst
+                )
+            else:
+                return inst
+
+        if len(value)<>1:
+            raise TypeError(
+                "Attempt to create enumerated value without specifying value",
+                klass, nameOrValue
+            )
+
+        inst = super(Enumeration,klass).__new__(klass,nameOrValue,value[0])
+        inst.__dict__['name']  = nameOrValue
+        inst.__dict__['value'] = value[0]
+        return inst
+
+    def __init__(self,name,*value):
+        super(Enumeration,self).__init__()  # no parameters pass thru
+
+    def __repr__(self):
+        return "%s.%s" % (self.__class__.__name__,self.name)
 
 
     def fromString(klass, value):
@@ -693,6 +787,7 @@ class Enumeration(Immutable):
         raise ValueError, value
 
     fromString = classmethod(fromString)
+
 
 
 class DataType(Immutable):
