@@ -21,6 +21,55 @@
     the default model implementation, and 'peak.metamodels.UML.Model', which
     adds domain logic to the raw UML metamodel, and elects to use
     'peak.metamodels.SimpleModel' in place of the default 'peak.model' module.
+
+    TODO
+
+        XMI 1.0
+
+        - Support disjoint (i.e. wasteful) reference collections (the XMI
+          spec allows for multiple collection tags to be joined together; ugh!)
+
+        - marshal strings to values (needs support from peak.model & uml.Model)
+
+          * ints
+
+          * enumerations
+
+          * booleans
+
+          * multiplicities?
+
+        - handle CORBA types (YAGNI?)
+
+        XMI 1.1
+
+        - attributes as references/collections
+
+        - XML namespaces (required by spec!)
+
+        - metamodel lookups
+
+        Writing
+
+        - needs to know composition link direction (needs peak.model support)
+
+        - Possible algorithms:
+
+          - Direct write w/UUIDs, don't keep comments, PIs, extensions or IDs.
+            This is probably fast and simple for application data, but useless
+            for round-tripping metadata with modeling tools.
+
+          - Direct write, keep extras but push to end of containing XML tag if
+            object represented by tag was modified (we'll need to keep track of
+            comments and processing instructions as well as ignorable
+            whitespace for this to work well).  This is almost certainly the
+            one we'll implement, *maybe* with XMI.diff support.
+          
+          - Modify pseudo-DOM in place, allowing for possible persistent DOM
+            implementation.  This only seems useful if we don't use our
+            existing pseudo-DOM, or rewrite it to proxy to a "real" DOM.  And
+            that would only be useful if such a persistent "real" DOM existed
+            that we needed to use.  YAGNI, but doc'd here for clarification.
 """        
 
 from peak.api import *
@@ -29,14 +78,6 @@ from Persistence.PersistentList import PersistentList
 from weakref import WeakValueDictionary
 
 __bases__ = model,
-
-
-
-
-
-
-
-
 
 
 class XMINode(object):
