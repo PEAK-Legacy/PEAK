@@ -59,19 +59,19 @@ class IConfigurable(IConfigSource):
 
     """Object which can be configured with rules for configuration keys"""
 
-    def registerProvider(configKeys, ruleObj):
+    def registerProvider(configKey, ruleObj):
 
-        """Register 'IRule' 'ruleObj' as a provider for 'configKeys'
+        """Register 'IRule' 'ruleObj' as a provider for 'configKey'
 
-            'configKeys' may be an object that implements 'IConfigKey',
-            or a (possibly nested) tuple of such objects.  'ruleObj' will
-            be registered as a provider for all the provided keys.
+            'configKeys' must be an object that implements 'IConfigKey' (it
+            will *not* be adapted).  'ruleObj' will be registered as a provider
+            of the specified key.
 
-            If a provider has already been registered for a given key, the
+            If a provider has already been registered for the given key, the
             new provider will replace it, provided that it has not yet been
             used.  (If it has, 'AlreadyRead' should be raised.)
 
-            If a key is an 'Interface' with bases, the provider will also
+            If the key is an 'Interface' with bases, the provider will also
             be registered for any base interfaces of the supplied key(s),
             unless a provider was previously registered under a base of
             the supplied key.
