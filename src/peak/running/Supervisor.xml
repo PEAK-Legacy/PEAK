@@ -13,7 +13,7 @@
     parent process, etc.)
     </description>
 
-    <key name="Command" attribute="cmdText" datatype="string" required="yes">
+    <key name="Command" attribute="cmdText" datatype="string" default="">
         <description>
         The command to be run as a subprocess.  This is a standard PEAK command
         line; i.e. a URL or peak.running.shortcut item, followed by its

@@ -8,13 +8,13 @@ from process import signals, ChildProcess, AbstractProcessTemplate
 from shlex import shlex
 from cStringIO import StringIO
 
+def tokenize(s):
+    return list(iter(shlex(StringIO(s)).get_token,''))
 
-
-
-
-
-
-
+def unquote(s):
+    if s.startswith('"') or s.startswith("'"):
+        s = s[1:-1]
+    return s
 
 
 
@@ -49,12 +49,12 @@ class ProcessSupervisor(EventDriven):
     startInterval = 15  # seconds between forks
     importModules = ()  # Placeholder for ZConfig pre-import hook; see schema
 
-    cmdText = binding.Require("String form of subprocess command line")
+    cmdText = ""        # String form of subprocess command line
 
     cmdLine = binding.Make(
-        lambda self: list(
-            iter(shlex(StringIO(self.cmdLine)).get_token,'')
-        )+self.argv[1:]
+        lambda self: [
+            unquote(x) for x in tokenize(self.cmdText)
+        ]+self.argv[1:]
     )
 
     template = binding.Make(
