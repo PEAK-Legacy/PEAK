@@ -170,6 +170,7 @@ class ProcessSupervisor(EventDriven):
         proxy, stub = self.template.spawn(self)
 
         if proxy is None:
+            del self.processes  # we're the child, so give up custody
             self.mainLoop.childForked(stub)
             return
 
@@ -197,7 +198,6 @@ class ProcessSupervisor(EventDriven):
     def startIfTooFew(self):
         if len(self.processes)<self.minChildren:
             self.requestStart()
-
 
 
 
