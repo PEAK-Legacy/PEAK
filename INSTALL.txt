@@ -12,17 +12,22 @@ Installing PEAK
  SYSTEM REQUIREMENTS
 
   Python 2.2.2 or better is required.  Some portions of PEAK may support only
-  POSIX-like and/or Windows operating systems.
+  POSIX-like and/or Windows operating systems.  Installation from a source
+  distribution requires a C compiler that works with Python.
 
-  Note: if you have installed previous versions of PEAK or TransWarp, be
-  sure to remove them before installing this one.  A lot of things have
-  moved, been removed, or just plain ain't the same.
+  If you are modifying the source of PEAK extension modules, you will need
+  Pyrex version 0.7.2.  You do not need Pyrex if you are just installing
+  PEAK as-is, but if you *do* have Pyrex installed, it must be version 0.7.2.
+
+  In general, it is best to uninstall previous versions of PEAK before
+  installing new ones, since some modules may have moved or been renamed.
 
 
  BASIC INSTALLATION
 
-  PEAK is distributed using the now-standard Python 'distutils' protocol.
-  Just unpack the archive, go to the directory containing 'setup.py', and run::
+  PEAK is distributed using the now-standard Python 'distutils' utilities.
+  Just unpack the archive, go to the directory containing 'setup.py', and
+  run::
 
     python setup.py install
 
@@ -31,6 +36,9 @@ Installing PEAK
   Modules" section of the Python manuals for details on customizing
   installation locations, etc.).
 
+  (Note: for the Win32 installer release, just run the .exe file.)
+
+
  SCRIPTS
 
   On operating systems where 'os.name == "posix"', PEAK installs a Python
@@ -38,6 +46,39 @@ Installing PEAK
   can invoke any object that is referenceable via the PEAK naming system.
   Run the 'peak' script for usage info, or see the 'Bootstrap' class in
   'peak.running.commands' for more on how to make objects bootable via 'peak'.
+
+
+
+ TESTING YOUR INSTALLATION
+
+  PEAK comes with a moderately-sized built-in test suite.  If you wish to
+  run it after installation, you can do so like this::
+
+   python setup.py test
+
+  This will run over 120 tests on various parts of PEAK.  If you have
+  installed everything correctly, 100% of the tests should succeed.  If
+  anything is broken, you will probably be unable to run the tests at all.
+
+  If you'd like to run only a portion of the test suite, you can supply
+  the '--test-module' or '-m' option to the test command as follows::
+
+    python setup.py test --test-module=peak.util.tests
+
+    python setup.py test -m peak.tests
+
+  And so on.  You can also use 'python setup.py -q test' to make the tests
+  run more "quietly".
+
+
+
+
+
+
+
+
+
+
 
  THIRD PARTY SOFTWARE INCLUDED WITH PEAK
 
@@ -97,30 +138,6 @@ Installing PEAK
 
 
 
- TESTING YOUR INSTALLATION
-
-  PEAK comes with a moderately-sized built-in test suite.  If you wish to
-  run it after installation, you can do so like this::
-
-   python setup.py test
-
-  This will run over 120 tests on various parts of PEAK.  If you have
-  installed everything correctly, 100% of the tests should succeed.  If
-  anything is broken, you will probably be unable to run the tests at all.
-
-  If you'd like to run only a portion of the test suite, you can supply
-  the '--test-module' or '-m' option to the test command as follows::
-
-    python setup.py test --test-module=peak.util.tests
-
-    python setup.py test -m peak.tests
-
-  And so on.  You can also use 'python setup.py -q test' to make the tests
-  run more "quietly".
-
-
-
-
  EMBEDDING PEAK IN AN APPLICATION
 
   If you are embedding PEAK in an application that you are distributing,
@@ -133,23 +150,6 @@ Installing PEAK
   either set of modules by editing 'setup.py', and changing the
   'include_tests' and 'include_metamodels' flags, located near the top of
   the script.
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
