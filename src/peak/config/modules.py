@@ -250,6 +250,7 @@ from types import ModuleType
 from peak.util.EigenData import AlreadyRead
 from peak.util._Code import codeIndex
 from peak.util.imports import lazyModule, joinPath, getModuleHooks
+from peak.util.advice import isClassAdvisor
 
 # Make the default value of '__proceed__' a built-in, so that code written for
 # an inheriting module won't fail with a NameError if there's no base module
@@ -273,7 +274,6 @@ def setupObject(obj, **attrs):
     for k,v in attrs.items():
         if not hasattr(obj,k):
             setattr(obj,k,v)
-
 
 
 
@@ -698,7 +698,7 @@ mutableOps = (
 class Simulator:
 
     def __init__(self, dict):
-
+        self.advisors  = {}
         self.defined   = {}
         self.locked    = {}
         self.funcs     = {}
@@ -869,11 +869,36 @@ class Simulator:
 
         self.setKind[qname] = BUILD_CLASS
 
+        mc = cdict.get('__metaclass__')
+
+        if mc is not None:
+
+            while isClassAdvisor(mc):
+                cb = getattr(mc,'callback',None)
+                if cb is not None:
+                    self.advisors.setdefault(qname,[]).append(cb)
+                mc = mc.previousMetaclass
+
+            if mc is None:
+                del cdict['__metaclass__']
+            else:
+                cdict['__metaclass__'] = mc
+
+
         classes = self.classes
         get = self.classPath.get
         oldDPaths = []
         basePaths = tuple([get(id(base)) for base in bases])
         dictPaths = [(k,get(id(v))) for (k,v) in cdict.items() if get(id(v))]
+
+
+
+
+
+
+
+
+
 
         if classes.has_key(qname):
             
@@ -908,6 +933,14 @@ class Simulator:
         newClass.__module__ = self.dict['__name__']
         self.classPath[id(newClass)] = qname
 
+        # Apply callbacks
+        if qname in self.advisors:
+            cbs = self.advisors[qname][:]
+            while cbs:
+                newClass = cbs.pop()(newClass)
+
+
+
         locked = self.locked
         if locked.has_key(qname):
             return locked[qname]
@@ -917,6 +950,14 @@ class Simulator:
 
         return newClass
         
+
+
+
+
+
+
+
+
 
 
 
