@@ -61,11 +61,11 @@ def findUtilities(component, iface):
     for component in iterParents(component):
 
         try:
-            utility = component.__class__._getConfigData
+            utility = component._getConfigData
         except AttributeError:
             continue
 
-        utility = utility(component, forObj, iface)
+        utility = utility(forObj, iface)
 
         if utility is not NOT_FOUND:
             yield utility

@@ -104,11 +104,11 @@ def getProperty(obj, propName, default=NOT_GIVEN):
 
     for component in iterParents(obj):
         try:
-            prop = component.__class__._getConfigData
+            prop = component._getConfigData
         except AttributeError:
             continue
 
-        prop = prop(component, forObj, propName)
+        prop = prop(forObj, propName)
 
         if prop is not NOT_FOUND:
             return prop
