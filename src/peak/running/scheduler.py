@@ -5,7 +5,7 @@ from interfaces import *
 from peak.util.EigenData import EigenCell, AlreadyRead
 from bisect import insort_right
 from peak.util.signal_stack import pushSignals, popSignals
-
+from errno import EINTR
 
 __all__ = [
     'setReactor', 'getReactor', 'getTwisted',
@@ -23,7 +23,7 @@ class DefaultSignalManager(binding.Component):
         self.reactor.callLater(0, self.reactor.stop)
 
     SIGTERM = SIGBREAK = SIGINT
-    
+
 
 
 
@@ -177,6 +177,7 @@ class UntwistedReactor(binding.Component):
     time    = binding.bindTo('import:time.time')
     sleep   = binding.bindTo('import:time.sleep')
     select  = binding.bindTo('import:select.select')
+    _error  = binding.bindTo('import:select.error')
     logger  = binding.bindTo('logging.logger:peak.reactor')
 
     checkInterval = binding.bindTo(
@@ -197,7 +198,6 @@ class UntwistedReactor(binding.Component):
 
     def removeWriter(self, writer):
         if writer in self.writers: self.writers.remove(writer)
-
 
 
 
@@ -269,18 +269,18 @@ class UntwistedReactor(binding.Component):
         delay = max(delay, 0)
 
         if self.readers or self.writers:
-            r, w, e = self.select(self.readers, self.writers, [], delay)
+            try:
+                r, w, e = self.select(self.readers, self.writers, [], delay)
+            except self._error,v:
+                if v.args[0]==EINTR:
+                    pass    # signal received during select
+                raise
 
             for reader in r: reader.doRead()
             for writer in w: writer.doWrite()
 
         elif delay:
             self.sleep(delay)
-
-
-
-
-
 
 
 
