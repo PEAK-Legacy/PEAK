@@ -2,6 +2,19 @@ Fixes and Enhancements since Version 0.5 alpha 2
 
  Changed, Enhanced, or Newly Deprecated Features
 
+ - SQL connection objects now get their type converters from a distinct
+   property namespace for each DBAPI driver.  For example a driver using the
+   'cx_Oracle' module will get its type converters from the
+   'cx_Oracle.sql_types' property namespace, instead of 'peak.sql_types'.  For
+   backward compatibility, these driver-specific namespaces are set up to
+   fall back to 'peak.sql_types' for their defaults.  Type converter
+   construction has also been improved, to eliminate conversion overhead
+   completely when no conversions are required for a specific query.  Also,
+   SQL connections now offer a method that will create a row conversion
+   function for a given result description and optional postprocessing
+   function.  This new method should now be used in place of direct access to
+   the 'typeMap' attribute of connection objects.
+
  - Added 'binding.Require', 'binding.Obtain', 'binding.Make', and
    'binding.Delegate'.  *ALL* other binding types are now DEPRECATED, and will
    go away before 0.5 beta is released:

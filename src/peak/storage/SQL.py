@@ -4,6 +4,7 @@ from interfaces import *
 from peak.util.Struct import makeStructType
 from peak.util.imports import importObject
 from connections import ManagedConnection, AbstractCursor, RowBase
+from new import instancemethod
 
 __all__ = [
     'SQLCursor', 'GenericSQL_URL', 'SQLConnection', 'SybaseConnection',
@@ -38,13 +39,11 @@ def NullConverter(descr,value):
 
 
 
-
 class SQLCursor(AbstractCursor):
 
     """Iterable cursor bridge/proxy"""
 
     conn = binding.Obtain('..')
-    typeMap = binding.Obtain('conn/typeMap')
     multiOK = False
 
     _cursor = binding.Make(lambda self: self._conn.cursor())
@@ -73,6 +72,7 @@ class SQLCursor(AbstractCursor):
 
     def __getattr__(self,attr):
         return getattr(self._cursor,attr)
+
 
 
 
@@ -176,17 +176,17 @@ class SQLCursor(AbstractCursor):
                 __module__ = __name__,
             )
 
-            typeMap = self.typeMap
-            convert = [(typeMap.get(d[1],NullConverter),d) for d in descr]
-            mkTuple = tuple.__new__
+            # mkTuple is a curried constructor for our new 'rowStruct' type
+            mkTuple = instancemethod(tuple.__new__,rowStruct,None)
 
+            # Now get a row conversion function for our description, using
+            # our rowStruct constructor as a postprocessor
+            converter = self.conn.getRowConverter(descr,mkTuple)
 
         while rows:
 
             for row in rows:
-                yield mkTuple(rowStruct,
-                    [ c(d,f) for (f,(c,d)) in zip(row,convert) ]
-                )
+                yield converter(row)
 
             rows = fetch()
 
@@ -232,9 +232,21 @@ class SQLConnection(ManagedConnection):
     Exceptions          = binding.Obtain(["Error", "Warning"])
     supportedTypes      = 'STRING','BINARY','NUMBER','DATETIME','ROWID'
 
+    TYPES_NS = PropertyName('peak.sql_types')   # Replace in subclasses!
+
+
+
+
+
+
+
+
+
+
+
     def typeMap(self):
         tm = {}
-        ps = PropertyName('peak.sql_types').of(self)
+        ps = self.TYPES_NS.of(self)
         api = self.API
 
         for k in self.supportedTypes:
@@ -244,12 +256,41 @@ class SQLConnection(ManagedConnection):
 
     typeMap = binding.Make(typeMap)
 
+
+    def getRowConverter(self,description,post=None):
+        """See ISQLConnection.getRowConverter()"""
+
+        typeMap = self.typeMap
+
+        converters = [
+            instancemethod(
+                typeMap.get(d[1],NullConverter), d, None
+            ) for d in description
+        ]
+
+        for conv in converters:
+            if conv.im_func is not NullConverter:
+                # At least one conversion, so we must create a row converter
+                if post is None:
+                    return lambda row: [
+                        conv(col) for (col,conv) in zip(row,converters)
+                    ]
+                else:
+                    return lambda row: post(
+                        [conv(col) for (col,conv) in zip(row,converters)]
+                    )
+        else:
+            return post     # No conversions other than postprocessor
+
+
+
+
 class ValueBasedTypeConn(SQLConnection):
 
     def typeMap(self):
 
         tm = {}
-        ps = PropertyName('peak.sql_types').of(self)
+        ps = self.TYPES_NS.of(self)
         api = self.API
 
         for k in self.supportedTypes:
@@ -302,10 +343,10 @@ class SybaseConnection(ValueBasedTypeConn):
         'view' : 'V',
     }
 
+    TYPES_NS = PropertyName('Sybase.sql_types')
+
     def _open(self):
-
         a = self.address
-
         db = self.API.connect(
             a.server, a.user, a.passwd, a.db, auto_commit=1, delay_connect=1
         )
@@ -371,6 +412,8 @@ class PGSQLConnection(ValueBasedTypeConn):
 
     API = binding.Obtain("import:pgdb")
 
+    TYPES_NS = PropertyName('pgdb.sql_types')
+
     def _open(self):
 
         a = self.address
@@ -406,11 +449,11 @@ class PGSQLConnection(ValueBasedTypeConn):
 
 
 
-
-
 class SqliteConnection(ValueBasedTypeConn):
 
     API = binding.Obtain("import:sqlite")
+
+    TYPES_NS = PropertyName('sqlite.sql_types')
 
     supportedTypes = (
         'DATE', 'INT', 'NUMBER', 'ROWID', 'STRING', 'TIME', 'TIMESTAMP',
@@ -447,11 +490,10 @@ class SqliteConnection(ValueBasedTypeConn):
 
 
 
-
-
 class GadflyConnection(SQLConnection):
 
     API = binding.Obtain("import:gadfly")
+    TYPES_NS = PropertyName('gadfly.sql_types')
 
     Error    = Exception    # Gadfly doesn't really do DBAPI...  Sigh.
     Warning  = Warning
@@ -473,7 +515,6 @@ class GadflyConnection(SQLConnection):
         g.startup(self.address.db, self.address.dir)
         g.commit()
         g.close()
-
 
 class GadflyURL(naming.URL.Base):
 
@@ -575,6 +616,7 @@ class OracleURL(naming.URL.Base):
 class CXOracleConnection(SQLConnection):
 
     API = binding.Obtain("import:cx_Oracle")
+    TYPES_NS = PropertyName('cx_Oracle.sql_types')
 
     def _open(self):
         a = self.address
@@ -612,14 +654,13 @@ class CXOracleConnection(SQLConnection):
 
 
 
-
 class DCOracle2Connection(ValueBasedTypeConn):
-
     protocols.advise(
         instancesProvide=[ISQLIntrospector]
     )
 
     API = binding.Obtain("import:DCOracle2")
+    TYPES_NS = PropertyName('DCOracle2.sql_types')
 
     def _open(self):
         a = self.address

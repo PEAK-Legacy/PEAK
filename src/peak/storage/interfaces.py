@@ -14,7 +14,33 @@ __all__ = [
 ]
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 class ITransactionService(Interface):
+
     """Manages transaction lifecycle, participants, and metadata.
 
     There is no predefined number of transactions that may exist, or
@@ -43,6 +69,16 @@ class ITransactionService(Interface):
 
     def fail():
         """Force transaction to fail (i.e. no commits allowed, only aborts)"""
+
+
+
+
+
+
+
+
+
+
 
     # Managing participants
 
@@ -80,7 +116,6 @@ class ITransactionService(Interface):
         nothing with this information. Transaction participants will
         need to retrieve the information with 'getInfo()' and record
         it at the appropriate point during the transaction."""
-
 
     def getInfo():
         """Return a copy of the transaction's metadata dictionary"""
@@ -163,6 +198,10 @@ class ITransactionParticipant(Interface):
         the commit.  DB connections will probably issue COMMIT TRAN
         here. Transactional caches might use this message to reset
         themselves."""
+
+
+
+
 
     def abortTransaction(txnService):
         """This message can be received at any time, and means the
@@ -352,16 +391,57 @@ class IManagedConnection(IComponent,ITransactionParticipant):
         """Close all registered cursors which are still active"""
 
 
-# XXX These need fleshing out w/API, exceptions, etc
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# XXX These need more fleshing out w/API, exceptions, etc
 
 class ISQLConnection(IManagedConnection):
+
     """A ManagedConnection that talks SQL"""
+
+    def getRowConverter(description,post=None):
+        """Get row-convert function for a given DBAPI description (or None)
+
+        For the given 'description', which is a DBAPI cursor result description
+        (i.e. sequence of tuples describing result columns), return a conversion
+        function which will map the values in a row, to application-specific
+        datatypes.  (The database-type to application-type mapping should be
+        controlled via the connection's configuration properties.)
+
+        The created conversion function will accept a single database result
+        row, and return a sequence of values.  'post' is an optional
+        postprocessing function which will be passed the entire sequence of
+        converted values as a single argument.  The return value of 'post' will
+        then be returned from the conversion function.
+
+        Note that if no postprocessing function is supplied, and no columns in
+        the given description require type conversion, this method may
+        return 'None', indicating that no conversion of any kind is required.
+        """
+
 
 class ILDAPConnection(IManagedConnection):
     """A ManagedConnection that talks LDAP"""
 
+
 class IDDEConnection(IManagedConnection):
     """A ManagedConnection that talks DDE"""
+
 
 
 
@@ -512,3 +592,24 @@ class ISQLIntrospector(Interface):
             if obtypes is given, it shall be a sequence of the above types,
             and rows shall only be returned for the given types.
         """
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
