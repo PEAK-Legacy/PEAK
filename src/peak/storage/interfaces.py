@@ -5,7 +5,7 @@ from peak.binding.interfaces import IComponent
 from peak.api import NOT_GIVEN
 
 __all__ = [
-    'IDelta', 'IHistory', 'IUndoManager',
+    'IDelta', 'IHistory', 'IUndoManager', 'UndoError',
     'ITransactionService', 'ITransactionParticipant', 'ICache',
     'ITransactionErrorHandler', 'ICursor', 'IRow',
     'IDataManager', 'IDataManager_SPI', 'IWritableDM', 'IWritableDM_SPI',
@@ -15,8 +15,8 @@ __all__ = [
 ]
 
 
-
-
+class UndoError(Exception):
+    """Invalid undo/redo operation"""
 
 
 

@@ -5,6 +5,7 @@ an individual module to get just those tests."""
 
 
 allSuites = [
+    'test_undo:test_suite',
     'LDAP:test_suite',
     'transactions:test_suite',
     'xmi:test_suite',
