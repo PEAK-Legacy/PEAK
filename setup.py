@@ -106,7 +106,8 @@ class happy(Command):
         if self.happy_options is None:
             self.happy_options = [
                 '-t', 'PEAK Reference', '-d', self.doc_output_path,
-                '-i', 'examples', '-i', 'old', '-i', 'tests', '.',
+                '-i', 'examples', '-i', 'old', '-i', 'tests',
+                '-i', 'Interface', '.'
             ]
             if not self.verbose: self.happy_options.insert(0,'-q')
 
@@ -119,7 +120,6 @@ class happy(Command):
 
         if not self.dry_run:
             HappyDoc(self.happy_options).run()
-
 
 setup(
 
