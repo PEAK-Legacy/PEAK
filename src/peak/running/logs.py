@@ -350,7 +350,7 @@ class AbstractLogger(Component):
     def isEnabledFor(self,lvl):
         return self.level >= lvl
 
-    def getEffectiveLevel(self,lvl):
+    def getEffectiveLevel(self):
         return self.level
 
     debug     = _levelledMessage(DEBUG)

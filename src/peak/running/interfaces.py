@@ -474,7 +474,7 @@ class ILogger(Interface):
     def isEnabledFor(lvl):
         """Return true if logger will accept messages of level 'lvl'"""
 
-    def getEffectiveLevel(lvl):
+    def getEffectiveLevel():
         """Get minimum priority level required for messages to be accepted"""
 
     def debug(msg, *args, **kwargs):
