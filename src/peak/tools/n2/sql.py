@@ -352,13 +352,13 @@ xacts\t\tnumber of times to repeat execution of the input. Only results
                 
                 if xacts > 1:
                     for j in range(xacts - 1):
-                        c = con(sql, outsideTxn=self.is_outside)
+                        c = con(sql, outsideTxn=self.interactor.is_outside)
                         c.fetchall()    # XXX doesn't handle multiresults!
 
                         time.sleep(secs)
 
-                c = con(sql, multiOK=True, outsideTxn=self.is_outside)
-            except:
+                c = con(sql, multiOK=True, outsideTxn=self.interactor.is_outside)
+            except con.Exceptions:
                 # currently the error is logged
                 # sys.excepthook(*sys.exc_info()) # XXX
                 self.interactor.resetBuf()
@@ -464,7 +464,7 @@ rollback -- abort current transaction"""
             if self.interactor.con.dbTxnStarted:
                 print >>stderr, "Already active in a transaction; commit or abort first."
             else:
-                self.is_outside = True
+                self.interactor.is_outside = True
 
             self.interactor.resetBuf()
 
