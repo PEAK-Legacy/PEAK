@@ -163,7 +163,6 @@ def getTwisted(appConfig):
 
 
 class UntwistedReactor(binding.Component):
-
     """Primitive partial replacement for 'twisted.internet.reactor'"""
 
     protocols.advise(
@@ -177,6 +176,10 @@ class UntwistedReactor(binding.Component):
     time    = binding.bindTo('import:time.time')
     sleep   = binding.bindTo('import:time.sleep')
     select  = binding.bindTo('import:select.select')
+
+    checkInterval = binding.bindTo(
+        PropertyName('peak.running.reactor.checkInterval')
+    )
 
     def run(self):
         self.running = True
@@ -199,9 +202,9 @@ class UntwistedReactor(binding.Component):
     def addWriter(self, writer):
         if writer not in self.writers: self.writers.append(writer)
 
+
     def removeReader(self, reader):
         if reader in self.readers: self.readers.remove(reader)
-
 
     def removeWriter(self, writer):
         if writer in self.writers: self.writers.remove(writer)
@@ -225,13 +228,14 @@ class UntwistedReactor(binding.Component):
                 delay = 0
             elif self.laters:
                 delay = self.laters[0].time - self.time()
+            elif self.readers or self.writers:
+                delay = self.checkInterval
             else:
-                delay = 3600    # XXX
+                delay = 0
 
         delay = max(delay, 0)
 
         if self.readers or self.writers:
-
             r, w, e = self.select(self.readers, self.writers, [], delay)
 
             for reader in r: reader.doRead()
@@ -239,10 +243,6 @@ class UntwistedReactor(binding.Component):
 
         elif delay:
             self.sleep(delay)
-
-
-
-
 
 class _Appt(object):
 
