@@ -254,164 +254,21 @@ class SQLInteractor(binding.Component):
 
 
 
-    def showResults(self, c, shower, opts, stdout):
-        shower = self.showers.get(shower, 'showHoriz')
-        shower = getattr(self, shower)
+    def showResults(self, c, formatter, opts, stdout, stderr):
         if c._cursor.description:
-            nr = shower(c, opts, stdout)
-            if not opts.has_key('-f'):
-                print >>stdout, "(%d rows)" % nr
-
-        while c.nextset():
-            if not c._cursor.description:
-                continue
-            print >>stdout
-            nr = shower(c, opts, stdout)
-            if not opts.has_key('-f'):
-                print >>stdout, "(%d rows)" % nr
-
-
-
-    showers = {
-        'horiz' : 'showHoriz',
-        'vert' : 'showVert',
-        'plain' : 'showPlain',
-        'python' : 'showPython',
-        'ldif' : 'showLDIF',
-    }
-
-
-
-    def showHoriz(self, c, opts, stdout):
-        out = stdout.write
-        t, d, l = [], [], []
-        first = 1
-        nr = 0
-        for r in c._cursor.description:
-            w = r[2]
-            if not w or w <= 0: w = r[3]
-            if not w or w <= 0: w = 20 # XXX
-            if w<len(r[0]): w = len(r[0])
-
-            t.append(self.toStr(r[0], w)); d.append('-' * w); l.append(w)
-
-        if '-h' not in opts:
-            out(' '.join(t)); out('\n')
-            out(' '.join(d)); out('\n')
-
-        for r in c:
-            nr += 1
-            i = 0
-            o = []
-            for v in r:
-                o.append(self.toStr(v, l[i]))
-                i += 1
-
-            out(' '.join(o))
-            out('\n')
-
-        return nr
-
-
-
-    def showVert(self, c, opts, stdout):
-        h = [x[0] for x in c._cursor.description]
-        w = max([len(x) for x in h])
-        nr = 0
-
-        for r in c:
-            i = 0
-            nr += 1
-            for v in r:
-                print >>stdout, "%s %s" % (h[i].rjust(w), self.toStr(v))
-                i += 1
-            print >>stdout
-
-        return nr
-
-
-
-    def showPlain(self, c, opts, stdout):
-        d = opts.get('-d', '|')
-        nr = 0
-
-        if not '-h' in opts:
-            print >>stdout, d.join([x[0] for x in c._cursor.description])
-        for r in c:
-            nr += 1
-            print >>stdout, d.join([self.toStr(v) for v in r])
-
-        return nr
-
-
-
-    def showPython(self, c, opts, stdout):
-        nr = 0
-
-        if not '-h' in opts:
-            print >>stdout, c._cursor.description
-        for r in c:
-            nr += 1
-            print >>stdout, r
-
-        return nr
-
-
-
-    def showLDIF(self, c, opts, stdout):
-        nr = 0
-        
-        for r in c:
-            nr += 1
-            cols = r.keys()
-
-            # dn must come first, according to RFC2849...
-            try:
-                dnix = cols.index('dn')
-                del cols[dnix]
-                cols.insert(0, 'dn')
-            except ValueError:
-                # ...though we can't be fully compliant if there is no dn!
-                pass
-                 
-            for col in cols:
-                vals = r[col]
-                if type(vals) is not list:
-                    vals = [vals]
+            kw = {
+                'header' : not opts.has_key('-h'),
+                'footer' : not opts.has_key('-f'),
+                'delim'  : opts.get('-d', '|')
+            }
                 
-                for val in vals:
-                    if val is None:
-                        continue
-                        
-                    if type(val) is unicode:
-                        val = val.encode('utf8')
-                    else:
-                        val = str(val)
-
-                    colname = "%s: " % col
-
-                    ascii = True
-                    for ch in val:
-                        o = ord(ch)
-                        if o < 32 or o > 126:
-                            ascii = False
-                            break
-
-                    if not ascii:
-                        colname = "%s:: " % col
-                        val = ''.join(val.encode('base64').split())
-                    
-                    fl = 77 - len(colname)
-                    stdout.write(colname + val[:fl] + '\n')
-                    
-                    val = val[fl:]
-                    while val:
-                        stdout.write(' ' + val[:76] + '\n')
-                        val = val[76:]
+            fmt = c.getFormatter(formatter, **kw)
+            if fmt is None:
+                print >>stderr, "Unknown formatter '%s', defaulting to 'horiz'" % formatter
+                fmt = c.getFormatter('horiz', **kw)
                 
-            print >>stdout
+            fmt(stdout)
 
-        return nr
 
        
     def command_names(self):
@@ -494,14 +351,14 @@ xacts\t\tnumber of times to repeat execution of the input. Only results
                     c = con(sql, multiOK=True)
                 else:
                     c = con(sql, multiOK=True, outsideTxn=True)
-            except ZeroDivisionError:
+            except:
                 # currently the error is logged
                 # sys.excepthook(*sys.exc_info()) # XXX
                 self.interactor.resetBuf()
                 return
 
-            shower = opts.get('-m', 'horiz')
-            self.interactor.showResults(c, shower, opts, stdout)
+            formatter = opts.get('-m', 'horiz')
+            self.interactor.showResults(c, formatter, opts, stdout, stderr)
 
             self.interactor.setBuf(i, name='!!')
 
@@ -993,9 +850,9 @@ default for src is '!.', the current input buffer"""
                 if si is None:
                     print >>stderr, "%s: database doesn't support describe" % cmd
                 else:
-                    shower = opts.get('-m', 'horiz')
+                    formatter = opts.get('-m', 'horiz')
                     c = si.listObjects('-v' in opts)
-                    self.interactor.showResults(c, shower, opts, stdout)
+                    self.interactor.showResults(c, formatter, opts, stdout, stderr)
 
     cmd_describe = binding.Make(cmd_describe)
 
