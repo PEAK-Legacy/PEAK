@@ -67,17 +67,17 @@ class IBasicContext(Interface):
     def lookupLink(name):
         """Return terminal LinkRef of 'name', if it's a link"""
 
-    creationParent = Attribute(
-        """The object which should be used as the parent of any newly-created
-        components during retrieval from this context.
 
-        This attribute is for the use of object factories and the like, which
-        must create a new object relative to some context.  It *must* be
-        implemented as a findUtility lookup for 'IParentForRetrievedObject',
-        except in InitialContext objects, where it must be an actual object
-        reference.  (Since all naming lookups begin from an InitialContext,
-        that is where the search must "top out".)"""
-    )
+
+
+
+
+
+
+
+
+
+
 
 
 class IReadContext(IBasicContext):
