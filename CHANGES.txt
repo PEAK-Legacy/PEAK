@@ -1,5 +1,8 @@
 Fixes and Enhancements since Version 0.5 alpha 3
 
+ - The 'log()' method of PEAK loggers ('logs.ILogger') now accepts a level name
+   *or* a number, for convenient invocation.
+
  - SQL transaction semantics have changed.  Now, issuing an SQL statement
    *always* causes the connection to join the active PEAK transaction, even if
    you request that the SQL be issued "outside" a transaction.  Such SQL will

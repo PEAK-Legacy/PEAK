@@ -106,6 +106,9 @@ class ILogger(IBasicLogger):
     def emergency(msg, *args, **kwargs):
         """Log 'msg' w/level EMERG"""
 
+    def log(lvl, msg, *args, **kwargs):
+        """Log 'msg' w/level 'lvl' (accepts level names as well as numbers)"""
+
 
 class ILogEvent(protocols.Interface):
     """Temporary marker to allow configurable event classes
@@ -114,9 +117,6 @@ class ILogEvent(protocols.Interface):
     syncs up more with the capabilities and interfaces of the Python
     2.3 logging package.
     """
-
-
-
 
 
 
@@ -510,7 +510,7 @@ class AbstractLogger(binding.Component):
 
     TRACE = DEBUG = INFO = NOTICE = WARNING = ERROR = CRITICAL = \
         ALERT = EMERG = \
-            binding.Make(lambda self,d,a: self.logSvc.getLevelFor(a))
+            binding.Make(lambda self,d,a: self.getLevelFor(a))
 
     trace     = _levelledMessage('TRACE')
     debug     = _levelledMessage('DEBUG')
@@ -532,6 +532,7 @@ class AbstractLogger(binding.Component):
             )
 
     def log(self, lvl, msg, *args, **kwargs):
+        lvl = self.getLevelFor(lvl)
         if self.level <= lvl:
             self.publish(
                 self.EventClass(
@@ -539,6 +540,8 @@ class AbstractLogger(binding.Component):
                     **kwargs
                 )
             )
+
+    getLevelFor = binding.Delegate('logSvc')
 
     def publish(self, event):
         pass
@@ -558,9 +561,6 @@ class AbstractLogger(binding.Component):
                 e.ident = ident
 
         self.sink(e)
-
-
-
 
 
 
