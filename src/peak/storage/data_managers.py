@@ -429,7 +429,12 @@ class EntityDM(QueryDM):
     # Persistence.IPersistentDataManager methods
 
     def register(self, ob):
-    
+
+        # Ensure that we have a transaction service and we've joined
+        # the transaction in progress...
+        
+        self.joinedTxn
+
         # precondition:
         #   object has been changed since last save
 
@@ -442,12 +447,7 @@ class EntityDM(QueryDM):
         # Ensure it's in the 'dirty' set
         self.dirty.setdefault(key,ob)
 
-        # Ensure that we have a transaction service and we've joined
-        # the transaction in progress...
-        
         return self.joinedTxn
-
-
 
     # ITransactionParticipant methods
 
@@ -474,6 +474,7 @@ class EntityDM(QueryDM):
 
         for set in self.dirty, self.saved:
             for ob in set.values():
+                del ob._p_changed
                 ob._p_deactivate()
 
             set.clear()
