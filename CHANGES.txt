@@ -2,6 +2,21 @@ Fixes and Enhancements since Version 0.5 alpha 2
 
  Changed, Enhanced, or Newly Deprecated Features
 
+ - There is now a 'storage.DMFor(class)' function that returns a configuration
+   key for registering or looking up data managers by class.  You can use the
+   returned key in a binding's 'offerAs' list, or as the target of a 'bindTo()'
+   or 'lookupComponent()'.  The key is constructed using
+   'config.ProviderOf(storage.IDataManager,class)'.
+
+ - You can now register utilities that are keyed by the combination of an
+   interface and one or more classes, using 'config.ProviderOf(iface,*classes)'
+   as a configuration key.  Providers are registered under an '(iface,klass)'
+   tuple for each specified class, and looked up using the MRO order of the
+   class specified for lookup.  In other words, searching for a provider will
+   find a provider for the requested class, or one of its base classes, with
+   precedence given to the more-specific provider.  This is primarily intended
+   for services like data managers and Specialists.
+
  - It's now possible to extend .ini file parsing with custom section types,
    and PEAK defines its own built-in section types using this extension
    mechanism.  Custom section types must include at least one space, (e.g.
