@@ -620,7 +620,10 @@ class AddressContext(NameContext):
 
     def _get(self, name, retrieve=True):
         # All syntactically valid addresses exist in principle
-        return Reference(name.defaultFactory, (name,))
+        if hasattr(name, 'defaultFactory'):
+            return Reference(name.defaultFactory, (name,))
+        else:
+            return name
 
 
     def _resolveURL(self, name, iface):
