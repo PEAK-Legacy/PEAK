@@ -9,7 +9,7 @@ __all__ = [
     'PATH_PROTOCOL', 'PAGE_PROTOCOL', 'INTERACTION_CLASS', 'RESOURCE_PREFIX',
     'DEFAULT_METHOD', 'APPLICATION_LOG', 'AUTHENTICATION_SERVICE',
     'ERROR_PROTOCOL', 'SKIN_SERVICE', 'IWebException', 'IDOMletState',
-    'IDOMletNode',    'IDOMletNodeFactory', 'ITraversalContext',
+    'IDOMletNode',    'IDOMletNodeFactory', 'ITraversalContext', 'IResource',
     'IDOMletElement', 'IDOMletElementFactory', 'ISkin', 'IPolicyInfo'
 ]
 
@@ -66,8 +66,8 @@ class IWebInteraction(IInteraction, IPolicyInfo):
 
     skin = Attribute("""Root namespace for presentation resources""")
 
-    def getAbsoluteURL(traversable):
-        """Return an absolute URL for specified traversable"""
+    def getAbsoluteURL(resource=None):
+        """Return an absolute URL for specified resource, or interaction URL"""
 
 
 class IInteractionPolicy(IPolicyInfo):
@@ -88,6 +88,22 @@ class ITraversalContext(Interface):
         """The 'IWebInteraction' for this traversal context"""
     )
 
+    traversable = Attribute(
+        """The 'IWebTraversable' for this traversal context"""
+    )
+
+    subject = Attribute("""The underlying object being traversed""")
+
+    absoluteURL = Attribute("""Absolute URL for object at this location""")
+
+    traversedURL = Attribute(
+        """Parent context's absolute URL + current context's name"""
+    )
+
+    renderable = Attribute(
+        """Underlying object (adapted to page protocol) or 'None'"""
+    )
+
     def checkPreconditions():
         """Invoked before traverse by web requests (calls 'preTraverse()')"""
 
@@ -100,24 +116,8 @@ class ITraversalContext(Interface):
     def render():
         """Return rendered value of underlying object"""
 
-    def asRenderable():
-        """Return object adapted to page protocol, or 'None'"""
-
-    def getAbsoluteURL():
-        """Absolute URL for object at this location"""
-
-    def getTraversedURL():
-        """This traversal's followed path, in absolute URL form"""
-
-    def getObject():
-        """The underlying object being traversed"""
-
     def subcontext(name, ob):
         """Create a new subcontext named 'name', for 'ob'"""
-
-#class ITraversalContextSPI(Interface):
-#
-#    """Traversal context methods for traversables to use"""
 
 
 
@@ -153,12 +153,12 @@ class IWebTraversable(Interface):
     def getURL(context):
         """Return this object's URL in traversal context 'context'"""
 
-    localPath = Attribute("Relative URL (no leading '/') from skin/app root")
 
+class IResource(IWebTraversable):
 
+    """Traversable with a fixed location"""
 
-
-
+    resourcePath = Attribute("Relative URL (no leading '/') from skin")
 
 
 
@@ -178,7 +178,7 @@ class IWebException(Interface):
         """Perform necessary recovery actions"""
 
 
-class ISkin(IWebTraversable):
+class ISkin(IResource):
 
     def getResource(path):
         """Return the named resource"""

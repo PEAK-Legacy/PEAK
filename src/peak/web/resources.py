@@ -5,8 +5,8 @@ from publish import TraversalPath
 from templates import DOMletAsWebPage, TemplateDocument
 from peak.naming.factories.openable import FileURL
 from peak.util.imports import importString
-import os.path
-import sys
+import os.path, posixpath, sys
+
 
 __all__ = [
     'Resource', 'FSResource', 'ResourceDirectory', 'FileResource',
@@ -41,6 +41,10 @@ def parseFileResource(parser, section, name, value, lineInfo):
 
 class Resource(Traversable):
 
+    protocols.advise(
+        instancesProvide = [IResource]
+    )
+
     permissionsNeeded = binding.requireBinding("Permissions needed for access")
 
     def preTraverse(self, interaction):
@@ -51,8 +55,29 @@ class Resource(Traversable):
     def traverseTo(self, name, interaction):
         return NOT_FOUND
 
+
     def getURL(self, ctx):
+        # We want an absolute URL based on the interaction
         return ctx.interaction.getAbsoluteURL(self)
+
+
+    def _getResourcePath(self, d, a):
+
+        name = self.getComponentName()
+
+        if name:
+            base = self.getParentComponent().resourcePath
+            return posixpath.join(base, name)   # handles empty parts OK
+
+        raise ValueError("Traversable was not assigned a name", self)
+
+    resourcePath = binding.Once(_getResourcePath)
+
+
+
+
+
+
 
 
 class FSResource(Resource):
@@ -76,6 +101,22 @@ class FSResource(Resource):
         return klass(filename = url.getFilename())
 
     getObjectInstance = classmethod(getObjectInstance)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -162,16 +203,16 @@ class ResourceDirectory(FSResource):
         self.cache[name] = obj = adapt(obj,interaction.pathProtocol)    #XXX
         return obj
 
-    def localPath(self,d,a):
+    def resourcePath(self,d,a):
 
         if self.isRoot and not self.includeURL:
             # Our name doesn't count in the URL
-            return self.getParentComponent().localPath
+            return self.getParentComponent().resourcePath
 
         # use original definition
-        return self._getLocalPath(d,a)
+        return self._getResourcePath(d,a)
 
-    localPath = binding.Once(localPath)
+    resourcePath = binding.Once(resourcePath)
 
 
 
@@ -218,15 +259,15 @@ def findPackage(pkg):
 
 class ResourceProxy(object):
 
-    __slots__ = 'path', 'localPath'
+    __slots__ = 'path', 'resourcePath'
 
     protocols.advise(
         instancesProvide = [IWebTraversable]
     )
 
-    def __init__(self, path, localPath):
+    def __init__(self, path, resourcePath):
         self.path = path
-        self.localPath = localPath
+        self.resourcePath = resourcePath
 
     def getObject(self, interaction):
         return interaction.skin.getResource(self.path)
@@ -239,8 +280,8 @@ class ResourceProxy(object):
         return ob.traverseTo(name, interaction)
 
     def getURL(self,ctx):
-        interaction = ctx.interaction
-        return interaction.getAbsoluteURL(self.getObject(interaction))
+        return self.getObject(ctx.interaction).getURL(ctx)
+
 
 
 
@@ -323,7 +364,7 @@ class DefaultLayer(Traversable):
         return d
 
     # Our name doesn't count in the URL
-    localPath = binding.bindTo('../localPath')
+    resourcePath = binding.bindTo('../resourcePath')
 
 
 class TemplateResource(FSResource):
@@ -356,7 +397,7 @@ class TemplateResource(FSResource):
 
     def getURL(self, ctx):
         # We're a method, so use our context URL, not container URL
-        return ctx.getTraversedURL()
+        return ctx.traversedURL
 
 
 class FileResource(FSResource):

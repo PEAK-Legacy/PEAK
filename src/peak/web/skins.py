@@ -1,6 +1,6 @@
 from peak.api import *
 from interfaces import *
-from places import Traversable, MultiTraverser, TraversalContext
+from places import Traversable, MultiTraverser, Traversal
 from publish import TraversalPath
 
 __all__ = ['Skin',]
@@ -8,16 +8,16 @@ __all__ = ['Skin',]
 
 class SkinTraverser(MultiTraverser):
 
+    protocols.advise(
+        instancesProvide = [IResource]
+    )
+
     # Our local path is effectively '/++resources++'
-    localPath = binding.bindTo(RESOURCE_PREFIX)
+    resourcePath = binding.bindTo(RESOURCE_PREFIX)
 
     items = binding.bindTo('../layers')
 
     _subTraverser = MultiTraverser
-
-
-
-
 
 
 
@@ -71,7 +71,7 @@ class Skin(Traversable):
 
         return self.root.traverseTo(name, interaction)
 
-    localPath = ''  # skin is at root
+    resourcePath = ''  # skin is at root
 
 
 
@@ -88,19 +88,13 @@ class Skin(Traversable):
             return self.cache[path]
 
         interaction = self.dummyInteraction
-        traverser = TraversalContext(
-            self, interaction=interaction, traversable=self.traverser
-        )
+        start = Traversal(
+            self, interaction=interaction
+        ).contextFor(interaction.resourcePrefix)   # start at ++resources++
 
-        resource = path.traverse(
-            traverser, getRoot = lambda ctx: traverser
-        )
-
-        if resource is not NOT_FOUND and resource is not NOT_ALLOWED:
-            resource = resource.getObject()
-
-        self.cache[path] = resource
-        return resource
+        resourceCtx = path.traverse(start, getRoot = lambda ctx: start)
+        self.cache[path] = resourceCtx.subject
+        return resourceCtx.subject
 
 
     def getResourceURL(self, path, interaction):
@@ -114,6 +108,12 @@ class Skin(Traversable):
             return '%s/%s' % (base, path)
         else:
             return base
+
+
+
+
+
+
 
 
 

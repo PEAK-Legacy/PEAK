@@ -2,7 +2,7 @@
 
 from peak.api import *
 from interfaces import *
-from places import TraversalContext
+from places import Traversal
 
 __all__ = [
     'Interaction', 'NullAuthenticationService', 'InteractionPolicy',
@@ -194,17 +194,14 @@ class Interaction(security.Interaction):
         storage.beginTransaction(self.app)
 
     def getApplication(self,request):
-        return TraversalContext(
-            self.skin, interaction=self, traversable=self.skin
-        )
+        return Traversal(self.skin, interaction=self)
 
     def callTraversalHooks(self, request, ob):
         ob.checkPreconditions()
 
-
-
     def traverseName(self, request, ob, name, check_auth=1):
         return ob.contextFor(name)
+
 
     def afterTraversal(self, request, ob):
         # Let the found object know it's being traversed
@@ -233,6 +230,7 @@ class Interaction(security.Interaction):
     def callObject(self, request, ob):
         return ob.render()
 
+
     def afterCall(self, request):
         """Commit transaction after successful hit"""
 
@@ -242,6 +240,8 @@ class Interaction(security.Interaction):
             # XXX a different response class for HEAD; Zope 3 should
             # XXX probably do it that way too.
             request.response.setBody('')
+
+
 
 
     def handleException(self, object, request, exc_info, retry_allowed=1):
@@ -271,14 +271,14 @@ class Interaction(security.Interaction):
         raise Unauthorized(name=name)   # XXX
 
 
-    baseURL = binding.Once(lambda s,d,a: s.request.getApplicationURL())
+    appURL = binding.Once(lambda s,d,a: s.request.getApplicationURL())
 
-    def getAbsoluteURL(self, traversable):
-        base = self.baseURL
-        path = adapt(traversable,self.pathProtocol).localPath
+    def getAbsoluteURL(self, resource=None):
+        base = self.appURL
+        if resource is None:
+            return base
+        path = adapt(resource,self.pathProtocol).resourcePath
         return '%s/%s' % (base, path)
-
-
 
 
 
@@ -293,7 +293,7 @@ class TestInteraction(Interaction):
 
     request = binding.New('peak.web.requests:TestRequest')
 
-    baseURL = 'http://127.0.0.1'    # prevent use of request unless necessary
+    appURL = 'http://127.0.0.1'    # prevent use of request unless necessary
 
     def simpleTraverse(self, path, run=True):
 

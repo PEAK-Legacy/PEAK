@@ -5,7 +5,7 @@ import posixpath
 
 __all__ = [
     'Traversable', 'Decorator', 'ContainerAsTraversable',
-    'MultiTraverser', 'TraversalContext',
+    'MultiTraverser', 'TraversalContext', 'Traversal',
 ]
 
 
@@ -45,6 +45,7 @@ class TraversalContext(binding.Component):
         instancesProvide = [ITraversalContext]
     )
 
+    previous    = binding.bindTo('..')
     interaction = binding.Acquire(IWebInteraction)
     traversable = binding.requireBinding("Traversable being traversed")
 
@@ -68,13 +69,12 @@ class TraversalContext(binding.Component):
     def subcontext(self, name, ob):
         ob = adapt(ob, self.interaction.pathProtocol)
         binding.suggestParentComponent(self.traversable, name, ob)
-        return self.__class__(self, name, traversable = ob)
+        return self.__class__.newCtx(self, name, traversable = ob)
 
-    def asRenderable(self):
-        return self.renderable
+    # newCtx = "this class"
+    newCtx = binding.classAttr(binding.bindTo('.'))
 
-    def getObject(self):
-        return self.subject
+
 
 
 
@@ -84,10 +84,9 @@ class TraversalContext(binding.Component):
         """Return a new traversal context for 'name'"""
 
         if name == '..':
-            parent = self.getParentComponent()
-            if parent is not interaction.skin:
-                return parent
-            return self
+            if self.previous is None:
+                return self
+            return self.previous
 
         elif name=='.':
             return self
@@ -107,51 +106,52 @@ class TraversalContext(binding.Component):
 
         if page is None:
             # Render the found object directly
-            return ob
+            return self.renderable
 
         return page.render(self)
 
 
+    absoluteURL = binding.Once(
+        lambda s,d,a: s.traversable.getURL(self),
+        doc = "Absolute URL of the current object"
+    )
 
 
 
 
 
 
+    def traversedURL(self, d, a):
+        """Parent context's absolute URL + current context's name"""
 
-
-
-    def getAbsoluteURL(self):
-        """Absolute URL for object at this location"""
-        return self.traversable.getURL(self)
-
-
-    def getTraversedURL(self, absolute=True):
-        """Traversed-to URL"""
-        if not absolute:
-            return self.localPath
-
-        return '%s/%s' % (self.interaction.baseURL, self.localPath)
-
-
-    def _getLocalPath(self, d, a):
-
+        base = self.getParentComponent().absoluteURL
         name = self.getComponentName()
+        return posixpath.join(base, name)   # handles empty parts OK
 
-        if name:
-            base = self.getParentComponent().localPath
-            return posixpath.join(base, name)   # handles empty parts OK
-
-        raise ValueError("Traversable was not assigned a name", self)
-
-    localPath = binding.Once(_getLocalPath)
+    traversedURL = binding.Once(traversedURL)
 
 
 
+class Traversal(TraversalContext):
 
+    """Root traversal context"""
 
+    # We're the root, so our URL is that of the interaction
+    absoluteURL = binding.Once(
+        lambda s,d,a: s.interaction.getAbsoluteURL()
+    )
 
+    # We haven't gone anywhere yet, so traversed URL = absolute URL
+    traversedURL = binding.bindTo('absoluteURL')
 
+    # And you can't go to '..' from here:
+    previous = None
+
+    # Traversal start point is always the skin
+    traversable = binding.bindTo('interaction/skin')
+
+    # Subcontexts are non-root traversal context
+    newCtx = binding.classAttr(TraversalContext)
 
 
 
@@ -188,20 +188,20 @@ class Traversable(binding.Component):
     def preTraverse(self, interaction):
         pass    # Should do any traversal requirements checks
 
-    def _getLocalPath(self, d, a):
-
-        name = self.getComponentName()
-
-        if name:
-            base = self.getParentComponent().localPath
-            return posixpath.join(base, name)   # handles empty parts OK
-
-        raise ValueError("Traversable was not assigned a name", self)
-
-    localPath = binding.Once(_getLocalPath)
-
     def getURL(self,ctx):
-        return ctx.getTraversedURL()
+        return ctx.traversedURL
+
+
+
+
+
+
+
+
+
+
+
+
 
 class NullTraversable(object):
 
@@ -222,12 +222,12 @@ class NullTraversable(object):
         return self
 
     def getURL(self,ctx):
-        return ctx.getTraversedURL()
+        return ctx.traversedURL
 
     def preTraverse(self, interaction):
         pass
 
-    localPath = None
+
 
 
 

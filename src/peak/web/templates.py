@@ -639,7 +639,7 @@ class Text(ContentReplacer):
         write(self._openTag)
 
         if not data.isNull():
-            write(unicode(data.getObject()))
+            write(unicode(data.subject))
 
         write(self._closeTag)
 
@@ -673,7 +673,7 @@ class List(ContentReplacer):
             # XXX this should probably use an iteration location, or maybe
             # XXX put some properties in execution context for loop vars?
 
-            for item in data.getObject():
+            for item in data.subject:
 
                 if not allowed(item):
                     continue
