@@ -5,12 +5,12 @@ from peak.api import *
 from peak.tests import testRoot
 from peak.query.api import *
 from peak.query.algebra import BasicJoin, Not, And, Or, Table, PhysicalDB, \
-     function, aggregate, Parameter
+     function, aggregate, Parameter, SQLContext
 from kjbuckets import kjSet
 
 
 def getSQL(rv):
-    return rv.sqlSelect()[0]
+    return rv.sqlSelect(SQLContext())[0]
 
 
 
@@ -688,8 +688,8 @@ class DatabaseTests(SimpleFixtures):
                 )
             ),
             "SELECT B2.*, x1.*"
-            " FROM (SELECT COUNT(E1.empnr) AS employees, E1.branchnr"
-            " FROM Employee AS E1 GROUP BY E1.branchnr"
+            " FROM (SELECT COUNT(E3.empnr) AS employees, E3.branchnr"
+            " FROM Employee AS E3 GROUP BY E3.branchnr"
             ") AS x1, Branch AS B2 WHERE B2.branchnr=x1.branchnr"
         )
 
@@ -711,14 +711,14 @@ class DatabaseTests(SimpleFixtures):
         salary = self.db.Employee.salary
 
         self.assertEqual(
-            Employee(where=Employee.empnr.eq(param)).sqlSelect(),
+            Employee(where=Employee.empnr.eq(param)).sqlSelect(SQLContext()),
             ("SELECT E1.* FROM Employee AS E1 WHERE E1.empnr=?", [param])
         )
 
         self.assertEqual(
             Employee(
                 calc=Items(crazy=COMPLEX(Employee.empnr,param))
-            ).sqlSelect(),
+            ).sqlSelect(SQLContext()),
             ("SELECT COMPLEX(E1.empnr,?) AS crazy, E1.* FROM Employee AS E1",
                 [param]
             )

@@ -45,17 +45,17 @@ class AbstractSQLGenerator:
         instancesProvide = [ISQLGenerator],
     )
 
-    def sqlCondition(self,driver):
+    def sqlCondition(self,ctx):
         raise TypeError("Not a condition",self)
 
-    def sqlExpression(self,driver):
+    def sqlExpression(self,ctx):
         raise TypeError("Not an condition",self)
 
-    def sqlSelect(self,driver):
+    def sqlSelect(self,ctx):
         raise TypeError("Not SELECT-able",self)
 
-    def sqlTableRef(self,driver=None):
-        return fmt("(%s)", [self.sqlSelect(driver)])
+    def sqlTableRef(self,ctx):
+        return fmt("(%s)", [self.sqlSelect(ctx)])
 
 
 class Parameter(AbstractSQLGenerator):
@@ -63,7 +63,7 @@ class Parameter(AbstractSQLGenerator):
     def __init__(self,name):
         self.name = name
 
-    def sqlExpression(self,driver):
+    def sqlExpression(self,ctx):
         return "?", (self,)
 
 
@@ -142,7 +142,7 @@ class EMPTY(binding.Singleton):
     def __or__(self,other):
         return other
 
-    def sqlCondition(self,driver):
+    def sqlCondition(self,ctx):
         return ps('')
 
 
@@ -203,38 +203,38 @@ class PhysicalDB(binding.Component):
 
 
 
-class SQLDriver:
+class SQLContext(binding.Component):
 
-    def __init__(self,query):
-        d = {}; ct=1
-        # XXX outer, nested, plus fix None
-        rvs = [(rv.sqlTableRef(None),rv) for rv in query.getInnerRVs()]
+    counter = binding.Make(lambda: [1])
+    aliases = binding.Make(dict)
+
+    def getAlias(self,rv):
+        return self.aliases[rv]
+
+    def assignAlias(self,rv):
+        if rv in self.aliases:
+            return
+        n0 = getattr(rv,'name','*')[0]
+        if n0.isalpha():
+            ltr = n0.upper()
+        else:
+            ltr="x"
+        self.aliases[rv] = "%s%d" % (ltr,self.counter[0])
+        self.counter[0] += 1
+
+    def assignAliasesFor(self,query):
+        rvs = list(query.getInnerRVs())+list(query.getOuterRVs()) # XXX nested
         rvs.sort()
-        for (name,params),rv in rvs:
-            if name[0].isalpha():
-                ltr = name[0].upper()
-            else:
-                ltr="x"
-            d[rv] = "%s%d" % (ltr,ct)
-            ct+=1
-        self.aliases = d
-
-    def getAlias(self,RV):
-        return self.aliases[RV]
+        map(self.assignAlias,rvs)
 
     def getFromDef(self,RV):
-        # XXX Fix None
-        return fmt("%s AS %s", [RV.sqlTableRef(None),ps(self.getAlias(RV))])
+        return fmt("%s AS %s", [RV.sqlTableRef(self),ps(self.getAlias(RV))])
 
     def sqlize(self,arg):
         v = adapt(arg,ISQLGenerator,None)
-
         if v is not None:
             return v.sqlExpression(self)
-
         return ps(`arg`)
-
-
 
 
 
@@ -342,10 +342,10 @@ class Table(AbstractRV, HashAndCompare):
     def getDB(self):
         return self.db
 
-    def sqlSelect(self,driver=None):
+    def sqlSelect(self,ctx):
         return ps("SELECT * FROM %s" % self.name)
 
-    def sqlTableRef(self,driver):
+    def sqlTableRef(self,ctx):
         return ps(self.name)
 
     def __deepcopy__(self,memo):
@@ -385,14 +385,13 @@ class GroupBy(AbstractRV, HashAndCompare):
     def getDB(self):
         return self.rv.getDB()
 
-    def sqlSelect(self,driver=None):
-        if driver is None:
-            driver = SQLDriver(self.rv)
-        groupBys = [self.rv[col].sqlExpression(driver) for col in self.groupBy]
-        sql = self.rv.sqlSelect(driver)
+    def sqlSelect(self,ctx):
+        ctx.assignAliasesFor(self.rv)
+        groupBys = [self.rv[col].sqlExpression(ctx) for col in self.groupBy]
+        sql = self.rv.sqlSelect(ctx)
         sql = fmt("%s GROUP BY %s",[sql, join(", ",groupBys)])
 
-        condSQL = self.condition.sqlCondition(driver)
+        condSQL = self.condition.sqlCondition(ctx)
         if condSQL[0]:
             sql = fmt("%s HAVING %s", [sql,condSQL])
         return sql
@@ -404,6 +403,7 @@ class GroupBy(AbstractRV, HashAndCompare):
         if where is not None:
             return GroupBy(self.rv,self.groupBy,self.condition&where)
         return self
+
 
 
 
@@ -467,8 +467,8 @@ class Column(AbstractDV,HashAndCompare):
     def getDB(self):
         return self.table.getDB()
 
-    def sqlExpression(self,driver):
-        return ps(driver.getAlias(self.table)+'.'+self.name)
+    def sqlExpression(self,ctx):
+        return ps(ctx.getAlias(self.table)+'.'+self.name)
 
 
 
@@ -516,9 +516,9 @@ class Func(AbstractDV):
         self._agg = agg or self.isAggFunc
 
 
-    def sqlExpression(self,driver):
+    def sqlExpression(self,ctx):
         return fmt("%s(%s)",
-            [ps(self.fname), join(",",[driver.sqlize(arg) for arg in self.args])]
+            [ps(self.fname), join(",",[ctx.sqlize(arg) for arg in self.args])]
         )
 
 class Aggregate(Func):
@@ -613,10 +613,9 @@ class BasicJoin(AbstractRV, HashAndCompare):
 
 
 
-    def sqlSelect(self,driver=None):
+    def sqlSelect(self,ctx):
 
-        if driver is None:
-            driver = SQLDriver(self)
+        ctx.assignAliasesFor(self)
 
         columnNames = []
         remainingColumns = self.columns
@@ -629,21 +628,21 @@ class BasicJoin(AbstractRV, HashAndCompare):
 
             if outputSubset==tblCols:
                 # All names in table are kept as-is, so just use '*'
-                columnNames.append(ps(driver.getAlias(tbl)+".*"))
+                columnNames.append(ps(ctx.getAlias(tbl)+".*"))
                 continue
 
             # For all output columns that are in this table...
             for name,col in outputSubset.items():
-                sql = col.sqlExpression(driver)
+                sql = col.sqlExpression(ctx)
                 if name<>col.name:
                     sql=fmt('%s AS %s',[sql,ps(name)])
                 columnNames.append(sql)
 
         for name,col in remainingColumns.items():
-            sql = col.sqlExpression(driver)
+            sql = col.sqlExpression(ctx)
             columnNames.append(fmt('%s AS %s',[sql,ps(name)]))
 
-        tablenames = [driver.getFromDef(tbl) for tbl in self.relvars]
+        tablenames = [ctx.getFromDef(tbl) for tbl in self.relvars]
 
         tablenames.sort()
         columnNames.sort()
@@ -654,7 +653,8 @@ class BasicJoin(AbstractRV, HashAndCompare):
 
 
 
-        condSQL = self.condition.sqlCondition(driver)
+
+        condSQL = self.condition.sqlCondition(ctx)
 
         if condSQL[0]:
             sql = fmt("%s WHERE %s", [sql,condSQL])
@@ -705,8 +705,8 @@ class And(_compound):
     def __invert__(self):
         return Or(*tuple([~op for op in self.operands]))
 
-    def sqlCondition(self,driver):
-        return join(' AND ',[op.sqlCondition(driver) for op in self.operands])
+    def sqlCondition(self,ctx):
+        return join(' AND ',[op.sqlCondition(ctx) for op in self.operands])
 
 class Or(_compound):
     def _getPromotable(self,op):
@@ -718,9 +718,9 @@ class Or(_compound):
     def __invert__(self):
         return And(*tuple([~op for op in self.operands]))
 
-    def sqlCondition(self,driver):
+    def sqlCondition(self,ctx):
         return fmt( '(%s)',
-            [join(' OR ',[op.sqlCondition(driver) for op in self.operands])]
+            [join(' OR ',[op.sqlCondition(ctx) for op in self.operands])]
         )
 
 class Not(_compound):
@@ -731,8 +731,8 @@ class Not(_compound):
     def __invert__(self):
         return self.operands[0]
 
-    def sqlCondition(self,driver):
-        return fmt('NOT (%s)', [self.operands[0].sqlCondition(driver)])
+    def sqlCondition(self,ctx):
+        return fmt('NOT (%s)', [self.operands[0].sqlCondition(ctx)])
 
 
 
@@ -759,9 +759,9 @@ class Cmp(_expr, HashAndCompare):
     def __repr__(self):
         return 'Cmp%r' % ((self.arg1,self.op,self.arg2),)
 
-    def sqlCondition(self,driver):
+    def sqlCondition(self,ctx):
         return fmt('%s%s%s',
-            [driver.sqlize(self.arg1), ps(self.op), driver.sqlize(self.arg2)]
+            [ctx.sqlize(self.arg1), ps(self.op), ctx.sqlize(self.arg2)]
         )
 
 
