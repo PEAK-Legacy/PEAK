@@ -516,6 +516,7 @@ class ActionProcessor(ModelProcessor):
 
     # our class is the class of whatever our instance is, at any point in time
     targetClass = binding.Obtain('targetInstance/__class__', noCache=True)
+    fixtures = binding.Make( config.Namespace('peak.ddt.models') )
 
     def processRows(self,rows):
         """Just process rows; no column headings are required or wanted."""
@@ -528,7 +529,6 @@ class ActionProcessor(ModelProcessor):
             self.getCommand(row.cells[0].text)(row.cells[1:])
         except:
             row.cells[0].exception()
-
 
 
     def getCommand(self,text):
@@ -546,7 +546,7 @@ class ActionProcessor(ModelProcessor):
     def mapCell(self,mapperCell,mappedCell,mapMethod):
 
         """Convenience method for two-argument mapping commands"""
-        
+
         try:
             mapMethod = getattr(self.getMapper(mapperCell.text),mapMethod)
         except:
@@ -575,12 +575,11 @@ class ActionProcessor(ModelProcessor):
     # Basic commands
 
     def start(self,cells):
-        """Create an instance of the specified type and use it from here on
+        """Obtain an instance of the specified type and use it from here on
         """
         try:
             name = titleAsPropertyName(cells[0].text)
-            # factory = XXX
-            self.targetInstance = factory()
+            self.targetInstance = self.fixtures[name]
             # XXX if processor, pass extra cells?
         except:
             cells[0].exception()
@@ -602,6 +601,7 @@ class ActionProcessor(ModelProcessor):
         """Look up a field name, and check if value matches
         """
         self.mapCell(cells[0],cells[1],'get')
+
 
 
 

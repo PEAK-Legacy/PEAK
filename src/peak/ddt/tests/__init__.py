@@ -203,6 +203,47 @@ class BasicTests(TestCase):
 
 
 
+    def testRunner(self):
+
+        # Test a file runner, action processor, and model processor
+
+        from peak.ddt.runners import HTMLRunner
+
+        runner = HTMLRunner(
+            testRoot(),
+            argv=['ddt','pkgfile:peak.ddt.tests/Action_Test.html'],
+            stdout = StringIO(),
+            stderr = StringIO(),
+        )
+        runner.run()
+
+        self.assertEqual(
+            runner.stderr.getvalue().strip(),
+            "21 right, 1 wrong, 0 ignored, 1 exceptions"
+        )
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     def testOutput(self):
 
         s = StringIO()

@@ -249,7 +249,7 @@ class Cell(Item):
 
         If the value doesn't match, the cell will be flagged as "wrong",
         and the actual value is added to the cell."""
-
+        if dataType is model.String: value = str(value) # hack
         if dataType.mdl_normalize(value)<>dataType.mdl_fromString(self.text):
             self.wrong(dataType.mdl_toString(value))
         else:

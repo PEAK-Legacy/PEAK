@@ -22,9 +22,9 @@ class ArithmeticModel(model.Element):
 
     def divide(self):
         return self.x/float(self.y)
-        
 
-
+    def clear(self):
+        self.x = self.y = 0
 
 
 
@@ -78,5 +78,5 @@ class ArithmeticDemo(ddt.MethodProcessor):
         cell.assertEqual(self._x/float(self._y), model.Float)
 
     floating = divide
-    
+
 
