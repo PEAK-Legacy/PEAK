@@ -121,13 +121,6 @@ class DeferredAsEventSource(sources.Value,protocols.StickyAdapter):
 
 
 
-
-
-
-
-
-
-
 class Scheduler(binding.Component,events.Scheduler):
 
     """'events.IScheduler' that uses a Twisted reactor for timing"""
@@ -189,7 +182,7 @@ class EventLoop(io_events.EventLoop):
             lambda s,e: [exit.append(e), self.reactor.crash()]
         )
 
-        self.reactor.run()
+        self.reactor.run(False)
 
         if exit:
             return exit.pop()
@@ -239,16 +232,16 @@ class TwistedReadEvent(events.Broadcaster):
         self._register()
 
     def fileno(self):
-        return fd
+        return self.fd
 
     def doRead(self):
         self._fire(True)
 
+    def connectionLost(self,*args):
+        pass    # XXX
 
-
-
-
-
+    def logPrefix(self):
+        return '(peak.events)'
 
 
 class TwistedWriteEvent(TwistedReadEvent):
