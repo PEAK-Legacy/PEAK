@@ -337,7 +337,7 @@ that keeps track of its passengers.
 }>>> from peak.api import binding
 >>> class Car:
         passengers = binding.New(dict, 'passengers')
-	
+
 >>> aCar=Car()
 >>> print aCar.passengers
 {}
@@ -370,7 +370,7 @@ method to initialize the structure, like so:
 \begin{verbatim%
 }class Car:
     def __init__(self):
-	self.passengers = {}
+        self.passengers = {}
 \end{verbatim}
 
 This works alright for simple situations, but gets more complex when you use
@@ -429,7 +429,7 @@ to do this:
 \begin{verbatim%
 }>>> class Car(binding.Base):
         passengers = binding.New(dict)
-	
+
 >>> aCar=Car()
 >>> print aCar.passengers
 {}
@@ -452,7 +452,7 @@ What would happen if we did this \emph{without} \class{binding.Base}?
 \begin{verbatim%
 }>>> class Car:
         passengers = binding.New(dict)
-	
+
 >>> aCar=Car()
 >>> print aCar.passengers
 Traceback (most recent call last):
@@ -751,14 +751,14 @@ important.  Let's look at an example:
 
 \begin{verbatim%
 }>>> class Wheel(binding.Base):
-	def spin(self):
-		print "I'm moving at %d mph" % self.getParentComponent().speed
+        def spin(self):
+            print "I'm moving at %d mph" % self.getParentComponent().speed
 
 >>> class Car(binding.Base):
-	wheel = binding.New(Wheel)
-	speed = 50
+        wheel = binding.New(Wheel)
+        speed = 50
 
-	
+
 >>> c = Car()
 >>> c.wheel.spin()
 I'm moving at 50 mph
@@ -779,14 +779,14 @@ example:
 
 \begin{verbatim%
 }>>> class Wheel(binding.Base):
-	def spin(self):
-		print "I'm moving at %d mph" % self.speed
-	speed = binding.bindTo('../speed')
-	
+        def spin(self):
+            print "I'm moving at %d mph" % self.speed
+        speed = binding.bindTo('../speed')
+
 >>> class Car(binding.Base):
-	wheel = binding.New(Wheel)
-	speed = 50
-	
+        wheel = binding.New(Wheel)
+        speed = 50
+
 >>> c = Car()
 >>> c.wheel.spin()
 I'm moving at 50 mph
@@ -795,7 +795,7 @@ I'm moving at 50 mph
 By now, perhaps the wheels in your brain will be spinning as well, thinking
 about the possibilities here.
 
-
+\newpage
 
 
 
@@ -832,7 +832,7 @@ continuing the previous example above:
 <__main__.Car object at 0x00F7BCB0>
 
 >>> class Transport(Car):
-	cargo = binding.New(Car)
+        cargo = binding.New(Car)
 
 >>> t=Transport()
 >>> print t
@@ -847,6 +847,9 @@ wheel
 >>> print binding.getComponentPath(t.cargo.wheel)
 /cargo/wheel
 
+>>> print binding.getComponentPath(t.wheel)
+/wheel
+
 >>> print t.cargo
 <__main__.Car object at 0x00FABB70>
 
@@ -856,8 +859,6 @@ wheel
 >>> binding.lookupComponent('/cargo/wheel',t)
 <__main__.Wheel object at 0x00FAB900>
 \end{verbatim}
-
-
 
 As you can see, \function{binding.getParentComponent}, \function{binding.%
 getRootComponent}, \function{binding.lookupComponent}, \function{binding.%
