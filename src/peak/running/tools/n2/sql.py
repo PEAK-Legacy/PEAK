@@ -7,7 +7,7 @@ from commands import *
 from interfaces import *
 
 from tempfile import mktemp
-import sys, os
+import sys, os, time
 
 
 def bufname(s):
@@ -155,10 +155,14 @@ class SQLInteractor(binding.Component):
     def showResults(self, c, shower, opts, stdout):
         shower = self.showers.get(shower, 'showHoriz')
         shower = getattr(self, shower)
-        shower(c, opts, stdout)
+        nr = shower(c, opts, stdout)
+        if not opts.has_key('-f'):
+            print >>stdout, "(%d rows)" % nr
         while c.nextset():
             print >>stdout
-            show(r, opts, stdout)
+            nr = shower(r, opts, stdout)
+            if not opts.has_key('-f'):
+                print >>stdout, "(%d rows)" % nr
 
 
 
@@ -175,6 +179,7 @@ class SQLInteractor(binding.Component):
         out = stdout.write
         t, d, l = [], [], []
         first = 1
+        nr = 0
         for r in c._cursor.description:
             w = r[2]
             if w <= 0: w = 20 # XXX
@@ -186,6 +191,7 @@ class SQLInteractor(binding.Component):
             out(' '.join(d)); out('\n')
             
         for r in c:
+            nr += 1
             i = 0
             o = []
             for v in r:
@@ -194,37 +200,52 @@ class SQLInteractor(binding.Component):
 
             out(' '.join(o))
             out('\n')
+        
+        return nr
 
 
 
     def showVert(self, c, opts, stdout):
         h = [x[0] for x in c._cursor.description]
         w = max([len(x) for x in h])
+        nr = 0
         
         for r in c:
             i = 0
+            nr += 1
             for v in r:
                 print >>stdout, "%s %s" % (h[i].rjust(w), self.toStr(v))
                 i += 1
             print >>stdout
+            
+        return nr
 
 
             
     def showPlain(self, c, opts, stdout):
         d = opts.get('-d', '|')
+        nr = 0
         
         if not '-h' in opts:
             print >>stdout, d.join([x[0] for x in c._cursor.description])
         for r in c:
+            nr += 1
             print >>stdout, d.join([self.toStr(v) for v in r])
+
+        return nr
             
 
 
     def showPython(self, c, opts, stdout):
+        nr = 0
+        
         if not '-h' in opts:
             print >>stdout, c._cursor.description
         for r in c:
+            nr += 1
             print >>stdout, r
+
+        return nr
 
 
             
@@ -240,14 +261,15 @@ class SQLInteractor(binding.Component):
 
 
     class cmd_go(ShellCommand):
-        """go [-d delim] [-m style] [-h] -- submit current input
+        """go [-d delim] [-m style] [-h] [-f] -- submit current input
 -d delim\tuse specified delimiter
 -m style\tuse specified format (one of: horiz, vert, plain, python)
--h\t\tsuppress header"""
+-h\t\tsuppress header
+-f\t\tsuppress footer"""
 
         noBackslash = True
         
-        args = ('d:f:h', 0, 0)
+        args = ('d:m:hf', 0, 0)
         
         def cmd(self, cmd, opts, stdout, **kw):
             i = self.interactor.getBuf()
@@ -267,7 +289,7 @@ class SQLInteractor(binding.Component):
                 self.interactor.resetBuf()
                 return
 
-            shower = opts.get('-f', 'horiz')
+            shower = opts.get('-m', 'horiz')
             self.interactor.showResults(c, shower, opts, stdout)
 
             self.interactor.setBuf(i, name='!!')
@@ -586,6 +608,39 @@ default for src is '!.', the current input buffer"""
             self.interactor.resetBuf()
 
     cmd_reconnect = binding.New(cmd_reconnect)
+
+
+
+    class cmd_echo(ShellCommand):
+        """\\echo secs -- echo for 'secs' seconds"""
+
+        args = ('-n', 0, sys.maxint)
+        
+        def cmd(self, cmd, opts, args, stdout, **kw):
+            stdout.write(' '.join(args))
+            if not opts.has_key('-n'):
+                stdout.write('\n')
+            stdout.flush()
+
+    cmd_echo = binding.New(cmd_echo)
+
+
+
+    class cmd_sleep(ShellCommand):
+        """\\sleep secs -- sleep for 'secs' seconds"""
+
+        args = ('', 1, 1)
+        
+        def cmd(self, cmd, args, stderr, **kw):
+            try:
+                s = float(args[0])
+            except:
+                print >>stderr, "%s: invalid number '%s'" % (cmd, args[0])
+                return
+                
+            time.sleep(s)
+
+    cmd_sleep = binding.New(cmd_sleep)
 
 
 
