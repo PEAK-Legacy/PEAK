@@ -1,5 +1,5 @@
-from structural import *
-from enumerations import *
+from structural import PrimitiveType, structField, Immutable, Classifier
+from enumerations import Enumeration, enum
 from peak.api import binding
 
 __all__ = [

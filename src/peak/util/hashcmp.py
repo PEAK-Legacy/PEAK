@@ -6,14 +6,14 @@ class HashAndCompare(object):
 
     """Mixin that allows 'hash' and 'cmp' operations on a delegate value
 
-        'model.Immutable', 'model.DataType', and 'model.Enumeration' all use
+        'model.Immutable', 'model.Struct', and 'model.Enumeration' all use
         this mixin so that their instances can be hashed and compared according
         to a delegate value.  For enumerations, it's the "value" of the
         enumeration, and for the others it's a tuple of attribute values.
 
         You only need to use this mixin if you *aren't* using one of the
         immutable element base classes such as 'model.Immutable' or
-        'model.DataType', but you want to be able to have your instances
+        'model.Struct', but you want to be able to have your instances
         implement '__hash__', '__cmp__', and '__nonzero__' based on a delegate
         value in the same way.
 

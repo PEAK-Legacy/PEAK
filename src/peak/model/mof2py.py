@@ -532,7 +532,7 @@ _config              = _lazy('peak.config.api')
 
     def writeStruct(self,dtype,memberInfo):
 
-        self.beginObject(dtype,'_model.DataType')
+        self.beginObject(dtype,'_model.StructType')
 
         posn = 0
         for mname, mtype in memberInfo:

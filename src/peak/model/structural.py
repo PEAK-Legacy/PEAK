@@ -18,7 +18,7 @@ __all__ = [
     'Immutable', 'Package', 'Model',
     'StructuralFeature', 'Field', 'Collection', 'Reference', 'Sequence',
     'Classifier','PrimitiveType','DataType', 'DerivedFeature',
-    'DerivedAssociation', 'structField', 'Attribute'
+    'DerivedAssociation', 'structField', 'Attribute', 'Struct'
 ]
 
 
@@ -941,13 +941,13 @@ class PrimitiveType(Classifier):
 
 
 
-class DataType(Immutable):
+class Struct(Immutable):
 
     """An immutable data structure type"""
 
     def mdl_typeCode(klass, d, a):
 
-        """TypeCode for DataTypes is a 'struct' w/appropriate fields"""
+        """TypeCode for Struct classes is a 'tk_struct' w/appropriate fields"""
 
         from peak.model.datatypes import TCKind, TypeCode
 
@@ -962,3 +962,5 @@ class DataType(Immutable):
 
     mdl_typeCode = binding.classAttr( binding.Once(mdl_typeCode) )
 
+
+DataType = Struct   # XXX backward compatibility...  deprecated

@@ -63,7 +63,7 @@ class MailModel(model.Model):
             return value
         fromString = classmethod(fromString)
 
-    class Address(model.DataType):
+    class Address(model.Struct):
     
         class name(model.structField):
             referencedType = 'String'

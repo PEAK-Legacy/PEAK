@@ -39,7 +39,7 @@ _writers = PropertyName('peak.metamodels.mof1.3.writers.*')
 
 
 
-class MultiplicityType(model.DataType):
+class MultiplicityType(model.Struct):
 
     class lower(model.structField):
         sortPosn = 1
@@ -106,7 +106,7 @@ class VerifyResultKind(model.Enumeration):
     published = model.enum()
 
 
-class ViolationType(model.DataType):
+class ViolationType(model.Struct):
 
     class errorKind(model.structField):
         referencedType = model.String
