@@ -5,7 +5,9 @@ from peak.util.imports import whenImported
 
 __all__ = [
     'IClientSocketAddr', 'IClientSocket',
-    'IListenSocketAddr', 'IListeningSocket'
+    'IListenSocketAddr', 'IListeningSocket',
+    'IConnectionFactory', 'IBaseConnection', 'IRWConnection',
+    'IReadConnection', 'IWriteConnection', 
 ]
 
 
@@ -37,7 +39,46 @@ whenImported(
 
 
 
+class IConnectionFactory(Interface):
+    """Thing that can create connections or listen for them"""
 
+    def connect():
+        """Yield outgoing 'IRWConnection' objects (XXX timeouts,retries)"""
+
+    def listen(queuesize=5):
+        """Yield incoming 'IRWConnection' objects"""
+
+
+class IBaseConnection(Interface):
+    """Closable pipe/socket connection
+
+    XXX Introspection needed?  getpeername?  isOpen?
+    """
+    
+    def close():
+        """Close the connection"""
+
+
+class IReadConnection(IBaseConnection):
+    """Readable pipe/socket"""
+
+    def read(nbytes):
+        """Yield 'nbytes' bytes from connection, or less if EOF"""
+
+    def readline(maxlen=None, delimiter='\n'):
+        """Yield one line from connection of up to 'maxlen' bytes"""
+
+
+class IWriteConnection(IBaseConnection):
+
+    """Writable pipe/socket"""
+
+    def write(data):
+        """Yield once 'data' has been buffered or written to the connection"""
+
+
+class IRWConnection(IReadConnection,IWriteConnection):
+    """Two-way connection"""
 
 class IClientSocketAddr(Interface):
     """An address that can specify a client socket connection"""
