@@ -121,13 +121,13 @@ class XMIFactory:
 
 
 
-XMIMapMaker = RegistryBuilder(
-                keyFunc = lambda attName,attVal: getattr(attVal,'_XMINames',()),
-                valFunc = lambda oldEnt,newItem:
-                    type(newItem)==type('') and newItem or
-                    newItem.__name__.split('.')[-1]
-              )
+class XMIMapMaker(RegistryBuilder):
 
+    def registerItem(self,reg,attName,attVal):
+        for k in getattr(attVal,'_XMINames',()):
+            reg[k] = attName
+
+XMIMapMaker = XMIMapMaker()
 
 
 
