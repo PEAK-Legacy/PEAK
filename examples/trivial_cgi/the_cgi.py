@@ -22,4 +22,18 @@ class DemoCGI(binding.Component):
 
         for k,v in env.items():
             print >>output, '%-20s = %r' % (k,v)
-            
+
+        print >>output
+
+        print >>output, "Modules Loaded"
+        print >>output, "--------------"
+
+        import sys
+        names = dict(
+            [(mod.__name__,None)
+                for mod in sys.modules.values() if mod is not None
+            ]
+        )
+
+        for n in names:
+            print >>output, n

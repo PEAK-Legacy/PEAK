@@ -1,2 +1,2 @@
-#!invoke peak CGI import:trivial_cgi.DemoCGI
+#!invoke peak CGI import:the_cgi.DemoCGI
 

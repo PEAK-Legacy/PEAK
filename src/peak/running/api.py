@@ -3,3 +3,8 @@
 Please see the individual modules for useful classes, etc."""
 
 from interfaces import *
+from peak.util.imports import lazyModule
+
+commands = lazyModule('peak.running.commands')
+
+del lazyModule

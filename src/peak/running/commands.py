@@ -741,13 +741,13 @@ class CGICommand(EventDriven):
         if self.isFastCGI():
 
             self.reactor.addReader(
-                self.newAcceptor(command=self.command)
+                self.newAcceptor(self, command=self.cgiCommand)
             )
 
         else:
             # Setup CGI
             self.reactor.callLater(
-                0, self.command.runCGI,
+                0, self.cgiCommand.runCGI,
                 self.stdin, self.stdout, self.stderr, self.environ, self.argv
             )
 
