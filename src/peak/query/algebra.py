@@ -68,13 +68,13 @@ class PhysicalDB(binding.Component):
     tables = binding.Make(list)
 
     tableMap = binding.Make(
-        lambda self: dict(
-            [(name,Table(name,cols,self)) for (name,cols) in self.tables]
-        )
+        lambda self: dict(self.tables)
     )
 
     def table(self,name):
-        return self.tableMap[name]
+        return Table(name,self.tableMap[name],self)
+
+
 
 
 
@@ -91,7 +91,7 @@ class Table:
 
     def __init__(self,name,columns,db=None):
         self.name = name
-        self.columns = kjGraph(zip(columns,range(len(columns))))
+        self.columns = kjGraph([(c,(c,self)) for c in columns])
         self.db = db
 
     def __call__(self,where=None,join=(),outer=(),rename=(),keep=None):

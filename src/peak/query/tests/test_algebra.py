@@ -271,11 +271,7 @@ class SimplificationAndEquality(TestCase):
             Branch(join=[Employee],where=x), Employee(join=[Branch],where=x)
         )
 
-        for tbl in 'Branch','Employee','Speaks','Drives','Car','LangUse':
-            tbl = db.table(tbl)
-            self.failUnless(tbl.getDB() is db)
-            self.failUnless(tbl(keep=tbl.attributes().keys()[:-1]).getDB() is db)
-
+        # Single-db join should have the same DB
         self.failUnless(Branch(join=[Employee],where=x).getDB() is db)
 
         # Mixed-db joins should have a DB of None (for now)
@@ -283,6 +279,51 @@ class SimplificationAndEquality(TestCase):
 
 
 
+
+
+
+
+
+
+        for tbl in 'Branch','Employee','Speaks','Drives','Car','LangUse':
+
+            # table objects must be unique
+            self.failUnless(db.table(tbl) is not db.table(tbl))
+
+            # column objects must be unique
+            self.assertNotEqual(
+                db.table(tbl).attributes(), db.table(tbl).attributes()
+            )
+
+            tbl = db.table(tbl)
+
+            # table's db should be db
+            self.failUnless(tbl.getDB() is db)
+
+            # a projection of table should still have the same DB
+            self.failUnless(
+                tbl(keep=tbl.attributes().keys()[:-1]).getDB() is db
+            )
+
+
+    def testReferences(self):
+        x,y,z = self.condX, self.condY, self.condZ
+        A,B,C,D = self.rvA, self.rvB, self.rvC, self.rvD
+
+        self.assertEqual(A.getReferencedRVs(),[A])
+        tmp = A(outer=[B,C,D],where=x)
+        self.assertEqual(kjSet(tmp.getReferencedRVs()),kjSet([A,B,C,D,tmp]))
+
+
+    def testRVReuseNotAllowed(self):
+        # The same RV may not appear more than once in a single expression
+
+        x,y,z = self.condX, self.condY, self.condZ
+        A,B,C,D = self.rvA, self.rvB, self.rvC, self.rvD
+
+        self.assertRaises(ValueError, B, join=[A,A])
+        self.assertRaises(ValueError, B, outer=[A,A])
+        self.assertRaises(ValueError, B(join=[C]), join=[C(join=[D])])
 
 
     def testProjection(self):
@@ -356,47 +397,6 @@ class SimplificationAndEquality(TestCase):
                 kjSet([n.upper() for n in abcd.attributes().keys()]),
                 kjSet(ABCD.attributes())
             )
-
-
-
-
-
-
-
-
-
-
-
-    def testReferences(self):
-        x,y,z = self.condX, self.condY, self.condZ
-        A,B,C,D = self.rvA, self.rvB, self.rvC, self.rvD
-
-        self.assertEqual(A.getReferencedRVs(),[A])
-        tmp = A(outer=[B,C,D],where=x)
-        self.assertEqual(kjSet(tmp.getReferencedRVs()),kjSet([A,B,C,D,tmp]))
-
-
-    def testRVReuseNotAllowed(self):
-
-        # The same RV may not appear more than once in a single expression
-
-        x,y,z = self.condX, self.condY, self.condZ
-        A,B,C,D = self.rvA, self.rvB, self.rvC, self.rvD
-
-        self.assertRaises(ValueError, B, join=[A,A])
-        self.assertRaises(ValueError, B, outer=[A,A])
-        self.assertRaises(ValueError, B(join=[C]), join=[C(join=[D])])
-
-
-
-
-
-
-
-
-
-
-
 
 
 
