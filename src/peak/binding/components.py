@@ -760,7 +760,8 @@ class StructuralFeature(Base):
 
     def set(self,val):
         feature = self.__class__.__feature__
-        self.__dict__[feature.__name__]=[val]
+        self.__dict__[feature.__name__]=val
+        feature._changed(self)
 
     set.namingConvention = 'set%(initCap)s'
 
@@ -768,12 +769,16 @@ class StructuralFeature(Base):
     def delete(self):
         feature = self.__class__.__feature__
         del self.__dict__[feature.__name__]
+        feature._changed(self)
 
     delete.namingConvention = 'delete%(initCap)s'
     delete.verb = 'delattr'    
 
+    def _changed(feature, element):
+        pass
 
 class Field(StructuralFeature):
+
     __class_implements__ = IValue    
     upperBound = 1
 
@@ -781,58 +786,77 @@ class Collection(StructuralFeature):
 
     __class_implements__ = ICollection
 
-    def get(self):
+    def _getList(feature, element):
+        return element.__dict__.setdefault(feature.__name__, [])
+        
+    def get(self, asSeq=None):
         feature = self.__class__.__feature__
-        return self.__dict__.get(feature.__name__, [])
+        return feature._getList(self)
 
     get.namingConvention = 'get%(initCap)s'
 
+    def set(self,val):
+        feature = self.__class__.__feature__
+        feature.__delete__(self)
+        self.__dict__[feature.__name__]=val
+        feature._changed(self)
+
+    set.namingConvention = 'set%(initCap)s'
 
     def add(self,item):
-
-        """Add the item to the collection/relationship"""
-        
+        """Add the item to the collection/relationship"""      
         feature = self.__class__.__feature__
         ub = feature.upperBound
-        value = feature.__get__(self)
+        value = feature._getList(self)
 
         if not ub or len(value)<ub:
             feature._notifyLink(self,item)
             feature._link(self,item)
+            feature._changed(self)
         else:
             raise ValueError("Too many items")
 
     add.namingConvention = 'add%(initCap)s'
-
 
     def remove(self,item):
         """Remove the item from the collection/relationship, if present"""
         feature = self.__class__.__feature__
         feature._unlink(self,item)
         feature._notifyUnlink(self,item)
+        feature._changed(self)
 
     remove.namingConvention = 'remove%(initCap)s'
-
-
-
-
 
 
     def replace(self,oldItem,newItem):
 
         feature = self.__class__.__feature__
 
-        d = feature.__get__(self)
+        d = feature._getList(self)
         p = d.index(oldItem)
 
         if p!=-1:
             d[p]=newItem
             feature._notifyUnlink(self,oldItem)
             feature._notifyLink(self,newItem)
+            feature._changed(self)
         else:
             raise ValueError(oldItem,"not found")
 
     replace.namingConvention = 'replace%(initCap)s'
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
     def delete(self):
@@ -841,7 +865,7 @@ class Collection(StructuralFeature):
         feature = self.__class__.__feature__
         referencedEnd = feature.referencedEnd
 
-        d = feature.__get__(self)
+        d = feature._getList(self)
 
         if referencedEnd:
             
@@ -849,55 +873,42 @@ class Collection(StructuralFeature):
                 otherEnd = getattr(item.__class__,referencedEnd)
                 otherEnd._unlink(item,self)
 
-        super(Collection,feature).delete(self)
+        del self.__dict__[feature.__name__]
+        feature._changed(self)
+
+    delete.namingConvention = 'delete%(initCap)s'
+    delete.verb = 'delattr'    
 
 
+    def _notifyLink(feature, element, item):
 
-
-
-
-
-
-
-    def _notifyLink(self,element,item):
-
-        referencedEnd = self.referencedEnd
+        referencedEnd = feature.referencedEnd
 
         if referencedEnd:
             otherEnd = getattr(item.__class__,referencedEnd)
             otherEnd._link(item,element)
 
 
-    def _notifyUnlink(self,element,item):
+    def _notifyUnlink(feature, element, item):
 
-        referencedEnd = self.referencedEnd
+        referencedEnd = feature.referencedEnd
 
         if referencedEnd:
             otherEnd = getattr(item.__class__,referencedEnd)
             otherEnd._unlink(item,element)
 
 
-    def _link(self,element,item):
-        d=self.__get__(element)
+
+
+    def _link(feature,element,item):
+        d=feature._getList(element)
         d.append(item)
-        self.__set__(element,d)
+        feature._changed(element)
 
-    def _unlink(self,element,item):
-        d=self.__get__(element)
+    def _unlink(feature,element,item):
+        d=feature._getList(element)
         d.remove(item)
-        self.__set__(element,d)
-
-
-
-
-
-
-
-
-
-
-
-
+        feature._changed(element)
 
 
 class Reference(Collection):
@@ -906,13 +917,28 @@ class Reference(Collection):
 
     upperBound = 1
 
-    def __call__(self):
-        """Return the value of the feature"""
-        return self._getData(None)
+    def get(self):
+        feature = self.__class__.__feature__
+        vals = feature._getList(self)
+        if vals: return vals[0]
 
-    def _set(self,value):
-        self.clear()
-        self._setData([value])
+    get.namingConvention = 'get%(initCap)s'
+
+
+    def set(self,val):
+        feature = self.__class__.__feature__
+        feature.__delete__(self)
+        feature.getMethod(self,'add')(val)
+
+    set.namingConvention = 'set%(initCap)s'
+
+
+
+
+
+
+
+
 
 
 class Sequence(Collection):
@@ -923,22 +949,37 @@ class Sequence(Collection):
 
     def insertBefore(self,oldItem,newItem):
 
-        d = self._getData([])
+        feature = self.__class__.__feature__
+        d = feature._getList(self)
         
-        ub = self.upperBound
+        ub = feature.upperBound
         if ub and len(d)>=ub:
-            raise ValueError    # XXX
+            raise ValueError("Too many items")
 
         i = -1
-        if d: i = d.index(element)
+        if d: i = d.index(oldItem)
 
         if i!=-1:
             d.insert(i,newItem)
-            self._setData(d)
-            self._notifyLink(newItem)
+            feature._changed(self)
+            feature._notifyLink(self,newItem)
         else:
-            raise ValueError    # XXX
+            raise ValueError(oldItem,"not found")
     
+    insertBefore.namingConvention = 'insert%(initCap)sBefore'
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 class Classifier(StaticBinding, Base):

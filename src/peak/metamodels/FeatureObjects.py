@@ -259,6 +259,31 @@ class Reference(Collection):
         self.clear()
         self._setData([value])
 
+    set = Collection.set.im_func
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 class Sequence(Collection):
 
@@ -276,7 +301,7 @@ class Sequence(Collection):
             raise ValueError    # XXX
 
         i = -1
-        if d: i = d.index(element)
+        if d: i = d.index(oldItem)
 
         if i!=-1:
             d.insert(i,newItem)

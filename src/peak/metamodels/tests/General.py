@@ -2,12 +2,13 @@
 
 from unittest import TestCase, makeSuite, TestSuite
 from TW.SEF.Queries import ANY, Equals
-from TW.UML.Model import UMLClass
-
+from TW.API import *
 
 class UMLTest(TestCase):
 
     def setUp(self):
+        global UMLClass
+        from TW.UML.Model import UMLClass
         self.m = m = UMLClass()
         self.pkg = m.newElement('Package')
 
@@ -34,7 +35,6 @@ class UMLTest(TestCase):
         oe.removeItem(oe()[0])
         assert oe.isEmpty()
         assert len(oe())==0
-
 
 
 
@@ -121,7 +121,7 @@ class XMITests(TestCase):
         sc = enum.Get('superclasses*').Get('name'); sc.sort()
         assert sc==['AttributeKind','PackageElement'], sc
 
-from TW.SEF.Basic import FeatureMC, Element
+from TW.SEF.Basic import FeatureMC
 
 class featureBase(object):
 
@@ -169,7 +169,7 @@ class featureBase(object):
     doubled.namingConvention = '%(name)sDoubled'
 
 
-class X(Element):
+class X(SEF.Element):
 
     class zebra(featureBase):
         singular = 0
@@ -203,8 +203,114 @@ class checkExport(TestCase):
 
 
 
+class anElement1(SEF.Element):
+
+    class field1(SEF.Field):
+        defaultValue = 1
+
+    class simpleSeq(SEF.Sequence):
+        pass
+
+    class fwdRef(SEF.Reference):
+        referencedEnd = 'backColl'
+
+    class simpleRef(SEF.Reference):
+        pass
+
+    class fwdColl(SEF.Collection):
+        referencedEnd = 'backRef'
+        upperBound = 3
+
+
+class anElement2(SEF.Element):
+
+    class backColl(SEF.Collection):
+        referencedEnd = 'fwdRef'
+
+    class backRef(SEF.Reference):
+        referencedEnd = 'fwdColl'
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class exerciseFeatures(TestCase):
+
+    def setUp(self):
+        self.e = anElement1()
+
+
+    def checkField(self):
+        self.e.setField1(5)
+        assert self.e.field1==5
+        del self.e.field1
+        assert self.e.field1==1
+
+
+    def checkSimpleSeq(self):
+        e = self.e
+
+        map(e.addSimpleSeq, range(5))
+        assert e.simpleSeq == [0,1,2,3,4]
+
+        e.insertSimpleSeqBefore(1,-1)
+        assert e.simpleSeq == [0,-1,1,2,3,4]
+
+        e.removeSimpleSeq(-1)
+        assert e.simpleSeq == [0,1,2,3,4]
+
+        e.replaceSimpleSeq(0,-1)
+        assert e.simpleSeq == [-1,1,2,3,4]
+
+
+    def checkFwdRef(self):
+        e1=self.e
+        e2=anElement2()
+        e1.fwdRef = e2
+        assert e2.backColl[0] is e1
+        assert len(e2.backColl)==1
+
+
+    def checkSimpleRef(self):
+        self.e.simpleRef = 99
+        assert self.e.simpleRef == 99
+
+    def checkFwdColl(self):
+    
+        e = self.e
+        e1 = anElement2(); e.addFwdColl(e1)
+        e2 = anElement2(); e.addFwdColl(e2)
+        e3 = anElement2(); e.addFwdColl(e3)
+
+        assert e.fwdColl == [e1,e2,e3]
+
+        for x,y in zip(e.fwdColl, (e1,e2,e3)):
+            assert x is y
+
+        assert e1.backRef is e
+        assert e2.backRef is e
+        assert e3.backRef is e
+
+        try:
+            e.addFwdColl(anElement2())
+        except ValueError:
+            pass
+        else:
+            raise AssertionError,"Bounds check failed"
+
+
 TestClasses = (
-    checkExport, UMLTest, QueryTests, XMILoad, XMITests
+    checkExport, exerciseFeatures, UMLTest, QueryTests, XMILoad, XMITests
 )
 
 
