@@ -538,6 +538,17 @@ class MOFModel(model.Model, storage.xmi.Loader):
                 visitor(IMPORT_DEP,[self.importedNamespace])
             super(MOFModel.Import,self)._visitDependencies(visitor)
             
+        class visibility(model.Field):
+            referencedType = VisibilityKind
+            defaultValue = VisibilityKind.public_vis
+
+        class isClustered(model.Field):
+            referencedType = Boolean
+            defaultValue = False
+
+        class importedNamespace(model.Reference):
+            referencedType = 'Namespace'
+
 
     class Constraint(ModelElement):
 
@@ -545,6 +556,20 @@ class MOFModel(model.Model, storage.xmi.Loader):
             if self.constrainedElements:
                 visitor(CONSTRAINED_ELEMENTS_DEP,self.constrainedElements)
             super(MOFModel.Constraint,self)._visitDependencies(visitor)
+
+        class expression(model.Field)
+            referencedType = model.PrimitiveType    # XXX 'Any'
+
+        class language(model.Field):
+            referencedType = String
+
+        class evaluationPolicy(model.Field):
+            referencedType = EvaluationKind
+
+        class constrainedElements(model.Collection):
+            referencedType = 'ModelElement'
+
+
 
 
     class Tag(ModelElement):
@@ -558,17 +583,11 @@ class MOFModel(model.Model, storage.xmi.Loader):
             referencedType = String
 
         class values(model.Field):
-            referencedType = model.PrimitiveType  # XXX
+            referencedType = model.PrimitiveType  # XXX 'Any'
             upperBound = None
 
         class elements(model.Collection):
             referencedType = 'ModelElement'
-
-
-
-
-
-
 
 
 
@@ -577,11 +596,21 @@ class MOFModel(model.Model, storage.xmi.Loader):
         _allowedContents = binding.classAttr(
 
             binding.bindSequence(
-                'Package','Class','DataType','Exception','Constraint',
-                'Constant', 'Tag',
+                'Package','Class','DataType','Association','Exception',
+                'Constraint', 'Constant', 'Import', 'Tag',
             )
 
         )
+
+        def externalize(self, format):
+            raise FormatNotSupported(format)    # XXX should allow Python gen.
+
+        def internalize(klass, format, stream):
+            raise FormatNotSupported(format)    # XXX
+
+        internalize = classmethod(internalize)
+
+
 
 
     class Classifier(GeneralizableElement):
@@ -599,6 +628,18 @@ class MOFModel(model.Model, storage.xmi.Loader):
         _allowedContents = binding.classAttr(
             binding.bindSequence('AssociationEnd','Constraint','Tag')
         )
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -756,14 +797,55 @@ class MOFModel(model.Model, storage.xmi.Loader):
     class TypeAlias(TypedElement):
         pass
 
+
     class Constant(TypedElement):
-        pass
+
+        class value(model.Field):
+            referencedType = LiteralType
+
 
     class Parameter(TypedElement):
-        pass
+
+        class direction(model.Field):
+            referencedType = DirectionKind
+
+        class multiplicity(model.Field):
+            referencedType = MultiplicityType
+
+
+
+
+
+
 
     class AssociationEnd(TypedElement):
-        pass
+
+        class multiplicity(model.Field):
+            referencedType = MultiplicityType
+
+        class aggregation(model.Field):
+            referencedType = AggregationKind
+
+        class isNavigable(model.Field):
+            referencedType = Boolean
+            defaultValue = True
+
+        class isChangeable(model.Field):
+            referencedType = Boolean
+            defaultValue = True
+
+        def otherEnd(self):
+            # return first sibling that isn't me...
+            for e in self.container.contents:
+                if isinstance(e,MOFModel.AssociationEnd) and e is not self:
+                    return e
+                    
+
+
+
+
+
+
 
 
 
