@@ -176,7 +176,7 @@ class GenericSQL_URL(naming.ParsedURL):
     )?  
 
     (?P<server>[^/]+)
-    (/(?P<db>).+)?
+    (/(?P<db>.+))?
     """
 
     __fields__ = tuple('user passwd server db scheme body'.split())
@@ -190,6 +190,7 @@ class GenericSQL_URL(naming.ParsedURL):
         # XXX we should really url-unquote the fields first...
 
         return tuple.__new__(
+            klass,
             map(locals().get, klass.__fields__)
         )
 
@@ -200,7 +201,6 @@ class GenericSQL_URL(naming.ParsedURL):
             context.creationParent,
             address = self
         )
-
 
 
 drivers = {
