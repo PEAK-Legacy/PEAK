@@ -367,7 +367,7 @@ def executableAsFactory(executable):
 
 
 
-class Bootstrap(AbstractInterpreter):
+class Bootstrap(AbstractInterpreter, config.Application):
 
     """Invoke and use an arbitrary 'IExecutable' object
 
