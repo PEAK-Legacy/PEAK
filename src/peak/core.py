@@ -25,19 +25,19 @@
 
     'adapt()' -- the PEP 246 'adapt()' function.
 
-    'protocols' -- the PyProtocols 'protocols' module.
+    'protocols' -- the PyProtocols 'protocols' package.
+
+    'dispatch' -- the PyProtocols 'dispatch' package.
 """
 
 from __future__ import generators
-import protocols
+import protocols, dispatch
 from protocols import adapt
-
 __all__ = [
-    'adapt', 'protocols', 'NOT_GIVEN', 'NOT_FOUND', 'Items',    # Primitives
-    'PropertyName', 'binding', 'config', 'model', 'naming',     # Core
+    'adapt','protocols','dispatch','NOT_GIVEN','NOT_FOUND','Items',# Primitives
+    'PropertyName', 'binding', 'config', 'model', 'naming',        # Core
     'exceptions',
 ]
-
 
 from peak.util.imports import lazyModule, whenImported
 
