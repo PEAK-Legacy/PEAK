@@ -46,7 +46,7 @@ class ExtractQuoted(Rule):
     __slots__ = 'rule', 'unquote', 'terminators'
 
     def __init__(self, rule=MatchString(), unquote=True, terminators=''):
-        self.rule = adapt(rule,Rule)
+        self.rule = adapt(rule,IRule)
         self.unquote = unquote
         self.terminators = terminators
 

@@ -57,7 +57,7 @@
 """
 
 
-from peak.api import exceptions, NOT_GIVEN, adapt
+from peak.api import exceptions, NOT_GIVEN, adapt, protocols
 
 import re
 
@@ -65,7 +65,7 @@ __all__ = [
     'ParseError', 'MissingData', 'Rule', 'Sequence', 'Repeat', 'Optional',
     'Tuple', 'Named', 'ExtractString', 'Conversion', 'Alternatives',
     'Set', 'MatchString', 'parse', 'format', 'Input', 'StringInput',
-    'StringConstant', 'Epsilon',
+    'StringConstant', 'Epsilon', 'IRule', 'IInput',
 ]
 
 class ParseError(Exception):
@@ -80,39 +80,121 @@ from peak.binding.once import Make
 def uniquechars(s):
     return ''.join(dict([(c,c) for c in s]))
 
+class IRule(protocols.Interface):
+
+    """Production rule protocol for translation between data and strings"""
+
+    def parse(input, produce, startState):
+        """Parse 'input' at 'startState', call 'produce(result)', return state
+
+        Return a 'ParseError' instance if no match"""
+
+    def format(data, write):
+        """Pass formatted 'data' to 'write()'"""
+
+    def withTerminators(terminators, memo):
+        """Return a version of this syntax using the specified terminators"""
+
+    def getOpening(closing, memo):
+        """Possible opening characters for this match, based on 'closing'"""
+
+
+protocols.declareAdapter(
+    lambda o,p: StringConstant(o),
+    provides=[IRule],
+    forTypes=[str]
+)
+
+protocols.declareAdapter(
+    lambda o,p: Optional(*o),
+    provides=[IRule],
+    forTypes=[tuple]
+)
+
+
+
+
+
+
+
+
+
+
+
 class Rule(object):
 
     """Production rule protocol for translation between data and strings"""
 
+    protocols.advise(
+        instancesProvide=[IRule]
+    )
+
     __slots__ = ()
 
     def parse(self, input, produce, startState):
-        """Parse 'input' at 'startState', call 'produce(result)', return state
-
-        Return a 'ParseError' instance if no match"""
         raise NotImplementedError
 
     def format(self, data, write):
-        """Pass formatted 'data' to 'write()'"""
         raise NotImplementedError
 
     def withTerminators(self, terminators, memo):
-        """Return a version of this syntax using the specified terminators"""
         raise NotImplementedError
 
     def getOpening(self,closing,memo):
-        """Possible opening characters for this match, based on 'closing'"""
         raise NotImplementedError
 
-    def __adapt__(klass, ob):
-        # never inherit '__adapt__'!
-        if klass is Rule:
-            if isinstance(ob,str):
-                return StringConstant(ob)
-            elif isinstance(ob,tuple):
-                return Optional(*ob)
 
-    __adapt__ = classmethod(__adapt__)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class IInput(protocols.Interface):
+
+    def reset():
+        """"""
+
+    def parse(rule,produce,state):
+        """"""
+
+    def error(rule,state,*args):
+        """"""
+
+    def startState():
+        """"""
+
+    def finished(state):
+        """"""
+
+
+protocols.declareAdapter(
+    lambda o,p: StringInput(o),
+    provides=[IInput],
+    forTypes=[str]
+)
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -122,6 +204,10 @@ class Rule(object):
 
 
 class Input(object):
+
+    protocols.advise(
+        instancesProvide=[IInput]
+    )
 
     def __init__(self, *__args,**__kw):
         super(Input,self).__init__(*__args,**__kw)
@@ -155,11 +241,7 @@ class Input(object):
     def finished(self,state):
         raise NotImplementedError
 
-    def __adapt__(klass,ob):
-        if klass is Input and isinstance(ob,str):
-            return StringInput(ob)
 
-    __adapt__ = classmethod(__adapt__)
 
 
 class Epsilon(Rule):
@@ -246,7 +328,7 @@ class Sequence(Rule):
 
     def _computeRules(self, memo=None):
 
-        obs = [adapt(ob,Rule) for ob in self.initArgs]
+        obs = [adapt(ob,IRule) for ob in self.initArgs]
 
         obs.reverse()
 
@@ -344,7 +426,7 @@ class StringConstant(Rule, str):
 
         return ParseError(
             "Expected %r, found %r at position %d in %r" %
-            (self, inputStr[startState:state], startState, input)
+            (self, inputStr[startState:state], startState, inputStr)
         )
 
 
@@ -444,7 +526,7 @@ class Repeat(Sequence):
 
     def __init__(self,*__args,**_kw):
         super(Repeat,self).__init__(*__args,**_kw)
-        self.sep = adapt(self.separator, Rule)
+        self.sep = adapt(self.separator, IRule)
 
 
 
@@ -579,7 +661,7 @@ class ExtractString(Rule):
     __slots__ = 'rule', 'terminators'
 
     def __init__(self, rule=MatchString(), terminators=''):
-        self.rule = adapt(rule,Rule)
+        self.rule = adapt(rule,IRule)
         self.terminators = terminators
 
     def parse(self, input, produce, startState):
@@ -621,7 +703,7 @@ class Named(Rule):
 
     def __init__(self, name, rule=ExtractString()):
         self.name = name
-        self.rule = adapt(rule,Rule)
+        self.rule = adapt(rule,IRule)
 
     def withTerminators(self,terminators,memo):
         return self.__class__(
@@ -664,7 +746,7 @@ class Conversion(Rule):
 
     def __init__(self, rule=ExtractString(), **kw):
         self.__dict__.update(kw)
-        self.rule = adapt(rule, Rule)
+        self.rule = adapt(rule, IRule)
 
 
     def parse(self, input, produce, startState):
@@ -743,7 +825,7 @@ class Alternatives(Rule):
     __slots__ = 'alternatives'
 
     def __init__(self, *alternatives):
-        self.alternatives = [adapt(a,Rule) for a in alternatives]
+        self.alternatives = [adapt(a,IRule) for a in alternatives]
 
     def withTerminators(self,terminators,memo):
         return self.__class__(
@@ -872,7 +954,7 @@ class StringInput(Input, str):
 def parse(input, rule):
 
     out = []
-    input = adapt(input,Input)
+    input = adapt(input,IInput)
     state = input.parse(rule, out.append, input.startState())
 
     if isinstance(state,ParseError):

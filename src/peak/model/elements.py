@@ -17,13 +17,13 @@ from types import FunctionType
 from peak.persistence import Persistent
 from peak.storage.lazy_loader import LazyLoader
 from peak.binding.components import _Base
-from peak.util.imports import lazyModule
-
-fmtparse = lazyModule('peak.util.fmtparse')
+from peak.util import fmtparse
 
 __all__ = [
     'Type', 'PrimitiveType', 'Immutable', 'Struct', 'Element',
 ]
+
+
 
 
 
@@ -193,15 +193,15 @@ class TypeClass(Namespace.__class__):
         doc="""Ordered subset of 'mdl_features' that are composite"""
     )
 
+    mdl_subclassNames = binding.Make(
+        lambda: (), doc =
+        """Sequence of component keys to find an abstact class' subclasses"""
+    )
 
-
-
-
-
-
-
-
-
+protocols.declareAdapter(
+    lambda o,p: o.mdl_asSyntax(),
+    provides=[fmtparse.IRule], forTypes=[TypeClass]
+)
 
 class Type(Namespace):
 
@@ -210,7 +210,6 @@ class Type(Namespace):
     protocols.advise( classProvides = [ITypeInfo] )
 
     mdl_defaultValue = NOT_GIVEN
-
     mdl_isAbstract   = True   # 'model.Type' itself is abstract
     mdl_syntax       = None   # Syntax rule for parsing/formatting
 
@@ -236,6 +235,7 @@ class Type(Namespace):
 
     def mdl_normalize(klass, value):
         return value
+
 
 
 
@@ -288,6 +288,21 @@ class Type(Namespace):
     def mdl_toString(klass, value):
         return str(value)
 
+    def mdl_asSyntax(klass):
+        if klass.mdl_isAbstract and klass.mdl_subclassNames:
+            return fmtparse.Alternatives(
+                *tuple(
+                    [binding.lookupComponent(klass,n)
+                        for n in klass.mdl_subclassNames
+                    ]
+                )
+            )
+        elif klass.mdl_syntax is not None:
+            return fmtparse.Conversion(
+                fmtparse.Tuple(klass.mdl_syntax),
+                converter=lambda x: klass(**dict(x)),
+                formatter=klass.mdl_toString,
+            )
 
     def __str__(self):
         if self.__class__.mdl_syntax is not None:
@@ -306,21 +321,6 @@ class Type(Namespace):
             except AttributeError:
                 continue
         return d
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -435,8 +435,14 @@ class PrimitiveType(Type):
         # primitive types don't have fields...
         raise NotImplementedError
 
-
-
+    def mdl_asSyntax(klass):
+        if klass.mdl_syntax is not None:
+            return fmtparse.Conversion(
+                klass.mdl_syntax,
+                converter=klass.mdl_fromString,
+                formatter=klass.mdl_toString,
+            )
+        return Type.mdl_asSyntax.im_func(klass)
 
 
 

@@ -13,15 +13,15 @@ from peak.api import *
 from interfaces import *
 from method_exporter import MethodExporter
 from peak.util.hashcmp import HashAndCompare
-from peak.util.imports import lazyModule
 from peak.util.advice import supermeta
-
-fmtparse = lazyModule('peak.util.fmtparse')
+from peak.util import fmtparse
 
 __all__ = [
     'StructuralFeature',  'Collection', 'Sequence',
     'DerivedFeature', 'structField', 'Attribute',
 ]
+
+
 
 
 
@@ -171,11 +171,10 @@ class FeatureClass(HashAndCompare,MethodExporter):
     typeCode    = binding.Make(lambda self: self.rawTypeCode.unaliased() )
 
     def _syntax(feature):
-
         syntax = feature.syntax
 
         if syntax is None:
-            syntax = getattr(feature.typeObject, 'mdl_syntax', None)
+            syntax = adapt(feature.typeObject,fmtparse.IRule,None)
 
         if syntax is None:
             syntax = fmtparse.Conversion(
@@ -198,10 +197,11 @@ class FeatureClass(HashAndCompare,MethodExporter):
 
     _syntax = binding.Make(_syntax)
 
-    def __conform__(feature,protocol):
-        if protocol is fmtparse.Rule:
-            return feature._syntax
-        return supermeta(FeatureClass,feature).__conform__(protocol)
+protocols.declareAdapter(
+    lambda o,p: o._syntax,
+    provides = [fmtparse.IRule],
+    forTypes = [FeatureClass]
+)
 
 class StructuralFeature(object):
 
