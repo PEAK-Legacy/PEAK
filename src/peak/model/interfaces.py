@@ -4,7 +4,7 @@
   pattern, but only its *structural* aspect.  Other interfaces can and should
   be implemented to represent other aspects in the appropiate horizontal
   frameworks.  For example, a Zope/ZPublisher framework would probably want
-  to have its own ITypeService, IElement, and IFeature interfaces that included
+  to have its own ISpecialist, IElement, and IFeature interfaces that included
   an 'index_html' method with the appropriate meaning for each type of object.
   (i.e., a "Find/add objects of type foo", "View this instance of type foo",
   and "a management screen of instances of type foo", respectively.)
@@ -17,7 +17,7 @@
 import Interface
 
 __all__ = [
-    'ISEF','IService','ITypeService','IElement','IFeature','IQuerying',
+    'ISEF','IService','ISpecialist','IElement','IFeature','IQuerying',
     'IClassifier','IDataType','IPrimitiveType', 'IEnumeration',
     'IValue','ICollection','IReference','ISequence',
 ]
@@ -47,7 +47,7 @@ class ISEF(Interface.Base):
         """Name of this component in its immediate context"""
     )
 
-    def getService(self,name=None):
+    def getService(name=None):
         """Locate a service in context
 
             If 'name' is not supplied, return the Service object which is
@@ -63,7 +63,7 @@ class ISEF(Interface.Base):
             does not exist.
         """
 
-    def getSEFparent(self):
+    def getSEFparent():
         """Return the parent of this object (in S-E-F terms)
 
             If this is a feature, returns the element.  If this is an element,
@@ -82,7 +82,7 @@ class IService(ISEF):
 
 class IQuerying(Interface.Base):
 
-    def Get(self,name,recurse=None):
+    def Get(name,recurse=None):
         """Return a sequence representing SEF child 'name', w/optional recursion
 
             If this is a service, return elements of type name 'name'.  If this
@@ -100,7 +100,7 @@ class IQuerying(Interface.Base):
             'Where()' methods over its contents.
         """
             
-    def Where(self,criteria=None):
+    def Where(criteria=None):
         """Filter contents by 'criteria' predicate
 
             If this is a service, return elements meeting 'criteria'.  If this
@@ -121,9 +121,9 @@ class IQuerying(Interface.Base):
 
 
 
-class ITypeService(IService):
+class ISpecialist(IService):
 
-    """A component instance responsible for a (possibly abstract) datatype
+    """A service responsible for a (possibly abstract) datatype
 
        TODO:
        
@@ -132,14 +132,14 @@ class ITypeService(IService):
         
     """
     
-    def newItem(self,*args,**kw):
+    def newItem(key=None):
         """Create a new Element of the type managed by the service"""
         
-    def getItem(self,*args,**kw):
-        """Retrieve an existing Element of the type managed by the service"""
+    def getItem(key, default=None):
+        """Retrieve an existing Element; return 'default' if not found"""
 
-
-
+    def __getitem__(key):
+        """Retrieve an existing element; raise KeyError if not found"""
 
 
 
@@ -209,7 +209,7 @@ class IFeature(ISEF):
         """Lower bound of multiplicity; 0 unless overridden in class definition
         or by isRequired"""
     )
-        
+
     upperBound = Interface.Attribute(
         "Upper bound of multiplicity; None=unbounded"
     )
@@ -221,35 +221,35 @@ class IFeature(ISEF):
     isOrdered     = Interface.Attribute(
         "Flag for whether feature is ordered sequence"
     )
-    
+
     isChangeable  = Interface.Attribute(
         "Flag for whether feature is changeable"
     )
 
-    def getElement(self):
+    def getElement():
         """Retrieve the Element to which this Feature belongs"""
-        
-    def getReferencedType(self):
+
+    def getReferencedType():
         """Retrieve the Service representing the type this Feature references"""
 
-    def __call__(self):
+    def __call__():
         """Return the value of the feature"""
 
-    def values(self):
+    def values():
         """Return the value(s) of the feature as a sequence, even if it's a single value"""
 
-    def set(self,value):
+    def set(value):
         """Set the value of the feature to value"""
 
-    def clear(self):
+    def clear():
         """Unset the value of the feature, like del or set(empty/None)"""
 
     # SPI calls used for feature-to-feature collaboration
     
-    def _link(self,element):
+    def _link(element):
         """Link to element without notifying other end"""
         
-    def _unlink(self,element):
+    def _unlink(element):
         """Unlink from element without notifying other end"""
 
 
@@ -287,7 +287,7 @@ class IFeature(ISEF):
 
 class IValue(IFeature):
 
-    def marshal(self,*args,**kw):
+    def marshal(*args,**kw):
         """Convert args[0] or kwargs into an 'item' suitable for use with the other methods.
            Raises ValueError if invalid format."""
 
@@ -295,20 +295,20 @@ class IValue(IFeature):
 class ICollection(IFeature):
     """A feature which is a collection of items which may be added or removed."""
 
-    def isEmpty(self):
+    def isEmpty():
         """Return true if the value is not set or collection is empty"""
 
-    def isReferenced(self,item):
+    def isReferenced(item):
         """Return true if the item is a member of the set/sequence"""
 
-    def addItem(self,item):
+    def addItem(item):
         """Add the item to the collection/relationship, reject if multiplicity
         exceeded"""
 
-    def removeItem(self,item):
+    def removeItem(item):
         """Remove the item from the collection/relationship, if present"""
 
-    def replaceItem(self,oldItem,newItem):
+    def replaceItem(oldItem,newItem):
         """Replace oldItem with newItem in the collection; raises ValueError
         if oldItem is missing"""
 
@@ -321,7 +321,7 @@ class ISequence(ICollection):
 
     """An ordered collection; isOrdered==1"""
     
-    def insertBefore(self,oldItem,newItem):
+    def insertBefore(oldItem,newItem):
         """Insert newItem before oldItem in the collection; raises ValueError
         if oldItem is missing, TypeError if feature is not ordered"""
 

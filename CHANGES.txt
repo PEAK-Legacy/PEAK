@@ -1,5 +1,12 @@
 New Features and Bug Fixes since v0.2, preview 1
 
+ * Added basic Specialist implementation to 'TW.SEF.Basic', and reverted
+   naming from 'TypeService' and 'ITypeService' to 'Specialist' and
+   'ISpecialist'.  Updated 'TW.SEF.Interfaces' to reflect "self"-less
+   convention for documenting methods.
+
+ * Dropped obsolete 'TW.Database.Records' module.
+
  * Added 'SEF.bindToParent()' and 'SEF.bindToNames()' specifiers to allow
    more flexible component parameter bindings.
 
