@@ -260,7 +260,7 @@ class I_DM_Implementation(Interface):
         '_p_deactivate()' method will be called instead."""
 
 
-    def load(oid):
+    def load(oid, ob):
         """Load & return the state for 'oid', suitable for '__setstate__()'"""
 
     def save(ob):

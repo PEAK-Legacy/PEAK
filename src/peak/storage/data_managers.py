@@ -136,7 +136,7 @@ class EntityDM(TransactionComponent):
 
         return klass()
 
-    def load(self, oid):
+    def load(self, oid, ob):
         raise NotImplementedError
 
     def save(self, ob):
@@ -172,7 +172,7 @@ class EntityDM(TransactionComponent):
 
         oid = ob._p_oid
         assert oid is not None
-        ob.__setstate__(self.load(oid))
+        ob.__setstate__(self.load(oid,ob))
 
 
     def register(self, ob):

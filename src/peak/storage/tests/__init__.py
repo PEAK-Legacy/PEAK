@@ -257,7 +257,7 @@ class Harness(binding.Component):
         class defaultClass(Persistent):
             pass
 
-        def load(self, oid):
+        def load(self, oid, ob):
 
             rows = self.table.SELECT(Items(a=oid))
 
