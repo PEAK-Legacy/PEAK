@@ -165,6 +165,9 @@ class ManagedConnection(TransactionComponent):
     def _close(self):
         """Actions to take before 'del self.connection', if needed."""
 
+    __txnTimeConverter = binding.bindToProperty(
+        'peak.storage.txnTimeType', default=float
+    )
 
     def txnTime(self,d,a):
         """Per-transaction timestamp, based on this connection's clock
@@ -178,7 +181,7 @@ class ManagedConnection(TransactionComponent):
             override this implementation, you must ensure that the
             connection has joined the transaction first!
         """
-        return self.joinedTxn.getTimestamp()
+        return self.__txnTimeConverter( self.joinedTxn.getTimestamp() )
 
     txnTime = binding.Once(txnTime)
 
@@ -193,9 +196,6 @@ class ManagedConnection(TransactionComponent):
 
     def abortTransaction(self, txnService):
         self.closeCursors()
-
-
-
 
 
 
