@@ -243,7 +243,7 @@ actually has the permission for the subject, and return either ``True`` or a
 
 (Note that you must *not* make this determination in the ``when()`` clause, or
 else you won't be able to return a ``Denial`` when the check fails.  Only use
-the ``when()``clause to determine when the rule should be applied.)
+the ``when()`` clause to determine when the rule should be applied.)
 
 Let's look at some examples of defining and using access rules, so you can
 see how this works.
