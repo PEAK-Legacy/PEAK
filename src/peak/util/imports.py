@@ -121,49 +121,62 @@ def lazyModule(modname, relativePath=None):
     (Note: 'relativePath' can also be an absolute path (starting with '/');
     this is mainly useful for module '__bases__' lists.)"""
 
+    def _loadModule(module):
+
+        oldGA = LazyModule.__getattribute__
+        oldSA = LazyModule.__setattr__
+
+        modGA = ModuleType.__getattribute__
+        modSA = ModuleType.__setattr__
+
+        LazyModule.__getattribute__ = modGA
+        LazyModule.__setattr__      = modSA
+
+        try:
+            # Get Python (or supplied 'reload') to do the real import!
+            _loadAndRunHooks(module)
+        except:
+            # Reset our state so that we can retry later
+            LazyModule.__getattribute__ = oldGA.im_func
+            LazyModule.__setattr__      = oldSA.im_func
+            raise
+
+        try:
+            # Convert to a real module (if under 2.2)
+            module.__class__ = ModuleType
+        except TypeError:
+            pass    # 2.3 will fail, but no big deal
+
+
     class LazyModule(ModuleType):
-
-        __slots__=()
-
+        __slots__ = ()
         def __init__(self, name):
-            self.__name__ = name    # Fixes 2.2 not setting __name__ on create
+            ModuleType.__setattr__(self,'__name__',name)
+            #super(LazyModule,self).__init__(name)
 
         def __getattribute__(self,attr):
-            if '.' in modname:
-                # ensure parent is in sys.modules and parent.modname=self
-                splitpos = modname.rindex('.')
-                mod = importString(modname[:splitpos])
-                setattr(mod,modname[splitpos+1:],self)
+            _loadModule(self)
+            return ModuleType.__getattribute__(self,attr)
 
-            oldGA = LazyModule.__getattribute__
-            modGA = ModuleType.__getattribute__
-            LazyModule.__getattribute__ = modGA
-
-            try:
-                # Get Python (or supplied 'reload') to do the real import!
-                _loadAndRunHooks(self)
-            except:
-                # Reset our state so that we can retry later
-                LazyModule.__getattribute__ = oldGA
-                raise
-
-            try:
-                # Convert to a real module (if under 2.2)
-                self.__class__ = ModuleType
-            except TypeError:
-                pass    # 2.3 will fail, but no big deal
-
-            # Finish off by returning what was asked for
-            return modGA(self,attr)
-
+        def __setattr__(self,attr,value):
+            _loadModule(self)
+            return ModuleType.__setattr__(self,attr,value)
 
     if relativePath:
         modname = joinPath(modname, relativePath)
 
-
-
     if modname not in modules:
         modules[modname] = LazyModule(modname)
+
+        if '.' in modname:
+            # ensure parent module/package is in sys.modules
+            # and parent.modname=module, as soon as the parent is imported
+
+            splitpos = modname.rindex('.')
+            whenImported(
+                modname[:splitpos],
+                lambda m: setattr(m,modname[splitpos+1:],modules[modname])
+            )
 
     return modules[modname]
 
@@ -202,6 +215,34 @@ def getModuleHooks(moduleName):
     return hooks
 
 
+def _setModuleHook(moduleName, hook):
+
+    if moduleName in modules and postLoadHooks.get(moduleName) is None:
+        # Module is already imported/loaded, just call the hook
+        module = modules[moduleName]
+        hook(module)
+        return module
+
+    getModuleHooks(moduleName).append(hook)
+    return lazyModule(moduleName)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 def whenImported(moduleName, hook):
 
@@ -225,14 +266,16 @@ def whenImported(moduleName, hook):
     deferred until the module is used.
     """
 
-    if moduleName in modules and postLoadHooks.get(moduleName) is None:
-        # Module is already imported/loaded, just call the hook
-        module = modules[moduleName]
-        hook(module)
-        return module
+    if '.' in moduleName:
+        # If parent is not yet imported, delay hook installation until the
+        # parent is imported.
+        splitpos = moduleName.rindex('.')
+        whenImported(
+            moduleName[:splitpos], lambda m: _setModuleHook(moduleName,hook)
+        )
+    else:
+        return _setModuleHook(moduleName,hook)
 
-    getModuleHooks(moduleName).append(hook)
-    return lazyModule(moduleName)
 
 
 
