@@ -2,6 +2,12 @@ Fixes and Enhancements since Version 0.5 alpha 2
 
  Changed, Enhanced, or Newly Deprecated Features
 
+ - Added simple example scripts and small applications in the 'examples' 
+   directory.
+
+ - There is a new command-line namespace introspection tool, 'n2', which
+   can be accessed by running 'peak n2'.  Type 'peak n2 -h' for help.
+
  - The PEAK_CONFIG environment variable can now list multiple files, separated
    by the platform's 'os.pathsep' (e.g. ':' on Unix, ';' on Windows).
 
@@ -86,7 +92,10 @@ Fixes and Enhancements since Version 0.5 alpha 2
    a binding to suggest a parent component, use 'suggestParent=False' in the
    binding definition.
 
+ Corrected Problems
 
+  - The default reactor supplied in 'peak.running.scheduler' would consume
+    CPU continuously if it was waiting for I/O and no tasks were scheduled.
 
 
 
