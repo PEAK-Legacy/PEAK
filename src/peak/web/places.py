@@ -211,13 +211,21 @@ class Location(Place,binding.Configurable):
     )
 
     containers = binding.Make(list)
+    have_views = False
 
-    def addContainer(self,container,permissionNeeded=None):
-        binding.suggestParentComponent(self,None,container)
-        self.containers.append((permissionNeeded,container))
+
+    def preTraverse(self,ctx):
+        if self.have_views:
+            ctx = ctx.clone(view_protocol=VIEW_NAMES.of(self).get)
+        return ctx
+
 
     def traverseTo(self, name, ctx, default=NOT_GIVEN):
+        if self.have_views:
+            ctx = ctx.clone(view_protocol=VIEW_NAMES.of(self).get)
+
         result = Place.traverseTo(self,name,ctx,NOT_FOUND)
+
         if result is NOT_FOUND:
             for perm,cont in self.containers:
                 if perm is not None:
@@ -232,6 +240,10 @@ class Location(Place,binding.Configurable):
             raise NotFound(ctx,name)
         return default
 
+
+
+
+
     def registerLocation(self,location_id,path):
         path = adapt(path,web.TraversalPath)
         self.registerProvider(
@@ -239,10 +251,39 @@ class Location(Place,binding.Configurable):
         )
 
     def registerView(self,target,name,handler):
+        self.have_views = True
         IViewTarget(target).registerWithProtocol(
             config.registeredProtocol(self,VIEW_NAMES+'.'+name),
             lambda ob:handler
         )
+
+    def addContainer(self,container,permissionNeeded=None):
+        binding.suggestParentComponent(self,None,container)
+        self.containers.append((permissionNeeded,container))
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 class Decorator(Traversable):
 

@@ -114,26 +114,26 @@ class LocationTests(TestCase):
         self.root.registerLocation('test2','.')
         self.failUnless(self.ctx.traverseName('++id++test2') is self.ctx)
 
-    def testTypeView(self):
+    def testAppViews(self):
+        self.checkView(self.root,int,123)
+        self.checkView(self.root,protocols.IOpenProtocol,web.IWebTraversable)
+
+
+
+
+    def checkView(self,loc,tgt,src):
         bar_handler = lambda ctx,o,ns,nm,qn,d: ctx.childContext(qn,"baz")
-        self.root.registerView(int,'bar',bar_handler)
-        self.root.addContainer({'foo':123})
-        ctx = web.TraversalPath('foo/@@bar').traverse(self.ctx)
+        loc.registerView(tgt,'bar',bar_handler)
+        loc.addContainer({'foo':src})
+        ctx = web.TraversalPath('foo/@@bar').traverse(
+            self.ctx.clone(current=loc)
+        )
         self.assertEqual(ctx.current,'baz')
-
-    def testProtocolView(self):
-        bar_handler = lambda ctx,o,ns,nm,qn,d: ctx.childContext(qn,"baz")
-        self.root.registerView(protocols.IOpenProtocol,'bar',bar_handler)
-        self.root.addContainer({'foo':web.IWebTraversable})
-        ctx = web.TraversalPath('foo/@@bar').traverse(self.ctx)
-        self.assertEqual(ctx.current,'baz')
-
-
-
-
-
-
-
+        
+    def testNestedViews(self):
+        loc = web.Location(self.root)
+        self.checkView(loc,int,123)
+        self.checkView(loc,protocols.IOpenProtocol,web.IWebTraversable)
 
 
 
