@@ -2,28 +2,28 @@ from peak.api import *
 from time import sleep
 
 __all__ = [
-    'ITask', 'ITaskSwitch', 'IEventSource', 'IEventSink', 'IReadableSource',
-    'IWritableSource', 'IValue', 'IConditional', 'ISemaphore', 'IThread',
-    'IScheduledThread', 'IThreadState', 'IScheduler', 'ISignalSource',
+    'IProcedure', 'ITaskSwitch', 'IEventSource', 'IEventSink', 'IReadableSource',
+    'IWritableSource', 'IValue', 'IConditional', 'ISemaphore', 'ITask',
+    'IScheduledTask', 'ITaskState', 'IScheduler', 'ISignalSource',
     'ISelector', 'IEventLoop', 'Interruption', 'TimeoutError', 'IWritableValue',
     'IPausableSource',
 ]
 
 
 class Interruption(Exception):
-    """A thread was interrupted by an asynchronous event"""
+    """A task was interrupted by an asynchronous event"""
 
 
 class TimeoutError(Interruption):
     """A timeout occurred"""
 
 
-class ITask(protocols.Interface):
+class IProcedure(protocols.Interface):
 
-    """Iterator suitable for use with a thread, such as a generator-iterator"""
+    """Iterator suitable for use in a task, such as a generator-iterator"""
 
     def __iter__():
-        """*Must* return the 'ITask'; i.e. iterator not iterable"""
+        """*Must* return the 'IProcedure'; i.e. iterator not iterable"""
 
     def next():
         """Return an 'ITaskSwitch', or value to be yielded to previous task"""
@@ -41,25 +41,25 @@ class ITask(protocols.Interface):
 
 class ITaskSwitch(protocols.Interface):
 
-    """What a thread yields control to
+    """What a task yields control to
 
-    Iterators running in a thread yield 'ITaskSwitch' objects to control the
-    thread's flow and co-operation.
+    'IProcedure' objects running in a task yield 'ITaskSwitch' objects to
+    control the task's flow and co-operation.
 
     In addition to PEAK-supplied event sources like 'Value', 'Semaphore', and
-    'Condition', generator-iterators and other 'ITask' objects are also
+    'Condition', generator-iterators and other 'IProcedure' objects are also
     adaptable to 'ITaskSwitch', thus allowing one to e.g.
-    'yield someGenerator(someArgs)' in a thread.  This allows the nested
-    generator to run next in the thread.
+    'yield someGenerator(someArgs)' in a task.  This allows the nested
+    generator to run as the next procedure for the task.
     """
 
 
-    def nextAction(thread=None, state=None):
-        """Return true if thread should continue
+    def nextAction(task=None, state=None):
+        """Return true if task should continue
 
-        If supplied, 'thread' and 'state' are an 'IThread' and 'IThreadState',
+        If supplied, 'task' and 'state' are an 'ITask' and 'ITaskState',
         respectively, and the task switch may perform any needed actions with
-        them, such as arranging to call back 'thread.step()', or performing
+        them, such as arranging to call back 'task.step()', or performing
         an action such as 'state.YIELD(value)' or 'state.CALL(task)'.
         """
 
@@ -258,18 +258,18 @@ protocols.declareAdapter(
 
 class ISemaphore(IWritableSource,IConditional):
 
-    """An event source that allows 'n' threads to proceed at once
+    """An event source that allows 'n' tasks to proceed at once
 
     Unlike a conditional or value, a semaphore distributes its events to at
-    most one accepting callback.  This ensures that threads waiting for the
-    semaphore are not awakened if other threads remove all available tokens
+    most one accepting callback.  This ensures that tasks waiting for the
+    semaphore are not awakened if other tasks remove all available tokens
     first."""
 
     def put():
-        """Increase the number of runnable threads by 1"""
+        """Increase the number of runnable tasks by 1"""
 
     def take():
-        """Decrease the number of runnable threads by 1"""
+        """Decrease the number of runnable tasks by 1"""
 
 
 
@@ -285,40 +285,40 @@ class ISemaphore(IWritableSource,IConditional):
 
 
 
-class IThread(protocols.Interface):
+class ITask(protocols.Interface):
 
-    """Simulate a thread using iterables that yield 'ITaskSwitch' objects
+    """Task that can be paused and resumed based on event occurences
 
-    Threads maintain a stack of "currently executing iterables".  The topmost
-    iterable's 'next()' method is invoked repeatedly to obtain 'ITaskSwitch'
-    instances that determine whether the thread will continue, invoke a nested
-    iterable (by pushing it on the stack), or be suspended (by returning from
-    the 'step()' method.  When an iterable is exhausted, it's popped from the
-    stack, and the next-highest iterable is resumed.  This simple "virtual
-    machine" allows linear Python code to co-operatively multitask on the
-    basis of arbitrary events.
+    Tasks maintain a stack of "currently executing procedures".  The topmost
+    procedure's 'next()' method is invoked repeatedly to obtain 'ITaskSwitch'
+    instances that determine whether the task will continue, invoke a nested
+    procedure (by pushing it on the stack), or be suspended (by returning from
+    the 'step()' method.  When an procedure's iteration is exhausted, it's
+    popped from the stack, and the next-highest procedure is resumed.  This
+    simple "virtual machine" allows linear Python code to co-operatively
+    multitask on the basis of arbitrary events.
 
-    Iterators used in threads must call 'events.resume()' immediately after
+    Procedures used in tasks must call 'events.resume()' immediately after
     each 'yield' statement (or at the beginning of their 'next()' method, if
     not a generator), in order to ensure that errors are handled properly.  If
     the event source or generator that was yielded sends a value or event
-    back to the thread, that value will be returned by 'resume()'.
+    back to the task, that value will be returned by 'resume()'.
 
-    Iterators may send values back to their calling iterators by yielding
+    Procedures may send values back to their calling iterators by yielding
     values that do not implement 'ITaskSwitch'.  Event sources may send values
-    back to a thread by passing them as events to the thread's 'step()'
+    back to a task by passing them as events to the task's 'step()'
     callback method.
     """
 
     def step(source=None,event=NOT_GIVEN):
-        """Run until thread is suspended by an 'ITaskSwitch' or finishes
+        """Run until task is suspended by an 'ITaskSwitch' or finishes
 
-        If the thread's current generator calls 'events.resume()', it will
+        If the task's current generator calls 'events.resume()', it will
         receive 'event' as the return value.
         """
 
     isFinished = protocols.Attribute(
-        """'IConditional' that fires when the thread is completed"""
+        """'IConditional' that fires when the task is completed"""
     )
 
 
@@ -326,40 +326,40 @@ class IThread(protocols.Interface):
 
 
 
-class IScheduledThread(IThread):
+class IScheduledTask(ITask):
 
-    """A thread that relies on a scheduler for ongoing execution
+    """A task that relies on a scheduler for ongoing execution
 
-    Scheduled threads do not run when their 'step()' methods are called, but
+    Scheduled tasks do not run when their 'step()' methods are called, but
     instead simply put themselves on the scheduler's schedule for later
-    execution.  This means that scheduled threads do not run during operations
+    execution.  This means that scheduled tasks do not run during operations
     that cause callbacks, and so they cannot raise errors in apparently-unrelated
     code.  They also are less likely to cause unintended or unexpected
     side-effects due to their executing between 'yield' statements in other
-    threads.  And finally, scheduled threads can reliably signal that they
+    tasks.  And finally, scheduled tasks can reliably signal that they
     were aborted due to an uncaught exception, via their 'aborted' attribute.
 
-    There are some drawbacks, however.  First, scheduled threads require a
+    There are some drawbacks, however.  First, scheduled tasks require a
     scheduler, and the scheduler must 'tick()' repeatedly as long as one wishes
-    the threads to continue running.  Second, scheduled threads can take
+    the tasks to continue running.  Second, scheduled tasks can take
     slightly longer to task switch than unscheduled ones, because multiple
     callbacks are required.
 
-    Last, but far from least, when a scheduled thread is resumed, it cannot be
-    guaranteed that another thread or callback has not already contravened
-    whatever condition the thread was waiting for.  This is true even if only
-    one thread is waiting for that condition, since non-thread callbacks or
+    Last, but far from least, when a scheduled task is resumed, it cannot be
+    guaranteed that another task or callback has not already contravened
+    whatever condition the task was waiting for.  This is true even if only
+    one task is waiting for that condition, since non-task callbacks or
     other code may be executed between the triggering of the event, and the
-    time at which the thread's resumption is scheduled.
+    time at which the task's resumption is scheduled.
     """
 
 
     def step(source=None,event=NOT_GIVEN):
-        """Schedule thread to resume during its scheduler's next 'tick()'"""
+        """Schedule task to resume during its scheduler's next 'tick()'"""
 
 
     aborted = protocols.Attribute(
-        """'IConditional' that fires if the thread is aborted"""
+        """'IConditional' that fires if the task is aborted"""
     )
 
 
@@ -367,9 +367,9 @@ class IScheduledThread(IThread):
 
 
 
-class IThreadState(protocols.Interface):
+class ITaskState(protocols.Interface):
 
-    """Control a thread's behavior
+    """Control a task's behavior
 
     This interface is made available only to 'ITaskSwitch' objects via their
     'nextAction()' method, so you don't need to know about this unless you're
@@ -383,7 +383,7 @@ class IThreadState(protocols.Interface):
         """Supply 'value' to next 'resume()' call"""
 
     def CALL(iterator):
-        """Cause thread to execute 'iterator' next"""
+        """Cause task to execute 'iterator' next"""
 
     def RETURN():
         """Silently abort the currently-running iterator"""
@@ -413,7 +413,7 @@ class IScheduler(protocols.Interface):
     """Time-based conditions"""
 
     def spawn(iterator):
-        """Return a new 'IScheduledThread' based on 'iterator'"""
+        """Return a new 'IScheduledTask' based on 'iterator'"""
 
     def alarm(iterator, timeout, errorType=TimeoutError):
         """Run 'iterator', interrupting w/'errorType' after 'timeout' secs"""
@@ -435,9 +435,9 @@ class IScheduler(protocols.Interface):
         """'IEventSource' that fires 'secs' after each callback/task switch
 
         The object returned is reusable: each time you yield it or add a
-        callback to it, the thread/callback will be delayed 'secs' from the
+        callback to it, the task/callback will be delayed 'secs' from the
          time that the task switch was requested or the callback added.  More
-        than one thread/callback may wait on the same 'sleep()' object, but
+        than one task/callback may wait on the same 'sleep()' object, but
         each "wakes" at a different time, according to when it "slept"."""
 
     def until(time):
@@ -499,7 +499,7 @@ class ISignalSource(protocols.Interface):
 
         Note: signal callbacks occur from within a signal handler, so it's
         usually best to yield to an 'IScheduler.sleep()' (or use a scheduled
-        thread) in order to avoid doing anything that might interfere with
+        task) in order to avoid doing anything that might interfere with
         running code.
 
         Also note that signal event sources are only active so long as a
@@ -520,7 +520,7 @@ class ISelector(ISignalSource):
     reactor's 'iterate()' method with a delay of 'IScheduler.time_available()'
     seconds.  Note that all returned event sources are active only so long
     as a reference to them is kept.  If all references to an event source go
-    away, its threads/callbacks will not be called."""
+    away, its tasks/callbacks will not be called."""
 
     def readable(stream):
         """'IEventSource' that fires when 'stream' is readable"""
@@ -542,20 +542,20 @@ class IEventLoop(IScheduler, ISelector):
         used, and should raise a 'NotImplementedError' if it is set to False.
 
         Note that if the event loop's scheduler becomes empty (i.e., there are
-        no active tasks/threads remaining), and 'eventSource' has not fired,
+        no active tasks/callbacks remaining), and 'eventSource' has not fired,
         this method *may* raise 'StopIteration' to indicate this.  If you would
         prefer that 'runUntil()' simply exit when that happens, just use the
         event loop's 'isEmpty' condition as part of an 'events.AnyOf()'
         condition passed into 'runUntil()'.  Or, if you'd prefer that the event
         loop continue indefinitely despite the lack of any active tasks (e.g.
         in GUI programs), you may schedule something to be executed in the far
-        future, or use a thread that looks something like:
+        future, or use a task that looks something like:
 
             oneDay = eventLoop.sleep(86400)
             while True:
                 yield oneDay; events.resume()
 
-        Such a thread will only execute once per day, but is sufficient to
+        Such a task will only execute once per day, but is sufficient to
         ensure that 'runUntil()' does not exit due to an empty schedule.  Note
         that if you are using a Twisted reactor, you don't need to do this
         as an event loop based on a Twisted reactor will only raise
@@ -569,6 +569,6 @@ class IEventLoop(IScheduler, ISelector):
         events.
 
         Note that the 'idle' function will probably never be called when there
-        are threads waiting for I/O, when there are threads that reschedule
+        are tasks waiting for I/O, when there are tasks that reschedule
         themselves at short intervals, or when using Twisted."""
 

@@ -1,10 +1,10 @@
-"""Test event sources and threads with Twisted"""
+"""Test event sources and tasks with Twisted"""
 
 from __future__ import generators
 from unittest import TestCase, makeSuite, TestSuite
 from peak.api import *
 from peak.tests import testRoot
-from test_events import ScheduledThreadsTest, SchedulerTests, ValueTests
+from test_events import ScheduledTasksTest, SchedulerTests, ValueTests
 from twisted.internet import defer
 from twisted.python import failure
 import sys
@@ -39,7 +39,7 @@ class TestDeferredAsEvent(ValueTests):
 
 
 
-class TwistedThreadsTest(ScheduledThreadsTest):
+class TwistedTasksTest(ScheduledTasksTest):
 
     def setUp(self):
         self.scheduler = SA.lookupComponent(events.IEventLoop)
@@ -92,7 +92,7 @@ class TestDeferreds(TestCase):
         except:
             self.log.append(sys.exc_info()[1])
 
-    wait = events.threaded(wait)
+    wait = events.taskFactory(wait)
 
     def testCallbackWhileWaiting(self):
         self.wait()
@@ -122,7 +122,7 @@ class TestDeferreds(TestCase):
 
 
 TestClasses = (
-    TwistedThreadsTest, TestDeferreds, TestDeferredAsEvent
+    TwistedTasksTest, TestDeferreds, TestDeferredAsEvent
 )
 
 def test_suite():

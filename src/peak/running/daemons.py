@@ -118,7 +118,7 @@ class TaskQueue(binding.Component):
 
 
     _processNextTask = binding.Make(
-        events.threaded(_processNextTask), uponAssembly=True
+        events.taskFactory(_processNextTask), uponAssembly=True
     )
 
 class AdaptiveTask(binding.Component):

@@ -169,17 +169,17 @@ class ProcessSupervisor(EventDriven, config.ServiceArea):
         somethingChanged = events.AnyOf(
             self.processCount, self.desiredProcesses
         )
-        
+
         while True:
 
             if self.processCount()<self.desiredProcesses():
-                 
+
                 self.log.debug(
                     "%d processes desired, %d running: requesting start",
                     self.desiredProcesses(), self.processCount()
                 )
-                
-                # Spawn a thread to start a process as soon as possible
+
+                # Spawn a task to start a process as soon as possible
                 self._doStart()
 
                 # But don't start any more until start interval passes
@@ -193,13 +193,13 @@ class ProcessSupervisor(EventDriven, config.ServiceArea):
                     self.log.debug(
                         "%d processes reached; resetting goal to %d",
                         self.processCount(), self.minChildren
-                    )   
+                    )
                     self.desiredProcesses.set(self.minChildren)
 
                 # And sleep until something relevant changes
                 yield somethingChanged; events.resume()
 
-    _monitorProcessCount = events.threaded(_monitorProcessCount)
+    _monitorProcessCount = events.taskFactory(_monitorProcessCount)
 
 
 
@@ -225,7 +225,7 @@ class ProcessSupervisor(EventDriven, config.ServiceArea):
         for plugin in self.plugins:
             plugin.processStarted(proxy)
 
-    _doStart = events.threaded(_doStart)
+    _doStart = events.taskFactory(_doStart)
 
 
     def killProcesses(self):
@@ -250,7 +250,7 @@ class ProcessSupervisor(EventDriven, config.ServiceArea):
         self.mainLoop.activityOccurred()
 
         if src is proxy.isFinished:
-            
+
             if proxy.exitedBecause():
                 self.log.warning(
                     "Child process %d exited due to signal %d (%s)",
@@ -279,7 +279,7 @@ class ProcessSupervisor(EventDriven, config.ServiceArea):
             self.log.error("Child process %d has stopped", proxy.pid)
             self._monitorChild(proxy)   # continue monitoring
 
-    _monitorChild = events.threaded(_monitorChild)   
+    _monitorChild = events.taskFactory(_monitorChild)
 
 
 

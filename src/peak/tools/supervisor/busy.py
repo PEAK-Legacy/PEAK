@@ -77,7 +77,7 @@ class BusyProxy(ChildProcess):
 
         self.busyStream.close()
         
-    _monitor = binding.Make(events.threaded(_monitor), uponAssembly = True)
+    _monitor = binding.Make(events.taskFactory(_monitor), uponAssembly = True)
 
 
 class BusyStarter(binding.Component):
@@ -117,7 +117,7 @@ class BusyStarter(binding.Component):
             trace("All children were busy for: %s seconds", duration)
 
     monitorUsage = binding.Make(
-        events.threaded(monitorUsage), uponAssembly = True
+        events.taskFactory(monitorUsage), uponAssembly = True
     )
 
 
@@ -141,7 +141,7 @@ class BusyStarter(binding.Component):
 
         self.childCount.set(self.childCount()-1)
 
-    processStarted = events.threaded(processStarted)
+    processStarted = events.taskFactory(processStarted)
 
 
     def monitorBusy(self):
@@ -159,6 +159,6 @@ class BusyStarter(binding.Component):
             yield events.AnyOf(self.busyCount,self.childCount); events.resume()
             
     monitorBusy = binding.Make(
-        events.threaded(monitorBusy), uponAssembly = True
+        events.taskFactory(monitorBusy), uponAssembly = True
     )
 

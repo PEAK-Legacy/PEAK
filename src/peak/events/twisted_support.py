@@ -87,7 +87,7 @@ class DeferredAsEventSource(sources.Value,protocols.StickyAdapter):
 
 
 
-    def nextAction(self, thread=None, state=None):
+    def nextAction(self, task=None, state=None):
 
         if state is not None:
 
@@ -103,7 +103,7 @@ class DeferredAsEventSource(sources.Value,protocols.StickyAdapter):
             if self.subject.called:
                 state.YIELD(self.subject.result)
             else:
-                self.addCallback(thread.step)
+                self.addCallback(task.step)
 
         return self.subject.called
 
@@ -262,7 +262,7 @@ class Selector(io_events.Selector):
     """Implement ISelector using a reactor"""
 
     reactor = binding.Obtain(running.ITwistedReactor)
-    monitor = None  # don't run a monitoring thread!
+    monitor = None  # don't run a monitoring task!
 
     def _mkEvent(self,rwe,key):
         if rwe==2:

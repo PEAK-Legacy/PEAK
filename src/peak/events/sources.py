@@ -69,7 +69,7 @@ class NullClass(object):
     def addCallback(self,cb):
         pass    # we'll never fire, and so can't call back
 
-    def nextAction(self, thread=None, state=None):
+    def nextAction(self, task=None, state=None):
         pass    # always suspend
 
 Null = NullClass()
@@ -137,17 +137,17 @@ class AnyOf(object):
                 print data
 
     'AnyOf' fires callbacks whenever any of its actual event sources fire (and
-    allows threads to continue if any of its actual event sources allow it).
+    allows tasks to continue if any of its actual event sources allow it).
     The 'event' it supplies to its user is actually a '(source,event)' tuple
     as shown above, so you can distinguish which of the actual event sources
     fired, as well as receive the event from it.
 
     Note that callbacks registered with an 'AnyOf' instance will fire at most
     once, even if more than one of the original event sources fires.  Thus,
-    you should not assume in a callback or thread that the event you received
+    you should not assume in a callback or task that the event you received
     is the only one that has occurred.  This is especially true in scheduled
-    threads, where many things may happen between the triggering of an event
-    and the resumption of a thread that was waiting for the event.
+    tasks, where many things may happen between the triggering of an event
+    and the resumption of a task that was waiting for the event.
     """
 
     __slots__ = '_sources'
@@ -173,21 +173,21 @@ class AnyOf(object):
         raise ValueError, "AnyOf must be called with one or more IEventSources"
 
 
-    def nextAction(self, thread=None, state=None):
+    def nextAction(self, task=None, state=None):
         """See 'events.ITaskSwitch.nextAction()'"""
 
         for source in self._sources:
             action = source.nextAction()
 
             if action:
-                flag = source.nextAction(thread,state)
+                flag = source.nextAction(task,state)
 
                 if state is not None:
                     state.YIELD( (source,state.lastEvent) )
                 return flag
 
-        if thread is not None:
-            self.addCallback(thread.step)
+        if task is not None:
+            self.addCallback(task.step)
 
 
     def addCallback(self,func):
@@ -225,10 +225,10 @@ class Observable(object):
         self._disabled = 0
 
 
-    def nextAction(self, thread=None, state=None):
+    def nextAction(self, task=None, state=None):
         """See 'events.ITaskSwitch.nextAction()'"""
-        if thread is not None:
-            self.addCallback(thread.step)
+        if task is not None:
+            self.addCallback(task.step)
 
 
     def addCallback(self,func):
@@ -293,7 +293,7 @@ class Observable(object):
             if saved:
                 del saved[0]
 
-        elif len(saved)>=len(self._callbacks):       
+        elif len(saved)>=len(self._callbacks):
             raise ValueError("Can't buffer event", self, event)
 
         saved.append(event)
@@ -335,7 +335,7 @@ class Distributor(Observable):
     callbacks.  As soon as a callback "accepts" the event (by returning a true
     value), distribution of the event stops.
 
-    Yielding to an 'events.Distributor' in a thread always suspends the thread
+    Yielding to an 'events.Distributor' in a task always suspends the task
     until the next 'send()' call on the distributor.
     """
 
@@ -422,7 +422,7 @@ class AbstractConditional(Observable):
         else:
             super(AbstractConditional,self).addCallback(func)
 
-    def nextAction(self, thread=None, state=None):
+    def nextAction(self, task=None, state=None):
         """Suspend only if current value is false"""
         value = self()
         if value:
@@ -430,8 +430,8 @@ class AbstractConditional(Observable):
                 state.YIELD(value)
             return True
 
-        if thread is not None:
-            self.addCallback(thread.step)
+        if task is not None:
+            self.addCallback(task.step)
 
     def __invert__(self):
         return Not(self)
@@ -546,9 +546,9 @@ class Value(Writable):
         aValue.set(78,force=True)   # force firing even though value's the same
 
     Events are broadcast to all callbacks, whether they "accept" or "reject"
-    the event, and threads yielding to a 'Value' are suspended until the next
+    the event, and tasks yielding to a 'Value' are suspended until the next
     event is broadcast.  The current value of the 'Value' is supplied to
-    callbacks and threads via the 'event' parameter, and the 'Value' itself
+    callbacks and tasks via the 'event' parameter, and the 'Value' itself
     is supplied as the 'source'.  (See 'events.IEventSink'.)
     """
 
@@ -615,14 +615,14 @@ class DerivedValue(Readable):
 
 class Condition(WritableAsCondition):
 
-    """Send callbacks/allow threads to proceed when condition is true
+    """Send callbacks/allow tasks to proceed when condition is true
 
     A 'Condition' is very similar to a 'Value', except in its yielding and
-    callback behavior.  Yielding to a 'Condition' in a thread will suspend the
-    thread *only* if the current value of the 'Condition' is false.  If the
-    'Condition' has a true value, the thread is allowed to proceed, and
+    callback behavior.  Yielding to a 'Condition' in a task will suspend the
+    task *only* if the current value of the 'Condition' is false.  If the
+    'Condition' has a true value, the task is allowed to proceed, and
     'events.resume()' will return the value of the 'Condition'.  If the
-    'Condition' has a false value, the thread will be suspended until
+    'Condition' has a false value, the task will be suspended until
     the value is changed to a true one.
 
     The behavior for callbacks is similar: when a callback is added with
@@ -669,7 +669,7 @@ class DerivedCondition(ReadableAsCondition):
 
     Note that like other 'events.IConditional' implementations, callbacks
     added to a 'DerivedCondition' will be fired immediately if the current
-    value of 'formula()' is true, and threads yielding to a true
+    value of 'formula()' is true, and tasks yielding to a true
     'DerivedCondition' will also proceed immediately without waiting for a
     callback.
     """
@@ -779,7 +779,7 @@ class Intersect(_compound):
 
 class Semaphore(Condition):
 
-    """Allow up to 'n' threads to proceed simultaneously
+    """Allow up to 'n' tasks to proceed simultaneously
 
     A 'Semaphore' is like a 'Condition', except that it does not broadcast
     its events.  Each event is supplied to callbacks only until one "accepts"
@@ -789,8 +789,8 @@ class Semaphore(Condition):
     respectively increase or decrease their value by 1.
 
     Note that 'Semaphore' does not automatically decrease its count due to
-    a callback or thread resumption.  You must explicitly 'take()' the
-    semaphore in your thread or callback to reduce its count.
+    a callback or task resumption.  You must explicitly 'take()' the
+    semaphore in your task or callback to reduce its count.
     """
 
     __slots__ = ()

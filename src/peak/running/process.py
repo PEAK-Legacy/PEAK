@@ -117,7 +117,7 @@ class ChildProcess(binding.Component):
         self.close()
 
     waitForSignals = binding.Make(
-        events.threaded(waitForSignals), uponAssembly = True
+        events.taskFactory(waitForSignals), uponAssembly = True
     )
 
 

@@ -1,4 +1,4 @@
-"""Test event sources and threads"""
+"""Test event sources and tasks"""
 from __future__ import generators
 from unittest import TestCase, makeSuite, TestSuite
 from peak.api import *
@@ -367,10 +367,10 @@ class AnyOfTests(TestCase):
 
 
 
-class TestThreads(TestCase):
+class TestTasks(TestCase):
 
     def spawn(self, iterator):
-        return events.Thread(iterator)
+        return events.Task(iterator)
 
     def tick(self):
         pass
@@ -384,22 +384,22 @@ class TestThreads(TestCase):
 
 
     def testSimple(self):
-        # Test running a single-generator thread, receiving values
+        # Test running a single-generator task, receiving values
         # from an event source, verifying its 'isFinished' condition
 
         v = events.Value()
         log = []
         testData = [1,2,3,5,8,13]
 
-        thread = self.spawn( self.simpleGen(log,v,None) )
-        self.failIf( thread.isFinished() )
+        task = self.spawn( self.simpleGen(log,v,None) )
+        self.failIf( task.isFinished() )
 
         for i in testData:
             v.set(i); self.tick()
-            self.failIf( thread.isFinished() )
+            self.failIf( task.isFinished() )
 
         v.set(None); self.tick()
-        self.failUnless( thread.isFinished() )
+        self.failUnless( task.isFinished() )
         self.assertEqual(log, testData)
 
 
@@ -414,7 +414,7 @@ class TestThreads(TestCase):
         v1, v2, v3 = events.Value(), events.Value(), events.Value()
 
         any = events.AnyOf(v1,v2,v3)
-        thread = self.spawn( self.simpleGen(log, any, (v3,None)) )
+        task = self.spawn( self.simpleGen(log, any, (v3,None)) )
 
         for i in range(5):
             v3.set(i); self.tick();
@@ -428,7 +428,7 @@ class TestThreads(TestCase):
 
         testdata += [(v1,True),(v2,True),(v1,False),(v1,True)]
 
-        self.failUnless( thread.isFinished() )
+        self.failUnless( task.isFinished() )
         self.assertEqual(log, testdata)
 
 
@@ -464,26 +464,26 @@ class TestThreads(TestCase):
             sem2.take()
             sem1.put()
 
-        threads = []
+        tasks = []
 
-        # In the first phase, the first 5 threads take from sem1, and its
+        # In the first phase, the first 5 tasks take from sem1, and its
         # available count decreases
 
         part1 = [(0,5), (1,4), (2,3), (3,2), (4,1)]
         for n in range(10):
-            threads.append( self.spawn( gen(n) ) )
+            tasks.append( self.spawn( gen(n) ) )
 
         self.assertEqual(log, part1)
 
-        # In the second phase, the first 5 threads release their hold on sem1,
-        # and the second 5 threads get to take it, seeing each count as it
+        # In the second phase, the first 5 tasks release their hold on sem1,
+        # and the second 5 tasks get to take it, seeing each count as it
         # becomes available.
 
         part2 = [(5,1),(6,1),(7,1),(8,1),(9,1)]
 
         for i in range(10):
             sem2.put(); self.tick()
-            self.failUnless(threads[i].isFinished(), i)
+            self.failUnless(tasks[i].isFinished(), i)
 
         self.assertEqual(log, part1+part2)
         self.assertEqual(sem1(), 5)
@@ -510,7 +510,7 @@ class TestThreads(TestCase):
             # be handled by normal Python error trapping)
             yield events.Condition(1); events.resume()
 
-            # Okay, now we're being run by the thread itself, so hit it...
+            # Okay, now we're being run by the task itself, so hit it...
             raise ValueError
 
         log = []
@@ -554,10 +554,10 @@ class TestThreads(TestCase):
         def gen1():
             yield c2; events.resume()
 
-        events.Thread(gen())
+        events.Task(gen())
         self.assertRaises(events.Interruption, c1.send, True)
 
-        events.Thread(gen(ValueError))
+        events.Task(gen(ValueError))
         self.assertRaises(ValueError, c1.send, True)
 
 
@@ -572,7 +572,7 @@ class TestThreads(TestCase):
 
 
 
-class ScheduledThreadsTest(TestThreads):
+class ScheduledTasksTest(TestTasks):
 
     def setUp(self):
         self.scheduler = events.Scheduler()
@@ -586,7 +586,7 @@ class ScheduledThreadsTest(TestThreads):
     def testUncaughtError(self):
 
         # This also verifies task-switch on sleep, and aborted/not isFinished
-        # state of an aborted scheduled thread.
+        # state of an aborted scheduled task.
 
         def gen(c):
             yield c; events.resume()
@@ -597,14 +597,14 @@ class ScheduledThreadsTest(TestThreads):
             raise ValueError
 
         c = events.Condition()
-        thread = self.spawn(gen(c))
+        task = self.spawn(gen(c))
         c.set(True) # enable proceeding
         self.assertRaises(ValueError, self.scheduler.tick)
 
         self.scheduler.tick()   # give the error handler a chance to clean up
 
-        self.assertEqual(thread.isFinished(), False)
-        self.assertEqual(thread.aborted(), True)
+        self.assertEqual(task.isFinished(), False)
+        self.assertEqual(task.aborted(), True)
 
 
 
@@ -705,16 +705,16 @@ class SchedulerTests(TestCase):
         def gen1():
             yield c; events.resume()
 
-        events.Thread(gen())
+        events.Task(gen())
 
         self.time.set(1)
         self.sched.tick()   # shouldn't fail, timeout hasn't expired yet
         c.send(True)
 
         self.time.set(6)
-        self.sched.tick()   # shouldn't fail, as thread has already exited
+        self.sched.tick()   # shouldn't fail, as task has already exited
 
-        events.Thread(gen())
+        events.Task(gen())
         self.time.set(15)
         self.assertRaises(events.TimeoutError, self.sched.tick)
 
@@ -1029,19 +1029,19 @@ class AdviceTests(TestCase):
 
         class MyClass(binding.Component):
 
-            def aThread(self):
+            def aTask(self):
                 yield events.Condition(True); events.resume()
 
-            aThread = binding.Make( events.threaded(aThread) )
+            aTask = binding.Make( events.taskFactory(aTask) )
 
-            def threadedMethod(self):
+            def taskedMethod(self):
                 yield events.Condition(True); events.resume()
 
-            threadedMethod = events.threaded(threadedMethod)
+            taskedMethod = events.taskFactory(taskedMethod)
 
         ob = MyClass()
-        self.failIf(adapt(ob.aThread, events.IThread,None) is None)
-        self.failIf(adapt(ob.threadedMethod(), events.IThread,None) is None)
+        self.failIf(adapt(ob.aTask, events.ITask,None) is None)
+        self.failIf(adapt(ob.taskedMethod(), events.ITask,None) is None)
 
 
 
@@ -1056,7 +1056,7 @@ class AdviceTests(TestCase):
 
 TestClasses = (
     BasicTests, ValueTests, ConditionTests, SemaphoreTests, AnyOfTests,
-    TestThreads, ScheduledThreadsTest, SchedulerTests, AdviceTests,
+    TestTasks, ScheduledTasksTest, SchedulerTests, AdviceTests,
     DerivedValueTests, DerivedConditionTests, BroadcastTests,
     SubscriptionTests, LogicTests, NullTests1, NullTests2, SemanticsTests
 )

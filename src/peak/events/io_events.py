@@ -4,7 +4,7 @@ from interfaces import *
 from peak.util.EigenData import AlreadyRead
 from weakref import WeakValueDictionary, ref
 import sources
-from event_threads import resume, threaded
+from event_threads import resume, taskFactory
 from errno import EINTR
 from time import sleep
 
@@ -164,7 +164,7 @@ class EventLoop(binding.Component):
 
 class Selector(binding.Component):
 
-    """Simple threaded implementation of an ISelector"""
+    """Simple task-based implementation of an ISelector"""
 
     protocols.advise( instancesProvide = [ISelector] )
 
@@ -233,7 +233,7 @@ class Selector(binding.Component):
                     events[stream]().send(True)
 
 
-    monitor = binding.Make(threaded(monitor), uponAssembly=True)
+    monitor = binding.Make(taskFactory(monitor), uponAssembly=True)
 
 
 

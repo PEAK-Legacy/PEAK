@@ -94,7 +94,7 @@ class WSGIServer(commands.EventDriven, WSGIServer):
             self.handle_request()
 
     serve_requests = binding.Make(
-        events.threaded(serve_requests),uponAssembly=True
+        events.taskFactory(serve_requests),uponAssembly=True
     )
 
     log = binding.Obtain('logger:tools.local_server')

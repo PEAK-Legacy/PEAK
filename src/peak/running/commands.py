@@ -809,7 +809,7 @@ class FastCGIAcceptor(binding.Component):
                 self.finish()
                 self.ping()
 
-    __onStart = binding.Make(events.threaded(__onStart), uponAssembly=True)
+    __onStart = binding.Make(events.taskFactory(__onStart), uponAssembly=True)
 
 
 

@@ -95,7 +95,7 @@ class MainLoop(binding.Component):
 
         self.exitWith(None)
 
-    _checkIdle = events.threaded(_checkIdle)
+    _checkIdle = events.taskFactory(_checkIdle)
 
 
     def exitWith(self, exitCode):

@@ -9,15 +9,15 @@ import time
 from peak.util.advice import advice
 
 __all__ = [
-    'resume', 'threaded', 'Scheduler', 'Thread', 'ThreadState', 'Interrupt',
+    'resume', 'taskFactory', 'Scheduler', 'Task', 'TaskState', 'Interrupt',
 ]
 
 def resume():
-    """Call this after every task/task switch 'yield' in a thread
+    """Call this after every 'yield' in a task
 
-    This function returns the event that caused the thread to resume, or
-    reraises any exceptions thrown by a nested generator in the thread.  It
-    should be called after every 'yield' statement in a thread, if the
+    This function returns the event that caused the task to resume, or
+    reraises any exceptions thrown by a nested generator in the task.  It
+    should be called after every 'yield' statement in a task, if the
     statement yields a generator or an 'ITaskSwitch' or 'IEventSource'.
     (If the statement simply yields a value to its calling generator, it need
     not be followed by an 'events.resume()' call.)
@@ -39,9 +39,9 @@ def resume():
     return state.lastEvent
 
 
-class threaded(advice):
+class taskFactory(advice):
 
-    """Wrap a generator function to return a 'Thread'
+    """Wrap a generator function to return a new 'Task' each time it's called
 
     Usage::
 
@@ -49,25 +49,25 @@ class threaded(advice):
             yield whatever; events.resume()
             # ...
 
-        someMethod = events.threaded(someMethod)
+        someMethod = events.taskFactory(someMethod)
 
-    When called, 'ob.someMethod(whatever)' will return an 'events.Thread' that
-    executes 'someMethod'.  Note that this may also be used in conjunction with
+    Each time it's called, 'ob.someMethod(whatever)' will return a new
+    'events.Task' that executes the code of the 'someMethod' function on the
+    supplied parameter(s).  Note that this may also be used in conjunction with
     'binding.Make', e.g.::
 
-        def aThread(self):
+        def aTask(self):
             yield self.something; events.resume()
             # ...
 
-        aThread = binding.Make( events.threaded(aThread) )
+        aTask = binding.Make( events.taskFactory(aTask) )
 
-    In this case, 'ob.aThread' will be an 'events.Thread' that runs the
-    'aThread' method.  This is often convenient to use with 'uponAssembly=True',
-    so that the thread is started as soon as the component is assembled."""
+    In this case, 'ob.aTask' will be an 'events.Task' that runs the
+    'aTask' method.  This is often convenient to use with 'uponAssembly=True',
+    so that the task is started as soon as the component is assembled."""
 
     def __call__(self,*__args,**__kw):
-        return Thread(self._func(*__args,**__kw))
-
+        return Task(self._func(*__args,**__kw))
 
 
 
@@ -82,7 +82,7 @@ class threaded(advice):
 
 class Interrupt(object):
 
-    """Interrupt a thread with an error if specified event occurs
+    """Interrupt a task with an error if specified event occurs
 
     Usage::
 
@@ -94,7 +94,7 @@ class Interrupt(object):
             print "readline() took more than 5 seconds"
 
     An 'Interrupt' object is an 'events.ITaskSwitch', so you can only use it
-    within a thread, and you cannot set callbacks on it.  If the supplied
+    within a task, and you cannot set callbacks on it.  If the supplied
     generator/iterator exits for any reason, the interruption is cancelled.
 
     Also note that because generator objects are not reusable, neither are
@@ -127,14 +127,14 @@ class Interrupt(object):
 
         Wrap execution of 'iterator' so that it will raise 'errorType' if
         'eventSource' fires before 'iterator' exits (or aborts), assuming that
-        the 'Interrupt' is yielded to a thread."""
+        the 'Interrupt' is yielded to a task."""
 
-        self.iterator = adapt(iterator,ITask)
+        self.iterator = adapt(iterator,IProcedure)
         self.source  =  adapt(eventSource,IEventSource)
         self.errorType = errorType
 
 
-    def nextAction(self,thread=None,state=None):
+    def nextAction(self,task=None,state=None):
 
         if state is not None:
 
@@ -145,7 +145,7 @@ class Interrupt(object):
 
             def interrupt(source,event):
                 if not cancelled():
-                    state.CALL(doInterrupt()); thread.step(source,event)
+                    state.CALL(doInterrupt()); task.step(source,event)
 
             def doInterrupt():
                 raise self.errorType(resume())
@@ -162,19 +162,19 @@ class Interrupt(object):
 
 
 
-class TaskAsTaskSwitch(protocols.Adapter):
+class ProcedureAsTaskSwitch(protocols.Adapter):
 
     protocols.advise(
         instancesProvide=[ITaskSwitch],
-        asAdapterForProtocols=[ITask]
+        asAdapterForProtocols=[IProcedure]
     )
 
-    def nextAction(self,thread=None,state=None):
+    def nextAction(self,task=None,state=None):
         if state is not None:
             state.CALL(self.subject)
         return True
 
-protocols.declareImplementation(GeneratorType, [ITask])
+protocols.declareImplementation(GeneratorType, [IProcedure])
 
 
 
@@ -241,7 +241,7 @@ class Scheduler(object):
 
 
     def spawn(self, iterator):
-        return _SThread(iterator, self)
+        return _STask(iterator, self)
 
 
     def alarm(self, iterator, timeout, errorType=TimeoutError):
@@ -273,9 +273,9 @@ class _Sleeper(object):
         self.scheduler = scheduler
         self.delay = delay
 
-    def nextAction(self,thread=None,state=None):
-        if thread is not None:
-            self.addCallback(thread.step)
+    def nextAction(self,task=None,state=None):
+        if task is not None:
+            self.addCallback(task.step)
 
     def addCallback(self,func):
         self.scheduler._callAt(
@@ -285,14 +285,14 @@ class _Sleeper(object):
 
 
 
-class ThreadState(object):
+class TaskState(object):
 
-    """Tracks the state of a thread; see 'events.IThreadState' for details"""
+    """Tracks the state of a task; see 'events.ITaskState' for details"""
 
     __slots__ = 'lastEvent', 'handlingError', 'stack'
 
     protocols.advise(
-        instancesProvide=[IThreadState]
+        instancesProvide=[ITaskState]
     )
 
     def __init__(self):
@@ -301,7 +301,7 @@ class ThreadState(object):
         self.stack = []
 
     def CALL(self,iterator):
-        self.stack.append( adapt(iterator,ITask) )
+        self.stack.append( adapt(iterator,IProcedure) )
 
     def YIELD(self,value):
         self.lastEvent = value
@@ -326,8 +326,8 @@ class ThreadState(object):
 
 
 
-class Thread(object):
-    """Lightweight "thread" that responds to events, using generator/iterators
+class Task(object):
+    """Thread-like "task" that pauses and resumes in response to events
 
     Usage::
 
@@ -335,32 +335,32 @@ class Thread(object):
             yield untilSomeCondition; events.resume()
             # ... do something ...
 
-        events.Thread(aGenerator(someValue))    # create the thread
+        events.Task(aGenerator(someValue))    # create a task
 
-    When created, threads run until the first 'yield' operation yielding an
-    'ITaskSwitch' results in the thread being suspended.  The thread will
+    When created, tasks run until the first 'yield' operation yielding an
+    'ITaskSwitch' results in the task being suspended.  The task will
     then be resumed when the waited-on event fires its callbacks, and so on.
 
-    Threads offer an 'isFinished' 'ICondition' that can be waited on, or checked
-    to find out whether the thread has successfully completed.  See
-    'events.IThread' for more details."""
+    Tasks offer an 'isFinished' 'ICondition' that can be waited on, or checked
+    to find out whether the task has successfully completed.  See
+    'events.ITask' for more details."""
 
     __slots__ = 'isFinished', '_state'
 
-    protocols.advise( instancesProvide=[IThread] )
+    protocols.advise( instancesProvide=[ITask] )
 
     def __init__(self, iterator):
         self.isFinished = Condition()
-        self._state = ThreadState()
+        self._state = TaskState()
         self._state.CALL(iterator)
         self._start()
 
     def _start(self):
-        """Hook for subclasses to start the thread"""
+        """Hook for subclasses to start the task"""
         self.step()
 
     def _uncaughtError(self):
-        """Hook for subclasses to catch exceptions that escape the thread"""
+        """Hook for subclasses to catch exceptions that escape the task"""
         try:
             raise
         except SystemExit,v:
@@ -368,7 +368,7 @@ class Thread(object):
             return True
 
     def step(self, source=None, event=NOT_GIVEN):
-        """See 'events.IThread.step'"""
+        """See 'events.ITask.step'"""
         state = self._state; state.YIELD(event)
 
         while state.stack:
@@ -408,22 +408,22 @@ class Thread(object):
         self.isFinished.set(True)
         return True
 
-class _SThread(Thread):
+class _STask(Task):
 
-    """'events.Thread' that handles errors better, by relying on a scheduler"""
+    """'events.Task' that handles errors better, by relying on a scheduler"""
 
     __slots__ = 'scheduler','aborted'
 
-    protocols.advise( instancesProvide=[IScheduledThread] )
+    protocols.advise( instancesProvide=[IScheduledTask] )
 
     def __init__(self, iterator, scheduler):
         self.scheduler = scheduler
         self.aborted = Condition()
-        Thread.__init__(self,iterator)
+        Task.__init__(self,iterator)
 
 
     def _start(self):
-        super(_SThread,self).step()
+        super(_STask,self).step()
 
 
     def _uncaughtError(self):
@@ -441,9 +441,9 @@ class _SThread(Thread):
 
 
     def step(self, source=None, event=NOT_GIVEN):
-        """See 'events.IScheduledThread.step'"""
+        """See 'events.IScheduledTask.step'"""
         self.scheduler._callAt(
-            lambda e,s: super(_SThread,self).step(source,event),
+            lambda e,s: super(_STask,self).step(source,event),
             self.scheduler.now()
         )
 
