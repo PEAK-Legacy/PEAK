@@ -244,9 +244,7 @@ class Type(Namespace):
 
 
 
-    def __init__(self,*__args,**__kw):
-
-        super(Type,self).__init__(*__args)
+    def __init__(self,parentComponent=NOT_GIVEN,componentName=None,**__kw):
 
         klass = self.__class__
 
@@ -266,17 +264,19 @@ class Type(Namespace):
             if f.attrName in __kw:
                 f._setup(self,__kw[f.attrName])
 
+        if parentComponent is not NOT_GIVEN or componentName is not None:
+            self.setParentComponent(parentComponent,componentName)
 
 
+    def setParentComponent(self, parentComponent, componentName=None):
+        if parentComponent is not None or componentName is not None:
+            raise TypeError("Data values are not components")
 
+    def getParentComponent(self):
+        return None
 
-
-
-
-
-
-
-
+    def getComponentName(self):
+        return None
 
 
 
@@ -340,21 +340,21 @@ class Immutable(Type, HashAndCompare):
     _hashAndCompare = binding.Once(_hashAndCompare)
 
 
-    def setParentComponent(self, parentComponent, componentName=None):
-        if parentComponent is not None or componentName is not None:
-            raise TypeError("Data values are not components")
-
-    def getParentComponent(self):
-        return None
-
-    def getComponentName(self):
-        return None
-
     def __setattr__(self,attr,value):
         raise TypeError("Immutable object", self)
 
     def __delattr__(self,attr,value):
         raise TypeError("Immutable object", self)
+
+
+
+
+
+
+
+
+
+
 
 
 
