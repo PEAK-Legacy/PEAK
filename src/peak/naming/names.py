@@ -153,7 +153,7 @@ class OpaqueURL(Name):
     parse = classmethod(parse)
 
     def __str__(self):
-        return '%s:%s' % self
+        return '%s:%s' % tuple(self)
 
 
 

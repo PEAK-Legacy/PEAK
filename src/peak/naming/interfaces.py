@@ -73,7 +73,7 @@ class NamingException(Exception):
 
     def __init__(self, *args, **kw):
 
-        for k in self.extras:
+        for k in self.otherattrs:
             setattr(self,k,kw.get(k))
 
         self.args = args
