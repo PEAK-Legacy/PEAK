@@ -1,5 +1,17 @@
 Fixes and Enhancements since Version 0.5 alpha 3
 
+ - Use of the included 'kjbuckets' module is now DEPRECATED, due to increasing
+   bitrot.  Aaron Watters originally wrote this extension for Python 1.2, and
+   it has not been well-maintained for newer versions of the Python/C API.
+   Instead of 'kjSet' objects, use the Python 2.3 'Set' type, and instead of
+   the 'kjGraph' type, use the new 'Graph' type in 'peak.util.Graph'.  Some
+   porting effort may be required, as these types are not precisely the same
+   in signature as the originals.
+
+ - The '_setNS()' method of the 'peak.util.SOX.ISOXNode_NS' interface has
+   changed signature, due to a lack of use of the second argument in the code
+   base, and its dependency on 'kjbuckets'.
+
  - The old 'peak.security' implementation has been removed, and replaced with
    a simpler, more flexible implementation based on generic functions (using
    less than half the code and seven fewer interfaces).  Complete documentation

@@ -82,7 +82,9 @@
 
 from peak.api import *
 import os
-from kjbuckets import *
+from sets import Set
+from peak.util.Graph import Graph
+
 
 def parseCluster(prefix, file):
 
@@ -100,10 +102,10 @@ def parseCluster(prefix, file):
     if file is None:
         file = [hn]
 
-    all    = kjGraph()
-    groups = kjSet()
-    hosts  = kjSet()
-    order  = kjDict()
+    all    = Graph()
+    groups = Set()
+    hosts  = Set()
+    order  = {}
     gname  = '__orphans__'
     inLump = False
     lineno = 0
@@ -119,15 +121,13 @@ def parseCluster(prefix, file):
 
 
 
-
-
         if lumpline or l.startswith('GROUP:'):
 
             inLump  = lumpline
             gname = l.split(':', 1)[1]
             groups.add(gname)
 
-            if not order.has_key(gname):
+            if gname not in order:
                 order[gname] = lineno, gname
 
         else:
@@ -142,19 +142,19 @@ def parseCluster(prefix, file):
                 order[l] = lineno, l
 
         def ordered_tuple(set):
-            values = (set * order).values()
+            values = (Graph.fromkeys(set) * order.items()).values()
             values.sort()
             return tuple([v for (k,v) in values])
 
     host_pre  = prefix+'hosts.'
     group_pre = prefix+'groups.'
 
-    for host in hosts.values():
+    for host in hosts:
         props[host_pre + host] = ordered_tuple(all.reachable(host))
 
     g = ~all    # get reverse mappping from groups to hosts
 
-    for group in groups.values() + ['__orphans__']:
+    for group in list(groups) + ['__orphans__']:
         props[group_pre + group] = ordered_tuple(
             # don't include groups in groups' membership
             (g.reachable(group) - groups)

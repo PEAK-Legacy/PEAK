@@ -169,7 +169,6 @@ from peak.persistence import Persistent
 from xml.sax import saxutils
 from types import StringTypes
 from peak.model.api import TCKind, SimpleTC, Boolean, TypeCode
-from kjbuckets import kjGraph
 
 XMI_METAMODELS = PropertyName('peak.xmi.metamodels')
 
@@ -195,6 +194,7 @@ _any_converters = {
     'string': str,
     'wstring': unicode,
 }
+
 
 
 
@@ -254,7 +254,7 @@ class XMINode(object):
 
     __slots__ = [
         '_name','subNodes','allNodes','attrs','index','document',
-        '__weakref__','parent','isExtension','ns2uri','uri2ns'
+        '__weakref__','parent','isExtension','ns2uri',
     ]
 
     def __init__(self, parent=None, name='',atts={}):
@@ -268,7 +268,6 @@ class XMINode(object):
             self.document = parent.document
             self.parent = parent
             self.ns2uri = parent.ns2uri
-            self.uri2ns = parent.uri2ns
 
 
     def _xml_addLiteral(self,text):
@@ -281,8 +280,10 @@ class XMINode(object):
             ns2uri = dict(
                 [(prefix,stack[-1]) for prefix,stack in parser.nsInfo.items()]
             )
-            node._setNS(ns2uri, ~kjGraph(ns2uri.items()))
+            node._setNS(ns2uri)
         return node
+
+
 
 
     def _xml_addChild(self,node):
@@ -346,8 +347,8 @@ class XMINode(object):
         return self.index[ref].getId()
 
 
-    def _setNS(self, ns2uri, uri2ns):
-        self.ns2uri, self.uri2ns = ns2uri, uri2ns
+    def _setNS(self, ns2uri):
+        self.ns2uri = ns2uri
 
 
 
@@ -662,7 +663,6 @@ class XMIDocument(binding.Component, XMINode):
     _name = None
     parent = None
     ns2uri = {}
-    uri2ns = kjGraph()
 
     document = binding.Obtain('.')
     nodeClass = XMINode
@@ -683,6 +683,7 @@ class XMIDocument(binding.Component, XMINode):
         indStrm.write('<?xml version="1.0" encoding="utf-8">\n')
         for node in self.subNodes:
             node.writeTo(indStrm)
+
 
 
 

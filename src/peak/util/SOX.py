@@ -31,12 +31,12 @@
 
 from xml.sax.saxutils import XMLGenerator, quoteattr, escape
 from protocols import Interface, advise, Adapter
-from kjbuckets import kjGraph
 
 __all__ = [
     'load', 'ISOXNode', 'ISOXNode_NS', 'IXMLBuilder', 'ExpatBuilder',
     'Node', 'Node_NS', 'Document', 'Document_NS', 'IndentedXML',
 ]
+
 
 
 class ISOXNode(Interface):
@@ -88,8 +88,8 @@ class ISOXNode_NS(Interface):
 
            Child node must implement the 'ISOX2Node' interface."""
 
-    def _setNS(ns2uri, uri2ns):
-        """Set namespace declaration maps"""
+    def _setNS(ns2uri):
+        """Set namespace declaration map"""
 
     def _addText(text):
         """Add text string 'text' to node"""
@@ -228,7 +228,7 @@ class NSNodeAsXMLBuilder(Adapter):
             ns2uri = dict(
                 [(prefix,stack[-1]) for prefix,stack in parser.nsInfo.items()]
             )
-            node._setNS(ns2uri, ~kjGraph(ns2uri.items()))
+            node._setNS(ns2uri)
         self.lastName = name
         return node
 
@@ -303,20 +303,27 @@ class Document(Node):
     def _newNode(self,name,atts):
         return Node(name,atts)
 
+
 class Node_NS(Node):
 
     advise( instancesProvide = [ISOXNode_NS] )
     ns2uri = {}
-    uri2ns = kjGraph()
 
     def _newNode(self,name,atts):
         node = self.__class__(
-            name, atts, ns2uri=self.ns2uri, uri2ns=self.uri2ns
+            name, atts, ns2uri=self.ns2uri,
         )
         return node
 
-    def _setNS(self, ns2uri, uri2ns):
-        self.ns2uri, self.uri2ns = ns2uri, uri2ns
+    def _setNS(self, ns2uri):
+        self.ns2uri = ns2uri
+
+
+
+
+
+
+
 
 
 class Document_NS(Node_NS):
@@ -515,10 +522,10 @@ class NegotiatingParser:
     def addNamespace(self,prefix,ns_uri):
         self.ns_info.setdefault(prefix,[]).append(ns_uri)
         self.stack[-1].setdefault('prefixes',[]).append(prefix)
-        # We have new XML namespaces, so our caches are invalid until 
+        # We have new XML namespaces, so our caches are invalid until
         # we're done with this element: reset caches for now
         self.resetCaches()
-    
+
 
     def splitName(self,name):
         if ':' in name:
@@ -589,7 +596,7 @@ class NegotiatingParser:
         if 'prefixes' in data:
             for prefix in data['prefixes']:
                 self.ns_info[prefix].pop()
-            
+
         if 'caches' in data:
             self.attribute_map, self.element_map = data['caches']
             if 'lookups' in data:
@@ -716,11 +723,11 @@ class NegotiatingParser:
 
     def parseString(self,text,root=None,url=None):
         self._beforeParsing(root,url).Parse(text,True)
-        return self._afterParsing()        
+        return self._afterParsing()
 
     def parseStream(self,stream,root=None,url=None):
         self._beforeParsing(root,url).ParseFile(stream)
-        return self._afterParsing()        
+        return self._afterParsing()
 
 
 

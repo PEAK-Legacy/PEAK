@@ -8,7 +8,7 @@ __all__ = [
 from types import FunctionType
 from new import instancemethod
 from peak.binding.once import ActiveClass, getInheritedRegistries
-from kjbuckets import kjGraph
+from peak.util.Graph import Graph
 import protocols
 
 
@@ -458,7 +458,7 @@ class MethodExporter(protocols.ProviderMixin,ActiveClass):
 
         verbs = self.verbs = {}
         mt    = self.methodTemplates = {}
-        vt    = kjGraph()
+        vt    = Graph()
 
         for v in getInheritedRegistries(self,'verbs'):
             verbs.update(v)

@@ -4,19 +4,19 @@ from peak.api import *
 from peak.util.hashcmp import HashAndCompare
 import interfaces
 from interfaces import *
-from kjbuckets import kjSet, kjGraph
 from copy import deepcopy, _deepcopy_dispatch
 from cStringIO import StringIO
 __all__ = []
 
-def _dc_kjGraph(x,memo):
-    return kjGraph([(deepcopy(k,memo),deepcopy(v,memo)) for k,v in x.items()])
+from peak.util.Graph import Graph
+from sets import Set, ImmutableSet
 
-def _dc_kjSet(x,memo):
-    return kjSet([deepcopy(k,memo) for k in x.items()])
 
-_deepcopy_dispatch[type(kjSet())] = _dc_kjSet
-_deepcopy_dispatch[type(kjGraph())] = _dc_kjGraph
+
+
+
+
+
 
 
 
@@ -338,9 +338,9 @@ class AbstractRV(AbstractSQLRenderable,object):
     def __call__(self,
         where=None,join=(),outer=(),rename=(),keep=None,calc=(),groupBy=()
     ):
-        cols = kjGraph(self.columns)
-        rename = ~kjGraph(rename)
-        groupBy = kjSet(groupBy)
+        cols = Graph(self.columns)
+        rename = ~Graph(rename)
+        groupBy = Set(groupBy)
         join = [self]+list(join)
         outer = list(outer)
 
@@ -351,21 +351,21 @@ class AbstractRV(AbstractSQLRenderable,object):
             cols += rv.attributes()
 
         if groupBy or keep is not None:
-            cols = (kjSet(keep or ())+kjSet(~rename)+groupBy) * cols
+            cols = Graph.fromkeys(
+                Set(keep or ()) | Set((~rename).keys()) | groupBy
+            ) * cols
 
         if rename:
             cols = rename * cols + (cols-cols.restrict(~rename))
 
         rv = BasicJoin(
-            where, join, outer, cols+kjGraph(calc)
+            where, join, outer, cols+calc
         )
 
         if groupBy:
-            return GroupBy(rv, groupBy.items())
+            return GroupBy(rv, groupBy)
 
         return rv
-
-
 
     def attributes(self):
         return self.columns
@@ -412,7 +412,7 @@ class Table(AbstractRV, HashAndCompare):
 
     def __init__(self,name,columns,db=None):
         self.name = name
-        self.columns = kjGraph([(c,Column(c,self)) for c in columns])
+        self.columns = Graph([(c,Column(c,self)) for c in columns])
         self.db = db
         self._hashAndCompare = (
             self.__class__.__name__, self.db, self.name
@@ -456,7 +456,7 @@ class GroupBy(AbstractRV, HashAndCompare):
         groupBy = list(groupBy); groupBy.sort()
         self.rv = rv
         self.groupBy = groupBy
-        self.columns = kjGraph([(c,Column(c,self)) for c in rv.keys()])
+        self.columns = Graph([(c,Column(c,self)) for c in rv.keys()])
         for k in rv.keys():
             if k not in groupBy and not rv[k].isAggregate():
                 raise TypeError("Non-aggregate column in groupBy",k,rv[k])
@@ -642,10 +642,10 @@ class BasicJoin(AbstractRV, HashAndCompare):
         self.relvars = tuple(myrels)
         self.outers = tuple(outers)
         self.condition = condition
-        self.columns = kjGraph(columns)
+        self.columns = Graph(columns)
         self._hashAndCompare = (
             self.__class__.__name__, condition,
-            self.relvars, self.outers, self.columns
+            self.relvars, self.outers, ImmutableSet(self.columns)
         )
 
 
@@ -704,7 +704,9 @@ class BasicJoin(AbstractRV, HashAndCompare):
         for tbl in self.relvars:
 
             tblCols = tbl.attributes()
-            outputSubset = remainingColumns * kjSet(tblCols.values())
+            outputSubset = remainingColumns * Graph.fromkeys(
+                Set(tblCols.values())
+            )
             remainingColumns = remainingColumns - outputSubset
 
             if outputSubset==tblCols:
@@ -731,8 +733,6 @@ class BasicJoin(AbstractRV, HashAndCompare):
 
         writer.prepender(' WHERE ').writeCond(self.condition)
         return writer.data()
-
-
 
 
 
@@ -862,7 +862,7 @@ class Not(_compound):
 class Cmp(_expr, HashAndCompare):
 
     invOps = {'=':'<>', '<':'>=', '>':'<='}
-    invOps = kjGraph(invOps.items())
+    invOps = Graph(invOps.items())
     invOps = invOps + ~invOps
 
     def __init__(self,arg1,op,arg2):

@@ -15,6 +15,7 @@ allSuites = [
     'test_signature:test_suite',
     'test_conflict:test_suite',
     'peak.util.tests:test_unittrace',
+    'peak.util.tests:test_Graph',
 ]
 
 def test_unittrace():
@@ -23,7 +24,14 @@ def test_unittrace():
         'unittrace.txt', optionflags=doctest.ELLIPSIS, package='peak.util',
     )
 
-    
+
+def test_Graph():
+    from peak.util import doctest
+    return doctest.DocFileSuite(
+        'Graph.txt', optionflags=doctest.ELLIPSIS, package='peak.util',
+    )
+
+
 def test_suite():
     from peak.util.imports import importSuite
     return importSuite(allSuites, globals())

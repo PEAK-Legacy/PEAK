@@ -251,7 +251,7 @@ class IRelationVariable(Interface):
         """Return the IRelationAttribute for the named column"""
 
     def attributes():
-        """Return a kjGraph mapping names->relation attributes"""
+        """Return a peak.util.Graph mapping names->relation attributes"""
 
     def getDB():
         """Return an object indicating the responsible DB, or None if mixed"""

@@ -6,8 +6,7 @@ from peak.tests import testRoot
 from peak.query.api import *
 from peak.query.algebra import BasicJoin, Not, And, Or, Table, PhysicalDB, \
      function, aggregate, Parameter, SQLWriter, Cmp
-from kjbuckets import kjSet
-
+from sets import Set
 
 def getSQL(rv):
     ctx = SQLWriter()
@@ -18,6 +17,7 @@ def getSQLParams(rv):
     ctx = SQLWriter()
     ctx.writeSelect(rv)
     return ctx.data()
+
 
 
 
@@ -289,10 +289,10 @@ class SimplificationAndEquality(SimpleFixtures):
         x,y,z = self.condX, self.condY, self.condZ
         A,B,C,D = self.rvA, self.rvB, self.rvC, self.rvD
 
-        self.assertEqual( kjSet(A.keys()), kjSet(self.A_Columns) )
-        self.assertEqual( kjSet(B.keys()), kjSet(self.B_Columns) )
-        self.assertEqual( kjSet(C.keys()), kjSet(self.C_Columns) )
-        self.assertEqual( kjSet(D.keys()), kjSet(self.D_Columns) )
+        self.assertEqual( Set(A.keys()), Set(self.A_Columns) )
+        self.assertEqual( Set(B.keys()), Set(self.B_Columns) )
+        self.assertEqual( Set(C.keys()), Set(self.C_Columns) )
+        self.assertEqual( Set(D.keys()), Set(self.D_Columns) )
 
         self._verifyJoinedColumns(A,x,B)
         self._verifyJoinedColumns(C,y,D)
@@ -421,11 +421,11 @@ class SimplificationAndEquality(SimpleFixtures):
                 A[theColumn], Arenamed.theColumn
             )
             self.assertEqual(
-                kjSet(Arenamed.keys()),
-                kjSet(
+                Set(Arenamed.keys()),
+                Set(
                     ('theColumn',) + self.A_Columns[:colNum]
                                    + self.A_Columns[colNum+1:]
-                )
+                ), colNum
             )
 
         for abcd in [ A(join=[B,C,D],where=x), A(outer=[B,C,D],where=x) ]:
@@ -435,8 +435,8 @@ class SimplificationAndEquality(SimpleFixtures):
             )
 
             self.assertEqual(
-                kjSet([n.upper() for n in abcd.keys()]),
-                kjSet(ABCD.keys())
+                Set([n.upper() for n in abcd.keys()]),
+                Set(ABCD.keys())
             )
 
 
@@ -568,7 +568,7 @@ class DatabaseTests(SimpleFixtures):
                     rename=Items(empname='Name')
                 )
             ),
-            "SELECT E1.empname AS Name, E1.salary"
+            "SELECT E1.salary, E1.empname AS Name"
             " FROM Employee AS E1 WHERE E1.empnr=42"
         )
 

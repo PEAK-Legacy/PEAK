@@ -2,7 +2,7 @@
 
 from __future__ import generators
 from peak.api import *
-from kjbuckets import *
+from sets import Set
 from peak.util.imports import importObject
 
 __all__ = [
@@ -251,8 +251,7 @@ class ModelElement(model.Element):
         stack = [self]; push = stack.push; pop = stack.pop
         output = []; append = output.append
 
-        visitedObjects = kjSet([id(self)])
-        haveVisited = visitedObjects.member
+        visitedObjects = Set([id(self)])
         visit = visitedObjects.add
 
         def visitor(kind,items):
@@ -263,7 +262,7 @@ class ModelElement(model.Element):
                     return
 
                 ii = id(item)
-                if not haveVisited(ii):
+                if ii not in visitedObject:
                     visit(ii)
                     push(item)
 
@@ -285,22 +284,22 @@ class ModelElement(model.Element):
 
 
 
+
     def findRequiredElements(self, kinds=(ALL_DEP,), recursive=False):
 
         """List elements this one depends on by 'kinds' relationships"""
 
-        kindSet = kjSet(list(kinds))
+        kindSet = Set(kinds)
 
-        if kindSet.member(ALL_DEP):
+        if ALL_DEP in kindSet:
             # include all dependency types
             include = lambda x: 1
         else:
             # include only types specified
-            include = kindSet.member
+            include = kindSet.__contains__
 
         output = []; append = output.append
-        visitedObjects = kjSet([id(self)])
-        haveVisited = visitedObjects.member
+        visitedObjects = Set([id(self)])
         visit = visitedObjects.add
 
         def visitor(kind,items):
@@ -310,7 +309,7 @@ class ModelElement(model.Element):
                 for item in items:
                     ii = id(item)
 
-                    if not haveVisited(ii):
+                    if ii not in visitedObjects:
                         append(item)
                         visit(ii)
 
@@ -319,6 +318,7 @@ class ModelElement(model.Element):
 
         self._visitDependencies(visitor)
         return output
+
 
 
 

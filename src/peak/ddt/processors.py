@@ -2,8 +2,9 @@ from peak.api import *
 from interfaces import *
 from model import *
 from peak.util.signature import ISignature
-from kjbuckets import kjGraph, kjSet
+from sets import Set
 from peak.storage.interfaces import ISQLConnection
+from peak.util.Graph import Graph
 
 __all__ = [
     'titleAsPropertyName', 'titleAsMethodName', 'DocumentProcessor',
@@ -25,7 +26,6 @@ def titleAsMethodName(text):
     """Convert a string like '"Spam the Sprocket"' to '"spamTheSprocket"'"""
     text = ''.join(text.strip().title().split())
     return text[:1].lower()+text[1:]
-
 
 
 
@@ -680,12 +680,12 @@ class RecordChecker(ModelChecker):
             extract = mapper.extract
             parse = mapper.parse
 
-            recordMap = kjGraph([(extract(record),record) for record in data])
-            rowMap = kjGraph([(parse(row.cells[column]),row) for row in rows])
+            recordMap = Graph([(extract(record),record) for record in data])
+            rowMap = Graph([(parse(row.cells[column]),row) for row in rows])
 
             column += 1
             missing, extra = [], []
-            for key in kjSet(rowMap.keys()+recordMap.keys()).items():
+            for key in Set(rowMap.keys()+recordMap.keys()):
                 m,e = self.compare(
                     rowMap.neighbors(key), recordMap.neighbors(key), column
                 )
