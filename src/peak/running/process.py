@@ -22,9 +22,9 @@ else:
         ]
     )
 
-    signal_names = dict(
-        [(signum,signame) for signame,signum in signals.items()]
-    )
+    signal_names = {}
+    for signame,signum in signals.items():
+        signal_names.setdefault(signum,[]).append(signame)
 
     signal = signal.signal
 
@@ -43,9 +43,7 @@ class SignalManager(binding.Singleton):
 
     """Global signal manager"""
 
-    protocols.advise(
-        classProvides = [ISignalManager]
-    )
+    protocols.advise( classProvides = [ISignalManager] )
 
     signal_handlers = dict(
         [(num,WeakValueDictionary()) for (name,num) in signals.items()]
@@ -74,9 +72,11 @@ class SignalManager(binding.Singleton):
                 signal(signum, SIG_DFL)
 
     def _handle(self, signum, frame):
-        signame = signal_names[signum]
         for hid, handler in self.signal_handlers[signum].items():
-            getattr(handler,signame)(signum, frame)
+            for signame in signal_names[signum]:
+                if hasattr(handler,signame):
+                    getattr(handler,signame)(signum, frame)
+                    break
 
     def __call__(self,*args): return self
 
