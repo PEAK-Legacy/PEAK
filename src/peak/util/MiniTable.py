@@ -121,7 +121,7 @@ class Table(UserList):
 
 
 
-    def SET(self, whereItems, setItems)
+    def SET(self, whereItems, setItems):
 
         """table.SET( Items(key1=val1,...), Items(setfield1=setval1,...) )
 
