@@ -26,18 +26,9 @@
 
         XMI 1.0
 
-        - Support disjoint (i.e. wasteful) reference collections (the XMI
-          spec allows for multiple collection tags to be joined together; ugh!)
-
         - marshal strings to values (needs support from peak.model & uml.Model)
 
-          * ints
-
-          * enumerations
-
-          * booleans
-
-          * multiplicities?
+          * ints, enums, booleans, other...?
 
         - handle CORBA types (YAGNI?)
 
@@ -79,45 +70,13 @@
         - cross-reference between files could be supported by having document
           objects able to supply a relative or absolute reference to another
           document.  But this requires HREF support.  :(
-"""        
+"""
+
 from peak.api import *
 from peak.util import SOX
 from weakref import WeakValueDictionary
 
 __bases__ = model,
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -307,10 +266,10 @@ class XMI_DM(storage.EntityDM):
             if model.IValue.isImplementedBy(f):
                 d[f.attrName] = node.getValue()
             else:
-                d[f.attrName] = [
-                    self[n.getRef()]
-                        for n in node.subNodes if not n.isExtension
-                ]
+                d.setdefault(f.attrName,[]).extend(
+                    [self[n.getRef()]
+                        for n in node.subNodes if not n.isExtension]
+                )
 
         coll = target.parent
         if coll is None: return d

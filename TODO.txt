@@ -123,9 +123,6 @@ Open Issues/To-Do Items
 
   peak.model
 
-    * Review other-end-notification protocols in the light of managed storage
-      models (e.g. database Records using virtual sequence objects as fields)
-
     * Marshalling interface in Services; implementations for Enumeration, etc.
 
     * More S-E-F metadata: features, subclasses, svc.<->class, nested services
@@ -135,8 +132,6 @@ Open Issues/To-Do Items
     * Implement WarpCORE-oriented structural model, w/Querying support
 
     * "Indexed" version of in-memory model?
-
-    * "Persistent" StructuralModel (indexes w/BTrees?  Catalog?)
 
 
     Queries
@@ -157,6 +152,11 @@ Open Issues/To-Do Items
        * How much of framework needs extensibility?  Should the predicate
          classes be placed in the StructuralModel's namespace so that predicates
          have their meaning assigned by the StructuralModel implementation?
+
+
+
+
+
 
 
 
@@ -206,8 +206,6 @@ Open Issues/To-Do Items
   peak.metamodels.xmi
 
     * Re-org to self-contain all XMI stuff inside an _XMI sub-component/service
-
-    * Refactoring to pure S-E-F model using Persistence
 
     * Document version of standard used
 
