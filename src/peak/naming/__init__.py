@@ -20,9 +20,9 @@
         * Detailed interface and subclassing docs
 """
 
-from Interfaces import *
-from Names      import *
+from interfaces import *
+from names      import *
 from references import *
-from API        import *
-import SPI
+from api        import *
+import spi
 

@@ -1,7 +1,8 @@
 """Name and Syntax Objects"""
 
 import re
-from Interfaces import *
+from interfaces import *
+from exceptions import * # XXX
 from types import StringTypes
 
 __all__ = [
