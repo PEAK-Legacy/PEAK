@@ -163,10 +163,39 @@ class UUID(str):
 
 
     def bytes(self):
+        """Return a 16 byte binary string representing the 128 bit ID in
+        network order"""
+        
         x = ''.join(self.split('-'))
         return ''.join([chr(int(x[i:i+2], 16)) for i in range(0, len(x), 2)])
 
 
+    def base64(self):
+        """Return a 24 byte string that is more compact than the
+        36-byte hex form, but still not binary"""
+        
+        # slice is to remove the trailing newline
+        return self.bytes().encode('base64')[:-1]
+        
+
+    def fromBytes(klass, s):
+        if len(s) != 16:
+            raise ValueError, "UUID byte representation must be 16 bytes long"
+
+        s = tuple(["%02x" % ord(c) for c in s])
+        s = "%s%s%s%s-%s%s-%s%s-%s%s-%s%s%s%s%s%s" % s
+        
+        return klass(s)
+        
+    fromBytes = classmethod(fromBytes)
+    
+
+    def fromBase64(klass, s):
+        return klass.fromBytes(s.decode('base64'))
+
+    fromBase64 = classmethod(fromBase64)
+
+    
     def __repr__(self):
         return "UUID('%s')" % str(self)
 
