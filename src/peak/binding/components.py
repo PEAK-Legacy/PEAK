@@ -868,6 +868,12 @@ class Component(_Base):
         else:
             tba.append(child)       # save reference to child for callback
 
+            if (len(tba)==1 and self.__parentSetting is not NOT_GIVEN
+                and len(tba)==1 and not self.__class__.__attrsToBeAssembled__
+            ):
+                # Make sure our parent calls us, since we need to call a
+                # child now, but would not have been registered ourselves.
+                notifyUponAssembly(self.getParentComponent(),self)
 
     def uponAssembly(self):
 
@@ -893,12 +899,6 @@ class Component(_Base):
         except:
             self.__objectsToBeAssembled__ = tba
             raise
-
-
-
-
-
-
 
     __objectsToBeAssembled__ = New(list)
 

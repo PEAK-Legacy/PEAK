@@ -46,8 +46,6 @@ class assemblyTracer(binding.Component):
     activated = binding.requireBinding("list to append ids to")
     id = binding.requireBinding("identity of this object")
 
-    thingy = binding.whenAssembled(lambda *x: None)
-
     def uponAssembly(self):
         if self.__objectsToBeAssembled__ is not None:
             self.activated.append(self.id)
@@ -69,7 +67,7 @@ class Outermost(assemblyTracer):
     foo = None
 
 class InnerMost(assemblyTracer):
-    pass
+    thingy = binding.whenAssembled(lambda *x: None)
 
 class Middle(assemblyTracer):
 
@@ -79,6 +77,8 @@ class Middle(assemblyTracer):
         )
 
     child = binding.whenAssembled(child)
+
+
 
 class AssemblyTests(TestCase):
 
@@ -142,14 +142,14 @@ class AssemblyTests(TestCase):
 
 
 
-
-
-
-
-
-
-
-
+    def checkDelayedSubscribe(self):
+        # create parent w/child, assembled, then create child
+        log = self.append
+        root = Outermost(None, log=log, activated=self.activated, id=1,
+            foo = Outermost(id=3, log=log, activated=self.activated)
+        )
+        new = InnerMost(root.foo, log=log,activated=self.activated, id=2)
+        self.assertCompleteness(3)
 
 
 

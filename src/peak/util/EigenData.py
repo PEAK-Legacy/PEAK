@@ -289,23 +289,42 @@ class EigenRegistry(EigenDict):
 
     """EigenDict that takes Interface objects as keys, handling inheritance"""
 
-    def register(self,implements,item):
+    def __init__(self):
+        self.depth = {}
+        super(EigenRegistry,self).__init__()
+
+    def register(self,implements,item, depth=0):
         """Register 'item' under 'implements' (an Interface or nested tuple)"""
         if isinstance(implements,tuple):
             for iface in implements:
                 self.register(iface,item)
-        else:
+        elif self.depth.get(implements,depth)>=depth:
             self[implements]=item
+            self.depth[implements] = depth
             for i in implements.getBases():
-                self.register(i, item)
+                self.register(i, item, depth+1)
+
 
     def setdefault(self,key,failobj=None):
         raise NotImplementedError
 
+    def update(self,other):
+        """Conservatively merge in another EigenRegistry"""
+
+        if not isinstance(other,EigenRegistry):
+            raise TypeError("Not an EigenRegistry", other)
+
+        mydepth = self.depth
+        get = mydepth.get
+        sc = self._setCell
+        for iface, depth in other.depth.items():
+            old = get(iface,depth)
+            if old>=depth:
+                sc(iface).set(other[iface])
+                mydepth[iface] = depth
 
     def __delitem__(self,key):
         raise NotImplementedError
-
 
     def clear(self):
         raise NotImplementedError
@@ -315,6 +334,28 @@ class EigenRegistry(EigenDict):
 
 CollapsedCell = EigenCell()
 CollapsedCell.exists()  # force locking
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

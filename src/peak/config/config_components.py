@@ -124,6 +124,7 @@ def findUtility(component, iface, default=NOT_GIVEN):
 class PropertyMap(Component):
 
     rules = New(dict)
+    depth = New(dict)
 
     protocols.advise(
         instancesProvide=[IPropertyMap]
@@ -139,19 +140,18 @@ class PropertyMap(Component):
         _setCellInDict(self.rules, PropertyName(propName), lambda *args: value)
 
 
-    def registerProvider(self, ifaces, provider):
+    def registerProvider(self, ifaces, provider, depth=0):
         """Register 'item' under 'implements' (an Interface or nested tuple)"""
 
         if isinstance(ifaces,tuple):
             for iface in ifaces:
                 self.register(iface,provider)
-        else:
+        elif self.depth.get(ifaces,depth)>=depth:
             # ifaces is a configKey
             _setCellInDict(self.rules, ifaces, provider)
+            self.depth[ifaces]=depth
             for i in ifaces.getBases():
-                self.registerProvider(i, provider)
-
-
+                self.registerProvider(i, provider,depth+1)
 
 
 
