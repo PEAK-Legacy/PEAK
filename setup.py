@@ -76,9 +76,9 @@ if include_metamodels:
 
         packages += [ 'peak.metamodels.tests' ]
 
-        data_files += findDataFiles('src/peak/metamodels/tests', 1, '*.xml')
-
-
+        data_files += findDataFiles(
+            'src/peak/metamodels/tests', 1, '*.xml', '*.asdl'
+        )
 
 try:
     # Check if Zope X3 is installed; we use zope.component

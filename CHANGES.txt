@@ -2,6 +2,15 @@ Fixes and Enhancements since Version 0.5 alpha 2
 
  Changed, Enhanced, or Newly Deprecated Features
 
+ - Added 'peak.metamodels.ASDL', a metamodel for the Zephyr Abstract Syntax
+   Description Language.  ASDL is a convenient way to describe a domain model
+   for an abstract syntax tree (AST), and the models generated with the new
+   ASDL tool can be combined with concrete syntax to create a complete parsing
+   solution for "mini languages", possibly including the Python language
+   itself.  (Future versions of the Python and Jython compilers are likely to
+   use AST models based on ASDL, and in the current Python CVS sandbox there's
+   already an ASDL model of Python's AST available.)
+
  - Enhanced 'fmtparse' and 'peak.model' to allow using types as syntax rules
    for parsing, including abstract types.  An abstract type's syntax is the
    union (using 'fmtparse.Alternatives') of the syntaxes of its subclasses
