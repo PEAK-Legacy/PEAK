@@ -26,10 +26,6 @@
 
         XMI 1.0
 
-        - marshal strings to values (needs support from peak.model & uml.Model)
-
-          * ints, enums, booleans, other...?
-
         - handle CORBA types (YAGNI?)
 
         - HREF support (ugh!)  Note that cross-file HREF needs some way to cache
@@ -70,6 +66,11 @@
         - cross-reference between files could be supported by having document
           objects able to supply a relative or absolute reference to another
           document.  But this requires HREF support.  :(
+
+        - XMI.field: needs model support for 'fromFields()'
+
+        - XMI.any, XMI.CorbaTypeCode, XMI.CorbaTcXXX ...?
+
 """
 
 from peak.api import *
@@ -77,9 +78,6 @@ from peak.util import SOX
 from weakref import WeakValueDictionary
 
 __bases__ = model,
-
-
-
 
 
 class XMINode(object):
