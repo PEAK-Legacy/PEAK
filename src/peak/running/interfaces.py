@@ -15,7 +15,7 @@ __all__ = [
 
     'IAdaptiveTask', 'IAdaptiveTaskSPI',
 
-    'IBasicReactor', 'ITwistedReactor', 'ILogger', 
+    'IBasicReactor', 'ITwistedReactor', 'ILogger', 'ICheckableResource',
 
 ]
 
@@ -492,10 +492,42 @@ class ILogger(Interface):
 
 class ICheckableResource(Interface):
 
-    """Interface for objects that can be checked for availability
-    or proper functioning."""
+    """Objects that can be checked for availability/proper functioning."""
 
     def checkResource():
-        """Check wether a resource is up/functioning correctly and
-        return either None or a string indicating the nature of the
-        problem"""
+
+        """Check whether a resource is up/functioning correctly
+
+        Return either None or a string describing the problem"""
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

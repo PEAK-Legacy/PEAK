@@ -1,12 +1,12 @@
 from peak.api import *
 from interfaces import *
 from bisect import insort_left
+from peak.naming.interfaces import IStreamFactory
+from peak.storage.interfaces import IManagedConnection
 
 __all__ = [
     'AdaptiveTask', 'TaskQueue',
 ]
-
-
 
 
 
@@ -258,13 +258,31 @@ class FileCleaner(AdaptiveTask):
 
     def getWork(self):
         t = time.time() - self.olderThan
-        self.log.info('Scanning for files matching %s older than %d minutes' % (d,self.older_than/60))
+        self.log.info(
+            'Scanning for files matching %s older than %d minutes',
+            d, self.older_than/60
+        )
         return [f for f in glob(self.pattern) if os.stat(f).st_mtime < t]
 
     def doWork(self, job):
-        self.loginfo('Deleting %d old files' % len(job))
+        self.log.info('Deleting %d old files', len(job))
         for f in job:
             os.unlink(f)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 import traceback
@@ -278,18 +296,15 @@ class URLChecker(AdaptiveTask):
     url = binding.requireBinding("name (usually URL) for resource to check")    
     restarter = binding.requireBinding("command to execute to restart")
 
-        return lookupComponent(self, self.url)
-        
-    resource = binding.Once(resource)
-
     def getWork(self):
         try:
-            rsrc = lookupComponent(self, self.url)
+            rsrc = self.lookupComponent(self.url)
         except:
             # XXX log error
             return True
             
         err = adapt(rsrc, ICheckableResource).checkResource()
+
         if err:
             # XXX log error
             return True
@@ -297,23 +312,18 @@ class URLChecker(AdaptiveTask):
         return False
         
 
-
     def doWork(self, job):
-        # XXX self.log(self.log.LOG_WARNING, 'Service not responding, restarting', self.name)
+        self.log.warning('Service %s not responding; restarting', self.name)
         ret = adapt(self.restarter, ICmdLineAppFactory)(self).run()
         # XXX logging of command output?
         if ret:
-            pass
-            # XXX self.log(self.log.LOG_WARNING, "service restart returned %d" % ret, self.name)
+            self.log.warning("Service %s restart returned %d", self.name, ret)
         
         if self.getWork():
-            pass
-            # XXX self.log(self.log.LOG_CRIT, 'service still not responding', self.name)
+            self.log.critical('Service %s still not responding', self.name)
         else:
-            # XXX self.log(self.log.LOG_NOTICE, 'service now responding', self.name)
-
+            self.log.notice('Service %s now responding', self.name)
         return True
-
 
 
 class StreamFactoryAsCheckableResource(object):
@@ -330,7 +340,7 @@ class StreamFactoryAsCheckableResource(object):
         if self.sf.exists():
             return None
 
-        return "check failed"
+        return "Check failed"
 
 
 
@@ -349,6 +359,11 @@ class ManagedConnectionAsCheckableResource(object):
             self.mc.connection # reference it to ensure it's opened
             return None
         except:
-            return ''.join(traceback.format_exception(*sys.exc_info())
+            return ''.join(traceback.format_exception(*sys.exc_info()))
 
-        return "check failed"
+        return "Check failed"
+
+
+
+
+
