@@ -39,12 +39,17 @@ __all__ += allInterfaces
 
 
 
+class ServiceMeta(binding.AutoCreatable, binding.TraversableClass):
+    pass
+    
+
 class Service(binding.AutoCreated):
 
     """Well-known instances"""
 
     __implements__ = IService
-    
+    __metaclass__  = ServiceMeta
+
 
 class App(Service):
 
@@ -75,12 +80,7 @@ class App(Service):
 
 
 
-
-
-
-
-
-class FeatureMC(MethodExporter):
+class FeatureMC(MethodExporter, binding.TraversableClass):
 
     """Method-exporting Property
     
@@ -102,6 +102,9 @@ class FeatureMC(MethodExporter):
         more detail on how method templates are defined, the use of naming
         conventions, verbs, template variants, etc."""
 
+    __metaclass__ = binding.ActiveDescriptors
+    
+
     def __get__(self, ob, typ=None):
 
         """Get the feature's value by delegating to 'ob.getX()'"""
@@ -115,12 +118,50 @@ class FeatureMC(MethodExporter):
 
         return self.getMethod(ob,'set')(val)
 
+
+
+
     def __delete__(self, ob):
 
         """Delete the feature's value by delegating to 'ob.delattrX()'"""
 
         return self.getMethod(ob,'delattr')()
-        
+
+
+    def typeObject(self,d,a):
+        rt = self.referencedType
+        if isinstance(rt,str):
+            return binding.lookupComponent(rt,self)
+        return rt
+
+    typeObject = binding.Once(typeObject)
+
+
+    fromString = binding.bindTo('typeObject/fromString')
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 class StructuralFeature(object):
 
     __metaclass__ = FeatureMC
@@ -172,20 +213,20 @@ class Field(StructuralFeature):
         return [feature.get(element)]
 
 
-    def fromString(feature, value):
 
-        tc = feature.referencedType
 
-        # XXX This is a hack for the fact that our current UML metamodel
-        # includes "referencedType='someType'" settings; if referencedType
-        # is a string, we don't use it here.  We should probably also have
-        # a fromFields() or fromTuple() capability to use specialty
-        # DataTypes.
 
-        if tc and not isinstance(tc,str):
-            return tc.fromString(value)
 
-        return value
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -410,6 +451,7 @@ class Sequence(Collection):
 
 class Classifier(binding.Base):
     """Basis for all flavors"""
+    __metaclass__ = binding.TraversableClass
 
 
 class PrimitiveType(Classifier):
@@ -421,7 +463,7 @@ class PrimitiveType(Classifier):
     fromString = classmethod(fromString)
 
 
-class EnumerationMeta(Classifier.__class__):
+class EnumerationMeta(binding.TraversableClass):
 
     def __init__(klass, name, bases, cdict):
 
@@ -446,7 +488,6 @@ class EnumerationMeta(Classifier.__class__):
         if value in klass.__values__:
             return klass.__values__[value]
         raise ValuError, value
-
 
 
 class Enumeration(Classifier):
