@@ -11,10 +11,32 @@ __all__ = [
 
 
 class IComponentKey(Interface):
+
     """Key that can be looked up via 'Component.lookupComponent()'"""
 
     def findComponent(context, default=NOT_GIVEN):
-        """Look self up in 'context', return 'default' or raise NameNotFound"""
+        """Look self up in 'context', return 'default' or raise 'NameNotFound'
+
+        'context' is an arbitrary component, to be used as the starting point
+        for the search.  'default' is a value to be returned if the key cannot
+        be found.  If 'default' is 'NOT_GIVEN', and the key cannot be found,
+        this method should raise 'exceptions.NameNotFound' instead of returning
+        a value."""
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 class IComponentFactory(Interface):
@@ -37,8 +59,6 @@ class IComponentFactory(Interface):
         component is required."""
 
 
-
-
 class IBindingNode(IConfigSource):
 
     """Minimum requirements to join a component hierarchy"""
@@ -51,6 +71,12 @@ class IBindingNode(IConfigSource):
 
     def notifyUponAssembly(child):
         """Call 'child.uponAssembly()' when component knows its root"""
+
+
+
+
+
+
 
 
 
@@ -76,10 +102,6 @@ class IBindableAttrs(Interface):
         """Ensure that no binding for 'attr' is active"""
 
 
-
-
-
-
 class IAttachable(Interface):
 
     """Object that can be told it has a parent component"""
@@ -96,6 +118,9 @@ class IAttachable(Interface):
         successfully set."""
 
 
+
+
+
 class IComponent(IAttachable, IBindingNode, IBindableAttrs, IConfigurable):
 
     """API supplied by binding.Component and its subclasses"""
@@ -106,18 +131,6 @@ class IComponent(IAttachable, IBindingNode, IBindableAttrs, IConfigurable):
 
     def uponAssembly():
         """Notify the component that its parents and root are known+fixed"""
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -135,19 +148,6 @@ class IActiveDescriptor(Interface):
 
     def activateInClass(klass, attrName):
         """Do any necessary installation in 'klass' under name 'attrName'"""
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

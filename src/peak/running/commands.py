@@ -536,10 +536,10 @@ class Bootstrap(AbstractInterpreter):
         if not naming.URLMatch(name):
             name = "config:peak.running.shortcuts.%s/" % name
 
-        try:
-            factory = self.lookupComponent(name)
-        except exceptions.NameNotFound, v:
-            raise InvocationError("Name not found: %s" % v)
+        factory = self.lookupComponent(name, default=NOT_FOUND)
+
+        if factory is NOT_FOUND:
+            raise InvocationError("Name not found: %s" % name)
 
         try:
             return self.getSubcommand(factory)
@@ -914,10 +914,10 @@ class CGIInterpreter(CGICommand):
         if not naming.URLMatch(name):
             name = "config:peak.running.shortcuts.%s/" % name
 
-        try:
-            ob = self.lookupComponent(name, suggestParent=False)
-        except exceptions.NameNotFound, v:
-            raise InvocationError("Name not found: %s" % v)
+        ob = self.lookupComponent(name, suggestParent=False, default=NOT_FOUND)
+
+        if ob is NOT_FOUND:
+            raise InvocationError("Name not found: %s" % name)
 
         # Is it a component factory?  If so, try to instantiate it first.
         factory = adapt(ob, binding.IComponentFactory, None)

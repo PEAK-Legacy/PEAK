@@ -211,7 +211,7 @@ def acquireComponent(component, name):
     the component's parent will be searched, and so on until the root component
     is reached.  If 'name' is still not found, and the root component
     implements 'config.IConfigurationRoot', the name will be looked up in the
-    default naming context, if any.  Otherwise, a NameNotFound error will be
+    default naming context, if any.  Otherwise, a 'NameNotFound' error will be
     raised."""
 
     prev = target = component
@@ -343,19 +343,15 @@ _getNextPathComponent = dict( (
 def lookupComponent(component, name, default=NOT_GIVEN, adaptTo=None,
     creationName=None, suggestParent=True):
 
-    """Lookup 'name' relative to 'component'
+    """Lookup 'name' as a component key relative to 'component'
 
-    'name' can be any name acceptable to the 'peak.naming' package, or an
-    Interface object.  Strings and compound names will be interpreted
-    as paths relative to the starting component.  (See the 'ComponentName'
-    class for details of path interpretation.)  An empty name will return
-    the starting component.  Interfaces and Properties will be looked up using
-    'config.findUtility(component, name)'.  All other kinds of names,
-    including URL strings and 'CompositeName' instances, will be looked up
-    using 'naming.lookup()'.
-
-    Regardless of how the lookup is processed, an 'exceptions.NameNotFound'
-    error will be raised if the name cannot be found."""
+    'name' can be any object that implements or is adaptable to 'IComponentKey'.
+    Such objects include 'peak.naming' names, interface objects, property
+    names, and any custom objects you may create that implement 'IComponentKey'.
+    Strings will be converted to a URL, or to a 'ComponentName' if they have
+    no URL prefix.  If the key cannot be found, an 'exceptions.NameNotFound'
+    error will be raised unless a 'default' other than 'NOT_GIVEN' is provided.
+    """
 
     result = adapt(name, IComponentKey).findComponent( component, default )
 
@@ -366,6 +362,10 @@ def lookupComponent(component, name, default=NOT_GIVEN, adaptTo=None,
         suggestParentComponent(component,creationName,result)
 
     return result
+
+
+
+
 
 # Declare that strings should be converted to names (with a default class
 # of ComponentName), in order to use them as component keys

@@ -152,14 +152,14 @@ class AbstractName(tuple):
 
         """Look the name up in context of component"""
 
-        try:
-            from api import lookup
-            return lookup(component, self, creationParent=component)
+        from api import lookup
 
-        except exceptions.NameNotFound:
-            if default is NOT_GIVEN:
-                raise
-            return default
+        return lookup(
+            component, self, default=default, creationParent=component
+        )
+
+
+
 
 
 class CompositeName(AbstractName):

@@ -39,7 +39,9 @@ from protocols import adviseObject
 adviseObject(InitialContext, provides=[IComponentFactory])
 del IComponentFactory, adviseObject
 
-def lookup(parent, name, **options):
+from peak.api import NOT_GIVEN
+
+def lookup(parent, name, default=NOT_GIVEN, **options):
 
     """Look up 'name' in the default initial context for 'parent', w/'options'
 
@@ -48,10 +50,9 @@ def lookup(parent, name, **options):
         naming.InitialContext(parent,**options)[name]
     """
 
-    return InitialContext(parent, **options)[name]
+    return InitialContext(parent, **options).lookup(name,default)
 
-
-
+del NOT_GIVEN   # don't pollute the namespace
 
 def parseURL(parent, name):
 
@@ -78,5 +79,4 @@ def parseURL(parent, name):
         raise InvalidName("Unknown scheme", scheme)
 
     return ctx.schemeParser(scheme, body)
-
 

@@ -339,7 +339,9 @@ class NameContext(Component):
             state = self._get(name)
 
         if state is NOT_FOUND:
-            raise exceptions.NameNotFound(name) # XXX exception needs more info
+            raise exceptions.NameNotFound(
+                remainingName=name, resolvedObj=self
+            )
 
         if adapt(state,LinkRef,None) is not None:   # XXX introspection!
             return state
@@ -355,15 +357,13 @@ class NameContext(Component):
         if ctx is not self: return ctx[name]
 
         obj = self._getOb(name)
+
         if obj is NOT_FOUND:
-            raise exceptions.NameNotFound(name) # XXX exception needs more info
+            raise exceptions.NameNotFound(
+                remainingName=name, resolvedObj=self
+            )
 
         return obj
-
-
-
-
-
 
 
 
@@ -392,9 +392,12 @@ class NameContext(Component):
         return self._get(name, False) is not NOT_FOUND
 
 
-    def lookup(self, name):
+    def lookup(self, name, default=NOT_GIVEN):
         """Lookup 'name' --> object; synonym for __getitem__"""
-        return self[name]
+        if default is NOT_GIVEN:
+            return self[name]
+        else:
+            return self.get(name,default)
 
     def has_key(self, name):
         """Synonym for __contains__"""
@@ -404,9 +407,11 @@ class NameContext(Component):
         """Return a sequence of the names present in the context"""
         return [name for name in self]
 
+
     def items(self):
         """Return a sequence of (name,boundItem) pairs"""
         return [ (name,self._getOb(name, None)) for name in self ]
+
 
     def info(self):
         """Return a sequence of (name,refInfo) pairs"""
@@ -438,11 +443,6 @@ class NameContext(Component):
 
         if state is NOT_FOUND: return default
         return self._deref(state, name)
-
-
-
-
-
 
 
 

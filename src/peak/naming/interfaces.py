@@ -1,7 +1,7 @@
 """Interfaces, constants, property names, etc. for peak.naming"""
 
 from protocols import Interface, Attribute
-from peak.api import PropertyName
+from peak.api import PropertyName, NOT_GIVEN
 from peak.binding.interfaces import IComponentKey
 
 __all__ = [
@@ -104,7 +104,7 @@ class IPath(IName):
 
 
 
-    
+
 
 
 
@@ -166,11 +166,14 @@ class IBasicContext(IResolver):
 
     """Basic naming context; supports only name retrieval"""
 
-    def lookup(name):
-        """Lookup 'name' --> object; synonym for __getitem__"""
+    def lookup(name, default=NOT_GIVEN):
+        """Lookup 'name' and return object, 'default', or raise 'NameNotFound'
+
+        If 'default' is 'NOT_GIVEN', this method should behave identically to
+        '__getitem__()'.  Otherwise, it should behave like 'get()'."""
 
     def __getitem__(name):
-        """Lookup 'name' and return an object"""
+        """Lookup 'name' and return an object, or raise 'NameNotFound'"""
 
     def get(name, default=None):
         """Lookup 'name' and return an object, or 'default' if not found"""
@@ -186,9 +189,6 @@ class IBasicContext(IResolver):
 
     def lookupLink(name):
         """Return terminal LinkRef of 'name', if it's a link"""
-
-
-
 
 
 

@@ -2,6 +2,15 @@ Fixes and Enhancements since Version 0.5 alpha 2
 
  Changed, Enhanced, or Newly Deprecated Features
 
+ - 'naming.IBasicContext.lookup()' and 'naming.lookup()' now accept a 'default'
+   argument, similar to that used by 'lookupComponent()' and most other
+   lookup-like APIs in PEAK.  This change was made so that component lookups
+   don't need to rely on catching 'exceptions.NameNotFound' errors to tell them
+   when to use the default value.  This could hide 'NameNotFound' errors that
+   were actually from a broken component somewhere in the lookup process.  (In
+   general, it's probably a bad idea to have an exception that's used for both
+   control flow and real errors!)
+
  - Added new 'version' tool that automatically edits files to update version
    information in them.  Just execute the 'version' file in the main PEAK
    source directory.  (Use '--help' for help.)  You can use this tool with your
