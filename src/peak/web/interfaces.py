@@ -58,9 +58,6 @@ class IAuthService(Interface):
 
 class IViewService(Interface):
 
-    def viewHandler(name,ob,default=None):
-        """Return an 'INamespaceHandler' for obtaining view 'name' on 'ob'"""
-
     def registerView(target,name,handler):
         """Register 'handler' to implement view 'name' for 'target'
 
@@ -69,8 +66,11 @@ class IViewService(Interface):
         to apply to the view service itself, rather than to a content type.
         """
 
-    def registrationProtocol(name):
-        """Return a protocol for registering views of 'name'"""     # XXX
+
+
+
+
+
 
 
 
@@ -139,7 +139,7 @@ class ITraversalContext(Interface):
     rootURL      = Attribute("""Application root URL""")
     absoluteURL  = Attribute("""Absolute canonical URL""")
     traversedURL = Attribute("""URL traversed to get to this context""")
-
+    viewService  = Attribute("""Nearest 'IViewService' for this context""")
 
     def childContext(name,ob):
         """Return a new child context with name 'name' and current->'ob'"""
@@ -159,8 +159,8 @@ class ITraversalContext(Interface):
     def getResource(path):
         """Return the named resource"""
 
-    def viewHandler(name,ob,default=None):
-        """Return an 'INamespaceHandler' for obtaining view 'name' on 'ob'"""
+
+
 
     def shift():
         """Shift a path component from 'PATH_INFO' to 'SCRIPT_NAME'

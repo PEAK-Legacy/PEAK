@@ -24,8 +24,8 @@ from peak.api import *
 import errors
 from wsgiref.util import shift_path_info, setup_testing_defaults, request_uri
 from peak.security.api import Anybody, allow
-
-
+from dispatch import generic
+from dispatch.strategy import default
 
 
 
@@ -138,7 +138,7 @@ class Context:
     getResource = binding.Delegate('skin')
 
     _clone_attrs = (
-        'user','policy','skin','rootURL','previous','viewHandler'
+        'user','policy','skin','rootURL','previous','viewService'
     )
 
     def __init__(self,name,current,environ,previous=None,**kw):
@@ -244,15 +244,15 @@ class Context:
     )
 
 
-    def viewHandler(self):
+    def viewService(self):
         vs = IViewService(self.current,None)
         if vs is not None:
-            return vs.viewHandler
+            return vs
         if self.previous is None:
-            return lambda name,ob,default=None: default
-        return self.previous.viewHandler
+            return None
+        return self.previous.viewService
 
-    viewHandler = binding.Make(viewHandler)
+    viewService = binding.Make(viewService)
 
     default = NOT_GIVEN
     nothing = None
@@ -367,12 +367,12 @@ def traverseItem(ctx, ob, ns, name, qname, default=NOT_GIVEN):
 
 
 
+[dispatch.generic()]
 def traverseView(ctx, ob, ns, name, qname, default=NOT_GIVEN):
-
-    handler = ctx.viewHandler(name,ob)
-    if handler is not None:
-        return handler(ctx, ob, ns, name, qname, default)
-
+    """XXX"""
+    
+[traverseView.when(default)]
+def traverseView(ctx, ob, ns, name, qname, default):
     if default is NOT_GIVEN:
         raise errors.NotFound(ctx,qname,ob)
     return default

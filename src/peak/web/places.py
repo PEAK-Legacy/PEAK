@@ -6,11 +6,11 @@ from errors import NotFound, NotAllowed, WebException
 from environ import traverseAttr, traverseDefault, traverseView
 from urlparse import urljoin
 from peak.util.EigenData import AlreadyRead
+from dispatch.strategy import Pointer
 
 __all__ = [
     'Traversable', 'Place', 'Decorator', 'MultiTraverser', 'Location',
 ]
-
 
 
 
@@ -162,47 +162,6 @@ class Place(Traversable):
 
 
 
-[dispatch.on('target')]
-def registerWithProtocol(target,protocol,adapter):
-    """Register 'target' as a source of 'protocol', via 'adapter'"""
-    
-
-[registerWithProtocol.when([type,ClassType])]
-def registerTypeWithProtocol(target,protocol,adapter):
-    protocols.declareAdapter(adapter,[protocol],forTypes=[target])
-
-
-[registerWithProtocol.when([protocols.IOpenProtocol])]
-def registerProtocolWithProtocol(target,protocol,adapter):
-    protocols.declareAdapter(adapter,[protocol],forProtocols=[target])
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 class Location(Place,binding.Configurable):
 
     """A location suitable for configuration via site map"""
@@ -212,8 +171,6 @@ class Location(Place,binding.Configurable):
     )
 
     containers = binding.Make(list)
-    have_views = False
-    local_views = binding.Make(dict)
 
     def traverseTo(self, name, ctx, default=NOT_GIVEN):
 
@@ -244,41 +201,43 @@ class Location(Place,binding.Configurable):
 
 
 
+
+
+    [dispatch.on("target")]
     def registerView(self,target,name,handler):
+        """See IViewService.registerView()"""
+
+    [registerView.when((type,ClassType,Pointer,type(None)))]   
+    def registerView(self,target,_name,handler):
         if target is None:
-            self.local_views[name] = handler
-        else:
-            self.have_views = True
-            registerWithProtocol(
-                target, self.registrationProtocol(name), lambda ob:(ob,handler)
-            )
+            target = Pointer(self)
+        traverseView.when.im_self[_match] = handler       
+
+    [registerView.when(protocols.IOpenProtocol)]
+    def registerView(self, target, _name, handler):       
+        [traverseView.when(_match)]
+        def traverseAdapter(ctx, ob, ns, name, qname, default):
+            return handler(ctx, adapt(ob,target), ns, name, qname, default)
+
+_match = \
+"name==_name and ob in target and binding.hasParent(ctx.viewService, self)"
 
 
-    def registrationProtocol(self,name):
-        parent = config.parentProviding(
-            self.getParentComponent(), IViewService, None
-        )
-
-        if parent is not None:
-            parent.registrationProtocol(name)   # force it to register first
-
-        return config.registeredProtocol(self,str(VIEW_NAMES+'.'+name))
 
 
-    def viewHandler(self,name,ob,default=None):
-        if ob is self and name in self.local_views:
-            return self.local_views[name]
 
-        p = self._viewProtocolFor(name,None)
-        if p is not None:
-            target, handler = adapt(ob,p,(NOT_FOUND,NOT_FOUND))
-            if handler is not NOT_FOUND:
-                return lambda ctx,ob,ns,nm,qname,default=NOT_GIVEN: (
-                    handler(ctx, target, ns, nm, qname, default)
-                )
-        return default
 
-    _viewProtocolFor = binding.Make(lambda self:VIEW_NAMES.of(self).get)
+
+
+
+
+
+
+
+
+
+
+
 
 
 
