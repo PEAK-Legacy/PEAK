@@ -1,7 +1,7 @@
 """Basic binding tools"""
 
 from __future__ import generators
-from once import Once, New
+from once import Once, New, OnceClass
 import meta
 from peak.config.modules import setupModule
 
@@ -572,19 +572,13 @@ class Component(Base):
 
 
 
-class AutoCreatable(type):
+class AutoCreatable(OnceClass):
 
     """Metaclass for components which auto-create when used"""
 
-    def __get__(self, obj, typ=None):
+    def computeValue(self,owner,_d,_a):
+        return self(owner)
 
-        if obj is None:
-            return self
-
-        newOb = self(obj)
-        
-        obj.__dict__[newOb._componentName] = newOb
-        return newOb
 
 
 class AutoCreated(Component):
@@ -600,14 +594,6 @@ class AutoCreated(Component):
 
         if parent is not None:
             self.setParentComponent(parent)
-
-
-
-
-
-
-
-
 
 
 

@@ -2,6 +2,7 @@
 
 from meta import ActiveDescriptor
 from peak.api import NOT_FOUND
+from peak.util.EigenData import EigenRegistry
 
 __all__ = ['Once', 'New', 'Copy', 'OnceClass']
 
@@ -30,7 +31,6 @@ def New(obtype, name=None, provides=None, doc=None):
     """
 
     return Once( (lambda s,d,a: obtype()), name, provides, doc)
-
 
 
 
@@ -165,31 +165,31 @@ class Once(ActiveDescriptor):
     def activate(self,klass,attrName):
 
         if attrName !=self.attrName:
-
-            from copy import copy
-            newOb = copy(self)
-
-            newOb.attrName = attrName
-            setattr(klass, attrName, newOb)
+            setattr(klass, attrName, self._copyWithName(attrName))
 
         if self._provides is not None:
 
             if not klass.__dict__.has_key('__class_provides__'):
+
                 cp = EigenRegistry()
+
                 for c in klass.__mro__:
                     if c.__dict__.has_key('__class_provides__'):
                         cp.update(c.__class_provides__)
+
                 klass.__class_provides__ = cp
 
             klass.__class_provides__.register(self._provides,attrName)
 
 
+    def _copyWithName(self, attrName):
 
+        from copy import copy
+        newOb = copy(self)
 
-
-
-
-
+        newOb.attrName = attrName
+        return newOb
+        
 
 
 
@@ -228,12 +228,12 @@ class OnceClass(Once, type):
         super(Once,klass).__init__(name,bases,dict)
         klass.attrName = name
 
+
     def computeValue(self, *args):
         return self(*args)
 
-    def activate(self,klass,attrName):
 
-        if attrName !=self.attrName:
-            setattr(klass, attrName, Once(self.computeValue, attrName))
+    def _copyWithName(self,attrName):
+        return Once(self.computeValue, attrName)
 
 
