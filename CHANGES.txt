@@ -1,5 +1,9 @@
 Fixes and Enhancements since Version 0.5 alpha 3
 
+ - Changed 'running.lookupCommand()' to use the command's 'getCommandParent()'
+   method, so that commands using the '--config' option will utilize the
+   specified configuration(s) to lookup subcommands.
+   
  - Added a '-c/--config' option to PEAK bootstrap commands to load an .ini
    configuration file in a new service area before executing any subcommands.
    

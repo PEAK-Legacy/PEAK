@@ -21,9 +21,11 @@ class InvocationError(Exception):
     """Problem with command arguments or environment"""
 
 
-def lookupCommand(component,name,default,acceptURLs=False):
+def lookupCommand(command,name,default,acceptURLs=False):
+    """Lookup 'name' as a command shortcut or URL; may raise InvalidName
 
-    """Lookup 'name' as a command shortcut or URL; may raise InvalidName"""
+    'command.getCommandParent()'  is used as the lookup context.
+    """
 
     if not naming.URLMatch(name):
         # may raise exceptions.InvalidName
@@ -33,10 +35,8 @@ def lookupCommand(component,name,default,acceptURLs=False):
         raise exceptions.InvalidName("URL not allowed")
 
     return adapt(name, binding.IComponentKey).findComponent(
-        component, default
+        command.getCommandParent(), default
     )
-
-
 
 
 def runMain(factory):
@@ -998,6 +998,8 @@ to invoke it.
     def interpret(self,filename):
 
         name = filename
+        parent = self.getCommandParent()
+
         ob = lookupCommand(
             self, name, default=NOT_FOUND, acceptURLs=self.acceptURLs
         )
@@ -1009,17 +1011,15 @@ to invoke it.
         factory = adapt(ob, binding.IComponentFactory, None)
 
         if factory is ob:   # XXX ???
-            ob = factory(self, 'cgi')
+            ob = factory(parent, 'cgi')
 
         cgi = IWSGIApplication(ob, None)
 
         if cgi is not None:
-            return self.cgiWrapper(self, cgiCommand = cgi, argv=self.argv[:1])
+            return self.cgiWrapper(parent, cgiCommand=cgi, argv=self.argv[:1])
 
         raise InvocationError(
             "Can't convert", ob, "to CGI; found at", name
         )
-
-
 
 
