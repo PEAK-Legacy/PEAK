@@ -1,14 +1,102 @@
-"""Basic, in-memory implementation of the Service-Element-Feature pattern"""
+"""Basic binding tools"""
 
 from once import Once
 import meta, modules
+
+from weakref import ref
+from peak.naming.names import toName, Syntax, CompoundName
+from peak.naming.interfaces import NameNotFoundException
+
+    
 
 
 __all__ = [
     'Component','AutoCreated',
     'bindTo', 'requireBinding', 'bindToNames', 'bindToParent', 'bindToSelf',
+    'getRootComponent', 'getParentComponent', 'lookupComponent',
+    'acquireComponent', 'globalLookup'
 ]
 
+_ACQUIRED = object()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+def getParentComponent(component):
+
+    """Return parent of 'component', or 'None' if root or non-component"""
+
+    try:
+        gpc = component.getParentComponent
+    except AttributeError:
+        pass
+    else:
+        return gpc()
+
+
+def getRootComponent(component):
+
+    """Return the root component of the tree 'component' belongs to"""
+
+    next = component
+
+    while next is not None:
+        component = next
+        next = getParentComponent(component)
+
+    return component
+
+
+def globalLookup(name, component=None):
+
+    """Lookup 'name' in global 'InitialContext', w/'component' in environ"""
+
+    from peak.naming.api import InitialContext
+    
+    return InitialContext(RELATIVE_TO_COMPONENT=component).lookup(name)
+
+
+
+
+
+
+
+
+
+def acquireComponent(component, name):
+
+    """Acquire 'name' relative to 'component', w/fallback to globalLookup()"""
+
+    target = component
+    
+    while target is not None:
+
+        ob = getattr(target, name, _ACQUIRED)
+
+        if ob is not _ACQUIRED:
+            return ob
+
+        target = getParentComponent(target)
+
+    else:
+        return globalLookup(name, component)
 
 
 
@@ -33,7 +121,124 @@ __all__ = [
 
 
 
+ComponentNameSyntax = Syntax(
+    direction = 1,
+    separator = '/',
+)
 
+
+def ComponentName(nameStr):
+    return CompoundName(nameStr, ComponentNameSyntax)
+
+
+_getFirstPathComponent = dict( (
+    ('',   getRootComponent),
+    ('.',  lambda x:x),
+    ('..', getParentComponent),
+) ).get
+
+
+_getNextPathComponent = dict( (
+    ('',   lambda x:x),
+    ('.',  lambda x:x),
+    ('..', getParentComponent),
+) ).get
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+def lookupComponent(component, name):
+
+    """Lookup 'name' relative to 'component'
+
+    'name' can be any name acceptable to the 'peak.naming' package.  Strings
+    and 'CompoundName' names will be interpreted as paths relative to the
+    starting component.  An empty name will return the starting component.
+    All other kinds of names, including URL strings and 'CompositeName'
+    instances, will be looked up using 'binding.globalLookup()'.
+    
+    Regardless of how the lookup is processed, a 'naming.NameNotFoundException'
+    will be raised if the name cannot be found.
+   
+
+    Component Path Syntax
+
+        Paths are '/'-separated attribute names.  Path segments of '.' and
+        '..' mean the same as they do in URLs.  A leading '/' (or a
+        CompoundName beginning with an empty path segment), will be treated
+        as an "absolute path" relative to the component's root component.
+
+        Paths beginning with anything other than '/', './', or '../' are
+        acquired, which means that the first path segment will be looked
+        up using 'acquireComponent()' before processing the rest of the path.
+        (See 'acquireComponent()' for more details.)  If you do not want
+        a name to be acquired, simply prefix it with './' so it is relative
+        to the starting object.
+
+        All path segments after the first are interpreted as attribute names
+        to be looked up, beginning at the component referenced by the first
+        path segment.  '.' and '..' are interpreted the same as for the first
+        path segment.   
+    """
+
+    parsedName = toName(name, ComponentName, 1)
+
+    # URL's and composite names must be handled globally
+
+    if not parsedName.isCompound:
+        return globalLookup(name, component)
+
+    if not parsedName:
+        # empty name refers to self
+        return component
+
+    parts = iter(parsedName)
+
+    attr = parts.next() # first part
+    pc = _getFirstPathComponent(attr)
+
+    if pc:
+        ob = pc(component)
+    else:
+        ob = acquireComponent(component,attr)
+
+
+    resolved = []
+    append = resolved.append
+
+    try:
+        for attr in parts:
+            pc = _getNextPathComponent(attr)
+            if pc:
+                ob = pc(ob)
+            else:
+                ob = getattr(ob,attr)
+            append(attr)
+
+    except AttributeError:
+
+        raise NameNotFoundException(
+            resolvedName = ComponentName(resolved),
+            remainingName = ComponentName([attr] + [a for a in parts]),
+            resolvedObj = ob
+        )
+
+    return ob
 
 
 
@@ -41,42 +246,83 @@ __all__ = [
 
 class bindTo(Once):
 
-    """Automatically look up and cache a relevant service
+    """Automatically look up and cache a relevant component
 
         Usage::
 
-            class someClass(binding.AutoCreated):
+            class someClass(binding.Component):
 
-                thingINeed = binding.bindTo("path.to.service")
+                thingINeed = binding.bindTo("path/to/service")
 
+                getOtherThing = binding.bindTo("some/thing", weak=True)
+                
         'someClass' can then refer to 'self.thingINeed' instead of
-        calling 'self.lookupComponent("path.to.service")' repeatedly.
+        calling 'self.lookupComponent("path/to/service")' repeatedly.
+        It can also do 'self.getOtherThing()' to get '"some/thing"'.
+        (The 'weak' argument, if true, means to bind to a weak reference.)
     """
 
-    singleValue = 1
+    singleValue = True
 
-    def __init__(self,targetName):
+    def __init__(self,targetName,weak=False):
+
         self.targetNames = (targetName,)
+        self.weak = weak
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     def computeValue(self, obj, instanceDict, attrName):
 
-        instanceDict[attrName] = None   # recursion guard
+        instanceDict[attrName] = _ACQUIRED   # recursion guard
 
-        parent = obj.getParentComponent()
-        if parent is None: parent = obj
+        names = self.targetNames
+        obs   = map(obj.lookupComponent, names)
 
-        obs = map(parent.lookupComponent, self.targetNames)
+        for name,newOb in zip(names, obs):
 
-        for newOb in obs:
-            if newOb is None:
+            if newOb is _ACQUIRED:
+            
                 del instanceDict[attrName]
-                raise NameError(
-                    "%s not found binding %s" % (self.targetName, attrName)
-                )
-            elif self.singleValue:
-                return newOb
+                raise NameNotFoundError(attrName, resolvedName = name)
+
+            if self.singleValue:
+            
+                if self.weak:
+                    return ref(newOb)
+                else:
+                    return newOb
+
+        if self.weak:
+            obs = map(ref,obs)
 
         return tuple(obs)
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -89,21 +335,21 @@ class bindToNames(bindTo):
             class someClass(binding.AutoCreated):
 
                 thingINeed = binding.bindToNames(
-                    "path.to.service1", "another.path", ...
+                    "path/to/service", "another/path", ...
                 )
 
         'someClass' can then refer to 'self.thingINeed' to get a tuple of
         services instead of calling 'self.lookupComponent()' on a series of
-        names.
+        names.  As with 'bindTo()', a 'weak' keyword argument can be set to
+        indicate that the sequence should consist of weak references to the
+        named objects.
     """
 
-    singleValue = 0
+    singleValue = False
 
-    def __init__(self,*targetNames):
+    def __init__(self, *targetNames, **kw):
         self.targetNames = targetNames
-
-
-
+        self.weak = kw.get('weak')
 
 
 
@@ -246,31 +492,15 @@ class requireBinding(Once):
 
 class Component(object):
 
-    """Base for all S-E-F classes"""
+    """Thing that can be composed into a component tree, w/binding & lookups"""
 
     __metaclasses__  = (
         meta.AssertInterfaces, meta.ActiveDescriptors
     )
 
-    def lookupComponent(self,name=None):
+    # use the global lookupComponent function as a method
 
-        if name:
-            if not isinstance(name,tuple):
-                name = tuple(name.split('.'))
-                
-            if hasattr(self,name[0]):
-                o = getattr(self,name[0])
-                if len(name)==1:
-                    return o
-                else:
-                    return o.lookupComponent(name[1:])
-            else:    
-                parent = self.getParentComponent()
-                if parent is not None:
-                    return parent.lookupComponent(name)
-        else:                
-            return self.getParentComponent()
-
+    lookupComponent = lookupComponent
 
     def setParentComponent(self,parent):
         from weakref import ref
@@ -285,9 +515,25 @@ class Component(object):
     _componentName = Once(_componentName)
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 class AutoCreatable(type):
 
-    """Metaclass for classes which auto-create"""
+    """Metaclass for components which auto-create when used"""
 
     def __get__(self, obj, typ=None):
 
@@ -302,7 +548,7 @@ class AutoCreatable(type):
 
 class AutoCreated(Component):
 
-    """Class which auto-creates instances for instances of its containing class
+    """Component that auto-creates itself in instances of its containing class
     """
 
     __metaclasses__ = AutoCreatable,

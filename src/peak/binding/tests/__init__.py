@@ -102,19 +102,19 @@ class DescriptorData(binding.Component):
 
             thing6 = binding.bindToParent(2)
 
+            deep = binding.bindTo('deep')
+
+            acquired = binding.bindTo('thing1')
+
+            getRoot = binding.bindTo('/', weak=True)
+
+            getUp = binding.bindTo('..', weak=True)
 
     newDict = binding.New(dict)
 
     listCopy = binding.Copy(testList)
 
-
-
-
-
-
-
-
-
+    deep = binding.bindTo('aService/nestedService/thing6/thing1')
 
 
 
@@ -182,6 +182,25 @@ class DescriptorTest(TestCase):
         assert type(l) is list      # should be a list
         assert l == testList        # should be equal
         assert l is not testList    # but separate!
+
+
+    def checkDeep(self):
+
+        data = self.data
+        thing = data.thing1
+        assert data.deep is thing
+        
+        nested = data.aService.nestedService
+
+        assert nested.deep is thing
+        assert nested.acquired is thing
+        assert nested.getRoot() is data
+        assert nested.getUp() is data.aService
+
+
+
+
+
 
 
 

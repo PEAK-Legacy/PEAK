@@ -47,33 +47,33 @@ class ISEF(Interface.Base):
         """Name of this component in its immediate context"""
     )
 
-    def lookupComponent(name=None):
-        """Locate a service in context
-
-            If 'name' is not supplied, return the Service object which is
-            responsible for the object this method is called on.  (Aka
-            "the responsible Service".) In the case of a Feature, that
-            would be the Service responsible for the Feature's Element.
-
-            If 'name' is supplied, it must be a string containing a dotted
-            name, or a sequence of path components (e.g. '"foo.bar"' or
-            '("foo","bar")' are valid names).  The contextually closest
-            Service to the "responsible Service" which matches the name
-            will be returned.  An exception may result if the named Service
-            does not exist.
-        """
+    def lookupComponent(name):
+        """Look up a name in context - see 'binding.lookupComponent()'"""
 
     def getParentComponent():
-        """Return the parent of this object (in S-E-F terms)
+        """Return the parent component of this object
 
             If this is a feature, returns the element.  If this is an element,
             return the controlling service.  If this is a service, return the
-            containing service (or self if none).
+            containing service (or 'None' if this is the root service).
         """
 
 
 class IService(ISEF):
     """A component instance compatible with the S-E-F framework"""
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

@@ -55,7 +55,7 @@ def getInitialContext(environ={}):
     factory = importObject(
         environ.get(
             'NAMING_INITIAL_CONTEXT_FACTORY',
-            'peak.naming.providers.Initial:DefaultInitialContext'
+            'peak.naming.contexts:AbstractContext'  # XXX temporary hack
         )
     )
 
