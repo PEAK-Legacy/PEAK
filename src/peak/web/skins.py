@@ -1,6 +1,6 @@
 from peak.api import *
 from interfaces import *
-from places import Traversable, MultiTraverser
+from places import MultiTraverser, Place
 from publish import TraversalPath
 from resources import Resource
 from wsgiref.util import setup_testing_defaults
@@ -39,7 +39,7 @@ __all__ = [
 
 
 
-class Skin(MultiTraverser,Resource):
+class Skin(MultiTraverser,Place):
 
     """Skins provide a branch-point between the app root and resources"""
 
@@ -62,7 +62,7 @@ class Skin(MultiTraverser,Resource):
         for name in self.layerNames:
             layer = getLayer(name)
             # Kludge: don't include layer in path to child resources, by
-            #    setting its component name to an empty string
+            #    suggesting its component name is an empty string
             binding.suggestParentComponent(self,'',layer)
             if __debug__:
                 # Make sure the kludge worked, by asserting that the layer's
@@ -70,13 +70,13 @@ class Skin(MultiTraverser,Resource):
                 # as our place_url.
                 if IPlace(layer,None) is not None:
                     url = IPlace(layer).place_url
-                    assert naming.URLMatch(url) or url==prefix, ("Bad url", url,prefix)
+                    assert naming.URLMatch(url) or url==prefix, (
+                        "Bad url", url,prefix
+                    )
             layers.append(layer)
         return layers
 
     items = binding.Make(items)
-
-
 
 
 

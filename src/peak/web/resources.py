@@ -1,7 +1,7 @@
 from __future__ import generators
 from peak.api import *
 from interfaces import *
-from places import Traversable
+from places import Place
 from publish import TraversalPath
 from templates import TemplateDocument
 from peak.naming.factories.openable import FileURL
@@ -9,7 +9,6 @@ from peak.util.imports import importString
 import os.path, posixpath, sys
 from errors import UnsupportedMethod, NotFound, NotAllowed
 from environ import clientHas, traverseItem
-from urlparse import urljoin
 
 __all__ = [
     'Resource', 'FSResource', 'ResourceDirectory', 'FileResource',
@@ -22,6 +21,7 @@ RESOURCE_CONFIG   = PropertyName('peak.web.resourceConfigFile')
 FILE_FACTORY      = PropertyName('peak.web.file_resources.file_factory')
 DIR_FACTORY       = PropertyName('peak.web.file_resources.dir_factory')
 RESOURCE_VISIBLE  = PropertyName('peak.web.file_resources.visible')
+
 ALLOWED_PACKAGES  = PropertyName('peak.web.resource_packages')
 PACKAGE_FACTORY   = PropertyName('peak.web.packageResourceFactory')
 PERMISSION_NS     = PropertyName(RESOURCE_BASE+'permission')
@@ -39,45 +39,13 @@ def parseFileResource(parser, section, name, value, lineInfo):
     for pattern in section.split()[1:]:
         parser.add_setting(prefix,filenameAsProperty(pattern),value,lineInfo)
 
-class Resource(Traversable):
-
-    protocols.advise(
-        instancesProvide = [IPlace]
-    )
-
+class Resource(Place):
     permissionNeeded = binding.Require("Permission needed for access")
-
 
     def preTraverse(self, ctx):
         perm = self.permissionNeeded
         ctx.requireAccess('', self, permissionNeeded=perm)
         return ctx
-
-
-    def getURL(self, ctx):
-        # Root-relative URL
-        base = ctx.rootURL+'/'[ctx.rootURL.endswith('/'):]
-        return urljoin(base,self.place_url)
-
-
-    def _getResourcePath(self):
-        name = self.getComponentName()
-        if name is None:
-            # We must be the root, unless it's an error
-            return ''
-
-        base = IPlace(self.getParentComponent(),None)
-        if base is not None:
-            if name:
-                return posixpath.join(base.place_url, name)
-            else:
-                return base.place_url
-
-        return name
-
-    place_url = binding.Make(_getResourcePath)
-
-
 
 
 class FSResource(Resource):
@@ -110,15 +78,6 @@ class FSResource(Resource):
     getObjectInstance = classmethod(getObjectInstance)
 
     basename = binding.Make(lambda self: os.path.basename(self.filename))
-
-
-
-
-
-
-
-
-
 
 
 class ResourceDirectory(FSResource, binding.Configurable):

@@ -96,11 +96,11 @@ class ResourceTests(TestCase):
 
     def testURLcalculations(self):
 
-        # Simple paths: direct children of a non-IPlace parent
+        # Root locations: direct children of a non-IPlace parent
         r=web.Resource(testRoot())
         self.assertEqual(r.place_url,'')
         r=web.Resource(testRoot(),'foo')
-        self.assertEqual(r.place_url,'foo')
+        self.assertEqual(r.place_url,'')
 
         # Skin path is resource prefix
         policy = web.TestPolicy(ResourceApp1(testRoot()))

@@ -244,7 +244,7 @@ class IWebTraversable(Interface):
 
 
 
-class IPlace(IWebTraversable):
+class IPlace(Interface):
     """Traversable component with a fixed location"""
 
     place_url = Attribute("Relative URL (no leading '/') from skin")

@@ -4,11 +4,11 @@ from types import FunctionType, MethodType
 import posixpath
 from errors import NotFound, NotAllowed, WebException
 from environ import traverseAttr, traverseDefault
+from urlparse import urljoin
 
 __all__ = [
-    'Traversable', 'Decorator', 'MultiTraverser',
+    'Traversable', 'Place', 'Decorator', 'MultiTraverser',
 ]
-
 
 
 
@@ -57,6 +57,88 @@ class Traversable(binding.Component):
         return ctx.traversedURL
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class Place(Traversable):
+    """Traversable that has a fixed URL (maybe relative to parent component)
+
+    The 'place_url' attribute of a 'Place' determines its response to the
+    'getURL()' method.  If the 'place_url' is relative (i.e. doesn't start with
+    a URL scheme or a '/'), it is relative to the application's root URL.
+    Otherwise, it's absolute.
+
+    If you do not set a 'place_url', then it will be computed using the
+    instance's 'getComponentName()', added onto the 'place_url' of its
+    'getParentComponent()'.  If the instance has no name (i.e., its name
+    is 'None'), or its parent cannot be adapted to 'web.IPlace', then it
+    assumes that it is the application's root object, and thus uses the
+    application root URL as its own URL.  (Unless of course you've explicitly
+    set a 'place_url'.)
+
+    As a special case, if the instance's name is '""' (the empty string), then
+    it will use the same URL as its parent 'IPlace'.  This peculiarity is
+    useful when a component needs to be in an 'IPlace' component tree, without
+    affecting the URLs of its child components.
+    """
+
+    protocols.advise(
+        instancesProvide = [IPlace]
+    )
+
+    def getURL(self, ctx):
+        # Root-relative URL
+        base = ctx.rootURL+'/'[ctx.rootURL.endswith('/'):]
+        return urljoin(base,self.place_url)
+
+
+
+
+
+
+
+
+
+
+
+    def place_url(self,d,a):
+
+        name = self.getComponentName()
+        if name is None:
+            # No name, we must be the root
+            return ''
+
+        base = IPlace(self.getParentComponent(),None)
+        if base is not None:
+            if name:
+                return posixpath.join(base.place_url, name)
+            else:
+                return base.place_url
+
+        # No parent, we must be the root
+        return ''
+
+    place_url = binding.Make(place_url)
 
 
 

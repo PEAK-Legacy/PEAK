@@ -968,17 +968,17 @@ to invoke it.
         factory = adapt(ob, binding.IComponentFactory, None)
 
         if factory is ob:   # XXX ???
-            # Always suggest empty name, in case it's an IPlace
-            ob = factory(self, None)    
-        else:
-            binding.suggestParentComponent(self,None,ob)
+            ob = factory(self, 'cgi')    
 
         cgi = IWSGIApplication(ob, None)
+
         if cgi is not None:
             return self.cgiWrapper(self, cgiCommand = cgi, argv=self.argv[:1])
 
         raise InvocationError(
             "Can't convert", ob, "to CGI; found at", name
         )
+
+
 
 
