@@ -453,12 +453,12 @@ def suggestParentComponent(parent,name,child):
 
     """Suggest to 'child' that it has 'parent' and 'name'
 
-    If 'child' does not support 'IComponent' and is a non-string, reiterable
-    container, all of its elements that support 'IComponent' will be given
-    a suggestion to use 'parent' and 'name' as well.  Note that this
-    means it would not be a good idea to use this on, say, a 10,000 element
-    list or dictionary (especially if the objects in it aren't components),
-    because this function has to check all of them."""
+    If 'child' does not support 'IComponent' and is a container that derives
+    from 'tuple' or 'list', all of its elements that support 'IComponent'
+    will be given a suggestion to use 'parent' and 'name' as well.  Note that
+    this means it would not be a good idea to use this on, say, a 10,000
+    element list (especially if the objects in it aren't components), because
+    this function has to check all of them."""
 
     ob = adapt(child,IComponent,None)
 
@@ -466,29 +466,29 @@ def suggestParentComponent(parent,name,child):
         # Tell it directly
         ob.setParentComponent(parent,name,suggest=True)
 
-    elif not isinstance(child,(str,unicode)):
+    elif isinstance(child,(list,tuple)):
 
-        # Check for a sequence of components
+        ct = 0
 
-        try:
-            i = iter(child)
-        except TypeError:
-            return
+        for ob in child:
 
-        if i is not child:              # avoid non-reiterables
-            ct = 0
-            for ob in i:
-                ob = adapt(ob,IComponent,None)
-                if ob is not None:
-                    ob.setParentComponent(parent,name,suggest=True)
-                else:
-                    ct += 1
-                    if ct==100:
-                        warn(
-                            ("Large iterator for %s; if it will never"
-                             " contain components, this is wasteful" % name),
-                            ComponentSetupWarning, 3
-                        )
+            ob = adapt(ob,IComponent,None)
+
+            if ob is not None:
+                ob.setParentComponent(parent,name,suggest=True)
+            else:
+                ct += 1
+                if ct==100:
+                    warn(
+                        ("Large iterator for %s; if it will never"
+                         " contain components, this is wasteful" % name),
+                        ComponentSetupWarning, 3
+                    )
+
+
+
+
+
 
 def delegateTo(delegateAttr, name=None, provides=None, doc=None):
 
