@@ -3,7 +3,7 @@
 from peak.api import *
 from interfaces import *
 from errors import NotFound, NotAllowed
-from environ import newEnvironment, StartContext
+from environ import default_for_testing, StartContext
 from cStringIO import StringIO
 import os,sys
 
@@ -121,21 +121,24 @@ class InteractionPolicy(binding.Component, protocols.StickyAdapter):
 
 
 
-    def newContext(self,environ={},start=NOT_GIVEN,skin=None,interaction=None):
-        new_env = newEnvironment(environ)
+    def newContext(self,environ=None,start=NOT_GIVEN,skin=None,interaction=None):
+
+        if environ is None:
+            environ = {}
 
         if skin is None:
             skin = self.getSkin("default")  # XXX
 
         if interaction is None:
-            interaction = self.newInteraction(user=self.getUser(new_env))
+            interaction = self.newInteraction(user=self.getUser(environ))
 
         if start is NOT_GIVEN:
             start = skin
 
-        root_url = "http://%(HTTP_HOST)s%(SCRIPT_NAME)s" % new_env  # XXX
+        environ.setdefault('HTTP_HOST',environ['SERVER_NAME'])
+        root_url = "http://%(HTTP_HOST)s%(SCRIPT_NAME)s" % environ  # XXX
 
-        return StartContext('', start, new_env,
+        return StartContext('', start, environ,
             policy=self, skin=skin, interaction=interaction, rootURL=root_url
         )
 
@@ -148,9 +151,6 @@ class InteractionPolicy(binding.Component, protocols.StickyAdapter):
     def afterCall(self, ctx):
         """Commit transaction after successful hit"""
         storage.commitTransaction(self.app)
-
-
-
 
 
 
@@ -209,6 +209,15 @@ class TestPolicy(InteractionPolicy):
 
     app = binding.Obtain('..')
 
+    def newContext(self,environ=None,start=NOT_GIVEN,skin=None,interaction=None):
+        # Set up defaults for test environment
+        if environ is None:
+            environ = {}
+        default_for_testing(environ)
+        return super(TestPolicy,self).newContext(
+            environ, start, skin, interaction
+        )
+
     def simpleTraverse(self, path, run=True):
 
         path = adapt(path, TraversalPath)
@@ -224,15 +233,6 @@ class TestPolicy(InteractionPolicy):
             return ''.join(body)
 
         return ctx
-
-
-
-
-
-
-
-
-
 
 
 

@@ -11,7 +11,7 @@
 """
 
 __all__ = [
-    'traverseAttr', 'newEnvironment', 'Context', 'StartContext',
+    'traverseAttr', 'default_for_testing', 'Context', 'StartContext',
     'simpleRedirect', 'clientHas',
 ]
 
@@ -184,22 +184,22 @@ class StartContext(Context):
         return self
 
 
-def newEnvironment(environ={}):
+def default_for_testing(environ):
+    """Update 'environ' with trivial defaults for testing purposes"""
 
-    new_env = dict(os.environ)     # First the OS
-    new_env.update(environ)        # Then the server
-
-    # Defaults for testing trivial environments
-
-    new_env.setdefault('HTTP_HOST',
-        new_env.setdefault('SERVER_NAME','127.0.0.1')
+    environ.setdefault('HTTP_HOST',
+        environ.setdefault('SERVER_NAME','127.0.0.1')
     )
 
-    if 'SCRIPT_NAME' not in new_env and 'PATH_INFO' not in new_env:
-        new_env.setdefault('SCRIPT_NAME','')
-        new_env.setdefault('PATH_INFO','/')
+    if 'SCRIPT_NAME' not in environ and 'PATH_INFO' not in environ:
+        environ.setdefault('SCRIPT_NAME','')
+        environ.setdefault('PATH_INFO','/')
 
-    return new_env
+
+
+
+
+
 
 
 

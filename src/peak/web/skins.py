@@ -3,11 +3,11 @@ from interfaces import *
 from places import Traversable, MultiTraverser
 from publish import TraversalPath
 from resources import Resource
+from environ import default_for_testing
 
 __all__ = [
     'Skin',
 ]
-
 
 
 
@@ -61,6 +61,9 @@ class Skin(Traversable):
         lambda self: self.policy.newInteraction(user=None)
     )
 
+    dummyEnviron = {}
+    default_for_testing(dummyEnviron)
+
     def traverseTo(self, name, ctx):
 
         if name == ctx.policy.resourcePrefix:
@@ -77,9 +80,6 @@ class Skin(Traversable):
 
 
 
-
-
-
     def getResource(self, path):
 
         path = adapt(path,TraversalPath)
@@ -88,7 +88,7 @@ class Skin(Traversable):
             return self.cache[path]
 
         start = self.policy.newContext(
-            skin=self, interaction=self.dummyInteraction
+            self.dummyEnviron.copy(), self, self, self.dummyInteraction
         )
 
         # start at ++resources++
