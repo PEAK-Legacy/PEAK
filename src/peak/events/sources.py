@@ -213,16 +213,16 @@ class Observable(object):
     reject the event.
     """
 
-    __slots__ = '_callbacks', '__weakref__'
+    __slots__ = '_callbacks', '__weakref__', '_disabled', '_savedEvents'
 
     singleFire = True
+    overrunOK  = True
 
-    protocols.advise(
-        instancesProvide=[IEventSource]
-    )
+    protocols.advise( instancesProvide=[IEventSource] )
 
     def __init__(self):
         self._callbacks = []
+        self._disabled = 0
 
 
     def nextAction(self, thread=None, state=None):
@@ -236,15 +236,35 @@ class Observable(object):
         self._callbacks.append(func)
 
 
+    def disable(self):
+        """Pause event callbacks"""
+        if not self._disabled:
+            self._savedEvents = []
+        self._disabled += 1
 
 
 
+    def enable(self):
+        """Resume and send saved events"""
 
+        if not self._disabled:
+            raise ValueError("More enable() calls than disable() calls", self)
 
+        self._disabled -= 1
 
+        if not self._disabled:
+
+            while self._savedEvents:
+                self._fire(self._savedEvents.pop(0))
+
+            del self._savedEvents
 
 
     def _fire(self, event):
+
+        if self._disabled:
+            self._buffer(event)
+            return
 
         callbacks, self._callbacks = self._callbacks, []
         count = len(callbacks)
@@ -259,9 +279,30 @@ class Observable(object):
                 while count:
                     callbacks.pop(0)(self,event)
                     count -= 1
-
         finally:
             self._callbacks[0:0] = callbacks      # put back unfired callbacks
+
+
+
+
+    def _buffer(self,event):
+
+        saved = self._savedEvents
+
+        if self.overrunOK:
+            if saved:
+                del saved[0]
+
+        elif len(saved)>=len(self._callbacks):       
+            raise ValueError("Can't buffer event", self, event)
+
+        saved.append(event)
+
+
+
+
+
+
 
 
 
@@ -300,6 +341,8 @@ class Distributor(Observable):
 
     __slots__ = ()
 
+    overrunOK  = False
+
     def send(self,event):
         """Send 'event' to one or more callbacks, until accepted"""
         self._fire(event)
@@ -313,13 +356,11 @@ class Broadcaster(Observable):
 
     singleFire   = False
 
+    overrunOK  = False
+
     def send(self,event):
         """Send 'event' to all callbacks"""
         self._fire(event)
-
-
-
-
 
 
 
@@ -342,6 +383,8 @@ class Readable(Observable):
         """See 'events.IReadableSource.__call__()'"""
         return self._value
 
+    def derive(self,func):
+        return DerivedValue(lambda: func(self()), self)
 
 
 class Writable(Readable):
@@ -359,8 +402,6 @@ class Writable(Readable):
         if force or value<>self._value:
             self._value = value
             self._fire(value)
-
-
 
 
 
@@ -455,7 +496,8 @@ class ReadableAsCondition(AbstractConditional):
 
     __slots__ = 'value'
 
-    protocols.advise( instancesProvide=[IConditional],
+    protocols.advise(
+        instancesProvide=[IConditional],
         asAdapterForProtocols=[IValue]
     )
 
@@ -467,8 +509,9 @@ class ReadableAsCondition(AbstractConditional):
         subscribe(subject, self._set)
         self.cmpval = self.__class__, subject
 
-    def __call__(self):
-        return self.value()
+    def __call__(self): return self.value()
+
+    def derive(self,func):  return self.value.derive(func)
 
     def _set(self,src,evt):
         if evt:
@@ -486,8 +529,6 @@ class WritableAsCondition(ReadableAsCondition):
 
     def set(self,value,force=False):
         self.value.set(value,force)
-
-
 
 
 class Value(Writable):

@@ -9,6 +9,7 @@ class BasicTests(TestCase,object):
     kind = "stream"
     sourceType = events.Distributor
     requiredInterface = events.IEventSource
+    singleBuffered = False
 
     def setUp(self):
         self.source = self.sourceType()
@@ -37,7 +38,6 @@ class BasicTests(TestCase,object):
         self.source.addCallback(self.sink)
         self.doPut(1)
         self.assertEqual(self.log,[(self.source,1)])
-
 
     def testProvides(self):
         adapt(self.source, self.requiredInterface)
@@ -94,31 +94,78 @@ class BasicTests(TestCase,object):
         self.assertEqual(self.log,[(self.source,1),(self.source,1)])
 
 
+    def testPauseResume(self):
+        self.source.addCallback(self.sink)
+        self.source.disable()
+        self.doPut(1)
+        self.assertEqual(self.log,[])
+        self.source.enable()
+        self.assertEqual(self.log,[(self.source,1)])
+
+    def testNestedDisable(self):
+        self.source.addCallback(self.sink)
+        self.source.disable()
+        self.source.disable()
+        self.doPut(1)
+        self.source.enable()
+        self.assertEqual(self.log,[])
+        self.source.enable()
+        self.assertEqual(self.log,[(self.source,1)])
+
+    def testBrokenNesting(self):
+        self.source.addCallback(self.sink)
+        self.source.disable()
+        self.source.enable()
+        self.assertEqual(self.log,[])   # nothing should have happened
+        self.assertRaises(ValueError, self.source.enable)
+
+
+
+    def testBufferSize(self):
+        self.source.addCallback(self.sink)
+        self.source.disable()
+        self.source.disable()
+        self.doPut(1)
+
+        if self.singleBuffered:
+            # Single-buffered sources fire the last event (at most) when resumed
+            self.doPut(2)
+            self.source.enable()
+            self.assertEqual(self.log,[])
+            self.source.enable()
+            self.assertEqual(self.log,[(self.source,2)])
+
+        else:
+            # More events than callbacks should raise an error
+            self.assertRaises(ValueError,self.doPut,2)
+
+            if self.kind=="stream":
+                # stream: add a callback for the second event
+                self.source.addCallback(self.sink)
+            else:
+                # broadcast: add a callback for the first event that registers
+                # one for the second event
+                self.source.addCallback(lambda s,e: s.addCallback(self.sink))
+
+            # Fire the second event
+            self.doPut(2)
+            self.source.enable()
+            self.assertEqual(self.log,[])
+            self.source.enable()
+            self.assertEqual(self.log,[(self.source,1), (self.source,2)])
+
+    def testDerivation(self):
+        if adapt(self.source,events.IReadableSource,None) is not None:
+            derived = self.source.derive(lambda x: x*2)
+            derived.addCallback(self.sink)
+            self.doPut(20)
+            self.assertEqual(self.log,[(derived,40)])
+
+
 class BroadcastTests(BasicTests):
 
     sourceType = events.Broadcaster
     kind = "broadcast"
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 class ValueTests(BasicTests):
@@ -126,6 +173,7 @@ class ValueTests(BasicTests):
     sourceType = events.Value
     kind = "broadcast"
     requiredInterface = events.IWritableSource
+    singleBuffered = True
 
     def doPut(self,value,force=False):
         self.source.set(value, force)
@@ -135,6 +183,7 @@ class ConditionTests(ValueTests):
 
     sourceType = events.Condition
     requiredInterface = events.IConditional
+    singleBuffered = True
 
     def reenter(self,source,event):
         self.doPut(False)
@@ -154,28 +203,16 @@ class ConditionTests(ValueTests):
 
 
 
-
-
-
-
-
-
-
-
 class DerivedValueTests(BasicTests):
 
     sourceType = events.DerivedValue
     kind = "broadcast"
-
+    singleBuffered = True
     requiredInterface = events.IReadableSource
 
     def setUp(self):
-        # we use a condition instead of a value in order to verify that derived
-        # values use IValue to bypass the conditionality of their arguments.
-        self.base = events.Condition(False)
-        self.source = self.sourceType(
-            lambda: self.base()*2, events.Value(), self.base  # ensure multi
-        )
+        self.base = events.Value(0)
+        self.source = self.base.derive(lambda base: base*2)
         self.log = []
 
     def doPut(self,value,force=False):
@@ -194,10 +231,14 @@ class DerivedConditionTests(DerivedValueTests):
     reenter = ConditionTests.reenter.im_func
     testSuspend = ConditionTests.testSuspend.im_func
 
-
-
-
-
+    def setUp(self):
+        # we use a condition instead of a value in order to verify that derived
+        # values use IValue to bypass the conditionality of their arguments.
+        self.base = events.Condition(False)
+        self.source = self.sourceType(
+            lambda: self.base()*2, events.Value(), self.base  # ensure multi
+        )
+        self.log = []
 
 
 

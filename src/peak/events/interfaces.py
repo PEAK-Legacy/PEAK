@@ -6,6 +6,7 @@ __all__ = [
     'IWritableSource', 'IValue', 'IConditional', 'ISemaphore', 'IThread',
     'IScheduledThread', 'IThreadState', 'IScheduler', 'ISignalSource',
     'ISelector', 'IEventLoop', 'Interruption', 'TimeoutError', 'IWritableValue',
+    'IPausableSource',
 ]
 
 
@@ -26,7 +27,6 @@ class ITask(protocols.Interface):
 
     def next():
         """Return an 'ITaskSwitch', or value to be yielded to previous task"""
-
 
 
 
@@ -121,15 +121,45 @@ class IEventSink(protocols.Interface):
 
 
 
+class IPausableSource(IEventSource):
+
+    """An event source whose firing can be temporarily disabled
+
+    Calls to 'disable()' and 'enable()' may be nested, so the number of
+    'enable()' calls must match the number of 'disable()' calls in order for
+    the event source to resume firing.
+
+    Events occuring while the source is disabled may be buffered.  Readable
+    sources will normally buffer only their last value, and therefore send
+    at most one event when re-enabled.  Non-readable sources such as
+    'Broadcast' and 'Distributor' typically will buffer as many events as there
+    are currently registered callbacks for, and raise an error if more events
+    occur, in order to avoid growing the buffer indefinitely.
+    """
+
+    def disable():
+        """Stop events from firing"""
+
+    def enable():
+        """Reenable events, and fire any that accumulated in the meanwhile"""
+
+
 class IReadableSource(IEventSource):
 
     """An event source whose current value or state is readable
 
     Note that the firing behavior of an 'IReadableSource' is undefined.  See
-    'IValue' and 'IConditional' for two possible kinds of firing behavior."""
+    'IValue' and 'IConditional' for two possible kinds of firing behavior.
+    """
 
     def __call__():
         """Return the current value, condition, or event"""
+
+    def derive(func):
+        """Return a derived 'IValue', computed using 'func(source())'"""
+
+
+
 
 
 class IWritableSource(IReadableSource):
@@ -147,6 +177,7 @@ class IWritableSource(IReadableSource):
 
 
 class IValue(IReadableSource):
+
     """A readable event source that fires when changed"""
 
     isTrue = protocols.Attribute(
@@ -158,8 +189,18 @@ class IValue(IReadableSource):
     )
 
 
+
 class IWritableValue(IWritableSource,IValue):
+
     """A writable event source that fires when changed"""
+
+
+
+
+
+
+
+
 
 
 class IConditional(IReadableSource):
