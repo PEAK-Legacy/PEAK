@@ -56,8 +56,8 @@ class ComponentAsLocation(SimpleLocation):
 
     asLocationFor = classmethod(asLocationFor)
 
-
-
+    def getObject(self):
+        return self.ob
 
 
 
