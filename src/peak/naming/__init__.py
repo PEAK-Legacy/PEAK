@@ -18,6 +18,7 @@
 """
 
 from Interfaces import *
+from Names      import *
 from API        import *
 
 import SPI
