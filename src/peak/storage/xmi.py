@@ -74,8 +74,8 @@ from peak.api import *
 from peak.util import SOX
 from weakref import WeakValueDictionary
 from Persistence import Persistent
-
-
+from xml.sax import saxutils
+from types import StringTypes
 
 
 
@@ -285,6 +285,47 @@ class XMINode(object):
 
 
 
+    def writeTo(self, indStrm):
+
+        write = indStrm.write
+        indStrm.push()
+
+        try:
+            write('<%s' % self._name.encode('utf-8'))
+            for k,v in self.attrs.iteritems():
+                write(' %s=%s' %
+                    (k.encode('utf-8'), saxutils.quoteattr(v).encode('utf-8'))
+                )
+
+            if self.allNodes:
+                write('>')
+                if self.subNodes==self.allNodes:
+                    write('\n'); indStrm.setMargin(1)
+                    for node in self.subNodes:
+                        node.writeTo(indStrm); write('\n')
+
+                elif self.subNodes:
+                    indStrm.setMargin(absolute=0)    # turn off indenting
+                    # piece by piece...
+                    for node in self.allNodes:
+                        if isinstance(node,StringTypes):
+                            write(saxutils.escape(node).encode('utf-8'))
+                        else:
+                            node.writeTo(indStrm)
+                else:
+                    indStrm.setMargin(absolute=0)    # turn off indenting
+                    write(
+                        saxutils.escape(''.join(self.allNodes)).encode('utf-8')
+                    )
+
+                write('</%s>' % self._name.encode('utf-8'))
+
+            else:
+                write('/>')
+
+        finally:
+            indStrm.pop()
+
 class XMIDocument(binding.Component, XMINode):
 
     index = binding.New(WeakValueDictionary)
@@ -314,10 +355,10 @@ class XMIDocument(binding.Component, XMINode):
             sub.parent = None
         return self
 
-
-
-
-
+    def writeTo(self, indStrm):
+        indStrm.write('<?xml version="1.0" encoding="utf-8">\n')
+        for node in self.subNodes:
+            node.writeTo(indStrm)
 
 
 
