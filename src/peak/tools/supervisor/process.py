@@ -39,7 +39,7 @@ def unquote(s):
 
 
 
-class ProcessSupervisor(EventDriven):
+class ProcessSupervisor(EventDriven, config.ServiceArea):
 
     log           = binding.Obtain('logger:supervisor')
 
@@ -76,8 +76,8 @@ class ProcessSupervisor(EventDriven):
         lambda self: "flockfile:%s.lock" % self.pidFile
     )
 
-
-
+    processCount     = binding.Make(lambda: events.Value(0))
+    desiredProcesses = binding.Make(lambda self: events.Value(self.minChildren))
 
 
     startLock = binding.Make(
@@ -90,26 +90,13 @@ class ProcessSupervisor(EventDriven):
         adaptTo = running.ILock
     )
 
-    lastStart = None    # last time a fork occurred
-    nextStart = None    # next scheduled fork
-
     processes = binding.Make(dict)
     plugins   = binding.Make(list)
 
-    reactor = binding.Make(
-        # Can't use Make(IBasicReactor), because 'getReactor()' is a singleton
-        'peak.running.scheduler:UntwistedReactor',
-        offerAs=[running.IBasicReactor]
-    )
+    eventLoop = binding.Obtain(events.IEventLoop)
 
-    mainLoop = binding.Make(running.IMainLoop, offerAs=[running.IMainLoop])
-
-    taskQueue = binding.Make(running.ITaskQueue, offerAs=[running.ITaskQueue])
-
-    _no_twisted = binding.Require(
-        "ProcessSupervisor subcomponents may not depend on Twisted",
-        offerAs = [running.ITwistedReactor]
-    )
+    # ProcessSupervisor subcomponents may not depend on Twisted
+    _no_twisted = binding.Make(lambda: False, offerAs=['peak.events.isTwisted'])
 
     import os
 
@@ -118,8 +105,21 @@ class ProcessSupervisor(EventDriven):
     def setup(self):
         self.log.debug("Beginning setup")
         template = adapt(self.template, ISupervisorPluginProvider, None)
+
         if template is not None:
             self.plugins.extend(template.getSupervisorPlugins(self))
+
+
+
+
+
+
+
+
+
+
+
+
 
     def _run(self):
 
@@ -134,7 +134,7 @@ class ProcessSupervisor(EventDriven):
         finally:
             self.startLock.release()
 
-        self.startIfTooFew()
+        self._monitorProcessCount()
 
         retcode = super(ProcessSupervisor,self)._run()
 
@@ -142,6 +142,7 @@ class ProcessSupervisor(EventDriven):
             # child process, drop out to the trampoline
             return retcode
 
+        self.desiredProcesses.set(0)    # don't restart children any more
         self.killProcesses()
         self.removePidFile()
 
@@ -149,43 +150,82 @@ class ProcessSupervisor(EventDriven):
 
 
     def requestStart(self):
-        if self.nextStart is None:
-            if self.lastStart is None:
-                self.nextStart = self.time()
-            else:
-                self.nextStart = max(
-                    self.lastStart + self.startInterval, self.time()
+        self.desiredProcesses.set(
+            min(self.processCount()+1, self.maxChildren)
+        )
+        self.mainLoop.activityOccurred()
+
+
+
+
+
+
+
+
+    def _monitorProcessCount(self):
+
+        startDelay = self.eventLoop.sleep(self.startInterval)
+
+        somethingChanged = events.AnyOf(
+            self.processCount.value, self.desiredProcesses
+        )
+        
+        while True:
+
+            if self.processCount()<self.desiredProcesses():
+                 
+                self.log.debug(
+                    "%d processes desired, %d running: requesting start",
+                    self.processCount(), self.desiredProcesses()
                 )
-            delay = self.nextStart-self.time()
-            self.log.debug("Scheduling child start in %.1d seconds",delay)
-            self.mainLoop.activityOccurred()
-            self.reactor.callLater(delay, self._doStart)
+                
+                # Spawn a thread to start a process as soon as possible
+                self._doStart()
+
+                # But don't start any more until start interval passes
+                yield startDelay; events.resume()
+
+            else:
+
+                # We have enough processes, so reset desired = minimum
+
+                if self.desiredProcesses()>self.minChildren:
+                    self.log.debug(
+                        "%d processes reached; resetting goal to %d",
+                        self.processCount(), self.minChildren
+                    )   
+                    self.desiredProcesses.set(self.minChildren)
+
+                # And sleep until something relevant changes
+                yield somethingChanged; events.resume()
+
+    _monitorProcessCount = events.threaded(_monitorProcessCount)
 
 
-    def _doStart(self):
 
-        if len(self.processes)<self.maxChildren:
+     def _doStart(self):
 
-            proxy, stub = self.template.spawn(self)
-    
-            if proxy is None:
-                self.abandonChildren()  # we're the child, so give up custody
-                self.mainLoop.exitWith(stub)
-                return
-    
-            self.mainLoop.activityOccurred()
-            self.log.debug("Spawned new child process (%d)", proxy.pid)
-            proxy.addListener(self._childChange)
-            self.processes[proxy.pid] = proxy
-    
-            for plugin in self.plugins:
-                plugin.processStarted(proxy)
+        # ensure we're in a top-level timeslice
+        yield self.eventLoop.sleep(); events.resume()
 
-        self.lastStart = self.time()
-        self.nextStart = None
+        proxy, stub = self.template.spawn(self)
 
-        # We might not be up to our minimum yet
-        self.startIfTooFew()
+        if proxy is None:
+            self.abandonChildren()  # we're the child, so give up custody
+            self.mainLoop.exitWith(stub)
+            return
+
+        self.mainLoop.activityOccurred()
+        self.log.debug("Spawned new child process (%d)", proxy.pid)
+        self._monitorChild(proxy)
+
+        self.processes[proxy.pid] = proxy
+        self.processCount.set(self.processCount()+1)
+
+        for plugin in self.plugins:
+            plugin.processStarted(proxy)
+
+    _doStart = events.threaded(_doStart)
 
 
     def killProcesses(self):
@@ -194,53 +234,54 @@ class ProcessSupervisor(EventDriven):
             proxy.sendSignal('SIGTERM')
 
 
-    def startIfTooFew(self):
-        if len(self.processes)<self.minChildren:
-            self.requestStart()
+    def abandonChildren(self):
+        for proxy in self.processes.values():
+            proxy.close()
+        del self.processes
 
 
 
 
 
 
-    def _childChange(self,proxy):
+    def _monitorChild(self,proxy):
 
+        yield proxy.isFinished | proxy.isStopped; src, evt = events.resume()
         self.mainLoop.activityOccurred()
 
-        if proxy.isFinished:
-
-            if proxy.exitedBecause:
+        if src is proxy.isFinished:
+            
+            if proxy.exitedBecause():
                 self.log.warning(
                     "Child process %d exited due to signal %d (%s)",
-                    proxy.pid, proxy.exitedBecause,
-                    signal_names.setdefault(proxy.exitedBecause,('?',))[0]
+                    proxy.pid, proxy.exitedBecause(),
+                    signal_names.setdefault(proxy.exitedBecause(),('?',))[0]
                 )
-            elif proxy.exitStatus:
+            elif proxy.exitStatus():
                 self.log.warning(
                     "Child process %d exited with errorlevel %d",
-                    proxy.pid, proxy.exitStatus
+                    proxy.pid, proxy.exitStatus()
                 )
             else:
                 self.log.debug("Child process %d has finished", proxy.pid)
 
             del self.processes[proxy.pid]
+            self._processCount.set(self.processCount()-1)
 
-            self.startIfTooFew()
-
-        elif proxy.stoppedBecause:
+        elif proxy.stoppedBecause():
             self.log.error("Child process %d stopped due to signal %d (%s)",
-                proxy.pid, proxy.stoppedBecause,
-                signal_names.getdefault(proxy.stoppedBecause,('?',))[0]
+                proxy.pid, proxy.stoppedBecause(),
+                signal_names.getdefault(proxy.stoppedBecause(),('?',))[0]
             )
+            self._monitorChild(proxy)   # continue monitoring
 
-        elif proxy.isStopped:
+        elif proxy.isStopped():
             self.log.error("Child process %d has stopped", proxy.pid)
+            self._monitorChild(proxy)   # continue monitoring
+
+    _monitorChild = events.threaded(_monitorChild)   
 
 
-    def abandonChildren(self):
-        for proxy in self.processes.values():
-            proxy.close()
-        del self.processes
 
 
 

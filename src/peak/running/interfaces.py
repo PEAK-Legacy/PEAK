@@ -491,28 +491,20 @@ class ISignalManager(Interface):
 
 
 class IProcessProxy(Interface):
+    """Object that represents a child process
 
-    """Object that represents a child process"""
-
-    def addListener(func):
-        """'func' will be called with the proxy when process status changes
-
-        Note that 'func' may be called from a signal handler, and thus can
-        be executed at any time, even between two operations in the same line
-        of code.  Thus, 'func' must take care not to create any race
-        conditions.
-
-        The simplest way to address this in a reactor-driven program is for
-        'func' to simply schedule its real action for later, via e.g.::
-
-            def func(proxy):
-                self.reactor.callLater(0, self.aMethod, proxy)
-
-        This prevents race conditions by waiting to do the real work until
-        the next reactor iteration."""
+    Attributes whose name begins with 'is' are 'events.IConditional' objects,
+    and the other listed attributes are 'events.IValue' objects."""
 
     def sendSignal(signal):
         """Send 'signal' (name or number) to process, return success flag"""
+
+    def close():
+        """Stop monitoring this process"""
+
+    isOpen = Attribute(
+        """'close()' has not been called and not 'isFinished()'"""
+    )
 
     isFinished = Attribute(
         """Has the process exited? (WIFSIGNALED or WIFEXITED)"""
@@ -526,11 +518,6 @@ class IProcessProxy(Interface):
         """Is the process running? (not isFinished and not isStopped)"""
     )
 
-    def close():
-        """Stop monitoring this process"""
-
-
-
     exitStatus = Attribute(
         """Returncode of the process, if finished (WEXITSTATUS)"""
     )
@@ -542,34 +529,6 @@ class IProcessProxy(Interface):
     exitedBecause  = Attribute(
         """Signal that killed the process, or None (WTERMSIG)"""
     )
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 class IProcessTemplate(Interface):
@@ -596,9 +555,9 @@ class IProcessTemplate(Interface):
             if proxy is None:
                 self.mainLoop.exitWith(stub)
             else:
-                proxy.addListener(self.newChildStatus)
-            # ...
+                # ... do something with the proxy
         """
+
 
 
 

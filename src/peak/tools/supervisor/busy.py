@@ -1,4 +1,5 @@
 """Start-on-busy-children plugin for ProcessSupervisor"""
+
 from __future__ import generators
 from peak.api import *
 from interfaces import *
@@ -38,46 +39,45 @@ __all__ = ['BusyProxy', 'BusyStarter']
 
 
 
-
 class BusyProxy(ChildProcess):
 
     """Proxy for process that communicates its "busy" status"""
+
     log        = binding.Obtain('logger:supervisor.busy-monitor')
-    reactor    = binding.Obtain(running.IBasicReactor)
     busyStream = binding.Require("readable pipe from child")
-    fileno     = binding.Obtain('busyStream/fileno')
-    isBusy     = False
+    fileno     = binding.Delegate('busyStream')
+    isBusy     = binding.Make(lambda: events.Condition(False))
 
-    def doRead(self):
-        if self.isFinished:
-            return
+    def _monitor(self):
 
-        try:
-            # We need this try block because the pipe could close at any time
-            byte = self.busyStream.read(1)
-        except ValueError:
-            # already closed
-            return
+        readable = self.eventLoop.readable(self)
+        readableOrDone = events.AnyOf(readable, ~self.isOpen)
+        
+        while True:
 
-        if byte=='+':
-            self.log.trace("Child process %d is now busy", self.pid)
-            self.isBusy = True
-            self._notify()
-        elif byte=='-':
-            self.log.trace("Child process %d is now free", self.pid)
-            self.isBusy = False
-            self._notify()
+            yield readableOrDone; src,evt = events.resume()
 
-    __onStart = binding.Make(
-        lambda self: self.reactor.addReader(self),
-        uponAssembly = True
-    )
+            if src is not readable:
+                break
 
-    def close(self):
-        super(BusyProxy,self).close()
-        self.reactor.removeReader(self)
+            try:
+                # We need a try block because the pipe could close at any time
+                byte = self.busyStream.read(1)
+            except ValueError:
+                # already closed
+                return
+
+            if byte=='+':
+                self.log.trace("Child process %d is now busy", self.pid)
+                self.isBusy.set(True)
+
+            elif byte=='-':
+                self.log.trace("Child process %d is now free", self.pid)
+                self.isBusy.set(False)
+
         self.busyStream.close()
-
+        
+    _monitor = binding.Make(events.threaded(_monitor), uponAssembly = True)
 
 
 class BusyStarter(binding.Component):
@@ -87,11 +87,12 @@ class BusyStarter(binding.Component):
     children = binding.Make(dict)
     template = binding.Obtain(running.IProcessTemplate, suggestParent=False)
     stream   = binding.Obtain('./template/stdin')
-    fileno   = binding.Obtain('./stream/fileno')
-    reactor  = binding.Obtain(running.IBasicReactor)
+    fileno   = binding.Delegate('stream')
     log      = binding.Obtain('logger:supervisor.busy-stats')
-    busyCount = binding.Make(lambda self: events.Value(self._busy()) )
+    busyCount  = binding.Make(lambda: events.Value(0))
+    childCount = binding.Make(lambda: events.Value(0))
     supervisor = binding.Obtain('..')
+    eventLoop  = binding.Obtain(events.IEventLoop)
 
     def monitorUsage(self):
 
@@ -102,15 +103,14 @@ class BusyStarter(binding.Component):
         busy = self.busyCount()
 
         while True:
-
             # wait until all children are started and busy
-            while busy<len(self.children) or len(self.children)<maxChildren:
+            while busy<self.childCount() or self.childCount()<maxChildren:
                 yield self.busyCount; busy = events.resume()
 
             start = time()  # then begin timing
 
             # Time while N or N-1 children are busy
-            while busy and busy>=len(self.children)-1 and len(self.children)==maxChildren:
+            while busy and busy>=self.childCount()-1 and self.childCount()==maxChildren:
                 yield self.busyCount; busy = events.resume()
 
             duration = time()-start
@@ -121,48 +121,44 @@ class BusyStarter(binding.Component):
     )
 
 
-    def _busy(self):
-        return len(filter(None,self.children.values()))
-
-
     def processStarted(self, proxy):
-        proxy.addListener(self.statusChanged)
-        self.children[proxy.pid] = proxy.isBusy
-        self.busyCount.set(self._busy())
+
+        self.childCount.set(self.childCount()+1)
+
+        busy   = proxy.isBusy.value
+        closed = ~proxy.isOpen
+        somethingChanged = events.AnyOf(busy,closed)
+
+        while True:
+            yield somethingChanged; src,evt = events.resume()
+
+            if src is closed:
+                break
+            elif evt:
+                self.busyCount.set(self.busyCount+1)
+            else:
+                self.busyCount.set(self.busyCount-1)
+
+        self.childCount.set(self.childCount()-1)
+
+    processStarted = events.threaded(processStarted)
 
 
-    def statusChanged(self, proxy):
-        if not proxy.isRunning:
-            if proxy.pid in self.children:
-                del self.children[proxy.pid]
-        else:
-            self.children[proxy.pid] = proxy.isBusy
-        self.busyCount.set(self._busy())
+    def monitorBusy(self):
+        untilReadable = self.eventLoop.readable(self) 
 
+        while True:
+            # Wait until we have stream activity
+            yield untilReadable; events.resume()
 
-    def doRead(self):
-        if self.busyCount()==len(self.children):
-            self.supervisor.requestStart()
+            # Is everybody busy?
+            if self.busyCount()==self.childCount():
+                self.supervisor.requestStart()
 
-
-    __onStart = binding.Make(
-        lambda self: self.reactor.addReader(self),
-        uponAssembly = True
+            # Wait until the child or busy count changes before proceeding
+            yield events.AnyOf(self.busyCount,self.childCount); events.resume()
+            
+    monitorBusy = binding.Make(
+        events.threaded(monitorBusy), uponAssembly = True
     )
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 

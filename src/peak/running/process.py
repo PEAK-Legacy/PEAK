@@ -88,41 +88,42 @@ class ChildProcess(binding.Component):
 
     log        = binding.Obtain('logger:running.process')
     pid        = None
-    isStopped  = False
-    isFinished = False
-    isRunning  = True
+    isRunning  = binding.Make(lambda self: (~self.isStopped & ~self.isFinished))
+    isStopped  = isFinished = binding.Make(lambda: events.Condition(False))
+    exitStatus = stoppedBecause = exitedBecause = binding.Make(
+        lambda: events.Value(None)
+    )
 
-    exitStatus     = None
-    stoppedBecause = None
-    exitedBecause  = None
+    statusEvents = binding.Obtain(
+        [   'isStopped','isFinished','exitStatus','stoppedBecause',
+            'exitedBecause'
+        ]
+    )
 
-    listeners     = binding.Make(list)
-    signalSource  = binding.Obtain(events.ISignalSource)
-    scheduler     = binding.Obtain(events.IScheduler)
+    isOpen    = binding.Make(lambda: events.Condition(True))
+    eventLoop = binding.Obtain(events.IEventLoop)
+
     import os
 
     def waitForSignals(self):
-        while not self.isFinished:
+        while self.isOpen():
+            yield self.eventLoop.signals('SIGCLD','SIGCHLD'); events.resume()
+            if self._closed: return
 
-            yield self.signalSource.signals('SIGCLD','SIGCHLD'); events.resume()
-
-            # ensure that we are outside the signal handler before doing
-            # a wait()
-            yield self.scheduler.sleep(); events.resume()
-
+            # ensure that we are outside the signal handler before we 'wait()'
+            yield self.eventLoop.sleep(); events.resume()
             self._checkStatus()
+
+        self.close()
 
     waitForSignals = binding.Make(
         events.threaded(waitForSignals), uponAssembly = True
     )
 
-    def addListener(self,func):
-        self.listeners.append(func)
-
-
 
     def close(self):
-        self._delBinding('waitForSignals')
+        self._delBinding('waitForSignals')  # drop references
+        self.isOpen.set(False)
 
 
     def sendSignal(self, signal):
@@ -151,7 +152,6 @@ class ChildProcess(binding.Component):
             else:
                 if p==self.pid:
                     self._setStatus(s)
-                    self._notify()
         finally:
             self._checking = False
 
@@ -164,34 +164,34 @@ class ChildProcess(binding.Component):
 
     def _setStatus(self,status):
 
-        self.exitStatus = None
-        self.exitedBecause = None
-        self.stoppedBecause = None
+        for event in self.statusEvents:
+            event.disable()
 
-        self.isStopped = self.os.WIFSTOPPED(status)
+        self.exitedBecause.set(None)
+        self.stoppedBecause.set = None
+
+        self.isStopped.set(self.os.WIFSTOPPED(status))
 
         if self.os.WIFEXITED(status):
-            self.exitStatus = self.os.WEXITSTATUS(status)
+            self.exitStatus.set(self.os.WEXITSTATUS(status))
 
         if self.isStopped:
-            self.stoppedBecause = self.os.WSTOPSIG(status)
+            self.stoppedBecause.set(self.os.WSTOPSIG(status))
 
         if self.os.WIFSIGNALED(status):
-            self.exitedBecause = self.os.WTERMSIG(status)
+            self.exitedBecause.set(self.os.WTERMSIG(status))
 
-        self.isFinished = (
-            self.exitedBecause is not None or self.exitStatus is not None
+        self.isFinished.set(
+            self.exitedBecause() is not None or self.exitStatus() is not None
         )
-        if self.isFinished:
-            self.close()
 
-        self.isRunning = not self.isFinished and not self.isStopped
+        for event in self.statusEvents:
+            try:
+                event.enable()
+            except:
+                self.log.exception("Unexpected error in process listener")
 
 
-    def _notify(self):
-        # Notify listeners of status change
-        for listener in self.listeners:
-            listener(self)
 
 
 

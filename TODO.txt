@@ -4,14 +4,14 @@ Open Issues/To-Do Items
 
     * peak.events migration
 
-      - 'running.IProcessProxy' should use conditions/values instead of
-        listeners, and related command/supervisor tools should also be ported
-
       - Add tests for Twisted support
 
     * peak.ddt
 
       - A bit more doc and demos
+
+
+
 
 
 
