@@ -134,7 +134,7 @@ class ProcessSupervisor(EventDriven):
         finally:
             self.startLock.release()
 
-        self.requestStart()
+        self.startIfTooFew()
 
         retcode = super(ProcessSupervisor,self)._run()
 
@@ -150,7 +150,6 @@ class ProcessSupervisor(EventDriven):
 
     def requestStart(self):
         if self.nextStart is None:
-
             if self.lastStart is None:
                 self.nextStart = self.time()
             else:
@@ -161,6 +160,7 @@ class ProcessSupervisor(EventDriven):
             self.log.debug("Scheduling child start in %.1d seconds",delay)
             self.mainLoop.activityOccurred()
             self.reactor.callLater(delay, self._doStart)
+
 
     def _doStart(self):
 
@@ -184,8 +184,8 @@ class ProcessSupervisor(EventDriven):
         self.lastStart = self.time()
         self.nextStart = None
 
-        if len(self.processes)<self.minChildren:
-            self.requestStart()
+        # We might not be up to our minimum yet
+        self.startIfTooFew()
 
 
     def killProcesses(self):
@@ -194,9 +194,9 @@ class ProcessSupervisor(EventDriven):
             proxy.sendSignal('SIGTERM')
 
 
-
-
-
+    def startIfTooFew(self):
+        if len(self.processes)<self.minChildren:
+            self.requestStart()
 
 
 
@@ -225,8 +225,7 @@ class ProcessSupervisor(EventDriven):
 
             del self.processes[proxy.pid]
 
-            if len(self.processes)<self.minChildren:
-                self.requestStart()
+            self.startIfTooFew()
 
         elif proxy.stoppedBecause:
             self.log.error("Child process %d stopped due to signal %d (%s)",
@@ -236,6 +235,7 @@ class ProcessSupervisor(EventDriven):
 
         elif proxy.isStopped:
             self.log.error("Child process %d has stopped", proxy.pid)
+
 
 
 
