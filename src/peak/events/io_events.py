@@ -230,7 +230,7 @@ class Selector(binding.Component):
 
             for fired,events in zip(rwe,self.rwe):
                 for stream in fired:
-                    events[stream].send(True)
+                    events[stream]().send(True)
 
 
     monitor = binding.Make(threaded(monitor), uponAssembly=True)
@@ -265,17 +265,17 @@ class Selector(binding.Component):
 
     def _rmEvent(self,rwe,key):
         del self.cache[rwe][key]
+        self._deactivate(rwe,key)
 
     def _activate(self,rwe,key,src):
         if key not in self.rwe[rwe]:
-            self.rwe[rwe][key] = src
+            self.rwe[rwe][key] = ref(src)
             self.count.put()
 
     def _deactivate(self,rwe,key):
         if key in self.rwe[rwe]:
             del self.rwe[rwe][key]
             self.count.take()
-
 
 
 
