@@ -84,7 +84,35 @@
         XMI 2.0
 
             * Requires full URI-based namespace handling; maybe we should
-              go ahead and add this to current implementation?
+              go ahead and add this to current implementation?  Note that
+              this means all the 'xmi.*' tag and attribute names are now
+              'xmi:' instead.
+
+            * Further note on namespace handling: it sounds as though
+              XML attribute names for the target model are unqualified, and
+              indeed that element names can be so as well.
+
+            * Top-level element may not be the 'XMI' tag; if a document
+              represents a single object and doesn't want to include the
+              XMI documentation, it can simply add an 'xmi:version'
+              attribute to the outermost tag representing the serialized
+              object.
+
+            * Compositions are less regular: instead of nesting object
+              tags inside an attribute tag, the attribute and object tags
+              can be combined.  The tag name is the attribute name, and a
+              new 'xmi:type' attribute indicates the type of the object.
+              If omitted, the type of the object is assumed to be the type
+              specified by the composite reference.
+
+            * XMI 2.0 allows configuration-based control over whether
+              attributes are serialized, including derived attributes;
+              how should we handle derived attributes in XMI 1.x?
+
+            * Although 'xmi:id' is the normal ID attribute, it can be
+              specified via a tagged value as being different.  It isn't
+              clear how this would work if there were multiple ID attributes
+              per XMI file.
 
 
         Other
@@ -112,6 +140,19 @@ from weakref import WeakValueDictionary
 from Persistence import Persistent
 from xml.sax import saxutils
 from types import StringTypes
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
