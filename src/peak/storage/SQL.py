@@ -14,7 +14,7 @@ __all__ = [
 def _nothing():
     pass
 
-def NullConverter(name,descr,value):
+def NullConverter(descr,value):
     return value
 
 
@@ -43,6 +43,7 @@ class SQLCursor(AbstractCursor):
 
     """Iterable cursor bridge/proxy"""
 
+    typeMap = binding.bindTo('../typeMap')
 
     def _cursor(self,d,a):
         return self._conn.cursor()
@@ -79,7 +80,6 @@ class SQLCursor(AbstractCursor):
 
 
 
-
     def __iter__(self, onlyOneSet=True):
 
         fetch = self._cursor.fetchmany
@@ -87,38 +87,38 @@ class SQLCursor(AbstractCursor):
 
         if rows:
 
-            # we don't want to mess with souped-up row types
-            # so require an exact match to 'tuple' or 'list' type
+            descr = self._cursor.description
+            
+            rowStruct = makeStructType('rowStruct',
+                [d[0] for d in descr],
+                __implements__ = IRow, __module__ = __name__,
+            )
 
-            row = rows[0]
+            typeMap = self.typeMap
+            convert = [(typeMap.get(d[1],NullConverter),d) for d in descr]
+            mkTuple = tuple.__new__
 
-            if type(row) in (tuple, list):
 
-                rowStruct = makeStructType('rowStruct',
-                    [d[0] for d in self._cursor.description],
-                    __implements__ = IRow, __module__ = __name__,
+        while rows:
+
+            for row in rows:
+                yield mkTuple(rowStruct,
+                    [ c(d,f) for (f,(c,d)) in zip(row,convert) ]
                 )
 
-                mkTuple = tuple.__new__
+            rows = fetch()
 
-                while rows:
-
-                    for row in rows:
-                        yield mkTuple(rowStruct,row)
-
-                    rows = fetch()
-
-            else:
-
-                while rows:
-
-                    for row in rows:
-                        yield row
-
-                    rows = fetch()
 
         if onlyOneSet and self.nextset():
             raise exceptions.TooManyResults
+
+
+
+
+
+
+
+
 
 
 class SQLConnection(ManagedConnection):
@@ -247,6 +247,7 @@ class PGSQLConnection(SQLConnection):
 class GadflyConnection(SQLConnection):
 
     API = binding.bindTo("import:gadfly")
+    supportedTypes = ()
 
     def _open(self):
         a = self.address
@@ -269,7 +270,6 @@ class GadflyConnection(SQLConnection):
 class GadflyURL(naming.ParsedURL):
 
     _supportedSchemes = ('gadfly',)
-    
     _defaultScheme = 'gadfly'
 
     pattern = "(//)?(?P<db>[^@]+)@(?P<dir>.+)"
@@ -318,5 +318,5 @@ class GenericSQL_URL(naming.ParsedURL):
 
 drivers = {
     'sybase': SybaseConnection,
-    'pgsql': PGSQLConnection,
+    'pgsql':  PGSQLConnection,
 }
