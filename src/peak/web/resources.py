@@ -86,10 +86,12 @@ class FSResource(Resource):
         classProvides=[naming.IObjectFactory],
     )
 
+    security.allow(security.Anybody, basename=security.Anybody) # XXX
+
     filename = binding.Require("OS-specific full filename")
 
     filenameAsProperty = binding.Make(
-        lambda self: filenameAsProperty(os.path.basename(self.filename))
+        lambda self: filenameAsProperty(self.basename)
     )
 
     permissionNeeded = binding.Make(
@@ -107,9 +109,7 @@ class FSResource(Resource):
 
     getObjectInstance = classmethod(getObjectInstance)
 
-
-
-
+    basename = binding.Make(lambda self: os.path.basename(self.filename))
 
 
 
@@ -157,30 +157,24 @@ class ResourceDirectory(FSResource):
 
     filenames = binding.Make(filenames)
 
+    def getObject(self, interaction):
+        return self
 
 
 
-
-
-    def traverseTo(self, name, ctx):
-
+    def __getitem__(self,name):
         targets = self.filenames.get(name,())
-
         if len(targets)<1:
             # <1 means no match
-            raise NotFound(ctx)
-
+            raise KeyError,name
         elif len(targets)>1 and name not in targets:
             # >1 and name isn't in there, it's ambiguous
-            raise NotFound(ctx)
+            raise KeyError,name
 
         if name in self.cache:
-
             result = self.cache[name]
-
             if result is NOT_FOUND:
-                raise NotFound(ctx)
-
+                raise KeyError,name
             return result
 
         if name in targets:
@@ -190,11 +184,10 @@ class ResourceDirectory(FSResource):
 
         # XXX warn if name is overspecified
         prop = filenameAsProperty(filename)
-
         # check if name is visible; if false, drop it
         if not RESOURCE_VISIBLE.of(self)[prop]:
             self.cache[name] = NOT_FOUND
-            raise NotFound(ctx)
+            raise KeyError,name
 
         # look up factory for name
         path = os.path.join(self.filename, filename)
@@ -207,9 +200,8 @@ class ResourceDirectory(FSResource):
         ref = naming.Reference(factory, addresses=[FileURL.fromFilename(path)])
         obj = ref.restore(self,None)
         obj.setParentComponent(self, filename)
-        self.cache[name] = obj = adapt(obj,ctx.interaction.pathProtocol) #XXX
+        self.cache[name] = obj
         return obj
-
 
     def resourcePath(self):
 
@@ -223,8 +215,16 @@ class ResourceDirectory(FSResource):
     resourcePath = binding.Make(resourcePath)
 
 
+    def traverseTo(self, name, ctx):
 
+        if name.startswith('@@'):
+            return Traversable.traverseTo(self,name[2:],ctx)
 
+        try:
+            ob = self[name]
+        except KeyError:
+            return Traversable.traverseTo(self,name,ctx)
+        return ob
 
 
 

@@ -226,7 +226,7 @@ class Interaction(security.Interaction):
         base = self.appURL
         if resource is None:
             return base
-        path = adapt(resource,self.pathProtocol).resourcePath
+        path = adapt(resource,self.pathProtocol).resourcePath   # XXX borken
         return '%s/%s' % (base, path)
 
     def clientHas(self, lastModified=None, ETag=None):

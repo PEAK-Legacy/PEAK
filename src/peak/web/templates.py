@@ -799,6 +799,10 @@ class List(ContentReplacer):
             if not allowed(item):
                 continue
 
+            if not ct:
+                for child in self.params.get('header',()):
+                    child.renderFor(data,state)
+
             loc = subcontext(str(ct), item)
             nextPattern().renderFor(loc, state)
             ct += 1
@@ -807,14 +811,10 @@ class List(ContentReplacer):
             # Handle list being empty
             for child in self.params.get('emptyList',()):
                 child.renderFor(data, state)
+        else:
+            for child in self.params.get('footer',()):
+                child.renderFor(data,state)
 
         state.write(self._closeTag)
-
-
-
-
-
-
-
 
 
