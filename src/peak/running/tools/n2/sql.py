@@ -19,7 +19,7 @@ class SQLInteractor(binding.Component):
     state = ''
     pushbuf = binding.New(list)
     buf = ''
-    line = 0
+    line = 1
     semi = -1
     
     def interact(self, object, shell):
@@ -28,8 +28,6 @@ class SQLInteractor(binding.Component):
         self.quit = False
         
         while not self.quit:
-            self.line += 1
-            
             try:
                 l = self.readline('%s%d> ' % (self.state, self.line)) + '\n'
             except EOFError:
@@ -43,9 +41,11 @@ class SQLInteractor(binding.Component):
             if sl:
                 cmd = sl.split(None, 1)[0].lower()
 
-                if self.handleCommand(cmd, l) is not None:
+                if self.handleCommand(cmd, l) is not NOT_FOUND:
                     continue
 
+            self.line += 1
+            
             self.updateState(l)
             semi = self.semi
             
@@ -57,7 +57,7 @@ class SQLInteractor(binding.Component):
 
 
     def resetBuf(self):
-        self.state = self.buf = ''; self.line = 0; self.semi = - 1
+        self.state = self.buf = ''; self.line = 1; self.semi = - 1
 
     
         
@@ -69,7 +69,7 @@ class SQLInteractor(binding.Component):
     def handleCommand(self, cmd, l):
         shell = self.shell
 
-        r = None
+        r = NOT_FOUND
         
         cmd = cmd.lower()
         if cmd[0] == '\\' or cmd in (
@@ -82,7 +82,7 @@ class SQLInteractor(binding.Component):
             if cmdobj is None:
                 print >>shell.stderr, "command '%s' not found. Try 'help'." % cmd
 
-                return False
+                return
             else:
                 cmdinfo = parseCmd(l, shell)
 
@@ -94,10 +94,8 @@ class SQLInteractor(binding.Component):
                 # let files get closed, etc
                 del cmdinfo
 
-            if r:
-                self.resetBuf()
-            elif r is not None:
-                self.line = self.buf.count('\n')
+            if r is True:
+                pass # XXX
 
         return r
         
@@ -210,18 +208,20 @@ class SQLInteractor(binding.Component):
         def cmd(self, cmd, opts, stdout, **kw):
             i = self.interactor.buf
             if not i.strip():
-                return True
+                self.interactor.resetBuf()
+                return
 
             try:
                 c = self.interactor.con(i)
             except:
                 sys.excepthook(*sys.exc_info()) # XXX
-                return True
+                self.interactor.resetBuf()
+                return
 
             shower = opts.get('-f', 'horiz')
             self.interactor.showResults(c, shower, opts, stdout)
 
-            return True
+            self.interactor.resetBuf()
 
     cmd_go = binding.New(cmd_go)
 
@@ -237,7 +237,7 @@ rollback -- abort current transaction"""
             storage.abortTransaction(self)
             storage.beginTransaction(self)
             
-            return True
+            self.interactor.resetBuf()
 
     cmd_rollback = binding.New(cmd_abort)
     cmd_abort = binding.New(cmd_abort)
@@ -252,13 +252,11 @@ rollback -- abort current transaction"""
         def cmd(self, cmd, stderr, **kw):
             if self.interactor.buf.strip():
                 print >>stderr, "Use GO or semicolon to finish outstanding input first"
-
-                return False
             else:
                 storage.commitTransaction(self)
                 storage.beginTransaction(self)
             
-                return True
+                self.interactor.resetBuf()
 
     cmd_commit = binding.New(cmd_commit)
 
@@ -270,7 +268,7 @@ rollback -- abort current transaction"""
         args = ('', 0, 0)
         
         def cmd(self, cmd, **kw):
-            return True
+            self.interactor.resetBuf()
 
     cmd_reset = binding.New(cmd_reset)
 
@@ -283,7 +281,6 @@ rollback -- abort current transaction"""
         
         def cmd(self, cmd, **kw):
             self.interactor.quit = True
-            return True
 
     cmd_quit = binding.New(cmd_quit)
 
@@ -296,7 +293,6 @@ rollback -- abort current transaction"""
         
         def cmd(self, cmd, **kw):
             self.shell.interact()
-            return False
 
     cmd_python = binding.New(cmd_python)
 
@@ -310,8 +306,6 @@ rollback -- abort current transaction"""
         def cmd(self, cmd, stdout, **kw):
             stdout.write(self.interactor.buf)
             stdout.flush()
-            
-            return False
 
     cmd_buf_show = binding.New(cmd_buf_show)
 
@@ -340,7 +334,7 @@ rollback -- abort current transaction"""
 
             os.unlink(t)
                 
-            return False
+            return True
 
     cmd_buf_edit = binding.New(cmd_buf_edit)
 
@@ -364,9 +358,6 @@ rollback -- abort current transaction"""
                 f.close()
             except:
                 sys.excepthook(*sys.exc_info()) # XXX
-                
-            return False
-            
 
     cmd_buf_save = binding.New(cmd_buf_save)
 
@@ -396,7 +387,7 @@ rollback -- abort current transaction"""
             except:
                 sys.excepthook(*sys.exc_info()) # XXX
                 
-            return False
+            return True
             
 
     cmd_buf_load = binding.New(cmd_buf_load)
@@ -424,9 +415,6 @@ rollback -- abort current transaction"""
                 return opts.has_key('-r')
             except:
                 sys.excepthook(*sys.exc_info()) # XXX
-                
-            return False
-            
 
     cmd_source = binding.New(cmd_source)
 
@@ -448,8 +436,6 @@ rollback -- abort current transaction"""
                 print >>stdout, 'Available commands:\t(note, many require "\\" prefix)\n'
                 self.shell.printColumns(
                     stdout, self.interactor.command_names(), sort=1)
-
-            return False
 
     cmd_help = binding.New(cmd_help)
 

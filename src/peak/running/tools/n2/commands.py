@@ -149,7 +149,7 @@ class ShellCommand(binding.Component):
                 raise SyntaxError
         except:
             print >>stderr, 'usage:', self.__doc__
-            return False
+            return
 
         try:
             retval = self.cmd(
