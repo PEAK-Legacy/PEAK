@@ -2,7 +2,7 @@ from peak.api import *
 from interfaces import *
 from types import FunctionType, MethodType
 import posixpath
-from errors import NotFound, NotAllowed
+from errors import NotFound, NotAllowed, WebException
 
 __all__ = [
     'Traversable', 'Decorator', 'ContainerAsTraversable',
@@ -186,7 +186,7 @@ class Traversable(binding.Component):
             if result:
                 return loc
 
-            raise NotAllowed(ctx, result.message)
+            raise NotAllowed(ctx,getattr(result,'message',"Permission Denied"))
 
         raise NotFound(ctx)
 

@@ -73,8 +73,8 @@ class Skin(Traversable):
 
     resourcePath = ''  # skin is at root
 
-
-
+    def getObject(self,interaction):
+        return self.root.getObject(interaction)
 
 
 
