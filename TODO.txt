@@ -3,10 +3,10 @@ Open Issues/To-Do Items
 
  Targeted for 0.5 Alpha 1
 
+    * Finish tutorial chapter 2
+
     * Updated reference docstrings for 'peak.api', 'peak.binding',
       'peak.config', 'peak.exceptions', and 'peak.naming'.
-
-    * Additional content for the tutorial's chapter on binding
 
 
 
@@ -15,7 +15,7 @@ Open Issues/To-Do Items
 
     General
 
-        * Update tutorial documentation
+        * Tutorial complete through chapter 4
 
         * Up-to-date and complete Persistence package
 
@@ -45,6 +45,12 @@ Open Issues/To-Do Items
 
         - clean up TW docstrings & interfaces
 
+    peak.naming
+
+        - useful example "flat" naming context (e.g. like AppUtils.URLkeys)
+
+        - useful example hierarchical naming context (e.g. like JNDI's LDAP
+	  context or filesystem context)
 
     peak.running
 
@@ -62,23 +68,17 @@ Open Issues/To-Do Items
 
         - docstrings for reference
 
-
     peak.config
 
         - "Rule"-oriented configuration files (section specifies component
-          rather than property name prefix).
-
+          rather than property name prefix), so that daemons and other simple
+          apps can be fully configured and run via a config file.
 
     peak.util
 
         - docstrings for reference
 
         - more unit tests?
-
-
-
-
-
 
  Future Releases
 
