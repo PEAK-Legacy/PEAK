@@ -1,13 +1,23 @@
-==============================
-Command-line Option Processing
-==============================
+============================================================
+Command-line Option Processing with ``peak.running.options``
+============================================================
+
+.. contents:: **Table of Contents**
+
+
+-------
+Preface
+-------
 
 The ``peak.running.options`` module lets you define command-line options for
 a class (optionally inheriting options from base classes), and the ability
-to parse those options using the Python ``optparse`` library.  It offers an
-advantage over ``optparse``, however, in that it allows options to be defined
-with a lot less typing, allows options to be inherited from a base class, and
-integrates with PEAK's command-line application framework and ``peak.binding``.
+to parse those options using the Python ``optparse`` library.
+
+``options`` extends optparse by tying option metadata to classes (using
+the ``peak.binding`` attribute metadata framework), and allowing classes to
+inherit options from their base class(es).  It also uses a much more compact
+notation for specifying options than that provided by the "raw" ``optparse``
+module, that generally requires less typing to specify an option.
 
 For our examples, we'll need to use the PEAK API and the ``options`` module::
 
@@ -15,32 +25,65 @@ For our examples, we'll need to use the PEAK API and the ``options`` module::
     >>> from peak.running import options
 
 
-TODO:
-
-* Test ``Add`` operations
-* Set program name, usage message, description, version
-* Option groups; sort groups by ``sortKey``
-* Integrate with ``commands`` framework
-* Help formatter column setting, style setting
-* Allow use of interspersed args+options
-* Allow multi-valued args (``nargs>1``)?
-
-
 -------------
 Framework API
 -------------
 
-
-Attribute Options
+Parsing Functions
 =================
 
-The ``options`` framework is designed for use within a command class that
-wants some of its attributes to be set via command-line options.  Thus,
-most options are specified as attribute metadata, e.g. via the ``metadata``
-argument of an attribute binding, or through attribute metadata APIs like
-``binding.metadata()`` or ``binding.declareAttributes()``.
+The basic idea of the ``options`` framework is that you have an object whose
+attributes will store the options parsed from a command line.  The options that
+are available, depend on what options you declared when defining the object's
+class, or its base class(es).
 
-There are three kinds of options that can be associated with attributes:
+All of the ``options`` API functions assume that you have already created the
+object you intend to use to store options.  (This works well with the common
+case of a ``peak.running.commands`` command object that is calling the parsing
+API from within its ``run()`` method.)
+
+These functions also accept keyword arguments that are passed directly to the
+``optparse.OptionParser`` constructor.  So, if you need precise control over
+some ``optparse`` feature, you can supply keyword arguments to do so.  (Most
+often, these arguments will be used to set the `usage`, `description`, and
+`prog` values used for creating help messages.  See the section on `Parser
+Settings`_ for details.)
+
+``options.make_parser`` (`ob`, `**kw`)
+    Make an ``optparse.OptionParser`` for `ob`, populating it with the
+    options registered for ``ob.__class__``.
+
+``options.parse`` (`ob`, `args`, `**kw`)
+    Parse `args`, setting any options on `ob`, and returning a list of
+    the non-option arguments in `args`.  `args` should be a list of
+    argument values, such as one might find in ``sys.argv[1:]``.
+
+``options.get_help`` (`ob`, `**kw`)
+    Return a formatted help message for `ob`, explaining the options
+    registered for ``ob.__class__``.
+
+
+Declaring Options
+=================
+
+Most of the time, you will want command-line options to set or modify some
+attribute of your command object.  So, most options are specified as attribute
+metadata, e.g. via the ``metadata`` argument of an attribute binding, or
+through attribute metadata APIs like ``binding.metadata()`` or
+``binding.declareAttributes()``.  For simplicity in this document, we'll be
+mostly using ``binding.metadata()``, but you can also specify options like
+this::
+
+    class MyClass(commands.AbstractCommand):
+
+        dbURL = binding.Obtain(
+            PropertyName('myapp.dburl'),
+            [options.Set('--db', type=str, metavar="URL", help="Database URL")]
+        )
+
+(That is, by including option declarations as metadata in an attribute binding.)
+
+Anyway, there are three kinds of options that can associate with attributes:
 
 * ``options.Set()``
 * ``options.Add()``
@@ -61,7 +104,7 @@ Let's take a look at some usage examples::
     >>> opt_L = options.Append('-L', type=str, metavar="LIBPATH", sortKey=99)
     >>> opt_d = options.Add('-d', type=int, help="Add debug flag")
 
-All of these option constructors take the same arguments: one or more option
+All of these option constructors take the same arguments; one or more option
 names, followed by some combination of these keyword arguments:
 
 ``type``
@@ -99,7 +142,7 @@ names, followed by some combination of these keyword arguments:
 ``repeatable``
     A true/false flag indicating whether the option may appear more than once
     on the command line.  Defaults to ``True`` for ``Add`` and ``Append``
-    options, and ``False`` for ``Set`` options::
+    options, and ``False`` for ``Set`` options and ``option_handler`` methods::
 
         >>> opt_d.repeatable
         1
@@ -112,11 +155,17 @@ names, followed by some combination of these keyword arguments:
     The sort key is a value used to arrange options in a specified order for
     help messages.  Options with lower ``sortKey`` values appear earlier in
     generated help than options with higher ``sortKey`` values.  The default
-    ``sortKey`` is ``None``, which in current versions of Python will sort
-    before options that have a specified sort key::
+    ``sortKey`` is ``0``::
 
-        >>> opt_x.sortKey is None
-        1
+        >>> opt_x.sortKey
+        0
+        >>> opt_L.sortKey
+        99
+
+    Options that have the same ``sortKey`` will be sorted in the order in which
+    they were created, so you don't ordinarily need to set this.  (Except to
+    insert new options in the display order, ahead of previously-defined
+    options.)
 
 Note that an option must have either  a ``type`` (in which case it accepts an
 argument), or a ``value`` (in which case it does not accept an argument).  It
@@ -150,9 +199,17 @@ methods::
 ``option_handler`` is a function decorator that accepts the same positional
 and keyword arguments as an attribute option, but instead of modifying an
 attribute, it calls the decorated function when one of the specified options
-is encountered on a command line.
+is encountered on a command line.  You must specify ``repeatable=True`` if you
+want to allow the option to appear more than once on the command line.
 
-TODO: explain arguments, give parsing examples
+The ``zapify`` function above will be called on a ``Bar`` instance if it
+parses a ``-z`` option.  `parser` is the ``optparse.OptionParser`` being used
+to do the parsing, `optname` is the option name (e.g. ``-z``) that was
+encountered, `optval` is either the option's argument or the `value`
+keyword given to ``option_handler``, and `remaining_args` is the list of
+arguments that are not yet parsed.  The handler function is free to modify
+the list in-place in order to manipulate the handling of subsequent
+options.  It may also manipulate other attributes of `parser`, if desired.
 
 
 Inheriting Options
@@ -166,26 +223,25 @@ By default, options defined in a base class are inherited by subclasses::
 
     >>> print options.get_help(Foo())
     options:
-      -q, --quiet    Be quiet
       -v, --verbose  Be verbose
+      -q, --quiet    Be quiet
 
     >>> class Bar(Foo):
-    ...     binding.metadata(libs = opt_L)
+    ...     binding.metadata(libs = opt_L, debug=opt_d)
     ...
-    ...     [options.option_handler(
-    ...         '-z', type=int, help="Zapify!", repeatable=False)
-    ...     ]
+    ...     [options.option_handler('-z', type=int, help="Zapify!")]
     ...     def zapify(self, parser, optname, optval, remaining_args):
     ...         print "Zap!", optval
 
     >>> print options.get_help(Bar())   # doctest: +NORMALIZE_WHITESPACE
     options:
-      -q, --quiet    Be quiet
       -v, --verbose  Be verbose
+      -q, --quiet    Be quiet
+      -d INT         Add debug flag
       -z INT         Zapify!
       -L LIBPATH
 
-    # -L is last because its sortKey is 99
+    # Even though it was defined after -d, -L is last because its sortKey is 99
 
 But, you can selectively reject inheritance of individual options, by passing
 their option name(s) to ``options.reject_inheritance()``::
@@ -204,42 +260,42 @@ Or, you can reject all inherited options and start from scratch, by calling
     >>> class Spam(Foo):
     ...     options.reject_inheritance()
 
-    >>> print options.get_help(Spam())
-    <BLANKLINE>
+    >>> options.get_help(Spam())
+    ''
 
 
 
-Parsing
-=======
+Parsing Examples
+================
 
-Let's go ahead and parse some arguments, using ``options.parse(ob, argv)``,
-which takes the target object and a list of input arguments.  The return
-value is a list of non-option arguments, and the target object's attributes
-are modified (or handler methods called) according to the input arguments.
+Let's go ahead and parse some arguments, using ``options.parse()``.  This API
+function takes a target object and a list of input arguments, returning a list
+of the non-option arguments.  Meanwhile, the target object's attributes
+are modified (or its handler methods are called) according to the options found
+in the input arguments.
 
-
-No options or arguments::
+* No options or arguments::
 
     >>> foo = Foo(); options.parse(foo, [])
     []
     >>> foo.verbose
     0
 
-An option and an argument::
+* An option and an argument::
 
     >>> foo = Foo(); options.parse(foo, ['-v', 'q'])
     ['q']
     >>> foo.verbose
     1
 
-Two options::
+* Two options::
 
     >>> foo = Foo(); options.parse(foo, ['-v', '-q'])
     []
     >>> foo.verbose
     0
 
-Repeating unrepeatable options::
+* Repeating unrepeatable options::
 
     >>> foo = Foo(); options.parse(foo, ['-v', '-q', '-v'])
     Traceback (most recent call last):
@@ -251,14 +307,14 @@ Repeating unrepeatable options::
     ...
     InvocationError: -z can only be used once
 
-Using an invalid value for the given type converter::
+* Using an invalid value for the given type converter::
 
     >>> bar = Bar(); options.parse(bar, ['-z','foobly'])
     Traceback (most recent call last):
     ...
     InvocationError: -z: 'foobly' is not a valid INT
 
-Option handler called in the middle of parsing::
+* Option handler called in the middle of parsing::
 
     >>> bar = Bar(); options.parse(bar, ['-z','20', '-v', 'xyz'])
     Zap! 20
@@ -266,7 +322,7 @@ Option handler called in the middle of parsing::
     >>> bar.verbose
     1
 
-``Append`` option with multiple values, specified in different ways::
+* ``Append`` option with multiple values, specified in different ways::
 
     >>> bar = Bar(); bar.libs = []
     >>> options.parse(bar, ['-Labc','-L', 'xyz', '123'])
@@ -274,7 +330,15 @@ Option handler called in the middle of parsing::
     >>> bar.libs
     ['abc', 'xyz']
 
-Unrecognized option::
+* ``Add`` option with multiple values, specified in different ways::
+
+    >>> bar = Bar(); bar.debug = 0
+    >>> options.parse(bar, ['-d23','-d', '32', '321'])
+    ['321']
+    >>> bar.debug
+    55
+
+* Unrecognized option::
 
     >>> foo = Foo()
     >>> options.parse(foo, ['--help'])
@@ -283,56 +347,69 @@ Unrecognized option::
     InvocationError: ... no such option: --help
 
 
-TODO: more parsing examples, e.g. showing repeat
+Help/Usage Messages
+===================
 
-Help
-====
-
-Oops, looks like we need to add some sort of help facility.  By default, PEAK
-doesn't include a ``--help`` option in the options for an arbitrary class, so
-you have to create your own (unless you're using a ``commands`` framework
-base class)::
+By default, PEAK doesn't include a ``--help`` option in the options for an
+arbitrary class, so if you want one, you have to create your own.  (Unless
+you're using a ``commands`` framework base class, in which case it may be
+provided for you.)  Here's one way to implement such an option::
 
     >>> class Test(Bar):
-    ...     options.reject_inheritance('-L')
+    ...     options.reject_inheritance('-L', '-d')
     ...     [options.option_handler('--help',value=None,help="Show help")]
     ...     def show_help(self, parser, optname, optval, remaining_args):
     ...         print parser.format_help().strip()
     >>> test = Test()
     >>> args = options.parse(test, ['--help'])
     options:
-      --help         Show help
-      -q, --quiet    Be quiet
       -v, --verbose  Be verbose
+      -q, --quiet    Be quiet
       -z INT         Zapify!
+      --help         Show help
 
 (Of course, for command objects, the help should actually be sent to the
-command's standard out or standard error, rather than to ``sys.stdout`` as in
-this example.  Also, it's probably better to set a help flag and process it
-after the other options.)
+command's standard out or standard error, rather than to ``sys.stdout`` as is
+done in this example.)
 
 
+Parser Settings
+---------------
 
-Parser Options
-==============
+As we mentioned earlier, you can pass ``optparse.OptionParser`` keywords to
+any of the `Parsing Functions`_.  Most often, you'll want to set the `usage`,
+`prog`, and `description` keywords, in order to control the content of
+generated help messages.  For example::
+
+    >>> args = options.parse(test, ['--help'],
+    ...     usage="%prog [options]", description="Just a test program.",
+    ...     prog="Test",
+    ... )
+    usage: Test [options]
+    ...
+    Just a test program.
+    ...
+    options:
+      -v, --verbose  Be verbose
+      -q, --quiet    Be quiet
+      -z INT         Zapify!
+      --help         Show help
+
+(By the way, the ``...`` lines in the sample output shown above are actually
+blank lines in the real output.  Doctest doesn't allow blank lines to appear
+in sample output.)
 
 
+Option Groups
+-------------
 
-API Functions
-=============
+Finally, if you have a class with many options, you may want the help to
+display the options in groups.
 
+TODO: implement this feature and write docs
 
-``options.get_help(ob)``
-------------------------
-
-
-``options.makeParser(ob)``
---------------------------
-
-
-``options.parse(ob, args)``
----------------------------
-
+TODO: forward reference to ``peak.running.commands`` doc, once integration has
+      taken place.
 
 
 
@@ -395,14 +472,15 @@ The ``makeOption()`` Method
 
 ``AbstractOption`` instances should also be able to create ``optparse`` option
 objects for themselves, via their ``makeOption(attrname)`` method.  The
-method should return an ``optparse`` option instance configured with a callback
+method should return a ``(key,parser_opt)`` tuple, where ``key`` is a sort key,
+and ``parser_opt`` is an ``optparse.Option`` instance configured with a callback
 set to the option's ``callback`` method, an appropriate number of arguments
 (``nargs``), and callback arguments containing the attribute name (so the
 callback will know what attribute it's supposed to affect).  In addition, the
 created option's ``help`` and ``metavar`` should be the same as those on the
 original option::
 
-    >>> xopt = opt_x.makeOption('foo')
+    >>> key, xopt = opt_x.makeOption('foo')
     >>> xopt.action
     'callback'
     >>> xopt.nargs
@@ -416,7 +494,7 @@ original option::
     >>> xopt.help is opt_x.help
     1
 
-    >>> popt = opt_p.makeOption('bar')
+    >>> key, popt = opt_p.makeOption('bar')
     >>> popt.nargs
     1
     >>> popt.callback == opt_p.callback
@@ -432,19 +510,19 @@ supplied, the created option will only include option names that are present
 as keys in ``optmap``, and whose value in ``optmap`` is the original option
 object.  For example::
 
-    >>> print opt_f.makeOption('baz')
+    >>> print opt_f.makeOption('baz')[1]
     -f/--file
-    >>> print opt_f.makeOption('baz', {'-f':opt_f})
+    >>> print opt_f.makeOption('baz', {'-f':opt_f})[1]
     -f
-    >>> print opt_f.makeOption('baz', {'--file':opt_f})
+    >>> print opt_f.makeOption('baz', {'--file':opt_f})[1]
     --file
-    >>> print opt_f.makeOption('baz', {'--file':opt_f, '-f':opt_f})
+    >>> print opt_f.makeOption('baz', {'--file':opt_f, '-f':opt_f})[1]
     -f/--file
 
 Note, however, that this isn't a search through the ``optmap``, it's just a
 check for the option names the option already has::
 
-    >>> print opt_f.makeOption('baz', {'--foo':opt_f})
+    >>> print opt_f.makeOption('baz', {'--foo':opt_f})[1]
     Traceback (most recent call last):
     ...
     TypeError: at least one option string must be supplied
@@ -487,4 +565,15 @@ example::
     '-y': ('baz', <...AbstractOption instance...>),
     '-x': ('bar', <...AbstractOption instance...>),
     '--yodeling': ('baz', <...AbstractOption instance...>)}
+
+
+-----
+To Do
+-----
+
+* Option groups; sort groups by ``sortKey``
+* Integrate with ``commands`` framework
+* Help formatter column setting, style setting
+* Allow use of interspersed args+options
+* Allow multi-valued args (``nargs>1``)?
 

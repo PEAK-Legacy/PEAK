@@ -1,6 +1,12 @@
-from peak.api import *
+from peak.api import binding, NOT_GIVEN
 from dispatch import functions, combiners
 from protocols.advice import addClassAdvisor, add_assignment_advisor
+
+__all__ = [
+    'parse', 'make_parser', 'get_help',
+    'Set', 'Add', 'Append', 'Handler', 'reject_inheritance', 'option_handler',
+    'AbstractOption',
+]
 
 class _OptionCombiner(combiners.MapCombiner):
 
@@ -14,17 +20,52 @@ class _OptionCombiner(combiners.MapCombiner):
 
 OptionRegistry = functions.Dispatcher(['ob'], _OptionCombiner)
 
+_optcount = 0
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 def reject_inheritance(*names):
-    """Reject inheritance of the named options, or all options if none named"""
+    """Reject inheritance of the named options, or all options if none named
+
+    Call this function in a class body to reject inheritance of options
+    registered for any of the class' base classes, e.g.::
+
+        class Foo(Bar):
+            options.reject_inheritance('-v','--verbose')
+
+    Note that you must list all the variations that you wish to exclude from
+    inheritance.  You can also specify no option names, in which case *all*
+    inherited options are ignored, and your class will have no options except
+    those you explicitly declare.
+    """
     def callback(klass):
         # if no names are spec'd, 'method' will equal '()',
         #    which is the sentinel for "don't inherit anything"
         method = tuple([(name,(None, None)) for name in names])
         OptionRegistry[(klass,)] = method
         return klass
+
     addClassAdvisor(callback)
+
+
+
+
+
 
 
 
@@ -42,8 +83,8 @@ def reject_inheritance(*names):
 class AbstractOption:
     """Base class for option metadata objects"""
 
-    repeatable = True
-    sortKey = metavar = help = None
+    repeatable = True; sortKey = 0
+    metavar = help = None
     value = type = option_names = NOT_GIVEN
 
     def __init__(self,*option_names,**kw):
@@ -77,8 +118,8 @@ class AbstractOption:
         else:
             self.nargs = 0
 
-
-
+        global _optcount
+        _optcount +=1; self.sort_stable = _optcount
 
     def makeOption(self, attrname,optmap=None):
         options = self.option_names
@@ -87,11 +128,12 @@ class AbstractOption:
             options = [opt for opt in options if optmap.get(opt) is self]
 
         from peak.util.optparse import make_option
-        return make_option(
+        popt = make_option(
             action="callback", nargs=self.nargs, callback_args=(attrname,),
             callback = self.callback, metavar=self.metavar, help=self.help,
             type=(self.type is not NOT_GIVEN and "string" or None),*options
         )
+        return (self.sortKey, self.sort_stable), popt
 
     def convert(self,option,value):
         if self.value is NOT_GIVEN:
@@ -108,17 +150,16 @@ class AbstractOption:
 
     def check_repeat(self,option,parser):
         if not self.repeatable:
-            parser.use_counts.setdefault(self,0)
-            parser.use_counts[self]+=1
-            if parser.use_counts[self]>1:
+
+            if not hasattr(parser,'use_counts'):
+                parser.use_counts = {}
+
+            count = parser.use_counts.setdefault(self,0) + 1
+            parser.use_counts[self] = count
+
+            if count>1:
                 from commands import InvocationError
                 raise InvocationError("%s can only be used once" % option)
-
-
-
-
-
-
 
 
 class Set(AbstractOption):
@@ -153,6 +194,8 @@ class Append(AbstractOption):
 class Handler(AbstractOption):
     """Invoke a handler method when the option appears on the command line"""
 
+    repeatable = False
+
     def callback(self, option, opt, value, parser, attrname):
         self.check_repeat(option,parser)
         self.function(
@@ -160,29 +203,70 @@ class Handler(AbstractOption):
         )
 
 
+def parse(ob,args,**kw):
+    """Parse 'args' into 'ob', returning non-option arguments
 
+    'ob' can be any object whose class has options registered.  'args' must
+    be a list of arguments, such as one might find in 'sys.argv[1:]'.  A
+    list of all the non-option arguments is returned, and 'ob' will have
+    its attributes set or modified according to the defined behavior for
+    any options found in 'args'.
 
-def parse(ob,args):
-    parser = make_parser(ob)
-    parser.use_counts = {}
-    opts, args = parser.parse_args(args, ob)
+    You can also supply any keyword arguments that are accepted by
+    'optparse.OptionParser', to configure things like the usage string,
+    program name and description, etc.
+    """
+    opts, args = make_parser(ob,**kw).parse_args(args, ob)
     return args
 
 
-def exit_parser(status=0, msg=None):
-    if msg:
-        from commands import InvocationError
-        raise InvocationError(msg.strip())
-    if status:
-        raise SystemExit(status)
+def get_help(ob,**kw):
+    """Return a nicely-formatted help message for 'ob'
+
+    The return value is a formatted help message for any options that are
+    registered for the class of 'ob'.
+
+    You can also supply any keyword arguments that are accepted by
+    'optparse.OptionParser', to configure things like the usage string,
+    program name and description, etc., that are used to format the help.
+    """
+    return make_parser(ob,**kw).format_help().strip()
 
 
-def make_parser(ob):
-    """Make an 'optparse.OptionParser' for 'ob'"""
 
+
+
+
+
+
+
+
+
+
+
+def make_parser(ob,**kw):
+    """Make an 'optparse.OptionParser' for 'ob'
+
+    The parser will be populated with the options registered for the
+    object's class.  Any keyword arguments supplied will be passed
+    directly to 'optparse.OptionParser', so see its docs for details.
+    By default, this routine sets 'usage' to an empty string, and
+    'add_help_option' to 'False', unless you override them.
+    """
+
+    kw.setdefault('usage','')
+    kw.setdefault('add_help_option',False)
     from peak.util.optparse import OptionParser
-    parser = OptionParser("", add_help_option=False)
-    parser.exit = exit_parser
+    parser = OptionParser(**kw)
+
+    def _exit_parser(status=0, msg=None):
+        if msg:
+            from commands import InvocationError
+            raise InvocationError(msg.strip())
+        if status:
+            raise SystemExit(status)
+
+    parser.exit = _exit_parser
 
     optinfo = OptionRegistry[ob,].items()
     optmap = dict([(k,opt)for k,(a,opt) in optinfo if opt is not None])
@@ -191,24 +275,35 @@ def make_parser(ob):
     for optname,(attrname,option) in optinfo:
         if option in optsused or option is None:
             continue
-        popt = option.makeOption(attrname,optmap)
-        optlist.append( (option.sortKey, str(popt), popt) )
+        optlist.append( option.makeOption(attrname,optmap) )
         optsused[option] = True
+
     optlist.sort()
-    for k1,k2,popt in optlist:
+    for key,popt in optlist:
         parser.add_option(popt)
     return parser
-
-def get_help(ob):
-    return make_parser(ob).format_help().strip()
-
-
-
 
 
 
 def option_handler(*option_names, **kw):
-    """Decorate a method to be called when option is encountered"""
+    """Decorate a method to be called when option is encountered
+
+    Usage::
+        
+        class Bar:
+            [options.option_handler('-z', type=int, help="Zapify!")]
+            def zapify(self, parser, optname, optval, remaining_args):
+                print "Zap!", optval
+
+    The 'zapify' function above will be called on a 'Bar' instance if it
+    parses a '-z' option.  'parser' is the 'optparse.OptionParser' being used
+    to do the parsing, 'optname' is the option name (e.g. '-z') that was
+    encountered, 'optval' is either the option's argument or the 'value'
+    keyword given to 'option_handler', and 'remaining_args' is the list of
+    arguments that are not yet parsed.  The handler function is free to modify
+    the list in-place in order to manipulate the handling of subsequent
+    options.  It may also manipulate other attributes of 'parser', if desired.
+    """
 
     option = Handler(*option_names,**kw)
 
@@ -225,26 +320,9 @@ def option_handler(*option_names, **kw):
 
 
 [binding.declareAttribute.when(AbstractOption)]
-def declare_option(classobj,attrname,option):
+def _declare_option(classobj,attrname,option):
     OptionRegistry[(classobj,)] = tuple(
         [(optname,(attrname,option)) for optname in option.option_names]
     )
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
