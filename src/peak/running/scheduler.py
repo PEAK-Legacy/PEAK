@@ -49,7 +49,6 @@ class MainLoop(binding.Component):
 
     reactor       = binding.bindTo(IBasicReactor)
     time          = binding.bindTo('import:time.time')
-    signalManager = binding.bindTo(PropertyName('peak.running.signalManager'))
     lastActivity  = None
 
     def activityOccurred(self):
@@ -62,8 +61,6 @@ class MainLoop(binding.Component):
 
         self.lastActivity = self.time()
         reactor = self.reactor
-        from peak.util.signal_stack import pushSignals, popSignals
-        pushSignals(self.signalManager)
 
         try:
             if stopAfter:
@@ -76,9 +73,12 @@ class MainLoop(binding.Component):
 
         finally:
             del self.lastActivity
-            popSignals()
 
         # XXX we should probably log start/stop events
+
+
+
+
 
     def _checkIdle(self, timeout):
 
@@ -163,6 +163,7 @@ def getTwisted(appConfig):
 
 
 class UntwistedReactor(binding.Component):
+
     """Primitive partial replacement for 'twisted.internet.reactor'"""
 
     protocols.advise(
@@ -176,22 +177,13 @@ class UntwistedReactor(binding.Component):
     time    = binding.bindTo('import:time.time')
     sleep   = binding.bindTo('import:time.sleep')
     select  = binding.bindTo('import:select.select')
+    logger  = binding.bindTo('logging.logger:peak.reactor')
 
     checkInterval = binding.bindTo(
         PropertyName('peak.running.reactor.checkInterval')
     )
 
-    def run(self):
-        self.running = True
-        while self.running:
-            self.iterate()
-
-        # clear selectables
-        self._delBinding('readers')
-        self._delBinding('writers')
-
-    def stop(self):
-        self.running = False
+    signalManager = binding.bindTo(PropertyName('peak.running.signalManager'))
 
     def callLater(self, delay, callable, *args, **kw):
         insort_right(self.laters, _Appt(self.time()+delay, callable, args, kw))
@@ -202,14 +194,55 @@ class UntwistedReactor(binding.Component):
     def addWriter(self, writer):
         if writer not in self.writers: self.writers.append(writer)
 
-
     def removeReader(self, reader):
         if reader in self.readers: self.readers.remove(reader)
 
     def removeWriter(self, writer):
         if writer in self.writers: self.writers.remove(writer)
 
-    logger = binding.bindToProperty('peak.logs.reactor')
+
+
+
+    def run(self, installSignalHandlers=True):
+
+        from peak.util.signal_stack import pushSignals, popSignals
+
+        if installSignalHandlers:
+            pushSignals(self.signalManager)
+        else:
+            pushSignals(None)
+
+        try:
+            self.running = True
+            log = self.logger
+
+            while self.running:
+                try:
+                    self.iterate()
+                except:
+                    log.exception("Unexpected error in reactor.run():")
+
+        finally:
+            self.running = False
+            popSignals()
+
+            # clear selectables (XXX why???)
+            self._delBinding('readers')
+            self._delBinding('writers')
+
+
+    def stop(self):
+        self.running = False
+
+
+
+
+
+
+
+
+
+
 
     def iterate(self, delay=None):
 
@@ -243,6 +276,14 @@ class UntwistedReactor(binding.Component):
 
         elif delay:
             self.sleep(delay)
+
+
+
+
+
+
+
+
 
 class _Appt(object):
 

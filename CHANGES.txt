@@ -5,12 +5,13 @@ Fixes and Enhancements since Version 0.5 alpha 2
  - 'peak.running.scheduler.UntwistedReactor' now supports a configuration
    property ('peak.running.reactor.checkInterval') to determine how long it
    should run 'select()' calls for, when there are no scheduled tasks.
- 
- - 'peak.running.scheduler.MainLoop' now supports using a "signal manager"
-   component (via the 'peak.running.signalManager' property) to process signals
-   while a 'run()' loop is in progress.  Signal managers can also be added or
-   removed at any time via the new 'peak.util.signal_stack' module.
- 
+
+ - 'peak.running.scheduler.UntwistedReactor' now supports using a "signal
+   manager" component (via the 'peak.running.signalManager' property) to
+   process signals while a 'run()' loop is in progress.  Signal managers can
+   also be added or removed at any time via the new 'peak.util.signal_stack'
+   module.
+
  - 'peak.running.commands.AbstractCommand' now offers a '_run()' method that
    can be overridden in subclasses, instead of 'run()'.  If you override the
    new '_run()' method instead, you get the advantage of automatic handling
