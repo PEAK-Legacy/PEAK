@@ -335,8 +335,8 @@ that keeps track of its passengers.
 
 \begin{verbatim%
 }>>> from peak.api import binding
->>> class Car:
-        passengers = binding.New(dict, 'passengers')
+>>> class Car(object):
+        passengers = binding.New(dict, name='passengers')
 
 >>> aCar=Car()
 >>> print aCar.passengers
