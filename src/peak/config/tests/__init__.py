@@ -48,13 +48,16 @@ class IS2U(Interface):
 
 class UtilityData(binding.Component):
 
-    class aService(binding.AutoCreated):
+    class aService(binding.Component):
 
         thing5 = binding.bindToParent(provides=IS1U)
 
-        class nestedService(binding.AutoCreated):
-            _provides = IS2U
+        class nestedService(binding.Component):
+            pass
 
+        nestedService = binding.New(nestedService, provides=IS2U)
+
+    aService = binding.New(aService)
 
     deep = binding.bindTo('aService/nestedService/thing6/thing1')
 
@@ -70,9 +73,6 @@ class ISampleUtility2(Interface):
 def makeAUtility(context):
     u=binding.Component(); u.setParentComponent(context)
     return u
-
-
-
 
 
 

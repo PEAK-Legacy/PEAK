@@ -249,6 +249,8 @@ class Harness(binding.Component):
     class sampleTable(TxnTable):
         colNames = 'a', 'b'
         
+    sampleTable = binding.New(sampleTable)
+
 
     class testDM(storage.EntityDM):
 
@@ -278,9 +280,7 @@ class Harness(binding.Component):
         def defaultState(self,ob):
             return {}
 
-
-
-
+    testDM = binding.New(testDM)
 
 
 

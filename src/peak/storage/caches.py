@@ -8,7 +8,7 @@ __all__ = [
 ]
 
 
-class CacheBase(binding.AutoCreated):
+class CacheBase(binding.Base):
 
     __implements__  = ICache
     

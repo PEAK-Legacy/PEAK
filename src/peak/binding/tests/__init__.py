@@ -41,7 +41,6 @@ from peak.api import *
 
 testList = [1,2,'buckle your shoe']
 
-
 class DescriptorData(binding.Component):
 
     thing1 = "this is my thing"
@@ -51,11 +50,11 @@ class DescriptorData(binding.Component):
 
     underflow = binding.bindToParent(50)
     
-    class aService(binding.AutoCreated):
+    class aService(binding.Component):
 
         thing5 = binding.bindToParent()
 
-        class nestedService(binding.AutoCreated):
+        class nestedService(binding.Component):
 
             thing6 = binding.bindToParent(2)
 
@@ -69,15 +68,16 @@ class DescriptorData(binding.Component):
 
             getUp = binding.bindTo('..')
 
-    newDict = binding.New(dict)
+        nestedService = binding.New(nestedService)
+        
+    aService = binding.New(aService)
+    newDict  = binding.New(dict)
 
     listCopy = binding.Copy(testList)
 
     deep = binding.bindTo('aService/nestedService/thing6/thing1')
 
     testImport = binding.bindTo('import:unittest:TestCase')
-
-
 
 
 class DescriptorTest(TestCase):

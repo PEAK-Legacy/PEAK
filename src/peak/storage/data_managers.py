@@ -1,7 +1,6 @@
 from peak.api import binding, model
 from interfaces import *
 from transactions import TransactionComponent
-from caches import WeakCache
 from Persistence import Persistent
 from peak.util.ListProxy import ListProxy
 from lazy_loader import LazyLoader
@@ -39,7 +38,8 @@ __all__ = [
 
 
 
-class FacadeDM(binding.AutoCreated):
+
+class FacadeDM(binding.Component):
 
     """DM that just returns objects from other DM(s) via a different key"""
 
@@ -69,7 +69,7 @@ class FacadeDM(binding.AutoCreated):
 
     preloadState = __getitem__
 
-    cache = WeakCache
+    cache = binding.New('peak.storage.caches:WeakCache')
 
     def retrieve(self, oid, state=None):
         """Look up 'oid' in underlying storage and return it, or 'None'"""
@@ -246,7 +246,7 @@ class QueryDM(TransactionComponent):
 
     # Private abstract methods/attrs
 
-    cache = WeakCache
+    cache = binding.New('peak.storage.caches:WeakCache')
 
     defaultClass = PersistentQuery
 

@@ -574,7 +574,7 @@ class Component(Base):
 
 class AutoCreatable(OnceClass, ActiveClass):
 
-    """Metaclass for components which auto-create when used"""
+    """DEPRECATED Metaclass for components which auto-create when used"""
 
     def computeValue(self,owner,_d,_a):
         return self(owner,_a)
@@ -583,7 +583,8 @@ class AutoCreatable(OnceClass, ActiveClass):
 
 class AutoCreated(Component):
 
-    """Component that auto-creates itself in instances of its containing class
+    """DEPRECATED Component that auto-creates itself in instances of its
+        containing class
     """
 
     __metaclass__ = AutoCreatable

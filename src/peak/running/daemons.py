@@ -1,5 +1,4 @@
 from peak.api import *
-from peak.binding.components import AutoCreated
 
 from time import time, sleep
 import sys
@@ -39,7 +38,8 @@ __all__ = [
 
 
 
-class AbstractDaemon(AutoCreated):
+
+class AbstractDaemon(binding.Component):
 
     POLL_PERIOD = 0        # Minimum delay between an unsuccessful poll and the next one
     _nextpoll   = 0        # When's it okay to poll again?

@@ -246,7 +246,7 @@ class Once(ActiveDescriptor):
 
 class OnceClass(Once, type):
 
-    """A variation on Once that can be used as a metaclass
+    """DEPRECATED: A variation on Once that can be used as a metaclass
 
         Usage::
 

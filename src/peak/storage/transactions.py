@@ -133,7 +133,7 @@ class TransactionState(binding.Base):
 
 
 
-class TransactionService(binding.AutoCreated):
+class TransactionService(binding.Component):
 
     """Basic transaction service component"""
     
@@ -367,14 +367,12 @@ class AbstractParticipant(object):
 
 
 
-class TransactionComponent(binding.AutoCreated, AbstractParticipant):
+class TransactionComponent(binding.Component, AbstractParticipant):
 
     """Object that has a 'txnSvc' and auto-joins transactions"""
 
-    # XXX add binding.AutoCreated.__implements__ once binding.interfaces exist
-
     __implements__ = (
-        binding.AutoCreated.__implements__, AbstractParticipant.__implements__
+        binding.Component.__implements__, AbstractParticipant.__implements__
     )
 
     inTransaction = False
@@ -398,15 +396,6 @@ class TransactionComponent(binding.AutoCreated, AbstractParticipant):
 
     def onJoinTxn(self, txnService):
         pass
-
-
-
-
-
-
-
-
-
 
     def finishTransaction(self, txnService, committed):
 

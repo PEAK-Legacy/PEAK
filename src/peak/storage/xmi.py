@@ -285,7 +285,7 @@ class XMINode(object):
 
 
 
-class XMIDocument(binding.AutoCreated, XMINode):
+class XMIDocument(binding.Component, XMINode):
 
     index = binding.New(WeakValueDictionary)
     attrs = binding.New(dict)
@@ -369,13 +369,14 @@ class XMI_DM(storage.EntityDM):
 
 class Loader(binding.Component):
 
-    class __DM(XMI_DM):
+    class XMI_DM_Class(XMI_DM):
         metamodel = binding.bindToParent()
-        document  = XMIDocument
+        document  = binding.New(XMIDocument)
 
-    def importFromXMI(self,filename_or_stream):   
-        SOX.load(filename_or_stream, self.__DM.document)
-        return self.__DM[()]
+    def importFromXMI(self,filename_or_stream):
+        DM = self.XMI_DM_Class(self)
+        SOX.load(filename_or_stream, DM.document)
+        return DM[()]
 
 
 
