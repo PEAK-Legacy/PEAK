@@ -14,15 +14,20 @@
 """
 
 from TW.Utils.Import import interpretSpec, interpretSequence
-from TW.Utils.EigenData import EigenCell
+
+
+from Interfaces import *
 
 __all__ = [
-    'getInitialContext',         'setInitialContextHook',
-    'getInitialContext_default', 'getURLContext'
+    'getInitialContext',
+    'getObjectInstance', 
+    'getStateToBind', 
+    'getURLContext',
+    'getContinuationContext',
 ]
 
 
-_initialContextHook = EigenCell()
+
 
     
 
@@ -34,12 +39,7 @@ _initialContextHook = EigenCell()
 
 
 
-
-
-
-
-
-def getInitialContext_default(environ={}):
+def getInitialContext(environ={}):
 
     """Return an initial context using the specified environment properties
 
@@ -60,7 +60,7 @@ def getInitialContext_default(environ={}):
     factory = interpretSpec(
         environ.get(
             'NAMING_INITIAL_CONTEXT_FACTORY',
-            'TW.Naming.InitialContext:DefaultInitialContext'
+            'TW.Naming.Contexts:DefaultInitialContext'
         )
     )
 
@@ -80,43 +80,43 @@ def getInitialContext_default(environ={}):
 
 
 
-_initialContextHook.set(getInitialContext_default)
+def getContinuationContext(cpe, opInterface=IBasicContext):
+    pass    # XXX
+
+def getStateToBind(obj, name, context, environment, attrs=None):
+    pass    # XXX
+
+def getObjectInstance(refInfo, name, context, environment, attrs=None):
+    pass    # XXX
 
 
-def getInitialContext(environ={}):
-
-    """Return an initial context using the specified environment properties
-
-    This function invokes either the installed initial context hook, or
-    the default creation policy ('getInitialContext_default()').
-    """
-
-    return _initialContextHook.get()(environ)
 
 
-def setInitialContextHook(callable):
 
-    """Set the initial context creation hook to 'callable'
 
-        The initial context hook is a callable which is passed a single
-        mapping object to be used as an environment, and must return an
-        object supporting the 'TW.Naming.Context' interface.  This hook
-        will effectively be used in place of the standard
-        'getInitialContext()' function.
 
-        The initial context hook may be set as many times as you like,
-        but as soon as it has been used to create an initial context, 
-        further attempts to set the hook will raise an exception.  You
-        should only set the initial context if hook you need to globally
-        override the normal policy for creating an initial context.
 
-        This function is the Pythonic equivalent of JNDI's
-        'setInitialContextFactoryBuilder', in case you were wondering.  It's
-        amazing sometimes how much overhead it can take in Java to do
-        something that's trivial in Python.
-    """
 
-    _initialContextHook.set(callable)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

@@ -46,6 +46,7 @@ class AbstractContext(object):
     _envWritten = 0
     _scheme = None
     _acceptURLs = 1
+    _nameClass = CompoundName
 
     def __init__(self, env):
         self._environ = env
@@ -76,13 +77,13 @@ class AbstractContext(object):
         if hasattr(self,'_environ'):
             del self._environ
 
-
-
-
+    def clone(self):
+        return self.__class__(self.getEnvironment())
 
     def _performOp(self, name,
                     handleLocal, passThru,
-                    handleURL=URLsNotAccepted, handleNNS=None):
+                    handleURL=URLsNotAccepted, handleNNS=None,
+                    opInterface=IBasicContext):
     
         """Perform a naming operation"""
 
@@ -103,37 +104,75 @@ class AbstractContext(object):
 
             return handleURL(name)
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
         try:
             mine, rest = self._splitName(name)
             
             if not rest:
-                # It's all local
-                return handleLocal(mine)
+                return handleLocal(mine)    # It's all local
+
 
             elif len(rest)==1 and not rest[0]:
-                # Empty name for next name part (e.g. trailing /)
-                # So operation is on implicit NNS pointer
+
+                # Empty name for next name part (single trailing /)
+                # So operation is on the NNS pointer *itself*
+
                 return (handleNNS or self._processJunction)(mine)
+
+
+            elif not mine or not filter(None,rest):
+
+                # Name starts with "/" or ends with multiple slashes;
+                # It crosses namespaces, but the operation target is
+                # on the far side.  So look it up and point the CPE there.
+                # We also drop the first element of 'rest' from the
+                # 'remainingName' if it's empty.  This is needed because
+                # we end up here if '_resolveIntermediateNNS()' finds a
+                # non-junction on a non-empty 'mine'.  (Ugh!  But this
+                # is how the JNDI tutorial example does it.)
                 
+                obj = self._lookup_nns(mine)
+                if not rest[0]: rest = CompositeName(rest[1:])
+                raise self._fillInCPE(obj, mine, rest)
+
             else:
-                # Both local and non-local parts, so work it out
+                # We have both local and non-local parts, so work it out
                 obj = self._resolveIntermediateNNS(mine,rest)
                 raise self._fillInCPE(obj, mine, rest)
 
 
         except CannotProceedException, e:
-            cctx = SPI.getContinuationContext(e)    # XXX
-            return passThru(cctx, e.getRemainingName())
-
-
-    def _resolveIntermediateNNS(self, mine, rest, newName=None):
-        """Find the next naming system after resolving 'localName'"""
-        pass # XXX
+            cctx = SPI.getContinuationContext(e, opInterface)    # XXX
+            return passThru(cctx, e.remainingName)
 
 
     def _fillInCPE(self, resolvedObj, altName, remainingName):
+
         """Return an appropriate CannotProceedException"""
-        pass # XXX
+
+        return CannotProceedException(
+            resolvedObj   = resolvedObj,
+            altName       = altName,
+            remainingName = remainingName,
+            altNameCtx    = self,
+            environment   = self.getEnvironment(),
+        )
 
 
     def _processJunction(self,name):
@@ -146,9 +185,10 @@ class AbstractContext(object):
 
         else:
             try:
-                target = self._lookup
+                target = self._lookup_internal(name)
+
             except NamingException, e:
-                e.appendRemainingComponent("")  # XXX
+                e.remainingName += NNS_NAME
                 raise e
 
             raise self._fillInCPE(target, name, NNS_NAME)
@@ -157,6 +197,48 @@ class AbstractContext(object):
 
 
 
+
+
+
+
+
+
+    def _resolveIntermediateNNS(self, mine, rest, newName=None):
+
+        """Find the next naming system after resolving 'mine'"""
+
+        try:
+            obj = self._lookup_internal(mine)
+
+            if isinstance(obj,self.__class__):
+              
+                # Same or subclass, must not be a junction
+
+                cpe = self._fillInCPE(obj, mine, NNS_NAME+rest)
+                cpe.remainingNewName = newName
+
+
+            elif not IBasicContext.isImplementedBy(obj):
+                
+                # Not a context, make it an NNS reference
+                
+                ref = RefAddr("nns", obj)  # XXX???
+                cpe = self._fillInCPE(ref, mine + NNS_NAME, rest)
+
+
+            else:
+                # It's a context, so just return it
+                return obj
+
+
+        except NamingException, e:
+            # Make sure the remaining name portion includes the 'rest'
+            e.remainingName += rest
+            raise e
+
+
+        # Throw the error we worked out
+        raise cpe
 
 
 
@@ -186,17 +268,58 @@ class AbstractContext(object):
         """Return a tuple '(localpart,nonlocalpart)' from 'name'"""
 
         if name.isCompound:
-            return name, None
+            return CompositeName([name]), None
 
         if not name or not name[0]:
             localElements = 0
         else:
             localElements = self._numberOfLocalNameParts(name)
 
-        return (
-            CompositeName(name[:localElements]),
-            CompositeName(name[localElements:])
+        nameClass = self._nameClass
+
+        mine = CompositeName(
+            [ toName(part, nameClass) for part in name[:localElements] ]
         )
+
+        rest = CompositeName(name[localElements:])       
+        return mine, rest
+
+
+    # The real implementation stuff!
+
+    def _lookup_internal(self, name, requiredInterface=None):
+        """'name' is always a composite name of compound names"""
+
+        if name:
+            raise NotImplementedError
+        else:
+            return self.clone()
+
+
+    def _lookup_nns(self, name):
+        """Return next naming system for 'name'"""
+        self._processJunction(name) # raises a CPE
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -214,7 +337,7 @@ class InitialContext(AbstractContext):
                 return self.__class__(self.getEnvironment())
 
             else:
-                pass    # XXX return self._lookup(name,requiredInterface)
+                pass    # XXX return self._lookup_internal(name,requiredInterface)
                 
         def passThru(ctx, name):
             return ctx.lookup(name,requiredInterface)

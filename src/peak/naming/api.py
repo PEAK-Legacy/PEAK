@@ -1,9 +1,10 @@
 """Functions directly usable from the TW.Naming package"""
 
-__all__ = ['getInitialContext', 'lookup', 'parseName']
+__all__ = ['InitialContext', 'lookup', 'parseName']
 
+import SPI
 
-def getInitialContext(environ=None, **kw):
+def InitialContext(environ=None, **kw):
 
     """Get an initial naming context, based on 'environ' and keyword args
 
@@ -34,7 +35,6 @@ def lookup(name, requiredInterface=None):
 def parseName(name):
     """Parse 'name' in default initial context, and return a name object"""
     return defaultInitialContext().parseName(name)
-
 
 
 

@@ -2,6 +2,7 @@
 
 import re
 from Interfaces import *
+from types import StringTypes
 
 __all__ = [
     'Name', 'toName', 'CompositeName', 'CompoundName', 'OpaqueURL',
@@ -38,14 +39,13 @@ class UnspecifiedSyntax(object):
 
 
 
-
 class Name(tuple):
 
+    __implements__ = IName
+    
     isComposite = 0
     isCompound  = 0
     isURL       = 0
-
-    syntax = UnspecifiedSyntax()
 
     def __new__(klass, *args):
 
@@ -56,7 +56,7 @@ class Name(tuple):
             if isinstance(s,klass):
                 return s
 
-            elif isinstance(s,str) or isinstance(s,unicode):
+            elif isinstance(s,StringTypes):
                 return klass.parse(s)
                 
         return super(Name,klass).__new__(klass,*args)
@@ -67,7 +67,23 @@ class Name(tuple):
 
     def __repr__(self):
         return "%s(%r)" % (self.__class__.__name__, list(self))
-        
+
+    def __add__(self, other):
+        return self.__class__(
+            super(Name,self).__add__(self,other)
+        )
+
+
+
+
+
+
+
+
+    # syntax-based methods
+
+    syntax = UnspecifiedSyntax()
+
     def format(self):
         return self.syntax.format(self)
 
@@ -75,6 +91,31 @@ class Name(tuple):
         return klass(klass.syntax.parse(name))
 
     parse = classmethod(parse)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -397,7 +438,7 @@ class CompoundName(Name):
 
     def __new__(klass, name, syntax=UnspecifiedSyntax() ):
 
-        if isinstance(name,str) or isinstance(name,unicode):
+        if isinstance(name,StringTypes):
             name = syntax.parse(name)
             
         name = super(CompoundName,klass).__new__(klass,name)
@@ -424,7 +465,7 @@ def toName(aName, nameClass=CompositeName, acceptURL=0):
     if isinstance(aName,Name):
         return aName
         
-    elif isinstance(aName,str) or isinstance(aName,unicode):
+    elif isinstance(aName,StringTypes):
     
         if acceptURL and _URLMatch(aName):
             return OpaqueURL.parse(aName)
