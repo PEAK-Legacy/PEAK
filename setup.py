@@ -126,7 +126,6 @@ setup(
     name="PEAK",
     version="0.5a1",
     description="The Python Enterprise Application Kit",
-    
     author="Phillip J. Eby",
     author_email="transwarp@eby-sarna.com",
     
@@ -141,12 +140,17 @@ setup(
         'peak.binding.tests', 'peak.config.tests',
         'peak.metamodels.tests', 'peak.util.tests', 'peak.tests',
 
-        'Interface', 'Interface.Common', 'Interface.tests',
+        'Interface', 'Interface.Common', 'Interface.tests', 'Persistence',
     ],
     
     package_dir = {'':'src'},
 
-    ext_modules = [Extension("kjbuckets", ["src/kjbuckets/kjbucketsmodule.c"])],
+    ext_modules = [
+        Extension("kjbuckets", ["src/kjbuckets/kjbucketsmodule.c"]),
+        Extension("Persistence.cPersistence",
+            ["src/Persistence/cPersistence.c"]
+        )
+    ],
 
     cmdclass = {
         'install_data': install_data, 'sdist': sdist, 'happy': happy,
