@@ -296,6 +296,7 @@ class UMLClass(model.Model, storage.xmi.Loader):
     
     
         class stereotype(model.Reference):
+            isNavigable = False
             _XMINames = ('Foundation.Core.ModelElement.stereotype',)
             referencedType = 'Stereotype'
             referencedEnd = 'extendedElements'
@@ -347,6 +348,7 @@ class UMLClass(model.Model, storage.xmi.Loader):
 
 
         class partitions(model.Collection):
+            isNavigable = False
             _XMINames = ('Foundation.Core.ModelElement.partition',)
             referencedType = 'Partition'
             referencedEnd = 'contents'
@@ -359,12 +361,14 @@ class UMLClass(model.Model, storage.xmi.Loader):
     
     
         class behaviors(model.Collection):
+            isNavigable = False
             _XMINames = ('Foundation.Core.ModelElement.behavior',)
             referencedType = 'StateMachine'
             referencedEnd = 'context'
     
     
         class classifierRoles(model.Collection):
+            isNavigable = False
             _XMINames = ('Foundation.Core.ModelElement.classifierRole',)
             referencedType = 'ClassifierRole'
             referencedEnd = 'availableContents'
@@ -372,6 +376,7 @@ class UMLClass(model.Model, storage.xmi.Loader):
 
 
         class collaborations(model.Collection):
+            isNavigable = False
             _XMINames = ('Foundation.Core.ModelElement.collaboration',)
             referencedType = 'Collaboration'
             referencedEnd = 'constrainingElements'
@@ -433,6 +438,7 @@ class UMLClass(model.Model, storage.xmi.Loader):
         _isAbstract = 0
     
         class state3(model.Reference):
+            isNavigable = False
             _XMINames = ('Behavioral_Elements.Common_Behavior.Action.state3',)
             referencedType = 'State'
             referencedEnd = 'doActivity'
@@ -456,12 +462,14 @@ class UMLClass(model.Model, storage.xmi.Loader):
     
     
         class transition(model.Reference):
+            isNavigable = False
             _XMINames = ('Behavioral_Elements.Common_Behavior.Action.transition',)
             referencedType = 'Transition'
             referencedEnd = 'effect'
     
     
         class messages(model.Collection):
+            isNavigable = False
             _XMINames = ('Behavioral_Elements.Common_Behavior.Action.message',)
             referencedType = 'Message'
             referencedEnd = 'action'
@@ -487,12 +495,14 @@ class UMLClass(model.Model, storage.xmi.Loader):
     
     
         class state2(model.Reference):
+            isNavigable = False
             _XMINames = ('Behavioral_Elements.Common_Behavior.Action.state2',)
             referencedType = 'State'
             referencedEnd = 'exit'
     
     
         class state1(model.Reference):
+            isNavigable = False
             _XMINames = ('Behavioral_Elements.Common_Behavior.Action.state1',)
             referencedType = 'State'
             referencedEnd = 'entry'
@@ -557,12 +567,14 @@ class UMLClass(model.Model, storage.xmi.Loader):
             referencedType = 'OrderingKind'
     
         class associationEndRoles(model.Collection):
+            isNavigable = False
             _XMINames = ('Foundation.Core.AssociationEnd.associationEndRole',)
             referencedType = 'AssociationEndRole'
             referencedEnd = 'base'
     
     
         class linkEnds(model.Collection):
+            isNavigable = False
             _XMINames = ('Foundation.Core.AssociationEnd.linkEnd',)
             referencedType = 'LinkEnd'
             referencedEnd = 'associationEnd'
@@ -746,6 +758,7 @@ class UMLClass(model.Model, storage.xmi.Loader):
     
     
         class classifiersInState(model.Collection):
+            isNavigable = False
             _XMINames = ('Behavioral_Elements.State_Machines.State.classifierInState',)
             referencedType = 'ClassifierInState'
             referencedEnd = 'inStates'
@@ -907,6 +920,7 @@ class UMLClass(model.Model, storage.xmi.Loader):
 
 
         class classifierRoles(model.Collection):
+            isNavigable = False
             _XMINames = ('Foundation.Core.Feature.classifierRole',)
             referencedType = 'ClassifierRole'
             referencedEnd = 'availableFeatures'
@@ -922,6 +936,7 @@ class UMLClass(model.Model, storage.xmi.Loader):
         _XMINames = ('Foundation.Core.BehavioralFeature',)
     
         class raisedSignals(model.Collection):
+            isNavigable = False
             _XMINames = ('Foundation.Core.BehavioralFeature.raisedSignal',)
             referencedType = 'Signal'
             referencedEnd = 'contexts'
@@ -1018,6 +1033,7 @@ class UMLClass(model.Model, storage.xmi.Loader):
         _isAbstract = 0
     
         class structuralFeatures(model.Collection):
+            isNavigable = False
             _XMINames = ('Foundation.Core.Classifier.structuralFeature',)
             referencedType = 'StructuralFeature'
             referencedEnd = 'type'
@@ -1030,18 +1046,21 @@ class UMLClass(model.Model, storage.xmi.Loader):
     
     
         class parameters(model.Collection):
+            isNavigable = False
             _XMINames = ('Foundation.Core.Classifier.parameter',)
             referencedType = 'Parameter'
             referencedEnd = 'type'
     
     
         class objectFlowStates(model.Collection):
+            isNavigable = False
             _XMINames = ('Foundation.Core.Classifier.objectFlowState',)
             referencedType = 'ObjectFlowState'
             referencedEnd = 'type'
     
     
         class classifiersInState(model.Collection):
+            isNavigable = False
             _XMINames = ('Foundation.Core.Classifier.classifierInState',)
             referencedType = 'ClassifierInState'
             referencedEnd = 'type'
@@ -1055,12 +1074,14 @@ class UMLClass(model.Model, storage.xmi.Loader):
     
 
         class associationEnds(model.Collection):
+            isNavigable = False
             _XMINames = ('Foundation.Core.Classifier.associationEnd',)
             referencedType = 'AssociationEnd'
             referencedEnd = 'type'
     
     
         class collaborations(model.Collection):
+            isNavigable = False
             _XMINames = ('Foundation.Core.Classifier.collaboration',)
             referencedType = 'Collaboration'
             referencedEnd = 'representedClassifier'
@@ -1074,18 +1095,21 @@ class UMLClass(model.Model, storage.xmi.Loader):
         _XMINames = ('Foundation.Core.Classifier',)
     
         class createActions(model.Collection):
+            isNavigable = False
             _XMINames = ('Foundation.Core.Classifier.createAction',)
             referencedType = 'CreateAction'
             referencedEnd = 'instantiation'
     
     
         class instances(model.Collection):
+            isNavigable = False
             _XMINames = ('Foundation.Core.Classifier.instance',)
             referencedType = 'Instance'
             referencedEnd = 'classifiers'
     
     
         class classifierRoles(model.Collection):
+            isNavigable = False
             _XMINames = ('Foundation.Core.Classifier.classifierRole',)
             referencedType = 'ClassifierRole'
             referencedEnd = 'bases'
@@ -1126,12 +1150,14 @@ class UMLClass(model.Model, storage.xmi.Loader):
         _XMINames = ('Foundation.Core.Association',)
     
         class associationRoles(model.Collection):
+            isNavigable = False
             _XMINames = ('Foundation.Core.Association.associationRole',)
             referencedType = 'AssociationRole'
             referencedEnd = 'base'
     
     
         class links(model.Collection):
+            isNavigable = False
             _XMINames = ('Foundation.Core.Association.link',)
             referencedType = 'Link'
             referencedEnd = 'association'
@@ -1402,6 +1428,7 @@ class UMLClass(model.Model, storage.xmi.Loader):
     
     
         class occurrences(model.Collection):
+            isNavigable = False
             _XMINames = ('Behavioral_Elements.Common_Behavior.Signal.occurrence',)
             referencedType = 'SignalEvent'
             referencedEnd = 'signal'
@@ -1481,6 +1508,7 @@ class UMLClass(model.Model, storage.xmi.Loader):
         _XMINames = ('Foundation.Core.Constraint',)
     
         class constrainedElement2(model.Reference):
+            isNavigable = False
             _XMINames = ('Foundation.Core.Constraint.constrainedElement2',)
             referencedType = 'Stereotype'
             referencedEnd = 'stereotypeConstraints'
@@ -1778,6 +1806,7 @@ class UMLClass(model.Model, storage.xmi.Loader):
             referencedType = 'Expression'
         
         class associationEndRoles(model.Collection):
+            isNavigable = False
             _XMINames = ('Foundation.Core.Attribute.associationEndRole',)
             referencedType = 'AssociationEndRole'
             referencedEnd = 'availableQualifiers'
@@ -1790,6 +1819,7 @@ class UMLClass(model.Model, storage.xmi.Loader):
             referencedEnd = 'qualifiers'
         
         class attributeLinks(model.Collection):
+            isNavigable = False
             _XMINames = ('Foundation.Core.Attribute.attributeLink',)
             referencedType = 'AttributeLink'
             referencedEnd = 'attribute'
@@ -1873,11 +1903,13 @@ class UMLClass(model.Model, storage.xmi.Loader):
         _isAbstract = 0
     
         class collaborations(model.Collection):
+            isNavigable = False
             _XMINames = ('Foundation.Core.Operation.collaboration',)
             referencedType = 'Collaboration'
             referencedEnd = 'representedOperation'
     
         class callActions(model.Collection):
+            isNavigable = False
             _XMINames = ('Foundation.Core.Operation.callAction',)
             referencedType = 'CallAction'
             referencedEnd = 'operation'
@@ -1910,6 +1942,7 @@ class UMLClass(model.Model, storage.xmi.Loader):
 
 
         class occurrences(model.Collection):
+            isNavigable = False
             _XMINames = ('Foundation.Core.Operation.occurrence',)
             referencedType = 'CallEvent'
             referencedEnd = 'operation'
@@ -2030,6 +2063,7 @@ class UMLClass(model.Model, storage.xmi.Loader):
         _isAbstract = 0
     
         class states(model.Collection):
+            isNavigable = False
             _XMINames = ('Foundation.Core.Parameter.state',)
             referencedType = 'ObjectFlowState'
             referencedEnd = 'parameters'
@@ -2058,6 +2092,7 @@ class UMLClass(model.Model, storage.xmi.Loader):
             referencedEnd = 'parameters'
 
         class event(model.Reference):
+            isNavigable = False
             _XMINames = ('Foundation.Core.Parameter.event',)
             referencedType = 'Event'
             referencedEnd = 'parameters'
