@@ -2,13 +2,13 @@
 
 from Interfaces import *
 from Names import *
+from references import *
+
 import SPI
 
 _marker = object()
 
 __all__ = ['AbstractContext']
-
-
 
 
 
@@ -126,13 +126,13 @@ class AbstractContext(object):
         """Find the next naming system after resolving local part"""
 
         if name is None:
-        
-            # We're the NNS
-            return RefAddr("nns", self)  # XXX???
 
+            return self._deref(
+                Reference( None, RefAddr("nns", self) ),
+                name, None
+            )
 
         obj = self[name]
-
 
         if isinstance(obj,self.__class__):
           
@@ -145,13 +145,15 @@ class AbstractContext(object):
         elif not IBasicContext.isImplementedBy(obj):
             
             # Not a context?  make it an NNS reference
-            return RefAddr("nns", obj)  # XXX???
 
+            return self._deref(
+                Reference( None, RefAddr("nns", obj) ),
+                name, None
+            )
 
         else:
             # It's a context, so just return it
             return obj
-
 
 
     def _supportsScheme(self, scheme):
@@ -160,6 +162,31 @@ class AbstractContext(object):
 
 
 
+    def _deref(self, state, name, attrs=None):
+
+        return SPI.getObjectInstance(
+            state, name, self, self.getEnvironment(), attrs
+        )
+
+
+    def lookupLink(self,name):
+
+        """Return terminal link for 'name'"""
+
+        ctx, name = self._getTargetCtx(name)
+        if ctx is not self: return ctx.lookupLink(name)
+
+        info = self._get(name,_marker)
+        
+        if info is _marker:
+            raise NameNotFoundException(name)
+
+        state, attrs = info
+
+        if isinstance(state,LinkRef):
+            return state
+
+        return self._deref(state, name, attrs)
 
 
     def __getitem__(self,name):
@@ -193,14 +220,7 @@ class AbstractContext(object):
 
         state, attrs = info
 
-        return SPI.getObjectInstance(
-            state, name, self, self.getEnvironment(), attrs
-        )
-
-
-
-
-
+        return self._deref(state, name, attrs)
 
 
     def __contains__(self,name):
@@ -222,6 +242,8 @@ class AbstractContext(object):
         """Synonym for __contains__"""
         return name in self
 
+
+
     def keys():
         """Return a sequence of the names present in the context"""
         return [name for name in self]
@@ -236,20 +258,11 @@ class AbstractContext(object):
                     for name in self
         ]
 
-
-
-
-
-
-
-
-
     def bind(name,object,attrs=None):
 
         """Synonym for __setitem__, with attribute support"""
 
         self.__setitem__(name,object,attrs)
-
 
     def unbind(name,object):
 
@@ -271,19 +284,6 @@ class AbstractContext(object):
         ctx, newName = self._getTargetCtx(newName)
        
         self._rename(name,newName)
-
-
-
-
-
-
-
-
-
-
-
-
-
 
     def __setitem__(name,object,attrs=None):
 

@@ -240,8 +240,8 @@ class IBasicContext(Interface.Base):
     def copy():
         """Return a copy of the context"""
 
-    # lookupLink, composeName, getNameParser, getNameInNamespace
-
+    def lookupLink(name):
+        """Return terminal LinkRef of 'name', if it's a link"""
 
 
 class IReadContext(IBasicContext):

@@ -17,6 +17,7 @@ from TW.Utils.Import import interpretSpec, interpretSequence
 
 
 from Interfaces import *
+from Names import *
 
 __all__ = [
     'getInitialContext',
@@ -30,7 +31,6 @@ __implements__ = IObjectFactory, IStateFactory, IURLContextFactory
 
 
     
-
 
 
 
@@ -71,12 +71,94 @@ def getInitialContext(environ={}):
 
 
 
+
+
+
+
+
+
+
+
+
 def getStateToBind(obj, name, context, environment, attrs=None):
-    pass    # XXX
+
+    if IReferenceable.isImplementedBy(obj):
+        return (obj.getReference(obj), attrs)
+
+    for factory in interpretSequence(
+            environment.get(
+                'NAMING_STATE_FACTORIES', ()
+            ) 
+        ):
+
+        result = factory.getStateToBind(
+            obj, name, context, environment, attrs
+        )
+
+        if result is not None:
+            return result
+
+    return obj,attrs
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 def getObjectInstance(refInfo, name, context, environment, attrs=None):
-    pass    # XXX
 
+    if isinstance(refInfo,LinkRef):
+        return context[refInfo.linkName]
+
+    if isinstance(refInfo,Reference):
+
+        factory = getattr(refInfo,'objectFactory',None):
+
+        if factory:
+            factory = interpretSpec(factory)
+            return factory.getObjectInstance(refInfo, name, context, environment, attrs)
+        
+        else:
+            for addr in refInfo:
+                if addr.type=='URL':
+                    url = toName(addr.content,acceptURL=1)
+                    ctx = getURLContext(url.scheme, context, environment)
+                    if ctx is not None:
+                        try:
+                            return ctx[url]
+                        except NameNotFoundException:
+                            pass
+
+    for factory in interpretSequence(
+            environment.get(
+                'NAMING_OBJECT_FACTORIES', ()
+            ) 
+        ):
+
+        result = factory.getObjectInstance(
+            refInfo, name, context, environment, attrs
+        )
+
+        if result is not None:
+            return result                      
+
+    return refInfo
 
 
 
@@ -106,7 +188,7 @@ def getURLContext(scheme, context=None, environ=None, iface=IBasicContext):
 
     for contextFactory in interpretSequence(
             environ.get(
-                'NAMING_SCHEME_CONTEXT_FACTORIES',
+                'NAMING_URL_CONTEXT_FACTORIES',
                 'TW.Naming.Schemes'
             ) 
         ):

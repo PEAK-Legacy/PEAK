@@ -13,13 +13,13 @@ __all__ = [
     'StructuralFeature', 'Field', 'Collection', 'Reference', 'Sequence',
     'Classifier','PrimitiveType','Enumeration','DataType','Element',
     'bindTo', 'requireBinding', 'bindToNames', 'bindToParent', 'bindToSelf',
-    'Specialist'
 ]
 
 
 # We export the interfaces too, so people don't have to dig for them...
 
 __all__ += allInterfaces
+
 
 
 

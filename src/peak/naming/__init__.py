@@ -11,8 +11,6 @@
           operations simply do a series of lookup/lookup_nns operations on the
           composite name path in order to implement all the "standard" operations
 
-        * Create Reference, RefAddr, LinkRef, and associated classes
-
         * Implement default factory registries for schemes, objects, and states.
 
         * 'MappingContext', 'ConfigContext', 'FSContext', etc.
@@ -21,10 +19,15 @@
           schemes, factories, etc.
         
         * Unit tests!!!!
+
+        * Directory attribute support, and other remaining interface methods
+
+        * Detailed interface and subclassing docs
 """
 
 from Interfaces import *
 from Names      import *
+from references import *
 from API        import *
 import SPI
 
