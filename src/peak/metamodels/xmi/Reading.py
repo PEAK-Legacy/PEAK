@@ -126,9 +126,9 @@ class XMIMapMaker(RegistryBuilder):
     def registerItem(self,reg,attName,attVal):
         for k in getattr(attVal,'_XMINames',()):
             reg[k] = attName
-
+        return reg
+        
 XMIMapMaker = XMIMapMaker()
-
 
 
 
