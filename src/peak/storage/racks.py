@@ -1,5 +1,6 @@
-from peak.api import *
+from peak.api import binding
 
+__all__ = ['AbstractRack']
 
 class AbstractRack(binding.Component):
 
@@ -37,7 +38,6 @@ class AbstractRack(binding.Component):
 
         else:
             return self.thunk(ob)
-
 
     def flush(self):
         dirty = self.dirty.values()

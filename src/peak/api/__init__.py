@@ -7,17 +7,15 @@
  This will put you only one or two attribute accesses away from most of the
  functions, classes, and constants you need to use PEAK.
 
- At the present time, this will import the following API modules:
+ At the present time, this will import the 'api' submodules of the 'binding',
+ 'naming', 'config', 'storage', 'model', and 'running' packages, each under
+ the corresponding name, using a lazy import.  Thus, 'from peak.api import
+ binding' will get you a lazyImport of the 'peak.binding.api' module.  This
+ allows you to get quick, easy access to most of the PEAK API, without complex
+ import patterns, but also without a lot of namespace pollution.
 
-    'binding' -- a lazy import of the 'peak.binding.api' module
-
-    'naming' -- a lazy import of the 'peak.naming.api' module
-
-    'model' -- a lazy import of the 'peak.model.api' module
-
-    'config' -- a lazy import of the 'peak.config.api' module
-
- and the following objects for convenience in interacting with PEAK:
+ In addition to the lazily-imported API modules, this package also exports
+ the following objects for convenience in interacting with PEAK's APIs:
  
     'NOT_GIVEN' and 'NOT_FOUND' -- Singleton false values used for convenience
         in dealing with non-existent parameters or dictionary/cache entries
@@ -28,7 +26,7 @@
 
 __all__ = [
     'NOT_GIVEN', 'NOT_FOUND', 'Items',
-    'binding', 'naming', 'model', 'config', 'running',
+    'binding', 'naming', 'model', 'config', 'running', 'storage'
 ]
 
 from peak.binding.imports import lazyImport
@@ -38,6 +36,8 @@ naming  = lazyImport('peak.naming.api')
 model   = lazyImport('peak.model.api')
 config  = lazyImport('peak.config.api')
 running = lazyImport('peak.running.api')
+storage = lazyImport('peak.storage.api')
+
 
 # Convenience features
 
