@@ -51,8 +51,6 @@ class IAuthorizedPrincipal(Interface):
         Note that principals are not responsible for local grants/denials."""
 
 
-
-
 class IInteraction(Interface):
 
     """Component representing a security-controlled user/app interaction"""
@@ -71,12 +69,14 @@ class IInteraction(Interface):
 
         If 'user' is not supplied, the interaction's user should be used.  If
         the permissions are not supplied, 'subject' should be adapted to
-        'IGuardedObject' in order to obtain the required permissions."""
+        'IGuardedObject' in order to obtain the required permissions.
 
-
-
-
-
+        Note that if 'subject' does not support 'IGuardedObject', and the
+        required permissions are not specified, then this method should always
+        return true when the 'name' is 'None', and false otherwise.  That is,
+        an unguarded object is accessible, but none of its attributes are.
+        (This is so that value objects such as numbers and strings don't need
+        permissions.)"""
 
 
 

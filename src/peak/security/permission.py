@@ -186,22 +186,22 @@ class Interaction(binding.Component):
     def allows(self, subject,
         name=None, permissionsNeeded=NOT_GIVEN, user=NOT_GIVEN
     ):
-
         if permissionsNeeded is NOT_GIVEN:
             guard = adapt(subject,IGuardedObject,None)
             if guard is not None:
                 permissionsNeeded = guard.getPermissionsForName(name)
+            elif name is None:
+                # Access w/out a name is okay for unprotected objects
+                # because none of their named attributes will be accessible!
+                return True     
             else:
                 permissionsNeeded = ()
-
         for permType in permissionsNeeded:
             attempt = self.accessType(permType, subject, name, user, self)
             ok = self.checkPermission(attempt)
             if ok:
                 return ok
-
         return False
-
 
 class PermissionType(binding.ActiveClass):
 
