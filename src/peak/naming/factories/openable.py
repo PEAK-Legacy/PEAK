@@ -90,6 +90,37 @@ class OpenableURL(GenericPathURL):
         return URLStreamFactory(target = str(self))
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 class FileURL(OpenableURL):
 
     supportedSchemes = 'file',
@@ -118,6 +149,16 @@ class FileURL(OpenableURL):
     def retrieve(self, refInfo, name, context, attrs=None):
         return FileFactory( filename = self.getFilename() )
 
+    def fromFilename(klass, aName):
+        m = naming.URLMatch(aName)
+        if m:
+            return klass(m.group(1), aName[m.end():])
+        else:
+            from os.path import abspath
+            from urllib import pathname2url
+            return klass(None, pathname2url(abspath(aName)))
+
+    fromFilename = classmethod(fromFilename)
 
 
 

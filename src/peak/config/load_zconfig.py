@@ -113,7 +113,7 @@ command-line arguments.
             return component
 
     def interpret(self, filename):
-        url = naming.toName(filename, FileURL.mdl_fromString)
+        url = naming.toName(filename, FileURL.fromFilename)
         ob, handler = naming.lookup(self, url, objectFactories=[self])
         return self.getSubcommand(ob)
 

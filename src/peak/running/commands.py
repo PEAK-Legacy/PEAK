@@ -224,7 +224,7 @@ class ZConfigInterpreter(AbstractInterpreter):
         from peak.naming.factories.openable import FileURL
         from peak.config.load_zconfig import SchemaLoader
 
-        url = naming.toName(filename, FileURL.mdl_fromString)
+        url = naming.toName(filename, FileURL.fromFilename)
 
         return self.getSubcommand(
             naming.lookup(self, url,
@@ -554,7 +554,6 @@ class EventDriven(AbstractCommand):
         )
 
         # XXX we should probably log start/stop events
-
 
 
 
