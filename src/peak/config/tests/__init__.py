@@ -3,6 +3,8 @@
 from unittest import TestCase, makeSuite, TestSuite
 from peak.api import *
 from peak.interface import Interface
+from peak.config.interfaces import *
+
 
 class PropertyTest(TestCase):
 
@@ -23,8 +25,6 @@ class PropertyTest(TestCase):
                 assert ps[k] is v
 
         
-
-
 
 
 
@@ -202,6 +202,11 @@ class ModuleTest(TestCase):
         assert self.M2.RebindSub.__bases__ == (
             self.M2.UnusedBase, UserList.UserList, object  
         ), self.M2.RebindSub.__bases__
+
+    def checkImplements(self):
+        assert self.M1.FooThing.__implements__ == (IConfigKey,)
+        assert self.M2.FooThing.__implements__ == (IRule,)
+
 
 class AdviceTest(ModuleTest):
     

@@ -9,6 +9,14 @@ StringType
 # End special test
 
 
+from peak.interface import implements
+from peak.config.interfaces import *
+
+class FooThing(binding.Component):
+    implements(IRule)
+    implements(IConfigKey)
+
+
 class Referenced:
     M1 = 'M1'
 

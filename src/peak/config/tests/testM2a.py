@@ -1,4 +1,10 @@
 from peak.api import *
+from peak.config.interfaces import *
+from peak.interface import implements
+
+class FooThing:
+    implements(IConfigKey)
+    implements(IRule)
 
 class Referenced:
     M2 = 'M2'

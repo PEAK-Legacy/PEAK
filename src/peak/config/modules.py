@@ -921,9 +921,10 @@ class Simulator:
             for k,v in oldDPaths:
                 cdict[k] = classes[v][0]
 
-        cdict['__name__'] = qname
-        newClass = makeClass(qname,bases,cdict)
+        if '.' in qname:    # try to set __name__ if nested class
+            cdict['__name__'] = qname
 
+        newClass = makeClass(qname,bases,cdict)
 
         classes[qname] = newClass, bases, basePaths, cdict.items(), \
             dict(dictPaths+oldDPaths).items()
@@ -938,7 +939,6 @@ class Simulator:
             cbs = self.advisors[qname][:]
             while cbs:
                 newClass = cbs.pop()(newClass)
-
 
 
         locked = self.locked

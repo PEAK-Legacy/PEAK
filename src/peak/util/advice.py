@@ -1,5 +1,5 @@
 from new import instancemethod
-from types import ClassType
+from types import ClassType, FunctionType
 import sys
 
 __all__ = [
@@ -167,9 +167,9 @@ def addClassAdvisor(callback, depth=2):
         if previousMetaclass is None:
              if bases:
                  # find best metaclass or use global __metaclass__ if no bases
-                meta = determineMetaclass(bases)
+                 meta = determineMetaclass(bases)
              else:
-                meta = defaultMetaclass
+                 meta = defaultMetaclass
 
         elif isClassAdvisor(previousMetaclass):
             # special case: we can't compute the "true" metaclass here,

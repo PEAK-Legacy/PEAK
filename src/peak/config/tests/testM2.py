@@ -1,8 +1,14 @@
 from peak.api import *
+from peak.config.interfaces import *
+from peak.interface import implements
 
 import testM1
 
 __bases__ = testM1,
+
+class FooThing:
+    implements(IConfigKey)
+    implements(IRule)
 
 
 class Referenced:
