@@ -84,8 +84,8 @@ class autocommitted(advice):
 
     """meth = autocommited(meth) - Wrap a method with autocommit support
 
-        'AutoCommitter' classes should wrap any methods which want to be
-        atomic operations in an 'autocommitted()' advice.  For example:
+    'AutoCommitter' classes should wrap any methods which want to be
+    atomic operations in an 'autocommitted()' advice.  For example::
 
         from peak.storage.autocommit import *
         
@@ -96,30 +96,30 @@ class autocommitted(advice):
 
             send = autocommitted(send)
 
-        When a 'QueuedMessageSender' object's 'send()' method is called,
-        it will be wrapped in a transaction as long as the object was
-        created with a true setting for its 'autocommit' parameter.  If
-        an error is raised from 'send()', the transaction will be aborted,
-        otherwise it will be committed.
+    When a 'QueuedMessageSender' object's 'send()' method is called,
+    it will be wrapped in a transaction as long as the object was
+    created with a true setting for its 'autocommit' parameter.  If
+    an error is raised from 'send()', the transaction will be aborted,
+    otherwise it will be committed.
 
-        If a wrapped method is called from inside another 'autocommitted()'
-        method of the same object, or if the object doesn't have 'autocommit'
-        set to a true value, no special transaction handling occurs.
+    If a wrapped method is called from inside another 'autocommitted()'
+    method of the same object, or if the object doesn't have 'autocommit'
+    set to a true value, no special transaction handling occurs.
 
-        Note that errors raised during the wrapping transaction's commit or
-        abort method may leave the object's transaction service stuck in a
-        failure mode, where it cannot be committed, only aborted.  This can
-        be fixed by calling the 'theBrokenObject.txnSvc.abort()' until it
-        no longer raises an exception.  Or, it may be more worthwhile to
-        set up a custom error handler on the transaction service instance
-        used for autocommit transactions.  Once we have enough experience
-        with this issue to know what's most useful, we may add such an
-        error handler to the 'AutoCommitter' default 'txnSvc' setup code.
+    Note that errors raised during the wrapping transaction's commit or
+    abort method may leave the object's transaction service stuck in a
+    failure mode, where it cannot be committed, only aborted.  This can
+    be fixed by calling the 'theBrokenObject.txnSvc.abort()' until it
+    no longer raises an exception.  Or, it may be more worthwhile to
+    set up a custom error handler on the transaction service instance
+    used for autocommit transactions.  Once we have enough experience
+    with this issue to know what's most useful, we may add such an
+    error handler to the 'AutoCommitter' default 'txnSvc' setup code.
 
-        Also note that wrapped methods should always use 'self.joinedTxn' to
-        ensure they have joined a transaction; this wrapper doesn't do it for
-        you.  (It can't, since it would then fail to work correctly when
-        autocommit is turned off.)"""
+    Also note that wrapped methods should always use 'self.joinedTxn' to
+    ensure they have joined a transaction; this wrapper doesn't do it for
+    you.  (It can't, since it would then fail to work correctly when
+    autocommit is turned off.)"""
 
     __slots__ = ()
     
