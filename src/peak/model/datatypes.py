@@ -343,3 +343,5 @@ for kind, klass in basicTypes.items():
     else:
         klass.mdl_typeCode = TypeCode(kind=kind)
 
+Integer.mdl_typeCode       = TypeCode(kind=TCKind.tk_long)
+PrimitiveType.mdl_typeCode = TypeCode(kind=TCKind.tk_any)
