@@ -14,13 +14,13 @@ __all__ = [
     'Context', 'StartContext',
     'simpleRedirect', 'clientHas','parseName', 'traverseResource',
     'traverseView', 'traverseSkin', 'traverseAttr', 'traverseItem',
-    'traverseDefault',
+    'traverseDefault', 'traverseLocationId',
 ]
 
 from interfaces import *
 import protocols, posixpath, os, re
 from cStringIO import StringIO
-from peak.api import binding, adapt, NOT_GIVEN, NOT_FOUND
+from peak.api import binding, adapt, NOT_GIVEN, NOT_FOUND, PropertyName
 import errors
 from peak.security.interfaces import IInteraction
 from wsgiref.util import shift_path_info, setup_testing_defaults
@@ -163,7 +163,7 @@ class Context:
 
 
     def shift(self):
-        environ = self.environ       
+        environ = self.environ
         part = shift_path_info(environ)
         if part or part is None:
             return part
@@ -282,7 +282,7 @@ def traverseView(ctx, ob, ns, name, qname, default=NOT_GIVEN):
     if default is NOT_GIVEN:
         raise errors.NotFound(ctx,qname,ob)
     return default
-    
+
 
 
 def traverseDefault(ctx, ob, ns, name, qname, default=NOT_GIVEN):
@@ -296,6 +296,34 @@ def traverseDefault(ctx, ob, ns, name, qname, default=NOT_GIVEN):
             return traverseView(ctx,ob,ns,name,qname,default)
 
     return loc
+
+
+def traverseLocationId(ctx, ob, ns, name, qname, default=NOT_GIVEN):
+
+    key = PropertyName('peak.web.locations.'+name)
+
+    while ctx is not None:
+        cob = ctx.current
+
+        try:
+            gcd = cob._getConfigData
+        except AttributeError:
+            pass
+        else:
+            result = gcd(cob,key)
+            if result is not NOT_FOUND:
+                return result.traverse(ctx)
+
+        ctx = ctx.previous
+
+    if default is not NOT_GIVEN:
+        return default
+
+    raise errors.NotFound(ctx,qname,ob)
+
+
+
+
 
 
 class TraversableAsHandler(protocols.Adapter):
@@ -324,5 +352,18 @@ class TraversableAsHandler(protocols.Adapter):
             raise UnsupportedMethod(ctx)
 
         return ctx.traverseName(name).renderHTTP()
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 

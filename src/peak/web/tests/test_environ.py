@@ -326,6 +326,50 @@ class TestNamespaces(TestCase):
 
 
 
+    def testTraverseLocationId(self):
+        ctx = self.policy.newContext(start=self.app)
+        id1 = '++id++spammity'
+        id2 = '++id++foo.bar'
+        key1 ='peak.web.locations.spammity'
+        key2 ='peak.web.locations.foo.bar'
+
+        # check default/error behavior
+        self.invokeHandler(ctx,web.traverseLocationId,id1,fail=1)
+        self.assertRaises(web.NotFound, ctx.traverseName, id1)
+
+        # check direct find, no path
+        item = binding.Configurable(testRoot())
+        ctx1 = ctx.childContext('test',item)
+        item.registerProvider(key1,config.Value(web.TraversalPath('.')))
+        ctx2 = ctx1.traverseName(id1)
+        self.failUnless(ctx2 is ctx1)
+
+        # check indirect find, no path
+        ctx3 = ctx1.childContext('test2',binding.Component())
+        self.failUnless(ctx3.traverseName(id1) is ctx2)
+
+        # check direct find, with path
+        item.registerProvider(key2,config.Value(web.TraversalPath('../foo')))
+        self.failUnless(ctx1.traverseName(id2).current is self.app.foo)
+        
+        # check indirect find, with path
+        self.failUnless(ctx3.traverseName(id2).current is self.app.foo)
+
+        # check object w/no _getConfigData
+        ctx4 = ctx1.childContext('test2',None)
+        self.failUnless(ctx4.traverseName(id1) is ctx2)
+        self.failUnless(ctx4.traverseName(id2).current is self.app.foo)
+
+
+
+
+
+
+
+
+
+
+
 NO_SUCH_NAME = '__nonexistent__$$@'
 
 TestClasses = (

@@ -172,18 +172,18 @@ class ITraversalContext(IInteraction):
         'security.IInteraction'.  There is no return value.
         """
 
-    def findLocation(locationID,default=NOT_GIVEN):
-        """Return a context for specified location, or 'default'
 
-        'locationID' should be a property name.  It will be looked up in the
-        context's target object's 'peak.web.locations' property namespace, and
-        in the target object of each parent traversal context until the named
-        location is found.
 
-        If the named location is not found, return 'default'.  If 'default'
-        is 'NOT_GIVEN', raise 'NotFound'.  Note: this method must *not* wrap
-        'default' in a traversal context: checking for the returned default is
-        the caller's responsibility."""
+
+
+
+
+
+
+
+
+
+
 
 
 
