@@ -1,5 +1,6 @@
 """MOF 1.3.1 implementation as a PEAK domain model - far from finished yet"""
 
+from __future__ import generators
 from peak.api import *
 from kjbuckets import *
 
@@ -34,7 +35,6 @@ REFERENCED_ENDS_DEP = 'referenced ends'
 TAGGED_ELEMENTS_DEP = 'tagged elements'
 INDIRECT_DEP = 'indirect'
 ALL_DEP = 'all'
-
 
 
 
@@ -435,9 +435,7 @@ class MOFModel(model.Model, storage.xmi.Loader):
 
             for base in self.supertypes:
 
-                output.append(base)
-
-                for base in base.allSupertypes():
+                for base in base._MRO:
 
                     if base in output:
                         output.remove(base)
@@ -447,6 +445,8 @@ class MOFModel(model.Model, storage.xmi.Loader):
             return output
 
         _MRO = binding.Once(_MRO)
+
+
 
 
         class supertypes(model.Sequence):
@@ -480,57 +480,57 @@ class MOFModel(model.Model, storage.xmi.Loader):
             return self._MRO[1:]
 
 
-        def lookupElementExtended(self,name):
+        def _visitDependencies(self,visitor):
+
+            if self.supertypes:
+                visitor(SPECIALIZATION_DEP,self.supertypes)
+
+            super(MOFModel.GeneralizableElement,self)._visitDependencies(
+                visitor
+            )
+
+
+        def _extMRO(self):
+
+            seen = {}   # ensure each namespace is returned only once
+            
             for ns in self._MRO:
+
+                if ns in seen: continue
+                seen[ns] = True
+
+                yield ns
+
+                for imp in ns.findElementsByType(MOFModel.Import, False):
+                    for nns in imp.importedNamespace._extMRO():
+                        if nns in seen: continue
+                        seen[nns] = True
+                        yield nns
+
+
+        def lookupElementExtended(self,name):
+
+            for ns in self._extMRO():
                 try:
                     return ns.lookupElement(name)
                 except NameNotFound:
                     pass
-            else:
-                raise NameNotFound(name)
+
+            raise NameNotFound(name)
 
 
         def findElementsByTypeExtended(self, ofType, includeSubtypes=True):
 
             output = []
-
-            for ns in self._MRO:
-                output.extend(ns.findElementsByType(ofType,includeSubtypes))
+            names = {}
+            
+            for ns in self._extMRO():
+                for item in ns.findElementsByType(ofType,includeSubtypes):
+                    if item.name in names: continue
+                    names[item.name]=item; output.append(item)
 
             return output
                 
-
-        def _visitDependencies(self,visitor):
-            if self.supertypes:
-                visitor(SPECIALIZATION_DEP,self.supertypes)
-            super(MOFModel.GeneralizableElement,self)._visitDependencies(visitor)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     class Import(ModelElement):
 
         def _visitDependencies(self,visitor):
@@ -557,7 +557,7 @@ class MOFModel(model.Model, storage.xmi.Loader):
                 visitor(CONSTRAINED_ELEMENTS_DEP,self.constrainedElements)
             super(MOFModel.Constraint,self)._visitDependencies(visitor)
 
-        class expression(model.Field)
+        class expression(model.Field):
             referencedType = model.PrimitiveType    # XXX 'Any'
 
         class language(model.Field):
@@ -902,11 +902,13 @@ class MOFModel(model.Model, storage.xmi.Loader):
 
     class Reference(StructuralFeature):
 
-        class referencedEnd(model.Field):
+        class referencedEnd(model.Reference):
             referencedType = 'AssociationEnd'
+            defaultValue = None
 
-        class exposedEnd(model.Field):
+        class exposedEnd(model.Reference):
             referencedType = 'AssociationEnd'
+            defaultValue = None
 
         def _visitDependencies(self,visitor):
 
@@ -922,5 +924,14 @@ class MOFModel(model.Model, storage.xmi.Loader):
                 visitor(REFERENCED_ENDS_DEP,ends)
 
             super(MOFModel.Reference,self)._visitDependencies(visitor)
+
+
+
+    # We need MultiplicityType to be part of the model, in case it's encoded
+    # as such...  technically that's not supposed to happen, but the 'nsuml'
+    # metamodel for UML 1.3 references it as though it were an object class.
+    # So much for adherence to specs...  :(
+
+    MultiplicityType = MultiplicityType
 
     
