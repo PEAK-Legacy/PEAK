@@ -18,7 +18,7 @@
 static char PyPersist_doc_string[] =
 "Defines Persistent mixin class for persistent objects.\n"
 "\n"
-"$Id: cPersistence.c,v 1.4 2002/11/17 01:11:11 pje Exp $\n";
+"$Id: cPersistence.c,v 1.5 2002/12/17 23:30:16 pje Exp $\n";
 
 /* A custom metaclass is only needed to support Python 2.2. */
 #if PY_MAJOR_VERSION == 2 && PY_MINOR_VERSION == 2
@@ -58,9 +58,10 @@ _PyPersist_RegisterDataManager(PyPersistObject *self)
     result = PyObject_Call(meth, arg, NULL);
     Py_DECREF(arg);
     Py_DECREF(meth);
-    if (self->po_state == UPTODATE || self->po_state == STICKY)
-	self->po_state = CHANGED;
+
     if (result) {
+	if (self->po_state == UPTODATE || self->po_state == STICKY)
+	    self->po_state = CHANGED;
 	Py_DECREF(result);
 	return 1;
     }
@@ -295,7 +296,7 @@ persist_set_state(PyPersistObject *self, PyObject *v)
 	    /* Turn a ghost into a real object. */
 	    self->po_state = CHANGED;
 	    if (!_PyPersist_Load((PyPersistObject *)self))
-		return -1;
+		{ self->po_state = GHOST; return -1; }
 	    if (newstate == CHANGED_TRUE)
 		self->po_state = CHANGED;
 	    else
@@ -304,9 +305,9 @@ persist_set_state(PyPersistObject *self, PyObject *v)
     } else if (newstate == CHANGED_TRUE) {
 	/* Mark an up-to-date object as changed. */
 	if (self->po_state == UPTODATE) {
-	    self->po_state = CHANGED;
 	    if (!_PyPersist_RegisterDataManager((PyPersistObject *)self))
 		return -1;
+	    self->po_state = CHANGED;
 	}
     } else if (newstate == CHANGED_FALSE) {
 	/* Mark a changed object as up-to-date, but do nothing if it's
