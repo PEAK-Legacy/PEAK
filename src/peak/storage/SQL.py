@@ -149,7 +149,7 @@ class SQLConnection(ManagedConnection):
     def typeMap(self, d, a):
 
         tm = {}
-        ps = naming.PropertyName('peak.sql_types').of(self)
+        ps = PropertyName('peak.sql_types').of(self)
         api = self.API
 
         for k in self.supportedTypes:
@@ -215,6 +215,7 @@ class SybaseConnection(SQLConnection):
     txnTime = binding.Once(txnTime)
 
 
+
 class PGSQLConnection(SQLConnection):
 
     API = binding.bindTo("import:pgdb")
@@ -237,26 +238,6 @@ class PGSQLConnection(SQLConnection):
         return r[0]
 
     txnTime = binding.Once(txnTime)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -337,5 +318,5 @@ class GenericSQL_URL(naming.ParsedURL):
 
 drivers = {
     'sybase': SybaseConnection,
-    'pgsql': PGSQLConnection
+    'pgsql': PGSQLConnection,
 }

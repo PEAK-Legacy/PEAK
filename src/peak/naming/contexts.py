@@ -1,21 +1,21 @@
 """Base classes for naming contexts"""
 
+from peak.api import *
+
 from interfaces import *
 from names import *
 from properties import *
-from peak.util.imports import importObject
+
+import spi
 
 from peak.binding.components import Component, Once, Acquire
 
-from peak import exceptions
+from peak.util.imports import importObject
 
-
-import spi
 
 _marker = object()
 
 __all__ = ['AbstractContext', 'GenericURLContext']
-
 
 
 

@@ -1,11 +1,10 @@
 """Configuration Management API"""
 
-from peak.api import binding, exceptions, NOT_FOUND, NOT_GIVEN
+from peak.api import binding, exceptions, NOT_FOUND, NOT_GIVEN, PropertyName
 from interfaces import *
 from peak.util.EigenData import *
 from config_components import *
 from weakref import WeakKeyDictionary
-from peak.naming.names import PropertyName
 
 __all__ = [
     'getGlobal','setGlobal', 'registerGlobalProvider',
@@ -36,6 +35,7 @@ def setGlobal(cfg):
 
     _globalCfg.set(cfg)
     setLocal(cfg, None)     # force local config for global config to be None
+
 
 
 

@@ -1,6 +1,5 @@
 from peak.binding.components import Component, Once, New, findUtilities
-from peak.api import binding, config, NOT_GIVEN
-from peak.naming.names import PropertyName
+from peak.api import binding, config, NOT_GIVEN, PropertyName
 from time import time, localtime, strftime
 import sys, os, traceback
 from socket import gethostname
@@ -38,6 +37,7 @@ syslog_scale = (
     (PRI_SYSALERT, 1, 'LOG_ALERT'),
     (PRI_SYSEMERG, 0, 'LOG_EMERG'),
 )
+
 
 from Interface import Interface
 

@@ -19,7 +19,7 @@
  In addition to the lazily-imported modules, 'peak.api' also exports
  the following objects for convenience in interacting with PEAK's APIs:
  
-    'NOT_GIVEN' and 'NOT_FOUND' -- Singleton false values used for convenience
+    'NOT_GIVEN' and 'NOT_FOUND' -- Singleton values used for convenience
         in dealing with non-existent parameters or dictionary/cache entries
 
     'Items()' -- a convenience function that produces a 'dict.items()'-style
@@ -29,26 +29,26 @@
         preset priority, e.g. 'LOG_NOTICE("message",component)'
 """
 
+from __future__ import generators
+
 __all__ = [
-    'NOT_GIVEN', 'NOT_FOUND', 'Items',
+    'NOT_GIVEN', 'NOT_FOUND', 'Items', 'PropertyName',
     'binding', 'naming', 'model', 'config', 'running', 'logs', 'storage',
     'exceptions',
     'LOG_CRITICAL', 'LOG_ERROR', 'LOG_WARNING', 'LOG_NOTICE', 'LOG_INFO',
     'LOG_DEBUG', 'LOG',
 ]
 
+from peak.util.imports import lazyModule
 
-
-from peak.util.imports import lazyImport
-
-binding = lazyImport('peak.binding.api')
-naming  = lazyImport('peak.naming.api')
-model   = lazyImport('peak.model.api')
-config  = lazyImport('peak.config.api')
-running = lazyImport('peak.running.api')
-storage = lazyImport('peak.storage.api')
-exceptions = lazyImport('peak.exceptions')
-logs    = lazyImport('peak.running.logs')
+binding     = lazyModule('peak.binding.api')
+config      = lazyModule('peak.config.api')
+exceptions  = lazyModule('peak.exceptions')
+model       = lazyModule('peak.model.api')
+naming      = lazyModule('peak.naming.api')
+running     = lazyModule('peak.running.api')
+storage     = lazyModule('peak.storage.api')
+logs        = lazyModule('peak.running.logs')
 
 
 # Logging shortcuts
@@ -117,6 +117,129 @@ def Items(mapping=None, **kwargs):
 
     else:
         return []
+
+
+
+
+import re
+pnameValidChars = re.compile( r"([-+*?!:._a-z0-9]+)", re.I ).match
+
+class PropertyName(str):
+
+    def __new__(klass, *args):
+
+        self = super(PropertyName,klass).__new__(klass,*args)
+
+        valid = pnameValidChars(self)
+
+        if not valid or valid.end()<len(self):
+            raise exceptions.InvalidName(
+                "Invalid characters in property name", self
+            )
+
+        parts = self.split('.')
+
+        if '' in parts or not parts:
+            raise exceptions.InvalidName(
+                "Empty part in property name", self
+            )
+
+        if '*' in self:
+            if '*' not in parts or parts.index('*') < (len(parts)-1):
+                raise exceptions.InvalidName(
+                    "'*' must be last part of wildcard property name", self
+                )
+            
+        if '?' in self:
+            if '?' in parts or self.index('?') < (len(self)-1):
+                    raise exceptions.InvalidName(
+                        "'?' must be at end of a non-empty part", self
+                    )
+
+        return self
+
+
+
+
+
+    def isWildcard(self):
+        return self.endswith('*')
+
+    def isDefault(self):
+        return self.endswith('?')
+
+    def isPlain(self):
+        return self[-1:] not in '?*'
+
+
+    def matchPatterns(self):
+
+        if self.isWildcard():
+            raise exceptions.InvalidName(
+                "Can't match patterns against wildcard names", self
+            )
+
+        yield self
+
+        if self.isDefault():
+            return
+
+        name = self
+        
+        while '.' in name:
+            name = name[:name.rindex('.')]
+            yield name+'.*'
+
+        yield '*'
+        yield self
+        yield self+'?'
+
+
+    def getBases(self):
+        return ()
+
+
+    def extends(self, other, strict=1):
+        return not strict and self==other
+
+
+    def asPrefix(self):
+
+        p = self
+
+        if not self.isPlain():
+            p=p[:-1]
+
+        if p and not p.endswith('.'):
+            p=p+'.'
+
+        return p
+
+
+    def __call__(self, forObj=None, default=NOT_GIVEN):
+        from peak.config.api import getProperty
+        return getProperty(self, forObj, default)
+
+
+    def of(self, forObj):
+        from peak.config.config_components import PropertySet
+        return PropertySet(self, forObj)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

@@ -2,18 +2,20 @@ from __future__ import generators
 
 """Name, Syntax, and Reference Objects"""
 
+from peak.api import *
+
 import re
-from interfaces import *
 from types import StringTypes
-from peak.util.Struct import struct, structType
-from peak import exceptions
-from peak.api import NOT_GIVEN
 from urllib import unquote
+
+from interfaces import *
+
+from peak.util.Struct import struct, structType
 
 __all__ = [
     'Name', 'toName', 'CompositeName', 'CompoundName',
     'Syntax', 'UnspecifiedSyntax', 'NNS_NAME', 'ParsedURL', 'URLMatch',
-    'PropertyName', 'LinkRef', 'NNS_Reference'
+    'LinkRef', 'NNS_Reference'
 ]
 
 
@@ -26,8 +28,6 @@ class UnspecifiedSyntax(object):
 
     def format(self,name):
         return "%s(%r)" % (name.__class__.__name__, list(name))
-
-
 
 
 
@@ -561,129 +561,6 @@ def toName(aName, nameClass=CompoundName, acceptURL=1):
 
 
 NNS_NAME = CompositeName('/')
-
-
-
-
-
-
-
-
-
-
-
-pnameValidChars = re.compile( r"([-+*?!:._a-z0-9]+)", re.I ).match
-
-class PropertyName(str):
-
-    def __new__(klass, *args):
-
-        self = super(PropertyName,klass).__new__(klass,*args)
-
-        valid = pnameValidChars(self)
-
-        if not valid or valid.end()<len(self):
-            raise exceptions.InvalidName(
-                "Invalid characters in property name", self
-            )
-
-        parts = self.split('.')
-
-        if '' in parts or not parts:
-            raise exceptions.InvalidName(
-                "Empty part in property name", self
-            )
-
-        if '*' in self:
-            if '*' not in parts or parts.index('*') < (len(parts)-1):
-                raise exceptions.InvalidName(
-                    "'*' must be last part of wildcard property name", self
-                )
-            
-        if '?' in self:
-            if '?' in parts or self.index('?') < (len(self)-1):
-                    raise exceptions.InvalidName(
-                        "'?' must be at end of a non-empty part", self
-                    )
-
-        return self
-
-
-
-
-
-
-    def isWildcard(self):
-        return self.endswith('*')
-
-    def isDefault(self):
-        return self.endswith('?')
-
-    def isPlain(self):
-        return self[-1:] not in '?*'
-
-
-    def matchPatterns(self):
-
-        if self.isWildcard():
-            raise exceptions.InvalidName(
-                "Can't match patterns against wildcard names", self
-            )
-
-        yield self
-
-        if self.isDefault():
-            return
-
-        name = self
-        
-        while '.' in name:
-            name = name[:name.rindex('.')]
-            yield name+'.*'
-
-        yield '*'
-        yield self
-        yield self+'?'
-
-
-    def getBases(self):
-        return ()
-
-
-    def extends(self, other, strict=1):
-        return not strict and self==other
-
-
-    def asPrefix(self):
-
-        p = self
-
-        if not self.isPlain():
-            p=p[:-1]
-
-        if p and not p.endswith('.'):
-            p=p+'.'
-
-        return p
-
-
-    def __call__(self, forObj=None, default=NOT_GIVEN):
-        from peak.config.api import getProperty
-        return getProperty(self, forObj, default)
-
-
-    def of(self, forObj):
-        from peak.config.config_components import PropertySet
-        return PropertySet(self, forObj)
-
-
-
-
-
-
-
-
-
 
 
 

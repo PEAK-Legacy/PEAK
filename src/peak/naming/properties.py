@@ -1,6 +1,6 @@
 """Standard property names for the naming package"""
 
-from names import PropertyName
+from peak.api import PropertyName
 
 __all__ = [
     'CREATION_PARENT', 'OBJECT_FACTORIES', 'STATE_FACTORIES', 'SCHEMES_PREFIX',

@@ -1,14 +1,14 @@
 """Basic binding tools"""
 
 from __future__ import generators
-from once import Once, New, OnceClass, ActiveDescriptors
-from interfaces import *
+from peak.api import *
 
+from once import *
+from interfaces import *
 from weakref import WeakValueDictionary
 
-from peak.naming.names import toName, Syntax, CompoundName, PropertyName
+from peak.naming.names import toName, Syntax, CompoundName
 from peak.util.EigenData import EigenRegistry, EigenCell
-from peak.api import config, NOT_FOUND, NOT_GIVEN, exceptions
 from peak.config.interfaces import IConfigKey, IPropertyMap
 
 
@@ -125,9 +125,7 @@ def globalLookup(name, component=None, targetName=None):
 
     """Lookup 'name' in global 'InitialContext', relative to 'component'"""
 
-    from peak.naming.api import lookup
-    
-    return lookup(name, component,
+    return naming.lookup(name, component,
         creationParent=component, creationName=targetName
     )
 
@@ -154,6 +152,8 @@ def acquireComponent(name, component=None, targetName=None):
 
     else:
         return globalLookup(name, component, targetName)
+
+
 
 
 

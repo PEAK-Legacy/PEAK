@@ -1,6 +1,6 @@
 from Interface import Interface
 from Interface.Attribute import Attribute
-from peak.api import exceptions
+from peak.api import exceptions, PropertyName
 
 __all__ = [
     'IConfigKey', 'IConfigurable', 'IConfigSource',
@@ -12,7 +12,7 @@ class IConfigKey(Interface):
 
     """Marker interface for configuration data keys
     
-    Both 'naming.PropertyName()' and 'Interface' objects are usable as
+    Both 'PropertyName()' and 'Interface' objects are usable as
     configuration keys.  The common interface required is a subset of
     'Interface.IInterface' that's needed by property maps and EigenRegistry
     instances to use as dictionary keys.
@@ -31,10 +31,10 @@ class IConfigKey(Interface):
 
 
 from Interface.Implements import implements
-from peak.naming.names import PropertyName
 
 implements(Interface.__class__, IConfigKey)
 implements(PropertyName, IConfigKey)
+
 
 
 
@@ -48,7 +48,7 @@ class IConfigSource(Interface):
         """Return a value of 'configKey' for 'forObj' or 'NOT_FOUND'
 
         Note that 'configKey' is an 'IConfigKey' instance and may therefore be
-        a 'naming.PropertyName' or an 'Interface' object.
+        a 'PropertyName' or an 'Interface' object.
 
         Also note that 'binding.Base' implements this method by simply
         returning 'NOT_FOUND', and that is a perfectly acceptable

@@ -7,8 +7,6 @@ from peak.binding.components import Component, New, Base, Once
 from peak.util.EigenData import EigenCell, AlreadyRead
 from peak.util.FileParsing import AbstractConfigParser
 
-from peak.naming.names import PropertyName
-
 from interfaces import *
 from Interface import Interface
 
@@ -37,6 +35,8 @@ _emptyRuleCell.exists()
 def fileNearModule(moduleName,filename):
     filebase = importString(moduleName+':__file__')
     import os; return os.path.join(os.path.dirname(filebase), filename)
+
+
 
 
 class PropertyMap(Base):

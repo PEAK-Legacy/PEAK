@@ -2,16 +2,11 @@ Open Issues/To-Do Items
 
  Targeted for 0.5 Alpha 1
 
-    * Review possible cross-locational or "root" things like
-      'PropertyName' -- should these things move to the API?
-      Or where?  They're not 'util' things, certainly.  Perhaps
-      there should be a 'peak.core' module or package for things
-      that are foundational to all the packages?
-
     * Updated reference docstrings for 'peak.api', 'peak.binding',
       'peak.config', 'peak.exceptions', and 'peak.naming'.
 
     * Additional content for the tutorial's chapter on binding
+
 
  Targeted for 0.5 Final Release (or sooner)
 
@@ -28,7 +23,7 @@ Open Issues/To-Do Items
         - SQL cursor error logging, close conn on error, and rewrap errors
           w/SQL in error object
 
-        - SQL field type conversion. txnTime should also be converted.
+        - SQL field type conversion (should txnTime standard change?)
 
         - LDAP field type conversion
 
@@ -39,6 +34,8 @@ Open Issues/To-Do Items
         - "query" DM base class(es)
 
         - unit tests for more complex object scenarios: references, thunks..?
+
+        - lock management interfaces/API
 
         - docstrings for reference
 
@@ -74,6 +71,11 @@ Open Issues/To-Do Items
         - docstrings for reference
 
         - more unit tests?
+
+
+
+
+
 
 
 

@@ -2,10 +2,13 @@
 
 __all__ = [
     'importString', 'importObject', 'importSequence', 'importSuite',
+    'lazyImport', 'lazyModule',
 ]
 
 
-from types import StringTypes
+from types import StringTypes, ModuleType
+from sys import modules
+
 
 def importSuite(specs, globalDict=None):
 
@@ -16,9 +19,6 @@ def importSuite(specs, globalDict=None):
     return TestSuite(
         [t() for t in importSequence(specs,globalDict)]
     )
-
-
-
 
 
 
@@ -120,6 +120,47 @@ class lazyImport:
 
 
 
+
+def lazyModule(modname):
+
+    class LazyModule(ModuleType):
+
+        __slots__=()
+        
+        def __init__(self, name):
+            self.__name__ = name    # Fixes 2.2 not setting __name__ on create
+
+        def __getattribute__(self,attr):
+            if '.' in modname:
+                # ensure parent is in sys.modules and parent.modname=self
+                splitpos = modname.rindex('.')
+                mod = importString(modname[:splitpos])
+                setattr(mod,modname[splitpos+1:],self)
+                
+            oldGA = LazyModule.__getattribute__
+            modGA = ModuleType.__getattribute__
+            
+            LazyModule.__getattribute__ = modGA
+
+            try:
+                # Get Python to do the real import!
+                reload(self)
+            except:
+                # Reset our state so that we can retry later
+                LazyModule.__getattribute__ = oldGA
+                raise
+
+            try:
+                # Convert to a real module (if under 2.2)
+                self.__class__ = ModuleType
+            except TypeError:
+                pass    # 2.3 will fail, but no big deal
+
+            # Finish off by returning what was asked for
+            return modGA(self,attr)
+
+    m = modules[modname] = LazyModule(modname)
+    return m
 
 def importObject(spec, globalDict=None):
     """Convert a possible string specifier to an object

@@ -2,7 +2,7 @@
 
 Please see the individual modules for useful classes, etc."""
 
-from peak.naming.names import PropertyName
+from peak.api import PropertyName
 
 CLUSTER = PropertyName('peak.running.cluster').of(None)
 

@@ -177,13 +177,13 @@ def loadCluster(propertyMap, filename=None, prefix='peak.running.cluster.*',
                 propertyName=None, includedFrom=None
     ):
 
-    prefix = naming.PropertyName(prefix).asPrefix()
+    prefix = PropertyName(prefix).asPrefix()
 
     r = parseCluster(prefix, filename)
 
     for k,v in r.items():
         propertyMap.registerProvider(
-            naming.PropertyName(k), _value(v)
+            PropertyName(k), _value(v)
         )
 
     if propertyName:
