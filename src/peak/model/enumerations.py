@@ -7,7 +7,7 @@ from elements import PrimitiveTypeClass, PrimitiveType
 from peak.util.hashcmp import HashAndCompare
 
 __all__ = [
-    'enum', 'enumDict', 'enums', 'Enumeration'
+    'enum', 'enumDict', 'enums', 'Enumeration', 'ExtendedEnum'
 ]
 
 
@@ -440,6 +440,47 @@ class Enumeration(PrimitiveType, HashAndCompare):
 
     def __reduce__(self):
         return self.__class__, (self._hashAndCompare,)
+
+
+
+
+
+
+
+
+
+class ExtendedEnum(Enumeration):
+
+    """Enumeration that also parses integers"""
+
+    def mdl_toString(klass,x):
+        if x in klass: return klass[x].name
+        return str(int(x))
+
+    def mdl_fromString(klass,x):
+        if x.lower() in klass:
+            return klass[x.lower()]
+        return klass._convert(x)
+
+    def _convert(klass,x):
+        return int(x)
+
+    _convert = classmethod(_convert)
+
+    def __int__(self):
+        return self._hashAndCompare
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

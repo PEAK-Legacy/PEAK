@@ -90,12 +90,12 @@ class Short(Integer):
     pass
 
 class Long(Integer):
-    pass
+    mdl_fromString = long
 
 class UShort(Integer):
     pass
 
-class ULong(Integer):
+class ULong(Long):
     pass
 
 class Float(PrimitiveType):

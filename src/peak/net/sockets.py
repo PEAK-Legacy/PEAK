@@ -3,53 +3,23 @@ from peak.api import *
 from interfaces import *
 import sys, socket
 
-
 def getConstants(module,prefix):
     p = len(prefix)
     d = module.__dict__
     return [(k[p:].lower(),v) for k,v in d.items() if k.startswith(prefix)]
 
 
-class ExtendedEnum(model.Enumeration):
-
-    def mdl_toString(klass,x):
-        if x in klass: return klass[x].name
-        return str(int(x))
-
-    def mdl_fromString(klass,x):
-        if x.lower() in klass:
-            return klass[x.lower()]
-        return klass._convert(x)
-
-    def _convert(klass,x):
-        return int(x)
-
-    _convert = classmethod(_convert)
-
-    def __int__(self):
-        return self._hashAndCompare
-
-
-
-
-
-
-
-
-
-
-
-class SocketFamily(ExtendedEnum):
+class SocketFamily(model.ExtendedEnum):
 
     __values = model.enumDict( getConstants(socket,'AF_') )
 
 
-class SocketType(ExtendedEnum):
+class SocketType(model.ExtendedEnum):
 
     __values = model.enumDict( getConstants(socket, 'SOCK_') )
 
 
-class SocketProtocol(ExtendedEnum):
+class SocketProtocol(model.ExtendedEnum):
 
     __values = model.enumDict( getConstants(socket, 'IPPROTO_') )
 
@@ -62,22 +32,11 @@ class SocketProtocol(ExtendedEnum):
     _convert = classmethod(_convert)
 
 
-class FileDescriptor(ExtendedEnum):
+class FileDescriptor(model.ExtendedEnum):
 
     stdin = model.enum(0)
     stdout = model.enum(1)
     stderr = model.enum(2)
-
-
-
-
-
-
-
-
-
-
-
 
 
 class socketURL(naming.URL.Base):
