@@ -1,44 +1,6 @@
 from peak.api import *
 from peak.naming import URL
 
-justPath = URL.Sequence(
-    URL.MatchString(), ':',
-    ('//', URL.MatchString(pattern='[^/]*')),
-    URL.Named('path'),
-    ('?', URL.MatchString()), ('#', URL.MatchString()),
-)
-
-def pathFromURL(url):
-    return URL.parse(str(url),justPath)['path']
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 class GenericPathURL(URL.Base):
 
     nameAttr = 'path'
@@ -77,9 +39,6 @@ class GenericPathURL(URL.Base):
     )
 
 
-
-
-
 class OpenableURL(GenericPathURL):
     pass
 
@@ -105,7 +64,7 @@ class FileURL(OpenableURL):
         # We need to normalize ourself to match urllib's funky
         # conventions for file: conversion.  :(
         from urllib import url2pathname
-        return url2pathname(pathFromURL(self))
+        return url2pathname(str(self.path))
 
 
     def fromFilename(klass, aName):
