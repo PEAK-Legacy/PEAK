@@ -23,10 +23,12 @@ def getSysConfig():
 
     """Return the system (per-interpreter) configuration object"""
 
-    if not hasattr(_systemCfg,'value'):
-        setSysConfig(SystemConfig())
-
-    return _systemCfg.get()
+    def defaultSysConfig():
+        cfg = SystemConfig()
+        setAppConfig(cfg, None) # force app config for sys. config to be None
+        return cfg
+        
+    return _systemCfg.get(defaultSysConfig)
 
 
 def setSysConfig(cfg):
@@ -35,8 +37,6 @@ def setSysConfig(cfg):
 
     _systemCfg.set(cfg)
     setAppConfig(cfg, None)     # force app config for system config to be None
-
-
 
 
 _defaultCfg = EigenCell()
@@ -55,10 +55,7 @@ def getAppConfig(forRoot=None):
     if type(forRoot).__weakrefoffset__ and forRoot in _appConfigs:
         return _appConfigs[forRoot]
         
-    if not hasattr(_defaultCfg,'value'):
-        setAppConfig(None, AppConfig(getSysConfig()))
-        
-    return _defaultCfg.get()
+    return _defaultCfg.get( lambda: AppConfig(getSysConfig()) )
 
 
 def setAppConfig(forRoot, cfg):
@@ -78,6 +75,9 @@ def setAppConfig(forRoot, cfg):
             "Root object w/custom AppConfig must be weak-referenceable",
             forRoot
         )
+
+
+
 
 
 def getProperty(propName, obj=None, default=NOT_GIVEN):

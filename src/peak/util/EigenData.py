@@ -58,10 +58,27 @@ class EigenCell(object):
         """Create an (empty and unread) EigenCell"""
         self.locked = False
 
-    def get(self):
-        """Return the cell's value, or raise AttributeError if empty"""
+
+    def get(self, setdefault=None):
+        """Return the cell's value, or raise AttributeError if empty
+
+        A function may be supplied to set a default value, if the cell has not
+        yet been read and no value is currently assigned.  The return value
+        of the function will be used.  For example::
+
+            aCell.get(lambda: someObj())
+
+        will set the value of 'aCell' to 'someObj()' if 'aCell' has not been
+        read and has no value currently assigned.  Notice that you must pass
+        a function, not a value.  The simplest way to do this is with 'lambda'
+        as shown above."""
+
+        if not self.locked and not hasattr(self,'value') and setdefault:
+            self.value = setdefault()
+
         self.locked = True
         return self.value
+
 
     def exists(self):
         """Return true if the cell contains a value."""
@@ -78,6 +95,30 @@ class EigenCell(object):
         if hasattr(self,'value'):
             if self.locked: raise AlreadyRead
             del self.value
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 class EigenDict(object):

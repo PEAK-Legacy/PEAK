@@ -128,40 +128,40 @@ def setReactor(reactor):
     """Set the system reactor to 'reactor', if not already used"""
     _reactor.set(reactor)
 
-
 def getReactor(appConfig):
     """Get system reactor -- default to our "dirt simple" reactor"""
-
-    if not hasattr(_reactor,'value'):   # XXX ugh
-        setReactor(UntwistedReactor(appConfig))
-
-    return _reactor.get()
-
+    return _reactor.get(lambda: UntwistedReactor(appConfig))
 
 def getTwisted(appConfig):
 
     """Get system reactor -- but only if it's twisted!"""
 
     global _twisted
-    if not _twisted:
 
-        if _reactor.locked:
-            # I guess we're just not twisted enough!
-            raise AlreadyRead("Another reactor is already in use")
+    if _twisted:
+        return _reactor.get()
 
-        try:
-            from twisted.internet import reactor
-        except ImportError:
-            raise exceptions.PropertyNotFound(
-                """twisted.internet.reactor could not be imported"""
-            )
+    try:
+        from twisted.internet import reactor
+    except ImportError:
+        raise exceptions.PropertyNotFound(
+            """twisted.internet.reactor could not be imported"""
+        )
 
-        _reactor.set(reactor)
+    def _getTwisted():
         # XXX do twisted setups like threadable.init, wxSupport.install, etc.
-        _twisted = True
+        return reactor
 
-    return _reactor.get()
+    peak_reactor = _reactor.get(_getTwisted)
 
+    if peak_reactor is not reactor:
+        # I guess we're just not twisted enough!
+        raise AlreadyRead("Another reactor is already in use")
+
+    _twisted = True
+    return peak_reactor
+
+    
 class UntwistedReactor(binding.Base):
 
     """Primitive partial replacement for 'twisted.internet.reactor'"""
