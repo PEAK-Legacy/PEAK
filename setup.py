@@ -39,15 +39,6 @@ extensions = [
 ]
 
 
-# Base data files
-
-data_files = [
-    ('peak',     ['src/peak/peak.ini']),
-    ('peak/web', ['src/peak/web/resource_defaults.ini']),
-    ('peak/ddt', ['src/peak/ddt/resource_defaults.ini']),
-    ('ZConfig/doc', ['src/ZConfig/doc/schema.dtd']),
-] + findDataFiles('src/peak/running', 1, '*.xml', '*.ini')
-
 if include_tests:
 
     packages += [
@@ -57,12 +48,6 @@ if include_tests:
         'peak.storage.tests', 'peak.util.tests', 'protocols.tests',
         'peak.events.tests', 'peak.ddt.tests',
     ]
-    data_files += [
-        ('peak/running/tests', ['src/peak/running/tests/test_cluster.txt']),
-        ('peak/config/tests',  ['src/peak/config/tests/test_links.ini']),
-    ] + findDataFiles('src/peak/web/tests', 1, '*.pwt') + findDataFiles(
-                      'src/peak/ddt/tests', 1, '*.html'
-    )
 
 
 if include_metamodels:
@@ -76,9 +61,24 @@ if include_metamodels:
 
     if include_tests:
         packages += [ 'peak.metamodels.tests' ]
-        data_files += findDataFiles(
-            'src/peak/metamodels/tests', 1, '*.xml', '*.asdl'
-        )
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 try:
     # Check if Zope X3 is installed; we use zope.component
@@ -103,12 +103,12 @@ if not zope_installed:
 
     if include_tests:
         packages += [
-            'persistence.tests', 'ZConfig.tests',
+            'persistence.tests', 'ZConfig.tests', 'ZConfig.tests.library',
+            'ZConfig.tests.library.thing', 'ZConfig.tests.library.widget',
         ]
 
-        data_files += findDataFiles(
-            'src/ZConfig/tests', 1, '*.xml', '*.txt', '*.conf'
-        )
+
+
 
 
 
@@ -204,7 +204,12 @@ if os.name=='posix':
 
 
 execfile('src/setup/common.py')
+from setuptools import setup
 
+ALL_EXTS = [
+    '*.ini', '*.html', '*.conf', '*.xml', '*.pwt', '*.dtd', '*.txt',
+]
+    
 setup(
     name=PACKAGE_NAME,
     version=PACKAGE_VERSION,
@@ -219,23 +224,18 @@ setup(
     package_dir = {'':'src'},
     packages    = packages,
     cmdclass = SETUP_COMMANDS,
-    data_files = data_files,
+
+    package_data = {
+        '': ALL_EXTS,
+        'ZConfig.tests': ['input/*.xml', 'input/*.conf'],
+        'ZConfig.tests.library.thing': ['extras/extras.xml'],
+        'peak.metamodels': ['*.asdl']
+    },
+
+    test_module = TEST_MODULE,
     ext_modules = extensions,
     scripts = scripts,
 )
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
