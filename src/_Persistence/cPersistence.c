@@ -18,7 +18,7 @@
 static char PyPersist_doc_string[] =
 "Defines Persistent mixin class for persistent objects.\n"
 "\n"
-"$Id: cPersistence.c,v 1.3 2002/11/04 01:21:34 pje Exp $\n";
+"$Id: cPersistence.c,v 1.4 2002/11/17 01:11:11 pje Exp $\n";
 
 /* A custom metaclass is only needed to support Python 2.2. */
 #if PY_MAJOR_VERSION == 2 && PY_MINOR_VERSION == 2
@@ -679,7 +679,7 @@ static PyMemberDef persist_members[] = {
 #define DEFERRED_ADDRESS(ADDR) 0
 
 static PyTypeObject PyPersist_Type = {
-    PyObject_HEAD_INIT(&PyPersist_MetaType)
+    PyObject_HEAD_INIT(DEFERRED_ADDRESS(&PyPersist_MetaType))
     0,					/* ob_size */
     "Persistence.Persistent",		/* tp_name */
     sizeof(PyPersistObject),		/* tp_basicsize */
@@ -776,7 +776,7 @@ PyPersist_New(PyTypeObject *type, PyObject *args, PyObject *kwds)
     if (!new)
 	return NULL;
 
-    /* initialize dictionary offset to same as __base__ type */
+    /* If a base class already defined a dictoffset, use that. */
     new->tp_dictoffset = new->tp_base->tp_dictoffset;
 
     /* It is possible for a class that inherits from Persistent to
@@ -791,21 +791,16 @@ PyPersist_New(PyTypeObject *type, PyObject *args, PyObject *kwds)
     if (!new->tp_dictoffset) {
 
 	/* Update the type to know about __dict__. */
-
 	if (new->tp_itemsize)
 	    new->tp_dictoffset = -(long)sizeof(PyObject *);
-
-    else if (new->tp_weaklistoffset && !new->tp_base->tp_weaklistoffset) {
-
-        /* type.__new__ gave us a new weak reference pointer, but we need 
-           it to be *after* our dictionary pointer, so take it as our
-           dictionary pointer and put the weak reference pointer where
-           we otherwise would put the dictionary. */
-
-        new->tp_dictoffset = new->tp_weaklistoffset;
-        new->tp_weaklistoffset = new->tp_basicsize;
-    }
-
+	else if (new->tp_weaklistoffset && !new->tp_base->tp_weaklistoffset) {
+	    /* Python expects the weaklistoffset to come before the
+	       dictoffset.  The order matters to extra_ivars(), which
+	       is involved in determining the best base class.
+	    */
+	    new->tp_dictoffset = new->tp_weaklistoffset;
+	    new->tp_weaklistoffset = new->tp_basicsize;
+	}
 	else
 	    /* XXX Should be aligned properly */
 	    new->tp_dictoffset = new->tp_basicsize;
