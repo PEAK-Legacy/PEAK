@@ -398,7 +398,7 @@ class Repeat(Sequence):
 
             state = input.parse(rule, data.append, state)
             if isinstance(state,ParseError):
-                if self.sepIsTerm:
+                if self.sepMayTerm:
                     break   # if sep can be term, it's okay to end here
                 return state  # otherwise pass the error up
 
