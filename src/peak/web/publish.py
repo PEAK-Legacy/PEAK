@@ -47,8 +47,8 @@ class BaseInteraction(security.Interaction):
     request  = binding.requireBinding("Request object")
     response = binding.bindTo("request/response")
 
-    locationProtocol = binding.bindTo('../locationProtocol')
-    behaviorProtocol = binding.bindTo('../behaviorProtocol')
+    locationProtocol = binding.bindTo(LOCATION_PROTOCOL, default=IWebLocation)
+    behaviorProtocol = binding.bindTo(BEHAVIOR_PROTOCOL, default=IWebMethod)
 
     def beforeTraversal(self, request):
         """Begin transaction before traversal"""
@@ -209,27 +209,27 @@ class CGIPublisher(binding.Component):
         factoryMethod = 'fromApp',
     )
 
-    app       = binding.requireBinding("Application root to publish")
-    publish   = binding.bindTo("import:zope.publisher.publish:publish")
 
+    def fromApp(klass, app, protocol):
+        return klass(app, app=app)
+
+    fromApp = classmethod(fromApp)
+
+
+    app = binding.requireBinding("Application root to publish")
+
+    interactionClass=binding.bindTo(INTERACTION_CLASS,default=BaseInteraction)
+
+
+
+    # items to (potentially) replace in subclasses
+
+    publish   = binding.bindTo("import:zope.publisher.publish:publish")
     mkXMLRPC  = binding.bindTo("import:zope.publisher.xmlrpc:XMLRPCRequest")
     mkBrowser = binding.bindTo("import:zope.publisher.browser:BrowserRequest")
     mkHTTP    = binding.bindTo("import:zope.publisher.http:HTTPRequest")
 
     _browser_methods = binding.Copy( {'GET':1, 'POST':1, 'HEAD':1} )
-
-    # items to replace in subclasses
-    interactionClass = BaseInteraction
-    locationProtocol = IWebLocation
-    behaviorProtocol = IWebMethod
-
-
-    def fromApp(klass, app, protocol):
-        return klass(app=app)
-
-    fromApp = classmethod(fromApp)
-
-
 
 
 

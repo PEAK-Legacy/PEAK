@@ -597,7 +597,7 @@ class FastCGIAcceptor(binding.Component):
         i,o,e,env = self.accept()
 
         try:
-            self.runCGI(i,o,e,dict(env))
+            self.command.runCGI(i,o,e,dict(env))
 
         finally:
             self.finish()

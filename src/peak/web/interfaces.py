@@ -1,10 +1,18 @@
 from protocols import Interface, Attribute
 from peak.security.interfaces import IAuthorizedPrincipal, IInteraction
 import protocols
+from peak.api import PropertyName
 
 __all__ = [
     'IWebInteraction', 'IWebLocation', 'IWebMethod',
+    'LOCATION_PROTOCOL', 'BEHAVIOR_PROTOCOL', 'INTERACTION_CLASS',
 ]
+
+
+LOCATION_PROTOCOL = PropertyName('peak.web.locationProtocol')
+BEHAVIOR_PROTOCOL = PropertyName('peak.web.behaviorProtocol')
+INTERACTION_CLASS = PropertyName('peak.web.interactionClass')
+
 
 try:
     from zope.publisher.interfaces import IPublication
@@ -19,6 +27,16 @@ else:
     zopePublicationInterfaces = (
         IPublication, IBrowserPublication, IXMLRPCPublication
     )
+
+
+
+
+
+
+
+
+
+
 
 
 class IWebInteraction(IInteraction):
@@ -39,6 +57,7 @@ class IWebInteraction(IInteraction):
 
     # XXX skin, ...?
 
+
 class IWebLocation(Interface):
 
     """A component representing a URL location"""
@@ -57,24 +76,6 @@ class IWebMethod(Interface):
 
     def render(interaction):
         """Render a response"""
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
