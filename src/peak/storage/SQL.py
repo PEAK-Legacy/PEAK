@@ -80,7 +80,6 @@ class SQLCursor(AbstractCursor):
 
 
 
-
     def nextset(self):
         try:
             return getattr(self._cursor, 'nextset', _nothing)()

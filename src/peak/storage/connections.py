@@ -39,8 +39,6 @@ class RowBase(struct):
 
 
 
-
-
 class AbstractCursor(binding.Component):
 
     protocols.advise(
@@ -113,8 +111,18 @@ class AbstractCursor(binding.Component):
     __invert__ = justOne
 
 
+
+
+
+
+
+
+
+
+
+
     defaultFormat = "horiz"
-    
+
     def dumpTo(self, stream, format=None, **kw):
         if format is None:
             format = self.defaultFormat
@@ -126,6 +134,24 @@ class AbstractCursor(binding.Component):
         fmt = factory(parentComponent=self, cursor=self, **kw)
 
         fmt(stream)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
