@@ -103,11 +103,11 @@ def getComponentPath(component, relativeTo=None):
 
         path.append(getComponentName(c) or '*')
 
-        c = getParentComponent(c)
-
-
     path.reverse()
     return ComponentName(path)
+
+
+
 
 
 
