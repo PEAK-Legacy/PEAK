@@ -11,7 +11,7 @@ __all__ = [
     'IDOMletNode',    'IDOMletNodeFactory', 'IPlace', 'ITraversalContext',
     'IDOMletElement', 'IDOMletElementFactory', 'ISkin', 'IPolicyInfo',
     'IViewTarget', 'IConfigurableLocation',
-    'VIEW_NAMES', 'TEMPLATE_SCHEMA', 'LOCATION_ID',
+    'VIEW_NAMES', 'TEMPLATE_SCHEMA', 'SITEMAP_SCHEMA', 'LOCATION_ID',
 ]
 
 DEFAULT_METHOD    = PropertyName('peak.web.defaultMethod')
@@ -20,7 +20,24 @@ APPLICATION_LOG   = PropertyName('peak.web.appLog')
 NAMESPACE_NAMES   = PropertyName('peak.web.namespaces')
 VIEW_NAMES        = PropertyName('peak.web.views')
 TEMPLATE_SCHEMA   = PropertyName('peak.web.template_schema')
+SITEMAP_SCHEMA    = PropertyName('peak.web.sitemap_schema')
 LOCATION_ID       = lambda lid: PropertyName('peak.web.locations.'+lid)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 class IPolicyInfo(Interface):
 
@@ -37,6 +54,30 @@ class IAuthService(Interface):
 
     def getUser(environ):
         """Return a user object for the given WSGI 'environ'"""
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 class IInteractionPolicy(IAuthService, IPolicyInfo):
@@ -371,19 +412,22 @@ class IDOMletNode(Interface):
 
     """A component of a page template"""
 
-    def renderFor(environ, state):
+    def renderFor(ctx, state):
         """Write template's output by calling 'state.write()' 0 or more times
 
-        'environ' is an environment mapping for the object being rendered  (e.g.
+        'ctx' is an 'ITraversalContext' for the object being rendered  (e.g.
         the object the template is a method of).  'state' is an 'IDOMletState'
         component used to supply arbitrary properties/utilities to child
         DOMlets during template execution, and to provide access to the
         current output stream and 'IWebInteraction'.  Both of these
         parameters should be supplied to executed child nodes as-is, unless
-        the current DOMlet wishes to change them.
+        the current DOMlet wishes to change them.  (For example, a
+        'TemplateDocument' will normally change the context to point to its
+        traversal predecessor, rather than using itself as the target of
+        rendering.)
 
-        For example, if a node wishes to add properties to the 'state' for its
-        children, it should create a new 'IDOMletState' with the old 'state' as
+        If a node wishes to add properties to the 'state' for its children,
+        it should create a new 'IDOMletState' with the old 'state' as
         its parent, then supply the new state to child nodes's 'renderFor()'
         method.
         """
@@ -394,9 +438,6 @@ class IDOMletNode(Interface):
     )
 
     # XXX should be some kind of parseInfo w/source file/line/column
-
-
-
 
 
 
