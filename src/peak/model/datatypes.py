@@ -86,22 +86,22 @@ class TCKind(SimpleTC):
 
     tk_alias = enum()       # content_type
 
-    tk_array = enum()       # length + content_type
-    tk_sequence = enum()
+    tk_struct = enum()      # member names + types
+
+    tk_sequence = enum()    # length + content_type
+    tk_array = enum()
+
+    tk_objref = enum()
+
+    tk_enum = enum()        # member names
+    tk_union = enum()       # member names + types + discriminator
+    tk_except = enum()      # member names + types
 
     tk_string = enum()      # length
     tk_wstring = enum()
 
-    tk_enum = enum()        # member names
-
-    tk_struct = enum()      # member names + types
-    tk_except = enum()
-
-    tk_union = enum()       # member names + types + discriminator
-
     tk_fixed = enum()       # digits + scale
 
-    tk_objref = enum()
 
 
     # J2SE also defines these...  presumably they come from a newer CORBA

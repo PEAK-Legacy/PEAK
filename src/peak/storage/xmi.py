@@ -168,7 +168,7 @@ from weakref import WeakValueDictionary
 from Persistence import Persistent
 from xml.sax import saxutils
 from types import StringTypes
-from peak.model.datatypes import TCKind
+from peak.model.datatypes import TCKind, SimpleTC
 
 
 
@@ -203,10 +203,7 @@ from peak.model.datatypes import TCKind
 
 
 
-# These 18 CORBA typecode kinds are mapped to/from a single empty XML tag
-# with no attributes.
-
-simple_tc_mappings = [
+_tc_mappings = [
 
     (TCKind.tk_short, 'XMI.CorbaTcShort'),
     (TCKind.tk_long, 'XMI.CorbaTcLong'),
@@ -214,34 +211,37 @@ simple_tc_mappings = [
     (TCKind.tk_ulong, 'XMI.CorbaTcUlong'),
     (TCKind.tk_float, 'XMI.CorbaTcFloat'),
     (TCKind.tk_double, 'XMI.CorbaTcDouble'),
-
     (TCKind.tk_boolean, 'XMI.CorbaTcBoolean'),
     (TCKind.tk_char, 'XMI.CorbaTcChar'),
     (TCKind.tk_wchar, 'XMI.CorbaTcWchar'),
     (TCKind.tk_octet, 'XMI.CorbaTcOctet'),
-
     (TCKind.tk_any, 'XMI.CorbaTcAny'),
     (TCKind.tk_TypeCode, 'XMI.CorbaTcTypeCode'),
     (TCKind.tk_Principal, 'XMI.CorbaTcPrincipal'),
     (TCKind.tk_null, 'XMI.CorbaTcNull'),
     (TCKind.tk_void, 'XMI.CorbaTcVoid'),
-    
     (TCKind.tk_longlong, 'XMI.CorbaTcLongLong'),
     (TCKind.tk_ulonglong, 'XMI.CorbaTcUlongLong'),
     (TCKind.tk_longdouble, 'XMI.CorbaTcLongDouble'),
-
+    (TCKind.tk_alias, 'XMI.CorbaTcAlias'),
+    (TCKind.tk_struct, 'XMI.CorbaTcStruct'),
+    (TCKind.tk_sequence, 'XMI.CorbaTcSequence'),
+    (TCKind.tk_array, 'XMI.CorbaTcArray'),
+    (TCKind.tk_objref, 'XMI.CorbaTcObjref'),
+    (TCKind.tk_enum, 'XMI.CorbaTcEnum'),
+    (TCKind.tk_union, 'XMI.CorbaTcUnion'),
+    (TCKind.tk_except, 'XMI.CorbaTcExcept'),
+    (TCKind.tk_string, 'XMI.CorbaTcString'),
+    (TCKind.tk_wstring, 'XMI.CorbaTcWstring'),
+    (TCKind.tk_fixed, 'XMI.CorbaTcFixed'),
 ]
 
 
+type_kind_to_tag = dict(_tc_mappings)
 
-
-
-
-
-
-
-
-
+type_tag_to_kind = dict([
+    (tag,kind) for (kind,tag) in _tc_mappings
+])
 
 
 class XMINode(object):
@@ -339,8 +339,18 @@ class XMINode(object):
 
         sub = self.subNodes
 
-        if len(sub)==1 and not sub[0]._name.startswith('XMI.'):
-            return dm[sub[0].getRef()]
+        if len(sub)==1:
+
+            child = sub[0]
+
+            if not child._name.startswith('XMI.'):
+                return dm[sub[0].getRef()]
+
+            if child._name=='XMI.CorbaTypeCode':
+                return child.getTypeCode(feature,dm)
+
+            elif child._name=='XMI.any':
+                return child.getAny(feature,dm)
 
         fields = []
         for node in sub:
@@ -357,7 +367,79 @@ class XMINode(object):
 
 
 
+    def getTypeCode(self, feature, dm):
 
+        sub = self.subNodes
+
+        if len(sub)!=1:
+            raise ValueError(
+                "XMI.CorbaTypeCode tag must contain exactly one tag"
+            )
+
+        child = sub[0]
+        tag = child._name
+        kind = type_tag_to_kind.get(tag)
+
+        if not kind:
+            raise ValueError(
+                "Don't know how to handle type code kind", tag
+            )
+            
+        if kind in SimpleTC or kind==TCKind.tk_objref:
+            return TypeCode(kind=kind)
+
+        elif kind==TCKind.tk_alias:
+            return TypeCode(
+                kind=kind, content_type=child.getTypeCode(feature,dm)
+            )
+
+        elif kind==TCKind.tk_struct:
+            return child.getStructTypeCode(feature,dm)
+
+        elif kind in (TCKind.tk_sequence,TCKind.tk_array):
+            return TypeCode(
+                kind=kind, content_type=child.getTypeCode(feature,dm),
+                length=int(child.atts.get('xmi.tcLength',0))
+            )
+
+        elif kind==TCKind.tk_enum:
+            return child.getEnumTypeCode(feature,dm)
+
+        elif kind==TCKind.tk_union:
+            return child.getUnionTypeCode(feature,dm)
+
+        elif kind==TCKind.tk_except:
+            return child.getExceptionTypeCode(feature,dm)
+
+        elif kind in (TCKind.tk_string,TCKind.tk_wstring):
+            return TypeCode(
+                kind=kind, length=int(child.atts.get('xmi.tcLength',0))
+            )
+
+        elif kind==TCKind.tk_fixed:
+            return TypeCode(
+                kind=kind,
+                fixed_digits=int(child.atts.get('xmi.tcDigits',0)),
+                fixed_scale=int(child.atts.get('xmi.tcScale',0))
+            )
+
+        # XXX should never get here...
+
+
+    def getStructTypeCode(self, feature, dm):
+        pass    # XXX
+
+    def getEnumTypeCode(self, feature, dm):
+        pass    # XXX
+
+    def getUnionTypeCode(self, feature, dm):
+        pass    # XXX
+
+    def getExceptionTypeCode(self, feature, dm):
+        pass    # XXX
+
+    def getAny(self, feature, dm):
+        pass    # XXX
 
 
 
