@@ -43,6 +43,7 @@ __all__ = __all__[:] + [
 from peak.util.imports import lazyModule
 
 commands    = lazyModule('peak.running.commands')
+events      = lazyModule('peak.events.api')
 logs        = lazyModule('peak.running.logs')
 #net         = lazyModule('peak.net.api')
 #query       = lazyModule('peak.query.api')
