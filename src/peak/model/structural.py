@@ -28,10 +28,10 @@ class HashAndCompare(object):
     def __cmp__(self,other):
         return cmp(self._hashAndCompare,other)
 
+    def __nonzero__(self):
+        return self._hashAndCompare and True or False
 
 installIfChangeable = lambda f,m: f.isChangeable
-
-
 
 
 
