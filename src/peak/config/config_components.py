@@ -15,7 +15,7 @@ from Interface import Interface
 
 __all__ = [
     'GlobalConfig', 'LocalConfig', 'PropertyMap', 'LazyLoader', 'ConfigReader',
-    'loadConfigFile', 'loadMapping',
+    'loadConfigFile', 'loadMapping', 'PropSet',
 ]
 
 
@@ -263,3 +263,14 @@ class LocalConfig(Component):
         super(LocalConfig,self).setParentComponent(parent)
 
 
+class PropSet(object):
+
+    def __init__(self, prefix, targetObj=None):
+        self.prefix = PropertyName(prefix).asPrefix()
+        self.target = targetObj
+
+    def __getitem__(self, key, default=NOT_GIVEN):
+        return config.getProperty(self.prefix+key,self.target,default)
+
+    def get(self, key, default=None):
+        return config.getProperty(self.prefix+key,self.target,default)

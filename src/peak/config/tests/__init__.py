@@ -16,11 +16,13 @@ class PropertyTest(TestCase):
 
         # retry multiple times to verify re-get is safe...
         
+        ps = config.PropSet('environ.*')
+
         for r in range(3):
             for k,v in environ.items():
-                assert config.getProperty('environ.'+k) is v
+                assert ps[k] is v
 
-
+        
 
 
 
