@@ -9,10 +9,13 @@ parse = naming.InitialContext(objectFactories=[]).lookup
 validNames = {
 
     'smtp://foo':
-        Items(host='foo',port=25),
+        Items(host='foo', port=25),
+
+    'smtp://foo.bar:8025':
+        Items(host='foo.bar', port=8025),
 
     'ldap://localhost:9912':
-        Items(host='localhost',port=9912),
+        Items(host='localhost', port=9912),
 
     'uuid:6ba7b810-9dad-11d1-80b4-00c04fd430c8':
         Items(uuid='6ba7b810-9dad-11d1-80b4-00c04fd430c8', quals=()),
@@ -24,19 +27,16 @@ validNames = {
         
     'sybase:foo:bar@baz/spam':
         Items(server='baz', db='spam', user='foo', passwd='bar'),
-        
+
+    'sybase://user:p%40ss@server':
+        Items(server='server', db=None, user='user', passwd='p@ss'),
+
     'import:bada.bing':
         Items(body='bada.bing'),
         
     'lockfile:c:\\spam.lock':
         Items(body='c:\\spam.lock'),
 }
-
-
-
-
-
-
 
 
 class NameParseTest(TestCase):

@@ -22,6 +22,14 @@ class smtpURL(ParsedURL):
     ):
         self.setup(locals())
 
+    def parse(self,scheme,body):
+
+        d = super(smtpURL,self).parse(scheme,body)
+
+        if 'port' in d:
+            d['port'] = int(d['port'])
+        return d
+
     def retrieve(self, refInfo, name, context, attrs=None):
         return smtplib.SMTP(self.host, self.port)
    

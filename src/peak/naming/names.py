@@ -8,6 +8,7 @@ from types import StringTypes
 from peak.util.Struct import struct, structType
 from peak import exceptions
 from peak.api import NOT_GIVEN
+from urllib import unquote
 
 __all__ = [
     'Name', 'toName', 'CompositeName', 'CompoundName',
@@ -25,7 +26,6 @@ class UnspecifiedSyntax(object):
 
     def format(self,name):
         return "%s(%r)" % (name.__class__.__name__, list(name))
-
 
 
 
@@ -151,7 +151,7 @@ class ParsedURL(object):
     
     pattern = ''
 
-
+    dont_unquote = ()
 
 
 
@@ -165,7 +165,6 @@ class ParsedURL(object):
     def __init__(self, url=None):
         self.setup(locals())
     
-
     def parse(self, scheme, body):
 
         if self.pattern:
@@ -173,15 +172,17 @@ class ParsedURL(object):
 
             if m:
                 d=m.groupdict(NOT_GIVEN)
-                d['scheme'] = scheme
-                d['body']   = body
                 for k,v in d.items():
                     if v is NOT_GIVEN:
                         del d[k]
+                    elif k not in self.dont_unquote:
+                        d[k] = unquote(v)
+                d['scheme'] = scheme
+                d['body']   = body
                 return d
 
             else:
-                raise exceptions.InvalidName(':'.join([scheme,body]))
+                raise exceptions.InvalidName(self.url)
             
         return locals()
 
@@ -189,9 +190,8 @@ class ParsedURL(object):
     def retrieve(self, refInfo, name, context, attrs=None):
         pass
 
-
     def __str__(self):
-        return ":".join([self.scheme,self.body])
+        return self.url or object.__str__(self)
 
     def __repr__(self):
         return "%s(%r)" % (self.__class__.__name__, str(self))

@@ -14,21 +14,22 @@ class uuidURL(ParsedURL):
                     qualifiers is not well defined.
     """
 
+    _defaultScheme = 'uuid'
+
     _supportedSchemes = ('uuid', )
 
-    def __init__(self, url=None,scheme=None,body=None,uuid=None,quals=None):
+
+    def __init__(self, url=None, uuid=None, quals=None):
         self.setup(locals())
-    
+
+
     def parse(self, scheme, body):
 
-        l = body.split(';')
+        _l = body.split(';')
         
-        try:
-            uuid = UUID(l[0])
-        except:
-            raise exceptions.InvalidName(self.url)
+        uuid = UUID(_l[0])
 
-        quals = tuple( [tuple(x.split('=', 1)) for x in l[1:]] )
+        quals = tuple( [tuple(_x.split('=', 1)) for _x in _l[1:]] )
 
         return locals()
 
