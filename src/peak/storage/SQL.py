@@ -166,9 +166,37 @@ class SybaseConnection(SQLConnection):
 
     API = binding.bindTo("Sybase")
 
+    hostname = binding.bindToProperty('peak.storage.sybase.hostname',
+        default=None)
+    
+    appname = binding.bindToProperty('peak.storage.sybase.appname',
+        default=None)
+
+    textlimit = binding.bindToProperty('peak.storage.sybase.textlimit',
+        default=None)
+
+    textsize = binding.bindToProperty('peak.storage.sybase.textsize',
+        default=None)
+
     def _open(self):
         a = self.address
-        return self.API.connect(a.server, a.user, a.passwd, a.db)
+        db = self.API.connect(a.server, a.user, a.passwd, a.db, delay_connect=1)
+
+        if self.hostname is not None:
+            db.set_property(self.API.CS_HOSTNAME, self.hostname)
+
+        if self.appname is not None:
+            db.set_property(self.API.CS_APPNAME, str(self.appname))
+
+        if self.textlimit is not None:
+            db.set_property(self.API.CS_TEXTLIMIT, int(self.textlimit))
+
+        db.connect()
+
+        if self.textsize is not None:
+            db.execute('set textsize %d' % int(self.textsize))
+                              
+        return db
             
     def onJoinTxn(self, txnService):
         # Sybase doesn't auto-chain transactions...
