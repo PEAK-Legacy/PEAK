@@ -162,6 +162,18 @@ def register_factory(parser, section, name, value, lineInfo):
 
 
 
+def add_services(parser, section, name, value, lineInfo):
+    name = PropertyName(name)
+    pMap = parser.pMap
+    globalDict = parser.globalDict
+
+    pMap.registerProvider(
+        FactoryFor(name),
+        ruleForExpr(name,"importObject(%s)" % value, globalDict)
+    )
+    pMap.registerProvider(name, CreateViaFactory(name))
+
+
 def import_on_demand(parser, section, name, value, lineInfo):
 
     if not isIdentifier(name):
@@ -188,6 +200,9 @@ def load_on_demand(parser, section, name, value, lineInfo):
     )
 
 
+
+
+
 def provide_utility(parser, section, name, value, lineInfo):    # DEPRECATED!
     module = '.'.join(name.replace(':','.').split('.')[:-1])
     pMap = parser.pMap
@@ -198,6 +213,32 @@ def provide_utility(parser, section, name, value, lineInfo):    # DEPRECATED!
             importString(name), eval(value,globalDict,locals())
         )
     )
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

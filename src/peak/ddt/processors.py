@@ -3,10 +3,11 @@ from interfaces import *
 from model import *
 from peak.util.signature import ISignature
 from kjbuckets import kjGraph, kjSet
+from peak.storage.interfaces import ISQLConnection
 
 __all__ = [
     'titleAsPropertyName', 'titleAsMethodName', 'DocumentProcessor',
-    'AbstractProcessor', 'MethodChecker', 'ModelChecker',
+    'AbstractProcessor', 'MethodChecker', 'ModelChecker', 'SQLChecker',
     'RecordChecker', 'ActionChecker', 'Summary'
 ]
 
@@ -23,7 +24,6 @@ def titleAsMethodName(text):
     """Convert a string like '"Spam the Sprocket"' to '"spamTheSprocket"'"""
     text = ''.join(text.strip().title().split())
     return text[:1].lower()+text[1:]
-
 
 
 
@@ -652,6 +652,47 @@ class RecordChecker(ModelChecker):
                 extra.extend(e)
 
             return missing,extra
+
+
+class SQLChecker(RecordChecker):
+
+    """Check records from a database
+
+    This RecordChecker subclass checks results from an SQL query.  In its
+    simplest form, it performs a 'SELECT * FROM table' query if you supply it
+    with a 'testTable' constructor argument.  Alternatively, you can supply a
+    'testSQL' argument to specify the SQL to execute.
+
+    By default, the SQL will be run against a connection object found under the
+    'peak.ddt.testDB' property name.  You should define this property in a
+    '[Named Services]' section of your test configuration file(s).
+    
+    Alternatively, you can supply a connection object as the 'testDB'
+    constructor argument, or supply a 'dbKey' constructor argument to change
+    the configuration key to something other than 'peak.ddt.testDB'.
+    """
+
+    records  = binding.Make(
+        lambda self: list(self.testDB(self.testSQL))
+    )
+
+    testSQL = binding.Make(
+        lambda self: "SELECT * FROM " + self.testTable
+    )
+
+    testTable = binding.Require("Name of the table/view to check")
+
+    testDB    = binding.Obtain(naming.Indirect('dbKey'))
+
+    dbKey     = PropertyName('peak.ddt.testDB')
+
+
+
+    
+
+
+
+
 
 
 class ActionChecker(ModelChecker):
