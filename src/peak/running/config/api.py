@@ -11,6 +11,7 @@ __all__ = [
 ]
 
 _globalCfg = EigenCell()
+_defaultCfg = EigenCell()
 _localCfgs = EigenDict()
 _localCfgs.data = WeakKeyDictionary()
 
@@ -28,23 +29,26 @@ def setGlobal(cfg):
     setLocal(cfg, None)     # force local config for global config to be None
     
 
-def getLocal(forRoot):
+def getLocal(forRoot=None):
 
-    if forRoot is None:
-        return newDefaultConfig()
+    if forRoot is not None and _localCfgs.has_key(forRoot):
+        return _localCfgs[forRoot]
         
-    if not _localCfgs.data.has_key(forRoot):
-        setLocal(forRoot, newDefaultConfig())
+    if not _defaultCfg.locked:
+        setLocal(None, newDefaultConfig())
 
-    return _localCfgs[forRoot]
-
+    return _defaultCfg.get()
 
 def setLocal(forRoot, cfg):
-    _localCfgs[forRoot] = cfg
+    if forRoot is None:
+        _defaultCfg.set(cfg)
+    else:
+        _localCfgs[forRoot] = cfg
 
 
 def newDefaultConfig():
     return LocalConfig(getGlobal())
+
 
 def registerLocalProvider(forRoot, ifaces, provider):
     getLocal(forRoot).registerProvider(ifaces, provider)
