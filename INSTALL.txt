@@ -21,7 +21,8 @@ Installing PEAK
 
   In general, it is best to uninstall previous versions of PEAK before
   installing new ones, since some modules may have moved or been renamed.
-
+  Also, if you have Zope X3 installed on your Python path, you should ensure 
+  that it is an up-to-date CVS version: "Milestone 2" is no longer supported.
 
  BASIC INSTALLATION
 
@@ -37,7 +38,6 @@ Installing PEAK
   installation locations, etc.).
 
   (Note: for the Win32 installer release, just run the .exe file.)
-
 
  SCRIPTS
 
