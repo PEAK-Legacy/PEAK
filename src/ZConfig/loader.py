@@ -140,7 +140,7 @@ class SchemaLoader(BaseLoader):
 
     # schema parser support API
 
-    def schemaComponentSource(self, package):
+    def schemaComponentSource(self, package, file):
         parts = package.split(".")
         if not parts:
             raise ZConfig.SchemaError(
@@ -149,15 +149,20 @@ class SchemaLoader(BaseLoader):
             # '' somewhere in the package spec; still illegal
             raise ZConfig.SchemaError(
                 "illegal schema component name: " + `package`)
-        for dir in sys.path:
-            dirname = os.path.join(os.path.abspath(dir), *parts)
-            fn = os.path.join(dirname, "component.xml")
+        file = file or "component.xml"
+        __import__(package)
+        pkg = sys.modules[package]
+        if not hasattr(pkg, "__path__"):
+            raise ZConfig.SchemaError(
+                "import name does not refer to a package: " + `package`)
+        for dir in pkg.__path__:
+            dirname = os.path.abspath(dir)
+            fn = os.path.join(dirname, file)
             if os.path.exists(fn):
-                break
+                return "file://" + urllib.pathname2url(fn)
         else:
             raise ZConfig.SchemaError(
                 "schema component not found: " + `package`)
-        return "file://" + urllib.pathname2url(fn)
 
 
 class ConfigLoader(BaseLoader):
@@ -181,7 +186,8 @@ class ConfigLoader(BaseLoader):
 
     def startSection(self, parent, type, name, delegatename):
         if delegatename:
-            raise NotImpementedError("section delegation is not yet supported")
+            raise NotImpementedError(
+                "section delegation is not yet supported")
         t = self.schema.gettype(type)
         if t.isabstract():
             raise ZConfig.ConfigurationError(

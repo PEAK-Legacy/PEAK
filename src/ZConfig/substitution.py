@@ -23,17 +23,17 @@ except NameError:
 
 
 def substitute(s, mapping):
-    """Interpolate variables from `section` into `s`."""
+    """Interpolate variables from `mapping` into `s`."""
     if "$" in s:
         result = ''
         rest = s
         while rest:
-            p, name, rest = _split(rest)
+            p, name, namecase, rest = _split(rest)
             result += p
             if name:
                 v = mapping.get(name)
                 if v is None:
-                    raise ZConfig.SubstitutionReplacementError(s, name)
+                    raise ZConfig.SubstitutionReplacementError(s, namecase)
                 result += v
         return result
     else:
@@ -50,9 +50,10 @@ def isname(s):
 
 
 def _split(s):
-    # Return a triple:  prefix, name, suffix
+    # Return a four tuple:  prefix, name, namecase, suffix
     # - prefix is text that can be used literally in the result (may be '')
     # - name is a referenced name, or None
+    # - namecase is the name with case preserved
     # - suffix is trailling text that may contain additional references
     #   (may be '' or None)
     if "$" in s:
@@ -62,7 +63,7 @@ def _split(s):
             raise ZConfig.SubstitutionSyntaxError(
                 "illegal lone '$' at end of source")
         if c == "$":
-            return s[:i+1], None, s[i+2:]
+            return s[:i+1], None, None, s[i+2:]
         prefix = s[:i]
         if c == "{":
             m = _name_match(s, i + 2)
@@ -81,9 +82,9 @@ def _split(s):
                     "'$' not followed by '$' or name")
             name = m.group(0)
             i = m.end()
-        return prefix, name.lower(), s[i:]
+        return prefix, name.lower(), name, s[i:]
     else:
-        return s, None, None
+        return s, None, None, None
 
 
 import re

@@ -67,6 +67,18 @@ class LoaderTestCase(unittest.TestCase):
                                    "  <import src='library.xml'"
                                    "          package='ZConfig'/>"
                                    "</schema>"))
+        # cannot specify src and file
+        self.assertRaises(ZConfig.SchemaError, ZConfig.loadSchemaFile,
+                          StringIO("<schema>"
+                                   "  <import src='library.xml'"
+                                   "          file='other.xml'/>"
+                                   "</schema>"))
+        # cannot specify module as package
+        sio = StringIO("<schema>"
+                       "  <import package='ZConfig.tests.test_loader'/>"
+                       "</schema>")
+        self.assertRaises(ZConfig.SchemaError, ZConfig.loadSchemaFile,
+                          sio)
 
     def test_import_from_package(self):
         loader = ZConfig.loader.SchemaLoader()
@@ -75,6 +87,31 @@ class LoaderTestCase(unittest.TestCase):
                        "</schema>")
         schema = loader.loadFile(sio)
         self.assert_(schema.gettype("widget-a") is not None)
+
+    def test_import_from_package_with_file(self):
+        loader = ZConfig.loader.SchemaLoader()
+        sio = StringIO("<schema>"
+                       "  <import package='ZConfig.tests.library.widget'"
+                       "          file='extra.xml' />"
+                       "</schema>")
+        schema = loader.loadFile(sio)
+        self.assert_(schema.gettype("extra-type") is not None)
+
+    def test_import_from_package_with_missing_file(self):
+        loader = ZConfig.loader.SchemaLoader()
+        sio = StringIO("<schema>"
+                       "  <import package='ZConfig.tests.library.widget'"
+                       "          file='notthere.xml' />"
+                       "</schema>")
+        self.assertRaises(ZConfig.SchemaError, loader.loadFile, sio)
+
+    def test_import_from_package_with_directory_file(self):
+        loader = ZConfig.loader.SchemaLoader()
+        sio = StringIO("<schema>"
+                       "  <import package='ZConfig.tests.library.widget'"
+                       "          file='really/notthere.xml' />"
+                       "</schema>")
+        self.assertRaises(ZConfig.SchemaError, loader.loadFile, sio)
 
     def test_urlsplit_urlunsplit(self):
         # Extracted from Python's test.test_urlparse module:

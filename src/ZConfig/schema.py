@@ -13,6 +13,7 @@
 ##############################################################################
 """Parser for ZConfig schemas."""
 
+import os
 import xml.sax
 
 import ZConfig
@@ -279,11 +280,14 @@ class BaseParser(xml.sax.ContentHandler):
     def start_import(self, attrs):
         src = attrs.get("src", "").strip()
         pkg = attrs.get("package", "").strip()
+        file = attrs.get("file", "").strip()
         if not (src or pkg):
             self.error("import must specify either src or package")
         if src and pkg:
             self.error("import may only specify one of src or package")
         if src:
+            if file:
+                self.error("import may not specify file and src")
             src = url.urljoin(self._url, src)
             src, fragment = url.urldefrag(src)
             if fragment:
@@ -292,15 +296,13 @@ class BaseParser(xml.sax.ContentHandler):
             schema = self._loader.loadURL(src)
             for n in schema.gettypenames():
                 self._schema.addtype(schema.gettype(n))
-        elif self._components.has_key(pkg):
-            # already loaded, or in progress
-            pass
         else:
-            src = self._loader.schemaComponentSource(pkg)
-            if not src:
-                self.error("could not locate schema component " + `pkg`)
-            self._components[pkg] = src
-            self.loadComponent(src)
+            if os.path.dirname(file):
+                self.error("file may not include a directory part")
+            src = self._loader.schemaComponentSource(pkg, file)
+            if not self._components.has_key(src):
+                self._components[pkg] = src
+                self.loadComponent(src)
 
     def loadComponent(self, src):
         r = self._loader.openResource(src)
@@ -325,8 +327,6 @@ class BaseParser(xml.sax.ContentHandler):
         if attrs.has_key("extends"):
             basename = self.basic_key(attrs["extends"])
             base = self._schema.gettype(basename)
-            if not self._localtypes.has_key(basename):
-                self.error("cannot extend type derived outside component")
             if base.isabstract():
                 self.error("sectiontype cannot extend an abstract type")
             if attrs.has_key("keytype"):
@@ -336,7 +336,6 @@ class BaseParser(xml.sax.ContentHandler):
         else:
             sectinfo = self._schema.createSectionType(
                 name, keytype, valuetype, datatype)
-        self._localtypes[name] = sectinfo
         if attrs.has_key("implements"):
             ifname = self.basic_key(attrs["implements"])
             interface = self._schema.gettype(ifname)
@@ -456,56 +455,13 @@ class SchemaParser(BaseParser):
     _handled_tags = BaseParser._handled_tags + ("schema",)
     _top_level = "schema"
 
-    def __init__(self, registry, loader, url, subschema=None):
-        BaseParser.__init__(self, registry, loader, url)
-        self._subschema = subschema
-
     def start_schema(self, attrs):
         self.push_prefix(attrs)
         handler = self.get_handler(attrs)
         keytype, valuetype, datatype = self.get_sect_typeinfo(attrs)
-
-        if self._subschema is None:
-            # We're not being inherited, so we need to create the schema
-            self._schema = info.SchemaType(keytype, valuetype, datatype,
-                                           handler, self._url, self._registry)
-        else:
-            # Load into the inheriting ("subclass") schema
-            self._schema = self._subschema
-
-        self._localtypes = self._schema._types
+        self._schema = info.SchemaType(keytype, valuetype, datatype,
+                                       handler, self._url, self._registry)
         self._stack = [self._schema]
-
-        if attrs.has_key("extends"):
-            sources = attrs["extends"].split()
-            sources.reverse()
-            for src in sources:
-                src = url.urljoin(self._url, src)
-                src, fragment = url.urldefrag(src)
-                if fragment:
-                    self.error("schema extends many not include"
-                               " a fragment identifier")
-                self.extendSchema(src)
-
-        # If we have explicit type info, force the schema to use it
-        if attrs.has_key("keytype"):
-            self._schema.keytype = keytype
-        if attrs.has_key("valuetype"):
-            self._schema.valuetype = valuetype
-        if attrs.has_key("datatype"):
-            self._schema.datatype = datatype
-
-
-    def extendSchema(self,src):
-        parser = SchemaParser(
-            self._registry, self._loader, src, self._schema
-        )
-        parser._components = self._components
-        r = self._loader.openResource(src)
-        try:
-            xml.sax.parse(r.file, parser)
-        finally:
-            r.close()
 
     def end_schema(self):
         del self._stack[-1]
@@ -514,13 +470,13 @@ class SchemaParser(BaseParser):
         assert not self._prefixes
 
 
+class ComponentParser(BaseParser):
 
+    _handled_tags = BaseParser._handled_tags + ("component",)
+    _top_level = "component"
 
-class BaseComponentParser(BaseParser):
-
-    def __init__(self, registry, loader, url, schema, localtypes):
+    def __init__(self, registry, loader, url, schema):
         BaseParser.__init__(self, registry, loader, url)
-        self._localtypes = localtypes
         self._parent = schema
 
     def characters_description(self, data):
@@ -543,23 +499,14 @@ class BaseComponentParser(BaseParser):
         self._check_not_toplevel("multisection")
         BaseParser.start_multisection(self, attrs)
 
-    def _check_not_toplevel(self, what):
-        if not self._stack:
-            self.error("cannot define top-level %s in a schema %s"
-                       % (what, self._top_level))
-
-
-class ComponentParser(BaseComponentParser):
-
-    _handled_tags = BaseComponentParser._handled_tags + ("component",)
-    _top_level = "component"
-
-    def __init__(self, registry, loader, url, schema):
-        BaseComponentParser.__init__(self, registry, loader, url, schema, {})
-
     def start_component(self, attrs):
         self._schema = self._parent
         self.push_prefix(attrs)
 
     def end_component(self):
         self.pop_prefix()
+
+    def _check_not_toplevel(self, what):
+        if not self._stack:
+            self.error("cannot define top-level %s in a schema %s"
+                       % (what, self._top_level))
