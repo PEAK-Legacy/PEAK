@@ -1,5 +1,9 @@
 New Features and Bug Fixes since v0.2, preview 1
 
+ * 'setupModule()' and 'adviseModule()' will now issue warnings for most
+   questionable code structures and variable redefinitions that might not
+   work the way you'd expect or intend under module inheritance.
+
  * Added tests and documentation for 'adviseModule()' API
 
  * Added a 'test' command to 'setup.py' that installs and then tests all of

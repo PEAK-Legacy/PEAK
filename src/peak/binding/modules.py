@@ -133,7 +133,7 @@
             BaseModule:
 
                 class Foo: ...
-                    
+
                 class Bar: ...
 
             DerivedModule:
@@ -142,9 +142,6 @@
 
                 class Foo(Bar): ...
 
-          - Module level 'del' of globals, mixing of 'def', 'class' and
-            assignments to the same logical object...
-                    
         * This docstring is woefully inadequate to describe all the interesting
           subtleties of module inheritance; a tutorial is really needed.  But
           there *does* need to be a reference-style explanation as well, that
@@ -155,6 +152,9 @@
           allow inheriting from and/or giving advice to modules which do not
           call 'setupModule()'.
 """
+
+
+
 
 
 
@@ -346,11 +346,11 @@ from TW.Utils.Code import BUILD_CLASS, STORE_NAME, MAKE_CLOSURE, \
     MAKE_FUNCTION, LOAD_CONST, STORE_GLOBAL, CALL_FUNCTION, IMPORT_STAR, \
     IMPORT_NAME, JUMP_ABSOLUTE, POP_TOP, ROT_FOUR, LOAD_ATTR, LOAD_GLOBAL, \
     LOAD_CONST, ROT_TWO, LOAD_LOCALS, STORE_SLICE, DELETE_SLICE, STORE_ATTR, \
-    STORE_SUBSCR, DELETE_SUBSCR, DELETE_ATTR
+    STORE_SUBSCR, DELETE_SUBSCR, DELETE_ATTR, DELETE_NAME, DELETE_GLOBAL
 
 from TW.Utils.Meta import makeClass
 from sys import _getframe
-from warnings import warn_explicit
+from warnings import warn, warn_explicit
 
 class ModuleInheritanceWarning(UserWarning):
     pass
@@ -377,8 +377,8 @@ class Simulator:
         self.lastFunc  = {}
         self.classes   = {}
         self.classPath = {}
+        self.setKind   = {}
         self.dict      = dict
-
 
     def execute(self, code):
         
@@ -392,23 +392,72 @@ class Simulator:
             del d['__TW_Simulator__']
             self.locked.update(self.defined)
             self.defined.clear()
+            self.setKind.clear()
             self.classPath.clear()
 
     def finish(self):
         for k,v in self.lastFunc.items():
             bind_func(v,__proceed__=None)
-    
+
+
+
+
+
+
+
+
+
 
     def ASSIGN_VAR(self, value, qname):
+
         locked = self.locked
+
         if locked.has_key(qname):
+
+            if self.setKind.get(qname)==STORE_NAME:
+                warn(
+                    "Redefinition of variable locked by derived module",
+                    ModuleInheritanceWarning, 2
+                )
+
             return locked[qname]
+
         self.defined[qname] = value
+        self.setKind[qname] = STORE_NAME
         return value
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     def DEFINE_FUNCTION(self, value, qname):
+
+        if self.setKind.get(qname,IMPORT_STAR) != IMPORT_STAR:
+            warn(
+                ("Redefinition of %s" % qname),
+                ModuleInheritanceWarning, 2
+            )
+
+        self.setKind[qname] = MAKE_FUNCTION
 
         lastFunc, locked, funcs = self.lastFunc, self.locked, self.funcs
 
@@ -428,28 +477,69 @@ class Simulator:
         return value
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
     def IMPORT_STAR(self, module, locals, prefix):
+
         locked = self.locked
         have = locked.has_key
         defined = self.defined
-        
+        setKind = self.setKind
+        checkKind = setKind.get
+
+        def warnIfOverwrite(qname):
+            if checkKind(qname,IMPORT_STAR) != IMPORT_STAR:
+                warn(
+                    ("%s may be overwritten by 'import *'" % qname),
+                    ModuleInheritanceWarning, 3
+                )
+            setKind[qname]=IMPORT_STAR
+
         all = getattr(module,'__all__',None)
         
         if all is None:
+
             for k,v in module.__dict__.items():
                 if not k.startswith('_'):
                     qname = prefix+k
                     if not have(qname):
+                        warnIfOverwrite(qname)
                         locals[k] = defined[qname] = v
+
         else:
             for k in all:
                 qname = prefix+k
+                warnIfOverwrite(qname)
                 if not have(qname):
+                    warnIfOverwrite(qname)
                     locals[k] = defined[qname] = getattr(module,k)
 
 
 
+
+
+
+
     def DEFINE_CLASS(self, name, bases, cdict, qname):
+
+        if self.setKind.get(qname,IMPORT_STAR) != IMPORT_STAR:
+            warn(
+                ("Redefinition of %s" % qname),
+                ModuleInheritanceWarning, 2
+            )
+
+        self.setKind[qname] = BUILD_CLASS
 
         classes = self.classes
         get = self.classPath.get
@@ -479,7 +569,9 @@ class Simulator:
                 cdict[k] = classes[v][0]
 
         newClass = makeClass(name,bases,cdict)
-        
+
+
+
         classes[qname] = newClass, bases, basePaths, cdict.items(), \
             dict(dictPaths+oldDPaths).items()
 
@@ -521,24 +613,12 @@ class Simulator:
 
 
 
-
-
-
-
-
-
-
-
-
-
 def prepForSimulation(code, path='', depth=0):
 
     code = Code(code)
-
     idx = code.index()
     opcode, operand, lineOf = idx.opcode, idx.operand, idx.byteLine
     offset = idx.offset
-
     name_index = code.name_index
     const_index = code.const_index
 
@@ -554,7 +634,6 @@ def prepForSimulation(code, path='', depth=0):
     
     emit = code.append
     patcher = iter(code); patch = patcher.write; go = patcher.go
-
     spc = '    ' * depth
 
     for op in mutableOps:
@@ -565,12 +644,15 @@ def prepForSimulation(code, path='', depth=0):
                 code.co_filename,
                 lineOf[offset[i]],
             )
-        
 
-
-
-
-
+    for op in (DELETE_NAME, DELETE_GLOBAL):
+        for i in idx.opcodeLocations[op]:
+            warn_explicit(
+                "Deletion of global during initialization",
+                ModuleInheritanceWarning,
+                code.co_filename,
+                lineOf[offset[i]],
+            )
 
     ### Fix up IMPORT_STAR operations
 

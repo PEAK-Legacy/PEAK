@@ -2,10 +2,9 @@ Open Issues/To-Do Items
 
  Targeted for 0.2 Final Release
 
-    API.Modules
+    General
 
-      * Add checks and warnings for ambiguous re-assignments of global
-        variables and class attributes.
+      * Update tutorial documentation
 
     Database
 
@@ -13,10 +12,6 @@ Open Issues/To-Do Items
         consistency, queueing behavior, and typemap management.
 
       * Update Interfaces to reflect current API, and document internals
-
-    General
-
-      * Update tutorial documentation
 
  Ideas for 0.3 Release
 
@@ -36,8 +31,6 @@ Open Issues/To-Do Items
         instantiation.
 
       * A way to generate Z3 Interfaces from Feature-based specifications?
-
-
 
     Database
 
@@ -75,6 +68,13 @@ Open Issues/To-Do Items
     * Create tutorials/examples based on actual uses
 
     * Include dependencies in packaging?  Need to ask copyright owners first.
+
+
+
+
+
+
+
 
 
 
