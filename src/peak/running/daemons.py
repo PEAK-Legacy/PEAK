@@ -3,11 +3,11 @@ from interfaces import *
 from bisect import insort_left
 from peak.naming.interfaces import IStreamFactory
 from peak.storage.interfaces import IManagedConnection
+from lockfiles import NullLockFile
 
 __all__ = [
     'AdaptiveTask', 'TaskQueue',
 ]
-
 
 
 
@@ -207,31 +207,19 @@ class AdaptiveTask(binding.Component):
         """Find something to do, and return it"""
         pass
 
-
     def doWork(self,job):
         """Do the job; throw errors if unsuccessful"""
         return job
 
-
-    def lockMe(self):
+    lockMe = binding.bindTo(
+        'lock/attempt', doc=
         """Try to begin critical section for doing work, return true if successful"""
+    )
 
-        lock = self.lock
-
-        if lock:
-            return lock.attempt()
-
-        return True
-
-
-    def unlockMe(self):
+    unlockMe = binding.bindTo(
+        'lock/release', doc=
         """End critical section for doing work"""
-
-        lock = self.lock
-        if lock: lock.release()
-
-
-    lock = None
+    )
 
     _name = 'unnamed_task'    # Allow ZConfig to give us a '_name'
 
@@ -242,6 +230,18 @@ class AdaptiveTask(binding.Component):
     log = binding.Once(
         lambda s,d,a: s.lookupComponent(s.logName), adaptTo = ILogger
     )
+
+    lockName = None
+
+    lock = binding.Once(
+        lambda s,d,a:
+            s.lockName and s.lookupComponent(s.lockName) or NullLockFile(),
+        adaptTo = ILock
+    )
+
+
+
+
 
 
 from glob import glob

@@ -2,6 +2,11 @@ Fixes and Enhancements since Version 0.5 alpha 2
 
  Changed, Enhanced, or Newly Deprecated Features
 
+ - Added a 'lockName' attribute to 'runnning.AdaptiveTask', and a 'LockURL'
+   setting to its ZConfig schema.  This allows a lockfile URL to be specified
+   for adaptive tasks that need exclusive access to some resource while
+   running.
+
  - A list or tuple of 'IComponentKey' instances is now treated as a single
    component key, that returns a tuple of the values returned by each
    constituent component key.  This means that 'binding.bindTo()' and

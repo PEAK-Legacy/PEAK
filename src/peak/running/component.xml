@@ -116,7 +116,48 @@
 	 </description>
     </key>
 
+
+
+
+
+
+    <key name="LockURL" attribute="lockName" datatype="string">
+	 <description>
+	 The PEAK URL of an object to be used as a lock.  The lock will be acquired
+     before (and released after) the task's getWork() and doWork() methods
+     are called.  If no URL is supplied, no lock will be acquired or released.
+	 </description>
+    </key>
+
   </sectiontype>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
