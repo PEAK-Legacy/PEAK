@@ -111,14 +111,36 @@ class AssertInterfaces(type):
         super(AssertInterfaces, klass).__init__(name, bases, dict)
         
 
+
+
+
+
+
+
+
+
+
+
     def instancesImplements(klass):
+
         """Tell 'Interface' what our (non-metaclass) instances implement"""
-        d = klass.__dict__
-        if d.has_key('__implements__'):
-            return d['__implements__'].implements
+
+        ia = klass.interfaceAssertion
+
+        for k in klass.__mro__:
+
+            i = k.__dict__.get('__implements__')
+
+            if i is None:
+                continue
+
+            elif isinstance(i,ia):
+                return i.implements
+
+            else:
+                return i
 
     instancesImplement = instancesImplements
-
 
 
     class interfaceAssertion(object):
