@@ -59,7 +59,15 @@ class IRelationCondition(IBooleanExpression):
 
 class IRelationAttribute(Interface):
     """A column variable in relational algebra"""
-    # XXX Don't know what we need here yet
+
+    def getName():
+        """Return this column's original name in its containing table"""
+
+    def getRV():
+        """Return the relvar representing this column's containing table"""
+
+    def getDB(self):
+        """Return the database this column belongs to"""
 
 
 class IRelationComparison(IRelationCondition):
@@ -72,15 +80,8 @@ class IRelationComparison(IRelationCondition):
 
 
 
-
-
-
-
-
-
-
-
 class IRelationVariable(Interface):
+
     """A relation variable (RV) in relational algebra"""
 
     def __call__(where=None,join=(),outer=(),rename=(),keep=()):
@@ -105,6 +106,12 @@ class IRelationVariable(Interface):
         'keep' argument.
         """
 
+    def keys():
+        """Return a sequence of column names"""
+
+    def __getitem__(columnName):
+        """Return the IRelationAttribute for the named column"""
+
     def attributes():
         """Return a kjGraph mapping names->relation attributes"""
 
@@ -120,7 +127,6 @@ class IRelationVariable(Interface):
     def getCondition():
         """Return any select() or join condition applying to this RV"""
 
-
     def getReferencedRVs():
         """Return sequence of all RVs used in this RV (eg: joins,subqueries)"""
 
@@ -129,15 +135,6 @@ class IRelationVariable(Interface):
 
     def __hash__(other):
         """Relation variables must be hashable"""
-
-
-
-
-
-
-
-
-
 
 
 

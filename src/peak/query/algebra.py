@@ -91,7 +91,7 @@ class Table:
 
     def __init__(self,name,columns,db=None):
         self.name = name
-        self.columns = kjGraph([(c,(c,self)) for c in columns])
+        self.columns = kjGraph([(c,Column(c,self)) for c in columns])
         self.db = db
 
     def __call__(self,where=None,join=(),outer=(),rename=(),keep=None):
@@ -134,28 +134,28 @@ class Table:
                 all += kjSet(rv.getReferencedRVs())
         return all.items()
 
+    def __getitem__(self,key):
+        return self.columns[key]
+
+    def keys(self):
+        return self.columns.keys()
 
 
+class Column:
 
+    protocols.advise(
+        instancesProvide = [IRelationAttribute]
+    )
 
+    def __init__(self,name,table):
+        self.name = name
+        self.table = table
 
+    def getRV(self):
+        return self.table
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    def getDB(self):
+        return self.table.getDB()
 
 
 
@@ -179,7 +179,7 @@ class BasicJoin(Table, HashAndCompare):
                 relUsage[r] = relUsage.setdefault(r,0)+1
 
         if len(myrels)<1:
-            raise TypeError("BasicJoin requires at least 1 relvar(s)")
+            raise TypeError("BasicJoin requires at least 1 relvar")
 
         for k,v in relUsage.items():
             if v>1:

@@ -207,10 +207,10 @@ class SimplificationAndEquality(TestCase):
         x,y,z = self.condX, self.condY, self.condZ
         A,B,C,D = self.rvA, self.rvB, self.rvC, self.rvD
 
-        self.assertEqual( kjSet(A.attributes()), kjSet(self.A_Columns) )
-        self.assertEqual( kjSet(B.attributes()), kjSet(self.B_Columns) )
-        self.assertEqual( kjSet(C.attributes()), kjSet(self.C_Columns) )
-        self.assertEqual( kjSet(D.attributes()), kjSet(self.D_Columns) )
+        self.assertEqual( kjSet(A.keys()), kjSet(self.A_Columns) )
+        self.assertEqual( kjSet(B.keys()), kjSet(self.B_Columns) )
+        self.assertEqual( kjSet(C.keys()), kjSet(self.C_Columns) )
+        self.assertEqual( kjSet(D.keys()), kjSet(self.D_Columns) )
 
         self._verifyJoinedColumns(A,x,B)
         self._verifyJoinedColumns(C,y,D)
@@ -302,8 +302,28 @@ class SimplificationAndEquality(TestCase):
 
             # a projection of table should still have the same DB
             self.failUnless(
-                tbl(keep=tbl.attributes().keys()[:-1]).getDB() is db
+                tbl(keep=tbl.keys()[:-1]).getDB() is db
             )
+
+            for colName in tbl.keys():
+                self.failUnless(tbl[colName].getRV() is tbl)
+                self.failUnless(tbl[colName].getDB() is db)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
     def testReferences(self):
@@ -326,12 +346,33 @@ class SimplificationAndEquality(TestCase):
         self.assertRaises(ValueError, B(join=[C]), join=[C(join=[D])])
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     def testProjection(self):
         x,y,z = self.condX, self.condY, self.condZ
         A,B,C,D = self.rvA, self.rvB, self.rvC, self.rvD
 
         # B and A have no common attrs
-        self.failIf( A(keep=self.B_Columns).attributes() )
+        self.failIf( A(keep=self.B_Columns).keys() )
 
         # columns in A(join=[B],where=x)(keep=B.attributes()) == B.attributes()
         AB = A(join=[B],where=x)
@@ -376,11 +417,10 @@ class SimplificationAndEquality(TestCase):
             Arenamed = A(rename=[(theColumn,'theColumn')])
 
             self.assertEqual(
-                A.attributes()[theColumn],
-                Arenamed.attributes()['theColumn']
+                A[theColumn], Arenamed['theColumn']
             )
             self.assertEqual(
-                kjSet(Arenamed.attributes().keys()),
+                kjSet(Arenamed.keys()),
                 kjSet(
                     ('theColumn',) + self.A_Columns[:colNum]
                                    + self.A_Columns[colNum+1:]
@@ -390,13 +430,14 @@ class SimplificationAndEquality(TestCase):
         for abcd in [ A(join=[B,C,D],where=x), A(outer=[B,C,D],where=x) ]:
 
             ABCD = abcd(
-                rename=[(n,n.upper()) for n in abcd.attributes().keys()]
+                rename=[(n,n.upper()) for n in abcd.keys()]
             )
 
             self.assertEqual(
-                kjSet([n.upper() for n in abcd.attributes().keys()]),
-                kjSet(ABCD.attributes())
+                kjSet([n.upper() for n in abcd.keys()]),
+                kjSet(ABCD.keys())
             )
+
 
 
 
