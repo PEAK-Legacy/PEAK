@@ -244,7 +244,48 @@ class SQLConnection(ManagedConnection):
 
     typeMap = binding.Once(typeMap)
 
-class SybaseConnection(SQLConnection):
+class ValueBasedTypeConn(SQLConnection):
+
+    def typeMap(self, d, a):
+
+        tm = {}
+        ps = PropertyName('peak.sql_types').of(self)
+        api = self.API
+
+        for k in self.supportedTypes:
+
+            c = ps.get(k,NullConverter)
+
+            for v in getattr(api,k).values:
+                try:
+                    v+''
+                except:
+                    tm[v] = c
+                else:
+                    # We support either '.int4' or '.INTEGER' style properties
+                    tm[v] = importObject(ps.get(v,c))
+
+        return tm
+
+    typeMap = binding.Once(typeMap)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class SybaseConnection(ValueBasedTypeConn):
 
     API = binding.bindTo("import:Sybase")
 
@@ -326,48 +367,7 @@ class SybaseConnection(SQLConnection):
 
 
 
-class ValueBasedTypeMap(object):
-
-    def typeMap(self, d, a):
-
-        tm = {}
-        ps = PropertyName('peak.sql_types').of(self)
-        api = self.API
-
-        for k in self.supportedTypes:
-
-            c = ps.get(k,NullConverter)
-
-            for v in getattr(api,k).values:
-                try:
-                    v+''
-                except:
-                    tm[v] = c
-                else:
-                    # We support either '.int4' or '.INTEGER' style properties
-                    tm[v] = importObject(ps.get(v,c))
-
-        return tm
-
-    typeMap = binding.Once(typeMap)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-class PGSQLConnection(ValueBasedTypeMap, SQLConnection):
+class PGSQLConnection(ValueBasedTypeConn):
 
     API = binding.bindTo("import:pgdb")
 
@@ -408,7 +408,7 @@ class PGSQLConnection(ValueBasedTypeMap, SQLConnection):
 
 
 
-class SqliteConnection(ValueBasedTypeMap, SQLConnection):
+class SqliteConnection(ValueBasedTypeConn):
 
     API = binding.bindTo("import:sqlite")
 
