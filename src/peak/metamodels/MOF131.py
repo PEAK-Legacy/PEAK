@@ -654,8 +654,6 @@ class Package(GeneralizableElement):
 
 
 
-
-
 class Classifier(GeneralizableElement):
 
     mdl_isAbstract = True
@@ -709,7 +707,7 @@ class DataType(Classifier):
 
     class supertypes(model.Sequence):
         upperBound = 0  # no supertypes allowed
-
+        referencedType = GeneralizableElement
 
     class isRoot(model.structField):
         referencedType = model.Boolean
