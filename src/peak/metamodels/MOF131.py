@@ -173,6 +173,7 @@ class MOFModel(model.Model, storage.xmi.Loader):
 
         class annotation(model.Field):
             referencedType = AnnotationType
+            defaultValue = None
 
         class qualifiedName(model.DerivedAssociation):
 
@@ -345,7 +346,7 @@ class MOFModel(model.Model, storage.xmi.Loader):
 
             def _onLink(feature, element, item, posn=None):
 
-                if not element.nameIsValid(item):
+                if not element.nameIsValid(item.name):
                     raise KeyError("Item already exists with name",item.name)
 
                 if not isinstance(item, element.__class__._allowedContents):
@@ -387,7 +388,7 @@ class MOFModel(model.Model, storage.xmi.Loader):
 
 
         def nameIsValid(self,proposedName):
-            return name not in self._contentsIndex
+            return proposedName not in self._contentsIndex
 
 
         def findElementsByType(self, ofType, includeSubtypes=True):
