@@ -2,7 +2,7 @@
 
 from unittest import TestCase, makeSuite, TestSuite
 from peak.storage.interfaces import *
-from peak.storage.undo import AbstractDelta, History
+from peak.storage.undo import AbstractDelta, History, UndoManager
 
 class TestDelta(AbstractDelta):
 
@@ -12,12 +12,18 @@ class TestDelta(AbstractDelta):
     
     def _undo(self):
         self.doneCount -= 1
+        for item in self.merges:
+            item.undo()
 
     def _redo(self):
         self.doneCount += 1
+        for item in self.merges:
+            item.redo()
 
     def _finish(self):
         self.finishCount += 1
+        for item in self.merges:
+            item.finish()
 
     def _merge(self,delta):
         if not isinstance(delta,TestDelta):
@@ -25,16 +31,10 @@ class TestDelta(AbstractDelta):
         self.merges += (delta,)
 
 
-
-
-
-
-
-
-
-
-
-
+def verify_deltas(case,deltas,**attrs):
+    for k,v in attrs.items():
+        for d in deltas:
+            case.assertEqual(getattr(d,k),v)
 
 
 
@@ -123,18 +123,21 @@ class DeltaTests(TestCase):
 
 class HistoryTests(TestCase):
 
+    verify_deltas = verify_deltas
+    
     def testHistoryCollection(self):
         d1, d2, d3 = TestDelta(), TestDelta(), TestDelta()
         h = History()
+        self.failUnless(IHistory(h,None) is h)
         map(h.merge, [d1,d2,d3])
         l = list(h)
         self.assertEqual(l, [d1,d2,d3])
+        self.assertEqual(len(h),3)
         h.undo()
-        for d in l:
-            self.assertEqual(d.doneCount, 0)
+        self.verify_deltas(l,doneCount=0)
+
         h.redo()
-        for d in l:
-            self.assertEqual(d.doneCount, 1)
+        self.verify_deltas(l,doneCount=1)
 
     def testHistoryUndoable(self):
         h = History()
@@ -153,58 +156,116 @@ class HistoryTests(TestCase):
         map(h.merge, [d1,d2,d3])
         l = list(h)
         self.assertEqual(l, [d1,d2])
+        self.assertEqual(len(h),2)
         self.assertEqual(d1.merges, (d3,))
-        
-        
-        
-        
         
         
         
         
     def testMergeHistory(self):
-        d1, d2, d3, d4 = TestDelta(), TestDelta(), TestDelta(), TestDelta()
+
+        all = d1,d2,d3,d4 = TestDelta(), TestDelta(), TestDelta(), TestDelta()
         d1.key = d3.key = 'a'; d2.key = 'b'
+
         h1 = History()
         h2 = History()
+
         h1.merge(d1); h1.merge(d2)
         h2.merge(d3); h2.merge(d4)
         h1.merge(h2)
+
         self.assertEqual(list(h1), [d1,d2,d4])
         self.assertEqual(d1.merges, (d3,))
         
-        #self.failUnless('a' in h1)
-        #self.failUnless('b' in h1)
-        #self.failIf('c' in h1)
+        self.failUnless('a' in h1)
+        self.failUnless('b' in h1)
+        self.failIf('c' in h1)
+        
+        self.verify_deltas(all,finishCount=0,doneCount=1)
+
+        h1.finish()
+        self.verify_deltas(all,finishCount=1,doneCount=1)
+        
+        h1.undo()
+        self.verify_deltas(all,doneCount=0)
+
+        h1.redo()
+        self.verify_deltas(all,doneCount=1)
+
+
+
+
+
+
+
+
+
+
+
+
+class UndoTests(TestCase):
+    
+    verify_deltas = verify_deltas
+    
+    def testBasics(self):
+        all = d1,d2,d3,d4 = TestDelta(), TestDelta(), TestDelta(), TestDelta()
+        d1.key = d3.key = 'a'; d2.key = 'b'
+
+        m = UndoManager()
+        self.failUnless(IUndoManager(m,None) is m)
+        map(m.record, all)
+        
+        self.failUnless(m.has_delta_for('a'))
+        self.failUnless(m.has_delta_for('b'))
+        self.failIf(m.has_delta_for('c'))
+
+        self.verify_deltas(all,finishCount=0,doneCount=1)
+
+        m.checkpoint()
+        self.verify_deltas(all,finishCount=1,doneCount=1)
+        
+        m.checkpoint()
+        m.undoLast()
+        m.undoLast()
+
+        self.verify_deltas(all,finishCount=1,doneCount=0)
+
+        for i in 1,2,3:
+            m.redoNext()
+            self.verify_deltas(all,finishCount=1,doneCount=1)
+
+            m.undoLast()
+            self.verify_deltas(all,finishCount=1,doneCount=0)
+
+        d5 = TestDelta()
+        m.record(d5)
+        self.assertRaises(UndoError,m.redoNext)
+        m.revert()
+        self.verify_deltas([d5],doneCount=0,finishCount=1)
+
+
+    def testUndoRedo(self):
+        m = UndoManager()
+        all = d1,d2,d3,d4 = TestDelta(), TestDelta(), TestDelta(), TestDelta()
+        
+        m.record(d1)
+        self.assertRaises(UndoError, m.undoLast)
+        m.checkpoint()
+        m.undoLast()    # redo stack is non-empty
+        m.checkpoint()  # this should clear it
+        self.assertRaises(UndoError, m.redoNext)
+        
+        d2.undoable = False
+        m.record(d2)
+        m.checkpoint()
+        self.assertEqual(len(m.undos),0)    # XXX shouldn't check internals
+        
+    # XXX need hosed-ness test, for if an undo/redo fails
+    # XXX also need API to reset a hosed undo manager
         
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 TestClasses = (
-    DeltaTests, HistoryTests,
+    DeltaTests, HistoryTests, UndoTests
 )
 
 

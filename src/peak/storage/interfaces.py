@@ -96,8 +96,8 @@ class IHistory(IDelta):
     def __iter__():
         """Yield the deltas that comprise the group"""
 
-
-
+    def __len__():
+        """Return the number of deltas in the history"""
 
 
 
@@ -126,7 +126,8 @@ class IUndoManager(Interface):
     """Perform undo/redo of recorded actions"""
 
     def record(delta):
-        """Record delta as part of the current history (see 'IDelta.merge()')"""
+        """Record delta as part of the current history (see 'IDelta.merge()')       
+        (Should clear redo history)"""
         
     def has_delta_for(key):
         """True if a delta with key 'key' is in current history"""
@@ -138,25 +139,24 @@ class IUndoManager(Interface):
         the undo stack too.)"""
                
     def revert():
-        """Roll back current history to last checkpoint or undo/redo"""
+        """Roll back current history to last checkpoint or undo/redo
+
+        Undo and discard all deltas recorded since the last checkpoint, revert, 
+        or undo/redo operation.  Undo/redo histories do not change."""
 
 
     def undoLast():
         """Undo the last history added to the undo stack
-        (while moving it to the redo stack)"""
+        (while moving it to the redo stack).  Raise an error if deltas recorded.
+        """
 
     def redoNext():
         """Pop a history from the redo stack and redo it
-        (while moving it to the undo stack)"""
+        (while moving it to the undo stack).  Raise an error if deltas recorded.
+        """
 
 
     # XXX canUndo(), canRedo(), clear()?
-
-
-
-
-
-
 
 
 
