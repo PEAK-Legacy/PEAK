@@ -42,9 +42,7 @@ except ImportError:
 histstack = []
 curhist = curcompl = curdelims = None
 curlines = -1
-
 _lastsize = 0
-
 
 def _openHistory():
     # Make readline module's state match our current values
@@ -70,6 +68,8 @@ def _closeHistory():
 
     if currentsize is not None:
         lines_added = currentsize - _lastsize
+        if lines_added<0:
+            lines_added = currentsize
         if curlines==-1 or lines_added<curlines:
             readline.set_history_length(lines_added)
 
@@ -126,8 +126,6 @@ def pushRLHistory(fn, completer=None, delims=None, environ=None, lines=-1):
         curlines = lines
 
         _openHistory()
-        readline.set_completer_delims(curdelims)
-        readline.set_history_length(curlines)
 
 
 def popRLHistory():
@@ -145,6 +143,8 @@ def popRLHistory():
 def addRLHistoryLine(l):
     if readline is not None:
         readline.add_history(l)
+
+
 
 
 
