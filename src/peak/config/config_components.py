@@ -169,9 +169,11 @@ class ConfigReader(AbstractConfigParser):
         self.prefix = PropertyName(prefix).asPrefix()
 
     def add_setting(self, section, name, value, lineInfo):
-        self.pMap.setRule(section+name,
-            lambda propertyMap, propertyName, targetObj: eval(value)
-        )
+        _ruleName = section+name
+        def f(propertyMap, propertyName, targetObj):
+                ruleName = _ruleName
+                return eval(value)
+        self.pMap.setRule(_ruleName,f)
 
     def do_include(self, section, name, value, lineInfo):
         from api_impl import getProperty
@@ -182,10 +184,7 @@ class ConfigReader(AbstractConfigParser):
 
 
     def provide_utility(self, section, name, value, lineInfo):
-
-        self.pMap.registerProvider(
-            importString(name), eval(value)
-        )
+        self.pMap.registerProvider(importString(name), eval(value))
 
     def add_section(self, section, lines, lineInfo):
         if section is None:
@@ -202,6 +201,7 @@ class ConfigReader(AbstractConfigParser):
             handler = self.add_setting
 
         self.process_settings(section, lines, handler)
+
 
 class GlobalConfig(Component):
 
