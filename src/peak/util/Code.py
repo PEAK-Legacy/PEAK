@@ -185,7 +185,7 @@ class Code(object):
 
         """Append opcode 'op', w/optional argument 'arg'; arg can be 32 bit"""
 
-        if isinstance(op,StringType): op = opcode[op]
+        #if isinstance(op,StringType): op = opcode[op]
 
         append = self.co_code.append
         
@@ -263,7 +263,7 @@ class codeIter(object):
         if findOps:
             opmap = self.findOps = [0]*256
             for f in findOps:
-                if isinstance(f,StringType): f = opcode[f]
+                #if isinstance(f,StringType): f = opcode[f]
                 opmap[f]=1
         else:
             self.findOps = allOps
@@ -330,7 +330,7 @@ class codeIter(object):
 
         """Write 'op' (w/optional 'arg') at current position"""
 
-        if isinstance(op,StringType): op = opcode[op]
+        #if isinstance(op,StringType): op = opcode[op]
     
         ca=self.codeArray
         start = self.start
