@@ -226,15 +226,30 @@ class StructuralFeature(object):
         unset   = 'unset%(initCap)s',
     )
 
-    def get(feature, element):
+
+    def _get_many(feature, element):
+        return feature._getList(element)
+
+    _get_many.installIf = lambda f,m: f.isMany
+    _get_many.verb      = 'get'
+
+
+
+
+
+
+
+
+
+
+
+
+    def _get_one(feature, element):
 
         l = feature._getList(element)
-        if feature.isMany:
-            return l
-        
+
         if not l:
             value = feature.defaultValue
-
             if value is NOT_GIVEN:
                 raise AttributeError,feature.attrName
             return value
@@ -242,6 +257,8 @@ class StructuralFeature(object):
         return l[0]
 
 
+    _get_one.installIf = lambda f, m: not f.isMany
+    _get_one.verb      = 'get'
 
 
     def _assertChangeable(feature):
@@ -253,23 +270,47 @@ class StructuralFeature(object):
         feature._assertChangeable()
         element._setBinding(feature.implAttr,val)
 
+    set.installIf = lambda f,m: f.isChangeable
+
 
     def unset(feature, element):
         feature._assertChangeable()
         element._delBinding(feature.implAttr)
 
+    unset.installIf = lambda f,m: f.isChangeable
 
-    def _getList(feature, element):
 
-        if feature.isMany:
-            return element._getBinding(feature.implAttr, [])
 
+
+
+
+
+    def _getList_many(feature, element):
+        return element._getBinding(feature.implAttr, [])
+
+    _getList_many.installIf = lambda f,m: f.isMany and not f.isDerived
+    _getList_many.verb      = '_getList'
+
+
+    def _getList_one(feature, element):
+    
         value = element._getBinding(feature.implAttr, NOT_GIVEN)
 
         if value is NOT_GIVEN:
             return []
 
         return [value]
+
+    _getList_one.installIf = lambda f, m: not f.isMany and not f.isDerived
+    _getList_one.verb      = '_getList'
+
+
+    def _getList(feature, element):
+        """This must be defined in subclass"""
+        raise NotImplementedError
+
+
+
 
 
 
@@ -473,10 +514,6 @@ class DerivedAssociation(Collection):
 
     isDerived = True
 
-    def _getList(feature, element):
-        """This must be defined in subclass"""
-        raise NotImplementedError
-        
     def get(feature, element):
         return feature._getList(element)
         
@@ -485,6 +522,10 @@ class DerivedAssociation(Collection):
 class Sequence(Collection):
 
     isOrdered = True
+
+
+
+
 
 
 

@@ -405,7 +405,7 @@ class MethodExporter(ActiveClass):
             if installIf is None or installIf(self,func):
                 verb = func.verb
                 if verb in verbs: mn[verb] = verbs[verb] % names
-                setattr(self,verb,classmethod(func))
+                if verb not in classDict: setattr(self,verb,classmethod(func))
 
 
 class nameMapping(object):
