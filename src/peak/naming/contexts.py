@@ -13,9 +13,9 @@ from peak.binding.components import Component, Once, Acquire
 from peak.util.imports import importObject
 
 
-_marker = object()
-
 __all__ = ['AbstractContext', 'GenericURLContext']
+
+
 
 
 
@@ -210,9 +210,9 @@ class AbstractContext(Component):
         ctx, name = self._getTargetCtx(name)
         if ctx is not self: return ctx.lookupLink(name)
 
-        info = self._get(name,_marker)
+        info = self._get(name)
         
-        if info is _marker:
+        if info is NOT_FOUND:
             raise exceptions.NameNotFound(name)
 
         state, attrs = info
@@ -229,8 +229,8 @@ class AbstractContext(Component):
         ctx, name = self._getTargetCtx(name)
         if ctx is not self: return ctx[name]
         
-        obj = self._getOb(name,_marker)
-        if obj is _marker:
+        obj = self._getOb(name)
+        if obj is NOT_FOUND:
             raise exceptions.NameNotFound(name)
 
         return obj
@@ -254,10 +254,10 @@ class AbstractContext(Component):
         return self._getOb(name, default)
 
 
-    def _getOb(self, name, default):
+    def _getOb(self, name, default=NOT_FOUND):
 
-        info = self._get(name,default)
-        if info is default: return info
+        info = self._get(name)
+        if info is NOT_FOUND: return default
 
         state, attrs = info
 
@@ -272,7 +272,7 @@ class AbstractContext(Component):
         if ctx is not self:
             return name in ctx
 
-        return self._get(name, _marker, retrieve=False) is not _marker
+        return self._get(name, retrieve=False) is not NOT_FOUND
 
 
     def lookup(self, name):
@@ -369,14 +369,17 @@ class AbstractContext(Component):
 
     # The actual implementation....
 
-    def _get(self, name, default=None, retrieve=1):
+    def _get(self, name, retrieve=1):
 
-        """Lookup 'name', returning 'default' if not found
+        """Lookup 'name', returning 'NOT_FOUND' if not found
+        
+        If 'name' doesn't exist, always return 'NOT_FOUND'.  Otherwise,
+        if 'retrieve' is true, return a '(state,attrs)' tuple of binding info.
 
-        If 'retrieve' is true, return a '(state,attrs)' tuple of binding info.
-        Otherwise, return any true value that is not 'default'.  In either
-        case, return 'default' if the name is not bound.
-        """
+        If 'retrieve' is false, you may return any value other than
+        'NOT_FOUND'.  This is for optimization purposes, to allow you to
+        skip costly retrieval operations if a simple existence check will
+        suffice."""
 
         raise NotImplementedError
 
@@ -405,14 +408,11 @@ class AbstractContext(Component):
 
 
 
-
-
-
 class GenericURLContext(AbstractContext):
 
     """Handler for address-only URL namespaces"""
 
-    def _get(self, name, default=None, retrieve=1):
+    def _get(self, name, retrieve=1):
         return (name, None)     # refInfo, attrs
 
 
