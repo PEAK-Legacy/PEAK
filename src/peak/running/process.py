@@ -217,7 +217,7 @@ class AbstractProcessTemplate(binding.Component):
 
         # Set parent component *after* the pipes are set up, in case
         # the proxy has assembly events that make use of the pipes.
-        proxy.setParentComponent(parentComponent)
+        binding.suggestParentComponent(parentComponent,None,proxy)
         return proxy
 
 

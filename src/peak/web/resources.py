@@ -158,7 +158,7 @@ class ResourceDirectory(FSResource, binding.Configurable):
         # create a reference, and dereference it
         ref = naming.Reference(factory, addresses=[FileURL.fromFilename(path)])
         obj = ref.restore(self,None)
-        obj.setParentComponent(self, filename, True)
+        binding.suggestParentComponent(self, filename, obj)
         self.cache[name] = obj
         return obj
 

@@ -150,7 +150,7 @@ class FeatureClass(HashAndCompare,MethodExporter):
     _defaultValue = binding.Make(_defaultValue)
 
     _bindFuncs = binding.Make(
-        lambda s: s.getParentComponent()._getBindingFuncs(s.implAttr,s.useSlot)
+        lambda s: binding.getParentComponent(s)._getBindingFuncs(s.implAttr,s.useSlot)
     )
 
     _doGet = binding.Make(lambda self: self._bindFuncs[0])

@@ -131,13 +131,13 @@ class Item(model.Element):
         referencedType = 'Document'
 
     def newRow(self,**kw):
-        row = self.getParentComponent().newItem(Row)
+        row = binding.getParentComponent(self).newItem(Row)
         row.document = self.document
         for k,v in kw.items(): setattr(row,k,v)
         return row
 
     def newCell(self,**kw):
-        cell = self.getParentComponent().newItem(Cell)
+        cell = binding.getParentComponent(self).newItem(Cell)
         cell.document = self.document
         for k,v in kw.items(): setattr(cell,k,v)
         return cell
