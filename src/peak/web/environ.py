@@ -81,14 +81,24 @@ def traverseSkin(ctx, ob, ns, nm, qname, default=NOT_GIVEN):
 
 
 class Context:
+    """Keep track of current traversal state"""
 
     __metaclass__ = binding.Activator
+
     protocols.advise(instancesProvide=[ITraversalContext])
 
     previous = binding.Require("Parent context")
-    interaction = policy = skin = rootURL = binding.Delegate('previous')
+
+    view_protocol = interaction = policy = skin = rootURL = \
+        binding.Delegate('previous')
+
     allows = user = permissionNeeded = binding.Delegate('interaction')
+
     getResource = binding.Delegate('skin')
+
+    _clone_attrs = (
+        'interaction','policy','skin','rootURL','previous','view_protocol'
+    )
 
     def __init__(self,name,current,environ,previous=None,**kw):
         if kw: self._setup(kw)
@@ -110,6 +120,7 @@ class Context:
     def parentContext(self):
         return self.previous
 
+
     absoluteURL = binding.Make(
         lambda self: IWebTraversable(self.current).getURL(self)
     )
@@ -119,7 +130,6 @@ class Context:
             self.previous.absoluteURL, self.name
         )
     )
-
 
     def renderHTTP(self):
         return IHTTPHandler(self.current).handle_http(self)
@@ -137,7 +147,7 @@ class Context:
         if 'clone_from' in kw:
             cfg = kw['clone_from'].__getattribute__
             del kw['clone_from']
-            for attr in 'interaction','policy','skin','rootURL','previous':
+            for attr in self._clone_attrs:
                 if attr not in kw:
                     kw[attr] = cfg(attr)
 
@@ -150,16 +160,6 @@ class Context:
                     "%s constructor has no keyword argument %s" %
                     (klass, k)
                 )
-
-
-
-
-
-
-
-
-
-
 
 
     def shift(self):
@@ -187,20 +187,20 @@ class Context:
         else:
             return IWebTraversable(self.current).traverseTo(name,self)
 
-    def getView(self,name,default=NOT_GIVEN):
-        ctx = traverseView(
-            self, self.current, 'view', name, '@@'+name, default
-        )
-        if ctx is not default:
-            return ctx.current
-        return ctx
-
     def requireAccess(self,qname,*args,**kw):
         result = self.allows(*args,**kw)
         if not result:
             raise errors.NotAllowed(self,qname,
                 getattr(result,'message',"Permission denied")
             )
+
+
+
+
+
+
+
+
 
 
 class StartContext(Context):
@@ -216,6 +216,8 @@ class StartContext(Context):
         adaptTo=IInteractionPolicy
     )
 
+    view_protocol = binding.Delegate('policy')
+
     def parentContext(self):
         return self
 
@@ -230,8 +232,6 @@ def simpleRedirect(environ,location):
 
 def clientHas(environ, lastModified=None, ETag=None):
     return False    # XXX
-
-
 
 
 
@@ -273,7 +273,7 @@ def traverseItem(ctx, ob, ns, name, qname, default=NOT_GIVEN):
 
 def traverseView(ctx, ob, ns, name, qname, default=NOT_GIVEN):
 
-    p = ctx.policy.view_protocol(name)
+    p = ctx.view_protocol(name)
     if p is not None:
         handler = adapt(ob,p,NOT_FOUND)
         if handler is not NOT_FOUND:

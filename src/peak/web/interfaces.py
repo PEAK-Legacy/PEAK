@@ -117,8 +117,8 @@ class ITraversalContext(IInteraction):
     def getResource(path):
         """Return the named resource"""
 
-    def getView(name,default=NOT_GIVEN):
-        """Return named view for target (or 'default', or raise NotFound)"""
+    def view_protocol(viewname,default=None):
+        """Return the protocol for views named 'viewname', or 'default'"""
 
 
     def shift():
@@ -145,9 +145,9 @@ class ITraversalContext(IInteraction):
         """Create a duplicate context, using supplied keyword arguments
 
         Acceptable keyword arguments include: 'name', 'current', 'environ',
-        'policy', 'skin', 'rootURL', 'interaction', 'previous', and
-        'clone_from'.  Most of these just set the corresponding attribute
-        on the new context, but the following names are special:
+        'policy', 'skin', 'rootURL', 'interaction', 'view_protocol',
+        'previous', and 'clone_from'.  Most of these just set the corresponding
+        attribute on the new context, but the following names are special:
 
          'clone_from' -- an existing context to clone.  If supplied, its
            'interaction', 'skin', 'policy', and 'previous' attributes will

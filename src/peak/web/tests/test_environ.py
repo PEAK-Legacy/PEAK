@@ -260,14 +260,8 @@ class TestNamespaces(TestCase):
     def testRegisteredView(self):
         self.failUnless(self.policy.view_protocol('foo') is self.p1)
         ctx = self.policy.newContext(start=123)
-        self.failUnless(ctx.getView('foo') is self)
-        self.assertRaises(web.NotFound, ctx.getView, NO_SUCH_NAME)
-        self.failUnless(ctx.getView(NO_SUCH_NAME,NOT_FOUND) is NOT_FOUND)
         ctx = ctx.clone(current="123")
-        self.assertEqual(ctx.getView('foo'), "baz")
         ctx = ctx.clone(current=[])
-        self.assertRaises(web.NotFound, ctx.getView, 'foo')
-        self.failUnless(ctx.getView('foo',NOT_FOUND) is NOT_FOUND)
 
     def testTraverseView(self):
         ctx = self.policy.newContext(start=123)
@@ -278,19 +272,18 @@ class TestNamespaces(TestCase):
             self.invokeHandler(ctx, handler, "@@"+NO_SUCH_NAME, fail=1)
             self.invokeHandler(ctx, handler, "++view++"+NO_SUCH_NAME, fail=1)
 
-
-
-
-
-
-
-
     def testTraverseSkin(self):
         ctx = self.policy.newContext(start=123)
         res = self.invokeHandler(ctx, web.traverseSkin, '++skin++foo', False)
         self.failUnless(res.skin is self.foo_skin)
         self.assertEqual(res.rootURL, ctx.rootURL+'/++skin++foo')
         self.invokeHandler(ctx, web.traverseSkin, "++skin++"+NO_SUCH_NAME,fail=1)
+
+
+
+
+
+
 
     def testTraverseAttr(self):
         ctx = self.policy.newContext(start=self.app)
@@ -312,20 +305,6 @@ class TestNamespaces(TestCase):
             #    self.invokeHandler, ctx, handler, "++item++...?"
             #)
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     def testTraverseNames(self):
         ctx = self.policy.newContext(start=123)
         self.failUnless(ctx.traverseName('++foo++bar') is self)
@@ -342,26 +321,6 @@ class TestNamespaces(TestCase):
         self.failUnless(ctx.traverseName('++attr++foo').current is foo)
         ctx = self.policy.newContext(start={'foo':'bar'})
         self.assertEqual(ctx.traverseName('++item++foo').current, 'bar')
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
