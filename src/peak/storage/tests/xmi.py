@@ -43,7 +43,7 @@ class MailModel(model.Model):
 
     class Letter(model.Element):
 
-        class envelope(model.Reference):
+        class envelope(model.Attribute):
             referencedType = 'Envelope'
             referencedEnd  = 'letter'
 

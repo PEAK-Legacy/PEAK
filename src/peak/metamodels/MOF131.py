@@ -184,7 +184,7 @@ class ModelElement(model.Element):
                 names.insert(0,element.name)
             return [names]
 
-    class container(model.Reference):
+    class container(model.Attribute):
         referencedType = 'Namespace'
         referencedEnd  = 'contents'
         defaultValue = None
@@ -546,7 +546,7 @@ class Import(ModelElement):
         referencedType = Boolean
         defaultValue = False
 
-    class importedNamespace(model.Reference):
+    class importedNamespace(model.Attribute):
         referencedType = 'Namespace'
 
 
@@ -824,7 +824,7 @@ class TypedElement(ModelElement):
 
     mdl_isAbstract = True
 
-    class type(model.Reference):    # XXX ugh
+    class type(model.Attribute):    # XXX ugh
         referencedType = 'Classifier'
         lowerBound = 1  # XXX what are semantics of 'required' attrs?
 
@@ -945,11 +945,11 @@ class Attribute(StructuralFeature):
 
 class Reference(StructuralFeature):
 
-    class referencedEnd(model.Reference):
+    class referencedEnd(model.Attribute):
         referencedType = 'AssociationEnd'
         defaultValue = None
 
-    class exposedEnd(model.Reference):
+    class exposedEnd(model.Attribute):
         referencedType = 'AssociationEnd'
         defaultValue = None
 

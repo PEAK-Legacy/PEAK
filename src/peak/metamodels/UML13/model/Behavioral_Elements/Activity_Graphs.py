@@ -20,7 +20,6 @@ class ActivityGraph(State_Machines.StateMachine):
     class partition(_model.StructuralFeature):
         referencedType = 'Partition'
         referencedEnd = 'activityGraph'
-        isReference = True
         sortPosn = 0
     
 
@@ -28,13 +27,11 @@ class Partition(Core.ModelElement):
     
     class contents(_model.StructuralFeature):
         referencedType = 'Foundation/Core/ModelElement'
-        isReference = True
         sortPosn = 0
     
     class activityGraph(_model.StructuralFeature):
         referencedType = 'ActivityGraph'
         referencedEnd = 'partition'
-        isReference = True
         upperBound = 1
         lowerBound = 1
         sortPosn = 1
@@ -96,12 +93,10 @@ class ObjectFlowState(State_Machines.SimpleState):
     
     class parameter(_model.StructuralFeature):
         referencedType = 'Foundation/Core/Parameter'
-        isReference = True
         sortPosn = 1
     
     class type(_model.StructuralFeature):
         referencedType = 'Foundation/Core/Classifier'
-        isReference = True
         upperBound = 1
         lowerBound = 1
         sortPosn = 2
@@ -111,14 +106,12 @@ class ClassifierInState(Core.Classifier):
     
     class type(_model.StructuralFeature):
         referencedType = 'Foundation/Core/Classifier'
-        isReference = True
         upperBound = 1
         lowerBound = 1
         sortPosn = 0
     
     class inState(_model.StructuralFeature):
         referencedType = 'State_Machines/State'
-        isReference = True
         lowerBound = 1
         sortPosn = 1
     

@@ -18,7 +18,6 @@ class Multiplicity(_model.Element):
     class range(_model.StructuralFeature):
         referencedType = 'MultiplicityRange'
         referencedEnd = 'multiplicity'
-        isReference = True
         lowerBound = 1
         sortPosn = 0
     
@@ -40,7 +39,6 @@ class MultiplicityRange(_model.Element):
     class multiplicity(_model.StructuralFeature):
         referencedType = 'Multiplicity'
         referencedEnd = 'range'
-        isReference = True
         upperBound = 1
         lowerBound = 1
         sortPosn = 2

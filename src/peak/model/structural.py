@@ -176,11 +176,11 @@ class FeatureClass(HashAndCompare,MethodExporter):
         doc = "The underlying (private) attribute implementing this feature"
     )
 
+    def isReference(self,d,a):
+        from datatypes import TCKind
+        return self.typeObject.mdl_typeCode.unaliased().kind==TCKind.tk_objref
 
-
-
-
-
+    isReference = binding.Once(isReference)
 
 
 
@@ -212,7 +212,6 @@ class StructuralFeature(object):
     isDerived     = False
     isComposite   = False
     isOrdered     = False
-    isReference   = False
 
     useSlot       = False
 
@@ -220,7 +219,8 @@ class StructuralFeature(object):
     upperBound    = None    # None means unbounded upper end
 
     referencedEnd  = None    # and without an 'other end'
-    referencedType = None
+    referencedType = None    # this actually is set to Classifier, later
+
     defaultValue   = NOT_GIVEN
 
     newVerbs = Items(
@@ -573,8 +573,8 @@ class StructuralFeature(object):
 
 
 class Collection(StructuralFeature):
+    pass
 
-    isReference = 1
 
 
 class Attribute(StructuralFeature):
@@ -583,34 +583,34 @@ class Attribute(StructuralFeature):
 
 
 
-class structField(Attribute):
+class structField(StructuralFeature):
 
-    """An unchangeable field; used for immutables"""
+    """An unchangeable attribute; used for immutables"""
+
+    upperBound = 1
 
     isChangeable = binding.classAttr( binding.Constant(None, False) )
 
 
 
-class Reference(Collection):
-
-    upperBound = 1
-
-
-
-class DerivedFeature(Collection):
+class DerivedFeature(StructuralFeature):
 
     isDerived = True
 
 
 
-class Sequence(Collection):
+class Sequence(StructuralFeature):
 
     isOrdered = True
 
 
 
+
+Reference = Attribute               # XXX backward compatibility...  deprecated
 Field = Attribute                   # XXX backward compatibility...  deprecated
 DerivedAssociation = DerivedFeature # XXX backward compatibility...  deprecated
+
+
 
 
 class ClassifierClass(Namespace.__class__):
@@ -801,7 +801,7 @@ class Classifier(Namespace):
 
 
 
-
+StructuralFeature.referencedType = Classifier
 
 
 

@@ -506,6 +506,11 @@ class XMINode(object):
                     d.setdefault(f.implAttr,[]).extend(obs)
                 else:
                     d[f.implAttr], = obs    # XXX
+            elif f.isMany:
+                raise ValueError(
+                    "Multi-valued feature coded as attribute",
+                    attr, val
+                )
             else:
                 d[f.implAttr] = f.fromString(val)
 
@@ -521,9 +526,10 @@ class XMINode(object):
                     d.setdefault(f.implAttr,[]).extend(obs)
                 else:
                     d[f.implAttr], = obs    # XXX
+            elif f.isMany:
+                d.setdefault(f.implAttr,[]).append(node.getValue(f, dm))
             else:
                 d[f.implAttr] = node.getValue(f, dm)
-
 
         coll = self.parent
         if coll is None: return d
@@ -547,12 +553,6 @@ class XMINode(object):
                 d.setdefault(pa,owner)
 
         return d
-
-
-
-
-
-
 
 
 

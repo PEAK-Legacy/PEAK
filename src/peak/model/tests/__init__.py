@@ -211,10 +211,10 @@ class anElement1(model.Element):
     class simpleSeq(model.Sequence):
         pass
 
-    class fwdRef(model.Reference):
+    class fwdRef(model.Attribute):
         referencedEnd = 'backColl'
 
-    class simpleRef(model.Reference):
+    class simpleRef(model.Attribute):
         pass
 
     class fwdColl(model.Collection):
@@ -227,7 +227,7 @@ class anElement2(model.Element):
     class backColl(model.Collection):
         referencedEnd = 'fwdRef'
 
-    class backRef(model.Reference):
+    class backRef(model.Attribute):
         referencedEnd = 'fwdColl'
 
 

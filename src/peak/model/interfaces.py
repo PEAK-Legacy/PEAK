@@ -193,7 +193,7 @@ class IFeature(Interface):
     )
 
     isReference  = Attribute(
-        """True if feature implements 'IReference'"""
+        """True if feature references a non-primitive/non-struct object type"""
     )
 
     attrName     = Attribute(

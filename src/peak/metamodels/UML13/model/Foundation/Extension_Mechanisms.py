@@ -31,17 +31,14 @@ class Stereotype(Core.GeneralizableElement):
     class requiredTag(_model.StructuralFeature):
         referencedType = 'TaggedValue'
         referencedEnd = 'stereotype'
-        isReference = True
         sortPosn = 2
     
     class extendedElement(_model.StructuralFeature):
         referencedType = 'Core/ModelElement'
-        isReference = True
         sortPosn = 3
     
     class stereotypeConstraint(_model.StructuralFeature):
         referencedType = 'Core/Constraint'
-        isReference = True
         sortPosn = 4
     
 
@@ -62,13 +59,11 @@ class TaggedValue(_model.Element):
     class stereotype(_model.StructuralFeature):
         referencedType = 'Stereotype'
         referencedEnd = 'requiredTag'
-        isReference = True
         upperBound = 1
         sortPosn = 2
     
     class modelElement(_model.StructuralFeature):
         referencedType = 'Core/ModelElement'
-        isReference = True
         upperBound = 1
         sortPosn = 3
     

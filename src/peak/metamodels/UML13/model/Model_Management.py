@@ -20,7 +20,6 @@ class Package(Core.GeneralizableElement, Core.Namespace):
     class elementImport(_model.StructuralFeature):
         referencedType = 'ElementImport'
         referencedEnd = 'package'
-        isReference = True
         sortPosn = 0
     
 
@@ -54,14 +53,12 @@ class ElementImport(_model.Element):
     class package(_model.StructuralFeature):
         referencedType = 'Package'
         referencedEnd = 'elementImport'
-        isReference = True
         upperBound = 1
         lowerBound = 1
         sortPosn = 2
     
     class modelElement(_model.StructuralFeature):
         referencedType = 'Foundation/Core/ModelElement'
-        isReference = True
         upperBound = 1
         lowerBound = 1
         sortPosn = 3

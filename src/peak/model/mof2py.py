@@ -630,8 +630,6 @@ _datatypes           = _lazy('peak.model.datatypes')
 
             if inverseRef is not None:
                 self.write('referencedEnd = %r\n' % str(inverseRef.name))
-                
-            self.write('isReference = True\n')
 
         elif feature.isDerived:
             self.write('isDerived = True\n')
@@ -647,6 +645,8 @@ _datatypes           = _lazy('peak.model.datatypes')
 
         self.write('sortPosn = %r\n' % posn)
         self.pop()
+
+
 
 
 
