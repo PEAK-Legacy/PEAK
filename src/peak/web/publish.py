@@ -115,7 +115,7 @@ class InteractionPolicy(binding.Configurable, protocols.StickyAdapter):
 
     ns_handler    = binding.Make(lambda self: NAMESPACE_NAMES.of(self).get)
     view_protocol = binding.Make(lambda self: VIEW_NAMES.of(self).get)
-
+    _getSkinName  = binding.Obtain(PropertyName('peak.web.getSkinName'))
 
 
 
@@ -126,11 +126,11 @@ class InteractionPolicy(binding.Configurable, protocols.StickyAdapter):
         if environ is None:
             environ = {}
 
-        if skin is None:
-            skin = self.getSkin("default")  # XXX
-
         if interaction is None:
             interaction = self.newInteraction(user=self.getUser(environ))
+
+        if skin is None:
+            skin = self.getSkin(self._getSkinName(environ,interaction))
 
         if start is NOT_GIVEN:
             start = self.app

@@ -285,10 +285,6 @@ class ConstantStream(object):
     getObjectInstance = classmethod(getObjectInstance)
 
 
-
-
-
-
 class ImportLoaderFactory(ConstantStream):
     """Stream factory for data loaded by a PEP 302 import loader"""
 
