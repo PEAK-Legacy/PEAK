@@ -403,7 +403,7 @@ class SybaseConnection(ValueBasedTypeConn):
             from sysobjects%s''' % (typecase, addsel, addwhere))
 
     protocols.advise(
-        instancesProvide=[ISQLIntrospector]
+        instancesProvide=[ISQLObjectLister]
     )
 
 
@@ -411,7 +411,7 @@ class SybaseConnection(ValueBasedTypeConn):
 class PGSQLConnection(ValueBasedTypeConn):
 
     protocols.advise(
-        instancesProvide=[ISQLIntrospector]
+        instancesProvide=[ISQLObjectLister]
     )
 
     DRIVER = "pgdb"
@@ -515,7 +515,7 @@ class SqliteConnection(ValueBasedTypeConn):
             from SQLITE_MASTER%s''' % (addsel, addwhere))
 
     protocols.advise(
-        instancesProvide=[ISQLIntrospector]
+        instancesProvide=[ISQLObjectLister]
     )
 
 
@@ -656,7 +656,7 @@ class OracleURL(naming.URL.Base):
 
 class OracleIntrospection(object):
 
-    """Mixin for Oracle ISQLIntrospector support"""
+    """Mixin for Oracle ISQLObjectLister support"""
 
     def listObjects(self, full=False, obtypes=NOT_GIVEN):
         addsel = addwhere = ''
@@ -698,7 +698,7 @@ class OracleIntrospection(object):
 class CXOracleConnection(SQLConnection,OracleIntrospection):
 
     protocols.advise(
-        instancesProvide=[ISQLIntrospector]
+        instancesProvide=[ISQLObjectLister]
     )
 
     DRIVER = "cx_Oracle"
@@ -739,7 +739,7 @@ class CXOracleConnection(SQLConnection,OracleIntrospection):
 class DCOracle2Connection(ValueBasedTypeConn,OracleIntrospection):
 
     protocols.advise(
-        instancesProvide=[ISQLIntrospector]
+        instancesProvide=[ISQLObjectLister]
     )
 
     DRIVER = "DCOracle2"

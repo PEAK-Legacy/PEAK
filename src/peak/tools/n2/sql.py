@@ -51,7 +51,7 @@ class SQLInteractor(binding.Component):
     def obnames(self):
         """Object names for completer"""
 
-        si = adapt(self.con, storage.ISQLIntrospector, None)
+        si = adapt(self.con, storage.ISQLObjectLister, None)
         if si is not None:
             return [x.obname
                 for x in si.listObjects(False,
@@ -987,9 +987,9 @@ default for src is '!.', the current input buffer"""
 
         def cmd(self, cmd, opts, args, stdout, stderr, **kw):
             if args:
-                pass # XXX
+                print >>stderr, "Feature not implemented yet."
             else:
-                si = adapt(self.interactor.con, storage.ISQLIntrospector, None)
+                si = adapt(self.interactor.con, storage.ISQLObjectLister, None)
                 if si is None:
                     print >>stderr, "%s: database doesn't support describe" % cmd
                 else:

@@ -10,7 +10,7 @@ __all__ = [
     'IDataManager', 'IDataManager_SPI', 'IWritableDM', 'IWritableDM_SPI',
     'IManagedConnection', 'IManagedConn_SPI', 'IKeyableDM',
     'ISQLConnection', 'ILDAPConnection', 'IDDEConnection',
-    'ISQLIntrospector'
+    'ISQLObjectLister'
 ]
 
 
@@ -572,7 +572,7 @@ class IRow(Interface):
 
 
 
-class ISQLIntrospector(Interface):
+class ISQLObjectLister(Interface):
     """Adapt a managed connection to this to obtain information on
        objects in the database"""
 
