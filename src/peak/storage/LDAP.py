@@ -140,8 +140,8 @@ class LDAPConnection(ManagedConnection):
         return conn
 
 
-
-
+    def __getattr__(self, attr):
+        return getattr(self.connection, attr)
 
 
 
@@ -204,7 +204,7 @@ class ldapURL(naming.ParsedURL):
 
 
     def __init__(self, url=None, scheme=None, body=None,
-                 host='', port=389, basedn='', attrs=(), 
+                 host='', port=389, basedn='', attrs=None, 
                  scope=SCOPE_BASE, filter=None, extensions=None,
     ):
         extensions = extensions or {}
