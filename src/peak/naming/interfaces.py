@@ -6,7 +6,7 @@ from Interface.Attribute import Attribute
 
 __all__ = [
 
-    'IName', 'IAddress', 'IInitialContextFactory',
+    'IName', 'IAddress', 'IInitialContextFactory', 'IResolver',
     'IObjectFactory', 'IStateFactory', 'IURLContextFactory',
     'I_NNS_Binding', 'IBasicContext', 'IReadContext', 'IWriteContext',
     'COMPOUND_KIND', 'COMPOSITE_KIND', 'URL_KIND', 'isName', 'isAddress',
@@ -80,9 +80,9 @@ isAddressClass = IAddress.isImplementedByInstancesOf
 
 
 
-class IBasicContext(Interface):
+class IResolver(Interface):
 
-    """Basic naming context; supports only configuration and name handling"""
+    """Thing which can participate in name resolution"""
 
     def resolveToInterface(name,iface):
         """Find nearest ctx to 'name' supporting 'iface', return rest of name
@@ -95,11 +95,38 @@ class IBasicContext(Interface):
             method is called on.
         """
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class IBasicContext(IResolver):
+
+    """Basic naming context; supports only name retrieval"""
+
     def lookup(name):
         """Lookup 'name' --> object; synonym for __getitem__"""
-
-    def lookup_nns(name=None):
-        """Lookup 'name' to retrieve a "next naming system" pointer"""
 
     def __getitem__(name):
         """Lookup 'name' and return an object"""
@@ -118,6 +145,20 @@ class IBasicContext(Interface):
 
     def lookupLink(name):
         """Return terminal LinkRef of 'name', if it's a link"""
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
