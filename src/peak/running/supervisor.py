@@ -167,13 +167,13 @@ class ProcessSupervisor(EventDriven):
         if len(self.processes)>=self.maxChildren:
             return
 
-        self.log.debug("Spawning new child process")
         proxy, stub = self.template.spawn(self)
 
         if proxy is None:
             self.mainLoop.childForked(stub)
             return
 
+        self.log.debug("Spawned new child process (%d)", proxy.pid)
         proxy.addListener(self._childChange)
         self.processes[proxy.pid] = proxy
 
