@@ -16,7 +16,7 @@ __all__ = [
     'ConfigMap', 'LazyRule', 'fileNearModule', 'packageFile', 'IniLoader',
     'Value', 'iterKeys', 'Namespace', 'iterValues',
     'CreateViaFactory', 'parentsProviding', 'parentProviding', 'lookup',
-    'ServiceArea', 'XMLKey',
+    'ServiceArea', 'XMLKey', 'processXML',
 ]
 
 
@@ -157,6 +157,88 @@ class XMLKey:
 
 
 
+
+
+
+
+
+def processXML(context,source,**kw):
+    """Return the result of parsing 'source' using 'context' to control parsing
+
+    'context' should be an 'IConfigSource' (e.g. almost any component) with
+    configuration data for the XML attributes and elements to be parsed.
+    'source' should be an 'IStreamSource' containing the XML to be parsed.
+
+    In addition to XML attribute and element definitions, the context can
+    also provide properties in 'peak.config.xml_namespaces' and
+    'peak.config.xml_functions' to exert additional control over the parsing.
+    For example, this::
+
+        [peak.config.xml_namespaces]
+        pwt = "http://peak.telecommunity.com/DOMlets/"
+
+    establishes that the namespace URI for the 'pwt' prefix will be the DOMlets
+    namespace URI, unless the document explicitly defines otherwise.  And
+    this::
+
+        [peak.config.xml_functions]
+        text = some_module.handleTopLevelText
+        child = some_module.handleRootElement
+        finish = some_module.getResult
+
+    sets up the top-level parsing functions used by the
+    'SOX.NegotiatingParser'.  (See 'peak.util.SOX.INegotiationData' for info
+    on what each parsing function does.)  Note that these functions are used
+    only for parsing the top-level document nodes, and not for any contained
+    XML elements.  You can also override or supplement these top-level
+    functions by passing keyword arguments to this function.  Note that this
+    function will only return a value if there is a 'finish' function defined.
+
+    The behavior for contained XML elements is determined by the XML element
+    and attribute definitions provided by 'context'.  These must be
+    'IElementNegotiator' and 'IAttributeNegotiator' functions, as defined in
+    'peak.util.SOX'.  So, in::
+
+        [XML Attributes for http://peak.telecommunity.com/DOMlets/]
+        domlet = pwt.negotiateDomlet
+        define = pwt.negotiateDefine
+
+    the 'negotiateDomlet' and 'negotiateDefine' functions must implement the
+    'peak.util.sox.IAttributeNegotiator' interface.
+    """
+
+    from peak.util.SOX import NegotiatingParser
+    p = NegotiatingParser()
+
+    nspre = 'peak.config.xml_namespaces.'
+    for key in iterKeys(context,nspre[:-1]):
+        if '*' not in key:
+            prefix = key[len(nspre):]
+            p.addNamespace(prefix,lookup(context,key))
+
+    nspre = 'peak.config.xml_functions.'
+    for key in iterKeys(context,nspre[:-1]):
+        if '*' not in key:
+            kw.setdefault(key[len(nspre):],lookup(context,key))
+
+    def lookupElement(ns,nm):
+        if ns is None:
+            nm=nm.split(':',1)[1]
+        return lookup(context,XMLKey('element',ns or '*',nm),None)
+
+    def lookupAttribute(ns,nm):
+        if ns is None:
+            nm = nm.split(':',1)[1]
+        return lookup(context,XMLKey('attribute',ns or '*',nm),None)
+
+    p.setLookups(lookupElement,lookupAttribute)
+
+    factory = IStreamSource(source).getFactory(context)
+    stream = factory.open('b')
+    try:
+        return p.parseStream(stream,kw,factory.address)
+    finally:
+        stream.close()
 
 
 

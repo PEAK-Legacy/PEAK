@@ -1,5 +1,11 @@
 Fixes and Enhancements since Version 0.5 alpha 3
 
+ - Added 'config.processXML()', a function that provides a high-level,
+   configuration-driven interface to 'peak.util.SOX.NegotiatingParser'.  This
+   simple front-end lets you supply as little as a configuration context and
+   a stream source, to do XML processing of arbitrary complexity, controlled by
+   the configuration of the context.
+   
  - Added 'config.XMLKey()', an 'IConfigKey' type that can be used to register
    configuration values for XML attribute and element names under specified
    XML namespace URI's.  Also, there are now '[XML Attributes for nsuri]' and

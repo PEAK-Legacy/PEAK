@@ -473,14 +473,17 @@ class XMLKeysTest(TestCase):
                     self.getBaseKey(k1)]
             )
 
-    def testParse(self):
+    def testParseIni(self):
         c = binding.Configurable(testRoot())
         config.ConfigReader(c).readString(xml_cfg)
         for args,result in xml_values:
             self.assertEqual(c.lookupComponent(config.XMLKey(*args)),result)
 
-
-
+    def testParseXML(self):
+        nspre = 'peak.config.xml_namespaces.'
+        c = binding.Configurable(testRoot())
+        c.registerProvider(nspre+'foo',config.Value('bar'))
+        config.processXML(c,"pkgfile:peak.web.tests/template1.pwt")
 
 
 
