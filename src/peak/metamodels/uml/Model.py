@@ -1,8 +1,91 @@
+"""Domain logic and convenience features for manipulating UML Models
+
+    This module adds a couple of domain logic features to the 'UMLClass'
+    class family defined by 'TW.UML.MetaModel'.  Specifically, it adds
+    some computed features, such as the notion of a "qualified name" of
+    a UML model element, and the "superclasses" and "subclasses" of UML
+    generalizable elements.
+
+    It also redefines 'SEF' to be 'TW.StructuralModel.SimpleModel', which
+    adds querying and XMI reading aspects to the basic in-memory SEF
+    structural model.
+"""
+
+from TW.API import *
+import TW.UML.MetaModel
+import TW.StructuralModel.SimpleModel as SEF
 from types import StringType, FunctionType
 from TW.StructuralModel.Queries import NodeList, ComputedFeature
 
+__bases__ = TW.UML.MetaModel,
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class UMLClass(SEF.App):
+
+    class ModelElement:
+    
+        def QualifiedName(self):
+            name = self.name()
+            if not name:
+                return NodeList([])
+                
+            names = self.Get('namespace*').Get('name')
+            names.reverse(); names.append(name)
+            
+            return NodeList(['.'.join(names)])
+
+        QualifiedName = ComputedFeature(QualifiedName)
+
+
+    class GeneralizableElement:
+    
+        def superclasses(self):
+            return self.generalizations.Get('parent')
+
+        superclasses = ComputedFeature(superclasses)
+        
+        def subclasses(self):
+            return self.specializations.Get('child')
+
+        subclasses = ComputedFeature(subclasses)
+
+
+setupModule()
+
+
+
+
+
+
+
+
+
+
+# Everything from here down is commented out for now...
 
 '''
+# Old stuff -- hanging onto it until we have a standard way to generate
+# TW.UML.MetaModel directly from the formal XMI specification of UML
+
 from TW.Utils.Pluralizer import Pluralizer
 
 UMLPlurals = Pluralizer(
@@ -23,14 +106,13 @@ cache   = mmx+'.pickle'
 
 from TW.MOF import MMX
 MetaModel = MMX.load(mmx,cache,UMLPlurals,name='UML_MetaModel')
-'''
 
 
-from TW.API import *
-import TW.StructuralModel.SimpleModel as SEF
-import MetaModel
 
-__bases__ = MetaModel,
+
+
+
+
 
 
 
@@ -115,39 +197,10 @@ class _UMLModel:    # stuff that still needs refactoring
             u,l = value.upper(), value.lower()
             if u==l: return "MultiplicityRange(%s)" % u
             return "MultiplicityRange(%s..%s)" % (l,u)
+'''
 
 
 
 
 
 
-class UMLClass(SEF.App):
-
-    class ModelElement:
-    
-        def QualifiedName(self):
-            name = self.name()
-            if not name:
-                return NodeList([])
-                
-            names = self.Get('namespace*').Get('name')
-            names.reverse(); names.append(name)
-            
-            return NodeList(['.'.join(names)])
-
-        QualifiedName = ComputedFeature(QualifiedName)
-
-
-    class GeneralizableElement:
-    
-        def superclasses(self):
-            return self.generalizations.Get('parent')
-
-        superclasses = ComputedFeature(superclasses)
-        
-        def subclasses(self):
-            return self.specializations.Get('child')
-
-        subclasses = ComputedFeature(subclasses)
-
-setupModule()

@@ -1,6 +1,42 @@
+"""Extend an SEF model with the ability to read XML Metadata Interchange files
+
+    Usage::
+
+        import TW.XMI.Reading as SEF
+
+        class MyMetaModel(SEF.App):
+
+            class anElementOfMyMetaModel(SEF.Element):
+
+                ...
+
+    In other words, create a metamodel as you normally would with SEF classes,
+    but using the TW.XMI.Reading module instead of SEF.  Of course, you can
+    also create your own variant modules that combine other aspects with this
+    one over the base SEF module.  Also, you may choose to define your
+    metamodel in a module that does not import a specific variant of the SEF
+    module, but instead uses the default unless overridden in an inheriting
+    module.  (See, for example, 'TW.UML.MetaModel', which uses the default
+    SEF implementation, and 'TW.UML.Model', which adds domain logic to the
+    raw UML metamodel, and elects to use 'TW.StructuralModel.SimpleModel' in
+    place of the default SEF module.
+"""        
+
 from TW.API import *
 from TW.Utils.SOX import Node, Document, load
 from kjbuckets import kjGraph
+
+__bases__ = SEF
+
+
+
+
+
+
+
+
+
+
 
 
 class XMINode(Node):
@@ -31,6 +67,11 @@ class XMIDocument(Document):
 
     def _finish(self):
         return self._findFirst('XMI.content')[0]._subNodes
+
+
+
+
+
 
 
 

@@ -1,4 +1,43 @@
+"""The UML 1.3 Metamodel, expressed as a Structural Aspect
+
+    This module's code was originally generated from a non-normative XML
+    representation of the UML 1.3 Metamodel, supplied as part of the
+    Novosoft UML (nsuml) toolkit.  Previous versions of TransWarp used
+    the XML representation directly, and only generated the class structure
+    in memory, without actually creating any Python source code.  However,
+    with the advent of TransWarp's relatively new "module inheritance"
+    capability, it is now computationally cheaper by at least an order or
+    two of magnitude to convert such metamodels to Python source code, and
+    then inherit from the module, rather than computationally combine class
+    definitions.  It's also somewhat more flexible, in that it allows you
+    to make use of any technique you like to generate Python source code
+    for metamodels!
+
+    There is little of direct interest for the human reader in this module's
+    source; a brief, one-time survey will probably suffice if you wish to get
+    the picture of how a metamodel can be represented in code for use with
+    TransWarp.
+
+    Oh, one item of note for the user...  in the enumerations and
+    element/feature names, Python reserved words have had an '_' appended;
+    so 'return' becomes 'return_' and 'in' becomes 'in_'.
+"""
+
 from TW.API import *
+
+
+# XXX The generator rewrite really should sort simple attributes to be defined
+# XXX before nested classes; the code will be much more readable that way.
+
+
+
+
+
+
+
+
+
+
 
 class UMLClass:
 
@@ -31,6 +70,14 @@ class UMLClass:
         _XMINames = ('Foundation.Data_Types.VisibilityKind',)
         public = 'public'
         private = 'private'
+
+
+
+
+
+
+
+
 
 
     class Base(SEF.Element):
@@ -113,7 +160,8 @@ class UMLClass:
             refTypeQN = 'Foundation.Core.ModelElement.templateParameter2'
             referencedEnd = 'modelElement2'
     
-    
+
+
         class visibility(SEF.Field):
             isRequired = 1
             qualifiedName = 'Foundation.Core.ModelElement.visibility'
@@ -152,7 +200,9 @@ class UMLClass:
             refTypeQN = 'Foundation.Core.ModelElement.templateParameter'
             referencedEnd = 'modelElement'
     
-    
+
+
+
         class partitions(SEF.Collection):
             isNavigable = 0
             isRequired = 1
@@ -192,7 +242,8 @@ class UMLClass:
             refTypeQN = 'Foundation.Core.ModelElement.classifierRole1'
             referencedEnd = 'availableContents'
     
-    
+
+
         class collaborations(SEF.Collection):
             isNavigable = 0
             isRequired = 1
@@ -230,7 +281,10 @@ class UMLClass:
             name = 'name'
             referencedType = 'Name'
     
-    
+
+
+
+
         class elementImports(SEF.Collection):
             isNavigable = 1
             isRequired = 1
@@ -270,7 +324,8 @@ class UMLClass:
             refTypeQN = 'Foundation.Core.ModelElement.templateParameter3'
             referencedEnd = 'defaultElement'
     
-    
+
+
         class constraints(SEF.Collection):
             isNavigable = 1
             isRequired = 1
@@ -281,8 +336,8 @@ class UMLClass:
             referencedEnd = 'constrainedElements'
     
 
-
     class Action(ModelElement):
+
         isAbstract = 0
     
         class state3(SEF.Reference):
@@ -310,7 +365,8 @@ class UMLClass:
             name = 'script'
             referencedType = 'ActionExpression'
     
-    
+
+
         class stimuli(SEF.Collection):
             isNavigable = 1
             isRequired = 1
@@ -348,7 +404,10 @@ class UMLClass:
             name = 'isAsynchronous'
             referencedType = 'Boolean'
     
-    
+
+
+
+
         class actionSequence(SEF.Reference):
             isNavigable = 1
             isRequired = 1
@@ -387,7 +446,9 @@ class UMLClass:
             referencedEnd = 'entry'
     
         _XMINames = ('Behavioral_Elements.Common_Behavior.Action',)
-    
+
+
+
         class actualArguments(SEF.Sequence):
             isNavigable = 1
             isRequired = 1
@@ -397,7 +458,6 @@ class UMLClass:
             refTypeQN = 'Behavioral_Elements.Common_Behavior.Action.actualArgument'
             referencedEnd = 'action'
     
-
 
     class ReturnAction(Action):
         isAbstract = 0
@@ -471,7 +531,6 @@ class UMLClass:
             name = 'ordering'
             referencedType = 'OrderingKind'
     
-    
         class associationEndRoles(SEF.Collection):
             isNavigable = 0
             isRequired = 1
@@ -510,7 +569,9 @@ class UMLClass:
             refTypeQN = 'Foundation.Core.AssociationEnd.type'
             referencedEnd = 'associationEnds'
     
-    
+
+
+
         class qualifiers(SEF.Sequence):
             isNavigable = 1
             isRequired = 1
@@ -532,7 +593,28 @@ class UMLClass:
     
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     class Instance(ModelElement):
+    
         isAbstract = 0
     
         class stimuli1(SEF.Collection):
@@ -564,7 +646,13 @@ class UMLClass:
             referencedType = 'Classifier'
             refTypeQN = 'Behavioral_Elements.Common_Behavior.Instance.classifier'
             referencedEnd = 'instances'
-    
+
+
+
+
+
+
+
     
         class slots(SEF.Collection):
             isNavigable = 1
@@ -605,7 +693,8 @@ class UMLClass:
             refTypeQN = 'Behavioral_Elements.Common_Behavior.Instance.linkEnd'
             referencedEnd = 'instance'
     
-    
+
+
         class stimuli2(SEF.Collection):
             isNavigable = 1
             isRequired = 1
@@ -615,7 +704,6 @@ class UMLClass:
             refTypeQN = 'Behavioral_Elements.Common_Behavior.Instance.stimulus2'
             referencedEnd = 'receiver'
     
-
 
     class UseCaseInstance(Instance):
         isAbstract = 0
@@ -645,7 +733,9 @@ class UMLClass:
             refTypeQN = 'Behavioral_Elements.State_Machines.StateVertex.outgoing'
             referencedEnd = 'source'
     
-    
+
+
+
         class incomings(SEF.Collection):
             isNavigable = 1
             isRequired = 1
@@ -654,10 +744,10 @@ class UMLClass:
             referencedType = 'Transition'
             refTypeQN = 'Behavioral_Elements.State_Machines.StateVertex.incoming'
             referencedEnd = 'target'
-    
 
 
     class State(StateVertex):
+
         isAbstract = 0
     
         class doActivity(SEF.Reference):
@@ -678,8 +768,15 @@ class UMLClass:
             referencedType = 'Action'
             refTypeQN = 'Behavioral_Elements.State_Machines.State.exit'
             referencedEnd = 'state2'
-    
-    
+
+
+
+
+
+
+
+
+
         class internalTransitions(SEF.Collection):
             isNavigable = 1
             isRequired = 1
@@ -719,7 +816,8 @@ class UMLClass:
             refTypeQN = 'Behavioral_Elements.State_Machines.State.classifierInState'
             referencedEnd = 'inStates'
     
-    
+
+
         class entry(SEF.Reference):
             isNavigable = 1
             isRequired = 1
@@ -755,7 +853,14 @@ class UMLClass:
         _XMINames = ('Behavioral_Elements.State_Machines.CompositeState',)
 
 
+
+
+
+
+
+
     class SubmachineState(CompositeState):
+    
         isAbstract = 0
     
         class submachine(SEF.Reference):
@@ -771,6 +876,7 @@ class UMLClass:
 
 
     class SubactivityState(SubmachineState):
+
         isAbstract = 0
     
         class dynamicArguments(SEF.Field):
@@ -789,7 +895,11 @@ class UMLClass:
             referencedType = 'Boolean'
     
         _XMINames = ('Behavioral_Elements.Activity_Graphs.SubactivityState',)
-    
+
+
+
+
+
         class dynamicMultiplicity(SEF.Field):
             isRequired = 1
             qualifiedName = 'Behavioral_Elements.Activity_Graphs.SubactivityState.dynamicMultiplicity'
@@ -829,12 +939,15 @@ class UMLClass:
         _XMINames = ('Foundation.Core.Dependency',)
 
 
+
+
     class Usage(Dependency):
         isAbstract = 0
         _XMINames = ('Foundation.Core.Usage',)
 
 
     class CallAction(Action):
+
         isAbstract = 0
     
         class operation(SEF.Reference):
@@ -850,6 +963,7 @@ class UMLClass:
 
 
     class Include(Relationship):
+
         isAbstract = 0
     
         class addition(SEF.Reference):
@@ -861,7 +975,13 @@ class UMLClass:
             refTypeQN = 'Behavioral_Elements.Use_Cases.Include.addition'
             referencedEnd = 'includes'
     
-    
+
+
+
+
+
+
+
         class base(SEF.Reference):
             isNavigable = 1
             isRequired = 1
@@ -875,6 +995,7 @@ class UMLClass:
 
 
     class Feature(ModelElement):
+
         isAbstract = 1
     
         class owner(SEF.Reference):
@@ -895,7 +1016,13 @@ class UMLClass:
             name = 'ownerScope'
             referencedType = 'ScopeKind'
     
-    
+
+
+
+
+
+
+
         class classifierRoles(SEF.Collection):
             isNavigable = 0
             isRequired = 1
@@ -904,7 +1031,6 @@ class UMLClass:
             referencedType = 'ClassifierRole'
             refTypeQN = 'Foundation.Core.Feature.classifierRole'
             referencedEnd = 'availableFeatures'
-    
 
 
     class BehavioralFeature(Feature):
@@ -938,8 +1064,6 @@ class UMLClass:
             refTypeQN = 'Foundation.Core.BehavioralFeature.parameter'
             referencedEnd = 'behavioralFeature'
     
-
-
     class Method(BehavioralFeature):
     
         class body(SEF.Field):
@@ -964,7 +1088,9 @@ class UMLClass:
 
 
     class GeneralizableElement(ModelElement):
+
         isAbstract = 1
+
         _XMINames = ('Foundation.Core.GeneralizableElement',)
     
         class isRoot(SEF.Field):
@@ -973,7 +1099,11 @@ class UMLClass:
             _XMINames = ('Foundation.Core.GeneralizableElement.isRoot',)
             name = 'isRoot'
             referencedType = 'Boolean'
-    
+
+
+
+
+
     
         class generalizations(SEF.Collection):
             isNavigable = 1
@@ -1004,8 +1134,22 @@ class UMLClass:
     
 
 
+
+
+
+
+
+
+
+
+
+
+
+
     class Namespace(ModelElement):
+
         isAbstract = 0
+
         _XMINames = ('Foundation.Core.Namespace',)
     
         class ownedElements(SEF.Collection):
@@ -1020,6 +1164,7 @@ class UMLClass:
 
 
     class Classifier(GeneralizableElement,Namespace):
+
         isAbstract = 0
     
         class structuralFeatures(SEF.Collection):
@@ -1081,7 +1226,8 @@ class UMLClass:
             refTypeQN = 'Foundation.Core.Classifier.participant'
             referencedEnd = 'specifications'
     
-    
+
+
         class associationEnds(SEF.Collection):
             isNavigable = 0
             isRequired = 1
@@ -1143,7 +1289,6 @@ class UMLClass:
             referencedEnd = 'bases'
     
 
-
     class Node(Classifier):
         isAbstract = 0
     
@@ -1159,7 +1304,14 @@ class UMLClass:
         _XMINames = ('Foundation.Core.Node',)
 
 
+
+
+
+
+
+
     class Association(GeneralizableElement,Relationship):
+
         isAbstract = 0
     
         class connections(SEF.Sequence):
@@ -1194,8 +1346,15 @@ class UMLClass:
     
 
 
+
+
+
+
+
     class Class(Classifier):
+
         isAbstract = 0
+
         _XMINames = ('Foundation.Core.Class',)
     
         class isActive(SEF.Field):
@@ -1213,7 +1372,9 @@ class UMLClass:
 
 
     class Stimulus(ModelElement):
+
         isAbstract = 0
+
         _XMINames = ('Behavioral_Elements.Common_Behavior.Stimulus',)
     
         class sender(SEF.Reference):
@@ -1224,7 +1385,12 @@ class UMLClass:
             referencedType = 'Instance'
             refTypeQN = 'Behavioral_Elements.Common_Behavior.Stimulus.sender'
             referencedEnd = 'stimuli3'
-    
+
+
+
+
+
+
     
         class receiver(SEF.Reference):
             isNavigable = 1
@@ -1268,6 +1434,7 @@ class UMLClass:
 
 
     class StateMachine(ModelElement):
+
         isAbstract = 0
     
         class transitionses(SEF.Collection):
@@ -1300,7 +1467,13 @@ class UMLClass:
             refTypeQN = 'Behavioral_Elements.State_Machines.StateMachine.top'
             referencedEnd = 'stateMachine'
     
-    
+
+
+
+
+
+
+
         class subMachineStates(SEF.Collection):
             isNavigable = 1
             isRequired = 1
@@ -1309,10 +1482,10 @@ class UMLClass:
             referencedType = 'SubmachineState'
             refTypeQN = 'Behavioral_Elements.State_Machines.StateMachine.submachineState'
             referencedEnd = 'submachine'
-    
 
 
     class Event(ModelElement):
+
         isAbstract = 1
     
         class states(SEF.Collection):
@@ -1335,7 +1508,13 @@ class UMLClass:
             referencedEnd = 'trigger'
     
         _XMINames = ('Behavioral_Elements.State_Machines.Event',)
-    
+
+
+
+
+
+
+
         class parameters(SEF.Sequence):
             isNavigable = 1
             isRequired = 1
@@ -1344,7 +1523,6 @@ class UMLClass:
             referencedType = 'Parameter'
             refTypeQN = 'Behavioral_Elements.State_Machines.Event.parameter'
             referencedEnd = 'event'
-    
 
 
     class TimeEvent(Event):
@@ -1383,6 +1561,7 @@ class UMLClass:
 
 
     class ElementImport(Base):
+
         isAbstract = 0
     
         class alias(SEF.Field):
@@ -1413,22 +1592,27 @@ class UMLClass:
             refTypeQN = 'Model_Management.ElementImport.modelElement'
             referencedEnd = 'elementImports'
     
-    
+
+
+
+
+
         class visibility(SEF.Field):
             isRequired = 1
             qualifiedName = 'Model_Management.ElementImport.visibility'
             _XMINames = ('Model_Management.ElementImport.visibility',)
             name = 'visibility'
             referencedType = 'VisibilityKind'
-    
-
 
     class DestroyAction(Action):
+
         isAbstract = 0
+
         _XMINames = ('Behavioral_Elements.Common_Behavior.DestroyAction',)
 
 
     class ClassifierInState(Classifier):
+
         isAbstract = 0
     
         class type(SEF.Reference):
@@ -1453,7 +1637,9 @@ class UMLClass:
         _XMINames = ('Behavioral_Elements.Activity_Graphs.ClassifierInState',)
 
 
+
     class NodeInstance(Instance):
+
         isAbstract = 0
     
         class residents(SEF.Collection):
@@ -1469,6 +1655,7 @@ class UMLClass:
 
 
     class Signal(Classifier):
+
         isAbstract = 0
     
         class receptions(SEF.Collection):
@@ -1490,7 +1677,8 @@ class UMLClass:
             refTypeQN = 'Behavioral_Elements.Common_Behavior.Signal.occurrence'
             referencedEnd = 'signal'
     
-    
+
+
         class contexts(SEF.Collection):
             isNavigable = 1
             isRequired = 1
@@ -1512,7 +1700,6 @@ class UMLClass:
             referencedEnd = 'signal'
     
 
-
     class Exception(Signal):
         isAbstract = 0
         _XMINames = ('Behavioral_Elements.Common_Behavior.Exception',)
@@ -1523,8 +1710,20 @@ class UMLClass:
         _XMINames = ('Behavioral_Elements.State_Machines.SimpleState',)
 
 
+
+
+
+
+
+
+
+
+
+
     class ObjectFlowState(SimpleState):
+
         isAbstract = 0
+
         _XMINames = ('Behavioral_Elements.Activity_Graphs.ObjectFlowState',)
     
         class isSynch(SEF.Field):
@@ -1560,6 +1759,8 @@ class UMLClass:
         _XMINames = ('Foundation.Data_Types.MappingExpression',)
 
 
+
+
     class Constraint(ModelElement):
     
         class body(SEF.Field):
@@ -1593,6 +1794,14 @@ class UMLClass:
     
 
 
+
+
+
+
+
+
+
+
     class PseudostateKind(SEF.Enumeration):
         fork = 'fork'
         shallowHistory = 'shallowHistory'
@@ -1606,6 +1815,7 @@ class UMLClass:
 
 
     class Transition(ModelElement):
+
         isAbstract = 0
     
         class source(SEF.Reference):
@@ -1626,7 +1836,12 @@ class UMLClass:
             referencedType = 'Guard'
             refTypeQN = 'Behavioral_Elements.State_Machines.Transition.guard'
             referencedEnd = 'transition'
-    
+
+
+
+
+
+
     
         class trigger(SEF.Reference):
             isNavigable = 1
@@ -1677,10 +1892,10 @@ class UMLClass:
             referencedType = 'Action'
             refTypeQN = 'Behavioral_Elements.State_Machines.Transition.effect'
             referencedEnd = 'transition'
-    
-
+   
 
     class Flow(Relationship):
+
         isAbstract = 0
     
         class sources(SEF.Collection):
@@ -1705,8 +1920,15 @@ class UMLClass:
     
 
 
+
+
+
+
+
     class StructuralFeature(Feature):
+
         isAbstract = 1
+
         _XMINames = ('Foundation.Core.StructuralFeature',)
     
         class targetScope(SEF.Field):
@@ -1745,6 +1967,7 @@ class UMLClass:
 
 
     class UseCase(Classifier):
+
         isAbstract = 0
     
         class extends2(SEF.Collection):
@@ -1777,7 +2000,13 @@ class UMLClass:
             referencedEnd = 'useCase'
     
         _XMINames = ('Behavioral_Elements.Use_Cases.UseCase',)
-    
+
+
+
+
+
+
+
         class includes2(SEF.Collection):
             isNavigable = 1
             isRequired = 1
@@ -1798,7 +2027,6 @@ class UMLClass:
             referencedEnd = 'addition'
     
 
-
     class Actor(Classifier):
         isAbstract = 0
         _XMINames = ('Behavioral_Elements.Use_Cases.Actor',)
@@ -1808,7 +2036,20 @@ class UMLClass:
         _XMINames = ('Foundation.Data_Types.Time',)
 
 
+
+
+
+
+
+
+
+
+
+
+
+
     class AttributeLink(ModelElement):
+
         isAbstract = 0
     
         class linkEnd(SEF.Reference):
@@ -1841,7 +2082,13 @@ class UMLClass:
             refTypeQN = 'Behavioral_Elements.Common_Behavior.AttributeLink.attribute'
             referencedEnd = 'attributeLinks'
     
-    
+
+
+
+
+
+
+
         class value(SEF.Reference):
             isNavigable = 1
             isRequired = 1
@@ -1884,7 +2131,9 @@ class UMLClass:
 
 
     class Subsystem(Package,Classifier):
+
         isAbstract = 0
+
         _XMINames = ('Model_Management.Subsystem',)
     
         class isInstantiable(SEF.Field):
@@ -1897,6 +2146,7 @@ class UMLClass:
 
 
     class CallEvent(Event):
+
         isAbstract = 0
     
         class operation(SEF.Reference):
@@ -1912,7 +2162,17 @@ class UMLClass:
 
     name = 'UML_MetaModel'
 
+
+
+
+
+
+
+
+
+
     class Attribute(StructuralFeature):
+
         isAbstract = 0
     
         class initialValue(SEF.Field):
@@ -1921,8 +2181,7 @@ class UMLClass:
             _XMINames = ('Foundation.Core.Attribute.initialValue',)
             name = 'initialValue'
             referencedType = 'Expression'
-    
-    
+        
         class associationEndRoles(SEF.Collection):
             isNavigable = 0
             isRequired = 1
@@ -1942,8 +2201,7 @@ class UMLClass:
             referencedType = 'AssociationEnd'
             refTypeQN = 'Foundation.Core.Attribute.associationEnd'
             referencedEnd = 'qualifiers'
-    
-    
+        
         class attributeLinks(SEF.Collection):
             isNavigable = 0
             isRequired = 1
@@ -1953,7 +2211,6 @@ class UMLClass:
             refTypeQN = 'Foundation.Core.Attribute.attributeLink'
             referencedEnd = 'attribute'
     
-
 
     class ProcedureExpression(Expression):
         _XMINames = ('Foundation.Data_Types.ProcedureExpression',)
@@ -2037,7 +2294,6 @@ class UMLClass:
             referencedEnd = 'ranges'
     
 
-
     class ActionExpression(Expression):
         _XMINames = ('Foundation.Data_Types.ActionExpression',)
 
@@ -2047,7 +2303,9 @@ class UMLClass:
 
 
     class SynchState(StateVertex):
+
         isAbstract = 0
+
         _XMINames = ('Behavioral_Elements.State_Machines.SynchState',)
     
         class bound(SEF.Field):
@@ -2065,6 +2323,7 @@ class UMLClass:
 
 
     class Link(ModelElement):
+
         isAbstract = 0
     
         class connections(SEF.Collection):
@@ -2075,7 +2334,6 @@ class UMLClass:
             referencedType = 'LinkEnd'
             refTypeQN = 'Behavioral_Elements.Common_Behavior.Link.connection'
             referencedEnd = 'link'
-    
     
         class stimuli(SEF.Collection):
             isNavigable = 1
@@ -2096,7 +2354,6 @@ class UMLClass:
             referencedType = 'Association'
             refTypeQN = 'Behavioral_Elements.Common_Behavior.Link.association'
             referencedEnd = 'links'
-    
 
 
     class LinkObject(Object,Link):
@@ -2111,7 +2368,16 @@ class UMLClass:
         _XMINames = ('Foundation.Data_Types.ChangeableKind',)
 
 
+
+
+
+
+
+
+
+
     class Operation(BehavioralFeature):
+
         isAbstract = 0
     
         class collaborations(SEF.Collection):
@@ -2143,15 +2409,13 @@ class UMLClass:
             referencedType = 'Method'
             refTypeQN = 'Foundation.Core.Operation.method'
             referencedEnd = 'specification'
-    
-    
+        
         class concurrency(SEF.Field):
             isRequired = 1
             qualifiedName = 'Foundation.Core.Operation.concurrency'
             _XMINames = ('Foundation.Core.Operation.concurrency',)
             name = 'concurrency'
             referencedType = 'CallConcurrencyKind'
-    
     
         class isRoot(SEF.Field):
             isRequired = 1
@@ -2186,7 +2450,6 @@ class UMLClass:
             refTypeQN = 'Foundation.Core.Operation.occurrence'
             referencedEnd = 'operation'
     
-
 
     class ArgListsExpression(Expression):
         _XMINames = ('Foundation.Data_Types.ArgListsExpression',)
@@ -2237,6 +2500,7 @@ class UMLClass:
 
 
     class ElementResidence(Base):
+
         isAbstract = 0
     
         class resident(SEF.Reference):
@@ -2269,8 +2533,17 @@ class UMLClass:
     
 
 
+
+
+
+
+
+
+
     class Binding(Dependency):
+
         isAbstract = 0
+
         _XMINames = ('Foundation.Core.Binding',)
     
         class arguments(SEF.Sequence):
@@ -2320,7 +2593,9 @@ class UMLClass:
 
 
     class ActionSequence(Action):
+
         isAbstract = 0
+
         _XMINames = ('Behavioral_Elements.Common_Behavior.ActionSequence',)
     
         class actions(SEF.Sequence):
@@ -2335,6 +2610,7 @@ class UMLClass:
 
 
     class Parameter(ModelElement):
+
         isAbstract = 0
     
         class states(SEF.Collection):
@@ -2345,7 +2621,6 @@ class UMLClass:
             referencedType = 'ObjectFlowState'
             refTypeQN = 'Foundation.Core.Parameter.state'
             referencedEnd = 'parameters'
-    
     
         class kind(SEF.Field):
             isRequired = 1
@@ -2383,7 +2658,11 @@ class UMLClass:
             refTypeQN = 'Foundation.Core.Parameter.type'
             referencedEnd = 'parameters'
     
-    
+
+
+
+
+
         class event(SEF.Reference):
             isNavigable = 0
             isRequired = 1
@@ -2394,8 +2673,8 @@ class UMLClass:
             referencedEnd = 'parameters'
     
 
-
     class ExtensionPoint(ModelElement):
+
         isAbstract = 0
     
         class extends(SEF.Collection):
@@ -2418,14 +2697,19 @@ class UMLClass:
             referencedEnd = 'extensionPoints'
     
         _XMINames = ('Behavioral_Elements.Use_Cases.ExtensionPoint',)
-    
+
+
+
+
+
+
+
         class location(SEF.Field):
             isRequired = 1
             qualifiedName = 'Behavioral_Elements.Use_Cases.ExtensionPoint.location'
             _XMINames = ('Behavioral_Elements.Use_Cases.ExtensionPoint.location',)
             name = 'location'
             referencedType = 'LocationReference'
-    
 
 
     class ComponentInstance(Instance):
@@ -2459,7 +2743,10 @@ class UMLClass:
         return_ = 'return'
 
 
+
+
     class Abstraction(Dependency):
+
         isAbstract = 0
         _XMINames = ('Foundation.Core.Abstraction',)
     
@@ -2468,8 +2755,7 @@ class UMLClass:
             qualifiedName = 'Foundation.Core.Abstraction.mapping'
             _XMINames = ('Foundation.Core.Abstraction.mapping',)
             name = 'mapping'
-            referencedType = 'MappingExpression'
-    
+            referencedType = 'MappingExpression'    
 
 
     class String(SEF.PrimitiveType):
@@ -2482,6 +2768,7 @@ class UMLClass:
 
 
     class Collaboration(Namespace,GeneralizableElement):
+
         isAbstract = 0
         _XMINames = ('Behavioral_Elements.Collaborations.Collaboration',)
     
@@ -2493,7 +2780,11 @@ class UMLClass:
             referencedType = 'Classifier'
             refTypeQN = 'Behavioral_Elements.Collaborations.Collaboration.representedClassifier'
             referencedEnd = 'collaborations'
-    
+
+
+
+
+
     
         class interactions(SEF.Collection):
             isNavigable = 1
@@ -2523,10 +2814,21 @@ class UMLClass:
             referencedType = 'ModelElement'
             refTypeQN = 'Behavioral_Elements.Collaborations.Collaboration.constrainingElement'
             referencedEnd = 'collaborations'
-    
+
+
+
+
+
+
+
+
+
+
+
 
 
     class Component(Classifier):
+
         isAbstract = 0
     
         class deploymentLocations(SEF.Collection):
@@ -2558,6 +2860,12 @@ class UMLClass:
     class CallState(ActionState):
         isAbstract = 0
         _XMINames = ('Behavioral_Elements.Activity_Graphs.CallState',)
+
+
+
+
+
+
 
 
     class ClassifierRole(Classifier):
@@ -2601,7 +2909,6 @@ class UMLClass:
             refTypeQN = 'Behavioral_Elements.Collaborations.ClassifierRole.message2'
             referencedEnd = 'sender'
     
-    
         class availableFeatures(SEF.Collection):
             isNavigable = 1
             isRequired = 1
@@ -2620,7 +2927,6 @@ class UMLClass:
             referencedType = 'ModelElement'
             refTypeQN = 'Behavioral_Elements.Collaborations.ClassifierRole.availableContents'
             referencedEnd = 'classifierRoles'
-    
 
 
     class Geometry(SEF.PrimitiveType):
@@ -2642,7 +2948,8 @@ class UMLClass:
             name = 'multiplicity'
             referencedType = 'Multiplicity'
     
-    
+
+
         class base(SEF.Reference):
             isNavigable = 1
             isRequired = 1
@@ -2662,8 +2969,6 @@ class UMLClass:
             referencedType = 'Message'
             refTypeQN = 'Behavioral_Elements.Collaborations.AssociationRole.message'
             referencedEnd = 'communicationConnection'
-    
-
 
     class Interface(Classifier):
         isAbstract = 0
@@ -2696,7 +3001,6 @@ class UMLClass:
             referencedType = 'Collaboration'
             refTypeQN = 'Behavioral_Elements.Collaborations.Interaction.context'
             referencedEnd = 'interactions'
-    
 
 
     class ChangeEvent(Event):
@@ -2762,6 +3066,13 @@ class UMLClass:
     
 
 
+
+
+
+
+
+
+
     class Multiplicity(SEF.DataType):
     
         class ranges(SEF.Sequence):
@@ -2784,6 +3095,7 @@ class UMLClass:
 
 
     class Partition(ModelElement):
+
         isAbstract = 0
     
         class activityGraph(SEF.Reference):
@@ -2796,7 +3108,12 @@ class UMLClass:
             referencedEnd = 'partitions'
     
         _XMINames = ('Behavioral_Elements.Activity_Graphs.Partition',)
-    
+
+
+
+
+
+
         class contents(SEF.Collection):
             isNavigable = 1
             isRequired = 1
@@ -2805,10 +3122,9 @@ class UMLClass:
             referencedType = 'ModelElement'
             refTypeQN = 'Behavioral_Elements.Activity_Graphs.Partition.contents'
             referencedEnd = 'partitions'
-    
-
 
     class Pseudostate(StateVertex):
+
         isAbstract = 0
     
         class kind(SEF.Field):
@@ -2822,6 +3138,7 @@ class UMLClass:
 
 
     class CreateAction(Action):
+
         isAbstract = 0
     
         class instantiation(SEF.Reference):
@@ -2836,6 +3153,8 @@ class UMLClass:
         _XMINames = ('Behavioral_Elements.Common_Behavior.CreateAction',)
 
 
+
+
     class AggregationKind(SEF.Enumeration):
         aggregate = 'aggregate'
         composite = 'composite'
@@ -2844,6 +3163,7 @@ class UMLClass:
 
 
     class Reception(BehavioralFeature):
+
         isAbstract = 0
     
         class isAbstarct(SEF.Field):
@@ -2870,7 +3190,12 @@ class UMLClass:
             name = 'specification'
             referencedType = 'String'
     
-    
+
+
+
+
+
+
         class signal(SEF.Reference):
             isNavigable = 1
             isRequired = 1
@@ -2887,7 +3212,6 @@ class UMLClass:
             _XMINames = ('Behavioral_Elements.Common_Behavior.Reception.isLeaf',)
             name = 'isLeaf'
             referencedType = 'Boolean'
-    
 
 
     class ParameterDirectionKind(SEF.Enumeration):
@@ -2903,8 +3227,20 @@ class UMLClass:
         _XMINames = ('Model_Management.Model',)
 
 
+
+
+
+
+
+
+
+
+
+
     class Comment(ModelElement):
+
         isAbstract = 0
+
         _XMINames = ('Foundation.Core.Comment',)
     
         class annotatedElements(SEF.Collection):
@@ -2917,8 +3253,8 @@ class UMLClass:
             referencedEnd = 'comments'
     
 
-
     class LinkEnd(ModelElement):
+
         isAbstract = 0
     
         class instance(SEF.Reference):
@@ -2960,7 +3296,6 @@ class UMLClass:
             referencedType = 'AssociationEnd'
             refTypeQN = 'Behavioral_Elements.Common_Behavior.LinkEnd.associationEnd'
             referencedEnd = 'linkEnds'
-    
 
 
     class ScopeKind(SEF.Enumeration):
@@ -2973,7 +3308,19 @@ class UMLClass:
         _XMINames = ('Foundation.Data_Types.IterationExpression',)
 
 
+
+
+
+
+
+
+
+
+
+
+
     class Extend(Relationship):
+
         isAbstract = 0
     
         class base(SEF.Reference):
@@ -3006,7 +3353,6 @@ class UMLClass:
             refTypeQN = 'Behavioral_Elements.Use_Cases.Extend.extension'
             referencedEnd = 'extends'
     
-    
         class condition(SEF.Field):
             isRequired = 1
             qualifiedName = 'Behavioral_Elements.Use_Cases.Extend.condition'
@@ -3014,8 +3360,6 @@ class UMLClass:
             name = 'condition'
             referencedType = 'BooleanExpression'
     
-
-
     class OperationDirectionKind(SEF.Enumeration):
         provide = 'provide'
         require = 'require'
@@ -3047,10 +3391,18 @@ class UMLClass:
             _XMINames = ('Behavioral_Elements.Common_Behavior.Argument.value',)
             name = 'value'
             referencedType = 'Expression'
-    
+
+
+
+
+
+
+
+
 
 
     class Generalization(Relationship):
+
         isAbstract = 0
     
         class powertype(SEF.Reference):
@@ -3081,8 +3433,7 @@ class UMLClass:
             name = 'child'
             referencedType = 'GeneralizableElement'
             refTypeQN = 'Foundation.Core.Generalization.child'
-            referencedEnd = 'generalizations'
-    
+            referencedEnd = 'generalizations'    
     
         class discriminator(SEF.Field):
             isRequired = 1
@@ -3091,9 +3442,8 @@ class UMLClass:
             name = 'discriminator'
             referencedType = 'Name'
     
-
-
     class Stereotype(GeneralizableElement):
+
         isAbstract = 0
     
         class extendedElements(SEF.Collection):
@@ -3143,7 +3493,6 @@ class UMLClass:
             referencedEnd = 'stereotype'
     
 
-
     class Guard(ModelElement):
         isAbstract = 0
         _XMINames = ('Behavioral_Elements.State_Machines.Guard',)
@@ -3171,7 +3520,12 @@ class UMLClass:
         _XMINames = ('Foundation.Data_Types.Boolean',)
 
 
+
+
+
+
     class TaggedValue(Element):
+
         isAbstract = 0
     
         class tag(SEF.Field):
@@ -3211,8 +3565,8 @@ class UMLClass:
             referencedType = 'String'
     
 
-
     class Message(ModelElement):
+
         isAbstract = 0
     
         class interaction(SEF.Reference):
@@ -3223,8 +3577,7 @@ class UMLClass:
             referencedType = 'Interaction'
             refTypeQN = 'Behavioral_Elements.Collaborations.Message.interaction'
             referencedEnd = 'messages'
-    
-    
+        
         class sender(SEF.Reference):
             isNavigable = 1
             isRequired = 1
@@ -3232,8 +3585,7 @@ class UMLClass:
             name = 'sender'
             referencedType = 'ClassifierRole'
             refTypeQN = 'Behavioral_Elements.Collaborations.Message.sender'
-            referencedEnd = 'messages2'
-    
+            referencedEnd = 'messages2'    
     
         class messages4(SEF.Collection):
             isNavigable = 1
@@ -3244,7 +3596,6 @@ class UMLClass:
             refTypeQN = 'Behavioral_Elements.Collaborations.Message.message4'
             referencedEnd = 'activator'
     
-    
         class communicationConnection(SEF.Reference):
             isNavigable = 1
             isRequired = 1
@@ -3253,7 +3604,8 @@ class UMLClass:
             referencedType = 'AssociationRole'
             refTypeQN = 'Behavioral_Elements.Collaborations.Message.communicationConnection'
             referencedEnd = 'messages'
-    
+
+
         _XMINames = ('Behavioral_Elements.Collaborations.Message',)
     
         class messages3(SEF.Collection):
@@ -3295,7 +3647,6 @@ class UMLClass:
             refTypeQN = 'Behavioral_Elements.Collaborations.Message.action'
             referencedEnd = 'messages'
     
-    
         class predecessors(SEF.Collection):
             isNavigable = 1
             isRequired = 1
@@ -3311,5 +3662,6 @@ class UMLClass:
         isAbstract = 0
         _XMINames = ('Behavioral_Elements.Common_Behavior.DataValue',)
 
+
 setupModule()
-# __all__ = [k for (k,v) in globals().items() if getattr(v,'__module__',None)=='TW.UML.MetaModel']
+
