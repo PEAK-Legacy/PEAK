@@ -115,10 +115,10 @@ def lazyModule(modname, relativePath=None):
         something = lazyModule(__name__,'../path/to/something')
 
     The above code will have different results in each module that inherits
-    it."""
+    it.
 
-
-
+    (Note: 'relativePath' can also be an absolute path (starting with '/');
+    this is mainly useful for module '__bases__' lists.)"""
 
 
     class LazyModule(ModuleType):
@@ -169,7 +169,8 @@ def lazyModule(modname, relativePath=None):
 
             if p=='..':
                 module.pop()
-
+            elif not p:
+                module = []
             elif p!='.':
                 module.append(p)
 
@@ -180,7 +181,6 @@ def lazyModule(modname, relativePath=None):
         modules[modname] = LazyModule(modname)
 
     return modules[modname]
-
 
 
 

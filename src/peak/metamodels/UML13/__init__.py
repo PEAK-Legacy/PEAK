@@ -22,20 +22,9 @@
 """
 
 from peak.api import config
-from peak.util.imports import lazyModule
-
-# Note that we do not keep around the actual generated code, because it
-# is a child package, and so it would show up incorrectly as part of our
-# package contents.  We could import it and then delete it, but then
-# it would cause a warning to be issued by the module inheritance system.
-# So instead, we set __bases__ to a tuple containing the generated code,
-# which of course will not result in it being treated as contents.
 
 # Inherit from the generated code (for the __init__ module)
-__bases__ = lazyModule(__name__, 'model'),
-
-# Inherit modules from generated code
-__path__.extend(__bases__[0].__path__)
+__bases__ = 'model',
 
 config.setupModule()
 

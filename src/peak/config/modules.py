@@ -25,12 +25,15 @@
     not list all the classes from its base module in order to change them
     by altering a base class in that module.
 
-    Note: All the modules listed in '__bases__' must call 'setupModule()', even
-    if they do not define a '__bases__' or desire module inheritance
-    themselves.  This is because PEAK cannot otherwise get access to
+    Note: All the modules listed in '__bases__' must either call
+    'setupModule()' themselves, or be located in an on-disk '.py', '.pyc', or
+    '.pyo' file.  This is because PEAK cannot otherwise get access to
     their bytecode in a way that is compatible with the many "import hook"
     systems that exist for Python.  (E.g. running bytecode from zip files or
-    frozen into an executable, etc.)
+    frozen into an executable, etc.)  So if you are using such a code
+    distribution technique, you must ensure that the base modules call
+    'setupModule()', even if they do not have a '__bases__' setting or use
+    any other PEAK code.
 
     Function Rebinding
 
@@ -117,6 +120,78 @@
         modules to inherit that code and wrap around it, if they so desire.
         
 
+    Package Inheritance
+
+        Packages (i.e. '__init__' modules) can also set '__bases__' and
+        call 'setupModule()'.  Their package '__path__' will be extended
+        to include the '__path__' contents of their '__bases__', in an
+        MRO-like order.  This means that to derive a package from another,
+        you do not need to create a separate inheriting module for every
+        individual module or subpackage, only those that you wish to make
+        modifications to.  If package 'foo' contains modules 'foo.bar'
+        and 'foo.baz', and you want your 'spam' package to derive from
+        'foo', you need only create a 'spam/__init__.py' that contains::
+
+            import foo
+            __bases__ = foo,
+
+            # ...
+
+            from peak.api import config
+            config.setupModule()
+
+        At this point, 'spam.baz' or 'spam.bar' will automatically be
+        importable, based on the 'foo' versions of their code.  This
+        will work even if the 'foo' versions don't call 'setupModule()',
+        although in that case you won't be able to override their contents.
+
+        To override a module within the 'spam' package, just create it,
+        and use module inheritance to specify the base in the original
+        package.  For example, you can extend 'foo.bar' by creating
+        'spam.bar' as follows:
+
+            import foo.bar
+            __bases__ = foo.bar,
+        
+            # ...
+
+            from peak.api import config
+            config.setupModule()
+
+
+    Using Relative Imports in Packages
+
+        If you want to extend a package, it's important to use only
+        relative imports.  This is because the code of a module
+        is executed as-is in the derived module.  If you do an
+        absolute import, e.g. 'import foo.baz' in package 'foo.bar',
+        then 'spam.bar' will still import 'foo.baz', not 'spam.baz'.
+        It's better to 'import baz' for an item in the same package,
+        or use 'peak.utils.imports.lazyModule' like this::
+
+            from peak.utils.imports import lazyModule
+            baz = lazyModule(__name__, 'baz')
+
+        While this is more verbose in the simple case, it works for
+        more complex relative paths than Python allows; for example
+        you can do this:
+
+            eggs = lazyModule(__name__, '../ni/eggs')
+
+        which isn't possible with a regular 'import' statement.
+
+
+    Import Paths
+
+        To make using relative imports easier, '__bases__' can include
+        '/'-separated relative path strings instead of modules, e.g.::
+
+            __bases__ = '../../foo/bar',
+
+        A '/' at the beginning of the path makes it absolute, so '/foo/bar'
+        would also work.
+
+
     To-do Items
 
         * The simulator should issue warnings for a variety of questionable
@@ -144,10 +219,17 @@
           describes the precise semantics of interpretation for assignments,
           'def', and 'class', in modules running under simulator control.
 
-        * Add 'LegacyModule("name")' and 'loadLegacyModule("name")' APIs to
-          allow inheriting from and/or patching modules which do not
-          call 'setupModule()'.
+        * Add a way to patch modules that don't call 'setupModule()'.
 """
+
+
+
+
+
+
+
+
+
 
 
 
@@ -165,6 +247,7 @@
 import sys
 from types import ModuleType
 from peak.util._Code import codeIndex
+from peak.util.imports import lazyModule
 
 # Make the default value of '__proceed__' a built-in, so that code written for
 # an inheriting module won't fail with a NameError if there's no base module
@@ -202,48 +285,87 @@ def setupObject(obj, **attrs):
 
 
 
+def getLegacyCode(module):
+
+    # XXX this won't work with zipfiles yet
+
+    from imp import PY_COMPILED, PY_SOURCE, get_magic, get_suffixes
+
+    file = module.__file__
+
+    for (ext,mode,typ) in get_suffixes():
+
+        if file.endswith(ext):
+
+            if typ==PY_COMPILED:
+
+                f = open(file, mode)
+
+                if f.read(4) == get_magic():
+                    f.read(4)   # skip timestamp
+                    import marshal
+                    code = marshal.load(f)
+                    f.close()
+                    return code
+
+                # Not magic!
+                f.close()
+                raise AssertionError("Bad magic for %s" % file)
+
+
+            elif typ==PY_SOURCE:
+
+                f = open(file, mode)
+                code = f.read()
+                f.close()
+                
+                if code and not code.endswith('\n'):
+                    code += '\n'
+
+                return compile(code, file, 'exec')
+
+    raise AssertionError("Can't retrieve code for %s" % module)
 
 def getCodeListForModule(module, code=None):
 
     if hasattr(module,'__codeList__'):
         return module.__codeList__
 
-    assert code is not None, ("Can't get codelist for %s" % module)
+    if code is None:
+        code = getLegacyCode(module)
 
     name = module.__name__
     code = prepForSimulation(code)
     codeList = module.__codeList__ = patchMap.get(name,[])+[code]
-
     bases = getattr(module,'__bases__',())
-    if isinstance(bases,ModuleType):
+
+    if isinstance(bases,(str,ModuleType)):
         bases = bases,
 
+    path = getattr(module,'__path__',[])
+
     for baseModule in bases:
-        baseModule.__class__    # force load of lazy module
+
+        if isinstance(baseModule, str):
+            baseModule = lazyModule(name, baseModule)
+
         if not isinstance(baseModule,ModuleType):
             raise TypeError (
                 "%s is not a module in %s __bases__" % (baseModule,name)
             )
+
+        for p in getattr(baseModule,'__path__',()):
+            if p in path: path.remove(p)
+            path.append(p)
+
         for c in getCodeListForModule(baseModule):
-            if c in codeList:
-                codeList.remove(c)
+            if c in codeList: codeList.remove(c)
             codeList.append(c)
 
+    if path:
+        module.__path__ = path
+
     return codeList
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 def setupModule():
 

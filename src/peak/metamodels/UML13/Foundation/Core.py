@@ -9,13 +9,13 @@
     queries over a UML model.
 """
 
-from peak.util.imports import lazyModule
-generated = lazyModule(__name__, '../../model/Foundation/Core')
-
-__bases__ = generated,
+__bases__ = '/peak/metamodels/UML13/model/Foundation/Core',
 
 from peak.api import *
 from peak.model.queries import query
+
+
+
 
 
 
