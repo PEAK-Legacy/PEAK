@@ -2,12 +2,17 @@ from Interface import Interface
 from Interface.Attribute import Attribute
 
 __all__ = [
-    'PropertyNotFound', 'IRule', 'IPropertyMap',
+    'IRule', 'IPropertyMap',
+    'PropertyNotFound', 'NoPropertyMap', 
 ]
 
 
 class PropertyNotFound(Exception):
     """A required configuration property could not be found/computed"""
+
+
+class NoPropertyMap(Exception):
+    """No property map was found to do a 'setRule()' or 'setProperty()' on"""
 
 
 class IRule(Interface):
@@ -16,7 +21,7 @@ class IRule(Interface):
 
     def __call__(propertyMap, targetObject, propName):
 
-        """Compute property 'propName' for 'targetObject'
+        """Compute property 'propName' for 'targetObject' or return 'NOT_FOUND'
 
         The rule object is allowed to call any 'IPropertyMap' methods on the
         'propertyMap' that is requesting computation of this rule.  It is
@@ -34,11 +39,6 @@ class IRule(Interface):
 
 
 
-
-
-
-
-        
 class IPropertyMap(Interface):
 
     def setRule(propName, ruleObj):
@@ -63,4 +63,4 @@ class IPropertyMap(Interface):
 
 
     def getPropertyFor(obj, propName):
-        """Return value of property for 'obj' or raise 'PropertyNotFound'"""
+        """Return value of property for 'obj' or return 'NOT_FOUND'"""
