@@ -52,8 +52,8 @@ Open Issues/To-Do Items
         - useful example hierarchical naming context (e.g. like JNDI's LDAP
           context or filesystem context)
 
-        - rework smtp: to return a facory object that supports open().
-          Also think about wether smtp should move elsewhere. Maybe
+        - rework smtp: to return a factory object that supports open().
+          Also think about whether smtp should move elsewhere. Maybe
           there should be peak.network or peak.internet for things like
           smtp, ftp, etc contexts?
 

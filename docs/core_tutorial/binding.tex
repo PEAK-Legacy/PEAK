@@ -700,9 +700,9 @@ This one is pretty self-explanatory, no pun intended.  This class supplies
 the owning object itself as an instance attribute.  What good is that?  Well,
 it's handy for objects that provide default support for various interfaces
 in the absence of an object to delegate the implementation to.  The object
-to.  The object can refer to \samp{self.delegateForInterfaceX.someMethod()},
-and have the \samp{delegateForInterfaceX} attribute be a
-\class{binding.bindToSelf} instance by default.
+can refer to \samp{self.delegateForInterfaceX.someMethod()}, and have the
+\samp{delegateForInterfaceX} attribute be a \class{binding.bindToSelf}
+instance by default.
 \end{funcdesc}
 
 \begin{funcdesc}{requireBinding}{description="", name=None, provides=None,
