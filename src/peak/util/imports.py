@@ -122,7 +122,6 @@ class lazyImport:
 
 
 def lazyModule(modname):
-
     class LazyModule(ModuleType):
 
         __slots__=()
@@ -159,8 +158,9 @@ def lazyModule(modname):
             # Finish off by returning what was asked for
             return modGA(self,attr)
 
-    m = modules[modname] = LazyModule(modname)
-    return m
+    if modname not in modules:
+        modules[modname] = LazyModule(modname)
+    return modules[modname]
 
 def importObject(spec, globalDict=None):
     """Convert a possible string specifier to an object
