@@ -9,20 +9,15 @@ Open Issues/To-Do Items
       'peak.config', 'peak.exceptions', and 'peak.naming'.
 
 
-
  Targeted for 0.5 Final Release (or sooner)
-
 
     General
 
         * Tutorial complete through chapter 4
 
-
     peak.storage
 
         - LDAP field type conversion
-
-        - Rack -> DM
 
         - "facade" DM base class(es)
 
@@ -37,7 +32,6 @@ Open Issues/To-Do Items
         - lock management interfaces/API
 
         - docstrings for reference
-
 
     peak.model
 
@@ -79,46 +73,11 @@ Open Issues/To-Do Items
           rather than property name prefix), so that daemons and other simple
           apps can be fully configured and run via a config file.
 
-
     peak.util
 
         - docstrings for reference
 
         - more unit tests?
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
  Future Releases

@@ -250,7 +250,7 @@ class Harness(binding.Component):
         colNames = 'a', 'b'
         
 
-    class testRack(storage.AbstractRack):
+    class testDM(storage.EntityDM):
 
         table = binding.bindTo('sampleTable')
         
@@ -326,12 +326,12 @@ class TableTest(TestCase):
         storage.abortTransaction()
         assert self.table.dump()==[(1,2)]
 
-class RackTest(TestCase):
+class DMTest(TestCase):
 
     def setUp(self):
         self.harness = Harness()
         self.table = self.harness.sampleTable
-        self.rack  = self.harness.testRack
+        self.dm  = self.harness.testDM
 
     def tearDown(self):
         if storage.getTransaction().isActive():
@@ -345,7 +345,7 @@ class RackTest(TestCase):
 
         self._addData()
 
-        ob = self.rack[1]
+        ob = self.dm[1]
         assert ob.b==2
         storage.abortTransaction()
 
@@ -359,9 +359,9 @@ class RackTest(TestCase):
         storage.commitTransaction()
         
         storage.beginTransaction()
-        ob = self.rack[1]
+        ob = self.dm[1]
         ob.b = 4
-        self.rack.flush()
+        self.dm.flush()
         assert self.table.dump()==[(1,4)]
 
         storage.abortTransaction()
@@ -369,7 +369,7 @@ class RackTest(TestCase):
 
     def checkModify(self):
         self._addData()
-        ob = self.rack[1]
+        ob = self.dm[1]
         ob.b = 4
         assert self.table.dump()==[(1,2)]
         storage.commitTransaction()
@@ -378,7 +378,7 @@ class RackTest(TestCase):
 
     def checkNew(self):
         storage.beginTransaction()
-        ob = self.rack.newItem()
+        ob = self.dm.newItem()
         ob.a = 1
         ob.b = 2
         assert self.table.dump()==[]
@@ -409,7 +409,7 @@ class RackTest(TestCase):
 
 
 TestClasses = (
-    TxnStateTest, VotingTest, TableTest, RackTest
+    TxnStateTest, VotingTest, TableTest, DMTest
 )
 
 

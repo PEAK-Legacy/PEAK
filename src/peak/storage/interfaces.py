@@ -6,7 +6,8 @@ from Interface.Attribute import Attribute
 __all__ = [
     'ITransactionService', 'ITransactionParticipant', 'ICache',
     'ITransactionErrorHandler', 'ICursor', 'IRow',
-    'IRack', 'IRackImplementation', 'IManagedConnection', 'IManagedConnImpl',
+    'IDataManager', 'I_DM_Implementation', 'IManagedConnection',
+    'IManagedConnImpl',
 ]
 
 class ITransactionService(Interface):
@@ -36,7 +37,6 @@ class ITransactionService(Interface):
     def abort():
         """Abort the transaction, or raise OutsideTransaction if not in
         progress."""
-
 
 
     def fail():
@@ -140,7 +140,7 @@ class ITransactionParticipant(Interface):
         value if nothing needed to be done, or a false value if
         work needed to be done.  DB connections will probably never
         do anything here, and thus will just return a true value.
-        Object managers like Racks will write their objects and
+        Object managers like Entity DMs will write their objects and
         return false, or return true if they have nothing to write.
         Note: participants *must* continue to accept writes until
         'voteForCommit()' occurs, and *must* accept repeated writes
@@ -203,18 +203,12 @@ class ITransactionErrorHandler(Interface):
 
 
 
-# Rack interfaces
+# DM interfaces
 
-try:
-    from Persistence.IPersistentDataManager import IPersistentDataManager
-
-except ImportError:
-    class IPersistentDataManager(Interface):
-        # Temporary hack until we include Persistence in our setup.py...
-        pass
+from Persistence.IPersistentDataManager import IPersistentDataManager
 
 
-class IRack(ITransactionParticipant, IPersistentDataManager):
+class IDataManager(ITransactionParticipant, IPersistentDataManager):
 
     """Data manager for persistent objects or queries"""
 
@@ -229,7 +223,7 @@ class IRack(ITransactionParticipant, IPersistentDataManager):
         """Pre-load 'state' for object designated by 'oid' and return it"""
         
     def oidFor(ob):
-        """Return an 'oid' suitable for retrieving 'ob' from this rack"""
+        """Return an 'oid' suitable for retrieving 'ob' from this DM"""
         
     def newItem(klass=None):
         """Create and return a new persistent object of class 'klass'"""
@@ -244,9 +238,15 @@ class IRack(ITransactionParticipant, IPersistentDataManager):
 
 
 
-class IRackImplementation(Interface):
 
-    """Methods/attrs that must/may be redefined in an AbstractRack subclass"""
+
+
+
+
+
+class I_DM_Implementation(Interface):
+
+    """Methods/attrs that must/may be redefined in an EntityDM subclass"""
     
     cache = Attribute("a cache for ghosts and loaded objects")
 

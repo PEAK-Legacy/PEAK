@@ -2,12 +2,12 @@ from peak.api import binding
 from interfaces import *
 from transactions import TransactionComponent
 
-__all__ = ['AbstractRack']
+__all__ = ['EntityDM']
 
 
-class AbstractRack(TransactionComponent):
+class EntityDM(TransactionComponent):
 
-    __implements__ = IRack
+    __implements__ = IDataManager
 
     resetStatesAfterTxn = True
 
@@ -182,7 +182,7 @@ class AbstractRack(TransactionComponent):
 
         # postcondition:
         #   ob is in 'dirty' set
-        #   Rack is registered w/transaction if not previously registered
+        #   DM is registered w/transaction if not previously registered
 
         key = id(ob)
         
@@ -239,7 +239,7 @@ class AbstractRack(TransactionComponent):
             for ob in self.cache.values():
                 ob._p_deactivate()
 
-        super(AbstractRack,self).finishTransaction(txnService,committed)
+        super(EntityDM,self).finishTransaction(txnService,committed)
 
 
 
