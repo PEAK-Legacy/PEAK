@@ -402,7 +402,7 @@ class Once(Attribute):
         self.computeValue = computeValue
         kw.setdefault('attrName',getattr(computeValue, '__name__', None))
         kw.setdefault('doc',
-            getattr(computeValue,'__doc_',None) or kw['attrName']
+            getattr(computeValue,'__doc__',None) or kw['attrName']
         )
         super(Once,self).__init__(**kw)
 
