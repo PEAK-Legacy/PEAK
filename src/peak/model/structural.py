@@ -13,8 +13,8 @@ from method_exporter import MethodExporter
 __all__ = [
     'Immutable', 'Namespace', 'Package', 'Model',
     'StructuralFeature', 'Field', 'Collection', 'Reference', 'Sequence',
-    'Classifier','PrimitiveType','DataType',
-    'DerivedAssociation', 'HashAndCompare', 'structField',
+    'Classifier','PrimitiveType','DataType', 'DerivedFeature',
+    'DerivedAssociation', 'HashAndCompare', 'structField', 'Attribute'
 ]
 
 
@@ -577,13 +577,13 @@ class Collection(StructuralFeature):
     isReference = 1
 
 
-class Field(StructuralFeature):
+class Attribute(StructuralFeature):
 
     upperBound = 1
 
 
 
-class structField(Field):
+class structField(Attribute):
 
     """An unchangeable field; used for immutables"""
 
@@ -597,7 +597,7 @@ class Reference(Collection):
 
 
 
-class DerivedAssociation(Collection):
+class DerivedFeature(Collection):
 
     isDerived = True
 
@@ -609,8 +609,8 @@ class Sequence(Collection):
 
 
 
-
-
+Field = Attribute                   # XXX backward compatibility...  deprecated
+DerivedAssociation = DerivedFeature # XXX backward compatibility...  deprecated
 
 
 class ClassifierClass(Namespace.__class__):
@@ -668,11 +668,11 @@ class ClassifierClass(Namespace.__class__):
         continue to be used by all subclasses, if possible.  For example::
 
             class A(model.Classifier):
-                class foo(model.Field): pass
+                class foo(model.Attribute): pass
                 
             class B(A):
-                class foo(model.Field): pass
-                class bar(model.Field): pass
+                class foo(model.Attribute): pass
+                class bar(model.Attribute): pass
 
         would result in 'B' having a 'mdl_features' order of '(foo,bar)',
         even though its 'mdl_featuresDefined' would be '(bar,foo)' (because

@@ -166,14 +166,14 @@ class ModelElement(model.Element):
 
     mdl_isAbstract = True
 
-    class name(model.Field):
+    class name(model.Attribute):
         referencedType = Name
 
-    class annotation(model.Field):
+    class annotation(model.Attribute):
         referencedType = AnnotationType
         defaultValue = None
 
-    class qualifiedName(model.DerivedAssociation):
+    class qualifiedName(model.DerivedFeature):
 
         upperBound = 1  # singular
 
@@ -189,7 +189,7 @@ class ModelElement(model.Element):
         referencedEnd  = 'contents'
         defaultValue = None
 
-    class requiredElements(model.DerivedAssociation):
+    class requiredElements(model.DerivedFeature):
         def _getList(feature, element):
             return element.findRequiredElements()
 
@@ -412,19 +412,19 @@ class GeneralizableElement(Namespace):
 
     mdl_isAbstract = True
 
-    class visibility(model.Field):
+    class visibility(model.Attribute):
         referencedType = VisibilityKind
         defaultValue = VisibilityKind.public_vis
 
-    class isAbstract(model.Field):
+    class isAbstract(model.Attribute):
         referencedType = Boolean
         defaultValue = False
 
-    class isRoot(model.Field):
+    class isRoot(model.Attribute):
         referencedType = Boolean
         defaultValue = False
 
-    class isLeaf(model.Field):
+    class isLeaf(model.Attribute):
         referencedType = Boolean
         defaultValue = False
 
@@ -538,11 +538,11 @@ class Import(ModelElement):
             visitor(IMPORT_DEP,[self.importedNamespace])
         super(Import,self)._visitDependencies(visitor)
         
-    class visibility(model.Field):
+    class visibility(model.Attribute):
         referencedType = VisibilityKind
         defaultValue = VisibilityKind.public_vis
 
-    class isClustered(model.Field):
+    class isClustered(model.Attribute):
         referencedType = Boolean
         defaultValue = False
 
@@ -557,13 +557,13 @@ class Constraint(ModelElement):
             visitor(CONSTRAINED_ELEMENTS_DEP,self.constrainedElements)
         super(Constraint,self)._visitDependencies(visitor)
 
-    class expression(model.Field):
+    class expression(model.Attribute):
         referencedType = model.PrimitiveType    # XXX 'Any'
 
-    class language(model.Field):
+    class language(model.Attribute):
         referencedType = String
 
-    class evaluationPolicy(model.Field):
+    class evaluationPolicy(model.Attribute):
         referencedType = EvaluationKind
 
     class constrainedElements(model.Collection):
@@ -579,10 +579,10 @@ class Tag(ModelElement):
             visitor(TAGGED_ELEMENTS_DEP,self.elements)
         super(Tag,self)._visitDependencies(visitor)
 
-    class tagId(model.Field):
+    class tagId(model.Attribute):
         referencedType = String
 
-    class values(model.Field):
+    class values(model.Attribute):
         referencedType = model.PrimitiveType  # XXX 'Any'
         upperBound = None
 
@@ -663,7 +663,7 @@ class Classifier(GeneralizableElement):
 
 class Association(Classifier):
 
-    class isDerived(model.Field):
+    class isDerived(model.Attribute):
         referencedType = Boolean
         defaultValue = False
 
@@ -704,7 +704,7 @@ class DataType(Classifier):
     )
 
 
-    class typeCode(model.Field):
+    class typeCode(model.Attribute):
         referencedType = TypeCode
 
     class supertypes(model.Sequence):
@@ -733,7 +733,7 @@ class Class(Classifier):
         )
     )
 
-    class isSingleton(model.Field):
+    class isSingleton(model.Attribute):
         referencedType = Boolean
         defaultValue = False
 
@@ -742,10 +742,10 @@ class Feature(ModelElement):
 
     mdl_isAbstract = True
 
-    class visibility(model.Field):
+    class visibility(model.Attribute):
         referencedType = VisibilityKind
 
-    class scope(model.Field):
+    class scope(model.Attribute):
         referencedType = ScopeKind
 
 
@@ -786,7 +786,7 @@ class BehavioralFeature(Namespace, Feature):
 
 class Operation(BehavioralFeature):
 
-    class isQuery(model.Field):
+    class isQuery(model.Attribute):
         referencedType = Boolean
         defaultValue = False
 
@@ -843,16 +843,16 @@ class TypeAlias(TypedElement):
 
 class Constant(TypedElement):
 
-    class value(model.Field):
+    class value(model.Attribute):
         referencedType = LiteralType
 
 
 class Parameter(TypedElement):
 
-    class direction(model.Field):
+    class direction(model.Attribute):
         referencedType = DirectionKind
 
-    class multiplicity(model.Field):
+    class multiplicity(model.Attribute):
         referencedType = MultiplicityType
 
 
@@ -863,17 +863,17 @@ class Parameter(TypedElement):
 
 class AssociationEnd(TypedElement):
 
-    class multiplicity(model.Field):
+    class multiplicity(model.Attribute):
         referencedType = MultiplicityType
 
-    class aggregation(model.Field):
+    class aggregation(model.Attribute):
         referencedType = AggregationKind
 
-    class isNavigable(model.Field):
+    class isNavigable(model.Attribute):
         referencedType = Boolean
         defaultValue = True
 
-    class isChangeable(model.Field):
+    class isChangeable(model.Attribute):
         referencedType = Boolean
         defaultValue = True
 
@@ -906,17 +906,17 @@ class StructuralFeature(Feature,TypedElement):
 
     mdl_isAbstract = True
 
-    class multiplicity(model.Field):
+    class multiplicity(model.Attribute):
         referencedType = MultiplicityType
 
-    class isChangeable(model.Field):
+    class isChangeable(model.Attribute):
         referencedType = Boolean
         defaultValue = True
 
 
 class Attribute(StructuralFeature):
 
-    class isDerived(model.Field):
+    class isDerived(model.Attribute):
         referencedType = Boolean
         defaultValue = False
 

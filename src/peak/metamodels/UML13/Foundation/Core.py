@@ -45,7 +45,7 @@ class ModelElement:
         defaultValue = None
 
 
-    class qualifiedName(model.DerivedAssociation):
+    class qualifiedName(model.DerivedFeature):
 
         def _getList(feature,element):
 
@@ -62,13 +62,13 @@ class ModelElement:
 
 class GeneralizableElement:
 
-    class superclasses(model.DerivedAssociation):
+    class superclasses(model.DerivedFeature):
 
         def _getList(feature,element):
             return list(query([element])['generalization']['parent'])
     
 
-    class subclasses(model.DerivedAssociation):
+    class subclasses(model.DerivedFeature):
 
         def _getList(feature,element):
             return list(query([element])['specialization']['child'])

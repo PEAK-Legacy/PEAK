@@ -94,11 +94,11 @@ class IClassifier(Interface):
         continue to be used by all subclasses, if possible.  For example::
 
             class A(model.Classifier):
-                class foo(model.Field): pass
+                class foo(model.Attribute): pass
                 
             class B(A):
-                class foo(model.Field): pass
-                class bar(model.Field): pass
+                class foo(model.Attribute): pass
+                class bar(model.Attribute): pass
 
         would result in 'B' having a 'mdl_features' order of '(foo,bar)',
         even though its 'mdl_featuresDefined' would be '(bar,foo)' (because

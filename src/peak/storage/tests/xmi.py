@@ -49,8 +49,8 @@ class MailModel(model.Model):
 
     class Envelope(model.Element):
 
-        class toAddress(model.Field):   referencedType = 'Address'
-        class fromAddress(model.Field): referencedType = 'Address'
+        class toAddress(model.Attribute):   referencedType = 'Address'
+        class fromAddress(model.Attribute): referencedType = 'Address'
 
         class letters(model.Collection):
             _XMINames = 'letter',

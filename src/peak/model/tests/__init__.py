@@ -164,18 +164,18 @@ class EnumerationTests(TestCase):
 
 class aBase(model.Element):
     mdl_isAbstract = True
-    class f1(model.Field): pass
-    class f2(model.Field): pass
+    class f1(model.Attribute): pass
+    class f2(model.Attribute): pass
 
 class aSub(aBase):
     class f3(model.Collection): isComposite=True
-    class f1(model.Field): pass
-    class a(model.Field): pass
+    class f1(model.Attribute): pass
+    class a(model.Attribute): pass
 
 class ordered(model.Element):
-    class a(model.Field): sortPosn = 3
-    class b(model.Field): sortPosn = 2
-    class c(model.Field): sortPosn = 1
+    class a(model.Attribute): sortPosn = 3
+    class b(model.Attribute): sortPosn = 2
+    class c(model.Attribute): sortPosn = 1
 
 class checkMetaData(TestCase):
 
@@ -192,7 +192,7 @@ class checkMetaData(TestCase):
     def checkChangeableBad(self):
         try:
             class anImmutable(model.Immutable):
-                class aFeature(model.Field):
+                class aFeature(model.Attribute):
                     pass
         except TypeError:
             pass
@@ -205,7 +205,7 @@ class checkMetaData(TestCase):
 
 class anElement1(model.Element):
 
-    class field1(model.Field):
+    class field1(model.Attribute):
         defaultValue = 1
 
     class simpleSeq(model.Sequence):
