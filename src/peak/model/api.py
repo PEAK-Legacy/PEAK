@@ -250,10 +250,10 @@ class Collection(StructuralFeature):
         p = d.index(oldItem)
 
         if p!=-1:
+            element._setBinding(feature.attrName, d)
             d[p]=newItem
             feature._notifyUnlink(element,oldItem)
             feature._notifyLink(element,newItem)
-            element._setBinding(feature.attrName, d)
         else:
             raise ValueError(oldItem,"not found")
 
@@ -296,14 +296,14 @@ class Collection(StructuralFeature):
 
     def _link(feature,element,item):
         d=feature._getList(element)
-        d.append(item)
         element._setBinding(feature.attrName, d)
+        d.append(item)
         
 
     def _unlink(feature,element,item):
         d=feature._getList(element)
-        d.remove(item)
         element._setBinding(feature.attrName, d)
+        d.remove(item)
 
 
 
@@ -389,8 +389,8 @@ class Sequence(Collection):
         if d: i = d.index(oldItem)
 
         if i!=-1:
-            d.insert(i,newItem)
             element._setBinding(feature.attrName, d)
+            d.insert(i,newItem)
             feature._notifyLink(element,newItem)
         else:
             raise ValueError(oldItem,"not found")
