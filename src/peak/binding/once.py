@@ -494,6 +494,10 @@ class ActiveClass(Activator):
 
     """Metaclass for classes that are themselves components"""
 
+    protocols.advise(
+        instancesProvide = [IActiveDescriptor]
+    )
+
     def activateInClass(self,klass,attrName):
 
         if klass.__module__ == self.__module__:
@@ -523,10 +527,6 @@ class ActiveClass(Activator):
         return NOT_FOUND
 
     _getConfigData = metamethod(_getConfigData)
-
-
-
-
 
 
 
