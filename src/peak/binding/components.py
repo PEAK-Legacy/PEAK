@@ -121,7 +121,7 @@ def globalLookup(name, component=None):
 
 
 
-def acquireComponent(component, name):
+def acquireComponent(name, component=None):
 
     """Acquire 'name' relative to 'component', w/fallback to globalLookup()"""
 
@@ -162,7 +162,7 @@ def acquireComponent(component, name):
 
 
 
-def iterParents(component):
+def iterParents(component=None):
 
     last = component
         
@@ -302,7 +302,7 @@ def lookupComponent(component, name):
     if pc:
         ob = pc(component)
     else:
-        ob = acquireComponent(component,attr)
+        ob = acquireComponent(attr,component)
 
     resolved = []
     append = resolved.append
