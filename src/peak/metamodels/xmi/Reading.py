@@ -41,6 +41,9 @@
 
         - handle CORBA types (YAGNI?)
 
+        - HREF support (ugh!)  Note that cross-file HREF needs some way to cache
+          the other documents and an associated DM, if it's to be dynamic.
+
         XMI 1.1
 
         - attributes as references/collections
@@ -70,14 +73,52 @@
             existing pseudo-DOM, or rewrite it to proxy to a "real" DOM.  And
             that would only be useful if such a persistent "real" DOM existed
             that we needed to use.  YAGNI, but doc'd here for clarification.
-"""        
 
+        Other
+
+        - cross-reference between files could be supported by having document
+          objects able to supply a relative or absolute reference to another
+          document.  But this requires HREF support.  :(
+"""        
 from peak.api import *
 from peak.util import SOX
 from Persistence.PersistentList import PersistentList
 from weakref import WeakValueDictionary
 
 __bases__ = model,
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 class XMINode(object):
@@ -281,7 +322,7 @@ class XMI_DM(storage.EntityDM):
 
         if other:
             d['__xmi_parent_attr__'] = pa = getattr(klass,other).attrName
-            d[pa] = [owner]
+            d.setdefault(pa,[owner])
 
         return d
 
