@@ -39,7 +39,7 @@ from types import StringTypes
 
 
 
-def importString(name):
+def importString(name, globalDict=None):
     """Import an item specified by a string
 
         Example Usage::
@@ -70,7 +70,7 @@ def importString(name):
         module = '.'.join(name[:-1])
         path = name[-1:]
 
-    item = __import__(module,globals(),locals(),path)
+    item = __import__(module, globalDict or globals(), locals(), path)
 
     for name in path:
         if name: item = getattr(item,name)
@@ -121,7 +121,7 @@ class lazyImport:
 
 
 
-def interpretSpec(spec):
+def interpretSpec(spec, globalDict=None):
     """Convert a possible string specifier to an object
 
     If 'spec' is a string or unicode object, import it using 'importString()',
@@ -129,12 +129,12 @@ def interpretSpec(spec):
     """
     
     if isinstance(spec,StringTypes):
-        return importString(spec)
+        return importString(spec, globalDict)
 
     return thing
 
 
-def interpretSequence(specs):
+def interpretSequence(specs, globalDict=None):
     """Convert a possible string specifier to a list of objects.
 
     If 'specs' is a string or unicode object, treat it as a
@@ -149,4 +149,4 @@ def interpretSequence(specs):
     if isinstance(specs,StringTypes):
         return [importString(x.strip()) for x in specs.split(',')]
     else:
-        return map(interpretSpec, specs)
+        return [interpretSpec(s,globalDict) for s in specs]

@@ -5,7 +5,7 @@ import Interface
 
 __all__ = [
 
-    'IName', 'ISyntax', 'IOpaqueURL',
+    'IName', 'ISyntax',
 
     'IObjectFactory', 'IStateFactory', 'IURLContextFactory',
 
@@ -170,10 +170,6 @@ class IName(Interface.Base):
     """Abstract name object"""
 
 
-class IOpaqueURL(IName):
-    """Opaque URL (scheme+body only)"""
-
-
 class IObjectFactory(Interface.Base):
 
     def getObjectInstance(refInfo, name, context, environment, attrs=None):
@@ -190,6 +186,10 @@ class IURLContextFactory(Interface.Base):
 
     def getURLContext(scheme, context=None, environ=None, iface=IBasicContext):
         """Return a context that can provide 'iface' for 'scheme' URLs"""
+
+
+
+
 
 
 

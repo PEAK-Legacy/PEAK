@@ -19,6 +19,8 @@ from TW.Utils.Import import interpretSpec, interpretSequence
 from Interfaces import *
 from Names import *
 
+import factories
+
 __all__ = [
     'getInitialContext',
     'getObjectInstance', 
@@ -28,11 +30,9 @@ __all__ = [
 
 __implements__ = IObjectFactory, IStateFactory, IURLContextFactory
 
-
+defaultFactories = factories,
 
     
-
-
 
 
 
@@ -87,7 +87,7 @@ def getStateToBind(obj, name, context, environment, attrs=None):
 
     for factory in interpretSequence(
             environment.get(
-                'NAMING_STATE_FACTORIES', ()
+                'NAMING_STATE_FACTORIES', defaultFactories
             ) 
         ):
 
@@ -147,7 +147,7 @@ def getObjectInstance(refInfo, name, context, environment, attrs=None):
 
     for factory in interpretSequence(
             environment.get(
-                'NAMING_OBJECT_FACTORIES', ()
+                'NAMING_OBJECT_FACTORIES', defaultFactories
             ) 
         ):
 
@@ -188,8 +188,7 @@ def getURLContext(scheme, context=None, environ=None, iface=IBasicContext):
 
     for contextFactory in interpretSequence(
             environ.get(
-                'NAMING_URL_CONTEXT_FACTORIES',
-                'TW.Naming.Schemes'
+                'NAMING_URL_CONTEXT_FACTORIES', defaultFactories
             ) 
         ):
 

@@ -6,7 +6,7 @@ from types import StringTypes
 
 __all__ = [
     'Name', 'toName', 'CompositeName', 'CompoundName', 'OpaqueURL',
-    'Syntax', 'UnspecifiedSyntax', 'NNS_NAME'
+    'Syntax', 'UnspecifiedSyntax', 'NNS_NAME', 'ParsedURL'
 ]
 
 
@@ -151,6 +151,47 @@ class OpaqueURL(Name):
         
 
     parse = classmethod(parse)
+
+    def __str__(self):
+        return '%s:%s' % self
+
+
+
+
+
+
+
+
+class ParsedURL(OpaqueURL):
+
+    pattern = re.compile('')
+    
+    _supportedSchemes = ()
+
+    def __new__(klass, name):
+
+        obj = super(ParsedURL,klass).__new__(klass,name)
+        obj._fromURL(obj)
+        return obj
+
+
+    def _fromURL(self, url):
+
+        if url.scheme.lower() in self._supportedSchemes:
+        
+            m = klass.pattern.match(url.body)
+
+            if m:
+                self.__dict__.update(m.groupdict())
+                return
+                
+        raise InvalidNameException(name)
+        
+
+
+    
+
+
 
 
 

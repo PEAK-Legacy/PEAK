@@ -97,6 +97,10 @@ class AbstractContext(object):
         if name.isURL:
 
             if self._supportsScheme(name.scheme):
+            
+                if not isinstance(name,ParsedURL):
+                    name = self._makeName(name)
+
                 return self, name
 
             ctx = SPI.getURLContext(
@@ -111,10 +115,6 @@ class AbstractContext(object):
             return ctx, name
 
         return self, name
-
-
-
-
 
 
 
