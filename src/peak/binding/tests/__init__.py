@@ -46,7 +46,7 @@ class assemblyTracer(binding.Component):
     activated = binding.requireBinding("list to append ids to")
     id = binding.requireBinding("identity of this object")
 
-    thingy = binding.Once(lambda *x: None, activateUponAssembly = True)
+    thingy = binding.whenAssembled(lambda *x: None)
 
     def uponAssembly(self):
         if self.__objectsToBeAssembled__ is not None:
@@ -78,7 +78,7 @@ class Middle(assemblyTracer):
             id=self.id+1, log=self.log, activated=self.activated
         )
 
-    child = binding.Once(child, activateUponAssembly = True)
+    child = binding.whenAssembled(child)
 
 class AssemblyTests(TestCase):
 

@@ -1,5 +1,8 @@
 Fixes and Enhancements since Version 0.5 alpha 1
 
+ - Added 'binding.whenAssembled(...)' as syntax sugar for
+   'binding.Once(...,activateUponAssembly=True)'.
+
  - Removed 'LOG_XYZ' convenience functions from 'peak.api', and refactored
    'peak.running.logs' to use a PEP 282-like interface, 'running.ILogger'.
    Under the new scheme, messages must be sent to a specific entry point
@@ -17,7 +20,7 @@ Fixes and Enhancements since Version 0.5 alpha 1
    'peak.logs.foo.bar' will be looked up in the target context of the
    lookup.  Optionally, you can configure the 'logging.logger' URL scheme so
    that it only uses PEAK loggers, and never uses the PEP 282 loggers.
-   
+
  - Added 'binding.metamethod()' wrapper for metaclass methods that might
    not be accessible from their instances if the instances (classes) also
    defined the method for *their* instances.  You must now use this wrapper

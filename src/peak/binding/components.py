@@ -20,7 +20,7 @@ class ComponentSetupWarning(UserWarning):
     """Large iterator passed to suggestParentComponent"""
 
 __all__ = [
-    'Base', 'Component', 'ComponentSetupWarning',
+    'Base', 'Component', 'ComponentSetupWarning', 'whenAssembled',
     'bindTo', 'requireBinding', 'bindSequence', 'bindToParent', 'bindToSelf',
     'getRootComponent', 'getParentComponent', 'lookupComponent',
     'acquireComponent', 'suggestParentComponent', 'notifyUponAssembly',
@@ -434,11 +434,11 @@ class bindSequence(bindTo):
         self.activateUponAssembly = kw.get('activateUponAssembly')
 
 
-
-
-
-
-
+def whenAssembled(func, name=None, provides=None, doc=None):
+    """'Once' function with 'activateUponAssembly' flag set"""
+    return Once(
+        func, name=name, provides=provides, doc=doc, activateUponAssembly=True
+    )
 
 
 
