@@ -47,10 +47,10 @@ class Resource(Traversable):
 
     permissionsNeeded = binding.requireBinding("Permissions needed for access")
 
-    def preTraverse(self, interaction):
+    def preTraverse(self, ctx):
         perms = self.permissionsNeeded
-        if not interaction.allows(self, permissionsNeeded = perms):
-            interaction.notAllowed(self, self.getComponentName())
+        if not ctx.interaction.allows(self, permissionsNeeded = perms):
+            ctx.interaction.notAllowed(self, self.getComponentName())
 
     def traverseTo(self, name, interaction):
         return NOT_FOUND
@@ -272,8 +272,8 @@ class ResourceProxy(object):
     def getObject(self, interaction):
         return interaction.skin.getResource(self.path)
 
-    def preTraverse(self, interaction):
-        self.getObject(interaction).preTraverse(interaction)
+    def preTraverse(self, ctx):
+        self.getObject(ctx.interaction).preTraverse(ctx)
 
     def traverseTo(self, name, interaction):
         ob = adapt(self.getObject(interaction),interaction.pathProtocol)
@@ -371,9 +371,9 @@ class TemplateResource(FSResource):
 
     """Template used as a method (via 'bindResource()')"""
 
-    def preTraverse(self, interaction):
+    def preTraverse(self, ctx):
         # Templates may not be accessed directly via URL!
-        interaction.notFound(self, self.getComponentName())
+        ctx.interaction.notFound(self, self.getComponentName())
 
 
     def theTemplate(self,d,a):
@@ -400,11 +400,93 @@ class TemplateResource(FSResource):
         return ctx.traversedURL
 
 
+
+
+
+
+
+
+
+
 class FileResource(FSResource):
-    pass
+
+    protocols.advise(
+        instancesProvide = [IWebPage]
+    )
+
+    lastModified = None
+    ETag         = None
+    blocksize    = 16384
+
+    def render(self, ctx):
+        interaction = ctx.interaction
+        response = interaction.response
+
+        #if not interaction.request.method in ('GET','HEAD'):
+        #   raise UnsupportedMethod(ctx)
+
+        if interaction.clientHas(self.lastModified, self.ETag):
+            return response
+
+        # Set response mimetype (wait till now, or above would be corrupted)
+        size = os.stat(self.filename).st_size
+        response.setHeader('Content-Type', self.mime_type)
+        response.setHeader('Content-Length', str(size))
+
+        # Put response into streaming mode
+        write = response.write
+        stream = open(self.filename, 'rb')
+        size = self.blocksize
+
+        # read/write data in size-N blocks
+        try:
+            while 1:
+                data = stream.read(size)
+                if not data: break
+                write(data)
+        finally:
+            stream.close()
+
+        return response
 
 class ImageResource(FileResource):
     pass
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

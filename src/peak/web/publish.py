@@ -280,8 +280,8 @@ class Interaction(security.Interaction):
         path = adapt(resource,self.pathProtocol).resourcePath
         return '%s/%s' % (base, path)
 
-
-
+    def clientHas(self, lastModified=None, ETag=None):
+        return False    # XXX
 
 
 

@@ -69,6 +69,16 @@ class IWebInteraction(IInteraction, IPolicyInfo):
     def getAbsoluteURL(resource=None):
         """Return an absolute URL for specified resource, or interaction URL"""
 
+    def clientHas(lastModified=None, ETag=None):
+        """Return true if no response need be sent, given the response data"""
+        
+
+
+
+
+
+
+
 
 class IInteractionPolicy(IPolicyInfo):
 
@@ -79,6 +89,37 @@ class IInteractionPolicy(IPolicyInfo):
 
     defaultMethod = Attribute("""Default method name (e.g. 'index_html')""")
     interactionClass = Attribute("Factory for interaction instances")
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 class ITraversalContext(Interface):
 
@@ -125,7 +166,7 @@ class IWebTraversable(Interface):
 
     """A component that supports path traversal"""
 
-    def preTraverse(interaction):
+    def preTraverse(context):
 
         """Invoked before traverse by web requests
 

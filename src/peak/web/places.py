@@ -64,7 +64,7 @@ class TraversalContext(binding.Component):
 
     def checkPreconditions(self):
         """Invoked before traverse by web requests"""
-        self.traversable.preTraverse(self.interaction)
+        self.traversable.preTraverse(self)
 
     def subcontext(self, name, ob):
         ob = adapt(ob, self.interaction.pathProtocol)
@@ -185,7 +185,7 @@ class Traversable(binding.Component):
 
         return loc
 
-    def preTraverse(self, interaction):
+    def preTraverse(self, ctx):
         pass    # Should do any traversal requirements checks
 
     def getURL(self,ctx):
@@ -224,7 +224,7 @@ class NullTraversable(object):
     def getURL(self,ctx):
         return ctx.traversedURL
 
-    def preTraverse(self, interaction):
+    def preTraverse(self, ctx):
         pass
 
 
@@ -337,9 +337,9 @@ class MultiTraverser(Traversable):
         for item in self.items:
             return item.getObject(interaction)
 
-    def preTraverse(self, interaction):
+    def preTraverse(self, ctx):
         for item in self.items:
-            item.preTraverse(interaction)
+            item.preTraverse(ctx)
 
     def traverseTo(self, name, interaction):
 
