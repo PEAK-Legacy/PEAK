@@ -214,7 +214,7 @@ class Collection(StructuralFeature):
     )
 
     def _getList(feature, element):
-        return element._getBinding(feature.attrName, ())
+        return element._getBinding(feature.attrName, [])
         
     def get(feature, element):
         return feature._getList(element)
@@ -246,7 +246,7 @@ class Collection(StructuralFeature):
 
     def replace(feature, element, oldItem, newItem):
 
-        d = feature._getList(element) or []
+        d = feature._getList(element)
         p = d.index(oldItem)
 
         if p!=-1:
@@ -295,13 +295,13 @@ class Collection(StructuralFeature):
 
 
     def _link(feature,element,item):
-        d=feature._getList(element) or []
+        d=feature._getList(element)
         d.append(item)
         element._setBinding(feature.attrName, d)
         
 
     def _unlink(feature,element,item):
-        d=feature._getList(element) or []
+        d=feature._getList(element)
         d.remove(item)
         element._setBinding(feature.attrName, d)
 
