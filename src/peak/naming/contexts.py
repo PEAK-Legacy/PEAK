@@ -490,7 +490,7 @@ class NameContext(Component):
 
         self._rename(base+n1, base+n2)
 
-    def __setitem__(name, object):
+    def __setitem__(self, name, object):
 
         """Bind 'object' under 'name'"""
 
