@@ -89,8 +89,7 @@ class ICellMapper(protocols.Interface):
     set to getting or setting the attribute, while methods map "get" to
     checking the return value of the method called with no argument, and "set"
     to calling the method with one argument, whose value is provided by the
-    cell.
-    """
+    cell."""
 
     def get(targetInstance, cell):
         """Get data from the 'targetInstance' and compare it to 'cell'
@@ -111,6 +110,17 @@ class ICellMapper(protocols.Interface):
         If the invocation raises an exception, record it in 'cell'.  If the
         feature does not support invocation, record an error in 'cell'."""
 
+    def parse(cell):
+        """Interpret 'cell.text' according to datatype, and return the value
+
+        If an error occurs, mark the cell with an exception, and return 'None'.
+        """
+
+    def extract(targetInstance):
+        """Return the value of the feature for targetInstance"""
+
+
+        
     def suggestType(dataType):
         """Suggest the 'model.IType' to be used for parsing/formatting cells
 
@@ -118,6 +128,37 @@ class ICellMapper(protocols.Interface):
         type supplied by this method.  If a cell mapper does not know what type
         to use, it should default to 'model.String' unless this method is
         called."""
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

@@ -80,11 +80,45 @@ class Score(model.Struct):
             self.right, self.wrong, self.ignored, self.exceptions
         )
 
+    def __nonzero__(self):
+        return (self.right or self.wrong or self.ignored or self.exceptions)<>0
+
+
 Zeros = Score()
 Right = Score(right=1)
 Wrong = Score(wrong=1)
 Ignored = Score(ignored=1)
 Error = Score(exceptions=1)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 class Item(model.Element):
@@ -118,6 +152,13 @@ class children(model.Collection):
     def _onUnlink(feature,element,item,posn):
         if item.document is element:
             item.document = None
+
+
+
+
+
+
+
 
 
 
@@ -286,7 +327,7 @@ class Cell(Item):
 
 
     def _assertUnscored(self):
-        if self.score!=Zeros:
+        if self.score:
             raise ValueError("Cell already scored", self)
 
 

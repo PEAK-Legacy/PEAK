@@ -2,11 +2,12 @@ from peak.api import *
 from interfaces import *
 from model import *
 from peak.util.signature import ISignature
+from kjbuckets import kjGraph, kjSet
 
 __all__ = [
     'titleAsPropertyName', 'titleAsMethodName', 'DocumentProcessor',
     'AbstractProcessor', 'MethodProcessor', 'ModelProcessor',
-    'ActionProcessor', 'Summary'
+    'RowProcessor', 'ActionProcessor', 'Summary'
 ]
 
 
@@ -22,7 +23,6 @@ def titleAsMethodName(text):
     """Convert a string like '"Spam the Sprocket"' to '"spamTheSprocket"'"""
     text = ''.join(text.strip().title().split())
     return text[:1].lower()+text[1:]
-
 
 
 
@@ -252,8 +252,8 @@ class MethodProcessor(AbstractProcessor):
         raises an exception, attempt to annotate the cell with the appropriate
         error information."""
 
-        self.beforeRow()
         try:
+            self.beforeRow()
             for cell,handler in zip(row.cells,self.handlers):
                 try:
                     handler(cell)
@@ -490,6 +490,129 @@ class ModelProcessor(MethodProcessor):
             mapper.suggestType(self._methodMap[name])
         return mapper
 
+class RowProcessor(ModelProcessor):
+
+    """Verify that table contents match a computed dataset"""
+
+    mappers = ()    # mapper objects
+    columns = ()    # column names (for 'getData')
+
+
+    def processRows(self,rows):
+
+        """Compare contents against generated data"""
+
+        row = rows.next()
+        table = row.table
+
+        try:
+            if self.setupColumns(row):
+    
+                missing, extra = self.compare(list(rows), self.getData())
+    
+                for row in missing:
+                    row.cell[0].annotation = "missing"
+                    row.cell[0].wrong()
+    
+                for record in extra:
+                    newRow = table.newRow(
+                        cells = [       # XXX mapper.format?
+                            table.newCell(text=str(value)) for value in record
+                        ]
+                    )
+                    newRow.cells[0].annotation = "extra"
+                    newRow.cells[0].wrong()
+                    table.addRow(newRow)
+        finally:
+            self.tearDown() # do any cleanup needed
+
+
+
+
+
+
+    def setupColumns(self,row):
+        """Set up mappers and column names from heading row"""
+
+        self.mappers = mappers = []
+        self.columns = names = []
+
+        for cell in row.cells:
+            try:
+                mappers.append(self.getMapper(cell.text))
+                names.append(titleAsMethodName(cell.text))
+            except:
+                cell.exception()
+                return False        # don't process table body
+
+        return True     # okay to proceed
+
+
+    def getData(self):
+        """Return the rows to be compared against the table contents
+
+        The return value must be a list of indexable sequences of uniform
+        length, corresponding exactly in order to the columns listed in
+        'self.columns'.  The default implementation just returns an empty list.
+        """
+        return []
+
+
+    def compareRow(self,row,record):
+        """Compare a single row against a single record, marking results"""
+
+        for cell,mapper in zip(row.cells, self.mappers):
+            try:
+                mapper.get(record,cell)    # verify contents
+            except:
+                cell.exception()
+
+
+    def tearDown(self):
+        """Perform any post-comparison cleanup"""
+
+
+    def compare(self,rows,data,column=0):
+        """Compare 'rows' and 'data' beginning at 'column' -> 'missing,extra'
+
+        Return value is a tuple '(missingRows,extraRecords)' containing the
+        'rows' not found in 'data', and the 'data' not present in 'rows',
+        respectively.  This works by successively partitioning the data on
+        each column from left to right, until either one of 'rows' or 'data'
+        is empty, or both contain only a single item.  (In the latter case,
+        the items are compared field-by-field, with the differences marked.)
+        """
+
+        if not rows or not data:
+            # One list is empty, so other is "missing" (or extra) by definition
+            return rows,data
+
+        elif len(rows)==1 and len(data)==1:           
+            self.compareRow(rows[0],data[0])    # do 1-to-1 comparison           
+            return [],[]                        # no missing or extra rows
+            
+        else:
+            # Partition the data into subsets based on current column,
+            # then assemble missing/extra data by recursing on subsets
+
+            recordMap = kjGraph(
+                [(record[column],record) for record in data]
+            )
+            parse = self.mappers[column].parse
+            rowMap = kjGraph(
+                [(parse(row.cells[column]),row) for row in rows]
+            )
+
+            column += 1
+            missing, extra = [], []
+            for key in kjSet(rowMap.keys()+recordMap.keys()).items():
+                m,e = self.compare(
+                    rowMap.neighbors(key), recordMap.neighbors(key), column
+                )
+                missing.extend(m)
+                extra.extend(e)
+            return missing,extra
+
 class ActionProcessor(ModelProcessor):
 
     """Test a domain object using a "script" of actions
@@ -654,48 +777,7 @@ class Summary(AbstractProcessor):
 
 
 
-class FeatureAsCellMapper(protocols.Adapter):
-
-    """Cell mapping support for 'property' and other data descriptors"""
-
-    protocols.advise(
-        instancesProvide=[ICellMapper],
-        asAdapterForProtocols=[model.IFeature]
-    )
-
-    def suggestType(self,dataType):
-        pass    # we know our datatype, so we don't care about this
-
-    def get(self,instance,cell):
-        value = self.subject.__get__(instance)
-        if self.subject.parse(cell.text) == value:
-            cell.right()
-        else:
-            cell.wrong(self.subject.format(value))
-
-    def set(self,instance,cell):
-        self.subject.__set__(instance, self.subject.parse(cell.text))
-
-    def invoke(self,instance,cell):
-        try:
-            raise TypeError("Attributes can't be invoked", self.subject)
-        except:
-            cell.exception()
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-class PropertyAsCellMapper(protocols.Adapter):
+class PropertyAsCellMapper(object):
 
     """Cell mapping support for 'property' and other data descriptors"""
 
@@ -704,22 +786,55 @@ class PropertyAsCellMapper(protocols.Adapter):
         asAdapterForTypes=[property]
     )
 
+    def __init__(self,ob,proto):
+        self.subject = ob
+        self.extract = ob.__get__
+        self._set = ob.__set__
+        
     dataType = model.String
 
     def suggestType(self,dataType):
         self.dataType = dataType
 
     def get(self,instance,cell):
-        value = self.subject.__get__(instance)
+        value = self.extract(instance)
         cell.assertEqual(value, self.dataType)
 
     def set(self,instance,cell):
-        value = self.dataType.mdl_fromString(cell.text)
-        self.subject.__set__(instance, value)
+        value = self.parse(cell)
+        self._set(instance, value)
 
     def invoke(self,instance,cell):
         try:
             raise TypeError("Descriptors can't be invoked", self.subject)
+        except:
+            cell.exception()
+
+    def parse(self,cell):
+        try:
+            return self.dataType.mdl_fromString(cell.text)
+        except:
+            cell.exception()
+
+
+
+class CallableAsCellMapper(PropertyAsCellMapper):
+
+    """Cell mapping support for methods"""
+
+    protocols.advise(
+        instancesProvide=[ICellMapper],
+        asAdapterForProtocols=[ISignature]
+    )
+
+    def __init__(self,ob,proto):
+        self.subject = ob
+        self.extract = self._set = ob.getCallable()
+        
+
+    def invoke(self,instance,cell):
+        try:
+            self.extract(instance)
         except:
             cell.exception()
 
@@ -736,41 +851,49 @@ protocols.declareAdapter(
 
 
 
-class CallableAsCellMapper(protocols.Adapter):
 
-    """Cell mapping support for methods"""
+
+
+
+
+
+
+
+class FeatureAsCellMapper(PropertyAsCellMapper):
+
+    """Cell mapping support for 'model.IFeature' descriptors"""
 
     protocols.advise(
         instancesProvide=[ICellMapper],
-        asAdapterForProtocols=[ISignature]
+        asAdapterForProtocols=[model.IFeature]
     )
 
-    dataType = model.String
+    def __init__(self,ob,proto):
+        self._parse = ob.parse        
+        self._format = ob.format
+        super(FeatureAsCellMapper,self).__init__(ob,proto)
 
     def suggestType(self,dataType):
-        self.dataType = dataType
+        pass    # we know our datatype, so we don't care about this
 
     def get(self,instance,cell):
-        value = self.subject.getCallable()(instance)
-        cell.assertEqual(value, self.dataType)
+        value = self.extract(instance)
+        cellval = self.parse(cell)
 
-    def set(self,instance,cell):
-        value = self.dataType.mdl_fromString(cell.text)
-        self.subject.getCallable()(instance, value)
+        if not cell.score:  # only process if not already scored
+            if cellval == value:
+                cell.right()
+            else:
+                try:
+                    cell.wrong(self._format(value))
+                except:
+                    cell.exception()
 
-    def invoke(self,instance,cell):
+    def parse(self,cell):
         try:
-            self.subject.getCallable()(instance)
+            return self._parse(cell.text)
         except:
             cell.exception()
-
-
-
-
-
-
-
-
 
 
 
