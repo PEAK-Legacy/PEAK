@@ -5,29 +5,29 @@ import dispatch,protocols
 
 __all__ = [
     'activateClass','classAttr','Activator','declareAttribute','metadata',
-    'declareAttributes', 'initAttrs',
+    'declareClassMetadata', 'declareMetadata', 'initAttrs',
 ]
 
 
-def metadata(**__kw):
-    """Declare metadata for attributes of containing class
+def metadata(*args, **kw):
+    """Declare metadata for containing class and its attributes
 
     Usage::
 
         class Foo:
-            binding.metadata(a=b, x=y)
+            binding.metadata(baz, a=b, x=y)
 
     is a shortcut for::
 
         class Foo:
             pass
 
-        binding.declareAttributes(Foo, a=b, x=y)
+        binding.declareMetadata(Foo, baz, a=b, x=y)
 
-    See 'binding.declareAttributes()' for more details.
+    See 'binding.declareMetadata()' for more details.
     """
     def callback(klass):
-        declareAttributes(klass,**__kw)
+        declareMetadata(klass,*args,**kw)
         return klass
 
     advice.addClassAdvisor(callback)
@@ -48,30 +48,30 @@ except NameError:
         return tmp
 
 
-def declareAttributes(classobj,**__kw):
-    """Declare metadata for attributes of specified class
+def declareMetadata(classobj, *args, **kw):
+    """Declare metadata for specified class and its attributes
 
     Usage::
 
         binding.declareAttributes(SomeClass,
+            [AdministratorPermission],
             some_attr=[security.Anybody, options.Set('-v',value=True)],
             other_attr=syntax("foo|bar"),
                 # etc...
         )
 
-    Keyword argument names are treated as attribute names, and the values are
-    passed to 'binding.declareAttribute()' in order to declare the given
-    metadata for the containing class.  Please see individual frameworks'
-    documentation for information about what metadata they need or provide,
-    and what that metadata's semantics are.
+    The first argument is the class for which metadata is being declared.
+    The second and subsequent positional arguments, if any are metadata for
+    the class as a whole.  Keyword arguments are treated as attribute names,
+    and their values are passed to 'binding.declareAttribute()' in order to
+    declare the given metadata for the containing class.
+
+    Please see individual frameworks' documentation for information about what
+    metadata they need or provide, and what that metadata's semantics are.
     """
-    for k,v in sorted(__kw.iteritems()):
+    declareClassMetadata(classobj, args)
+    for k,v in sorted(kw.iteritems()):
         declareAttribute(classobj,k,v)
-
-
-
-
-
 
 
 
@@ -111,6 +111,47 @@ def initAttrs(ob, attrItems):
 
 
 
+
+
+
+
+
+
+
+
+
+
+[dispatch.on('metadata')]
+def declareClassMetadata(classobj,metadata):
+    """Declare 'metadata' about 'classobj'
+
+    This generic function is used to dispatch metadata declarations.  You do
+    not normally call it directly, unless implementing a metadata API or
+    special class advisor.  Instead, you add methods to it, in order to support
+    a new metadata type you've defined.
+
+    Note that it's up to your methods to define the semantics, such as where
+    the metadata will be stored.  The only predefined semantics are for
+    metadata of 'None' (which is a no-op), and 'protocols.IBasicSequence' types
+    (which recursively invokes 'declareClassMetadata()' on the sequence's
+    contents).
+
+    Also note that many metadata frameworks have a notion of context, such
+    that different metadata might apply to the class in different contexts.
+    If this is the case for your metadata type, the method you add to this
+    function should set metadata for whatever your framework's "default
+    context" is.
+    """
+
+[declareClassMetadata.when(type(None))]
+def declareCM_None(classobj,attrname,metadata):
+    """Declaring attribute metadata of 'None' is a no-op."""
+
+[declareClassMetadata.when(protocols.IBasicSequence)]
+def declareCM_Sequence(classobj,metadata):
+    """Declaring attribute w/a sequence declares all contained items"""
+    for item in metadata:
+        declareClassMetadata(classobj,item)
 
 
 
