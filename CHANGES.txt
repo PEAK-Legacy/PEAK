@@ -11,10 +11,11 @@ Fixes and Enhancements since Version 0.5 alpha 2
    interfaces.
 
  - When creating a 'PropertyName()', it's now possible to force conversion of
-   invalid characters to '_', by supplying 'force=True'.  This doesn't address
-   syntactic issues (like having a non-terminating '*'), or character sets
-   (non-ASCII characters are still rejected).  But it's convenient for things
-   like filenames or text that might contain spaces.
+   invalid characters to '_', using the 'PropertyName.fromString()'
+   constructor.  (Note that the input must be a plain-ASCII string.)  Unless
+   you request that wildcards ('?' and '*') be kept, they will also be
+   converted to '_' characters.  This can be convenient for converting things
+   like filenames or text that might contain spaces, to property names.
 
  - It's now possible to declare an attribute as offering a wildcard property;
    such lookups now follow the same rules as other wildcard property lookups.
