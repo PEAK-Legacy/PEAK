@@ -7,11 +7,10 @@ Open Issues/To-Do Items
       - streamline descriptor mechanisms used by binding and model to make them
         uniform and cleanly functional (in both senses of the word functional)
 
-      - clean up attribute metadata framework and get rid of all the special
-        cases (e.g. isinstance() checks, special attribute names, etc.)
-
       - make indirection convenient (e.g. bind to looking up something from
         another binding)
+
+      - eliminate remaining introspection/'isinstance()' checks
 
     * Implement "contextual protocols" (c.f. "object teams") and "parameterized
       protocols" (E.g. 'ListOf(IFoo)', 'MappingOf(keys=IBar,values=IBaz)')
@@ -31,6 +30,7 @@ Open Issues/To-Do Items
 
     * Web publishing framework sufficient to deploy page-based or object-
       published apps
+
 
 
 

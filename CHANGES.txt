@@ -2,6 +2,11 @@ Fixes and Enhancements since Version 0.5 alpha 2
 
  Changed, Enhanced, or Newly Deprecated Features
 
+ - There is now an interface for "Active Descriptors":
+   'binding.IActiveDescriptor'.  'peak.binding' now uses this interface to
+   identify active descriptors, so you can now create your own.  (Previously,
+   'peak.binding' used 'isinstance()' to detect active descriptors.)
+
  - 'peak.naming' no longer automatically converts all addresses to the
    addressed objects.  You must specifically request the interface you want
    by adapting the retrieved object to that interface.  This can be done by
@@ -56,15 +61,9 @@ Fixes and Enhancements since Version 0.5 alpha 2
    words, ordinary attributes of a component do not receive "suggested parent"
    notices, even when set via constructor keyword arguments.  If you want an
    attribute to do this, you must define the attribute with the binding API;
-   e.g. via 'requireBinding()' or 'binding.Constant()'.
-
-
-
-
-
-
-
-
+   e.g. via 'requireBinding()' or 'binding.Constant()'.  If you do *not* want
+   a binding to suggest a parent component, use 'suggestParent=False' in the
+   binding definition.
 
 
 

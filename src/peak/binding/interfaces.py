@@ -6,7 +6,7 @@ from peak.api import NOT_GIVEN
 
 __all__ = [
     'IComponentFactory', 'IBindingNode', 'IComponent',
-    'IBindableAttrs', 'IComponentKey',
+    'IBindableAttrs', 'IComponentKey', 'IAttachable', 'IActiveDescriptor'
 ]
 
 
@@ -80,7 +80,23 @@ class IBindableAttrs(Interface):
 
 
 
-class IComponent(IBindingNode, IBindableAttrs, IConfigurable):
+class IAttachable(Interface):
+
+    """Object that can be told it has a parent component"""
+
+    def setParentComponent(parentComponent,componentName=None,suggest=False):
+        """Set the object's parent to 'parentComponent' (or suggest it)
+
+        If 'suggest' is true, this should not change an already-specified
+        parent.  If 'suggest' is false, and the current parent has already been
+        used by the component for any purpose, this method should raise an
+        'AlreadyRead' exception.
+
+        The component's 'componentName' will only be set if the parent is
+        successfully set."""
+
+
+class IComponent(IAttachable, IBindingNode, IBindableAttrs, IConfigurable):
 
     """API supplied by binding.Component and its subclasses"""
 
@@ -88,21 +104,46 @@ class IComponent(IBindingNode, IBindableAttrs, IConfigurable):
         suggestParent=True, creationName=None):
         """Look up 'name' in context - see 'binding.lookupComponent()'"""
 
-
-    def setParentComponent(parentComponent,componentName=None,suggest=False):
-        """Set the object's parent to 'parentComponent' (or suggest it)
-
-        If 'suggest' is true, this should not change an already-specified
-        parent.  If 'suggest' is false, and the current parent has already been
-        used by the component for any purpose, this method raises an
-        'AlreadyRead' exception.
-
-        The component's 'componentName' will only be set if the parent is
-        successfully set."""
-
-
     def uponAssembly():
         """Notify the component that its parents and root are known+fixed"""
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class IActiveDescriptor(Interface):
+
+    """Metadata supplied by active descriptors (e.g. binding.Attribute)"""
+
+    offerAs = Attribute(
+        """Sequence of config keys that this attribute binding offers"""
+    )
+
+    activateUponAssembly = Attribute(
+        """Activate this attribute binding when object knows all its parents"""
+    )
+
+    def activateInClass(klass, attrName):
+        """Do any necessary installation in 'klass' under name 'attrName'"""
+
+
+
+
+
+
+
+
+
 
 
 

@@ -3,14 +3,15 @@
 from __future__ import generators
 from peak.api import NOT_FOUND, protocols, adapt
 from peak.util.imports import importObject, importString
-from interfaces import IComponentFactory, IComponent
+from interfaces import IAttachable, IActiveDescriptor
 from _once import *
 from protocols import IOpenProvider, IOpenImplementor, NO_ADAPTER_NEEDED
 from peak.util.advice import metamethod
 from warnings import warn
+from types import ClassType
 
 __all__ = [
-    'Once', 'New', 'Copy', 'Activator', 'ActiveClass', 'ActiveClasses',
+    'Once', 'New', 'Copy', 'Activator', 'ActiveClass',
     'getInheritedRegistries', 'classAttr', 'Singleton', 'metamethod',
     'Attribute', 'ComponentSetupWarning', 'suggestParentComponent'
 ]
@@ -36,7 +37,6 @@ def supertype(supertype,subtype):
             break
 
     raise TypeError("Not sub/supertypes:", supertype, subtype)
-
 
 
 class Descriptor(BaseDescriptor):
@@ -84,14 +84,14 @@ def suggestParentComponent(parent,name,child):
 
     """Suggest to 'child' that it has 'parent' and 'name'
 
-    If 'child' does not support 'IComponent' and is a container that derives
-    from 'tuple' or 'list', all of its elements that support 'IComponent'
+    If 'child' does not support 'IAttachable' and is a container that derives
+    from 'tuple' or 'list', all of its elements that support 'IAttachable'
     will be given a suggestion to use 'parent' and 'name' as well.  Note that
     this means it would not be a good idea to use this on, say, a 10,000
     element list (especially if the objects in it aren't components), because
     this function has to check all of them."""
 
-    ob = adapt(child,IComponent,None)
+    ob = adapt(child,IAttachable,None)
 
     if ob is not None:
         # Tell it directly
@@ -103,7 +103,7 @@ def suggestParentComponent(parent,name,child):
 
         for ob in child:
 
-            ob = adapt(ob,IComponent,None)
+            ob = adapt(ob,IAttachable,None)
 
             if ob is not None:
                 ob.setParentComponent(parent,name,suggest=True)
@@ -112,12 +112,12 @@ def suggestParentComponent(parent,name,child):
                 if ct==100:
                     warn(
                         ("Large iterator for %s; if it will never"
-                         " contain components, this is wasteful" % name),
+                         " contain components, this is wasteful.  (You may"
+                         " want to set 'suggestParent=False' on the attribute"
+                         " binding or lookupComponent() call, if applicable.)"
+                         % name),
                         ComponentSetupWarning, 3
                     )
-
-
-
 
 
 
@@ -248,16 +248,19 @@ class Attribute(Descriptor):
 
     __metaclass__ = AttributeClass
 
+    protocols.advise(
+        instancesProvide = [IActiveDescriptor]
+    )
+
     offerAs = ()
     activateUponAssembly = False
     doc = None
     adaptTo = None
     suggestParent = True
 
-    def activate(self,klass,attrName):
+    def activateInClass(self,klass,attrName):
         setattr(klass, attrName, self._copyWithName(attrName))
         return self
-
 
     def _copyWithName(self, attrName):
         return Descriptor(
@@ -280,9 +283,6 @@ class Attribute(Descriptor):
         if self.suggestParent:
             suggestParentComponent(obj, attrName, value)
         return value
-
-
-
 
 
     # The following methods only get called when an instance of this class is
@@ -417,23 +417,16 @@ class Activator(type):
 
     def __new__(meta, name, bases, cdict):
 
-        class_attrs = []; addCA = class_attrs.append
-        class_descr = []; addCD = class_descr.append
+        classAttrs = [
+            (k,v.binding) for (k, v) in cdict.items()
+                if adapt(v,classAttr,not v) is v
+        ]
 
-        for k, v in cdict.items():
-            if isinstance(v,ActiveClasses):
-                if isinstance(v,classAttr):
-                    addCA(k)
-                else:
-                    addCD(k)
-
-        if class_attrs:
+        if classAttrs:
 
             cdict = cdict.copy(); d = {}
-
-            for k in class_attrs:
-                d[k]=cdict[k].binding
-                del cdict[k]
+            d = dict(classAttrs)
+            map(cdict.__delitem__, d.keys())
 
             d['__module__'] = cdict.get('__module__')
 
@@ -445,20 +438,27 @@ class Activator(type):
         klass = supertype(Activator,meta).__new__(meta, name, bases, cdict)
         klass.__name__ = name
 
+        cd = klass.__class_descriptors__ = {}
+
+        for k,v in cdict.items():
+            v = adapt(v, IActiveDescriptor, None)
+            if v is not None:
+                cd[k]=v.activateInClass(klass,k)
+
+        return klass
 
 
 
-
-        d = klass.__class_descriptors__ = {}
-        for k in class_descr:
-            v = cdict[k]
-            d[k] = v.activate(klass,k)
-
+    def __all_descriptors__(klass,d,a):
         ad = {}
         map(ad.update, getInheritedRegistries(klass, '__all_descriptors__'))
         ad.update(klass.__class_descriptors__)
-        klass.__all_descriptors__ = ad
-        return klass
+        return ad
+
+    __all_descriptors__ = Once(__all_descriptors__, suggestParent=False)
+
+
+
 
 
 
@@ -494,7 +494,7 @@ class ActiveClass(Activator):
 
     """Metaclass for classes that are themselves components"""
 
-    def activate(self,klass,attrName):
+    def activateInClass(self,klass,attrName):
 
         if klass.__module__ == self.__module__:
 
@@ -542,16 +542,16 @@ class ActiveClass(Activator):
 
         return importString(parent),
 
-    __parent__ = Once(__parent__)
+    __parent__ = Once(__parent__, suggestParent=False)
 
 
     def __cname__(self,d,a):
         return self.__name__.split('.')[-1]
 
-    __cname__ = Once(__cname__)
+    __cname__ = Once(__cname__, suggestParent=False)
 
 
-ActiveClasses = (Attribute, ActiveClass, classAttr)
+
 
 
 

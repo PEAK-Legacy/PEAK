@@ -60,6 +60,9 @@ class FeatureClass(HashAndCompare,MethodExporter):
 
     __metaclass__ = binding.Activator   # metaclasses can't be components
 
+    protocols.advise(
+        instancesProvide=[binding.IActiveDescriptor]
+    )
 
     def __get__(self, ob, typ=None):
 
@@ -76,9 +79,6 @@ class FeatureClass(HashAndCompare,MethodExporter):
             self.set(ob,val)
         else:
             raise AttributeError("Unchangeable feature",self.attrName)
-
-
-
 
     def __delete__(self, ob):
         """Delete the feature's value by delegating to 'ob.unsetX()'"""
@@ -237,8 +237,8 @@ class StructuralFeature(object):
         insertBefore = 'insert%(singularName.initCap)sBefore',
     )
 
-
-
+    offerAs = ()
+    activateUponAssembly = False
 
 
 

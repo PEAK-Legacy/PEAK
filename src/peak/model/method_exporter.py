@@ -427,11 +427,11 @@ class MethodExporter(protocols.ProviderMixin,ActiveClass):
 
         return getattr(ob,self.methodNames[verb])
 
-    def activate(self,klass,attrName):
+    def activateInClass(self,klass,attrName):
 
         """Install the feature's "verbSubject()" methods upon use in a class"""
 
-        self = super(MethodExporter,self).activate(klass,attrName)
+        self = super(MethodExporter,self).activateInClass(klass,attrName)
 
         if attrName != self.attrName:
             raise TypeError(
