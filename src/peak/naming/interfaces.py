@@ -43,7 +43,7 @@ class IBasicContext(Interface):
 
     """Basic naming context; supports only configuration and name handling"""
 
-    def resolve(name,iface):
+    def resolveToInterface(name,iface):
         """Find nearest ctx to 'name' supporting 'iface', return rest of name
         
             Return a tuple of the form '(ctx,remainingName)', where 'ctx' is

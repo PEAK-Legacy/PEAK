@@ -226,7 +226,8 @@ class ParsedURL(object):
             update(self.parse(scheme, body))
 
 
-
+    def __setattr__(self, n, v):
+        raise AttributeError, "Immutable object"
 
 
 

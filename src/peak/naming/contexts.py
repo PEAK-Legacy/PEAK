@@ -13,7 +13,9 @@ from peak.binding.components import Component, Once, Acquire
 from peak.util.imports import importObject
 
 
-__all__ = ['AbstractContext', 'GenericURLContext']
+__all__ = [
+    'NameContext', 'AddressContext', 'AbstractContext', 'GenericURLContext'
+]
 
 
 
@@ -37,9 +39,7 @@ __all__ = ['AbstractContext', 'GenericURLContext']
 
 
 
-
-
-class AbstractContext(Component):
+class NameContext(Component):
 
     __implements__ = IBasicContext
 
@@ -54,9 +54,8 @@ class AbstractContext(Component):
     
     _acceptStringURLs    = True     # XXX
 
-
-    def close(self):
-        pass
+    namingAuthority = None
+    # XXX nameInContext = binding.Once( nameClass([]) or CompoundName([]) )
 
 
     def _resolveComposite(self, name, iface):
@@ -67,17 +66,18 @@ class AbstractContext(Component):
         # another naming system.  
 
         if not name:
-            return self, name   # XXX this isn't very useful!
-
+            # convert to compound (local) empty name
+            return self._resolveLocal(CompoundName([]), iface) # XXX .nameClass
         else:
             local = name[0]
             if self.nameClass and self.nameClass.isComposite:
-                local = CompoundName(local)
+                local = CompoundName(local) # XXX use URL parser syntax?
 
             if len(name)==1:
-                return self.resolve(local, iface)
+                return self.resolveToInterface(local, iface)
 
-            return self.lookup_nns(local).resolve(name[1:], iface)
+            return self.lookup_nns(local).resolveToInterface(name[1:], iface)
+
 
 
     def _checkSupported(self, name, iface):
@@ -93,35 +93,35 @@ class AbstractContext(Component):
 
     def _resolveLocal(self, name, iface):
 
-        self._checkSupported(name, iface)
-        return self, name
+        if len(name)<2:
+            self._checkSupported(name, iface)
+            return self, name
+            
+        try:
+            return self[name[:1]].resolveToInterface(name[1:],iface)
 
+        except exceptions.NotAContext:
+            self._checkSupported(name, iface)
+            return self, name
 
 
     def _resolveURL(self, name, iface):
 
-        self._checkSupported(name, iface)
-        return self, name
+        #auth, nic = name.getAuthorityAndName()
+
+        #if self.namingAuthority == auth and nic.startswith(self.nameInContext):
+        
+            self._checkSupported(name, iface)
+            return self, name
+
+        #else:
+        #    ctx = self.__class__(self, namingAuthority=auth)
+        #    return ctx.resolveToInterface(nic, iface)
 
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    def resolve(self, name, iface=IBasicContext):
+    def resolveToInterface(self, name, iface=IBasicContext):
 
         parser = self.schemeParser
         name = toName(name, self.nameClass, self._acceptStringURLs)
@@ -146,19 +146,19 @@ class AbstractContext(Component):
                     "Unknown scheme %s in %r" % (name.scheme,name)
                 )
 
-            return ctx.resolve(name,iface)
+            return ctx.resolveToInterface(name,iface)
 
-        if self.nameClass and not self.nameClass.isComposite:
-            return self._resolveLocal(name,iface)
+        return self._resolveLocal(name,iface)
 
-        elif parser:
-            return self._resolveURL(
-                parser(self.defaultScheme, str(name)),iface
-            )
 
-        raise exceptions.InvalidName(
-            "This context only supports URLs", name
-        )
+
+
+
+
+
+
+
+
 
 
 
@@ -166,7 +166,7 @@ class AbstractContext(Component):
 
         """Find the next naming system after resolving local part"""
 
-        if name is None:
+        if not name:    # empty name means "this context"
 
             return self._deref(
                 NNS_Reference( self ), name, None
@@ -195,8 +195,8 @@ class AbstractContext(Component):
             return obj
 
 
-
-
+    def close(self):
+        pass
 
 
 
@@ -248,7 +248,7 @@ class AbstractContext(Component):
 
         """Return terminal link for 'name'"""
 
-        ctx, name = self.resolve(name)
+        ctx, name = self.resolveToInterface(name)
         if ctx is not self: return ctx.lookupLink(name)
 
         info = self._get(name)
@@ -267,7 +267,7 @@ class AbstractContext(Component):
 
         """Lookup 'name' and return an object"""
         
-        ctx, name = self.resolve(name)
+        ctx, name = self.resolveToInterface(name)
         if ctx is not self: return ctx[name]
         
         obj = self._getOb(name)
@@ -289,7 +289,7 @@ class AbstractContext(Component):
     
         """Lookup 'name' and return an object, or 'default' if not found"""
         
-        ctx, name = self.resolve(name)
+        ctx, name = self.resolveToInterface(name)
         if ctx is not self: return ctx.get(name,default)
 
         return self._getOb(name, default)
@@ -308,7 +308,7 @@ class AbstractContext(Component):
     def __contains__(self, name):
         """Return a true value if 'name' has a binding in context"""
 
-        ctx, name = self.resolve(name)
+        ctx, name = self.resolveToInterface(name)
         
         if ctx is not self:
             return name in ctx
@@ -357,13 +357,13 @@ class AbstractContext(Component):
 
         """Rename 'oldName' to 'newName'"""
 
-        ctx, name = self.resolve(oldName,IWriteContext)
+        ctx, name = self.resolveToInterface(oldName,IWriteContext)
         
         if ctx is not self:
             ctx.rename(oldName,newName)
             return
             
-        ctx, newName = self.resolve(newName)
+        ctx, newName = self.resolveToInterface(newName)
        
         self._rename(name,newName)
 
@@ -371,7 +371,7 @@ class AbstractContext(Component):
 
         """Bind 'object' under 'name'"""
 
-        ctx, name = self.resolve(name,IWriteContext)
+        ctx, name = self.resolveToInterface(name,IWriteContext)
         
         if ctx is not self:
             ctx[name]=object
@@ -384,7 +384,7 @@ class AbstractContext(Component):
     def __delitem__(self, name):
         """Remove any binding associated with 'name'"""
 
-        ctx, name = self.resolve(name,IWriteContext)
+        ctx, name = self.resolveToInterface(name,IWriteContext)
         
         if ctx is not self:
             del ctx[name]
@@ -449,16 +449,30 @@ class AbstractContext(Component):
 
 
 
-class GenericURLContext(AbstractContext):
+class AddressContext(NameContext):
 
     """Handler for address-only URL namespaces"""
+
 
     def _get(self, name, retrieve=1):
         return (name, None)     # refInfo, attrs
 
 
+    def _resolveLocal(self, name, iface):
+
+        # Convert compound names to a URL in this context's scheme
+
+        return self._resolveURL(
+            self.schemeParser(self.defaultScheme, str(name)), iface
+        )   # XXX should pass name, not str(name), but URL's don't unparse
+            # XXX bodies yet
 
 
+
+# XXX Backward compatibility
+
+AbstractContext = NameContext
+GenericURLContext = AddressContext
 
 
 
