@@ -8,11 +8,9 @@ from peak.util.imports import lazyModule
 UML13 = lazyModule('peak.metamodels.UML13')
 
 
-class UMLClass(storage.xmi.Loader):
+class UML_DM(storage.xmi.DM):
 
-    class XMI_DM_Class(storage.xmi.XMI_DM):
-        metamodel = UML13
-        document  = binding.New(storage.xmi.XMIDocument)
+    metamodel = UML13
 
     UML13 = UML13
     
@@ -39,10 +37,12 @@ class UMLClass(storage.xmi.Loader):
 
 
 
+
+
 class UMLTest(TestCase):
 
     def setUp(self):
-        self.m = m = UMLClass()
+        self.m = m = UML_DM()
         self.pkg = m.Package()
 
     def checkNameSet(self):
@@ -83,7 +83,7 @@ class UMLTest(TestCase):
 class QueryTests(TestCase):
 
     def setUp(self):
-        self.m = m = UMLClass()
+        self.m = m = UML_DM()
         self.pkg = pkg = m.Package()
         pkg.name = 'SomePackage'
         self.klass = klass = self.m.Class()
@@ -126,7 +126,7 @@ LoadedUML = None
 class XMILoad(TestCase):
     def checkLoad(self):
         global LoadedUML
-        self.m = m = LoadedUML = UMLClass()
+        self.m = m = LoadedUML = UML_DM()
         from os import path
         m.roots = m.importFromXMI(
             config.fileNearModule(__name__,'MetaMeta.xml')

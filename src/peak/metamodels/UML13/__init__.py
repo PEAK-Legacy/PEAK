@@ -1,7 +1,7 @@
 """A 'peak.model' metamodel for manipulating UML models
 
     This package can be used directly as a 'metamodel' for a
-    'peak.storage.xmi.XMI_DM'.  To see the actual structure of the metamodel,
+    'peak.storage.xmi.DM'.  To see the actual structure of the metamodel,
     see the enclosed 'peak.metamodels.UML13.model' package.  Everything else
     that's contained directly in 'peak.metamodels.UML13' actually inherits
     from and extends the corresponding subpackage/contained module of

@@ -654,7 +654,7 @@ class XMIDocument(binding.Component, XMINode):
 
 
 
-class XMI_DM(storage.EntityDM):
+class DM(storage.EntityDM):
 
     resetStatesAfterTxn = False
 
@@ -707,17 +707,10 @@ class XMI_DM(storage.EntityDM):
         return target.stateForClass(ob.__class__, self)
 
 
-
-class Loader(binding.Component):
-
-    class XMI_DM_Class(XMI_DM):
-        metamodel = binding.bindToParent()
-        document  = binding.New(XMIDocument)
-
     def importFromXMI(self,filename_or_stream):
-        DM = self.XMI_DM_Class(self)
-        SOX.load(filename_or_stream, DM.document)
-        return DM[()]
+        self.document = XMIDocument()
+        SOX.load(filename_or_stream, self.document)
+        return self[()]
 
 
 

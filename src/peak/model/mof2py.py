@@ -82,18 +82,18 @@ class oncePerObject(advice):
 
 class MOFGenerator(binding.Component):
 
-    MOFModel  = binding.bindTo("import:peak.metamodels.MOF131:MOFModel")
-    Package   = binding.bindTo("MOFModel/Package")
-    Import    = binding.bindTo("MOFModel/Import")
-    Class     = binding.bindTo("MOFModel/Class")
-    DataType  = binding.bindTo("MOFModel/DataType")
-    Attribute = binding.bindTo("MOFModel/Attribute")
-    Reference = binding.bindTo("MOFModel/Reference")
-    Namespace = binding.bindTo("MOFModel/Namespace")
+    metamodel = binding.bindTo("import:peak.metamodels.MOF131:")
+    Package   = binding.bindTo("metamodel/Package")
+    Import    = binding.bindTo("metamodel/Import")
+    Class     = binding.bindTo("metamodel/Class")
+    DataType  = binding.bindTo("metamodel/DataType")
+    Attribute = binding.bindTo("metamodel/Attribute")
+    Reference = binding.bindTo("metamodel/Reference")
+    Namespace = binding.bindTo("metamodel/Namespace")
 
-    NameNotFound = binding.bindTo("MOFModel/NameNotFound")
-    NameNotResolved = binding.bindTo("MOFModel/NameNotResolved")
-    StructuralFeature = binding.bindTo("MOFModel/StructuralFeature")
+    NameNotFound = binding.bindTo("metamodel/NameNotFound")
+    NameNotResolved = binding.bindTo("metamodel/NameNotResolved")
+    StructuralFeature = binding.bindTo("metamodel/StructuralFeature")
 
     fileObject = binding.New(StringIO)
 
@@ -670,7 +670,7 @@ _datatypes           = _lazy('peak.model.datatypes')
 
         klass(
             package,
-            MOFModel=metamodel,
+            metamodel=metamodel,
             stream=IndentedStream(s),
             **options
         ).writePackage(package)
@@ -702,7 +702,7 @@ class MOFFileSet(MOFGenerator):
         def doExt(package, parent):
         
             g = klass(
-                package, MOFModel=metamodel, **options
+                package, metamodel=metamodel, **options
             )
             
             filename = g.pkgFileName(package)

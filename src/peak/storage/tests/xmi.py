@@ -39,7 +39,7 @@ from cStringIO import StringIO
 
 
 
-class MailModel(model.Model, storage.xmi.Loader):
+class MailModel(model.Model):
 
     class Letter(model.Element):
 
@@ -124,8 +124,8 @@ MailText="""<?xml version="1.0"?>
 class XMIModelTests(TestCase):
 
     def setUp(self):
-        model = MailModel()
-        self.envelope, self.letter = model.importFromXMI(StringIO(MailText))
+        dm = storage.xmi.DM(metamodel=MailModel)
+        self.envelope, self.letter = dm.importFromXMI(StringIO(MailText))
 
     def checkTypes(self):
         assert isinstance(self.envelope,MailModel.Envelope)
@@ -145,7 +145,6 @@ class XMIModelTests(TestCase):
 
         assert str(e.fromAddress)== \
             "Steve, 555 Bailey, San Jose, CA 95141"
-
 
 
 
