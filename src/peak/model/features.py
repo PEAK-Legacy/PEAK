@@ -170,6 +170,7 @@ class FeatureClass(HashAndCompare,MethodExporter):
     typeKind    = binding.Obtain('typeCode/kind')
     typeCode    = binding.Make(lambda self: self.rawTypeCode.unaliased() )
 
+
     def _syntax(feature):
         syntax = feature.syntax
 
@@ -197,11 +198,51 @@ class FeatureClass(HashAndCompare,MethodExporter):
 
     _syntax = binding.Make(_syntax)
 
+
+
+
+
+
+    def parse(self,aString):
+        return fmtparse.parse(aString,self._syntax)[self.attrName]
+
+    def format(self,value):
+        return fmtparse.format({self.attrName:value},self._syntax)
+
+
 protocols.declareAdapter(
     lambda o,p: o._syntax,
     provides = [fmtparse.IRule],
     forTypes = [FeatureClass]
 )
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 class StructuralFeature(object):
 

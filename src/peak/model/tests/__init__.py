@@ -68,10 +68,10 @@ class parseFmtTest(TestCase):
 
 
     def checkFeatureParse(self):
-        self.assertEqual(
-            {'yy':[1,2,3]}, fmtparse.parse('1,2,3', XX.yy._syntax)
-        )
-            
+        self.assertEqual( [1,2,3], XX.yy.parse('1,2,3') )
+
+    def checkFeatureFormat(self):
+        self.assertEqual( '1,2,3', XX.yy.format([1,2,3]) )
 
 
 
