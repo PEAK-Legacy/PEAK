@@ -3,20 +3,45 @@
 from protocols import Interface
 
 __all__ = [
-    'IRelationVariable', 'IRelationCondition',
+    'IRelationVariable', 'IRelationCondition', 'IBooleanExpression',
     'IRelationAttribute', 'IRelationComparison',
 ]
 
-class IRelationCondition(Interface):
 
-    """A boolean condition in relational algebra"""
+class IBooleanExpression(Interface):
 
     def conjuncts():
-        """Return the sequence of conjuncts of this condition
+        """Return the sequence of conjuncts of this expression
 
-        For an 'and' operation, this should return the and-ed conditions.
+        For an 'and' operation, this should return the and-ed expressions.
         For most other operations, this should return a one-element sequence
-        containing the condition object itself."""
+        containing the expression object itself."""
+
+    def disjuncts():
+        """Return the sequence of disjuncts of this expression
+
+        For an 'or' operation, this should return the or-ed expressions.
+        For most other operations, this should return a one-element sequence
+        containing the expression object itself."""
+
+    def __inv__():
+        """Return the inverse ("not") of this expression"""
+
+    def __and__(expr):
+        """Return the conjunction ("and") of this expression with 'expr'"""
+
+    def __or__(expr):
+        """Return the disjunction ("or") of this expression with 'expr'"""
+
+
+
+
+
+
+
+class IRelationCondition(IBooleanExpression):
+
+    """A boolean condition in relational algebra"""
 
     def appliesTo(attrNames):
         """Does condition depend on any of the named columns?"""
@@ -29,6 +54,9 @@ class IRelationCondition(Interface):
         non-null.  (Note that for 'rejectsNullsFor()' to be true for an 'or'
         condition, it must be true for *all* the 'or'-ed subconditions.)"""
 
+    # XXX need some way to return renamed version
+
+
 class IRelationAttribute(Interface):
     """A column variable in relational algebra"""
     # XXX Don't know what we need here yet
@@ -37,6 +65,19 @@ class IRelationAttribute(Interface):
 class IRelationComparison(IRelationCondition):
     """A comparison operator in relational algebra"""
     # XXX Don't know what we need here yet
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 class IRelationVariable(Interface):
