@@ -23,7 +23,7 @@ packages = [
     'peak.naming', 'peak.naming.factories', 'peak.net', 'peak.running',
     'peak.tools', 'peak.tools.n2', 'peak.security', 'peak.tools.supervisor',
     'peak.storage', 'peak.util', 'peak.web', 'protocols',
-    'peak.tools.version', 'peak.query',
+    'peak.tools.version', 'peak.query', 'peak.events',
 ]
 
 extensions = [
@@ -48,12 +48,12 @@ data_files = [
 
 
 if include_tests:
-
     packages += [
         'peak.tests', 'peak.binding.tests', 'peak.config.tests',
         'peak.model.tests', 'peak.naming.tests', 'peak.running.tests',
         'peak.security.tests', 'peak.web.tests', 'peak.query.tests',
         'peak.storage.tests', 'peak.util.tests', 'protocols.tests',
+        'peak.events.tests'
     ]
 
     data_files += [
