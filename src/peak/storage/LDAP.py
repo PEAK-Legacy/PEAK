@@ -208,85 +208,89 @@ class ldapURL(naming.ParsedURL):
     
     def fromURL(klass, url):
 
-        bindinfo = None
-        host = basedn = ''
-        port = 389
-        extensions = {}
+        _bindinfo = None
+        #host = basedn = ''
+        #port = 389
+        _extensions = {}
         
         scheme, body = url.scheme, url.body
         
-        hostport = url.body
-        if hostport[:2] == '//':
-            hostport = hostport[2:]
+        _hostport = url.body
+        if _hostport[:2] == '//':
+            _hostport = _hostport[2:]
         else:
             raise exceptions.InvalidName(url)
 
-        if '/' in hostport:
-            hostport, rest = hostport.split('/', 1)
+        if '/' in _hostport:
+            _hostport, _rest = hostport.split('/', 1)
         else:
-            rest = ''
+            _rest = ''
 
-        if hostport:
-            if '@' in hostport:
-                bindinfo, hostport = hostport.split('@', 1)
+        if _hostport:
+            if '@' in _hostport:
+                _bindinfo, _hostport = _hostport.split('@', 1)
 
-            if ':' in hostport:
-                host, port = map(unquote, hostport.split(':', 1))
+            if ':' in _hostport:
+                host, port = map(unquote, _hostport.split(':', 1))
                 try:
                     port = int(port)
                 except:
                     raise exceptions.InvalidName(url)
             else:
-                host = unquote(hostport)
+                host = unquote(_hostport)
 
-        if bindinfo:
-            if ':' in bindinfo:
-                bindinfo, bindpw = map(unquote, bindinfo.split(':', 1))
-                extensions['x-bindpw'] = (1, bindpw)
+        if _bindinfo:
+            if ':' in _bindinfo:
+                _bindinfo, _bindpw = map(unquote, _bindinfo.split(':', 1))
+                _extensions['x-bindpw'] = (1, _bindpw)
             else:
-                bindinfo = unquote(bindinfo)
-            extensions['bindname'] = (1, bindinfo)
+                _bindinfo = unquote(_bindinfo)
+            _extensions['bindname'] = (1, _bindinfo)
         
-        if rest:
-            if '?' in rest:
-                basedn, rest = rest.split('?', 1)
+        if _rest:
+            if '?' in _rest:
+                basedn, _rest = rest.split('?', 1)
                 basedn = unquote(basedn)
             else:
-                basedn = unquote(rest)
+                basedn = unquote(_rest)
                 rest = ''
 
-        rest = (rest.split('?') + ['']*3)[:4]
+        _rest = (_rest.split('?') + ['']*3)[:4]
 
-        if rest[0]:
-            attrs = tuple(map(unquote, rest[0].split(',')))
-        else:
-            attrs = None
+        if _rest[0]:
+            attrs = tuple(map(unquote, _rest[0].split(',')))
             
-        scope = unquote(rest[1]).lower()
+        scope = unquote(_rest[1]).lower()
         if scope == 'one':
             scope = SCOPE_ONELEVEL
         elif scope == 'sub':
             scope = SCOPE_SUBTREE
         else:
-            scope = SCOPE_BASE
+            del scope
 
-        filter = unquote(rest[2])
+        if _rest[2]:
+            filter = unquote(_rest[2])
 
-        if rest[3]:
-            exts = map(unquote, rest[3].split(','))
-            for e in exts:
-                crit = 0
-                if e[0] == '!':
-                    crit = 1; e = e[1:]
-                k, v = e.split('=', 1)
-                extensions[k.lower()] = (crit, v)
+        if _rest[3]:
+            _exts = map(unquote, _rest[3].split(','))
+            for _e in _exts:
+                _crit = 0
+                if _e[0] == '!':
+                    _crit = 1; _e = e[1:]
+                _k, _v = _e.split('=', 1)
+                _extensions[_k.lower()] = (_crit, _v)
 
-        critical = a = []; a = a.append
-        for k, (crit, v) in extensions.items():
-            if crit:
-                a(k)
-        critical = tuple(critical)
+        _critical = _a = []; _a = _a.append
+        for _k, (_crit, _v) in _extensions.items():
+            if _crit:
+                _a(_k)
+
+        if _critical:
+            critical = tuple(_critical)
         
+        if _extensions:
+            extensions = _extensions
+            
         return klass.extractFromMapping(locals())
 
 
