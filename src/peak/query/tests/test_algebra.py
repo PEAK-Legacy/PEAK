@@ -465,28 +465,28 @@ class DatabaseTests(TestCase):
 
         self.assertEqual(
             EmployeesByBranch.simpleSQL(),
-            "SELECT * FROM Branch, Employee"
+            "SELECT Branch.*, Employee.* FROM Branch, Employee"
             " WHERE Branch.branchnr=Employee.branchnr"
         )
 
         self.assertEqual(
             Branch(where=Branch['branchnr'].eq(42)).simpleSQL(),
-            "SELECT * FROM Branch WHERE Branch.branchnr=42"
+            "SELECT Branch.* FROM Branch WHERE Branch.branchnr=42"
         )
 
+        self.assertEqual(
+            Employee(where=Employee['empnr'].eq(42),keep=['empname']).simpleSQL(),
+            "SELECT Employee.empname FROM Employee WHERE Employee.empnr=42"
+        )
 
-
-
-
-
-
-
-
-
-
-
-
-
+        self.assertEqual(
+            Employee(
+                where=Employee['empnr'].eq(42), keep=['empname','salary'],
+                rename=Items(empname='Name')
+            ).simpleSQL(),
+            "SELECT Employee.empname AS Name, Employee.salary"
+            " FROM Employee WHERE Employee.empnr=42"
+        )
 
 
 

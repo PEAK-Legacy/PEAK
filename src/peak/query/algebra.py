@@ -263,17 +263,58 @@ class BasicJoin(Table, HashAndCompare):
                 return None
         return db
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     def simpleSQL(self):
-        condSQL = self.condition.simpleSQL()
+
+        columnNames = []
+
+        for tbl in self.relvars:
+
+            tblCols = tbl.attributes()
+            shownCols = tblCols & self.columns
+
+            if shownCols==tblCols:
+                columnNames.append(tbl.name+".*")
+                continue
+
+            for name,col in (~(kjSet(tblCols.values())*~self.columns)).items():
+                sql = col.simpleSQL()
+                if name<>col.name:
+                    sql='%s AS %s' % (sql,name)
+                columnNames.append(sql)
+
         tablenames = [tbl.name for tbl in self.relvars]
         tablenames.sort()
-        sql = "SELECT * FROM "+", ".join(tablenames)
+
+        columnNames.sort()
+        sql = "SELECT "+", ".join(columnNames)+" FROM "+", ".join(tablenames)
+
+        condSQL = self.condition.simpleSQL()
         if condSQL:
             sql += " WHERE " + condSQL
+
         return sql
-
-
-
 
 
 
