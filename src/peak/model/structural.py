@@ -207,9 +207,7 @@ class StructuralFeature(object):
 
     __metaclass__ = FeatureClass
 
-    __class_implements__ = IFeature, IFeatureSPI        # XXX
-    __class_implements__ = IReference, IReferenceSPI
-
+    __class_implements__ = IFeature, IFeatureSPI
 
     isDerived     = False
     isComposite   = False
@@ -244,6 +242,8 @@ class StructuralFeature(object):
 
 
 
+
+
     def _get_one(feature, element):
 
         l = feature._getList(element)
@@ -263,7 +263,7 @@ class StructuralFeature(object):
 
 
     def _set_one(feature, element, val):
-        feature.getMethod(element,'add')(val)
+        feature._notifyLink(element,val)
 
     _set_one.installIf = lambda f,m: f.isChangeable and not f.isMany
     _set_one.verb      = 'set'
@@ -273,7 +273,7 @@ class StructuralFeature(object):
     def _unset_one(feature, element):
         l = feature._getList(element)
         if l:
-            feature.getMethod(element,'remove')(l[0])
+            feature._notifyUnlink(element,l[0])
 
     _unset_one.installIf = lambda f,m: f.isChangeable and not f.isMany
     _unset_one.verb      = 'unset'
@@ -294,9 +294,9 @@ class StructuralFeature(object):
 
     def _getList_one(feature, element):
     
-        value = element._getBinding(feature.implAttr, NOT_GIVEN)
+        value = element._getBinding(feature.implAttr, NOT_FOUND)
 
-        if value is NOT_GIVEN:
+        if value is NOT_FOUND:
             return []
 
         return [value]
@@ -327,8 +327,12 @@ class StructuralFeature(object):
 
 
     def _set_many(feature, element, val):
+
         feature.__delete__(element)
-        map(feature.getMethod(element,'add'),val)
+        add = feature._notifyLink
+
+        for v in val:
+            add(element,val)
 
     _set_many.installIf = lambda f,m: f.isChangeable and f.isMany
     _set_many.verb      = 'set'
@@ -340,17 +344,13 @@ class StructuralFeature(object):
 
         if oldItem in d:
             p = d.index(oldItem)
-            feature.getMethod(element,'remove')(oldItem,p)
-            feature.getMethod(element,'add')(newItem,p)
+            feature._notifyUnlink(element,oldItem,p)
+            feature._notifyLink(element,newItem,p)
 
         else:
             raise ValueError("Can't replace missing item", oldItem)
 
-    replace.installIf = installIfChangeable
-
-
-
-
+    replace.installIf = lambda f,m: f.isChangeable and f.isMany
 
 
 
@@ -376,7 +376,7 @@ class StructuralFeature(object):
         items = zip(range(len(d)),d)
         items.reverse()
 
-        remove = feature.getMethod(element,'remove')
+        remove = feature._notifyUnlink
 
         # remove items in reverse order, to simplify deletion and
         # to preserve any invariant that was relevant for addition
@@ -412,6 +412,13 @@ class StructuralFeature(object):
 
         """Add the item to the collection/relationship"""      
 
+        feature._notifyLink(element,item,posn)
+
+    add.installIf = lambda f,m: f.isChangeable and f.isMany
+
+
+    def _notifyLink(feature, element, item, posn=None):
+
         feature._link(element,item,posn)
         referencedEnd = feature.referencedEnd
 
@@ -419,12 +426,19 @@ class StructuralFeature(object):
             otherEnd = getattr(item.__class__,referencedEnd)
             otherEnd._link(item,element)
 
-    add.installIf = installIfChangeable
+    _notifyLink.installIf = installIfChangeable
 
 
     def remove(feature, element, item, posn=None):
 
         """Remove the item from the collection/relationship, if present"""
+
+        feature._notifyUnlink(element,item,posn)
+
+    remove.installIf = lambda f,m: f.isChangeable and f.isMany
+
+
+    def _notifyUnlink(feature, element, item, posn=None):
 
         feature._unlink(element,item,posn)
         referencedEnd = feature.referencedEnd
@@ -433,21 +447,7 @@ class StructuralFeature(object):
             otherEnd = getattr(item.__class__,referencedEnd)
             otherEnd._unlink(item,element)
 
-    remove.installIf = installIfChangeable
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    _notifyUnlink.installIf = installIfChangeable
 
     def _link(feature,element,item,posn=None):
 
@@ -467,7 +467,8 @@ class StructuralFeature(object):
         else:
             d.insert(posn,item)
 
-    _link.installIf         = installIfChangeable
+    _link.installIf = installIfChangeable
+    _link.verb      = '_link'
 
 
     def _unlink(feature,element,item,posn=None):
@@ -483,9 +484,8 @@ class StructuralFeature(object):
         else:
             del d[posn]
 
-    _unlink.installIf       = installIfChangeable
-
-
+    _unlink.installIf = installIfChangeable
+    _unlink.verb      = '_unlink'
 
 
 
@@ -495,7 +495,7 @@ class StructuralFeature(object):
         d = feature._getList(element)
 
         if oldItem in d:
-            feature.getMethod(element,'add')(newItem,d.index(oldItem))
+            feature._notifyLink(element,newItem,d.index(oldItem))
         else:
             raise ValueError("Can't insert before missing item", oldItem)
 

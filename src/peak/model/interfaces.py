@@ -7,8 +7,8 @@ __all__ = [
     'IFeature','IFeatureSPI',
     'IClassifier',
     'IEnumClass', 'IEnumValue',
-    'IReference', 'IReferenceSPI',
 ]
+
 
 
 
@@ -222,32 +222,6 @@ class IFeature(Interface):
     def __delete__(element):
         """Unset the feature for 'element' (works like __delattr__)"""
 
-
-class IFeatureSPI(Interface):
-
-    # SPI calls used for feature-to-feature collaboration and internal
-    # implementation
-
-    implAttr = Attribute(
-        """Name of the actual attribute used to store the feature
-
-        (Defaults to the same as 'attrName')"""
-    )
-
-    referencedType = Attribute(
-        """The 'IClassifier' for 'typeObject', or a name to find it by"""
-    )
-
-    def get(element):
-        """Return the value of the feature for 'element'"""
-
-    def _getList(element):
-        """Return the value(s) of the feature for 'element' as a sequence"""
-
-class IReference(IFeature):
-
-    """A feature which is a collection of items which may be added or removed."""
-
     def add(element,item):
         """Add the item to the collection/relationship, reject if multiplicity
         exceeded"""
@@ -270,7 +244,29 @@ class IReference(IFeature):
     )
 
 
-class IReferenceSPI(IFeatureSPI):
+class IFeatureSPI(Interface):
+
+    # SPI calls used for feature-to-feature collaboration and internal
+    # implementation
+
+    implAttr = Attribute(
+        """Name of the actual attribute used to store the feature
+
+        (Defaults to the same as 'attrName')"""
+    )
+
+    referencedType = Attribute(
+        """The 'IClassifier' for 'typeObject', or a name to find it by"""
+    )
+
+    def get(element):
+        """Return the value of the feature for 'element'"""
+
+    def set(element,value):
+        """Set the value of the feature for 'element'"""
+
+    def _getList(element):
+        """Return the value(s) of the feature for 'element' as a sequence"""
 
     def _notifyLink(element,posn=None):
         """Link to element, inserting it at 'posn' in our value"""
