@@ -132,11 +132,14 @@ class MiscTests(TestCase):
 
         class MockTemplate:
             protocols.advise(instancesProvide=[web.IDOMletRenderable])
+            renderCt = 0
             def renderFor(_self,ctx,state):
                 self.assert_(ctx is self.ctx)
                 self.assertEqual(state,123)
+                _self.renderCt+=1
 
-        p = pwt.Parameters(self.ctx,{'t':MockTemplate(), 'p':u'bar', 'd':123})
+        t = MockTemplate()
+        p = pwt.Parameters(self.ctx,{'t':t, 'p':u'bar', 'd':123})
         ctx = self.ctx.childContext('xyz',p)
         c2 = ctx.traverseName('t')
 
@@ -146,6 +149,9 @@ class MiscTests(TestCase):
         # It should render with the original context
         c2.current.renderFor(c2,123)
 
+        # and the mock 'renderFor' should have been called exactly once:
+        self.assertEqual(t.renderCt, 1)
+
         # Paths should be traversed from the start point
         c2 = ctx.traverseName('p')
         self.assertEqual(c2.current, (1,2,3))
@@ -153,12 +159,6 @@ class MiscTests(TestCase):
         # And data should just be returned
         c2 = ctx.traverseName('d')
         self.assertEqual(c2.current, (123))
-
-
-
-
-
-
 
 
 

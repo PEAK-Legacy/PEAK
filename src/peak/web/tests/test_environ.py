@@ -142,10 +142,11 @@ class TestTraversals(TestCase):
         self.assertRaises(TypeError, lambda: self.getPath('/').traversedURL)
         for attr in """
             url previous environ interaction policy skin rootURL
-            traversedURL absoluteURL user
+            traversedURL absoluteURL user default nothing
         """.strip().split():
             self.checkPath('/'+attr, getattr(self.ctx,attr))
-
+        self.assert_(self.getPath('/default').current is NOT_GIVEN)
+        self.assert_(self.getPath('/nothing').current is None)
 
     def testPolicyAttrs(self):
         for attr in "defaultMethod resourcePrefix app".strip().split():
@@ -154,7 +155,6 @@ class TestTraversals(TestCase):
     def testEnvironItems(self):
         for key in self.ctx.environ:
             self.checkPath('/environ/'+key, self.ctx.environ[key])
-
 
 
 

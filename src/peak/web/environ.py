@@ -242,7 +242,7 @@ class Context:
         ), permissionNeeded = Anybody
     )
 
-    allow() # XXX needed to jumpstart permission facility
+
 
     def viewHandler(self):
         vs = IViewService(self.current,None)
@@ -251,9 +251,39 @@ class Context:
         if self.previous is None:
             return lambda name,ob,default=None: default
         return self.previous.viewHandler
-            
+
     viewHandler = binding.Make(viewHandler)
-    
+
+    default = NOT_GIVEN
+    nothing = None
+
+    allow(default=Anybody,nothing=Anybody)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 class StartContext(Context):
 
@@ -282,6 +312,17 @@ def simpleRedirect(environ,location):
 
 def clientHas(environ, lastModified=None, ETag=None):
     return False    # XXX
+
+
+
+
+
+
+
+
+
+
+
 
 
 
