@@ -81,9 +81,7 @@ class TCKind(SimpleTC):
 
 
 class Any(PrimitiveType):
-
-    def mdl_normalize(klass, value):
-        return value    # Accept any value...
+    pass
 
 class Integer(PrimitiveType):
     mdl_fromString = int
@@ -106,6 +104,7 @@ class Float(PrimitiveType):
 class Double(Float):
     pass
 
+
 class String(PrimitiveType):
 
     length = 0
@@ -119,6 +118,7 @@ class String(PrimitiveType):
         return TypeCode(kind = klass.mdl_typeKind, length=klass.length)
 
     mdl_typeCode = binding.classAttr( binding.Once(mdl_typeCode) )
+
 
 
 class WString(String):

@@ -137,7 +137,7 @@ class FeatureClass(HashAndCompare,MethodExporter):
     def isReference(self,d,a):
         """Does the feature refer to a non-primitive/non-struct type?"""
         from datatypes import TCKind
-        return self.typeObject.mdl_typeCode.unaliased().kind==TCKind.tk_objref
+        return self.typeCode.kind==TCKind.tk_objref
 
     isReference = binding.Once(isReference)
 

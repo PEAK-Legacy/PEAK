@@ -207,7 +207,7 @@ class Type(Namespace):
 
     __metaclass__ = TypeClass
 
-    __class_implements__ = IType
+    __class_implements__ = ITypeInfo
 
     mdl_defaultValue = NOT_GIVEN
 
@@ -453,6 +453,8 @@ class Struct(Immutable):
 
     """An immutable data structure type"""
 
+    __class_implements__ = ITypeInfo, IStructType
+
     def mdl_typeCode(klass, d, a):
 
         """TypeCode for Struct classes is a 'tk_struct' w/appropriate fields"""
@@ -469,8 +471,6 @@ class Struct(Immutable):
         )
 
     mdl_typeCode = binding.classAttr( binding.Once(mdl_typeCode) )
-
-
 
 
 

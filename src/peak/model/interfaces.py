@@ -3,9 +3,9 @@
 from peak.interface import Interface, Attribute
 
 __all__ = [
-    'IFeature','IFeatureSPI', 'IType', 'IEnumType', 'IEnumValue',
+    'IFeature','IFeatureSPI', 'IType', 'ITypeInfo', 'IEnumType', 'IEnumValue',
+    'IStructType',
 ]
-
 
 
 
@@ -41,20 +41,13 @@ __all__ = [
 
 class IType(Interface):
 
-    """A model type"""
+    """Conversion/marshalling info for a model type"""
 
     def mdl_fromString(aString):
         """Return an instance of type created based on 'aString'"""
 
     def mdl_toString(instance):
         """Return a str() of 'instance'"""
-
-    def mdl_fromFields(fieldSequence):
-        """Return an instance of type created based on 'fieldSequence'
-
-        'fieldSequence' must be an iterable object whose contents
-        are the values of the features named by 'mdl_featureNames',
-        in that order."""
 
     def mdl_normalize(value):
         """Return 'value' normalized to the type, or raise error if invalid"""
@@ -63,12 +56,36 @@ class IType(Interface):
         """Syntax rule for parsing/formatting this type, or None"""
     )
 
-    mdl_isAbstract = Attribute(
-        """Is this an abstract class?  If so, instances can't be created."""
-    )
-
     mdl_defaultValue = Attribute(
         """Default value for attributes of this type, or NOT_GIVEN"""
+    )
+
+    mdl_typeCode = Attribute(
+        """CORBA typecode for the type"""
+    )
+
+
+class IStructType(IType):
+
+    """Structured (non-primitive) marshallable type"""
+
+    def mdl_fromFields(fieldSequence):
+        """Return an instance of type created based on 'fieldSequence'
+
+        'fieldSequence' must be an iterable object whose contents
+        are the values of the features named by 'mdl_featureNames',
+        in that order."""
+
+
+
+
+
+class ITypeInfo(IType):
+
+    """Introspection info for a model type"""
+
+    mdl_isAbstract = Attribute(
+        """Is this an abstract class?  If so, instances can't be created."""
     )
 
     mdl_featuresDefined = Attribute(
@@ -87,6 +104,22 @@ class IType(Interface):
     mdl_compositeFeatures = Attribute(
         """Ordered subset of 'mdl_features' that are composite"""
     )
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     mdl_features = Attribute(
         """All feature objects of this type, in monotonic order
@@ -119,6 +152,14 @@ class IType(Interface):
         subtype's display look "the same" as a base type's display, except for
         those features that it adds to the supertype."""
     )
+
+
+
+
+
+
+
+
 
 
 class IEnumType(IType):
