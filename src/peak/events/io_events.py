@@ -221,14 +221,14 @@ class Selector(binding.Component):
                 delay = self.checkInterval
 
             try:
-                rwe = self.select(r.keys(),w.keys(),e.keys(),delay)
+                fr,fw,fe = self.select(r.keys(),w.keys(),e.keys(),delay)
             except error, v:
                 if v.args[0]==EINTR:
                     continue    # signal received during select, try again
                 else:
                     raise
 
-            for fired,events in zip(rwe,self.rwe):
+            for fired,events in (fe,e),(fr,r),(fw,w):
                 for stream in fired:
                     events[stream]().send(True)
 
