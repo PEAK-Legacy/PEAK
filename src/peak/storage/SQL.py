@@ -164,7 +164,7 @@ class SQLConnection(ManagedConnection):
 
 class SybaseConnection(SQLConnection):
 
-    API = binding.bindTo("Sybase")
+    API = binding.bindTo("import:Sybase")
 
     hostname = binding.bindToProperty('Sybase.client.hostname',
         default=None)
@@ -246,7 +246,7 @@ class SybaseConnection(SQLConnection):
 
 class GadflyConnection(SQLConnection):
 
-    API = binding.bindTo("gadfly")
+    API = binding.bindTo("import:gadfly")
 
     def _open(self):
         a = self.address
