@@ -2,6 +2,84 @@
 
 """Distutils setup file"""
 
+include_tests = True        # edit this to stop installation of test modules
+include_metamodels = True   # edit this to stop installation of MOF, UML, etc.
+
+
+# Base packages for installation
+
+packages = [
+    'peak', 'peak.api', 'peak.binding', 'peak.config', 'peak.model',
+    'peak.naming', 'peak.naming.factories', 'peak.running',
+    'peak.storage', 'peak.util',
+
+    'Interface', 'Interface.Common', 'Interface.Registry',
+    'Persistence',
+]
+
+
+# Base data files
+
+data_files = [
+    ('peak', ['src/peak/peak.ini']),
+]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+if include_tests:
+
+    packages += [
+        'peak.tests', 'peak.binding.tests', 'peak.config.tests',
+        'peak.model.tests', 'peak.naming.tests', 'peak.running.tests',
+        'peak.storage.tests', 'peak.util.tests',
+
+        'Interface.tests', 'Interface.Common.tests',
+        'Interface.Registry.tests',
+    ]
+
+    data_files += [
+        ('peak/running/tests', ['src/peak/running/tests/test_cluster.txt']),
+    ]
+
+
+if include_metamodels:
+
+    packages += [
+        'peak.metamodels',
+        'peak.metamodels.UML13',
+        'peak.metamodels.UML13.Foundation',
+        'peak.metamodels.UML13.model',
+        'peak.metamodels.UML13.model.Foundation',
+        'peak.metamodels.UML13.model.Behavioral_Elements',
+    ]
+
+    if include_tests:
+
+        packages += [
+            'peak.metamodels.tests',
+        ]
+
+        data_files += [
+            ('peak/metamodels/tests',
+                ['src/peak/metamodels/tests/MetaMeta.xml']
+            ),
+        ]
+
+
+
 from distutils.core import setup, Command, Extension
 from distutils.command.install_data import install_data
 from distutils.command.sdist import sdist as old_sdist
@@ -38,6 +116,10 @@ class sdist(old_sdist):
 
         # Run the standard sdist command
         old_sdist.run(self)
+
+
+
+
 
 class test(Command):
 
@@ -135,43 +217,15 @@ setup(
     license="PSF or ZPL",
     platforms=['UNIX','Windows'],
 
-    packages=[
-        'peak', 'peak.api', 'peak.binding', 'peak.model', 'peak.metamodels',
-
-        'peak.metamodels.UML13',
-        'peak.metamodels.UML13.Foundation',
-
-        'peak.metamodels.UML13.model',
-        'peak.metamodels.UML13.model.Foundation',
-        'peak.metamodels.UML13.model.Behavioral_Elements',
-        
-
-        'peak.naming', 'peak.naming.factories', 'peak.util', 'peak.running',
-        'peak.config', 'peak.storage',
-
-        'peak.binding.tests', 'peak.config.tests', 'peak.storage.tests',
-        'peak.metamodels.tests', 'peak.util.tests', 'peak.naming.tests',
-        'peak.model.tests', 'peak.tests', 'peak.running.tests',
-
-        'Interface', 'Interface.tests',
-        'Interface.Common', 'Interface.Common.tests',
-        'Interface.Registry', 'Interface.Registry.tests',
-        'Persistence',
-    ],
-
+    packages    = packages,
     package_dir = {'':'src'},
-
 
     cmdclass = {
         'install_data': install_data, 'sdist': sdist, 'happy': happy,
         'test': test, 'sdist_nodoc': old_sdist, 'build_ext': build_ext,
     },
 
-    data_files = [
-        ('peak', ['src/peak/peak.ini']),
-        ('peak/running/tests', ['src/peak/running/tests/test_cluster.txt']),
-        ('peak/metamodels/tests', ['src/peak/metamodels/tests/MetaMeta.xml']),
-    ],
+    data_files = data_files,
 
     ext_modules = [
         Extension("kjbuckets", ["src/kjbuckets/kjbucketsmodule.c"]),
