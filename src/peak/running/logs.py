@@ -369,10 +369,10 @@ class AbstractLogger(Component):
 
     def log(self, lvl, msg, *args, **kwargs):
         if self.level <= lvl:
+            if args:
+                msg = msg % args
             self.publish(
-                self.EventClass(
-                    (msg % args), self, priority=lvl, **kwargs
-                )
+                self.EventClass(msg, self, priority=lvl, **kwargs)
             )
 
     def publish(self, event):
