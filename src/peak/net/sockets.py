@@ -155,7 +155,6 @@ class fdURL(naming.URL.Base):
     )
 
     def asSocket(self):
-        print self.fileno, self.af
         return socket.fromfd(self.fileno, self.af, self.stype)
 
 
