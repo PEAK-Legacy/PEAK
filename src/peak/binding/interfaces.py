@@ -3,43 +3,14 @@
 from Interface import Interface
 from Interface.Attribute import Attribute
 
+from peak.config.interfaces import IConfigurable, IConfigSource
+
 __all__ = [
-    'IBindingSPI', 'IBindingAPI',
+    'IBindingSPI', 'IBindingAPI', 'IComponent',
 ]
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-class IBindingSPI(Interface):
+class IBindingSPI(IConfigSource):
 
     """Minimum requirements to join a component hierarchy"""
 
@@ -48,18 +19,6 @@ class IBindingSPI(Interface):
 
     def getParentComponent():
         """Return the parent component of this object, or 'None'"""
-
-
-    def _getConfigData(configKey, forObj):
-
-        """Return a value of 'configKey' for 'forObj' or 'NOT_FOUND'
-
-        Note that 'configKey' is an IConfigKey instance and may therefore be
-        a 'naming.PropertyName' or an 'Interface' object.  'binding.Base'
-        implements this method by simply returning 'NOT_FOUND', and that is
-        a perfectly acceptable implementation for many purposes."""
-
-
 
 
 
@@ -113,13 +72,7 @@ class IBindingAPI(IBindingSPI):
 
 
 
+class IComponent(IBindingAPI, IConfigurable):
 
-
-
-
-
-
-
-
-
+    """API supplied by binding.Components"""
 

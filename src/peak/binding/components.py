@@ -574,7 +574,9 @@ class Base(object):
 
 class Component(Base):
 
-    """An implementation (solution-domain) component"""
+    """An configurable implementation (i.e., solution-domain) component"""
+
+    __implements__ = IComponent
 
     def __instance_provides__(self,d,a):
         from peak.config.config_components import PropertyMap
@@ -604,8 +606,8 @@ class Component(Base):
         return NOT_FOUND
 
 
-    def registerProvider(self, ifaces, provider):
-        self.__instance_provides__.registerProvider(ifaces, provider)
+    def registerProvider(self, configKeys, provider):
+        self.__instance_provides__.registerProvider(configKeys, provider)
 
 
 

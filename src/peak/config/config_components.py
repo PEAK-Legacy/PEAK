@@ -44,7 +44,7 @@ class PropertyMap(Base):
     rules     = New(dict)
     provided  = New(dict)   
     _provides = IPropertyMap
-
+    __implements__ = IPropertyMap, Base.__implements__
 
     def setRule(self, propName, ruleObj):
         _setCellInDict(self.rules, PropertyName(propName), ruleObj)
@@ -70,7 +70,7 @@ class PropertyMap(Base):
         old = self.provided.get(iface)
 
         # We want to keep more-general registrants
-        if old is None or old.extends(primary_iface):
+        if old is None or old.extends(primary_iface, False):
         
             _setCellInDict(self.rules, iface, item)
             self.provided[iface]=primary_iface
@@ -146,20 +146,20 @@ class LazyLoader(object):
         return NOT_FOUND
 
 
+def _value(v):
+    return lambda *x: v
 
 def loadMapping(pMap, mapping, prefix='*'):
 
     prefix = PropertyName(prefix).asPrefix()
 
     for k,v in mapping.items():
-        pMap.setValue(prefix+k, v)
+        pMap.registerProvider(PropertyName(prefix+k), _value(v))
 
 
 def loadConfigFile(pMap, filename, prefix='*'):
     if filename:
         ConfigReader(pMap,prefix).readFile(filename)
-
-
 
 
 class ConfigReader(AbstractConfigParser):
@@ -169,11 +169,11 @@ class ConfigReader(AbstractConfigParser):
         self.prefix = PropertyName(prefix).asPrefix()
 
     def add_setting(self, section, name, value, lineInfo):
-        _ruleName = section+name
+        _ruleName = PropertyName(section+name)
         def f(propertyMap, propertyName, targetObj):
                 ruleName = _ruleName
                 return eval(value)
-        self.pMap.setRule(_ruleName,f)
+        self.pMap.registerProvider(_ruleName,f)
 
     def do_include(self, section, name, value, lineInfo):
         from api_impl import getProperty
