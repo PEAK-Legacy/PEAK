@@ -1,6 +1,6 @@
 """Interfaces, constants, property names, etc. for peak.naming"""
 
-from peak.interface import Interface, Attribute
+from protocols import Interface, Attribute
 from peak.api import PropertyName
 
 

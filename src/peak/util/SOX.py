@@ -31,7 +31,7 @@
 
 from xml.sax import ContentHandler, parse
 from xml.sax.saxutils import XMLGenerator
-from peak.interface import Interface, implements
+from protocols import Interface, advise
 from kjbuckets import kjGraph
 
 __all__ = [
@@ -248,7 +248,7 @@ class Node:
 
     """Simple, DOM-like ISOXNode implementation"""
 
-    implements(ISOXNode)
+    advise( instancesProvide = [ISOXNode] )
 
     def __init__(self,name='',atts={},**kw):
         self._name = name
@@ -281,8 +281,8 @@ class Node:
                 d = n._findFirst(name)
                 if d: return d
 
-
-    def _finish(self): return self
+    def _finish(self):
+        return self
 
 
     _acquiredAttrs = ()

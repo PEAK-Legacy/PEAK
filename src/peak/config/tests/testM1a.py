@@ -8,11 +8,11 @@ StringType
 
 # End special test
 
-from peak.interface import implements
+
 from peak.config.interfaces import *
 
 class FooThing(binding.Component):
-    implements(IConfigKey)
+    protocols.advise(instancesProvide=[IConfigKey])
 
 
 class Referenced:

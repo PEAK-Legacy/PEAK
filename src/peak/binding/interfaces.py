@@ -1,6 +1,6 @@
 """PEAK Component Binding Interfaces"""
 
-from peak.interface import Interface, Attribute
+from protocols import Interface, Attribute
 from peak.config.interfaces import IConfigurable, IConfigSource
 from peak.api import NOT_GIVEN
 

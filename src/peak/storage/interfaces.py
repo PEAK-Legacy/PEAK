@@ -1,6 +1,6 @@
 """'Straw Man' Transaction Interfaces"""
 
-from peak.interface import Interface, Attribute
+from protocols import Interface, Attribute, advise
 from peak.binding.interfaces import IComponent
 
 __all__ = [
@@ -204,7 +204,6 @@ class ITransactionErrorHandler(Interface):
 
 
 # DM interfaces
-from peak.interface import implyProtocols
 from peak.persistence import IPersistentDataManager
 
 class IDataManager(IComponent,ITransactionParticipant):
@@ -234,15 +233,16 @@ class IWritableDM(IKeyableDM):
 
     """Data manager that possibly supports adding/modifying objects"""
 
+    advise(
+        # Can't subclass this if it's a Zope Interface, but we can extend it:
+        protocolExtends = [IPersistentDataManager]
+    )
+
     def newItem(klass=None):
         """Create and return a new persistent object of class 'klass'"""
 
     def flush(ob=None):
         """Sync stored state to in-memory state of 'ob' or all objects"""
-
-    implyProtocols(IPersistentDataManager)
-
-
 
 class IDataManager_SPI(Interface):
 

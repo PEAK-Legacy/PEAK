@@ -13,7 +13,7 @@ from syntax import *
 from arithmetic import *
 
 from peak.binding.once import Activator, Once
-from peak.interface import implements, classProvides
+
 
 __all__ = [
     'AbstractName', 'toName', 'CompositeName', 'CompoundName',
@@ -41,7 +41,9 @@ def crossesBoundaries(name):
 
 class AbstractName(tuple):
 
-    implements(IPath)
+    protocols.advise(
+        instancesProvide = [IPath]
+    )
 
     nameKind    = None
 
@@ -74,8 +76,6 @@ class AbstractName(tuple):
         return self.__class__(
             super(AbstractName,self).__getslice__(*args)
         )
-
-
 
 
 
@@ -166,8 +166,10 @@ class ParsedURL(object):
 
     __metaclass__    = URLMeta
 
-    implements(IAddress)
-    classProvides(IAddressFactory)
+    protocols.advise(
+        instancesProvide = [IAddress],
+        classProvides = [IAddressFactory]
+    )
 
     nameKind         = URL_KIND
 
@@ -197,8 +199,6 @@ class ParsedURL(object):
             )
 
     getURLContext = classmethod(getURLContext)
-
-
 
 
 
@@ -518,9 +518,6 @@ class NNS_Reference(object):
     def getObjectInstance(self, context, refInfo, name, attrs=None):
         # default is to treat the object as its own NNS
         return self.relativeTo
-
-
-
 
 
 

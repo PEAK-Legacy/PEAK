@@ -1,6 +1,6 @@
 """peak.model Interfaces"""
 
-from peak.interface import Interface, Attribute
+from protocols import Interface, Attribute
 
 __all__ = [
     'IFeature','IFeatureSPI', 'IType', 'ITypeInfo', 'IEnumType', 'IEnumValue',

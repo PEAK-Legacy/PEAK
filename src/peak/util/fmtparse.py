@@ -57,8 +57,7 @@
 """
 
 
-from peak.api import exceptions, NOT_GIVEN
-from peak.interface import adapt
+from peak.api import exceptions, NOT_GIVEN, adapt
 
 import re
 
@@ -74,6 +73,7 @@ class ParseError(Exception):
 
 class MissingData(Exception):
     pass
+
 
 
 

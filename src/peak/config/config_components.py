@@ -8,7 +8,7 @@ from peak.util.EigenData import EigenCell
 from peak.util.FileParsing import AbstractConfigParser
 
 from interfaces import *
-from peak.interface import Interface, adapt, implements
+from protocols import Interface
 
 
 __all__ = [
@@ -374,7 +374,7 @@ class ConfigurationRoot(Component):
     you can have whatever setup code you want, called automatically from .ini
     files loaded by this class.  We recommend you try that approach first."""
 
-    implements(IConfigurationRoot)
+    protocols.advise(instancesProvide=[IConfigurationRoot])
 
     def __instance_provides__(self,d,a):
         pm = d[a] = PropertyMap(self)

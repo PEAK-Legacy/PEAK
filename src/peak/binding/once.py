@@ -1,13 +1,11 @@
 """'Once' objects and classes"""
 
 from __future__ import generators
-from peak.api import NOT_FOUND
+from peak.api import NOT_FOUND, protocols, adapt
 from peak.util.imports import importObject, importString
 from interfaces import IComponentFactory
 from _once import *
-from peak.interface import adapt, implements, classProvides, \
-    IOpenProvider, IOpenImplementor, NO_ADAPTER_NEEDED, \
-    declareAdapterForType
+from protocols import IOpenProvider, IOpenImplementor, NO_ADAPTER_NEEDED
 from peak.util.advice import metamethod
 
 __all__ = [
@@ -28,6 +26,8 @@ def supertype(supertype,subtype):
             return mro.next()
     else:
         raise TypeError("Not sub/supertypes:", supertype, subtype)
+
+
 
 
 
@@ -291,7 +291,9 @@ class Activator(type):
 
     __name__ = 'Activator'    # trick to make instances' __name__ writable
 
-    implements(IOpenProvider)
+    protocols.advise(
+        instancesProvide=[IOpenProvider]
+    )
 
     def __new__(meta, name, bases, cdict):
 
@@ -322,8 +324,6 @@ class Activator(type):
 
         klass = supertype(Activator,meta).__new__(meta, name, bases, cdict)
         klass.__name__ = name
-
-
 
 
         d = klass.__class_descriptors__ = {}
@@ -357,7 +357,7 @@ class Activator(type):
     ):
         self.__protocols_implemented__[protocol] = adapter
         for sc in self.__subclasses__():
-            declareAdapterForType(protocol, adapter, sc, depth)
+            protocols.declareAdapterForType(protocol, adapter, sc, depth)
 
     def __conform__(self,protocol):
         adapter = self.__protocols_provided__.get(protocol)
@@ -455,14 +455,14 @@ class Adaptable(object):
 
     __metaclass__ = ActiveClass
 
-    classProvides(IOpenImplementor)
+    protocols.advise(
+        classProvides=[IOpenImplementor]
+    )
 
     def __conform__(self,protocol):
         adapter = self.__class__.__protocols_implemented__.get(protocol)
         if adapter is not None:
             return adapter(self,protocol)
-
-
 
 
 

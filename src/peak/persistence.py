@@ -27,8 +27,8 @@ except ImportError:
     # For safety's sake, declare that Persistent implements IPersistent,
     # since the '__implements__' attribute it's using is useless if
     # 'zope.interface' isn't around.
-    from peak.interface import instancesProvide
-    instancesProvide(Persistent, IPersistent)
+    from protocols import declareImplementation
+    declareImplementation(Persistent, instancesProvide=[IPersistent])
 
 # XX It's not clear that we should be using GHOST
 # XXX do we need simple_new()?  What is it for, anyway?

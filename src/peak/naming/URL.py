@@ -3,14 +3,13 @@
 from types import StringTypes
 from urllib import unquote
 
-from peak.api import exceptions, NOT_GIVEN
+from peak.api import exceptions, NOT_GIVEN, adapt, protocols
 from peak.binding.once import classAttr, Once
 from peak.binding.components import bindTo
 from peak.model.elements import Struct
 from peak.model.features import structField
 from peak.model.datatypes import String, Integer
 from peak.model.interfaces import IType
-from peak.interface import adapt, implements, classProvides
 from interfaces import *
 from arithmetic import *
 from names import CompoundName, URLMatch
@@ -23,6 +22,7 @@ __all__ = [
 ]
 
 from peak.util.fmtparse import *
+
 
 
 
@@ -166,8 +166,10 @@ class Base(Struct):
 
     """Basic scheme/body URL"""
 
-    implements(IAddress)
-    classProvides(IAddressFactory)
+    protocols.advise(
+        instancesProvide=[IAddress],
+        classProvides=[IAddressFactory]
+    )
 
     nameKind         = URL_KIND
     nameAttr         = None
@@ -199,8 +201,6 @@ class Base(Struct):
 
         super(Base,self).__init__(**__kw)
         self.__class__.body._setup(self, self.getCanonicalBody())
-
-
 
 
     class scheme(RequiredField):
@@ -358,7 +358,6 @@ class Base(Struct):
 
     def getObjectInstance(self, context, refInfo, name, attrs=None):
         return self.retrieve(refInfo, name, context, attrs)
-
 
 
 

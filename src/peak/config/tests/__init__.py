@@ -2,7 +2,7 @@
 
 from unittest import TestCase, makeSuite, TestSuite
 from peak.api import *
-from peak.interface import Interface, adapt
+from protocols import Interface
 from peak.config.interfaces import *
 from peak.tests import testRoot
 

@@ -1,4 +1,4 @@
-from peak.interface import Interface, Attribute
+from protocols import Interface, Attribute
 from peak.api import PropertyName
 from peak.binding.interfaces import IComponentFactory, IComponent
 import sys, os

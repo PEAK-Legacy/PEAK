@@ -1,9 +1,9 @@
 """Configuration Management API"""
 
-from peak.api import exceptions, NOT_FOUND, NOT_GIVEN, PropertyName
+from peak.api import exceptions, NOT_FOUND, NOT_GIVEN, PropertyName, adapt
 from interfaces import *
 from config_components import findUtility, iterParents, ConfigurationRoot
-from peak.interface import adapt
+
 
 __all__ = [
     'getProperty', 'setPropertyFor', 'setRuleFor', 'setDefaultFor',

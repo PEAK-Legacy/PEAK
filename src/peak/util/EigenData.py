@@ -34,7 +34,7 @@ __all__ = [
     'AlreadyRead', 'EigenCell', 'CollapsedCell', 'EigenDict', 'EigenRegistry'
 ]
 
-from peak.interface import Interface
+from protocols import Interface
 
 class AlreadyRead(Exception):
     """Key or value has already been read"""

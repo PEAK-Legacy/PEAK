@@ -1,5 +1,5 @@
-from peak.interface import *
-from peak.api import exceptions, PropertyName, NOT_GIVEN
+from peak.api import protocols, exceptions, PropertyName, NOT_GIVEN
+from protocols import Interface
 
 __all__ = [
     'IConfigKey', 'IConfigurable', 'IConfigSource', 'IConfigurationRoot',
@@ -25,19 +25,19 @@ class IConfigKey(Interface):
            if object is a property name"""
 
 
-instancesProvide(Interface.__class__, IConfigKey)
-instancesProvide(PropertyName, IConfigKey)
-declareAdapterForType(IConfigKey,PropertyName,str)
+protocols.declareImplementation(
+    Interface.__class__, instancesProvide=[IConfigKey]
+)
 
+protocols.declareImplementation(
+    PropertyName, instancesProvide=[IConfigKey]
+)
 
-
-
-
-
-
-
-
-
+protocols.declareAdapter(
+    PropertyName,
+    provides=[IConfigKey],
+    forTypes=[str]
+)
 
 class IConfigSource(Interface):
 

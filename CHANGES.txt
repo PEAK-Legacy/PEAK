@@ -26,13 +26,14 @@ Fixes and Enhancements since Version 0.5 alpha 1
    also been removed, as they were based on 'isImplementedBy()'.
 
  - REMOVED ability to use '__implements__' and '__class_implements__' to
-   declare support for interfaces.  Use 'implements()', 'classProvides()',
-   'directlyProvides()', 'moduleProvides()', etc. to do this now; they
-   are now available automatically from 'peak.api'.  Similarly, the ability
-   to use 'isImplementedBy()' with interfaces declared by PEAK is REMOVED.
-   You can still use 'isImplementedBy()' with Zope interfaces, of course,
-   but we recommend you switch to 'adapt()', which will work with both PEAK
-   and Zope interfaces.
+   declare support for interfaces.  Use 'protocols.advise()' or a related
+   API to do this now.  The 'protocols' package is available automatically
+   from 'peak.api'.
+
+   Similarly, the ability  to use 'isImplementedBy()' with interfaces declared
+   by PEAK is REMOVED.  You can still use 'isImplementedBy()' with Zope
+   interfaces, of course, but we recommend you switch to 'adapt()', which
+   should work with both PEAK and Zope interfaces.
 
  - Replaced all use of 'zope.interface' with 'protocols' package because
    the 'protocols' package:
@@ -74,7 +75,10 @@ Fixes and Enhancements since Version 0.5 alpha 1
    * uses adaptation as the fundamental approach to dealing with interfaces,
      and avoids the use of 'isImplementedBy()'.  In the *rare* case that you
      need to introspect rather than adapt, you can always call adapt() and
-     check the result.
+     check the result.  (But introspection usually means that you're using
+     interfaces as a form of metadata; it's better to create an explicit
+     interface that provides the metadata you seek, and adapt to that
+     interface, than to use interfaces as data.)
 
    Most of these features are unavailable in 'zope.interface', and some have
    been declared by the Zope Pope to be unacceptable or undesirable features

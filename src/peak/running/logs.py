@@ -8,8 +8,7 @@
 
 from peak.binding.components import Component, Once, New, requireBinding
 from peak.naming import URL
-from peak.interface import implements
-from peak.api import NOT_GIVEN
+from peak.api import NOT_GIVEN, protocols
 
 from interfaces import ILogger
 
@@ -25,6 +24,7 @@ __all__ = [
     'getLevelName', 'getLevelFor', 'addLevelName', 'Event', 'logfileURL',
     'AbstractLogger', 'LogFile', 'LogStream', 'loggerURL', 'peakLoggerURL',
 ]
+
 
 
 
@@ -328,7 +328,9 @@ def _levelledMessage(lvl,exc_info=()):
 
 class AbstractLogger(Component):
 
-    implements(ILogger)
+    protocols.advise(
+        instancesProvide=[ILogger]
+    )
 
     level = requireBinding("Minimum priority for messages to be published")
     EventClass = Event
@@ -364,8 +366,6 @@ class AbstractLogger(Component):
 
     def publish(self, event):
         pass
-
-
 
     def __call__(self, priority, msg, ident=None):
 

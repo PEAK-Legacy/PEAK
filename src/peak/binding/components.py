@@ -12,7 +12,6 @@ from peak.util.EigenData import AlreadyRead, EigenRegistry
 from peak.config.interfaces import IConfigKey, IPropertyMap, \
     IConfigurationRoot, NullConfigRoot
 from peak.util.imports import importString
-from peak.interface import adapt, adapterForProtocols, adapterForTypes
 from warnings import warn
 
 class ComponentSetupWarning(UserWarning):
@@ -37,6 +36,7 @@ class _proxy(Once):
         raise AttributeError, self.attrName
 
     def computeValue(self,d,a): raise AttributeError, a
+
 
 
 def getComponentPath(component, relativeTo=None):
@@ -328,9 +328,14 @@ def lookupComponent(component, name, default=NOT_GIVEN, creationName=None):
 
 class ConfigFinder(object):
 
+    """Look up utilities or properties"""
+
     __slots__ = 'ob'
 
-    adapterForProtocols(IComponentKey, [IConfigKey])
+    protocols.advise(
+        instancesProvide = [IComponentKey],
+        asAdapterForProtocols = [IConfigKey]
+    )
 
     def __init__(self, ob, proto):
         self.ob = ob
@@ -340,12 +345,39 @@ class ConfigFinder(object):
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 class NameFinder(object):
+
+    """Look up names"""
 
     __slots__ = 'name'
 
-    adapterForTypes(IComponentKey, [str, unicode])
-    adapterForProtocols(IComponentKey, [IName])
+    protocols.advise(
+        instancesProvide      = [IComponentKey],
+        asAdapterForTypes     = [str, unicode],
+        asAdapterForProtocols = [IName]
+    )
 
     def __init__(self, ob, proto):
         self.name = ob
@@ -365,6 +397,15 @@ class NameFinder(object):
                 return default
 
         return ComponentName(parsedName).lookup(component,default,creationName)
+
+
+
+
+
+
+
+
+
 
 
 class bindTo(Once):
