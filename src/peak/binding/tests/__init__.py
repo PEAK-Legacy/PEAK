@@ -2,6 +2,7 @@
 
 from unittest import TestCase, makeSuite, TestSuite
 from peak.api import *
+from Interface import Interface
 
 class ModuleTest(TestCase):
 
@@ -35,7 +36,6 @@ class ModuleTest(TestCase):
 
     def checkRefBetweenClasses(self):
         assert self.M2.Referencer.containedClass.M1=='M1'
-
 
 
 
@@ -121,15 +121,71 @@ class DescriptorData(binding.Component):
 
 
 
+class ISampleUtility1(Interface): pass
+class ISampleUtility2(Interface): pass
+
+def makeAUtility(context):
+    u=binding.Component(); u.setParentComponent(context)
+    return u
+
+
 class DescriptorTest(TestCase):
 
     def setUp(self):
+
         self.data = DescriptorData()
+
+        self.data.aService.registerProvider(
+            ISampleUtility1,
+            binding.Provider(makeAUtility)
+        )
+
+        self.data.aService.registerProvider(
+            ISampleUtility2,
+            binding.CachingProvider(makeAUtility)
+        )
+
+
+    def checkAcquireInst(self):
+
+        data = self.data
+        ob1 = data.acquireUtility(ISampleUtility1)
+        ob2 = data.aService.acquireUtility(ISampleUtility1)
+        ob3 = data.aService.nestedService.acquireUtility(ISampleUtility1)
+
+        assert ob1 is None
+        assert ob2 is not None
+        assert ob3 is not None
+        assert ob3 is not ob2
+        assert ob2.getParentComponent() is data.aService
+        assert ob3.getParentComponent() is data.aService.nestedService
+
+
+
+    def checkAcquireSingleton(self):
+
+        data = self.data
+        ob1 = data.acquireUtility(ISampleUtility2)
+        ob2 = data.aService.acquireUtility(ISampleUtility2)
+        ob3 = data.aService.nestedService.acquireUtility(ISampleUtility2)
+        ob4 = data.aService.nestedService.acquireUtility(ISampleUtility2)
+
+        assert ob1 is None
+        assert ob2 is not None
+        assert ob3 is not None
+        assert ob4 is not None
+        assert ob3 is ob2
+        assert ob4 is ob2
+        assert ob2.getParentComponent() is data.aService
+        assert ob3.getParentComponent() is data.aService
+        assert ob4.getParentComponent() is data.aService
+
 
     def checkBinding(self):
         thing2 = self.data.thing2 
         assert (thing2 is self.data.thing1), thing2
         assert self.data.__dict__['thing2'] is thing2
+
 
     def checkMulti(self):
 
@@ -138,6 +194,14 @@ class DescriptorTest(TestCase):
         assert type(thing4) is tuple
         assert thing4[0] is self.data.thing1
         assert thing4[1] is self.data.thing2
+
+
+
+
+
+
+
+
 
     def checkParents(self):
 
@@ -154,6 +218,7 @@ class DescriptorTest(TestCase):
             del self.data.aService.nestedService.thing6
             del self.data.underflow
 
+
     def checkForError(self):
         try:
             self.data.thing3
@@ -161,6 +226,7 @@ class DescriptorTest(TestCase):
             pass
         else:
             raise AssertionError("Didn't get an error retrieving 'thing3'")
+
 
     def checkNew(self):
     
@@ -172,6 +238,10 @@ class DescriptorTest(TestCase):
         data = DescriptorData()
         assert d == data.newDict        # should be equal
         assert d is not data.newDict    # but separate!
+
+
+
+
 
 
     def checkCopy(self):
@@ -200,6 +270,18 @@ class DescriptorTest(TestCase):
 
     def checkImport(self):
         assert self.data.testImport is TestCase
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
