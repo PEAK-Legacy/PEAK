@@ -252,7 +252,7 @@ class LogSink:
         return True
         
     def __call__(self, priority, msg, ident=None):
-        if type(msg) is type(()):
+        if isinstance(msg,tuple):
             e = Event('ERROR', exc_info = msg)
         else:
             e = Event(msg, priority=priority)

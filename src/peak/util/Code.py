@@ -371,7 +371,7 @@ class FunctionBinder(object):
 
     def __init__(self, func):
 
-        if type(func) is not Function:  # XXX 2.1 backport hack (isinstance)
+        if not isinstance(func,Function):
             func = Function(func)
             
         self.func = func

@@ -131,7 +131,7 @@ class UUID(str):
                 if not name or not ns:
                     raise ValueError, "Both ns and name must be specified"
 
-                if type(ns) is not UUID:
+                if not isinstance(ns,UUID):
                     ns = UUID(ns)
                     
                 h = md5(ns.bytes() + name).digest()
