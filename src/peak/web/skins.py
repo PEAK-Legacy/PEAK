@@ -8,8 +8,8 @@ __all__ = ['Skin',]
 
 class SkinTraverser(MultiTraverser):
 
-    def getAbsoluteURL(self, interaction):
-        return self.getParentComponent().getResourceURL('',interaction)
+    # Our local path is effectively '/++resources++'
+    localPath = binding.bindTo(RESOURCE_PREFIX)
 
     items = binding.bindTo('../layers')
 
@@ -80,8 +80,7 @@ class Skin(Traversable):
 
 
 
-    def getAbsoluteURL(self, interaction):
-        return interaction.request.getApplicationURL()
+    localPath = ''  # skin is at root
 
 
     def getResourceURL(self, path, interaction):
@@ -89,13 +88,14 @@ class Skin(Traversable):
         while path.startswith('/'):
             path = path[1:]
 
-        base = self.getAbsoluteURL(interaction)
-        path = '%s/%s/%s' % (base, interaction.resourcePrefix, path)
+        base = interaction.getAbsoluteURL(self.traverser)
 
-        while path.endswith('/'):
-            path = path[:-1]
+        if path:
+            return '%s/%s' % (base, path)
+        else:
+            return base
 
-        return path
+
 
 
 

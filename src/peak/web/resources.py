@@ -115,11 +115,11 @@ class ResourceDirectory(FSResource):
 
     filenames = binding.Once(filenames)
 
-    def getAbsoluteURL(self,interaction):
-        if self.isRoot and not self.includeURL:
-            # Our name doesn't count in the URL
-            return self.getParentComponent().getAbsoluteURL(interaction)
-        return super(ResourceDirectory,self).getAbsoluteURL(interaction)
+
+
+
+
+
 
     def traverseTo(self, name, interaction):
 
@@ -159,6 +159,47 @@ class ResourceDirectory(FSResource):
         obj.setParentComponent(self, filename)
 
         return adapt(obj,interaction.pathProtocol)
+
+
+
+    def localPath(self,d,a):
+
+        if self.isRoot and not self.includeURL:
+            # Our name doesn't count in the URL
+            return self.getParentComponent().localPath
+
+        # use original definition
+        return self._getLocalPath(d,a)
+
+    localPath = binding.Once(localPath)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -203,9 +244,8 @@ class DefaultLayer(Traversable):
         self.cache[name] = self.cache[pkg] = d
         return d
 
-    def getAbsoluteURL(self,interaction):
-        # Our name doesn't count in the URL
-        return self.getParentComponent().getAbsoluteURL(interaction)
+    # Our name doesn't count in the URL
+    localPath = binding.bindTo('../localPath')
 
 
 class FileResource(FSResource):
@@ -213,6 +253,7 @@ class FileResource(FSResource):
 
 class ImageResource(FileResource):
     pass
+
 
 
 

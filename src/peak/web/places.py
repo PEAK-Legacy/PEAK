@@ -1,12 +1,12 @@
 from peak.api import *
 from interfaces import *
 from types import FunctionType, MethodType
+import posixpath
 
 __all__ = [
     'Traversable', 'Decorator', 'ContainerAsTraversable',
     'MultiTraverser',
 ]
-
 
 
 
@@ -67,17 +67,17 @@ class Traversable(binding.Component):
     def preTraverse(self, interaction):
         pass    # Should do any traversal requirements checks
 
-    def getAbsoluteURL(self, interaction):
+    def _getLocalPath(self, d, a):
 
         name = self.getComponentName()
 
         if name:
-            base = self.getParentComponent().getAbsoluteURL(interaction)
-            return '%s/%s' % (base, name)
+            base = self.getParentComponent().localPath
+            return posixpath.join(base, name)   # handles empty parts OK
 
         raise ValueError("Traversable was not assigned a name", self)
 
-
+    localPath = binding.Once(_getLocalPath)
 
 
 class Decorator(Traversable):

@@ -295,12 +295,12 @@ class Interaction(security.Interaction):
         raise Unauthorized(name=name)   # XXX
 
 
+    baseURL = binding.Once(lambda s,d,a: s.request.getApplicationURL())
 
-
-
-
-
-
+    def getAbsoluteURL(self, traversable):
+        base = self.baseURL
+        path = adapt(traversable,self.pathProtocol).localPath
+        return '%s/%s' % (base, path)
 
 
 
@@ -329,13 +329,13 @@ class Interaction(security.Interaction):
 class TestInteraction(Interaction):
 
     """Convenient interaction to use for tests, experiments, etc."""
-    
+
     policy = binding.bindTo('..', adaptTo=IInteractionPolicy)
 
     request = binding.New('peak.web.requests:TestRequest')
 
+    baseURL = 'http://127.0.0.1'    # prevent use of request unless necessary
 
-    
 
 
 

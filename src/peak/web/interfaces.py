@@ -66,6 +66,9 @@ class IWebInteraction(IInteraction, IPolicyInfo):
 
     skin = Attribute("""Root namespace for presentation resources""")
 
+    def getAbsoluteURL(traversable):
+        """Return an absolute URL for specified traversable"""
+
 
 class IInteractionPolicy(IPolicyInfo):
 
@@ -76,9 +79,6 @@ class IInteractionPolicy(IPolicyInfo):
 
     defaultMethod = Attribute("""Default method name (e.g. 'index_html')""")
     interactionClass = Attribute("Factory for interaction instances")
-
-
-
 
 class IWebTraversable(Interface):
 
@@ -93,8 +93,7 @@ class IWebTraversable(Interface):
     def getObject():
         """Return the underlying object that would be traversed"""
 
-    def getAbsoluteURL(interaction):
-        """Return an absolute URL for this traversable"""
+    localPath = Attribute("Relative URL (no leading '/') from skin/app root")
 
 
 class IWebPage(Interface):
@@ -120,6 +119,7 @@ class ISkin(IWebTraversable):
 
     def getResourceURL(path, interaction):
         """Return the URL for the named resource"""
+
 
 class IDOMletState(IComponent):
 
