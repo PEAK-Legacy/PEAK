@@ -10,6 +10,7 @@ allSuites = [
     'FileParsing:test_suite',
     'SOX:test_suite',
     'uuid:test_suite',
+    'test_mockdb:test_suite',
 ]
 
 

@@ -285,6 +285,19 @@ class SQLConnection(ManagedConnection):
 
 
 
+class MockSQLConnection(SQLConnection):
+
+    DRIVER = "peak.util.mockdb"
+
+    def _open(self):
+        return self.API.connect()
+
+    expect = alsoExpect = provide = binding.Delegate('connection')
+
+    def getRowConverter(self,description,post=None):
+        return post     # provide() should be given pre-converted values
+
+
 class ValueBasedTypeConn(SQLConnection):
 
     def typeMap(self):
@@ -311,19 +324,6 @@ class ValueBasedTypeConn(SQLConnection):
         return tm
 
     typeMap = binding.Make(typeMap)
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 class SybaseConnection(ValueBasedTypeConn):
@@ -544,6 +544,7 @@ class GenericSQL_URL(naming.URL.Base):
         'sybase':  'peak.storage.SQL.SybaseConnection',
         'pgsql':   'peak.storage.SQL.PGSQLConnection',
         'psycopg': 'peak.storage.SQL.PsycopgConnection',
+        'mockdb':  'peak.storage.SQL.MockSQLConnection',
     }
 
     defaultFactory = property(
@@ -565,8 +566,6 @@ class GenericSQL_URL(naming.URL.Base):
     syntax = naming.URL.Sequence(
         ('//',), (user, (':', passwd), '@'), server, ('/', db)
     )
-
-
 
 
 

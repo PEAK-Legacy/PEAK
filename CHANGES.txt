@@ -2,6 +2,18 @@ Fixes and Enhancements since Version 0.5 alpha 2
 
  Changed, Enhanced, or Newly Deprecated Features
 
+ - Added 'peak.util.mockdb', a "mock object" implementation of a DBAPI 2.0
+   driver module.  'mockdb' connections can be told to 'expect()' queries
+   and 'provide()' data to their callers, and will raise AssertionErrors when
+   they are used in a way that doesn't conform to your supplied expectations.
+   This is intended to be used for unit testing components that depend on
+   a database connection: you can verify that they send the right SQL, and
+   you can provide them with dummy data to use.  There is also a 'mockdb:' URL
+   and peak.storage driver, so you can easily use a mock DB connection in place
+   of a real one within a PEAK application, for testing purposes.  Note,
+   however, that 'peak.util.mockdb' is a DBAPI 2.0 driver in itself, and thus
+   can also be used to test DBAPI usage outside of PEAK.
+
  - SQL connection objects now provide an 'appConfig' attribute that is a
    driver-specific 'config.Namespace()'.  This allows you to easily set up
    configuration properties that are driver-specific.  For example, you could
