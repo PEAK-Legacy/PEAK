@@ -45,7 +45,7 @@ class SQLInteractor(binding.Component):
     semi = -1
 
 
-    vars = binding.Make(lambda: {'prompt':'$S$L> '})
+    vars = binding.Make(lambda: {'prompt':'$S$L$T> '})
 
 
     def obnames(self):
@@ -66,6 +66,7 @@ class SQLInteractor(binding.Component):
         p = self.getVar('prompt')
         p = p.replace('$L', str(self.line))
         p = p.replace('$S', self.state)
+        p = p.replace('$T', (not self.txnSvc.isActive()) and 'U' or '')
         return p
 
 
@@ -518,11 +519,14 @@ rollback -- abort current transaction"""
 
         args = ('', 0, 0)
 
-        def cmd(self, cmd, **kw):
-            storage.abortTransaction(self)
-            storage.beginTransaction(self)
+        def cmd(self, cmd, stderr, **kw):
+            if not self.interactor.txnSvc.isActive():
+                print >>stderr, "No transaction active."
+            else:
+                storage.abortTransaction(self)
+                storage.beginTransaction(self)
 
-            self.interactor.resetBuf()
+                self.interactor.resetBuf()
 
     cmd_rollback = binding.Make(cmd_abort)
     cmd_abort = binding.Make(cmd_abort)
@@ -558,6 +562,8 @@ rollback -- abort current transaction"""
         def cmd(self, cmd, stderr, **kw):
             if self.interactor.getBuf().strip():
                 print >>stderr, "Use GO or semicolon to finish outstanding input first"
+            elif not self.interactor.txnSvc.isActive():
+                print >>stderr, "No transaction active."
             else:
                 storage.commitTransaction(self)
                 storage.beginTransaction(self)
