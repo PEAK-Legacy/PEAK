@@ -276,11 +276,11 @@ class ParserTests(TestCase):
         self.startElement('allow',['attributes','__class__,__doc__']); end()
         end(); loc=end()
         ctx = self.policy.newContext(start=loc).childContext('test',123)
-        self.assertEqual(ctx.traverseName("__doc__",None), None)
-        self.assertEqual(ctx.traverseName("__class__",None), None)
-        ctx = loc.beforeHTTP(ctx)
         self.assertEqual(ctx.traverseName("__doc__").current,(123).__doc__)
         self.assertEqual(ctx.traverseName("__class__").current,(123).__class__)
+
+
+
 
 
 

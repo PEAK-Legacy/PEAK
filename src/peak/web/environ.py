@@ -15,7 +15,6 @@ __all__ = [
     'simpleRedirect', 'clientHas','parseName', 'traverseResource',
     'traverseView', 'traverseSkin', 'traverseAttr', 'traverseItem',
     'traverseDefault', 'traverseLocationId', 'relativeURL',
-    'viewProtocol', 'registerView',
 ]
 
 from interfaces import *
@@ -26,6 +25,7 @@ import errors
 from peak.security.interfaces import IInteraction, IGuardedObject
 from wsgiref.util import shift_path_info, setup_testing_defaults, request_uri
 from peak.security.api import Anybody, allow
+
 
 
 
@@ -63,24 +63,20 @@ def relativeURL(base,url):
     return '/'.join(parts) or './'
 
 
-def viewProtocol(component, name):
-    """'IViewProtocol' for views of 'name', in context of 'component'"""
-    parents = list(binding.iterParents(component));parents.reverse()
-    key = str(VIEW_NAMES+'.'+name)
-    for c in parents:
-        if config.IConfigurable(c,None) is not None:
-            proto = config.registeredProtocol(c,key)
-    proto.view_name = name
-    protocols.adviseObject(proto,[IViewProtocol])
-    return proto
 
-    
-def registerView(component, target, name, handler):
-    """Use 'handler' for view 'name' of 'target' in context of 'component'"""
-    IViewTarget(target).registerWithProtocol(
-        viewProtocol(component,name),
-        lambda ob:(ob,handler)
-    )
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -140,13 +136,12 @@ class Context:
 
     user = binding.Delegate('interaction', permissionNeeded=Anybody)
 
-    # Private attrs    
-    view_protocol =  binding.Delegate('previous')
+    # Private attrs
     allows = permissionNeeded = binding.Delegate('interaction')
     getResource = binding.Delegate('skin')
 
     _clone_attrs = (
-        'interaction','policy','skin','rootURL','previous','view_protocol'
+        'interaction','policy','skin','rootURL','previous',
     )
 
     def __init__(self,name,current,environ,previous=None,**kw):
@@ -165,6 +160,7 @@ class Context:
 
     def peerContext(self,name,ob):
         return self.clone(name=name,current=ob)
+
 
     def parentContext(self):
         return self.previous
@@ -248,6 +244,17 @@ class Context:
 
     allow() # XXX needed to jumpstart permission facility
 
+    def view_protocol(self):
+        vs = IViewService(self.current,None)
+        if vs is not None:
+            return vs.lookupProtocol
+        if self.previous is None:
+            return {}.get
+        return self.previous.view_protocol
+            
+    view_protocol = binding.Make(view_protocol)
+    
+
 class StartContext(Context):
 
     previous = None
@@ -260,8 +267,6 @@ class StartContext(Context):
     policy       = binding.Require("Interaction policy",
         adaptTo=IInteractionPolicy
     )
-
-    view_protocol = binding.Delegate('policy')
 
     def parentContext(self):
         return self
@@ -277,15 +282,6 @@ def simpleRedirect(environ,location):
 
 def clientHas(environ, lastModified=None, ETag=None):
     return False    # XXX
-
-
-
-
-
-
-
-
-
 
 
 

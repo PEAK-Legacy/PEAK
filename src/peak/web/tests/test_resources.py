@@ -133,6 +133,7 @@ class LocationTests(TestCase):
     def testNestedViews(self):
         loc = web.Location(self.root)
         self.checkView(loc,int,123)
+        loc = web.Location(self.root)
         self.checkView(loc,protocols.IOpenProtocol,web.IWebTraversable)
 
     def testLocationView(self):

@@ -10,7 +10,7 @@ __all__ = [
     'IDOMletState', 'IHTTPHandler', 'IHTTPApplication', 'INamespaceHandler',
     'IDOMletNode',    'IDOMletNodeFactory', 'IPlace', 'ITraversalContext',
     'IDOMletElement', 'IDOMletElementFactory', 'ISkin', 'IPolicyInfo',
-    'IViewTarget', 'IConfigurableLocation', 'IViewProtocol',
+    'IViewTarget', 'IConfigurableLocation', 'IViewProtocol', 'IViewService',
     'VIEW_NAMES', 'TEMPLATE_SCHEMA', 'SITEMAP_SCHEMA', 'LOCATION_ID',
 ]
 
@@ -62,21 +62,21 @@ class IViewProtocol(protocols.IOpenProtocol):
     view_name = Attribute("The name of the view this protoocol is for")
 
 
+class IViewService(Interface):
+    
+    def lookupProtocol(name):
+        """Return an 'IViewProtocol' for looking up view 'name'"""
 
+    def registerView(target,name,handler):
+        """Register 'handler' to implement view 'name' for 'target'
 
+        'target' must be an 'IViewTarget' or 'None', and 'handler' must be an
+        'INamespaceHandler'.  If 'target' is 'None', then the view is intended
+        to apply to the view service itself, rather than to a content type.
+        """
 
-
-
-
-
-
-
-
-
-
-
-
-
+    def registrationProtocol(name):
+        """Return an 'IViewProtocol' for registering views of 'name'"""
 
 
 
@@ -115,8 +115,8 @@ class IInteractionPolicy(IAuthService, IPolicyInfo):
     def ns_handler(ns,default=None):
         """Return an 'INamespaceHandler' for namespace 'ns', or 'default'"""
 
-    def view_protocol(viewname,default=None):
-        """Return the 'IViewProtocol' for 'viewname', or 'default'"""
+
+
 
 
 
@@ -186,9 +186,9 @@ class ITraversalContext(IInteraction):
         """Create a duplicate context, using supplied keyword arguments
 
         Acceptable keyword arguments include: 'name', 'current', 'environ',
-        'policy', 'skin', 'rootURL', 'interaction', 'view_protocol',
-        'previous', and 'clone_from'.  Most of these just set the corresponding
-        attribute on the new context, but the following names are special:
+        'policy', 'skin', 'rootURL', 'interaction', 'previous', and
+        'clone_from'.  Most of these just set the corresponding attribute on
+        the new context, but the following names are special:
 
          'clone_from' -- an existing context to clone.  If supplied, its
            'interaction', 'skin', 'policy', and 'previous' attributes will
@@ -367,16 +367,8 @@ class INamespaceHandler(Interface):
         for the returned default is the caller's responsibility."""
 
 
-class IConfigurableLocation(IWebTraversable,IPlace):
+class IConfigurableLocation(IWebTraversable,IPlace,IViewService):
     """Location that can be configured via a sitemap file"""
-
-    def registerView(target,name,handler):
-        """Register 'handler' to implement view 'name' for 'target'
-
-        'target' must be an 'IViewTarget' or 'None', and 'handler' must be an
-        'INamespaceHandler'.  If 'target' is 'None', then the view is intended
-        to apply to the location itself, rather than to a content type.
-        """
 
     def addContainer(container,permissionNeeded=None):
         """Register 'container' for item lookups"""
@@ -386,6 +378,14 @@ class IConfigurableLocation(IWebTraversable,IPlace):
 
         The registered location can then be accessed using the '++id++'
         namespace."""
+
+
+
+
+
+
+
+
 
 
 

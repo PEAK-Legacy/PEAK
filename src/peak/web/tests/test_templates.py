@@ -18,7 +18,7 @@ from cStringIO import StringIO
 import peak.web.templates as pwt
 from urllib import quote
 
-class TestApp(web.Traversable):
+class TestApp(web.Location):
 
     security.allow(
         foo = security.Anybody,

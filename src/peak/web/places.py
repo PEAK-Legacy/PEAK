@@ -3,7 +3,7 @@ from interfaces import *
 from types import FunctionType, MethodType, ClassType
 import posixpath
 from errors import NotFound, NotAllowed, WebException
-from environ import traverseAttr, traverseDefault, traverseView, registerView
+from environ import traverseAttr, traverseDefault, traverseView
 from urlparse import urljoin
 from peak.util.EigenData import AlreadyRead
 
@@ -204,6 +204,7 @@ class ProtocolAsViewTarget(protocols.Adapter):
 
 
 class Location(Place,binding.Configurable):
+
     """A location suitable for configuration via site map"""
 
     protocols.advise(
@@ -215,14 +216,7 @@ class Location(Place,binding.Configurable):
     local_views = binding.Make(dict)
     security.allow(security.Anybody)    # XXX
 
-    def beforeHTTP(self,ctx):
-        if self.have_views:
-            ctx = ctx.clone(view_protocol=VIEW_NAMES.of(self).get)
-        return ctx
-
     def traverseTo(self, name, ctx, default=NOT_GIVEN):
-        if self.have_views:
-            ctx = ctx.clone(view_protocol=VIEW_NAMES.of(self).get)
 
         for perm,cont in self.containers:
             if perm is not None:
@@ -239,25 +233,31 @@ class Location(Place,binding.Configurable):
         return traverseDefault(ctx, self, '', name, name, default)
 
 
-
-
-
-
-
     def registerLocation(self,location_id,path):
         path = adapt(path,web.TraversalPath)
         self.registerProvider(LOCATION_ID(location_id),config.Value(path))
 
+
+
+
+
+
+
+
     def registerView(self,target,name,handler):
         if target is None:
             try:
-                web.viewProtocol(self.getParentComponent(),name)    # XXX!!!
+                self.registrationProtocol.im_func(
+                    self.getParentComponent(),name
+                )    # XXX!!!
             except AlreadyRead:
                 pass
             self.local_views[name] = handler
         else:
             self.have_views = True
-            registerView(self,target,name,handler)
+            IViewTarget(target).registerWithProtocol(
+                self.registrationProtocol(name), lambda ob:(ob,handler)
+            )
 
     def addContainer(self,container,permissionNeeded=None):
         binding.suggestParentComponent(self,None,container)
@@ -269,19 +269,19 @@ class Location(Place,binding.Configurable):
             return self, self.local_views[p.view_name]
 
 
+    def lookupProtocol(self,name,default=None):
+        return VIEW_NAMES.of(self).get(name,default)
 
 
-
-
-
-
-
-
-
-
-
-
-
+    def registrationProtocol(self,name):
+        parents = list(binding.iterParents(self));parents.reverse()
+        key = str(VIEW_NAMES+'.'+name)
+        for c in parents:
+            if config.IConfigurable(c,None) is not None:
+                proto = config.registeredProtocol(c,key)
+        proto.view_name = name
+        protocols.adviseObject(proto,[IViewProtocol])
+        return proto
 
 
 

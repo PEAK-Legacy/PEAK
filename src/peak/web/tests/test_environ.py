@@ -2,6 +2,7 @@ from unittest import TestCase, makeSuite, TestSuite
 from peak.api import *
 from peak.tests import testRoot
 from wsgiref.util import request_uri
+from test_templates import TestApp
 
 class TestTraversals(TestCase):
 
@@ -13,9 +14,9 @@ class TestTraversals(TestCase):
         self.ob1 = object()
         self.ob2 = object()
         self.ob3 = object()
-        self.policy = web.TestPolicy(testRoot())
+        self.root = TestApp(testRoot())
+        self.policy = web.TestPolicy(self.root)
         self.ctx = self.policy.newContext({'SCRIPT_NAME':self.script_name})
-        self.root = self.ctx.current    # XXX
 
     def getCurrent(self):
         return self.ctx.current
@@ -38,7 +39,6 @@ class TestTraversals(TestCase):
         if request_uri(self.ctx.environ,False)==self.url_base:
             self.assertEqual(self.ctx.url,self.script_name[1:]+url)
             
-
     def setName(self,name,ob,url):
         self.ctx = self.ctx.traverseName(name)
         self.failUnless(self.getCurrent() is ob)
@@ -82,7 +82,7 @@ class TestTraversals(TestCase):
 
     def testGotoName(self):
         from test_templates import TestApp
-        app = TestApp(testRoot())
+        app = TestApp(self.root,'test')
         self.setChild('test',app)
         self.setName('.',app,'/test')
         self.setName('',app,'/test')
@@ -247,7 +247,9 @@ class TestContext(TestCase):
 class TestNamespaces(TestCase):
 
     def setUp(self):
-        self.policy = web.TestPolicy(testRoot())
+        from test_templates import TestApp
+        self.app = TestApp(testRoot())
+        self.policy = web.TestPolicy(self.app)
         self.foo_skin = web.Skin()
         foo_dapter = lambda *args: self
         bar_dapter = lambda *args: "baz"
@@ -262,11 +264,9 @@ class TestNamespaces(TestCase):
         self.policy.registerProvider(
             'peak.web.skins.foo', config.Value(self.foo_skin)
         )
-        web.registerView(self.policy,int,'foo',foo_handler)
-        web.registerView(self.policy,str,'foo',bar_handler)
+        self.app.registerView(int,'foo',foo_handler)
+        self.app.registerView(str,'foo',bar_handler)
 
-        from test_templates import TestApp
-        self.app = TestApp(testRoot())
 
 
     def invokeHandler(self,ctx,handler,qname,check_context=True,fail=False):
@@ -299,14 +299,14 @@ class TestNamespaces(TestCase):
         self.invokeHandler(ctx,web.traverseResource,RESOURCE_NS+"xyz",fail=1)
 
     def testRegisteredView(self):
-        p = web.viewProtocol(self.policy,'foo')
-        self.failUnless(self.policy.view_protocol('foo') is p)
-        ctx = self.policy.newContext(start=123)
+        p = self.app.registrationProtocol('foo')
+        ctx = self.policy.newContext().childContext('x',123)
+        self.failUnless(ctx.view_protocol('foo') is p)
         ctx = ctx.clone(current="123")
         ctx = ctx.clone(current=[])
 
     def testTraverseView(self):
-        ctx = self.policy.newContext(start=123)
+        ctx = self.policy.newContext().childContext('x',123)
         for handler in web.traverseView, web.traverseDefault:
             for name in '@@foo', '++view++foo':
                 res = self.invokeHandler(ctx, handler, name)
@@ -348,7 +348,7 @@ class TestNamespaces(TestCase):
             #)
 
     def testTraverseNames(self):
-        ctx = self.policy.newContext(start=123)
+        ctx = self.policy.newContext().childContext('x',123)
         self.failUnless(ctx.traverseName('++foo++bar') is self)
         self.assertEqual(ctx.traverseName('++bar++baz'), 'baz')
         self.failUnless(ctx.traverseName('@@foo').current is self)

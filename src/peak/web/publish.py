@@ -113,8 +113,8 @@ class InteractionPolicy(binding.Configurable, protocols.StickyAdapter):
         return self._mkInteraction(self,None,**options)
 
     ns_handler    = binding.Make(lambda self: NAMESPACE_NAMES.of(self).get)
-    view_protocol = binding.Make(lambda self: VIEW_NAMES.of(self).get)
     _getSkinName  = binding.Obtain(PropertyName('peak.web.getSkinName'))
+
 
 
 
