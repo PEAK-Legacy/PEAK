@@ -1,5 +1,20 @@
 Fixes and Enhancements since Version 0.5 alpha 3
 
+ - Added a '-c/--config' option to PEAK bootstrap commands to load an .ini
+   configuration file in a new service area before executing any subcommands.
+   
+   This allows you to do things like::
+   
+        peak launch -c bulletins ref:sitemap@sitemap.xml
+
+   which loads the 'bulletins' configuration file before launching the sitemap.
+   Note that if you are subclassing 'commands.Bootstrap' you can suppress this
+   option using 'options.reject_inheritance("-c","--config")' in the body of
+   your subclass' class definition.  You may wish to do this if your
+   application's subcommands must run in the same service area as the parent
+   command.  (E.g. if the parent command expects the subcommand to partake in
+   a transaction controlled by the parent command.)
+
  - Added a 'value' property to 'model.Enumeration', so that you can access
    an enumeration instance's value (i.e., the value it hashes and compares
    equal to)

@@ -673,30 +673,30 @@ class Bootstrap(AbstractInterpreter):
             )
         return self.getSubcommand(factory)
 
+    cmdConfig = binding.Make(list,
+        [options.Append(
+            '-c','--config', type=str, metavar="INI_FILE",
+            help=".ini-style configuration file(s) to load"
+        )]
+    )
 
+    [dispatch.as(binding.Make)]
+    def cmdParent(self):
+        if self.cmdConfig:
+            parent = config.ServiceArea(self)
+            config.loadConfigFiles(parent,self.cmdConfig)
+            return parent
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    def getCommandParent(self):
+        """Get or create a component to be used as the subcommand's parent"""
+        # Default is to use the interpreter as the parent
+        parent = self.cmdParent
+        if parent is None:
+            return self
+        return parent
 
     usage = """
-Usage: peak NAME_OR_URL arguments...
+Usage: peak [options] NAME_OR_URL arguments...
 
 The 'peak' script bootstraps and runs a specified command object or command
 class.  The NAME_OR_URL argument may be a shortcut name defined in the
