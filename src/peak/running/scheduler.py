@@ -2,7 +2,7 @@
 
 from peak.api import *
 from interfaces import *
-from time import time
+from time import time, sleep
 from peak.util.EigenData import EigenCell, AlreadyRead
 from peak.util.imports import lazyModule
 select = lazyModule('select')
@@ -132,7 +132,7 @@ def setReactor(reactor):
 def getReactor(appConfig):
     """Get system reactor -- default to our "dirt simple" reactor"""
 
-    if hasattr(_reactor,'value'):   # XXX ugh
+    if not hasattr(_reactor,'value'):   # XXX ugh
         setReactor(UntwistedReactor(appConfig))
 
     return _reactor.get()
@@ -188,8 +188,8 @@ class UntwistedReactor(binding.Base):
     def stop(self):
         self.running = False
 
-    def callLater(delay, callable, *args, **kw):
-        insort_right(self.laters, _Appt(time()+delay, callable, args, kw)
+    def callLater(self, delay, callable, *args, **kw):
+        insort_right(self.laters, _Appt(time()+delay, callable, args, kw))
 
     def addReader(self, reader):
         if reader not in self.readers: self.readers.append(reader)
@@ -238,7 +238,7 @@ class _Appt(object):
     __slots__ = 'time','func','args','kw'
 
     def __init__(self,t,f,a,k):
-        self.time = t; self.func = f; self.args = a; self.kw = kw
+        self.time = t; self.func = f; self.args = a; self.kw = k
 
     def __call__(self): return self.func(*self.args, **self.kw)
     def __cmp__(self):  return cmp(self.time, other.time)
