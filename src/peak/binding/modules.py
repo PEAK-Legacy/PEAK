@@ -123,11 +123,6 @@
 
     To-do Items
 
-        * The 'adviseModule()' API is as-yet untested, and 'setupModule()' is
-          only lightly tested so far.  We need lots of test cases to make sure
-          this thing is working right, because a *lot* of things are going to
-          depend on it in future.
-
         * The simulator should issue warnings for a variety of questionable
           situations, such as...
 
@@ -162,10 +157,20 @@
 """
 
 
+
+
+
+
+
 import sys
 from types import ModuleType
+
 __proceed__ = None
-__all__ = ['adviseModule', 'setupModule', '__proceed__', 'configure']
+
+__all__ = [
+    'adviseModule', 'setupModule', '__proceed__', 'configure',
+    'ModuleInheritanceWarning'
+]
 
 adviceMap = {}
 
@@ -177,11 +182,6 @@ def configure(obj, **attrs):
     for k,v in attrs.items():
         if not hasattr(obj,k):
             setattr(obj,k,v)
-
-
-
-
-
 
 
 
@@ -287,6 +287,32 @@ def setupModule():
 
 def adviseModule(moduleName):
 
+    """"Advise" a module - like a runtime patch
+
+        Usage::
+            from TW.API import *
+
+            ...
+
+            adviseModule('moduleToAdvise')
+
+    'adviseModule()' works much like 'setupModule()'.  The main difference
+    is that it applies the current module as a patch to the supplied module
+    name.  The module to be advised must not have been imported yet, and it
+    must call 'setupModule()'.  The result will be as though the advised
+    module had been replaced with a derived module, using the standard module
+    inheritance rules to derive the new module.
+
+    Note that more than one advising module may advise a single target module,
+    in which case the order of importing is significant.  Advice modules
+    imported later take precedence over those imported earlier.  (The target
+    module must always be imported last.)
+
+    Advice modules may advise other advice modules, but there is little point
+    to doing this, since both advice modules will still have to be explicitly
+    imported before their mutual target in order for the advice to take effect.
+    """    
+
     frame = sys._getframe(1)
     dict = frame.f_globals
 
@@ -297,6 +323,8 @@ def adviseModule(moduleName):
         raise SpecificationError(
             "Advice modules cannot use '__bases__'"
         )
+
+
 
     if sys.modules.has_key(moduleName):
         raise SpecificationError(
@@ -309,20 +337,6 @@ def adviseModule(moduleName):
 
     codelist = getCodeListForModule(module, code)
     adviceMap.setdefault(moduleName, [])[0:0] = codelist
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -346,20 +360,6 @@ mutableOps = (
     DELETE_SLICE, DELETE_SLICE+1, DELETE_SLICE+2, DELETE_SLICE+3,
     STORE_ATTR,   DELETE_ATTR,    STORE_SUBSCR,   DELETE_SUBSCR,
 )
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

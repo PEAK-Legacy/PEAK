@@ -1,5 +1,7 @@
 New Features and Bug Fixes since v0.2, preview 1
 
+ * Added tests and documentation for 'adviseModule()' API
+
  * Added a 'test' command to 'setup.py' that installs and then tests all of
    TransWarp.  (It saves me time running the unit tests while I'm writing
    new code.)

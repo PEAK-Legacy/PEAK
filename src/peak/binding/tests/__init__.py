@@ -5,51 +5,80 @@ from TW.API import *
 
 class ModuleTest(TestCase):
 
+    def setUp(self):
+        import testM1, testM2
+        self.M1, self.M2 = testM1, testM2
+
     def checkBase(self):
-        from testM1 import BaseClass as B1
-        from testM2 import BaseClass as B2
-        assert B1.foo==1
-        assert B2.foo==2
+        assert self.M1.BaseClass.foo==1
+        assert self.M2.BaseClass.foo==2
         
     def checkSub(self):
-        from testM1 import Subclass as S1
-        from testM2 import Subclass as S2
-        assert S1.foo==1
-        assert S2.foo==2
+        assert self.M1.Subclass.foo==1
+        assert self.M2.Subclass.foo==2
 
     def checkNested(self):
-        from testM1 import Subclass as S1
-        from testM2 import Subclass as S2
-        assert S1.Nested.bar=='baz'
-        assert S2.Nested.bar=='baz'
-        assert S1.NestedSub.bar == 'baz'
-        assert S2.NestedSub.bar == 'baz'
-        assert not hasattr(S1.NestedSub,'spam')
-        assert S2.NestedSub.spam == 'Nested'
+        assert self.M1.Subclass.Nested.bar=='baz'
+        assert self.M2.Subclass.Nested.bar=='baz'
+        assert self.M1.Subclass.NestedSub.bar == 'baz'
+        assert self.M2.Subclass.NestedSub.bar == 'baz'
+        assert not hasattr(self.M1.Subclass.NestedSub,'spam')
+        assert self.M2.Subclass.NestedSub.spam == 'Nested'
 
     def checkFuncGlobals(self):
-        from testM1 import aFunc1 as F11
-        from testM2 import aFunc1 as F12
-        assert F11()=='M1'
-        assert F12()=='M2'
+        assert self.M1.aFunc1()=='M1'
+        assert self.M2.aFunc1()=='M2'
 
     def checkWrapping(self):
-        from testM1 import aFunc2 as F21
-        from testM2 import aFunc2 as F22
-        assert F21('x')=='M1(x)'
-        assert F22('x')=='after(M1(before(x)))'
-
-    def checkBaseBinding(self):
-        import testM2, UserList
-        assert testM2.RebindSub.M1=='M1'
-        assert testM2.RebindSub.M2=='M2'
-        assert testM2.RebindSub.__bases__ == (
-            testM2.UnusedBase, UserList.UserList, object  
-        ), testM2.RebindSub.__bases__
+        assert self.M1.aFunc2('x')=='M1(x)'
+        assert self.M2.aFunc2('x')=='after(M1(before(x)))'
 
     def checkRefBetweenClasses(self):
-        from testM2 import Referencer as R
-        assert R.containedClass.M1=='M1'
+        assert self.M2.Referencer.containedClass.M1=='M1'
+
+
+
+
+    def checkBaseBinding(self):
+        import UserList
+        assert self.M2.RebindSub.M1=='M1'
+        assert self.M2.RebindSub.M2=='M2'
+        assert self.M2.RebindSub.__bases__ == (
+            self.M2.UnusedBase, UserList.UserList, object  
+        ), self.M2.RebindSub.__bases__
+
+
+class AdviceTest(ModuleTest):
+    
+    def setUp(self):
+        import testM2a, testM1a, testM1
+        self.M1 = testM1
+        self.M2 = testM1a
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 class DescriptorData(SEF.App):
 
@@ -70,6 +99,15 @@ class DescriptorData(SEF.App):
         class nestedService(SEF.Service):
 
             thing6 = SEF.bindToParent(2)
+
+
+
+
+
+
+
+
+
 
 
 
@@ -125,7 +163,7 @@ class DescriptorTest(TestCase):
             raise AssertionError("Didn't get an error retrieving 'thing3'")
 
 TestClasses = (
-    ModuleTest, DescriptorTest
+    ModuleTest, AdviceTest, DescriptorTest
 )
 
 def test_suite():

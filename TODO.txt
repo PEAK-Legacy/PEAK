@@ -4,8 +4,6 @@ Open Issues/To-Do Items
 
     API.Modules
 
-      * Add tests for 'adviseModule()' API
-
       * Add checks and warnings for ambiguous re-assignments of global
         variables and class attributes.
 
@@ -38,6 +36,8 @@ Open Issues/To-Do Items
         instantiation.
 
       * A way to generate Z3 Interfaces from Feature-based specifications?
+
+
 
     Database
 
