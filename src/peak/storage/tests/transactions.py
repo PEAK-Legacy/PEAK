@@ -3,7 +3,7 @@
 from unittest import TestCase, makeSuite, TestSuite
 from peak.api import *
 from peak.util.MiniTable import Table
-from Persistence import Persistent
+from peak.persistence import Persistent
 
 
 class TxnStateTest(TestCase):

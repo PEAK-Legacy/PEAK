@@ -15,14 +15,14 @@ from method_exporter import MethodExporter
 from peak.util.hashcmp import HashAndCompare
 from types import FunctionType
 
-from Persistence import Persistent
-from Persistence.cPersistence import GHOST
+from peak.persistence import Persistent
 from peak.storage.lazy_loader import LazyLoader
 
 
 __all__ = [
     'Type', 'PrimitiveType', 'Immutable', 'Struct', 'Element',
 ]
+
 
 
 

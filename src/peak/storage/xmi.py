@@ -165,7 +165,7 @@
 from peak.api import *
 from peak.util import SOX
 from weakref import WeakValueDictionary
-from Persistence import Persistent
+from peak.persistence import Persistent
 from xml.sax import saxutils
 from types import StringTypes
 from peak.model.api import TCKind, SimpleTC, Boolean, TypeCode

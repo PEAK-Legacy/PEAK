@@ -8,7 +8,7 @@ from peak.util.EigenData import EigenCell, AlreadyRead
 from peak.util.FileParsing import AbstractConfigParser
 
 from interfaces import *
-from Interface import Interface
+from peak.interface import Interface
 
 
 __all__ = [

@@ -31,7 +31,7 @@
 
 from xml.sax import ContentHandler, parse
 from xml.sax.saxutils import XMLGenerator
-from Interface import Interface
+from peak.interface import Interface
 from kjbuckets import kjGraph
 
 __all__ = [

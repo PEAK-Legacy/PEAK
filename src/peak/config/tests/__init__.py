@@ -2,7 +2,7 @@
 
 from unittest import TestCase, makeSuite, TestSuite
 from peak.api import *
-from Interface import Interface
+from peak.interface import Interface
 
 class PropertyTest(TestCase):
 

@@ -1,7 +1,6 @@
 """Interfaces, constants, property names, etc. for peak.naming"""
 
-from Interface import Interface
-from Interface.Attribute import Attribute
+from peak.interface import Interface, Attribute
 from peak.api import PropertyName
 
 
@@ -28,6 +27,7 @@ STATE_FACTORIES  = PropertyName('peak.naming.stateFactories')
 SCHEME_PARSER    = PropertyName('peak.naming.schemeParser')
 
 SCHEMES_PREFIX   = PropertyName('peak.naming.schemes')
+
 
 
 

@@ -36,7 +36,7 @@ __all__ = ['LockFile', 'NullLockFile']
 import os, errno, time
 from peak.util.threads import allocate_lock
 
-from Interface import Interface
+from peak.interface import Interface
 
 
 class ILock(Interface):

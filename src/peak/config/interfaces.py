@@ -1,5 +1,4 @@
-from Interface import Interface
-from Interface.Attribute import Attribute
+from peak.interface import Interface, Attribute, addDeclarationToType
 from peak.api import exceptions, PropertyName
 
 __all__ = [
@@ -30,11 +29,12 @@ class IConfigKey(Interface):
             (Meaningless for property names)"""
 
 
-from Interface.Implements import implements
 
-implements(Interface.__class__, IConfigKey)
-implements(PropertyName, IConfigKey)
+# XXX when we can 'adapt()' to protocols, IConfigKey can just know that
+# XXX Interface and PropertyName are valid supporters.
 
+addDeclarationToType(Interface.__class__, IConfigKey)
+addDeclarationToType(PropertyName, IConfigKey)
 
 
 

@@ -80,7 +80,7 @@ for k, v in globals().items():
 
 
 
-from Interface import Interface
+from peak.interface import Interface
 
 class ILogSink(Interface):
     def sink(event):

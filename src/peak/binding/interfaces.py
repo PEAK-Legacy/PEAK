@@ -1,8 +1,6 @@
 """PEAK Component Binding Interfaces"""
 
-from Interface import Interface
-from Interface.Attribute import Attribute
-
+from peak.interface import Interface, Attribute
 from peak.config.interfaces import IConfigurable, IConfigSource
 
 __all__ = [
@@ -33,6 +31,8 @@ class IBindingSPI(IConfigSource):
 
     def getComponentName():
         """Return this component's name relative to its parent, or 'None'"""
+
+
 
 
 

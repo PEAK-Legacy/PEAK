@@ -1,11 +1,11 @@
 """peak.model Interfaces"""
 
-from Interface import Interface
-from Interface.Attribute import Attribute
+from peak.interface import Interface, Attribute
 
 __all__ = [
     'IFeature','IFeatureSPI', 'IType', 'IEnumType', 'IEnumValue',
 ]
+
 
 
 

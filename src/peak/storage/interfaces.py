@@ -1,7 +1,6 @@
 """'Straw Man' Transaction Interfaces"""
 
-from Interface import Interface
-from Interface.Attribute import Attribute
+from peak.interface import Interface, Attribute
 from peak.binding.interfaces import IComponent
 
 __all__ = [
@@ -11,6 +10,7 @@ __all__ = [
     'IManagedConnection', 'IManagedConn_SPI', 'IKeyableDM',
     'ISQLConnection'
 ]
+
 
 class ITransactionService(Interface):
     """Manages transaction lifecycle, participants, and metadata.
@@ -205,7 +205,7 @@ class ITransactionErrorHandler(Interface):
 
 # DM interfaces
 
-from Persistence.IPersistentDataManager import IPersistentDataManager
+from peak.persistence import IPersistentDataManager
 
 class IDataManager(IComponent,ITransactionParticipant,IPersistentDataManager):
 

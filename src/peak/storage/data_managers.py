@@ -1,8 +1,7 @@
 from peak.api import binding, model
 from interfaces import *
 from transactions import TransactionComponent
-from Persistence import Persistent
-from Persistence.cPersistence import GHOST
+from peak.persistence import Persistent, isGhost
 from peak.util.ListProxy import ListProxy
 from lazy_loader import LazyLoader
 
@@ -10,6 +9,7 @@ __all__ = [
     'FacadeDM', 'QueryDM', 'EntityDM', 'PersistentQuery', 'QueryLink',
     'StorableDM',
 ]
+
 
 
 
@@ -174,7 +174,7 @@ class QueryLink(ListProxy):
 
 
     def __isActive(self):
-        return self.__query._p_state <> GHOST
+        return not isGhost(self.__query)
 
 
     def __setitem__(self, i, item):
