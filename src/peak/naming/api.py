@@ -2,7 +2,7 @@
 
 __all__ = ['InitialContext', 'lookup']
 
-import SPI
+import spi
 
 def InitialContext(environ=None, **kw):
 
@@ -24,7 +24,7 @@ def InitialContext(environ=None, **kw):
     if kw:
         environ.update(kw)
 
-    return SPI.getInitialContext(environ)
+    return spi.getInitialContext(environ)
 
 
 def lookup(name):

@@ -17,7 +17,6 @@ from peak.util.Import import interpretSpec, interpretSequence
 
 
 from interfaces import *
-from exceptions import *
 from names import *
 
 import factories
@@ -34,6 +33,7 @@ __implements__ = IObjectFactory, IStateFactory, IURLContextFactory
 defaultFactories = factories,
 
     
+
 
 
 

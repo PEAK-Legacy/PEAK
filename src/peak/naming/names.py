@@ -2,7 +2,6 @@
 
 import re
 from interfaces import *
-from exceptions import * # XXX
 from types import StringTypes
 
 __all__ = [
@@ -298,34 +297,34 @@ class Syntax(object):
                 "%(bq)s(?:%(escapedChar)s[^%(eq_)s])%(eq)s|" % locals()
             bqchars += bq_
 
+        if separator:
+            sep         = re.escape(separator)
+            optionalSep = "(?:%s)?" % sep
+            sepOrEof    = "(?:%s)|$" % sep
+        else:
+            sep, optionalSep, sepOrEof = '', '', '$'
 
-        sep = re.escape(separator)
-        
+        if sep or bqchars:
+            charpat = "[^%s%s]" % (sep,bqchars)
+        else:
+            charpat = '.'
+
         PS = """
             # Each path segment begins with an optional separator:
-            (?:%(sep)s)?
+            %(optionalSep)s
 
             # Which is followed by either:
-            (
-                %(quotedStrs)s                 # a quoted string
-                (?:%(escapedChar)s[^%(sep)s%(bqchars)s])*     # or a string w/no unescaped quotes or slashes
-            )
-            
+            (   %(quotedStrs)s                      # a quoted string
+                (?:%(escapedChar)s%(charpat)s)*     # or a string w/no unescaped quotes or slashes
+            )           
             # And it must be followed by a separator or EOF:
-            (?=(?:%(sep)s)|$)
+            (?=%(sepOrEof)s)
         """ % locals()
 
         self.parseRe = re.compile(PS,re.X)
         
         if escape:
             self.unescape = re.compile(re.escape(escape)+'(.)').sub
-
-
-
-
-
-
-
 
     def format(self, seq):
     

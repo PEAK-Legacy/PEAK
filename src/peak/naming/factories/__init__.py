@@ -1,6 +1,6 @@
 """Factories for objects, states, and URL scheme contexts"""
 
-from peak.naming.Interfaces import *
+from peak.naming.interfaces import *
 from peak.naming.references import *
 
 from peak.util.Import import interpretSpec, importString
