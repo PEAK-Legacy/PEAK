@@ -381,7 +381,11 @@ class SQLInteractor(binding.Component):
                     if val is None:
                         continue
                         
-                    val = str(val)
+                    if type(val) is unicode:
+                        val = val.encode('utf8')
+                    else:
+                        val = str(val)
+
                     colname = "%s: " % col
 
                     ascii = True
@@ -389,6 +393,7 @@ class SQLInteractor(binding.Component):
                         o = ord(ch)
                         if o < 32 or o > 126:
                             ascii = False
+                            break
 
                     if not ascii:
                         colname = "%s:: " % col
