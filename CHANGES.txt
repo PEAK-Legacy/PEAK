@@ -2,6 +2,11 @@ Fixes and Enhancements since Version 0.5 alpha 2
 
  Changed, Enhanced, or Newly Deprecated Features
 
+ - Added 'events.IEventLoop' implementation and refactored 'UntwistedReactor'
+   to use it.  'UntwistedReactor' is now nothing more than an adapter from
+   'events.IEventLoop' to 'running.IBasicReactor'.  Added 'twisted_support'
+   versions of 'peak.events' interfaces (untested).
+
  - 'running.ISignalManager' is now DEPRECATED; please use 'events.ISignalSource'
    instead.
 
@@ -22,13 +27,13 @@ Fixes and Enhancements since Version 0.5 alpha 2
    "this message.":http://www.eby-sarna.com/pipermail/peak/2004-January/001125.html
 
    You can now configure a service area as using Twisted by setting its
-   'peak.running.isTwisted' property, or by depending upon the
+   'peak.events.isTwisted' property, or by depending upon the
    'running.ITwistedReactor' interface, as long as it happens early enough.
 
    If you need to make choices based on whether a Twisted reactor is being
-   used, you should use the 'peak.running.scheduler.ifTwisted()' function.
-   If you would like to try to force a service area to use a Twisted reactor,
-   you may use 'peak.running.scheduler.makeTwisted()'.
+   used, you should use the 'events.ifTwisted()' function.  If you would like
+   to try to force a service area to use a Twisted reactor, you may use
+   'events.makeTwisted()'.
  
  - Added automatic installation of 'csv' module for Python < 2.3.
 
@@ -217,11 +222,10 @@ Fixes and Enhancements since Version 0.5 alpha 2
 
  - 'binding.Make()' now accepts configuration keys, using them to look up a
    factory object that's then invoked to create the attribute.  This makes it
-   a lot easier to define a component with its own transaction service,
-   'IBasicReactor', or other normally "global" component.  It also makes it
-   easier to globally specify a factory class for some interface.  Factories
-   are looked up under the 'config.FactoryFor(key)' configuration key.  (See
-   below.)
+   a lot easier to define a component with its own transaction service
+   or other normally "global" component.  It also makes it easier to globally
+   specify a factory class for some interface.  Factories are looked up under
+   the 'config.FactoryFor(key)' configuration key.  (See below.)
 
  - Added 'config.FactoryFor(key)', a 'config.IConfigKey' implementation that
    provides a configuration namespace for factories.
@@ -304,8 +308,8 @@ Fixes and Enhancements since Version 0.5 alpha 2
    union (using 'fmtparse.Alternatives') of the syntaxes of its subclasses
    (as specified by 'mdl_subclassNames').
 
- - Added 'IMainLoop.setExitCode()' and 'IMainLoop.childForked()' methods, to
-   allow reactor-driven components to control the mainloop's exit code.
+ - Added 'IMainLoop.exitWith()' method, to allow reactor-driven components to
+   control the mainloop's exit code.
 
  - Added 'IBasicReactor.crash()', which forces an immediate reactor loop exit,
    ignoring pending scheduled calls.

@@ -130,18 +130,18 @@ class Scheduler(object):
     def __init__(self, time = time.time):
         self.now = time
         self._appointments = []
-
+        self.isEmpty = Condition(True)
 
     def time_available(self):
         if self._appointments:
             return max(0, self._appointments[0][0] - self.now())
 
 
-    def tick(self):
+    def tick(self,stop=None):
         now = self.now()
-        while self._appointments and self._appointments[0][0] <= now:
+        while self._appointments and self._appointments[0][0] <= now and not stop:
             self._appointments.pop(0)[1](self,now)
-
+        self.isEmpty.set(not self._appointments)
 
     def sleep(self, secs=0):
         return _Sleeper(self,secs)
@@ -163,7 +163,7 @@ class Scheduler(object):
 
 
     def _callAt(self, what, when):
-
+        self.isEmpty.set(False)
         appts = self._appointments
         lo = 0
         hi = len(appts)

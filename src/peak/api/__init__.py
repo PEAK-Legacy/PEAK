@@ -10,8 +10,8 @@
         that works with (or without) the PEP 282 logging package.
 
     'running' -- Gives you access to the 'peak.running.api', which provides
-        frameworks for command line applications, lock files, "reactor-driven"
-        (event based) applications, CGI, FastCGI, Unix child process management,
+        frameworks for command line applications, lock files, event-driven
+        applications, CGI, FastCGI, Unix child process management,
         and autonomous agents (periodic tasks).
 
     'security' -- Gives you access to the 'peak.security.api', which provides

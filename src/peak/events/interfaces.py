@@ -1,4 +1,5 @@
 from peak.api import *
+from time import sleep
 
 __all__ = [
     'ITask', 'ITaskSwitch', 'IEventSource', 'IEventSink', 'IReadableSource',
@@ -17,7 +18,6 @@ class ITask(protocols.Interface):
 
     def next():
         """Return an 'ITaskSwitch', or value to be yielded to previous task"""
-
 
 
 
@@ -286,7 +286,6 @@ class IThreadState(protocols.Interface):
 
 
 class IScheduler(protocols.Interface):
-
     """Time-based conditions"""
 
     def spawn(iterator):
@@ -295,18 +294,24 @@ class IScheduler(protocols.Interface):
     def now():
         """Return the current time"""
 
-    def tick():
-        """Invoke scheduled callbacks whose time has arrived"""
+    def tick(stop=None):
+        """Invoke scheduled callbacks whose time has arrived, until 'stop'
+
+        If you may want 'tick' to exit before all scheduled callbacks have been
+        invoked, you may supply a mutable object as the 'stop' parameter.  If
+        it is changed to a true value during the 'tick()' execution, 'tick()'
+        will return without executing any additional callbacks.  (Note that
+        schedulers based on Twisted will raise 'NotImplementedError' if the
+        'stop' parameter is supplied.)"""
 
     def sleep(secs=0):
         """'IEventSource' that fires 'secs' after each callback/task switch
 
         The object returned is reusable: each time you yield it or add a
-        callback to it, the thread or callback will be delayed 'secs' from
-        the time that the task switch was requested or the callback added.
-        Multiple threads and callbacks may wait on the same 'sleep()' object,
-        although they will "wake" at different times according to when they
-        went to "sleep"."""
+        callback to it, the thread/callback will be delayed 'secs' from the
+         time that the task switch was requested or the callback added.  More
+        than one thread/callback may wait on the same 'sleep()' object, but
+        each "wakes" at a different time, according to when it "slept"."""
 
     def until(time):
         """Get an 'IConditional' that fires when 'scheduler.now() >= time'"""
@@ -317,14 +322,9 @@ class IScheduler(protocols.Interface):
     def time_available():
         """Return number of seconds until next scheduled callback"""
 
-
-
-
-
-
-
-
-
+    isEmpty = protocols.Attribute(
+        """'IConditional' indicating whether the scheduler is empty"""
+    )
 
 class ISignalSource(protocols.Interface):
 
@@ -367,51 +367,44 @@ class ISelector(ISignalSource):
     def exceptional(stream):
         """'IEventSource' that fires when 'stream' is in error/out-of-band"""
 
-
-
-
-
-
-
-
 class IEventLoop(IScheduler, ISelector):
 
-    def runUntil(eventSource,suppressErrors=False):
+    def runUntil(eventSource, suppressErrors=False, idle=sleep):
         """'tick()' repeatedly until 'eventSource' fires, returning event
 
-        If 'suppressErrors' is true, this method will trap and log
-        all errors without allowing them to reach the caller.  Note
-        that event loop implementations based on Twisted *require*
-        that 'suppressErrors' be used."""
+        If 'suppressErrors' is true, this method will trap and log all errors
+        without allowing them to reach the caller.  Note that event loop
+        implementations based on Twisted *require* that 'suppressErrors' be
+        used, and should raise a 'NotImplementedError' if it is set to False.
 
+        Note that if the event loop's scheduler becomes empty (i.e., there are
+        no active tasks/threads remaining), and 'eventSource' has not fired,
+        this method *may* raise 'StopIteration' to indicate this.  If you would
+        prefer that 'runUntil()' simply exit when that happens, just use the
+        event loop's 'isEmpty' condition as part of an 'events.AnyOf()'
+        condition passed into 'runUntil()'.  Or, if you'd prefer that the event
+        loop continue indefinitely despite the lack of any active tasks (e.g.
+        in GUI programs), you may schedule something to be executed in the far
+        future, or use a thread that looks something like:
 
+            oneDay = eventLoop.sleep(86400)
+            while True:
+                yield oneDay; events.resume()
 
+        Such a thread will only execute once per day, but is sufficient to
+        ensure that 'runUntil()' does not exit due to an empty schedule.  Note
+        that if you are using a Twisted reactor, you don't need to do this
+        as an event loop based on a Twisted reactor will only raise
+        'StopIteration' if 'reactor.stop()' is called directly (i.e. not via
+        triggering of 'eventSource').
 
+        If 'idle' is supplied, it is called with a single argument
+        representing a 'float' number of seconds that the event loop intends
+        to be idle for, each time the event loop is idle.  The default
+        for 'idle' is 'time.sleep', so that the process sleeps between
+        events.
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+        Note that the 'idle' function will probably never be called when there
+        are threads waiting for I/O, when there are threads that reschedule
+        themselves at short intervals, or when using Twisted."""
 

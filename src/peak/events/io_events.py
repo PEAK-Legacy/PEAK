@@ -6,6 +6,7 @@ from weakref import WeakValueDictionary, ref
 import sources
 from event_threads import resume, threaded
 from errno import EINTR
+from time import sleep
 
 try:
     import signal
@@ -36,7 +37,6 @@ else:
     )
 
     signal = signal.signal
-
 
 
 class SignalEvents(binding.Singleton):
@@ -80,7 +80,89 @@ class SignalEvents(binding.Singleton):
         del self._events[signum]
         signal(signum, original_signal_handlers[signum])
 
-class SimpleSelector(binding.Component):
+class EventLoop(binding.Component):
+
+    """All-in-one event source and loop runner"""
+
+    protocols.advise( instancesProvide = [IEventLoop] )
+
+    sigsrc = binding.Obtain(ISignalSource)
+    haveSignal = signals = binding.Delegate('sigsrc')
+
+    scheduler = binding.Obtain(IScheduler)
+    spawn = now = tick = sleep = until = timeout = time_available \
+        = binding.Delegate('scheduler')
+
+    selector  = binding.Obtain(ISelector)
+    readable = writable = exceptional = binding.Delegate('selector')
+
+    log = binding.Obtain('logger:peak.events.loop')
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    def runUntil(self, eventSource, suppressErrors=False, idle=sleep):
+
+        running = [True]
+        exit = []
+        tick = self.tick
+        time_available = self.time_available
+
+        adapt(eventSource,IEventSource).addCallback(
+            lambda s,e: [running.pop(),exit.append(e)]
+        )
+
+        if suppressErrors:
+            def tick(exit,doTick=tick):
+                try:
+                    doTick(exit)
+                except:
+                    self.log.exception("Unexpected error in event loop:")
+
+        while running:
+            tick(exit)
+            if running:
+                delay = time_available()
+                if delay is None:
+                    raise StopIteration("Nothing scheduled to execute")
+                if delay>0:
+                    idle(delay)
+
+        return exit.pop()
+
+
+
+
+
+
+
+
+
+
+
+
+
+class Selector(binding.Component):
 
     """Simple threaded implementation of an ISelector"""
 
@@ -172,19 +254,19 @@ class SimpleSelector(binding.Component):
         try:
             return self.rwe[rwe][key]()
         except KeyError:
-            e = sources.Broadcaster()
+            e = self._mkEvent(rwe,key)
             self.rwe[rwe][key] = ref(
                 e, lambda ref: self._rmEvent(rwe,key)
             )
             self.count.put()
             return e
 
+    def _mkEvent(self,rwe,key):
+        return sources.Broadcaster()
 
     def _rmEvent(self,rwe,key):
         del self.rwe[rwe][key]
         self.count.take()
-
-
 
 
 

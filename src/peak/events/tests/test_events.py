@@ -613,6 +613,47 @@ class SchedulerTests(TestCase):
                 self.assertEqual(a<=i, c())     # Condition met if time expired
 
 
+    def testShortTick(self):
+
+        stopper = [True]
+        stopped = []
+
+        def shortCall(src,evt):
+            stopped.append(stopper.pop())
+            return True
+
+        sleep = self.sched.sleep(1)
+        sleep.addCallback(shortCall)
+        sleep.addCallback(shortCall)
+
+        self.time.set(1)
+        self.sched.tick(stopped)
+        self.assertEqual(stopper, [])
+        self.assertEqual(stopped, [True])
+
+
+    def testIsEmpty(self):
+        self.failUnless(self.sched.isEmpty())
+        self.sched.sleep(1).addCallback(lambda s,e: True)
+        self.failIf(self.sched.isEmpty())
+        self.sched.tick()
+        self.failIf(self.sched.isEmpty())
+        self.time.set(1)
+        self.sched.tick()
+        self.failUnless(self.sched.isEmpty())
+
+
+
+
+
+
+
+
+
+
+
+
+
     def testSleep(self):
 
         delays = 2,3,5,7

@@ -1,30 +1,15 @@
 """Event-driven Scheduling"""
 
+from __future__ import generators
 from peak.api import *
 from interfaces import *
 from peak.util.EigenData import EigenCell, AlreadyRead
 from errno import EINTR
 
 __all__ = [
-    #'setReactor', 'getReactor', 'getTwisted',
-    'MainLoop', 'UntwistedReactor', 'StopOnStandardSignals'
+    'MainLoop', 'UntwistedReactor',
 ]
 
-class StopOnStandardSignals(binding.Component):
-
-    # We hook up to the reactor as soon as possible (i.e. activate upon
-    # assembly), to avoid having to do the lookup during signal handling.
-
-    reactor = binding.Obtain(IBasicReactor, activateUponAssembly=True)
-
-    def SIGINT(self, num, frame):
-        self.reactor.stop()
-
-    SIGTERM = SIGBREAK = SIGINT
-
-
-class ReactorCrash(Exception):
-    """Signal that the reactor needs to crash/exit NOW"""
 
 
 
@@ -39,44 +24,18 @@ class ReactorCrash(Exception):
 
 
 
-def ifTwisted(ob,twistedValue,untwistedValue):
-    """Return 'twistedValue' if 'ob' is in a Twisted service area"""
-
-    sa = config.parentProviding(ob, config.IServiceArea)
-
-    if config.lookup(sa,'peak.running.isTwisted',None):
-        return twistedValue
-    return untwistedValue
 
 
-def makeTwisted(ob):
-    """Try to make service area containing 'ob' a Twisted area"""
-
-    sa = config.parentProviding(ob, config.IServiceArea)
-
-    try:
-        sa.registerProvider('peak.running.isTwisted', config.Value(True))
-    except AlreadyRead:
-        pass
-    if not config.lookup(sa,'peak.running.isTwisted',None):
-        raise AlreadyRead(
-            "Another reactor is already in use for this service area"
-        )
-
-    return True
 
 
-def getTwisted():
-    """Get Twisted reactor, or die trying"""
 
-    try:
-        from twisted.internet import reactor
-    except ImportError:
-        raise exceptions.NameNotFound(
-            """twisted.internet.reactor could not be imported"""
-        )
-    else:
-        return reactor
+
+
+
+
+
+
+
 
 
 
@@ -87,102 +46,61 @@ class MainLoop(binding.Component):
     protocols.advise(
         instancesProvide=[IMainLoop]
     )
-    exitCode      = 0
-    reactor       = binding.Obtain(IBasicReactor)
+
+    exitCode      = binding.Make(lambda: events.Value(None))
     lastActivity  = binding.Make(lambda: events.Value(None))
     stopOnSignals = binding.Obtain(PropertyName('peak.running.mainLoop.stopOnSignals'))
-    signalSource  = binding.Obtain(events.ISignalSource)
-    scheduler     = binding.Obtain(events.IScheduler)
+    eventLoop     = binding.Obtain(events.IEventLoop)
+    sleep         = binding.Obtain('import:time.sleep') # XXX testing hook
 
     def activityOccurred(self):
-        self.lastActivity.set(self.scheduler.now())
+        self.lastActivity.set(self.eventLoop.now())
 
     def run(self, stopAfter=0, idleTimeout=0, runAtLeast=0):
         """Loop polling for IO or GUI events and calling scheduled funcs"""
 
         self.activityOccurred()
-        self.exitCode = 0
+        self.exitCode.set(None)
 
         if self.stopOnSignals:
-            handler = self.signalSource.signals(*self.stopOnSignals)
-            handler.addCallback(lambda s,e: self.reactor.stop())
+            handler = self.eventLoop.signals(*self.stopOnSignals)
+            handler.addCallback(lambda s,e: self.exitWith(None))
 
         try:
             if stopAfter:
-                self.reactor.callLater(stopAfter, self.reactor.stop)
+                self.eventLoop.sleep(stopAfter).addCallback(
+                    lambda s,e: self.exitWith(None)
+                )
 
             if idleTimeout:
-                self.reactor.callLater(runAtLeast,self._checkIdle,idleTimeout)
+                self._checkIdle(runAtLeast, idleTimeout)
 
-            self.reactor.run(False)
-            return self.exitCode
+            return self.eventLoop.runUntil(self.exitCode,True,idle=self.sleep)[0]
 
         finally:
             self.lastActivity.set(None); handler = None
 
+    def _checkIdle(self, runAtLeast, timeout):
 
-    def _checkIdle(self, timeout):
+        yield self.eventLoop.sleep(runAtLeast); events.resume()
 
-        # Check whether we've been idle long enough to stop
-        idle = self.scheduler.now() - self.lastActivity()
+        idle = self.eventLoop.now() - self.lastActivity()
 
-        if idle >= timeout:
-            self.reactor.stop()
-
-        else:
-            # reschedule check for the earliest point at which
+        while idle<timeout:
+            # Next check is at the earliest point at which
             # we could have been idle for the requisite amount of time
-            self.reactor.callLater(timeout - idle, self._checkIdle, timeout)
+            yield self.eventLoop.sleep(timeout-idle); events.resume()
+
+            # Check whether we've been idle long enough to stop
+            idle = self.eventLoop.now() - self.lastActivity()
+
+        self.exitWith(None)
+
+    _checkIdle = events.threaded(_checkIdle)
 
 
     def exitWith(self, exitCode):
-        self.exitCode = exitCode
-        self.reactor.crash()
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-class TwistedScheduler(binding.Component,events.Scheduler):
-
-    """'events.IScheduler' that uses a Twisted reactor for timing"""
-
-    reactor = binding.Obtain(ITwistedReactor)
-    now     = binding.Obtain('import:time.time')
-
-    def time_available(self):
-        return 0    # no way to find this out from a reactor :(
-
-    def tick(self):
-        self.reactor.runUntilCurrent()
-
-    def _callAt(self, what, when):
-        self.reactor.callLater(when-self.now(), what, self, when)
-
-
-
-
-
-
+        self.exitCode.set((exitCode,), force=True)
 
 
 
@@ -212,27 +130,22 @@ class UntwistedReactor(binding.Component):
     )
 
     running = False
+    stopped = binding.Make(lambda: events.Condition(True))
+
     writers = binding.Make(dict)
     readers = binding.Make(dict)
     sleep   = binding.Obtain('import:time.sleep')
-    select  = binding.Obtain('import:select.select')
-    _error  = binding.Obtain('import:select.error')
-    logger  = binding.Obtain('logger:peak.reactor')
-    sigSvc  = binding.Obtain(events.ISignalSource)
-    scheduler = binding.Obtain(events.IScheduler)
-    selector  = binding.Obtain(events.ISelector)
-    checkInterval = binding.Obtain(
-        PropertyName('peak.running.reactor.checkInterval')
-    )
+
+    eventLoop = binding.Obtain(events.IEventLoop)
 
     def addReader(self, reader):
         if reader not in self.readers:
-            e = self.readers[reader] = self.selector.readable(reader)
+            e = self.readers[reader] = self.eventLoop.readable(reader)
             e.addCallback(lambda s,e: self._fire(self.readers, reader, reader.doRead))
 
     def addWriter(self, writer):
         if writer not in self.writers:
-            self.writers[writer]=self.selector.writable(writer)
+            self.writers[writer]=self.eventLoop.writable(writer)
             e.addCallback(lambda s,e: self._fire(self.writers, writer, writer.doWrite))
 
     def removeReader(self, reader):
@@ -244,22 +157,24 @@ class UntwistedReactor(binding.Component):
 
 
 
+
+
+
+
+
     def run(self, installSignalHandlers=True):
 
         if installSignalHandlers:
-            handler = self.sigSvc.signals('SIGTERM','SIGBREAK','SIGINT')
+            handler = self.eventLoop.signals('SIGTERM','SIGBREAK','SIGINT')
             handler.addCallback(lambda s,e: self.stop())
 
+        self.stopped.set(False)
+        self.running = True
+
         try:
-            self.running = True
-            log = self.logger
-
-            while self.running:
-                try:
-                    self.iterate()
-                except:
-                    log.exception("Unexpected error in reactor.run():")
-
+            self.eventLoop.runUntil(
+                self.stopped, suppressErrors=True, idle=self.sleep
+            )
         finally:
             self.running = False
             handler = None  # drop signal handling, if we were using it
@@ -273,22 +188,19 @@ class UntwistedReactor(binding.Component):
         self.callLater(0, self.crash)
 
     def crash(self):
-        self.running = False
-        raise ReactorCrash
-
-
-
-
-
-
-
-
-
+        self.stopped.set(True)
 
     def callLater(self, delay, callable, *args, **kw):
-        self.scheduler.sleep(delay).addCallback(
+        self.eventLoop.sleep(delay).addCallback(
             lambda s,e: callable(*args,**kw) or True
         )
+
+
+
+
+
+
+
 
 
     def _fire(self, events, target, method):
@@ -301,62 +213,27 @@ class UntwistedReactor(binding.Component):
             method()
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     def iterate(self, delay=None):
+        """Handle scheduled events for up to 'delay' seconds"""
 
         if delay is None:
             if not self.running:
                 delay = 0
             else:
-                delay = self.scheduler.time_available()
+                delay = self.eventLoop.time_available()
                 if delay is None:
-                    delay = self.checkInterval
+                    delay = 0
 
-        delay = max(delay, 0)
-        deadline = self.scheduler.now() + delay
+        # Run the event loop
+        self.stopped.set(False)
 
-        try:
-            self.scheduler.tick()
-        except ReactorCrash:
-            return
-        except:
-            self.logger.exception(
-                "%s: error executing scheduled callback:", self
-            )
-
-        delay = deadline - self.scheduler.now()
-
-        if delay>0 and self.running:
-            self.sleep(delay)
+        self.eventLoop.runUntil(
+            events.AnyOf(self.stopped, self.eventLoop.sleep(delay)),
+            suppressErrors=True, idle=self.sleep
+        )
 
 
-
-
-
+Reactor = UntwistedReactor  # for easy reference in peak.ini
 
 
 

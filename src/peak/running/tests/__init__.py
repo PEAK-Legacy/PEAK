@@ -162,14 +162,12 @@ class QuietTask(ScheduleTestTask):
 
 
 
-class TestApp(binding.Component):
+class TestApp(config.ServiceArea):
 
     clock = binding.Make(lambda self: TestClock(log=self.append))
 
     reactor = binding.Make(
-        lambda self: UntwistedReactor(
-            sleep = self.clock.sleep, select=self.clock.select
-        ),
+        lambda self: UntwistedReactor(sleep = self.clock.sleep),
         offerAs=[running.IBasicReactor]
     )
 
@@ -178,9 +176,10 @@ class TestApp(binding.Component):
         offerAs=[events.IScheduler]
     )
 
-    mainLoop = binding.Make(running.IMainLoop, offerAs=[running.IMainLoop])
-
-    tq = binding.Make(running.ITaskQueue, offerAs=[running.ITaskQueue])
+    mainLoop = binding.Make(
+        lambda self: MainLoop(sleep = self.clock.sleep),
+        offerAs=[running.IMainLoop]
+    )
 
     log = binding.Make(list)
 
@@ -198,6 +197,7 @@ sleep = lambda n: ('Sleeping for',n)
 notWork = ('getting work',False)
 gotWork = ('getting work',True)
 didWork = ('doing work',True)
+
 
 
 
@@ -296,12 +296,9 @@ class ReactiveTests(TestCase):
         app.mainLoop.run(60, 5, 20.5)
 
         # Note: this does not match exactly what would happen with a "real"
-        # clock; execution times will make a difference, and the finish-out
-        # that happens here, wouldn't take place because the events at the 35
-        # second mark wouldn't be scheduled.  It's only this way because the
-        # clock doesn't move between 'sleeps'.  But *because* this isn't
-        # real, the test is therefore stable (i.e. deterministic), as well
-        # as a faster-than-real-time.
+        # clock; execution times will make a difference.  But *because* this
+        # isn't real, the test is therefore stable (i.e. deterministic), as
+        # well as faster-than-real-time.
 
         self.assertEqual(self.log, [
             ping, pong, sleep(5), ping, sleep(2), pong, sleep(3), # 10 seconds
@@ -313,9 +310,12 @@ class ReactiveTests(TestCase):
             sleep(2.0), # but it was a false alarm, so finish waiting to 28 secs
             pong, sleep(2.0), ping,    # 30 seconds now
             sleep(3.0), # idle checker looking for timeout, false alarm again
-            sleep(2.0), # idle timeout! but reactor will process pending items;
-            pong, #ping  # finit at 35 seconds
+            sleep(2.0), # idle timeout, so stop! 
+            #pong, ping  # finit at 35 seconds
         ])
+
+
+
 
 
 

@@ -1,5 +1,5 @@
 """Base classes for Main Programs (i.e. processes invoked from the OS)"""
-
+from __future__ import generators
 from peak.api import *
 from interfaces import *
 from peak.util.imports import importObject
@@ -300,12 +300,12 @@ class AbstractInterpreter(AbstractCommand):
             return cmd
 
         # Return the subcommand instance in place of the interpreter instance
-        return cmd.interpret(cmd.argv[1])
+        try:
+            return cmd.interpret(cmd.argv[1])
+        except InvocationError:
+            return cmd
 
     __call__ = binding.classAttr(__call__)
-
-
-
 
 
 
@@ -695,9 +695,6 @@ list of available shortcut names, see '%s'""" % config.fileNearModule(
 
 
 
-
-
-
 class Alias(binding.Component):
 
     """A factory for executables that aliases some other command"""
@@ -785,7 +782,7 @@ class FastCGIAcceptor(binding.Component):
     """Accept FastCGI connections"""
 
     command  = binding.Require("IRerunnableCGI command object")
-
+    eventLoop= binding.Obtain(events.IEventLoop)
     mainLoop = binding.Obtain(IMainLoop)
     ping     = binding.Obtain('mainLoop/activityOccurred')
 
@@ -794,25 +791,25 @@ class FastCGIAcceptor(binding.Component):
     finish   = binding.Obtain('fcgi/Finish')
 
 
-    def fileno(self):
-        return 0    # FastCGI is always on 'stdin'
+    def __onStart(self):
 
+        readable = self.eventLoop.readable(0)   # FastCGI is always on 'stdin'
 
-    def doRead(self):
+        while True:
 
-        self.ping()
+            yield readable; events.resume()
 
-        i,o,e,env = self.accept()
-
-        try:
-            self.command.runCGI(i,o,e,dict(env))
-
-        finally:
-            self.finish()
             self.ping()
+            i,o,e,env = self.accept()
 
+            try:
+                self.command.runCGI(i,o,e,dict(env))
+    
+            finally:
+                self.finish()
+                self.ping()
 
-
+    __onStart = binding.Make(events.threaded(__onStart), uponAssembly=True)
 
 
 
@@ -830,34 +827,34 @@ class CGICommand(EventDriven):
     arrive.  Otherwise, it will assume that it is being run as a CGI, and
     use its environment attributes as the environment for the CGI command.
 
-    Note that if running in CGI mode, a 'CGICommand' will exit its reactor
-    loop immediately upon completion of the request, without running any
-    subsequent scheduled events, unless 'os.fork()' is available and
-    the 'forkAfterCGI' parameter is true (it defaults to false), in which
-    case the process will fork and finish out one reactor iteration.
+    Note that if running in CGI mode, 'CGICommand' will exit immediately
+    upon completion of the request, without running an event loop at all.
 
     To use this class, you must define the value of 'cgiCommand', which must
     be an 'IRerunnableCGI'.
     """
 
-    cgiCommand   = binding.Require(
+    cgiCommand = binding.Require(
         "IRerunnableCGI to invoke on each hit", adaptTo = IRerunnableCGI
     )
 
-    forkAfterCGI = False
-
-    reactor      = binding.Obtain(IBasicReactor)
     newAcceptor  = FastCGIAcceptor
 
 
+    def _run(self):
 
+        if self.isFastCGI():
+            # Create the acceptor
+            self.newAcceptor(self, command=self.cgiCommand)
 
+            # and run the event loop
+            return super(CGICommand,self)._run()
 
-
-
-
-
-
+        else:
+            # do plain CGI
+            return self.cgiCommand.runCGI(
+                self.stdin, self.stdout, self.stderr, self.environ, self.argv
+            )
 
 
 
@@ -903,100 +900,21 @@ class CGICommand(EventDriven):
 
 
 
-    def detatchAfterCGI(self):
-
-        try:
-            from os import fork
-        except ImportError:
-            # We can't fork; force an immediate shutdown
-            self.reactor.stop()
-            return
-
-        # Flush output to web server
-        self.stdout.flush()
-        self.stderr.flush()
-
-        if fork():
-            # Parent process; shutdown and exit
-            self.reactor.stop()
-
-        else:
-            # Child process; close file handles and proceed
-            self.stdin.close()
-            self.stdout.close()
-            self.stderr.close()
-
-            # Enable task queue, and schedule to exit after one iteration
-            self.lookupComponent(ITaskQueue).enable()
-            self.reactor.callLater(0, self.reactor.stop)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    def __setupCGI(self):
-
-        if self.isFastCGI():
-
-            self.reactor.addReader(
-                self.newAcceptor(self, command=self.cgiCommand)
-            )
-
-        else:
-            # Disable the task queue immediately, so that tasks won't run
-            # before the main CGI process
-
-            tq = self.lookupComponent(ITaskQueue)
-            tq.disable()
-
-            # Setup CGI
-            self.reactor.callLater(
-                0, self.cgiCommand.runCGI,
-                self.stdin, self.stdout, self.stderr, self.environ, self.argv
-            )
-
-            if self.forkAfterCGI:
-                # Schedule fork
-                self.reactor.callLater(0, self.detatchAfterCGI)
-
-            else:
-                # Schedule straight shutdown
-                self.reactor.callLater(0, self.reactor.stop)
-
-
-
-    __setupCGI = binding.Make(__setupCGI, uponAssembly=True)
-
-
-
-
-
-
-
-
-
-class CGIInterpreter(CGICommand):
-
+class CGIInterpreter(Bootstrap):
     """Run an application as a CGI, by adapting it to IRerunnableCGI"""
 
-    acceptURLs = True
+    cgiWrapper = CGICommand
+    usage = """
+Usage: peak CGI NAME_OR_URL arguments...
 
-    def cgiCommand(self):
+Run NAME_OR_URL as a CGI application, by adapting it to the
+'running.IRerunnableCGI' interface, and then using a 'commands.CGICommand'
+to invoke it.
+"""
 
-        if len(self.argv)<2:
-            raise InvocationError("missing argument(s)")
+    def interpret(self,filename):
 
-        name = self.argv[1]
+        name = filename
 
         ob = lookupCommand(
             self, name, default=NOT_FOUND, acceptURLs=self.acceptURLs
@@ -1012,16 +930,13 @@ class CGIInterpreter(CGICommand):
             ob = factory(self, 'cgi')
 
         cgi = adapt(ob, IRerunnableCGI, None)
+
         if cgi is not None:
-            return cgi
+            return self.getSubcommand(self.cgiWrapper, cgiCommand = cgi)
 
         raise InvocationError(
             "Can't convert", ob, "to CGI; found at", name
         )
-
-    cgiCommand = binding.Make(cgiCommand)
-
-
 
 
 

@@ -1,3 +1,4 @@
+from __future__ import generators
 from peak.api import *
 from interfaces import *
 from bisect import insort_left
@@ -38,43 +39,42 @@ __all__ = [
 
 
 
-
 class TaskQueue(binding.Component):
 
     protocols.advise(
         instancesProvide=[ITaskQueue]
     )
 
-    reactor     = binding.Obtain(IBasicReactor)
+    eventLoop   = binding.Obtain(events.IEventLoop)
     loop        = binding.Obtain(IMainLoop)
     ping        = binding.Obtain('loop/activityOccurred')
 
     activeTasks = binding.Make(list)
-    _scheduled  = False
-    _disabled   = False
+
+    _enabled   = binding.Make(lambda: events.Value(True))
+    _taskCount = binding.Make(lambda: events.Semaphore(0))
 
 
     def addTask(self,ptask):
         insort_left(self.activeTasks, ptask)    # round-robin if same priority
-        self._scheduleProcessing()
+        self._taskCount.put()
 
 
     def enable(self):
-        self._disabled = False
-        self._scheduleProcessing()
+        self._enabled.set(True)
 
 
     def disable(self):
-        self._disabled = True
+        self._enabled.set(False)
 
 
-    def _scheduleProcessing(self):
 
-        if self._scheduled or self._disabled or not self.activeTasks:
-            return
 
-        self.reactor.callLater(0, self._processNextTask)
-        self._scheduled = True
+
+
+
+
+
 
 
 
@@ -82,44 +82,44 @@ class TaskQueue(binding.Component):
 
     def _processNextTask(self):
 
-        # Processes the highest priority pending task
+        while True:
 
-        del self._scheduled
+            # Wait until we have tasks and are enabled
 
-        if self._disabled:
-            return      # Don't run tasks when disabled
+            while not self._taskCount() or not self._enabled():
+                yield self._taskCount; events.resume()
+                if not self._enabled():
+                    yield self._enabled; events.resume()
 
+            yield self.eventLoop.sleep(); events.resume()
 
-        didWork = cancelled = False
-
-        try:
-
-            task = self.activeTasks.pop()  # Highest priority task
+            didWork = cancelled = False
 
             try:
-                didWork = task()
 
-            except exceptions.StopRunning:  # Don't reschedule the task
-                cancelled = True
+                task = self.activeTasks.pop()  # Highest priority task
+                self._taskCount.take()
 
-        finally:
+                try:
+                    didWork = task()
 
-            if didWork:
-                self.ping()     # we did something; make note of it
+                except exceptions.StopRunning:  # Don't reschedule the task
+                    cancelled = True
+
+            finally:
+
+                if didWork:
+                    self.ping()     # we did something; make note of it
 
             if not cancelled:
-                self.reactor.callLater(task.pollInterval,self.addTask,task)
+                # Schedule item to be put back in the list
+                self.eventLoop.sleep(task.pollInterval).addCallback(
+                    lambda src,evt,task=task: self.addTask(task)
+                )
 
-            self._scheduleProcessing()
-
-
-
-
-
-
-
-
-
+    _processNextTask = binding.Make(
+        events.threaded(_processNextTask), uponAssembly=True
+    )
 
 class AdaptiveTask(binding.Component):
 

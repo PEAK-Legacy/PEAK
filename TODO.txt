@@ -5,14 +5,18 @@ Open Issues/To-Do Items
     * peak.events migration
 
       - 'running.IProcessProxy' should use conditions/values instead of
-        listeners
+        listeners, and related command/supervisor tools should also be ported
 
-      - Implement basic 'events.ISelector' and 'IEventLoop'
+      - Add tests for Twisted support
 
-      - 'UntwistedReactor' should use an 'IEventLoop' to implement 'run()'
+      - Add interrupt capability (to throw an asynchronous error, similar to
+        how 'KeyboardInterrupt' works, but in an 'events.Thread'), and use it
+        to implement an 'alarm()' capability
 
-      - Add 'events.twisted_support', with 'TwistedScheduler',
-       'TwistedSelector', and 'DeferredAsTaskSwitch'
+      - Make it possible to adapt from condition->value, so deriving from conds
+        can still work, and implement events.AllOf() as a condition
+
+      - Replace IMainLoop activity monitoring with a plugin-based mechanism?
 
     * peak.naming
 
@@ -33,11 +37,11 @@ Open Issues/To-Do Items
 
       - ZConfig schema for logging plugins, allowing multiple handlers/category
 
+
+
     * peak.binding
 
       - Cleanup/document attribute binding interface
-
-
 
     * peak.running.timers
 
@@ -61,10 +65,6 @@ Open Issues/To-Do Items
          a later release)
 
        - try/catch DOMlet (and related error rendering interface/framework)
-
-
-
-
 
 
 
