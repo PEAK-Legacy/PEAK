@@ -182,7 +182,7 @@ class TypeClass(Namespace.__class__):
         """All feature objects of this type, in sorted order"""
 
         fl = list(self.mdl_features)
-        fl.sort
+        fl.sort()
         return tuple(fl)
 
     mdl_sortedFeatures = binding.Once(mdl_sortedFeatures)
