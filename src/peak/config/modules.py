@@ -616,11 +616,11 @@ class Simulator:
 def prepForSimulation(code, path='', depth=0):
 
     code = Code(code)
-    idx = code.index()
-    opcode, operand, lineOf = idx.opcode, idx.operand, idx.byteLine
+    idx = code.index(); opcode, operand = idx.opcode, idx.operand
     offset = idx.offset
     name_index = code.name_index
     const_index = code.const_index
+    append = code.co_code.append
 
     Simulator = name_index('__PEAK_Simulator__')
     DefFunc   = name_index('DEFINE_FUNCTION')
@@ -642,7 +642,7 @@ def prepForSimulation(code, path='', depth=0):
                 "Modification to mutable during initialization",
                 ModuleInheritanceWarning,
                 code.co_filename,
-                lineOf[offset[i]],
+                idx.byteLine[offset[i]],
             )
 
     for op in (DELETE_NAME, DELETE_GLOBAL):
@@ -651,7 +651,7 @@ def prepForSimulation(code, path='', depth=0):
                 "Deletion of global during initialization",
                 ModuleInheritanceWarning,
                 code.co_filename,
-                lineOf[offset[i]],
+                idx.byteLine[offset[i]],
             )
 
     ### Fix up IMPORT_STAR operations
@@ -659,11 +659,12 @@ def prepForSimulation(code, path='', depth=0):
     for i in idx.opcodeLocations[IMPORT_STAR]:
 
         backpatch = offset[i]
-        line = lineOf[backpatch]
         
-        assert opcode[i-1]== IMPORT_NAME, (
-            "Unrecognized 'import *' at line %(line)d" % locals()
-        )
+        if opcode[i-1] != IMPORT_NAME:
+            line = idx.byteLine[backpatch]
+            raise AssertionError(
+                "Unrecognized 'import *' at line %(line)d" % locals()
+            )
 
         patchTarget = len(co_code)
         go(offset[i-1])
@@ -675,8 +676,8 @@ def prepForSimulation(code, path='', depth=0):
         # Call __PEAK_Simulator__.IMPORT_STAR(module, locals, prefix)
         emit(LOAD_GLOBAL, Simulator)
         emit(LOAD_ATTR, ImpStar)
-        emit(ROT_TWO)
-        emit(LOAD_LOCALS)
+        append(ROT_TWO)
+        append(LOAD_LOCALS)
         emit(LOAD_CONST, const_index(path))
         emit(CALL_FUNCTION, 3)
         emit(JUMP_ABSOLUTE, backpatch)
@@ -685,7 +686,6 @@ def prepForSimulation(code, path='', depth=0):
         co_code[offset[i]] = POP_TOP
 
         #print "%(line)04d import * (into %(path)s)" % locals()
-
 
 
 
@@ -706,8 +706,6 @@ def prepForSimulation(code, path='', depth=0):
 
         backpatch = offset[i]
         patchTarget = len(co_code)
-
-        line = lineOf[backpatch]
 
         if path and opcode[i]==STORE_NAME:
             qname = path+name
@@ -736,17 +734,23 @@ def prepForSimulation(code, path='', depth=0):
 
 
 
+
+
         ### Handle class operations
         
         if prevOp == BUILD_CLASS:
 
             bind = "class"
             
-            assert opcode[i-2]==CALL_FUNCTION and \
-               opcode[i-3] in (MAKE_CLOSURE, MAKE_FUNCTION) and \
-               opcode[i-4]==LOAD_CONST, (
+            if opcode[i-2]!=CALL_FUNCTION or \
+               opcode[i-3] not in (MAKE_CLOSURE, MAKE_FUNCTION) or \
+               opcode[i-4]!=LOAD_CONST:
+               
+                line = idx.byteLine[backpatch]
+                raise AssertionError(
                     "Unrecognized class %(qname)s at line %(line)d" % locals()
-            )
+                )
+
             const = operand[i-4]
             suite = consts[const]
             consts[const] = prepForSimulation(suite, qname+'.', depth+1)
@@ -764,15 +768,11 @@ def prepForSimulation(code, path='', depth=0):
             emit(LOAD_ATTR, DefClass)
             
             # Move it before the (name,bases,dict) args
-            emit(ROT_FOUR)
+            append(ROT_FOUR)
 
             # Get the absolute name, and call method w/4 args
             emit(LOAD_CONST, namArg)
             emit(CALL_FUNCTION, 4)
-
-
-
-
 
 
 
@@ -790,7 +790,7 @@ def prepForSimulation(code, path='', depth=0):
                 emit(LOAD_ATTR, Assign)
             
             # Move it before the value, get the absolute name, and call method
-            emit(ROT_TWO)
+            append(ROT_TWO)
             emit(LOAD_CONST, namArg)
             emit(CALL_FUNCTION, 2)
             
