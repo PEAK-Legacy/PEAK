@@ -1,9 +1,19 @@
-"""Periodic task scheduler"""
+"""Event-driven Scheduling"""
 
 from peak.api import *
 from interfaces import *
-from bisect import insort_left
 from time import time
+from peak.util.EigenData import EigenCell, AlreadyRead
+from peak.util.imports import lazyModule
+select = lazyModule('select')
+
+from bisect import insort_right
+
+
+__all__ = [
+    'setReactor', 'getReactor', 'getTwisted',
+    'MainLoop', 'UntwistedReactor',
+]
 
 
 
@@ -29,120 +39,209 @@ from time import time
 
 
 
+class MainLoop(binding.Base):
+
+    """Top-level application event loop, with timeout management"""
+
+    __implements__ = IMainLoop
 
 
+    reactor      = binding.bindTo(IBasicReactor)
 
+    lastActivity = None
 
-
-
-
-
-
-
-class ReactorBasedScheduler(binding.Component):
-
-    __implements__ = ITaskScheduler
-
-    lastActivity = runningSince = None
-    stayAliveFor = 0
-    shutDownAfter = 0
-    shutDownIfIdleFor = 0
-
-    activeTasks = binding.New(list)
-
-    callLater = binding.delegateTo('reactor')
-
-    reactor = binding.bindTo('import:twisted.internet.reactor')
-
-    def addPeriodic(self,ptask):
-        """Add 'ptask' to the prioritized processing schedule"""
-        insort_left(self.activeTasks, ptask)    # round-robins if same priority
-        self._scheduleProcessing()  # ensure that we'll be called
-
-    def run(self):
-        """Loop polling for IO or GUI events and calling scheduled funcs"""
-
-        self.lastActivity = self.runningSince = time(); self._stopped = False
-        self._scheduleProcessing()
-
-        try:
-            if self.shutDownAfter:
-                self.callLater(self.shutDownAfter, self.stop)
-
-            if self.shutDownIfIdleFor:
-                self.callLater(self.stayAliveFor, self._checkIdle)
-
-            self.reactor.run()
-
-        finally:
-            del self.lastActivity, self.runningSince
 
     def activityOccurred(self):
         self.lastActivity = time()
 
-    def _checkIdle(self):
+
+    def run(self, stopAfter=0, idleTimeout=0, runAtLeast=0):
+
+        """Loop polling for IO or GUI events and calling scheduled funcs"""
+
+        self.lastActivity = time()
+
+        reactor = self.reactor
+        
+        try:
+            if stopAfter:
+                reactor.callLater(stopAfter, reactor.stop)
+
+            if idleTimeout:
+                reactor.callLater(runAtLeast, self._checkIdle, idleTimeout)
+
+            reactor.run()
+
+        finally:
+            del self.lastActivity
+
+
+
+
+
+
+    def _checkIdle(self, timeout):
 
         # Check whether we've been idle long enough to stop
         idle = time() - self.lastActivity
         
-        if idle >= self.shutDownIfIdleFor:
-            self.stop()
+        if idle >= timeout:
+            self.reactor.stop()
 
         else:
             # reschedule check for the earliest point at which
             # we could have been idle for the requisite amount of time
-            self.callLater(self.shutDownIfIdleFor - idle, self._checkIdle)
-            
-            
-    def _processNextTask(self):
+            self.reactor.callLater(timeout - idle, self._checkIdle, timeout)
 
-        # Processes the highest priority pending task
-        
-        del self._scheduled
 
-        didWork = cancelled = False
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+_reactor = EigenCell()
+_twisted = False
+
+def setReactor(reactor):
+    """Set the system reactor to 'reactor', if not already used"""
+    _reactor.set(reactor)
+
+
+def getReactor(appConfig):
+    """Get system reactor -- default to our "dirt simple" reactor"""
+
+    if hasattr(_reactor,'value'):   # XXX ugh
+        setReactor(UntwistedReactor(appConfig))
+
+    return _reactor.get()
+
+
+def getTwisted(appConfig):
+
+    """Get system reactor -- but only if it's twisted!"""
+
+    if not _twisted:
+
+        if _reactor.locked:
+            # I guess we're just not twisted enough!
+            raise AlreadyRead("Another reactor is already in use")
 
         try:
+            from twisted.internet import reactor
+        except ImportError:
+            raise exceptions.PropertyNotFound(
+                """twisted.internet.reactor could not be imported"""
+            )
+        
+        _reactor.set(reactor)
+        # XXX do twisted setups like threadable.init, wxSupport.install, etc.
+        _twisted = True
 
-            task = self.activeTasks.pop()  # Highest priority task
+    return _reactor.get()
 
-            try:
-                didWork = task()
 
-            except exceptions.StopRunning:  # Don't reschedule the task               
-                cancelled = True
+class UntwistedReactor(binding.Base):
 
-        finally:
-            if didWork:               
-                self.activityOccurred() # did something; make note of it
+    """Primitive partial replacement for 'twisted.internet.reactor'"""
 
-            if not cancelled:
-                self.callLater(task.pollInterval, self.addPeriodic, task)
+    __implements__ = IBasicReactor
 
-            self._scheduleProcessing()
+    running = False
+    writers = binding.New(list)
+    readers = binding.New(list)
+    laters  = binding.New(list)
 
-    _stopped = _scheduled = False
+    def run(self):
 
-    def _scheduleProcessing(self):
+        self.running = True
 
-        if self._scheduled or not self.activeTasks or self._stopped:
-            return
-            
-        self._scheduled = self.callLater(0, self._processNextTask) or True
+        while self.running:
+            self.iterate()
+
+        # clear selectables
+        self._delBinding('readers')
+        self._delBinding('writers')
 
 
     def stop(self):
-        self._stopped = True
-        self.reactor.stop()
+        self.running = False
 
-    
+    def callLater(delay, callable, *args, **kw):
+        insort_right(self.laters, _Appt(time()+delay, callable, args, kw)
+
+    def addReader(self, reader):
+        if reader not in self.readers: self.readers.append(reader)
+        
+    def addWriter(self, writer):
+        if writer not in self.writers: self.writers.append(writer)
+
+    def removeReader(self, reader):
+        if reader in self.readers: self.readers.remove(reader)
+
+    def removeWriter(self, writer):
+        if writer in self.writers: self.writers.remove(writer)
+
+    def iterate(self, delay=None):
+
+        now = time()
+
+        while self.laters and self.laters[0].time <= now:
+            try:
+                self.laters.pop(0)()
+            except:
+                LOG_ERROR(
+                    "Error executing scheduled callback", self, exc_info=True
+                )
+
+        if delay is None:
+            delay = self.laters and self.laters[0].time - time() or 0
+
+        delay = max(delay, 0)
+
+        if self.readers or self.writers:
+
+            r, w, e = select.select(self.readers, self.writers, [], delay)
+
+            for reader in r: r.doRead()
+            for writer in w: w.doWrite()
+
+        elif delay:
+            sleep(delay)
 
 
+class _Appt(object):
 
+    """Simple "Appointment" for doing 'callLater()' invocations"""
 
+    __slots__ = 'time','func','args','kw'
 
+    def __init__(self,t,f,a,k):
+        self.time = t; self.func = f; self.args = a; self.kw = kw
 
-
+    def __call__(self): return self.func(*self.args, **self.kw)
+    def __cmp__(self):  return cmp(self.time, other.time)
 
 
 

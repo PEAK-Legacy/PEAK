@@ -1,10 +1,125 @@
 from peak.api import *
-from interfaces import IAdaptiveTask
+from interfaces import *
+from bisect import insort_left
 from time import time
 
 __all__ = [
-    'AdaptiveTask'
+    'AdaptiveTask', 'TaskQueue',
 ]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class TaskQueue(binding.Base):
+
+    __implements__ = ITaskQueue
+
+    reactor     = binding.bindTo(IBasicReactor)
+    loop        = binding.bindTo(IMainLoop)
+    ping        = binding.bindTo('loop/activityOccurred')
+
+    activeTasks = binding.New(list)
+    _scheduled  = False
+    _disabled   = True
+
+
+    def addTask(self,ptask):
+        insort_left(self.activeTasks, ptask)    # round-robin if same priority
+        self._scheduleProcessing()
+
+
+    def enable(self):
+        self._disabled = False
+        self._scheduleProcessing()
+
+
+    def disable(self):
+        self._disabled = True
+
+
+    def _scheduleProcessing(self):
+
+        if self._scheduled or self._disabled or not self.activeTasks:
+            return
+
+        self.reactor.callLater(0, self._processNextTask)
+        self._scheduled = True
+
+
+
+
+
+
+
+    def _processNextTask(self):
+
+        # Processes the highest priority pending task
+        
+        del self._scheduled
+
+        if self._disabled:
+            return      # Don't run tasks when disabled
+
+
+        didWork = cancelled = False
+
+        try:
+
+            task = self.activeTasks.pop()  # Highest priority task
+
+            try:
+                didWork = task()
+
+            except exceptions.StopRunning:  # Don't reschedule the task               
+                cancelled = True
+
+        finally:
+
+            if didWork:
+                self.ping()     # we did something; make note of it
+
+            if not cancelled:
+                self.reactor.callLater(task.pollInterval,self.addTask,task)
+
+            self._scheduleProcessing()
+
+
+
+
+
+
+
+
+
 
 class AdaptiveTask(binding.Component):
 
@@ -16,16 +131,24 @@ class AdaptiveTask(binding.Component):
 
     runEvery = binding.requireBinding("Number of seconds between invocations")
 
-    minimumIdle = binding.bindTo('runEvery')
+    minimumIdle    = binding.bindTo('runEvery')
     increaseIdleBy = 0
     multiplyIdleBy = 1
 
+
     # Maximum idle defaults to increasing three times
+
     maximumIdle = binding.Once(
         lambda s,d,a: s.runEvery * s.multiplyIdleBy**3 + s.increaseIdleBy*3
     )
 
     __ranLastTime = True
+
+
+
+
+
+
 
 
 
