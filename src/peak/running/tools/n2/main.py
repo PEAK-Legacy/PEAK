@@ -3,17 +3,12 @@
 from peak.api import *
 from peak.running.commands import AbstractCommand
 
-import sys, os, code
+import sys, os, code, __main__
 from getopt import getopt
-
-try:
-    import readline
-except:
-    readline = None
+from rlhist import *
 
 from interfaces import *
 import ns, sql
-
 
 class N2(AbstractCommand):
 
@@ -34,7 +29,7 @@ ls()\t\tshow contents of c
 -p\tuse python interactor even if there is a more specific interactor
 \t(implies -e)"""
 
-    idict = binding.New(dict)       # interpreter dictionary
+    idict = binding.Once(lambda self,d,a: __main__.__dict__)
     width = binding.Constant(80)    # XXX screen width
 
 
@@ -50,6 +45,7 @@ ls()\t\tshow contents of c
             self.invocationError('too many arguments')
             return 1
 
+
         cprt = 'Type "copyright", "credits" or "license" for more information.'
         help = 'Type "help" or "help(n2)" for help.'
 
@@ -63,14 +59,6 @@ ls()\t\tshow contents of c
 
         for cmd in ('cd','ls'):
             self.idict[cmd] = getattr(self, 'py_' + cmd)
-
-        if readline:
-            history = os.path.join(self.environ.get('HOME', os.getcwd()),
-                '.n2_history')
-            try:
-                readline.read_history_file(history)
-            except:
-                pass
 
         storage.begin(self)
 
@@ -96,9 +84,6 @@ ls()\t\tshow contents of c
             storage.abort(self)
         except:
             pass
-
-        if readline:
-            readline.write_history_file(history)
 
         return 0
 
@@ -159,7 +144,9 @@ ls()\t\tshow contents of c
         if c is not None:
             b += '\n\nc = %s\n' % `c`
 
+        pushRLHistory('.n2_history', True, None, self.environ)
         code.interact(banner=b, local=self.idict)
+        popRLHistory()
 
 
     def handle(self, c):

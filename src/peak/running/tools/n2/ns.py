@@ -5,6 +5,7 @@ Namespace Interactor
 from peak.api import *
 from commands import *
 from interfaces import *
+from rlhist import *
 
 
 class NamingInteractor(binding.Component):
@@ -19,11 +20,14 @@ class NamingInteractor(binding.Component):
 
         self.run = 1
 
+        pushRLHistory('.n2ns_history', None, None, self.shell.environ)
+        
         while self.run:
             try:
                 cl = raw_input('n2> ')
             except:
                 print >>shell.stdout
+                popRLHistory()
                 return
 
             cl = cl.strip()
@@ -44,6 +48,8 @@ class NamingInteractor(binding.Component):
 
             # let files get closed, etc
             del cmdinfo
+
+        popRLHistory()
 
 
     def stop(self):

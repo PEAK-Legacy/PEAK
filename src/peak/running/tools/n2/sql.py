@@ -5,12 +5,13 @@ SQL Interactor
 from peak.api import *
 from commands import *
 from interfaces import *
+from rlhist import *
 
 from tempfile import mktemp
 import sys, os, time, re
 
 
-varpat = re.compile('\\$\\{([a-zA-Z0-9_]+)\\}')
+varpat = re.compile('\\$\\{((?:[a-zA-Z0-9_]+)|(?:=[^}]+))\\}')
 
 
 def bufname(s):
@@ -67,11 +68,15 @@ class SQLInteractor(binding.Component):
 
         self.quit = False
         
+        pushRLHistory('.n2sql_history', self.complete, 
+            ' \t\n`~@#%^&*()=+[]|;:\'",<>/?', self.shell.environ)
+
         while not self.quit:
             try:
                 l = self.readline(self.prompt()) + '\n'
             except EOFError:
                 print >>shell.stdout
+                popRLHistory()
                 return
                                 
             sl = l.strip()
@@ -96,6 +101,8 @@ class SQLInteractor(binding.Component):
                 
                 self.handleCommand('go', 'go ' + cmd)
 
+        popRLHistory()
+        
 
 
     def getVar(self, name):
@@ -133,7 +140,15 @@ class SQLInteractor(binding.Component):
     def substVar(self, s):
         s = varpat.split(s)
         for i in range(1, len(s), 2):
-            s[i] = str(self.getVar(s[i]))
+            v = s[i]
+            if v.startswith('='):
+                try:
+                    v = eval(s[i][1:], self.shell.idict, self.shell.idict)
+                except Exception, x:
+                    v = "${%s:ERROR:%s}" % (v, x)
+            else:
+                v = self.getVar(s[i])
+            s[i] = str(v)
 
         return ''.join(s)
         
@@ -207,7 +222,7 @@ class SQLInteractor(binding.Component):
                 del cmdinfo
 
             if r is True:
-                self.redraw(self.shell.stdout)
+                self.redraw(self.shell.stdout, True)
 
         return r
         
@@ -481,12 +496,18 @@ rollback -- abort current transaction"""
 
 
     class cmd_python(ShellCommand):
-        """\\python -- enter python interactor"""
+        """\\python [code] -- enter python interactor or run code"""
             
-        args = ('', 0, 0)
+        args = ('', 0, sys.maxint)
         
-        def cmd(self, cmd, **kw):
-            self.shell.interact()
+        def cmd(self, cmd, args, **kw):
+            if args:
+                try:
+                    exec ' '.join(args) in self.shell.idict
+                except:
+                    sys.excepthook(*sys.exc_info()) # XXX
+            else:
+                self.shell.interact()
 
     cmd_python = binding.New(cmd_python)
 
@@ -732,7 +753,7 @@ default for src is '!.', the current input buffer"""
         args = ('', 0, 0)
         
         def cmd(self, cmd, **kw):
-            return True
+            self.interactor.redraw(self.shell.stdout)
             
     cmd_redraw = binding.New(cmd_redraw)
 
@@ -824,7 +845,7 @@ default for src is '!.', the current input buffer"""
 
 
 
-    def redraw(self, stdout):
+    def redraw(self, stdout, add_hist=False):
         b = self.getBuf()
         self.resetBuf()
         out = self.shell.stdout
@@ -835,6 +856,7 @@ default for src is '!.', the current input buffer"""
         b = b.split('\n')
 
         for l in b:
+            addRLHistoryLine(l)
             l += '\n'
             stdout.write(self.prompt())
             stdout.write(l)
@@ -895,6 +917,30 @@ default for src is '!.', the current input buffer"""
             return l
         else:
             return raw_input(prompt)
+
+
+    def complete(self, s, state):
+        if state == 0:
+            #print s
+            if s.startswith('!'):
+                self.matches = m = []
+                for b in self.bufs.keys():
+                    if not b.startswith('!'):
+                        b = '!' + b
+                    m.append(b)
+            elif s.startswith('${'):
+                self.matches = ['${' + k + '}' for k in self.vars.keys()]
+            elif s.startswith('$'):
+                self.matches = ['$' + k for k in self.vars.keys()]
+            else:
+                self.matches = self.command_names()
+
+            self.matches = [x for x in self.matches if x.startswith(s)]
+
+        try:        
+            return self.matches[state]
+        except IndexError:
+            return None
 
 
 protocols.declareAdapter(
