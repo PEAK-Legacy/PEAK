@@ -23,7 +23,7 @@ __all__ = [
 ]
 
 
-installIfChangeable = lambda f,m: f.isChangeable
+
 
 
 
@@ -342,23 +342,23 @@ class StructuralFeature(object):
 
 
 
-    def add(feature, element, item, posn=None):
+    def add(f):
+        # Hardwire straight to _notifyLink(feature,element,item,posn=None)
+        return f.methodTemplates['_notifyLink'](f)
 
-        """Add the item to the collection/relationship"""      
-
-        feature._notifyLink(element,item,posn)
-
-    add.installIf = lambda f,m: f.isChangeable and f.isMany
-
+    add.installIf  = lambda f,m: f.isChangeable and f.isMany
+    add.isTemplate = True
 
 
-    def remove(feature, element, item, posn=None):
+    def remove(f):
+        # Hardwire straight to _notifyUnlink(feature,element,item,posn=None)
+        return f.methodTemplates['_notifyUnlink'](f)
 
-        """Remove the item from the collection/relationship, if present"""
+    remove.installIf  = lambda f,m: f.isChangeable and f.isMany
+    remove.isTemplate = True
 
-        feature._notifyUnlink(element,item,posn)
 
-    remove.installIf = lambda f,m: f.isChangeable and f.isMany
+
 
 
 
@@ -394,17 +394,58 @@ class StructuralFeature(object):
 
 
 
-    def _notifyUnlink(feature, element, item, posn=None):
 
-        feature._unlink(element,item,posn)
-        referencedEnd = feature.referencedEnd
 
-        if referencedEnd:
-            otherEnd = getattr(item.__class__,referencedEnd)
-            otherEnd._unlink(item,element)
+
+
+
+
+
+
+
+
+
+
+
+
+    def _notifyUnlink(f):
+
+        _unlink = f.methodTemplates['_unlink'](f)
+        refEnd = f.referencedEnd
+
+        if not f.isChangeable:
+            _notifyUnlink = None
+
+        elif refEnd:
+
+            def _notifyUnlink(feature, element, item, posn=None):
+                _unlink(feature,element,item,posn)
+                otherEnd = getattr(item.__class__, refEnd)
+                otherEnd._unlink(item,element)
+
+        else:
+            # Return the _link method "in line"; _notify isn't needed
+            _notifyUnlink = _unlink
+
+        return _notifyUnlink
+
 
     _notifyUnlink.verb       = '_notifyUnlink'
-    _notifyUnlink.installIf  = installIfChangeable
+    _notifyUnlink.isTemplate = True
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -449,23 +490,36 @@ class StructuralFeature(object):
     _link.isTemplate = True
 
 
-    def _unlink(feature,element,item,posn=None):
+    def _unlink(f):
 
-        feature._onUnlink(element,item,posn)
+        if not f.isChangeable:
+            _unlink = None
 
-        if not feature.isMany:
-            return feature._doDel(element)
+        elif f.isMany:
 
-        d=feature.get(element)
-        feature._doSet(element,d)
+            def _unlink(feature,element,item,posn=None):
 
-        if posn is None:
-            d.remove(item)
+                feature._onUnlink(element,item,posn)
+                d=feature.get(element)
+                feature._doSet(element,d)
+
+                if posn is None:
+                    d.remove(item)
+                else:
+                    del d[posn]
+
         else:
-            del d[posn]
 
-    _unlink.installIf = installIfChangeable
-    _unlink.verb      = '_unlink'
+            def _unlink(feature,element,item,posn=None):
+                feature._onUnlink(element,item,posn)
+                feature._doDel(element)
+
+        return _unlink
+
+
+    _unlink.verb       = '_unlink'
+    _unlink.isTemplate = True
+
 
 
     def _onLink(feature,element,item,posn):
@@ -474,19 +528,6 @@ class StructuralFeature(object):
 
     def _onUnlink(feature,element,item,posn):
         pass
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
