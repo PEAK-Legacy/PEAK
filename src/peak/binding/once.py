@@ -285,7 +285,7 @@ class OnceClass(Once, type):
 
 
 
-class ActiveClass(type, ActiveDescriptor):
+class ActiveClass(type):
 
     """Type which gives its descriptors a chance to find out their names"""
 
@@ -293,16 +293,16 @@ class ActiveClass(type, ActiveDescriptor):
 
     def __init__(klass, name, bases, dict):
 
+        klass.__name__ = name
+
         for k,v in dict.items():
-            if isinstance(v,ActiveDescriptor):
+            if isinstance(v, ActiveClasses):
                 v.__class__.activate(v,klass,k)
 
         super(ActiveClass,klass).__init__(name,bases,dict)
 
 
     def activate(self,klass,attrName):
-
-        self = super(ActiveClass,self).activate(klass,attrName)
 
         if klass.__module__ == self.__module__:
 
@@ -346,7 +346,7 @@ class ActiveClass(type, ActiveDescriptor):
     __cname__ = Once(__cname__)
 
 
-
+ActiveClasses = (ActiveDescriptor, ActiveClass)
 
 
 

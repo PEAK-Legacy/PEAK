@@ -80,7 +80,7 @@ class Model(Package):
 
 
 
-class XMIInjector(binding.ActiveDescriptor):
+class XMIInjector(binding.ActiveClass):
 
     def activate(self,klass,attrName):
 
