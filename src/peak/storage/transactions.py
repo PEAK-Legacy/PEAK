@@ -373,6 +373,10 @@ class TransactionComponent(binding.AutoCreated, AbstractParticipant):
 
     # XXX add binding.AutoCreated.__implements__ once binding.interfaces exist
 
+    __implements__ = (
+        binding.AutoCreated.__implements__, AbstractParticipant.__implements__
+    )
+
     inTransaction = False
 
     txnAttrs = 'joinedTxn', 'inTransaction'
@@ -394,6 +398,15 @@ class TransactionComponent(binding.AutoCreated, AbstractParticipant):
 
     def onJoinTxn(self, txnService):
         pass
+
+
+
+
+
+
+
+
+
 
     def finishTransaction(self, txnService, committed):
 
