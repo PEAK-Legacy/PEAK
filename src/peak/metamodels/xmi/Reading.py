@@ -18,8 +18,8 @@
     module, but instead uses the default unless overridden in an inheriting
     module.  (See, for example, 'TW.UML.MetaModel', which uses the default
     SEF implementation, and 'TW.UML.Model', which adds domain logic to the
-    raw UML metamodel, and elects to use 'TW.StructuralModel.SimpleModel' in
-    place of the default SEF module.
+    raw UML metamodel, and elects to use 'TW.SEF.SimpleModel' in place of the
+    default SEF module.
 """        
 
 from TW.API import *

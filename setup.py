@@ -24,9 +24,8 @@ setup(
     url="http://www.zope.org/Members/pje/Wikis/TransWarp",
     
     packages=[
-        'TW', 'TW.API', 'TW.Database', 'TW.MOF', 'TW.StructuralModel', 'TW.UML',
-        'TW.Utils', 'TW.XMI', 'TW.tests', 'TW.tests.Database',
-        'TW.tests.StructuralModel',
+        'TW', 'TW.API', 'TW.Database', 'TW.MOF', 'TW.SEF', 'TW.UML', 'TW.XMI',
+        'TW.Utils', 'TW.tests', 'TW.tests.Database', 'TW.tests.StructuralModel'
     ],
     
     package_dir = {'':'src'},

@@ -6,16 +6,16 @@
     a UML model element, and the "superclasses" and "subclasses" of UML
     generalizable elements.
 
-    It also redefines 'SEF' to be 'TW.StructuralModel.SimpleModel', which
-    adds querying and XMI reading aspects to the basic in-memory SEF
+    It also redefines 'SEF' to be 'TW.SEF.SimpleModel', which adds
+    querying and XMI reading aspects to the basic in-memory SEF
     structural model.
 """
 
 from TW.API import *
 import TW.UML.MetaModel
-import TW.StructuralModel.SimpleModel as SEF
+import TW.SEF.SimpleModel as SEF
 from types import StringType, FunctionType
-from TW.StructuralModel.Queries import NodeList, ComputedFeature
+from TW.SEF.Queries import NodeList, ComputedFeature
 
 __bases__ = TW.UML.MetaModel,
 

@@ -30,11 +30,39 @@
     usage info.
 """
 
+
+
+
+
+
+
+
+
+
+# Convenience singletons
+
 NOT_GIVEN = []
 NOT_FOUND = []
 
-from Modules import *
-import SEF
+__all__ = ['NOT_GIVEN', 'NOT_FOUND']
 
-__all__ = [item for item in dir() if not item.startswith('_')]; del item
-__all__.append('__proceed__')
+
+# Import module inheritance support first, because almost everything uses it
+
+from Modules import *
+from Modules import __all__ as ModulesAll
+
+__all__.extend(ModulesAll)
+
+
+# Core metaclasses come next, many things will use them...
+
+import Meta
+__all__.append('Meta')
+
+
+# Last, but very far from least, Service-Element-Feature support.
+
+import TW.SEF.Basic as SEF
+__all__.append('SEF')
+
