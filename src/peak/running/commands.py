@@ -672,11 +672,11 @@ so in the example above it will see 'import:MyPackage.MyAppClass' as its
 The named object must implement one of the 'peak.running' command interfaces,
 or be callable.  See the 'Bootstrap' class in 'peak.running.commands' for
 more details on creating command objects for use with 'peak'.  For the
-list of available shortcut names, see '%s'""" % config.fileNearModule(
+list of available shortcut names, see '%s'""" % config.packageFile(
         'peak','peak.ini'
-    )
+    ).address
 
-    if 'PEAK_CONFIG' in os.environ:
+    if os.environ.get('PEAK_CONFIG'):
         usage += " and '%s'" % os.environ['PEAK_CONFIG']
 
     usage += ".\n"

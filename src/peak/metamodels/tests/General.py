@@ -129,7 +129,7 @@ class XMILoad(TestCase):
         global LoadedUML
         self.m = m = LoadedUML = UML_DM(testRoot())
         m.roots = storage.xmi.fromFile(
-            config.fileNearModule(__name__,self.filename), testRoot()
+            config.packageFile(__name__,self.filename).open('t'), testRoot()
         )
 
 class XMITests(TestCase):

@@ -66,8 +66,8 @@ class PublishedDirectory(IndexedDirectory):
 
     isRoot = True
 
-    resourceDefaultsIni = binding.Make(
-        lambda: config.fileNearModule('peak.ddt','resource_defaults.ini'),
+    resourceDefaultsIni = binding.Obtain(
+        "pkgfile:peak.ddt/resource_defaults.ini",
         offerAs = ['peak.web.resourceDefaultsIni']
     )
 

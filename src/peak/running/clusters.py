@@ -84,7 +84,7 @@ from peak.api import *
 import os
 from kjbuckets import *
 
-def parseCluster(prefix, fn):
+def parseCluster(prefix, file):
 
     try:
         import socket
@@ -96,10 +96,9 @@ def parseCluster(prefix, fn):
     props[prefix + 'hostname'] = hn
     props[prefix + 'shortname'] = hn.split('.', 1)[0]
 
-    if fn is None or not os.path.exists(fn):
+
+    if file is None:
         file = [hn]
-    else:
-        file = open(fn, 'r')
 
     all    = kjGraph()
     groups = kjSet()
@@ -116,6 +115,7 @@ def parseCluster(prefix, fn):
 
         if not l or l.startswith('#'):
             continue
+
 
 
 
@@ -170,16 +170,22 @@ def parseCluster(prefix, fn):
 
 
 
-
-
-
 def loadCluster(configMap, filename=None, prefix='peak.running.cluster.*',
                 propertyName=None, includedFrom=None
     ):
 
     prefix = PropertyName(prefix).asPrefix()
 
-    r = parseCluster(prefix, filename)
+    stream = None
+    if filename is not None:
+        factory = config.IStreamSource(filename).getFactory(configMap)
+        if factory.exists():
+            stream = factory.open('t')
+
+    try:
+        r = parseCluster(prefix, stream)
+    finally:
+        if stream is not None: stream.close()
 
     for k,v in r.items():
         configMap.registerProvider(
@@ -192,12 +198,6 @@ def loadCluster(configMap, filename=None, prefix='peak.running.cluster.*',
     return NOT_FOUND
 
 protocols.adviseObject(loadCluster, provides=[config.ISettingLoader])
-
-
-
-
-
-
 
 
 

@@ -248,9 +248,7 @@ class BasicTests(TestCase):
 
         dm = HTMLDocument(
             testRoot(),
-            text=open(
-                config.fileNearModule(__name__,'word_test.html')
-            ).read(),
+            text=config.packageFile(__name__,'word_test.html').open('t').read()
         )
 
         storage.beginTransaction(dm)
@@ -269,6 +267,8 @@ class BasicTests(TestCase):
 
         finally:
             storage.abortTransaction(dm)
+
+
 
 
 

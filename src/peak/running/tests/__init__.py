@@ -10,7 +10,7 @@ from peak.running.scheduler import UntwistedReactor, MainLoop
 test = binding.Configurable()
 
 loadCluster(test.__instance_offers__,
-    config.fileNearModule(__name__,'test_cluster.txt')
+    config.packageFile(__name__,'test_cluster.txt')
 )
 
 pm = running.CLUSTER.of(test)

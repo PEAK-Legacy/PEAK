@@ -41,7 +41,7 @@ class TestApp(web.Traversable):
 
 class BasicTest(TestCase):
 
-    template = open(config.fileNearModule(__name__,'template1.pwt')).read()
+    template = config.packageFile(__name__,'template1.pwt').open('t').read()
 
     rendered = """<html><head>
 <title>Template test: The title (with &lt;xml/&gt; &amp; such in it)</title>
