@@ -11,10 +11,10 @@
 """
 
 __all__ = [
-    'find_attr', 'default_for_testing', 'Context', 'StartContext',
+    'default_for_testing', 'Context', 'StartContext',
     'simpleRedirect', 'clientHas','parseName', 'traverseResource',
     'traverseView', 'traverseSkin', 'traverseAttr', 'traverseItem',
-    'find_item',
+    'traverseDefault',
 ]
 
 from interfaces import *
@@ -56,28 +56,28 @@ def parseName(name):
     return (match.group(1) or ''), name[match.end(0):]
 
 
-def traverseResource(ctx, ns, nm, qname):
+def traverseResource(ctx, ob, ns, nm, qname, default=NOT_GIVEN):
     if qname==ctx.policy.resourcePrefix:
         return ctx.childContext(qname, ctx.skin)
-    raise errors.NotFound(ctx, qname, ctx.current)
+    if default is NOT_GIVEN:
+        raise errors.NotFound(ctx, qname, ctx.current)
+    return default
 
 
-def traverseView(ctx, ns, nm, qname):
-    return ctx.childContext(qname, ctx.getView(nm))
-
-
-def traverseSkin(ctx, ns, nm, qname):
+def traverseSkin(ctx, ob, ns, nm, qname, default=NOT_GIVEN):
     skin = ctx.policy.getSkin(nm)
     if skin is not None:
         return ctx.clone(skin=skin, rootURL=ctx.rootURL+'/'+qname)
-    raise errors.NotFound(ctx, qname, ctx.current)
+    if default is NOT_GIVEN:
+        raise errors.NotFound(ctx, qname, ctx.current)
+    return default
 
 
-def traverseAttr(ctx, ns, nm, qname):
-    return ctx.childContext(qname, find_attr(ctx, ctx.current, nm, qname))
 
-def traverseItem(ctx, ns, nm, qname):
-    return ctx.childContext(qname, find_item(ctx, ctx.current, nm, qname))
+
+
+
+
 
 
 class Context:
@@ -209,29 +209,22 @@ class Context:
             handler = self.policy.ns_handler(ns,None)
             if handler is None:
                 raise errors.NotFound(self,name,self.current)
-            return handler(self, ns, nm, name)
+            return handler(self, self.current, ns, nm, name)
         if name=='..':
             return self.parentContext()
         elif not name or name=='.':
             return self
         else:
-            ob = IWebTraversable(self.current).traverseTo(name,self)
-            return self.childContext(name,ob)
+            return IWebTraversable(self.current).traverseTo(name,self)
 
 
     def getView(self,name,default=NOT_GIVEN):
-        p = self.policy.view_protocol(name)
-
-        if p is not None:
-            handler = adapt(self.current,p,NOT_FOUND)
-
-            if handler is not NOT_FOUND:
-                return handler(self, 'view', name, '@@'+name)
-
-        if default is NOT_GIVEN:
-            raise errors.NotFound(self,'@@'+name,self.current)
-
-        return default
+        ctx = traverseView(
+            self, self.current, 'view', name, '@@'+name, default
+        )
+        if ctx is not default:
+            return ctx.current
+        return ctx
 
 
     def requireAccess(self,qname,*args,**kw):
@@ -244,23 +237,25 @@ class Context:
 
 
 
+
+
+
+
+
+
+
 class StartContext(Context):
 
     previous = None
 
-    skin        = binding.Require("Traversal skin",
-        adaptTo=ISkin
-    )
-    policy      = binding.Require("Interaction policy",
+    skin        = binding.Require("Traversal skin", adaptTo=ISkin)
+    interaction = binding.Require("Security interaction", adaptTo=IInteraction)
+    rootURL     = binding.Require("Application root URL")
+    absoluteURL = traversedURL = binding.Obtain('rootURL')
+
+    policy       = binding.Require("Interaction policy",
         adaptTo=IInteractionPolicy
     )
-    interaction = binding.Require("Security interaction",
-        adaptTo=IInteraction
-    )
-
-    rootURL    = binding.Require("Application root URL")
-
-    traversedURL = absoluteURL = binding.Obtain('rootURL')
 
     def parentContext(self):
         return self
@@ -272,17 +267,11 @@ def default_for_testing(environ):
     environ.setdefault('HTTP_HOST',
         environ.setdefault('SERVER_NAME','127.0.0.1')
     )
-
     environ.setdefault('REQUEST_METHOD','GET')
 
     if 'SCRIPT_NAME' not in environ and 'PATH_INFO' not in environ:
         environ.setdefault('SCRIPT_NAME','')
         environ.setdefault('PATH_INFO','/')
-
-
-
-
-
 
 
 def simpleRedirect(environ,location):
@@ -292,26 +281,23 @@ def simpleRedirect(environ,location):
         status="303 See Other"
     return status,[('Location',location)],()
 
-
 def clientHas(environ, lastModified=None, ETag=None):
     return False    # XXX
 
 
-def find_attr(ctx, ob, name, qname):
-
+def traverseAttr(ctx, ob, ns, name, qname, default=NOT_GIVEN):
     loc = getattr(ob, name, NOT_FOUND)
-
-    if loc is not NOT_FOUND:      
+    if loc is not NOT_FOUND:
         ctx.requireAccess(qname, ob, name)
-        return loc
+        return ctx.childContext(qname,loc)
 
-    raise errors.NotFound(ctx,qname,ob)
+    if default is NOT_GIVEN:
+        raise errors.NotFound(ctx,qname,ob)
+    return default
 
 
-def find_item(ctx, ob, name, qname):
-    
+def traverseItem(ctx, ob, ns, name, qname, default=NOT_GIVEN):
     gi = getattr(ob,'__getitem__',None)
-
     if gi is not None:
         try:
             loc = ob[name]
@@ -319,11 +305,38 @@ def find_item(ctx, ob, name, qname):
             pass
         else:
             ctx.requireAccess(qname, loc)
-            return loc
+            return ctx.childContext(qname,loc)
 
-    raise errors.NotFound(ctx,qname,ob)
+    if default is NOT_GIVEN:
+        raise errors.NotFound(ctx,qname,ob)
+    return default
 
 
+def traverseView(ctx, ob, ns, name, qname, default=NOT_GIVEN):
+
+    p = ctx.policy.view_protocol(name)
+    if p is not None:
+        handler = adapt(ob,p,NOT_FOUND)
+        if handler is not NOT_FOUND:
+            return handler(ctx, ctx.current, ns, name, qname, default)
+
+    if default is NOT_GIVEN:
+        raise errors.NotFound(ctx,qname,ob)
+    return default
+    
+
+
+def traverseDefault(ctx, ob, ns, name, qname, default=NOT_GIVEN):
+
+    loc = traverseAttr(ctx,ob,ns,name,qname,NOT_FOUND)
+
+    if loc is NOT_FOUND:
+        loc = traverseItem(ctx,ob,ns,name,qname,NOT_FOUND)
+
+        if loc is NOT_FOUND:
+            return traverseView(ctx,ob,ns,name,qname,default)
+
+    return loc
 
 
 class TraversableAsHandler(protocols.Adapter):
@@ -335,7 +348,7 @@ class TraversableAsHandler(protocols.Adapter):
 
     def handle_http(self,ctx):
 
-        self.subject.preTraverse(ctx)
+        ctx = self.subject.preTraverse(ctx)
         name = ctx.shift()
 
         if name is None:
@@ -352,18 +365,5 @@ class TraversableAsHandler(protocols.Adapter):
             raise UnsupportedMethod(ctx)
 
         return ctx.traverseName(name).renderHTTP()
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 

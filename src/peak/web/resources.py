@@ -8,7 +8,7 @@ from peak.naming.factories.openable import FileURL
 from peak.util.imports import importString
 import os.path, posixpath, sys
 from errors import UnsupportedMethod, NotFound, NotAllowed
-from environ import clientHas
+from environ import clientHas, traverseItem
 
 __all__ = [
     'Resource', 'FSResource', 'ResourceDirectory', 'FileResource',
@@ -50,9 +50,8 @@ class Resource(Traversable):
 
     def preTraverse(self, ctx):
         perm = self.permissionNeeded
-        if not ctx.allows(self, permissionNeeded = perm):
-            raise NotAllowed(ctx, '')
-
+        ctx.requireAccess('', self, permissionNeeded=perm)
+        return ctx
 
     def getURL(self, ctx):
         # We want an absolute URL
@@ -79,6 +78,7 @@ class Resource(Traversable):
             return base
 
     resourcePath = binding.Make(_getResourcePath)
+
 
 class FSResource(Resource):
 
@@ -203,45 +203,8 @@ class ResourceDirectory(FSResource, binding.Configurable):
         self.cache[name] = obj
         return obj
 
-    def traverseTo(self, name, ctx):
-
-        if name.startswith('@@'):
-            return Traversable.traverseTo(self,name[2:],ctx)
-
-        try:
-            ob = self[name]
-        except KeyError:
-            return Traversable.traverseTo(self,name,ctx)
-        return ob
-
-
     def getURL(self, ctx):
         return Resource.getURL(self,ctx)+'/'   # avoid unnecessary redirects
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 def findPackage(pkg):
@@ -270,17 +233,13 @@ class ResourceProxy(object):
         return IHTTPHandler(ctx.getResource(self.path)).handle_http(ctx)
 
     def preTraverse(self, ctx):
-        IWebTraversable(ctx.getResource(self.path)).preTraverse(ctx)
+        return IWebTraversable(ctx.getResource(self.path)).preTraverse(ctx)
 
     def traverseTo(self, name, ctx):
         return IWebTraversable(ctx.getResource(self.path)).traverseTo(name,ctx)
 
     def getURL(self,ctx):
         return IWebTraversable(ctx.getResource(self.path)).getURL(ctx)
-
-
-
-
 
 
 
@@ -336,7 +295,7 @@ class DefaultLayer(Traversable):
             result = self.cache[name]
             if result is NOT_FOUND:
                 raise NotFound(ctx,name)
-            return result
+            return ctx.childContext(name,result)
 
         # convert name to a property name
         name = PropertyName.fromString(name)
@@ -364,7 +323,7 @@ class DefaultLayer(Traversable):
 
         # cache and return it
         self.cache[name] = self.cache[pkg] = d
-        return d
+        return ctx.childContext(name,d)
 
 
 class TemplateResource(FSResource):

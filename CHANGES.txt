@@ -1,14 +1,26 @@
 Fixes and Enhancements since Version 0.5 alpha 3
 
+ - Most 'peak.web' interfaces have changed significantly.  If you implemented
+   anything based on the older interfaces, and it still works, it's sheer
+   bloody luck.  In particular, note that every method in 'web.IWebTraversable'
+   now has different inputs and/or outputs than before.  Please read the new
+   interface docs and update your code!  The changed interfaces offer much
+   more flexibility and functionality than before, but they will require you to
+   update your code.
+
+ - 'web.ContainerAsTraversable' has been removed.  It was redundant, since the
+   new default traversal mechanism used by 'Traversable' and 'Decorator' now
+   handles getitem, getattr, and views.
+   
  - Added Zope 3-like "namespaces" to 'peak.web'.  Path segments in a URL
    may be prefixed with '"++some_id++"' in order to invoke a corresponding
-   namespace handler registered under '"peak.web.namespaces.some_id".
+   namespace handler registered under '"peak.web.namespaces.some_id"'.
    Namespace handlers must implement 'web.INamespaceHandler', and they are
    supplied with the original path segment as well as the separated namespace
    and name.  Also, as in Zope 3, '"@@foo"' is a shortcut for '"++view++foo"'.
    Builtin namespaces at this time include 'view', 'item', 'attr', 'skin', and
    'resources'.  'skin' treats the rest of its path segment as a skin name,
-   and sets the current skin, and 'resources' begins traversal to resources
+   and sets the current skin, while 'resources' begins traversal to resources
    found in the current skin.  The other namespaces are as described at:
 
    "Resources and traversal in peak.web":http://www.eby-sarna.com/pipermail/peak/2004-August/001712.html

@@ -3,10 +3,10 @@ from interfaces import *
 from types import FunctionType, MethodType
 import posixpath
 from errors import NotFound, NotAllowed, WebException
-from environ import find_attr
+from environ import traverseAttr, traverseDefault
 
 __all__ = [
-    'Traversable', 'Decorator', 'ContainerAsTraversable', 'MultiTraverser',
+    'Traversable', 'Decorator', 'MultiTraverser',
 ]
 
 
@@ -48,10 +48,10 @@ class Traversable(binding.Component):
     )
 
     def traverseTo(self, name, ctx):
-        return find_attr(ctx, self, name, name)
+        return traverseDefault(ctx, self, 'attr', name, name)
 
     def preTraverse(self, ctx):
-        pass    # Should do any traversal requirements checks
+        return ctx    # Should do any traversal requirements checks
 
     def getURL(self,ctx):
         return ctx.traversedURL
@@ -100,61 +100,20 @@ class Decorator(Traversable):
 
     def traverseTo(self, name, ctx):
         try:
-            return find_attr(ctx, self, name, name)
-        except NotFound:
-            # Not recognized, try the un-decorated object
-            pass           
+            loc = traverseAttr(ctx, self, 'attr', name, name, NOT_FOUND)
+            if loc is not NOT_FOUND:
+                return loc
+
         except NotAllowed:           
             # Access failed, see if attribute is private
             guard = adapt(self, security.IGuardedObject, None)
 
             if guard is not None and guard.getPermissionForName(name):
                 # We have explicit permissions defined, so reject access
-                raise NotAllowed(ctx, name, result.message)
+                raise
 
         # attribute is absent or private, fall through to underlying object
-        return find_attr(ctx, self.ob, name, name)
-
-
-
-
-
-
-
-class ContainerAsTraversable(Decorator):
-
-    """Traversal adapter for container components"""
-
-    protocols.advise(
-        instancesProvide = [IWebTraversable],
-        factoryMethod = 'asTraversableFor',
-        asAdapterForProtocols = [naming.IBasicContext, storage.IDataManager],
-        asAdapterForTypes = [dict],
-    )
-
-    def traverseTo(self, name, ctx):
-
-        if name.startswith('@@'):
-            name = name[2:]
-        else:
-            try:
-                ob = self.ob[name]
-            except KeyError:
-                pass
-            else:
-                result = ctx.allows(ob)
-                if result:
-                    return ob
-
-                raise NotAllowed(ctx, name, result.message)
-                
-        return super(ContainerAsTraversable,self).traverseTo(name, ctx)
-
-
-
-
-
-
+        return traverseDefault(ctx, self.ob, 'attr', name, name)
 
 
 
@@ -170,7 +129,8 @@ class MultiTraverser(Traversable):
 
     def preTraverse(self, ctx):
         for item in self.items:
-            IWebTraversable(item).preTraverse(ctx)
+            ctx = IWebTraversable(item).preTraverse(ctx)
+        return ctx
 
     def traverseTo(self, name, ctx):
 
@@ -179,12 +139,12 @@ class MultiTraverser(Traversable):
         for item in self.items:
             try:
                 loc = IWebTraversable(item).traverseTo(name, ctx)
-            except NotFound:
+            except NotFound:    # XXX NotAllowed too?
                 continue
             else:
                 # we should suggest the parent, since our caller won't
-                binding.suggestParentComponent(item, name, loc)
-                newItems.append(loc)
+                binding.suggestParentComponent(item, name, loc.current)
+                newItems.append(loc.current)
 
         if not newItems:
             raise NotFound(ctx,name)
@@ -193,10 +153,9 @@ class MultiTraverser(Traversable):
             loc = newItems[0]
         else:
             loc = self._subTraverser(self, name, items = newItems)
-        return loc
+        return ctx.childContext(name,loc)
 
     _subTraverser = lambda self, *args, **kw: self.__class__(*args,**kw)
-
 
 
 

@@ -173,6 +173,36 @@ class ITraversalContext(IInteraction):
         """
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 class IWebTraversable(Interface):
 
     """A component that supports path traversal"""
@@ -187,20 +217,31 @@ class IWebTraversable(Interface):
         items in the user's cart, or that the connection is secure.
 
         This method is only invoked when the traversable is about to be
-        traversed or rendered via a web request.  It is not invoked when
-        app-server code traverses a location (e.g. by paths in page templates).
-        Traversables can take advantage of this to have different security
-        restrictions for app-server code and via-the-web URL traversal.
-        Resources, for example, do not do security checks in 'traverseTo()',
-        only in 'preTraverse()', thus ensuring that app-server code can access
-        all available resources, whether they are available to the user or not.
+        traversed or rendered via a web request, AND the target object does
+        not have any other adaptation to 'IHTTPHandler'.  It is not invoked
+        when app-server code traverses a location (e.g. by paths in page
+        templates).  Traversables can take advantage of this to have different
+        security restrictions for app-server code and via-the-web URL
+        traversal.  Resources, for example, do not do security checks in
+        'traverseTo()', only in 'preTraverse()', thus ensuring that app-server
+        code can access all available resources, whether they are available to
+        the user or not.
+
+        This method must return either the passed-in context, or a new
+        traversal context to be used in its place.  Note also that if your
+        object implements 'IHTTPHandler', or you are implementing an adapter
+        to 'IHTTPHandler', you must call this method yourself, since it is
+        normally only invoked by PEAK's adapter from 'IWebTraversable' to
+        'IHTTPHandler'.
         """
 
     def traverseTo(name, context):
-        """Return named 'IWebTraversable', or raise 'NotAllowed'/'NotFound'"""
+        """Return next 'ITraversalContext', or raise 'NotAllowed'/'NotFound'"""
 
     def getURL(context):
         """Return this object's URL in traversal context 'context'"""
+
+
 
 
 class IResource(IWebTraversable):
@@ -247,16 +288,21 @@ class ISkin(IResource, IResourceService):
 class INamespaceHandler(Interface):
     """A function returning a new context for a given context/ns/name"""
 
-    def __call__(ctx,ns,nm,qname):
-        """Return a new context relative to 'ctx' for 'ns' and 'nm'
+    def __call__(ctx, ob, namespace, name, qname, default=NOT_GIVEN):
+        """Return a new context relative to 'ctx' for 'namespace' and 'name'
 
-        'ctx' is an 'ITraversalContext'.  'ns' is the namespace identifier
-        of 'qname', and 'nm' is the remainder of 'qname'.  'qname' is the
-        original URL path component that was being traversed.
+        'qname' is the original URL path component that was being traversed.
+        'ctx' is an 'ITraversalContext', and 'ob' is the target object (which
+        may not be the same as 'ctx.current', if the handler is being reused
+        as part of another handler).  'namespace' is the namespace
+        identifier of 'qname', and 'name' is the remainder of 'qname'.
 
         The handler must return an appropriate new 'ITraversalContext', or
-        raise an appropriate error."""
-
+        raise an appropriate error.  If a 'default' other than 'NOT_GIVEN'
+        is supplied, the handler should return the default instead of
+        raising 'NotFound' when the target cannot be located.  Note: the
+        handler must *not* wrap 'default' in a traversal context: checking
+        for the returned default is the caller's responsibility."""
 
 
 class IDOMletState(IComponent):
@@ -273,11 +319,6 @@ class IDOMletState(IComponent):
         the state's parent components are searched and the first parent
         supporting the interface is returned.  'None' is returned if no parent
         supports the requested interface."""
-
-
-
-
-
 
 
 
