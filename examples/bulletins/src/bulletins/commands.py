@@ -19,6 +19,7 @@ Available commands:
   showusers -- list current users
   adduser   -- add a user to the database
 """
+    acceptURLs = False
 
 
 class CreateDB(BulletinsApp, AbstractCommand):
@@ -32,7 +33,6 @@ class CreateDB(BulletinsApp, AbstractCommand):
             if not ddl.strip(): continue
             self.db(ddl)
         storage.commitTransaction(self)
-
 
 
 
