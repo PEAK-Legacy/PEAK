@@ -180,9 +180,9 @@ setup(
     cmdclass = SETUP_COMMANDS,
     data_files = data_files,
     ext_modules = extensions,
+    py_modules=modules,
     scripts = scripts,
 )
-
 
 
 
