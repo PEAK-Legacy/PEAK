@@ -28,7 +28,7 @@ class PropertyURL(naming.URL.Base):
     nameAttr = 'body'
 
     def getCanonicalBody(self):
-        return naming.CompositeName.parse(self.body, PropertyPath)
+        return naming.CompositeName.parse(self.body or '', PropertyPath)
 
 
 

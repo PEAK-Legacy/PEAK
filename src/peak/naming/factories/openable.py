@@ -82,11 +82,15 @@ class GenericPathURL(URL.Base):
 
 class OpenableURL(GenericPathURL):
 
+    protocols.advise(
+        instancesProvide = [ naming.IStreamAddress ]
+    )
+
     def retrieve(self, refInfo, name, context, attrs=None):
         return URLStreamFactory(target = str(self))
 
 
-class FileURL(GenericPathURL):
+class FileURL(OpenableURL):
 
     supportedSchemes = 'file',
 
@@ -117,11 +121,11 @@ class FileURL(GenericPathURL):
 
 
 
-
-
-
-
 class PkgFileURL(URL.Base):
+
+    protocols.advise(
+        instancesProvide = [ naming.IStreamAddress ]
+    )
 
     nameAttr = 'body'
 
@@ -145,10 +149,6 @@ class PkgFileURL(URL.Base):
 
     def retrieve(self, refInfo, name, context, attrs=None):
         return FileFactory( filename = self.getFilename() )
-
-
-
-
 
 
 

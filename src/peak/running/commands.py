@@ -217,20 +217,20 @@ command-line arguments.
 
 class ZConfigInterpreter(AbstractInterpreter):
 
-    """Interpret a ZConfig file and run it as a subcommand"""
-
-    appSchema = binding.requireBinding("Schema for the config file")
+    """Load a ZConfig schema and run it as a sub-interpreter"""
 
     def interpret(self, filename):
-        # XXX this should probably use "PEAK-aware" subclasses of ZConfig
-        # XXX preferably that act as child components of this one...
-        import ZConfig
-        config, handler = ZConfig.loadConfig(
-            self.appSchema, 'file://localhost/%s' % filename
+
+        from peak.naming.factories.openable import FileURL
+        from peak.config.load_zconfig import SchemaLoader
+
+        url = naming.toName(filename, FileURL.mdl_fromString)
+
+        return self.getSubcommand(
+            naming.lookup(self, url,
+                objectFactories = [SchemaLoader(self)]
+            )
         )
-        return config   # XXX Assume the configured object is a suitable app...
-
-
 
 
 
@@ -452,7 +452,7 @@ class Bootstrap(AbstractInterpreter):
     def interpret(self, name):
 
         if not naming.URLMatch(name):
-            name = PropertyName("peak.running.shortcuts." + name)
+            name = "config:peak.running.shortcuts.%s/" % name
 
         try:
             factory = self.lookupComponent(name)

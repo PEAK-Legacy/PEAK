@@ -745,7 +745,9 @@ class Component(_Base):
         instancesProvide = [IComponent]
     )
 
+
     def __init__(self, parentComponent=NOT_GIVEN, componentName=None, **kw):
+
         # Set up keywords first, so state is sensible
         if kw:
             klass = self.__class__
@@ -771,11 +773,26 @@ class Component(_Base):
 
     lookupComponent = lookupComponent
 
+
+
+
+
     def fromZConfig(klass, section):
+
         """Classmethod: Create an instance from a ZConfig 'section'"""
+
+        data = section.__dict__.copy()
+
+        if not hasattr(klass,'_name'):
+            del data['_name']
+
+        if not hasattr(klass,'_matcher'):
+            del data['_matcher']
+
         return klass(**section.__dict__)
 
     fromZConfig = classmethod(fromZConfig)
+
 
     def setParentComponent(self, parentComponent, componentName=None,
         suggest=False):
@@ -798,6 +815,7 @@ class Component(_Base):
 
     __parentSetting = NOT_GIVEN
     __componentName = None
+
 
 
     def __parentComponent(self,d,a):
@@ -829,6 +847,18 @@ class Component(_Base):
     )
 
 
+
+
+
+
+
+
+
+
+
+
+
+
     def _getConfigData(self, forObj, configKey):
 
         attr = self._getBinding('__instance_provides__')
@@ -851,14 +881,6 @@ class Component(_Base):
         self.__instance_provides__.registerProvider(configKeys, provider)
 
 
-
-
-
-
-
-
-
-
     def notifyUponAssembly(self,child):
 
         tba = self.__objectsToBeAssembled__
@@ -875,8 +897,11 @@ class Component(_Base):
                 # child now, but would not have been registered ourselves.
                 notifyUponAssembly(self.getParentComponent(),self)
 
-    def uponAssembly(self):
 
+
+
+    def uponAssembly(self):
+        """Don't override this unless you can handle the reentrancy issues!"""
         tba = self.__objectsToBeAssembled__
 
         if tba is None:
@@ -901,6 +926,7 @@ class Component(_Base):
             raise
 
     __objectsToBeAssembled__ = New(list)
+
 
     def __attrsToBeAssembled__(klass,d,a):
         aa = {}
@@ -935,6 +961,21 @@ class Component(_Base):
 
 
 Base = Component    # XXX backward compatibility; deprecated
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

@@ -10,7 +10,7 @@ __all__ = [
     'IObjectFactory', 'IStateFactory', 'IURLContextFactory', 'IAddressFactory',
     'IBasicContext', 'IReadContext', 'IWriteContext', 'IReferenceable',
     'COMPOUND_KIND', 'COMPOSITE_KIND', 'URL_KIND',
-    'IStreamFactory',
+    'IStreamFactory', 'IStreamAddress',
 
     'CREATION_PARENT', 'OBJECT_FACTORIES', 'STATE_FACTORIES', 'SCHEMES_PREFIX',
     'CREATION_NAME', 'INIT_CTX_FACTORY', 'SCHEME_PARSER',
@@ -405,8 +405,8 @@ class IAddress(IName, IObjectFactory):
     def getAuthorityAndName():
         """Return an 'authority,name' tuple"""
 
-
-
+class IStreamAddress(IAddress):
+    """Address that retrieves a stream factory"""
 
 class IInitialContextFactory(Interface):
     """Get access to an initial naming context"""

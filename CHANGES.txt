@@ -2,6 +2,28 @@ Fixes and Enhancements since Version 0.5 alpha 1
 
  Changed, Enhanced, or Newly Deprecated Features
 
+ - Added 'zconfig.schema' URL scheme that loads an enhanced ZConfig schema
+   object that can act as a command line interpreter using the 'peak' script.
+   To use it, run 'peak zconfig.schema:urlToSchema urlOfConfig'.  Or, add
+   a line like this::
+
+     #!/usr/bin/env peak zconfig.schema:pkgfile:some.package/schema.xml
+
+   to the top of a configuration file, and make the configuration file
+   executable.  Note that the schema specified must convert to an object
+   that's usable with the commands bootstrap framework.  Also note that
+   if you have a local PEAK_CONFIG file, you can add a 'peak.running.shortcuts'
+   entry to shorten the URL reference in your #! line.  E.g.::
+
+     #!/usr/bin/env peak mySchema
+
+   will suffice if you have defined 'peak.running.shortcuts.mySchema' as
+   'naming.LinkRef("zconfig.schema:pkgfile:some.package/schema.xml")'.
+
+   There is also a 'peak ZConfig urlOfSchema urlOfConfig' variant, that was
+   added to support putting '#!/usr/bin/env peak ZConfig' at the top of
+   schema files, but unfortunately that's not valid XML.
+
  - Standardized file-based URL syntaxes (e.g logfiles and lockfiles) to
    follow RFC 1738/2396, and Python 'urllib'.  This shouldn't affect much
    besides the canonical forms of the URLs.  Added 'pkgfile:some.pkg/filepath'
