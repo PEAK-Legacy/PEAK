@@ -228,7 +228,7 @@ class Once(ActiveDescriptor):
         from copy import copy
         newOb = copy(self)
 
-        newOb.attrName = attrName
+        newOb.attrName = newOb.__name__ = attrName
         return newOb
         
 

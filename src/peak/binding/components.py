@@ -453,10 +453,11 @@ class requireBinding(Once):
 
     """Placeholder for a binding that should be (re)defined by a subclass"""
 
-    def __init__(self,description="",provides=None,doc=None):
+    def __init__(self,description="",name=None,provides=None,doc=None):
         self.description = description
         self._provides = provides
         self.__doc__ = doc or ("binding.requireBinding: %s" % description)
+        self.attrName = self.__name__ = name
 
     def computeValue(self, obj, instanceDict, attrName):
     
@@ -487,7 +488,6 @@ def bindToProperty(propName, default=NOT_GIVEN, provides=None, doc=None):
     return Once(lambda s,d,a: config.getProperty(propName,s,default),
         provides=provides, doc=doc
     )
-
 
 
 class Base(object):
