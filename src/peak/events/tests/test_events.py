@@ -502,22 +502,22 @@ class TestThreads(TestCase):
         self.assertRaises(ValueError, self.spawn, gen())
 
 
+    def testInterrupt(self):
 
+        c1 = events.Broadcaster()
+        c2 = events.Broadcaster()
 
+        def gen(*args):
+            yield events.Interrupt(gen1(), c1, *args); events.resume()
 
+        def gen1():
+            yield c2; events.resume()
 
+        events.Thread(gen())
+        self.assertRaises(events.Interruption, c1.send, True)
 
-
-
-
-
-
-
-
-
-
-
-
+        events.Thread(gen(ValueError))
+        self.assertRaises(ValueError, c1.send, True)
 
 
 
@@ -641,6 +641,47 @@ class SchedulerTests(TestCase):
         self.time.set(1)
         self.sched.tick()
         self.failUnless(self.sched.isEmpty())
+
+
+
+
+
+
+
+
+
+
+
+
+
+    def testAlarm(self):
+
+        c = events.Broadcaster()
+
+        def gen():
+            yield self.sched.alarm(gen1(), 5); events.resume()
+
+        def gen1():
+            yield c; events.resume()
+
+        events.Thread(gen())
+
+        self.time.set(1)
+        self.sched.tick()   # shouldn't fail, timeout hasn't expired yet
+        c.send(True)
+
+        self.time.set(6)
+        self.sched.tick()   # shouldn't fail, as thread has already exited
+
+        events.Thread(gen())
+        self.time.set(15)
+        self.assertRaises(events.TimeoutError, self.sched.tick)
+
+
+
+
+
+
 
 
 

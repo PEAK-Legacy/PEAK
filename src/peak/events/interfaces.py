@@ -5,8 +5,16 @@ __all__ = [
     'ITask', 'ITaskSwitch', 'IEventSource', 'IEventSink', 'IReadableSource',
     'IWritableSource', 'IConditional', 'ISemaphore', 'IThread',
     'IScheduledThread', 'IThreadState', 'IScheduler', 'ISignalSource',
-    'ISelector', 'IEventLoop',
+    'ISelector', 'IEventLoop', 'Interruption', 'TimeoutError',
 ]
+
+
+class Interruption(Exception):
+    """A thread was interrupted by an asynchronous event"""
+
+
+class TimeoutError(Interruption):
+    """A timeout occurred"""
 
 
 class ITask(protocols.Interface):
@@ -18,14 +26,6 @@ class ITask(protocols.Interface):
 
     def next():
         """Return an 'ITaskSwitch', or value to be yielded to previous task"""
-
-
-
-
-
-
-
-
 
 
 
@@ -286,10 +286,14 @@ class IThreadState(protocols.Interface):
 
 
 class IScheduler(protocols.Interface):
+
     """Time-based conditions"""
 
     def spawn(iterator):
         """Return a new 'IScheduledThread' based on 'iterator'"""
+
+    def alarm(iterator, timeout, errorType=TimeoutError):
+        """Run 'iterator', interrupting w/'errorType' after 'timeout' secs"""
 
     def now():
         """Return the current time"""
@@ -325,6 +329,43 @@ class IScheduler(protocols.Interface):
     isEmpty = protocols.Attribute(
         """'IConditional' indicating whether the scheduler is empty"""
     )
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 class ISignalSource(protocols.Interface):
 

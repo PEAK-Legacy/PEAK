@@ -1,16 +1,16 @@
+from __future__ import generators
 from peak.core import protocols, adapt, NOT_GIVEN
 from interfaces import *
 from types import GeneratorType
 from sys import exc_info, _getframe
 import traceback
-from sources import Condition, Value
+from sources import Condition, Value, AnyOf
 import time
 from peak.util.advice import advice
 
 __all__ = [
-    'resume', 'threaded', 'Scheduler', 'Thread', 'ThreadState',
+    'resume', 'threaded', 'Scheduler', 'Thread', 'ThreadState', 'Interrupt',
 ]
-
 
 def resume():
     """Call this after every task/task switch 'yield' in a thread
@@ -72,6 +72,88 @@ class threaded(advice):
 
 
 
+
+
+
+
+
+
+
+
+class Interrupt(object):
+
+    """Interrupt a thread with an error if specified event occurs
+
+    Usage::
+
+        try:
+            yield events.Interrupt( stream.readline(), scheduler.timeout(5) )
+            line = events.resume()
+
+        except events.Interruption:
+            print "readline() took more than 5 seconds"
+
+    An 'Interrupt' object is an 'events.ITaskSwitch', so you can only use it
+    within a thread, and you cannot set callbacks on it.  If the supplied
+    generator/iterator exits for any reason, the interruption is cancelled.
+
+    Also note that because generator objects are not reusable, neither are
+    'Interrupt' objects.  You must create an 'Interrupt' for each desired
+    invocation of the applicable generator.  However, the called generator
+    need not create an additional 'Interrupt' for any nested generator calls,
+    even though multiple interrupts may be active at the same time.  This
+    allows you to do things like e.g. set one timeout for each line of data
+    being received, and another timeout for receiving an entire email.
+    """
+
+    __slots__ = 'iterator','source','errorType'
+
+    protocols.advise(
+        instancesProvide=[ITaskSwitch],
+    )
+
+
+
+
+
+
+
+
+
+
+    def __init__(self,iterator,eventSource,errorType=Interruption):
+
+        """'Interrupt(iterator,eventSource,errorType=Interruption)'
+
+        Wrap execution of 'iterator' so that it will raise 'errorType' if
+        'eventSource' fires before 'iterator' exits (or aborts), assuming that
+        the 'Interrupt' is yielded to a thread."""
+
+        self.iterator = adapt(iterator,ITask)
+        self.source  =  adapt(eventSource,IEventSource)
+        self.errorType = errorType
+
+
+    def nextAction(self,thread=None,state=None):
+
+        if state is not None:
+
+            cancelled = Condition(False)
+
+            def canceller():
+                yield self.iterator; cancelled.set(True); yield resume()
+
+            def interrupt(source,event):
+                if not cancelled():
+                    state.CALL(doInterrupt()); thread.step(source,event)
+
+            def doInterrupt():
+                raise self.errorType(resume())
+                yield None
+
+            state.CALL(canceller()); self.source.addCallback(interrupt)
+
+        return True
 
 
 
@@ -162,6 +244,9 @@ class Scheduler(object):
         return _SThread(iterator, self)
 
 
+    def alarm(self, iterator, timeout, errorType=TimeoutError):
+        return Interrupt(iterator, self.timeout(timeout), errorType)
+
     def _callAt(self, what, when):
         self.isEmpty.set(False)
         appts = self._appointments
@@ -196,9 +281,6 @@ class _Sleeper(object):
         self.scheduler._callAt(
             lambda s,e: func(self,e), self.scheduler.now() + self.delay
         )
-
-
-
 
 
 
