@@ -12,7 +12,7 @@ class featureBase(object):
     newVerbs = Items(
         get     = 'get%(initCap)s',
         set     = 'set%(initCap)s',
-        delattr = 'delattr%(initCap)s',
+        unset   = 'unset%(initCap)s',
         doubled = '%(name)sDoubled',
     )
 
@@ -33,7 +33,7 @@ class featureBase(object):
     def set(feature,self,val):
         self.__dict__[feature.attrName]=[val]
 
-    def delattr(feature,self):
+    def unset(feature,self):
         del self.__dict__[feature.attrName]
 
     def doubled(feature,self):
@@ -90,7 +90,7 @@ class checkExport(TestCase):
         assert self.el.getY()==1
         assert self.el.__dict__['Y']==[1]
         assert self.el.YDoubled()==2
-        self.el.delattrY()
+        self.el.unsetY()
         assert not self.el.__dict__.has_key('Y')
 
     def checkDescr(self):

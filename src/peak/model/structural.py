@@ -125,7 +125,7 @@ class FeatureMC(MethodExporter):
 
         """Delete the feature's value by delegating to 'ob.delattrX()'"""
 
-        return self.getMethod(ob,'delattr')()
+        return self.getMethod(ob,'unset')()
 
 
     def typeObject(self,d,a):
@@ -185,7 +185,7 @@ class StructuralFeature(object):
     newVerbs = Items(
         get     = 'get%(initCap)s',
         set     = 'set%(initCap)s',
-        delattr = 'delattr%(initCap)s',
+        unset   = 'unset%(initCap)s',
     )
     
     def get(feature, element):
@@ -195,10 +195,10 @@ class StructuralFeature(object):
     def set(feature, element, val):
         element._setBinding(feature.attrName,val)
 
-    def delete(feature, element):
+    def unset(feature, element):
         element._delBinding(feature.attrName)
 
-    config.setupObject(delete, verb='delattr')
+
 
 
 
@@ -230,7 +230,7 @@ class DerivedAssociation(StructuralFeature):
             "DerivedAssociation %s cannot be changed" % feature.attrName
         )
 
-    def delete(feature, element):
+    def unset(feature, element):
         raise TypeError(
             "DerivedAssociation %s cannot be changed" % feature.attrName
         )
@@ -265,7 +265,6 @@ class Collection(StructuralFeature):
         element._setBinding(feature.attrName, val)
 
     def add(feature, element, item):
-
         """Add the item to the collection/relationship"""      
 
         ub = feature.upperBound
@@ -285,6 +284,7 @@ class Collection(StructuralFeature):
 
 
 
+
     def replace(feature, element, oldItem, newItem):
 
         d = feature._getList(element)
@@ -299,14 +299,14 @@ class Collection(StructuralFeature):
             raise ValueError(oldItem,"not found")
 
 
-    def delete(feature, element):
+    def unset(feature, element):
         """Unset the value of the feature (like __delattr__)"""
 
         referencedEnd = feature.referencedEnd
 
-        d = feature._getList(element)
-
         if referencedEnd:
+
+            d = feature._getList(element)
             
             for item in d:
                 otherEnd = getattr(item.__class__,referencedEnd)
@@ -315,7 +315,15 @@ class Collection(StructuralFeature):
         element._delBinding(feature.attrName)
 
 
-    config.setupObject(delete, verb='delattr')
+
+
+
+
+
+
+
+
+
 
 
     def _notifyLink(feature, element, item):
@@ -325,6 +333,7 @@ class Collection(StructuralFeature):
         if referencedEnd:
             otherEnd = getattr(item.__class__,referencedEnd)
             otherEnd._link(item,element)
+
 
     def _notifyUnlink(feature, element, item):
 
@@ -345,15 +354,6 @@ class Collection(StructuralFeature):
         d=feature._getList(element)
         element._setBinding(feature.attrName, d)
         d.remove(item)
-
-
-
-
-
-
-
-
-
 
 
 
@@ -418,6 +418,7 @@ class Sequence(Collection):
         insertBefore = 'insert%(initCap)sBefore',
     )
 
+
     def insertBefore(feature, element, oldItem, newItem):
 
         d = feature._getList(element)
@@ -435,7 +436,6 @@ class Sequence(Collection):
             feature._notifyLink(element,newItem)
         else:
             raise ValueError(oldItem,"not found")
-
 
 
 
