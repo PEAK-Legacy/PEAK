@@ -7,7 +7,10 @@ from commands import *
 from interfaces import *
 
 from tempfile import mktemp
-import sys, os, time
+import sys, os, time, re
+
+
+varpat = re.compile('\\$\\{([a-zA-Z0-9_]+)\\}')
 
 
 def bufname(s):
@@ -20,7 +23,9 @@ def bufname(s):
         return s[1:]
     
     return s
-            
+
+
+EXPORTED = object() # indicates variable is exported to a python variable
 
 
 class SQLInteractor(binding.Component):
@@ -38,9 +43,20 @@ class SQLInteractor(binding.Component):
     semi = -1
     
 
+    def vars(self, d, a):
+        return {
+            'prompt' : '$S$L> '
+        }
+
+    vars = binding.Once(vars)
+
+
 
     def prompt(self):
-        return '%s%d> ' % (self.state, self.line)
+        p = self.getVar('prompt')
+        p = p.replace('$L', str(self.line))
+        p = p.replace('$S', self.state)
+        return p
 
 
 
@@ -82,8 +98,54 @@ class SQLInteractor(binding.Component):
 
 
 
+    def getVar(self, name):
+        v = self.vars.get(name, '')
+        if v is EXPORTED:
+            return self.shell.getvar(name, '')
+
+        return v
+        
+
+        
+    def setVar(self, name, val, export=False):
+        if not export:
+            if self.vars.get(name, '') is EXPORTED:
+                export = True
+        
+        if export:
+            self.vars[name] = EXPORTED
+            self.shell.setvar(name, val)
+        else:
+            self.vars[name] = val
+
+            
+
+    def importVar(self, name):
+        self.vars[name] = EXPORTED
+
+        
+
+    def exportVar(self, name):
+        self.setVar(name, self.getVar(name), True)
+
+
+
+    def substVar(self, s):
+        s = varpat.split(s)
+        for i in range(1, len(s), 2):
+            s[i] = str(self.getVar(s[i]))
+
+        return ''.join(s)
+        
+
+            
     def getBuf(self, name='!.'):
         name = bufname(name)
+        if name.startswith('$'):
+            try:
+                return str(self.getVar(name[1:]))
+            except:
+                return ''
 
         return self.bufs.get(name, '')
 
@@ -92,7 +154,13 @@ class SQLInteractor(binding.Component):
     def setBuf(self, val, name='!.', append=False):
         name = bufname(name)
 
-        if append:
+        if name.startswith('$'):
+            name = name[1:]
+            if append:
+                self.setVar(name, self.getVar(name) + val)
+            else:
+                self.setVar(name, val)
+        elif append:
             self.bufs[name] = self.bufs.get(name, '') + val
         else:
             self.bufs[name] = val
@@ -128,7 +196,7 @@ class SQLInteractor(binding.Component):
 
                 return
             else:
-                cmdinfo = parseCmd(l, shell)
+                cmdinfo = parseCmd(self.substVar(l), shell)
 
                 r = cmdobj.run(
                     cmdinfo['stdin'], cmdinfo['stdout'], cmdinfo['stderr'],
@@ -269,12 +337,13 @@ class SQLInteractor(binding.Component):
 
 
     class cmd_go(ShellCommand):
-        """go [-d delim] [-m style] [-h] [-f] [-s n] [xacts] -- submit current input
+        """go [-d delim] [-m style] [-h] [-f] [-n] [-s n] [xacts] -- submit current input
 
 -d delim\tuse specified delimiter
 -m style\tuse specified format (one of: horiz, vert, plain, python)
 -h\t\tsuppress header
 -f\t\tsuppress footer
+-n\t\tdon't expand variables in SQL
 -s n\t\tsleep 'n' seconds between batches, if xacts is greater than 1
 
 xacts\t\tnumber of times to repeat execution of the input. Only results
@@ -282,7 +351,7 @@ xacts\t\tnumber of times to repeat execution of the input. Only results
 
         noBackslash = True
         
-        args = ('d:m:hfs:', 0, 1)
+        args = ('d:m:hfs:n', 0, 1)
         
         def cmd(self, cmd, opts, args, stdout, stderr, **kw):
             secs = opts.get('-s', '0')
@@ -313,17 +382,22 @@ xacts\t\tnumber of times to repeat execution of the input. Only results
                     self.interactor.resetBuf()
                     return
 
+            if opts.has_key('-n'):
+                sql = i
+            else:
+                sql = self.interactor.substVar(i)
+            
             try:
                 con = self.interactor.con
                 con.joinTxn()
                 if xacts > 1:
                     for j in range(xacts - 1):
-                        c = con(i)
+                        c = con(sql)
                         c.fetchall()
                         
                         time.sleep(secs)
                         
-                c = con(i)
+                c = con(sql)
             except:
                 # currently the error is logged
                 # sys.excepthook(*sys.exc_info()) # XXX
@@ -697,6 +771,59 @@ default for src is '!.', the current input buffer"""
 
 
 
+    class cmd_set(ShellCommand):
+        """\\set [-x] name=val [name2=val2] [...] -- set variables
+
+-x\texport variables to python"""
+
+        args = ('x', 1, sys.maxint)
+        
+        def cmd(self, cmd, opts, args, stderr, **kw):
+            export = opts.has_key('-x')
+            for x in args:
+                try:                
+                    k, v = x.split('=', 1)  
+                except:
+                    print >>stderr, "%s: invalid syntax '%s'" % (cmd, x)
+                    continue
+                
+                try:
+                    self.interactor.setVar(k, v, export)
+                except KeyError:
+                    print >>stderr, "%s: unable to set '%s'" % (cmd, args[0])
+                
+    cmd_set = binding.New(cmd_set)
+
+
+
+    class cmd_import(ShellCommand):
+        """\\import name -- import variable from python"""
+
+        args = ('', 1, 1)
+        
+        def cmd(self, cmd, args, stderr, **kw):
+            self.interactor.importVar(args[0])
+                
+    cmd_import = binding.New(cmd_import)
+
+
+
+    class cmd_export(ShellCommand):
+        """\\export name -- export variable to python"""
+
+        args = ('', 1, 1)
+        
+        def cmd(self, cmd, args, stderr, **kw):
+            try:
+                self.interactor.exportVar(args[0])
+            except KeyError:
+                print >>stderr, "%s: unable to export '%s'" % (cmd, args[0])
+                return
+                
+    cmd_export = binding.New(cmd_export)
+
+
+
     def redraw(self, stdout):
         b = self.getBuf()
         self.resetBuf()
@@ -775,4 +902,3 @@ protocols.declareAdapter(
     provides = [IN2Interactor],
     forProtocols = [storage.ISQLConnection]
 )
-
