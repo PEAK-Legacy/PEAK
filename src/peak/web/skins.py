@@ -80,10 +80,6 @@ class Skin(MultiTraverser,Place):
 
 
 
-    dummyInteraction = binding.Make(
-        lambda self: self.policy.newInteraction(user=None)
-    )
-
     dummyEnviron = {}
     setup_testing_defaults(dummyEnviron)
 
@@ -96,7 +92,7 @@ class Skin(MultiTraverser,Place):
             return self.cache[path]
 
         start = self.policy.newContext(
-            self.dummyEnviron.copy(), self, self, self.dummyInteraction
+            self.dummyEnviron.copy(), self, self, None
         )
 
         if not path[0]:
@@ -105,6 +101,10 @@ class Skin(MultiTraverser,Place):
         resourceCtx = path.traverse(start)
         self.cache[path] = subject = resourceCtx.current
         return subject
+
+
+
+
 
 
 

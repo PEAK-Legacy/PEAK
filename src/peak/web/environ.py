@@ -11,7 +11,7 @@
 """
 
 __all__ = [
-    'Context', 'StartContext', 'Interaction',
+    'Context', 'StartContext',
     'simpleRedirect', 'clientHas','parseName', 'traverseResource',
     'traverseView', 'traverseSkin', 'traverseAttr', 'traverseItem',
     'traverseDefault', 'traverseLocationId', 'relativeURL',
@@ -121,47 +121,6 @@ def traverseSkin(ctx, ob, ns, nm, qname, default=NOT_GIVEN):
 
 
 
-class Interaction(binding.Component, security.Context):
-
-    """DON'T USE THIS
-
-    This is a temporary bridge between the old interaction API and the
-    new rules system; don't write new code for this!
-    """
-
-    protocols.advise(
-        instancesProvide = [IInteraction]
-    )
-
-    user = binding.Require(
-        "The principal responsible for this interaction"
-    )
-
-    def allows(self, subject,
-        name=None, permissionNeeded=NOT_GIVEN, user=NOT_GIVEN
-    ):
-        if permissionNeeded is NOT_GIVEN:
-            permissionNeeded = self.permissionFor(subject,name)
-
-        if user is NOT_GIVEN:
-            user = self.user
-
-        return self.hasPermission(user,permissionNeeded,subject)
-        
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 class Context:
     """Keep track of current traversal state"""
 
@@ -172,17 +131,14 @@ class Context:
     current = binding.Require("Current object", [security.Anybody])
     previous = binding.Require("Parent context",[security.Anybody])
 
-    environ = interaction = policy = skin = rootURL = \
+    environ = user = policy = skin = rootURL = \
         binding.Delegate('previous', [security.Anybody])
 
-    user = binding.Delegate('interaction', [security.Anybody])
-
     # Private attrs
-    allows = permissionProtocol = binding.Delegate('interaction')
     getResource = binding.Delegate('skin')
 
     _clone_attrs = (
-        'interaction','policy','skin','rootURL','previous',
+        'user','policy','skin','rootURL','previous',
     )
 
     def __init__(self,name,current,environ,previous=None,**kw):
@@ -202,9 +158,9 @@ class Context:
     def peerContext(self,name,ob):
         return self.clone(name=name,current=ob)
 
-
     def parentContext(self):
         return self.previous
+
 
     absoluteURL = binding.Make(
         lambda self: IWebTraversable(self.current).getURL(self),
@@ -243,6 +199,9 @@ class Context:
                     "%s constructor has no keyword argument %s" %
                     (klass, k)
                 )
+
+
+
 
     def shift(self):
         environ = self.environ
@@ -300,16 +259,16 @@ class Context:
 
     binding.metadata(default=Anybody, nothing=Anybody)
 
+    def allows(self, subject,
+        name=None, permissionNeeded=NOT_GIVEN, user=NOT_GIVEN
+    ):
+        if permissionNeeded is NOT_GIVEN:
+            permissionNeeded = self.policy.permissionFor(subject,name)
 
+        if user is NOT_GIVEN:
+            user = self.user
 
-
-
-
-
-
-
-
-
+        return self.policy.hasPermission(user,permissionNeeded,subject)
 
 
 
@@ -331,7 +290,7 @@ class StartContext(Context):
     previous = None
 
     skin        = binding.Require("Traversal skin", adaptTo=ISkin)
-    interaction = binding.Require("Security interaction", adaptTo=IInteraction)
+    user        = binding.Require("Application user")
     rootURL     = binding.Require("Application root URL")
     absoluteURL = traversedURL = binding.Obtain('rootURL')
 
@@ -369,7 +328,7 @@ def clientHas(environ, lastModified=None, ETag=None):
 
 def traverseAttr(ctx, ob, ns, name, qname, default=NOT_GIVEN):
 
-    perm = ctx.interaction.permissionFor(ob,name)
+    perm = ctx.policy.permissionFor(ob,name)
     if perm is not None:
         # We have explicit permissions defined, so allow access after check
         loc = getattr(ob, name, NOT_FOUND)

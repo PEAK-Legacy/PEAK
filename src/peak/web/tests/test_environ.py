@@ -93,13 +93,10 @@ class TestTraversals(TestCase):
 
     def testGetStuff(self):
         self.failUnless(self.ctx.policy is self.policy)
-        self.failUnless(
-            web.IInteraction(self.ctx.interaction,None) is not None
-        )
 
     def diffCtx(self,ctx1,ctx2):
         return [a
-            for a in 'name','current','environ','policy','interaction','skin'
+            for a in 'name','current','environ','policy','user','skin'
                 if getattr(ctx1,a) is not getattr(ctx2,a)
         ]
 
@@ -107,11 +104,14 @@ class TestTraversals(TestCase):
         ctx = self.ctx.clone()
         self.assertEqual(self.diffCtx(ctx,self.ctx),[])
         ctx1 = ctx.childContext('test',self.ob1)
-        ctx2 = ctx1.clone(interaction = ctx.policy.newInteraction())
-        self.assertEqual(self.diffCtx(ctx1,ctx2),['interaction'])
+        ctx2 = ctx1.clone(user = "spam")
+        self.assertEqual(self.diffCtx(ctx1,ctx2),['user'])
         ctx3 = ctx2.clone(skin = "foo")
         self.assertEqual(self.diffCtx(ctx2,ctx3),['skin'])
         self.assertRaises(TypeError,ctx3.clone,foo="bar")
+
+
+
 
 
 
@@ -142,7 +142,7 @@ class TestTraversals(TestCase):
         self.assertRaises(
             (TypeError,AttributeError), lambda: self.getPath('/').traversedURL)
         for attr in """
-            url previous environ interaction policy skin rootURL
+            url previous environ policy skin rootURL
             traversedURL absoluteURL user default nothing
         """.strip().split():
             self.checkPath('/'+attr, getattr(self.ctx,attr))

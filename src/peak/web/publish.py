@@ -10,7 +10,7 @@ from peak.security.api import Anybody
 import os,sys
 
 __all__ = [
-    'NullAuthenticationService', 'InteractionPolicy', 'CGIPublisher',
+    'NullAuthenticationService', 'InteractionPolicy', 'WSGIPublisher',
     'DefaultExceptionHandler', 'TraversalPath', 'TestPolicy',
 ]
 
@@ -80,57 +80,36 @@ class NullAuthenticationService:
         return None
 
 
-class InteractionPolicy(binding.Configurable, protocols.StickyAdapter):
+class InteractionPolicy(binding.Configurable, security.Context):
 
     protocols.advise(
         instancesProvide = [IInteractionPolicy],
-        asAdapterForProtocols = [binding.IComponent],
-        factoryMethod = 'fromComponent',
     )
 
-    attachForProtocols = (IInteractionPolicy,)
-
-    def fromComponent(klass, ob):
-        ip = klass(ob)
-        protocols.StickyAdapter.__init__(ip, ob)
-        return ip
-
-    fromComponent = classmethod(fromComponent)
-
-    app            = binding.Obtain('./subject', [security.Anybody])
+    app            = binding.Require("The application", [security.Anybody])
     log            = binding.Obtain(APPLICATION_LOG)
 
     defaultMethod  = binding.Obtain(DEFAULT_METHOD, [security.Anybody])
     resourcePrefix = binding.Obtain(RESOURCE_PREFIX, [security.Anybody])
 
     _authSvc       = binding.Make(IAuthService, adaptTo=IAuthService)
-    _mkInteraction = binding.Obtain(config.FactoryFor(IInteraction))
-
 
     getUser = binding.Delegate('_authSvc')
-
-    def newInteraction(self,**options):
-        return self._mkInteraction(self,None,**options)
 
     ns_handler    = binding.Make(lambda self: NAMESPACE_NAMES.of(self).get)
     _getSkinName  = binding.Obtain(PropertyName('peak.web.getSkinName'))
 
 
-
-
-
-
-
-    def newContext(self,environ=None,start=NOT_GIVEN,skin=None,interaction=None):
+    def newContext(self,environ=None,start=NOT_GIVEN,skin=None,user=NOT_GIVEN):
 
         if environ is None:
             environ = {}
 
-        if interaction is None:
-            interaction = self.newInteraction(user=self.getUser(environ))
+        if user is NOT_GIVEN:
+            user = self.getUser(environ)
 
         if skin is None:
-            skin = self.getSkin(self._getSkinName(environ,interaction))
+            skin = self.getSkin(self._getSkinName(environ,user))
 
         if start is NOT_GIVEN:
             start = self.app
@@ -138,7 +117,7 @@ class InteractionPolicy(binding.Configurable, protocols.StickyAdapter):
         root_url = application_uri(environ)
 
         return StartContext('', start, environ,
-            policy=self, skin=skin, interaction=interaction, rootURL=root_url
+            policy=self, skin=skin, user=user, rootURL=root_url
         )
 
 
@@ -150,16 +129,6 @@ class InteractionPolicy(binding.Configurable, protocols.StickyAdapter):
     def afterCall(self, ctx):
         """Commit transaction after successful hit"""
         storage.commitTransaction(self.app)
-
-
-
-
-
-
-
-
-
-
 
 
     def handleException(self, ctx, exc_info, retry_allowed=1):
@@ -193,29 +162,19 @@ class InteractionPolicy(binding.Configurable, protocols.StickyAdapter):
 
 
 
-
-
-
-
-
-
-
-
-
-
 class TestPolicy(InteractionPolicy):
 
-    """Convenient interaction to use for tests, experiments, etc."""
+    """Convenient interaction policy to use for tests, experiments, etc."""
 
     app = binding.Obtain('..')
 
-    def newContext(self,environ=None,start=NOT_GIVEN,skin=None,interaction=None):
+    def newContext(self,environ=None,start=NOT_GIVEN,skin=None,user=NOT_GIVEN):
         # Set up defaults for test environment
         if environ is None:
             environ = {}
         setup_testing_defaults(environ)
         return super(TestPolicy,self).newContext(
-            environ, start, skin, interaction
+            environ, start, skin, user
         )
 
     def simpleTraverse(self, path, run=True):
@@ -244,18 +203,9 @@ class TestPolicy(InteractionPolicy):
 
 
 
-class CGIPublisher(binding.Component):
+class WSGIPublisher(binding.Component):
 
-    """Use 'zope.publisher' to run an application as CGI/FastCGI
-
-    For basic use, this just needs an 'app' parameter, and it will publish
-    that application.
-
-    'CGIPublisher' is primarily intended as a base adapter class for creating
-    web applications.  To use it, you can simply subclass it, replacing the
-    'app' binding with an instance of your application, and replacing any other
-    parameters as needed.  The resulting class can be invoked with 'peak CGI'
-    to run as a CGI or FastCGI application."""
+    """Publish an arbitrary component as a WSGI application, using peak.web"""
 
     protocols.advise(
         instancesProvide=[running.IWSGIApplication],
@@ -273,14 +223,23 @@ class CGIPublisher(binding.Component):
     fromApp = classmethod(fromApp)
 
     app    = binding.Require("Application root to publish")
-    policy = binding.Obtain('app', adaptTo = IInteractionPolicy)
-
+    mkPolicy = binding.Obtain(config.FactoryFor(IInteractionPolicy))
+    policy = binding.Make(
+        lambda self: self.mkPolicy(self,app=self.app)
+    )
 
     def __call__(self, environ, start_response):
         """PEP 333 "application" callable"""
         s,h,b = self._handle_http(environ)
         start_response(s,h)
-        return b            
+        return b
+
+
+
+
+
+
+
 
 
 

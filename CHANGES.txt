@@ -6,12 +6,6 @@ Fixes and Enhancements since Version 0.5 alpha 3
    and API tests for the new implementation can be found in 'rules.txt' in the
    'peak.security' package directory.
 
-   (Note: as a side-effect of this change, the old 'security.IInteraction'
-   interface and 'security.Interaction' class can now be temporarily found
-   as 'web.IInteraction' and 'web.Interaction' respectively.  Both will soon
-   be refactored out of existence, however, so please update your code
-   accordingly!)
-
    Also, the new implemetation does not require redundant
    'security.allow(security.Anybody)' declarations just because you've declared
    other permissions for a class, so these declarations have been removed from

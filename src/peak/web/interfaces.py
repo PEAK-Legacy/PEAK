@@ -12,7 +12,7 @@ __all__ = [
     'IDOMletElement', 'IDOMletElementFactory', 'ISkin', 'IPolicyInfo',
     'IConfigurableLocation', 'IViewService',
     'VIEW_NAMES', 'TEMPLATE_SCHEMA', 'SITEMAP_SCHEMA', 'LOCATION_ID',
-    'IDOMletRenderable', 'IInteraction',
+    'IDOMletRenderable',
 ]
 
 DEFAULT_METHOD    = PropertyName('peak.web.defaultMethod')
@@ -39,50 +39,9 @@ LOCATION_ID       = lambda lid: PropertyName('peak.web.locations.'+lid)
 
 
 
-class IInteraction(ISecurityContext):
-    """Component representing a security-controlled user/app interaction
-
-    An interaction provides the necessary context to identify what security
-    rules should be used, and on whose behalf the action is being performed
-    (i.e. the principal).  To determine if an access is allowed, you use the
-    interaction's 'allows()' method.
-    """
-
-    user = Attribute("""The IPrincipal responsible for the interaction""")
-
-    permissionProtocol = Attribute(
-        """The protocol to which permissions should be adapted for checking"""
-    )
-
-    def allows(subject,name=None,permissionNeeded=NOT_GIVEN,user=NOT_GIVEN):
-        """Return true if 'user' has 'permissionNeeded' for 'subject'
-
-        If 'user' is not supplied, the interaction's user should be used.  If
-        the permission is not supplied, 'subject' should be adapted to
-        'IGuardedObject' in order to obtain the required permission.
-
-        Note that if 'subject' does not support 'IGuardedObject', and the
-        required permission is not specified, then this method should always
-        return true when the 'name' is 'None', and false otherwise.  That is,
-        an unguarded object is accessible, but none of its attributes are.
-        (This is so that value objects such as numbers and strings don't need
-        permissions.)
-
-        This method should return a true value, or a 'security.Denial()' with
-        an appropriate 'message' value."""
-
-
-
-
-
-
-
-
-
-
 class IPolicyInfo(Interface):
 
-    """Standard informational attributes for interaction and policy"""
+    """Standard informational attributes for interaction policy"""
 
     app = Attribute("""The underlying application object""")
     log = Attribute("""Default 'logs.ILogger' for interactions""")
@@ -121,7 +80,7 @@ class IViewService(Interface):
 
 
 
-class IInteractionPolicy(IAuthService, IPolicyInfo):
+class IInteractionPolicy(IAuthService, IPolicyInfo, ISecurityContext):
 
     """Component holding cross-hit configuration and consolidated services"""
 
@@ -131,17 +90,13 @@ class IInteractionPolicy(IAuthService, IPolicyInfo):
     def getLayer(name, default=None):
         """Return the named layer, or 'default'"""
 
-    def newInteraction(**options):
-        """Create a new 'IInteraction' with given arguments"""
-
-    def newContext(environ={},start=NOT_GIVEN,skin=None,interaction=None):
+    def newContext(environ={},start=NOT_GIVEN,skin=None,user=NOT_GIVEN):
         """Create an initial 'ITraversalContext' based on 'environ', etc.
 
         If 'start' is not supplied, the policy's application object will be
         used as the 'current' location of the created context.  If 'skin' is
-        not supplied, the default skin is used.  If 'interaction' is not
-        supplied, a fresh interaction is created (via the 'newInteraction()'
-        method).
+        not supplied, the default skin is used.  If 'user' is not
+        supplied, it is looked up via 'getUser()'.
         """
 
     def beforeTraversal(environ):
@@ -162,7 +117,11 @@ class IInteractionPolicy(IAuthService, IPolicyInfo):
 
 
 
-class ITraversalContext(IInteraction):
+
+
+
+
+class ITraversalContext(Interface):
 
     """A traversed-to location
 
@@ -174,6 +133,7 @@ class ITraversalContext(IInteraction):
     current      = Attribute("""Current object location""")
     environ      = Attribute("""WSGI (PEP 333) 'environ' mapping""")
     policy       = Attribute("""'IInteractionPolicy' for this hit""")
+    user         = Attribute("""Current user of the application""")
     skin         = Attribute("""Current 'ISkin' for this hit""")
     url          = Attribute("""Current object's standard URL""")
     rootURL      = Attribute("""Application root URL""")
@@ -202,7 +162,6 @@ class ITraversalContext(IInteraction):
     def viewHandler(name,ob,default=None):
         """Return an 'INamespaceHandler' for obtaining view 'name' on 'ob'"""
 
-
     def shift():
         """Shift a path component from 'PATH_INFO' to 'SCRIPT_NAME'
 
@@ -227,21 +186,21 @@ class ITraversalContext(IInteraction):
         """Create a duplicate context, using supplied keyword arguments
 
         Acceptable keyword arguments include: 'name', 'current', 'environ',
-        'policy', 'skin', 'rootURL', 'interaction', 'previous', and
+        'policy', 'skin', 'rootURL', 'user', 'previous', and
         'clone_from'.  Most of these just set the corresponding attribute on
         the new context, but the following names are special:
 
          'clone_from' -- an existing context to clone.  If supplied, its
-           'interaction', 'skin', 'policy', and 'previous' attributes will
+           'user', 'skin', 'policy', and 'previous' attributes will
            be used as defaults for the corresponding keyword arguments, if
            they are not supplied.
 
          'previous' -- an existing context that will be used as the new
            context's parent context.
-
-         'interaction' -- a 'security.IInteraction' that will be used as
-           the basis for the new context's security attributes and methods.
         """
+
+
+
 
 
     def requireAccess(qname, subject,
@@ -255,15 +214,15 @@ class ITraversalContext(IInteraction):
         """
 
 
+    def allows(subject,name=None,permissionNeeded=NOT_GIVEN,user=NOT_GIVEN):
+        """Return true if 'user' has 'permissionNeeded' for 'subject'
 
+        If 'user' is not supplied, the traversal context's current user
+        is checked.  If the permission is not supplied, the 'policy'
+        object's 'permissionFor()' method is used to determine one.
 
-
-
-
-
-
-
-
+        This method should return a true value, or a 'security.Denial()' with
+        an appropriate 'message' value."""
 
 
 

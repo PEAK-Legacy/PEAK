@@ -154,8 +154,8 @@ class IWSGIApplication(Interface):
 
 def WSGIFromComponent(ob):
     """Turn PEAK components into publishable web apps"""
-    from peak.web.publish import CGIPublisher
-    return CGIPublisher.fromApp(ob)
+    from peak.web.publish import WSGIPublisher
+    return WSGIPublisher.fromApp(ob)
 
 declareAdapter(WSGIFromComponent,
     provides=[IWSGIApplication], forProtocols=[IComponent]
