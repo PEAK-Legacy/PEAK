@@ -331,7 +331,7 @@ class MethodExporter(ActiveDescriptor, type):
 
             Being class methods, the first parameter of any method or method
             template that you place in a MethodExporter class is always the
-            class.  By convention in TransWarp, this parameter is named
+            class.  By convention in PEAK, this parameter is named
             'feature', but you may use any name that makes sense to you.  When
             the method executes, this parameter will refer to the
             MethodExporter, so you can access its attributes and methods.  For
@@ -339,7 +339,7 @@ class MethodExporter(ActiveDescriptor, type):
             parameter which you *must* define.
 
             Method templates, however, must take a second parameter, named
-            'self' by convention in TransWarp.  This parameter will receive
+            'self' by convention in PEAK.  This parameter will receive
             the instance of the containing class that the MethodExporter is
             being used in.  Any further parameters beyond this point belong
             to the signature of your method template and are not defined or

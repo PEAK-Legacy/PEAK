@@ -1,2 +1,2 @@
-"""The TransWarp Software Automation Framework
+"""PEAK, the Python Enterprise Application toolKit
 """

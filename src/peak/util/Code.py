@@ -5,7 +5,7 @@
     main difference between this module and 'bytecodehacks' is that this module
     values speed above nearly all other considerations, and thus only offers
     in-place bytecode patching, and eschews most of the higher-level facilities
-    offered by 'bytecodehacks'.  But it's plenty enough for what TransWarp needs.
+    offered by 'bytecodehacks'.  But it's plenty enough for what PEAK needs.
 
     The module makes available many useful values; you can get any opcode as a
     constant from it by explicit import, such as::
