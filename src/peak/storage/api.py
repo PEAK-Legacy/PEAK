@@ -10,3 +10,9 @@ from peak.util.imports import lazyModule
 xmi = lazyModule('peak.storage.xmi')
 
 del lazyModule
+
+def DMFor(*classes):
+    from peak.api import config
+    return config.ProviderFor(IDataManager,*classes)
+
+

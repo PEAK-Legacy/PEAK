@@ -8,6 +8,11 @@ from peak.tests import testRoot
 from peak.config.registries import EigenRegistry
 
 
+def makeAUtility(context):
+    u=binding.Component(); u.setParentComponent(context)
+    return u
+
+
 class TestRule(object):
 
     protocols.advise(
@@ -16,11 +21,6 @@ class TestRule(object):
 
     def computeProperty(self, propertyMap, name, prefix, suffix, targetObject):
         return propertyMap, name, prefix, suffix, targetObject
-
-
-
-
-
 
 
 
@@ -80,23 +80,35 @@ class PropertyTest(TestCase):
 
 
 
+class A:
+    pass
+
+class B(A):
+    pass
+
+
+class IProvide(Interface):
+    pass
+
 class IS1U(Interface):
     pass
 
 class IS2U(Interface):
     pass
 
+def provides(*classes):
+    return config.ProviderOf(IProvide, *classes)
 
 class UtilityData(binding.Component):
 
     class aService(binding.Component):
 
-        thing5 = binding.bindToParent(offerAs=[IS1U])
+        thing5 = binding.bindToParent(offerAs=[IS1U, provides(A)])
 
         class nestedService(binding.Component):
             pass
 
-        nestedService = binding.New(nestedService, offerAs=[IS2U])
+        nestedService = binding.New(nestedService, offerAs=[IS2U, provides(B)])
 
     aService = binding.New(aService)
 
@@ -106,20 +118,8 @@ class UtilityData(binding.Component):
 class ISampleUtility1(Interface):
     pass
 
-
 class ISampleUtility2(Interface):
     pass
-
-
-def makeAUtility(context):
-    u=binding.Component(); u.setParentComponent(context)
-    return u
-
-
-
-
-
-
 
 class UtilityTest(TestCase):
 
@@ -183,11 +183,11 @@ class UtilityTest(TestCase):
         assert ob3.getParentComponent() is data.aService
         assert ob4.getParentComponent() is data.aService
 
-
-
-
-
-
+    def checkFindProvider(self):
+        data = self.data
+        ns   = data.aService.nestedService
+        assert config.findUtility(ns,provides(A)) is data
+        assert config.findUtility(ns,provides(B)) is ns
 
 
 

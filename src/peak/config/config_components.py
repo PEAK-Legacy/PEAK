@@ -9,12 +9,12 @@ from peak.util.FileParsing import AbstractConfigParser
 
 from interfaces import *
 from protocols import Interface
-
+from protocols.advice import getMRO, determineMetaclass
 
 __all__ = [
     'PropertyMap', 'LazyRule', 'ConfigReader', 'loadConfigFiles',
     'loadConfigFile', 'loadMapping', 'PropertySet', 'fileNearModule',
-    'iterParents','findUtilities','findUtility',
+    'iterParents','findUtilities','findUtility', 'ProviderOf',
     'provideInstance', 'instancePerComponent',
 ]
 
@@ -113,6 +113,47 @@ def findUtility(component, iface, default=NOT_GIVEN):
 
 
 
+
+
+
+
+
+
+
+
+class ProviderOf(object):
+
+    """Configuration key based on interface+class(es)"""
+
+    protocols.advise(
+        instancesProvide=[IConfigKey]
+    )
+
+    __slots__ = 'keys', 'mro'
+
+    def __init__(self, iface, klass, *others):
+        bases = (klass,)+others
+        if others:
+            meta = determineMetaclass(bases)
+            klass = meta("Dummy",bases,{})
+            mro = list(getMRO(klass))[1:]
+        else:
+            mro = getMRO(klass)
+
+        self.keys = tuple(
+            [((i,base),d)
+                for base in bases
+                    for (i,d) in adapt(iface,IConfigKey).registrationKeys()
+            ]
+        )
+
+        self.mro  = tuple([(iface,klass) for klass in mro])
+
+    def registrationKeys(self,depth=0):
+        return self.keys
+
+    def lookupKeys(self):
+        return self.mro
 
 
 
