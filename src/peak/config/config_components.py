@@ -178,7 +178,10 @@ class XMLParser(Component):
         pwt = "http://peak.telecommunity.com/DOMlets/"
 
     establishes that the namespace URI for the 'pwt' prefix will be the DOMlets
-    namespace URI, unless the document explicitly defines otherwise. And this::
+    namespace URI, unless the document explicitly defines otherwise.  Also, if
+    there should be a default XML namespace for the document as a whole, you
+    can set it with the 'peak.config.default_xml_namespace' property.
+    Meanwhile, this::
 
         [peak.config.xml_functions]
         text = some_module.handleTopLevelText
@@ -214,13 +217,18 @@ class XMLParser(Component):
 
     def makeParser(self):
         """Return a configured NegotiatingParser"""
+
         p = self.parserClass()
         nspre = 'peak.config.xml_namespaces.'
         for key in iterKeys(self,nspre[:-1]):
             if '*' not in key:
                 prefix = key[len(nspre):]
                 p.addNamespace(prefix,lookup(self,key))
-       
+
+        defns = lookup(self,'peak.config.default_xml_namespace',NOT_FOUND)
+        if defns is not NOT_FOUND:
+            p.addNamespace('',defns)
+
         def lookupElement(ns,nm):
             if ns is None:
                 nm=nm.split(':',1)[-1]
@@ -233,6 +241,8 @@ class XMLParser(Component):
     
         p.setLookups(lookupElement,lookupAttribute)
         return p
+
+
         
     def parseFunctions(self):
         """Return top-level parse function map based on kwargs and props"""
@@ -264,16 +274,6 @@ class XMLParser(Component):
         finally:
             stream.close()
         
-
-
-
-
-
-
-
-
-
-
 
 
 
