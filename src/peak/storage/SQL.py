@@ -535,8 +535,8 @@ class GenericSQL_URL(naming.URL.Base):
 class OracleURL(naming.URL.Base):
 
     supportedSchemes = {
+        'cxoracle':  'peak.storage.SQL.CXOracleConnection',
         'dcoracle2': 'peak.storage.SQL.DCOracle2Connection',
-#       'cxoracle':  'peak.storage.SQL.CXOracleConnection',
     }
 
     defaultFactory = property(
@@ -554,6 +554,30 @@ class OracleURL(naming.URL.Base):
 
     syntax = naming.URL.Sequence(
         ('//',), (user, (':', passwd), '@'), server, ('/',)
+    )
+
+
+
+class CXOracleConnection(SQLConnection):
+
+    API = binding.bindTo("import:cx_Oracle")
+
+    def _open(self):
+        a = self.address
+
+        return self.API.connect(a.user, a.passwd, a.server)
+
+
+    def txnTime(self,d,a):
+        self.joinedTxn              # Ensure that we're in a transaction,
+        r = ~ self('SELECT SYSDATE FROM DUAL')  # retrieve the server's idea of the time
+        return r[0]
+
+    txnTime = binding.Once(txnTime)
+
+    supportedTypes = (
+        'BINARY','CURSOR','DATETIME','FIXED_CHAR','LONG_BINARY',
+        'LONG_STRING','NUMBER','ROWID','STRING',
     )
 
 
