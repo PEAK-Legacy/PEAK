@@ -43,23 +43,53 @@
 
         - needs to know composition link direction (needs peak.model support)
 
-        - Possible algorithms:
+        - Algorithm plan:
 
-          - Direct write w/UUIDs, don't keep comments, PIs, extensions or IDs.
-            This is probably fast and simple for application data, but useless
-            for round-tripping metadata with modeling tools.
+          - Element state will contain a reference to pseudo-DOM node, if
+            available.  Elements are saved by modifying node in-place.
+            Sub-elements are saved using their node, if the node's parent is
+            the containing element's node.  If the sub-element has no node,
+            save the sub-element (creating a node), and point its node's
+            parent to the current element's node.
 
-          - Direct write, keep extras but push to end of containing XML tag if
-            object represented by tag was modified (we'll need to keep track of
-            comments and processing instructions as well as ignorable
-            whitespace for this to work well).  This is almost certainly the
-            one we'll implement, *maybe* with XMI.diff support.
-          
-          - Modify pseudo-DOM in place, allowing for possible persistent DOM
-            implementation.  This only seems useful if we don't use our
-            existing pseudo-DOM, or rewrite it to proxy to a "real" DOM.  And
-            that would only be useful if such a persistent "real" DOM existed
-            that we needed to use.  YAGNI, but doc'd here for clarification.
+          - If the sub-element's node's parent is *not* the current element's
+            node, create an 'xmi.idref' node linking to the sub-element node.
+
+          - New elements, and non-persistent objects simply create a "fresh"
+            node for use by the containing element.  Elements keep a reference
+            to this new node, so that potential containers can tell if they've
+            seen it.
+
+          - We only care about keeping XMI.Extension tags, and then probably
+            only ones contained directly in an element.  If a node is modified,
+            its extension tags should all be moved to the end of the modified
+            node's children, with comments to trace where they came from, and
+            a warning issued if any extensions are moved from their original
+            position.
+
+          - Generate new ID's as UUIDs, and place in both UUID and ID fields;
+            need to standardize on a '__uuid__' or similar field in elements
+            so that elements that need/want a UUID to map over to/from another
+            data system can do so.
+
+          - Format transforms can be supported via DM.thunk(); it should be
+            possible to copy an entire model from one DM to another in this
+            way, and thus switch between XMI 1.0 and 1.1 (or other) storage
+            formats.
+
+          - For thunking to be effective, XMI.extensions must be sharable,
+            and therefore immutable -- so XMI extension/text class is needed.
+
+          - XMIDocument should become persistent, and use a second-order DM to
+            load/save it.  Modifying XMINode instances should flag the
+            XMIDocument as changed.  We can then implement a transactional
+            file-based DM that can load and save the XMIDocument itself.
+
+          - XMIDocument needs to know its version or select a strategy object
+            to handle node updates for a particular XMI version.
+
+          - Need to research 'ignorableWhitespace' et al to ensure that we can
+            write cleanly indented files but with same semantics as originals.
 
         Other
 
@@ -74,6 +104,17 @@
 from peak.api import *
 from peak.util import SOX
 from weakref import WeakValueDictionary
+
+
+
+
+
+
+
+
+
+
+
 
 
 
