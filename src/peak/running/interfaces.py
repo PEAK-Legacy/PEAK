@@ -93,7 +93,7 @@ class ICmdLineAppFactory(IComponentFactory, IExecutable):
     invocations of applications, as is needed for protocols like FastCGI
     and ReadyExec."""
 
-    def __call__(parentComponent=None, componentName=None,
+    def __call__(parentComponent, componentName=None,
 
         argv  = sys.argv,
 

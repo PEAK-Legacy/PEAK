@@ -107,16 +107,16 @@ class AssemblyTests(TestCase):
         log = self.append
         root = Outermost(log=log, activated=self.activated, id = 1)
         root.foo = InnerMost(root, id=2, log=log, activated=self.activated)
-        root.getParentComponent()
+        root.getParentComponent()   # whitebox hack for testing; don't do this
         self.assertCompleteness(2)
 
     def checkInit(self):
         # Create parent, activate, then attach child
         log = self.append
-        root = Outermost(log=log, activated=self.activated, id=1)
-        root.getParentComponent()
+        root = Outermost(None, log=log, activated=self.activated, id=1)
         root.foo = InnerMost(root, id=2, log=log, activated=self.activated)
         self.assertCompleteness(2)
+
 
 
 
@@ -124,23 +124,23 @@ class AssemblyTests(TestCase):
     def checkKW(self):
         # create child, then parent, then activate
         log = self.append
-        root = Outermost(
+        root = Outermost(None,
             log=log, activated=self.activated, id=1,
             foo = InnerMost(id=2, log=log, activated=self.activated)
         )
-        root.getParentComponent()
         self.assertCompleteness(2)
 
 
     def checkBindingSubscribes(self):
         # create parent w/child that creates a child
         log = self.append
-        root = Outermost(
+        root = Outermost(None,
             log=log, activated=self.activated, id=1,
             foo = Middle(id=2, log=log, activated=self.activated)
         )
-        root.getParentComponent()
         self.assertCompleteness(3)
+
+
 
 
 

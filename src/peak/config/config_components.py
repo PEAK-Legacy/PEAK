@@ -15,7 +15,7 @@ __all__ = [
     'PropertyMap', 'LazyLoader', 'ConfigReader',
     'loadConfigFile', 'loadMapping', 'PropertySet', 'fileNearModule',
     'iterParents','findUtilities','findUtility',
-    'provideInstance', 'instancePerComponent', 'ConfigurationRoot',
+    'provideInstance', 'instancePerComponent',
 ]
 
 
@@ -41,8 +41,7 @@ def fileNearModule(moduleName,filename):
 
 def iterParents(component):
 
-    """Return iterator for all parents of 'component', including config roots
-    """
+    """Iterate over all parents of 'component'"""
 
     last = component
 
@@ -74,6 +73,7 @@ def findUtilities(iface, component):
     adapt(
         component,IConfigurationRoot,NullConfigRoot
     ).noMoreUtilities(component, iface, forObj)
+
 
 
 
@@ -368,44 +368,44 @@ class ConfigReader(AbstractConfigParser):
 
 
 class ConfigurationRoot(Component):
+    """Default implementation for a configuration root.
+
+    If you think you want to subclass this, you're probably wrong.  Note that
+    you can have whatever setup code you want, called automatically from .ini
+    files loaded by this class.  We recommend you try that approach first."""
 
     implements(IConfigurationRoot, Component.__implements__)
 
     def __instance_provides__(self,d,a):
-        pm=PropertyMap(self)
-        d[a]=pm
-        self.setup(pm)
-        self.uponAssembly()
+        pm = d[a] = PropertyMap(self)
+        self.setupDefaults(pm)
         return pm
 
-    __instance_provides__ = Once(__instance_provides__, provides=IPropertyMap)
+    __instance_provides__ = Once(__instance_provides__,
+        provides=IPropertyMap, activateUponAssembly = True
+    )
 
+    iniFiles = ( ('peak','peak.ini'), )
 
-    def _getConfigData(self, configKey, forObj):
-        self.__instance_provides__  # ensure existence & setup
-        return super(ConfigurationRoot,self)._getConfigData(configKey,forObj)
+    def setupDefaults(self, propertyMap):
+        """Set up 'propertyMap' with default contents loaded from 'iniFiles'"""
 
-
-    def setup(self, propertyMap):
-        loadConfigFile(propertyMap, fileNearModule('peak','peak.ini'))
-
+        for file in self.iniFiles:
+            if isinstance(file,tuple):
+                file = fileNearModule(*file)
+            loadConfigFile(propertyMap, file)
 
     def propertyNotFound(self,root,propertyName,forObj,default=NOT_GIVEN):
         if default is NOT_GIVEN:
             raise exceptions.PropertyNotFound(propertyName, forObj)
         return default
 
-    def noMoreUtilities(self,root,configKey,forObj):
-        pass
+    def noMoreUtilities(self,root,configKey,forObj): pass
 
     def nameNotFound(self,root,name,forObj,bindName):
         return naming.lookup(name, component,
             creationParent=forObj, creationName=bindName
         )
-
-
-
-
 
 
 class PropertySet(object):

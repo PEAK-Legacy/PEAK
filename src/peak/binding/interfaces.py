@@ -14,14 +14,29 @@ class IComponentFactory(Interface):
 
     """Class interface for creating bindable components"""
 
-    def __call__(parentComponent=None, componentName=None, **attrVals):
+    def __call__(parentComponent, componentName=None, **attrVals):
         """Create a new component
 
         The default constructor signature of a binding component is
-        to receive an optional parent to be bound to, an optional name
+        to receive an parent component to be bound to, an optional name
         relative to the parent, and keyword arguments which will be
         placed in the new object's dictionary, to override the specified
-        bindings."""
+        bindings.
+
+        Note that some component factories (such as 'binding.Component')
+        may be more lenient than this interface requires, by allowing you to
+        omit the 'parentComponent' argument.  But if you do not know this is
+        true for the object you are calling, you should assume the parent
+        component is required."""
+
+
+
+
+
+
+
+
+
 
 
 class IBindingNode(IConfigSource):
@@ -59,21 +74,6 @@ class IBindableAttrs(Interface):
 
     def _delBinding(attr,useSlot=False):
         """Ensure that no binding for 'attr' is active"""
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

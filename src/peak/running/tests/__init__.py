@@ -167,8 +167,7 @@ class ReactiveTests(TestCase):
     verbose = False
 
     def setUp(self):
-        self.app = TestApp()
-        self.app.getParentComponent()
+        self.app = TestApp(None)
         self.log = self.app.log
         self.append = self.app.append
 
@@ -196,6 +195,7 @@ class ReactiveTests(TestCase):
 
         for priority in range(5):
             assert tq.activeTasks[priority] is tasks[4-priority]
+
 
 
 

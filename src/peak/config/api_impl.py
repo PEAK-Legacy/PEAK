@@ -49,19 +49,19 @@ def makeRoot(**options):
     will get their 'uponAssembly()' events invoked immediately.
 
     Normally, this function is called without any parameters, but it will
-    accept keyword arguments that it will pass along when it calls the
+    also accept keyword arguments that it will pass along when it calls the
     'peak.config.config_components.ConfigurationRoot' constructor.
-    See that class for acceptable options.
-    """
 
-    root = ConfigurationRoot(**options)
-    root.setParentComponent(None)   # make it a root
-    return root
+    Currently, the only acceptable keyword argument is 'iniFiles', which must
+    be a sequence of filename strings or '(moduleName,fileName)' tuples.
 
+    The default value of 'iniFiles' is '[("peak","peak.ini")]', which loads
+    useful system defaults from 'peak.ini' in the 'peak' package directory.
+    Files are loaded in the order specified, with later files overriding
+    earlier ones, unless the setting to be overridden has already been used
+    (in which case an 'AlreadyRead' error occurs)."""
 
-
-
-
+    return ConfigurationRoot(None, **options)
 
 
 

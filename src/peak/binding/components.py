@@ -703,7 +703,7 @@ class Component(_Base):
     __implements__       = IComponent
 
 
-    def __init__(self, parentComponent=None, componentName=None, **kw):
+    def __init__(self, parentComponent=NOT_GIVEN, componentName=None, **kw):
         # Set up keywords first, so state is sensible
         if kw:
             klass = self.__class__
@@ -724,7 +724,7 @@ class Component(_Base):
                 sPC(self,k,v)
 
         # set our parent component and possibly invoke assembly events
-        if parentComponent is not None or componentName is not None:
+        if parentComponent is not NOT_GIVEN or componentName is not None:
             self.setParentComponent(parentComponent,componentName)
 
     lookupComponent = _lookupComponent
@@ -743,7 +743,7 @@ class Component(_Base):
 
         if pc is NOT_GIVEN:
             self.__parentSetting = parentComponent
-            self.__componentName = componentName            
+            self.__componentName = componentName
             self.__parentComponent  # lock and invoke assembly events
             return
 
@@ -825,7 +825,7 @@ class Component(_Base):
         if tba is None:
             child.uponAssembly()    # assembly has already occurred
         else:
-            tba.append(ref(child))  # save weak reference to child for callback
+            tba.append(child)       # save reference to child for callback
 
 
     def uponAssembly(self):
@@ -839,14 +839,12 @@ class Component(_Base):
 
         try:
             while tba:
-                ref = tba.pop()
-                ob = ref()
-                if ob is not None:
-                    try:
-                        ob.uponAssembly()
-                    except:
-                        tba.append(ref)
-                        raise
+                ob = tba.pop()
+                try:
+                    ob.uponAssembly()
+                except:
+                    tba.append(ob)
+                    raise
 
             for attr in self.__class__.__attrsToBeAssembled__:
                 getattr(self,attr)
@@ -854,6 +852,8 @@ class Component(_Base):
         except:
             self.__objectsToBeAssembled__ = tba
             raise
+
+
 
 
 
