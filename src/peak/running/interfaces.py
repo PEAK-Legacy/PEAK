@@ -55,13 +55,13 @@ class ICmdLineAppFactory(IBindingFactory):
     def __call__(parentComponent=None, componentName=None,
 
         argv  = sys.argv,
-        
+
         stdin = sys.stdin,
         stdout = sys.stdout,
         stderr = sys.stderr,
 
         environ = os.environ, **otherAttrs):
-       
+
         """Create a new "command-line" application instance"""
 
 
@@ -86,7 +86,7 @@ class IPeriodicTask(Interface):
 
     def __call__():
         """Do whatever work is required; return truth if useful work done
-        
+
         This method should update the task's 'pollInterval' if needed.  To
         request that the task should no longer be recurrently scheduled,
         raise 'exceptions.StopRunning'."""
@@ -137,7 +137,7 @@ class ITaskQueue(Interface):
     in the "available" state.  (Note: a task queue is allowed to let the
     system reactor hold onto waiting tasks, so if the reactor's state is
     reset, queue contents may be lost whether the queue is enabled or not.)
-    
+
     Unlike many scheduling-related components, you may have as many of
     these as you like, but each must have access to an 'IBasicReactor'
     utility and an 'IMainLoop' utility.
@@ -197,7 +197,7 @@ class IMainLoop(Interface):
         'idleTimeout' -- If 'activityOccurred()' is not called for this
                          many seconds, stop and return from 'run()'.
                          (Zero means, "don't check for inactivity".)
-                         
+
         'runAtLeast' -- run at least this many seconds before an 'idleTimeout'
                         is allowed to occur.  (Zero means, "idle timeouts
                         may occur any time after the run starts.")

@@ -49,7 +49,7 @@ class TaskQueue(binding.Base):
 
     activeTasks = binding.New(list)
     _scheduled  = False
-    _disabled   = True
+    _disabled   = False
 
 
     def addTask(self,ptask):
@@ -83,7 +83,7 @@ class TaskQueue(binding.Base):
     def _processNextTask(self):
 
         # Processes the highest priority pending task
-        
+
         del self._scheduled
 
         if self._disabled:
@@ -99,7 +99,7 @@ class TaskQueue(binding.Base):
             try:
                 didWork = task()
 
-            except exceptions.StopRunning:  # Don't reschedule the task               
+            except exceptions.StopRunning:  # Don't reschedule the task
                 cancelled = True
 
         finally:
@@ -145,9 +145,9 @@ class AdaptiveTask(binding.Component):
     __ranLastTime = True
 
 
-
-
-
+    def __cmp__(self, other):
+        """Compare to another daemon on the basis of priority"""
+        return cmp(self.priority, other.priority)
 
 
 

@@ -62,7 +62,7 @@ class MainLoop(binding.Base):
         self.lastActivity = time()
 
         reactor = self.reactor
-        
+
         try:
             if stopAfter:
                 reactor.callLater(stopAfter, reactor.stop)
@@ -84,7 +84,7 @@ class MainLoop(binding.Base):
 
         # Check whether we've been idle long enough to stop
         idle = time() - self.lastActivity
-        
+
         if idle >= timeout:
             self.reactor.stop()
 
@@ -142,6 +142,7 @@ def getTwisted(appConfig):
 
     """Get system reactor -- but only if it's twisted!"""
 
+    global _twisted
     if not _twisted:
 
         if _reactor.locked:
@@ -154,13 +155,12 @@ def getTwisted(appConfig):
             raise exceptions.PropertyNotFound(
                 """twisted.internet.reactor could not be imported"""
             )
-        
+
         _reactor.set(reactor)
         # XXX do twisted setups like threadable.init, wxSupport.install, etc.
         _twisted = True
 
     return _reactor.get()
-
 
 class UntwistedReactor(binding.Base):
 
@@ -193,7 +193,7 @@ class UntwistedReactor(binding.Base):
 
     def addReader(self, reader):
         if reader not in self.readers: self.readers.append(reader)
-        
+
     def addWriter(self, writer):
         if writer not in self.writers: self.writers.append(writer)
 
@@ -241,7 +241,6 @@ class _Appt(object):
         self.time = t; self.func = f; self.args = a; self.kw = k
 
     def __call__(self): return self.func(*self.args, **self.kw)
-    def __cmp__(self):  return cmp(self.time, other.time)
-
+    def __cmp__(self, other):  return cmp(self.time, other.time)
 
 
