@@ -81,9 +81,7 @@ class PhysicalDB(binding.Component):
 
 
 class Table:
-    protocols.advise(
-        instancesProvide = [IRelationVariable],
-    )
+    protocols.advise( instancesProvide = [IRelationVariable] )
     condition = EMPTY
     outers = ()
 
@@ -95,12 +93,15 @@ class Table:
     def attributes(self):
         return self.columns
 
-    def __call__(self,where=EMPTY,join=(),outer=(),keep=None):
+    def __call__(self,where=EMPTY,join=(),outer=(),rename=(),keep=None):
         cols = kjGraph(self.columns)
+        rename = kjGraph(rename)
         for rv in tuple(join)+tuple(outer):
             cols = cols + rv.attributes()
         if keep:
-            cols = kjSet(keep)*cols
+            cols = (kjSet(keep)+kjSet(rename)) * cols
+        if rename:
+            cols = ~rename * cols + (cols-cols.restrict(rename))
         return BasicJoin(
             self.condition & where, (self,)+tuple(join), tuple(outer), cols
         )
@@ -119,7 +120,6 @@ class Table:
 
     def getCondition(self):
         return self.condition
-
 
 class BasicJoin(Table, HashAndCompare):
 

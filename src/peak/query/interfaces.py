@@ -98,19 +98,12 @@ class IRelationVariable(Interface):
         'keep' -- a sequence of the names of the columns that should be kept in
         the new RV.  Supplying a non-empty value here is equivalent to the
         relational algebra 'project' operation.
+
+        'rename' -- a sequence of '(oldName,newName)' tuples specifying columns
+        to be renamed.  The old columns are automatically "kept", so if you
+        mix 'rename' and 'keep', you do not need to list renamed columns in the
+        'keep' argument.
         """
-
-    def remap(__keep__=False, **newFromOld):
-        """Return RV with name changes
-
-        Keyword arguments are used to name new columns, with the old column
-        they are derived from, e.g.::
-
-            anRV.rename(newCol='oldCol', copyOfOld='oldCol', ...)
-
-        The positional argument '__keep__', if supplied, indicates that any
-        columns not mentioned in the keyword arguments should be kept.
-        Otherwise, unmentioned columns should be dropped."""
 
     def attributes():
         """Return a kjGraph mapping names->relation attributes"""
@@ -127,11 +120,18 @@ class IRelationVariable(Interface):
     def getCondition():
         """Return any select() or join condition applying to this RV"""
 
+
     def __cmp__(other):
         """Relation variables must be comparable to each other"""
 
     def __hash__(other):
         """Relation variables must be hashable"""
+
+
+
+
+
+
 
 
 

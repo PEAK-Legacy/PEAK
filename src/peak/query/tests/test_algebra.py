@@ -326,6 +326,47 @@ class SimplificationAndEquality(TestCase):
 
 
 
+    def testRename(self):
+        x,y,z = self.condX, self.condY, self.condZ
+        A,B,C,D = self.rvA, self.rvB, self.rvC, self.rvD
+
+        for colNum in range(len(self.A_Columns)):
+            theColumn = self.A_Columns[colNum]
+            Arenamed = A(rename=[(theColumn,'theColumn')])
+
+            self.assertEqual(
+                A.attributes()[theColumn],
+                Arenamed.attributes()['theColumn']
+            )
+            self.assertEqual(
+                kjSet(Arenamed.attributes().keys()),
+                kjSet(
+                    ('theColumn',) + self.A_Columns[:colNum]
+                                   + self.A_Columns[colNum+1:]
+                )
+            )
+
+        abcd = A(join=[B,C,D],where=x)
+        ABCD = abcd(rename=[(n,n.upper()) for n in abcd.attributes().keys()])
+
+        self.assertEqual(
+            kjSet([n.upper() for n in abcd.attributes().keys()]),
+            kjSet(ABCD.attributes())
+        )
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 TestClasses = (
     SimplificationAndEquality,
 )
