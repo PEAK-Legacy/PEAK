@@ -51,18 +51,18 @@ class TwistedTasksTest(ScheduledTasksTest):
         d = defer.Deferred(); d.callback(42);
         reactor = self.scheduler.reactor
         log = []
-        reactor.callLater(1, log.append, "failed")  # failure flag
-        reactor.callLater(1, reactor.crash)         # safety timeout
-        r = self.scheduler.runUntil(d,suppressErrors=True)
-        self.assertEqual(log,[])
-        self.assertEqual(r,42)
-
-
-
-
-
-
-
+        call1 = reactor.callLater(1, log.append, "failed")  # failure flag
+        call2 = reactor.callLater(1, reactor.crash)         # safety timeout
+        try:
+            r = self.scheduler.runUntil(d,suppressErrors=True)
+            self.assertEqual(log,[])
+            self.assertEqual(r,42)
+        finally:
+            # Clean up 
+            try: call1.cancel()
+            except: pass
+            try: call2.cancel()
+            except: pass
 
 
 
