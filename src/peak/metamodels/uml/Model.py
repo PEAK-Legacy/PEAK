@@ -1,7 +1,7 @@
 from types import StringType, FunctionType
 
-from TW.RootModel.Queries import NodeList
-from TW.RootModel._Aspects import ComputedFeature  #, RootModel
+from TW.StructuralModel.Queries import NodeList
+from TW.StructuralModel._Aspects import ComputedFeature  #, StructuralModel
 from TW.Features import Transform, FeatureSet
 import MMX
 
@@ -39,7 +39,7 @@ MetaModel = MMX.load(mmx,plurals,cache,name='UML_MetaModel')
 
 
 
-class UMLModel(MetaModel):  # XXX needs RootModel, too
+class UMLModel(MetaModel):  # XXX needs StructuralModel, too
 
     class Integer:
 
