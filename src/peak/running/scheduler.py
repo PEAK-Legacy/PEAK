@@ -145,7 +145,7 @@ class UntwistedReactor(binding.Component):
 
     def addWriter(self, writer):
         if writer not in self.writers:
-            self.writers[writer]=self.eventLoop.writable(writer)
+            e = self.writers[writer] = self.eventLoop.writable(writer)
             e.addCallback(lambda s,e: self._fire(self.writers, writer, writer.doWrite))
 
     def removeReader(self, reader):
