@@ -125,8 +125,12 @@ import re
 pnameValidChars = re.compile( r"([-+*?!:._a-z0-9]+)", re.I ).match
 
 class PropertyName(str):
-
     """Name of a configuration property, usable as a configuration key"""
+
+    # We can't actually declare all our interfaces, because they're in
+    # peak.config.interfaces and will be declared there.  But, if we did,
+    # we'd declare them thus:
+    # protocols.advise(instancesProvide=[IConfigKey],asAdapterForTypes=[str])
 
     def __new__(klass, value, protocol=None):
 
@@ -157,10 +161,6 @@ class PropertyName(str):
                     )
 
         return self
-
-
-
-
 
     def isWildcard(self):
         return self.endswith('*')
@@ -267,21 +267,21 @@ class PropertyName(str):
     fromString = classmethod(fromString)
 
 
-# If/when we use 'peak.config', declare that PropertyName supports IConfigKey
-# and that it adapts strings to IConfigKey
 
-whenImported('peak.config.interfaces',
 
-    lambda interfaces:  (
-        protocols.declareImplementation(
-            PropertyName, instancesProvide=[interfaces.IConfigKey]
-        ),
 
-        protocols.declareAdapter(
-            PropertyName,
-            provides=[interfaces.IConfigKey],
-            forTypes=[str]
-        )
-    )
-)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 

@@ -8,7 +8,6 @@ __all__ = [
     'IServiceArea',
 ]
 
-
 class IConfigKey(Interface):
 
     """Configuration data key, used for 'config.lookup()' et al
@@ -32,11 +31,12 @@ class IConfigKey(Interface):
     def parentKeys():
         """Iterate over keys that are containing namespaces for this key"""
 
-
-
-
-
-
+protocols.declareImplementation(
+    PropertyName, instancesProvide=[IConfigKey]
+)
+protocols.declareAdapter(
+    PropertyName, provides=[IConfigKey], forTypes=[str]
+)
 
 
 class IConfigSource(Interface):
