@@ -215,16 +215,16 @@ class Transition(Core.ModelElement):
 
 class CompositeState(State):
     
-    class subvertex(_model.StructuralFeature):
-        referencedType = 'StateVertex'
-        referencedEnd = 'container'
-        isReference = True
-        sortPosn = 0
-    
     class isConcurrent(_model.StructuralFeature):
         referencedType = 'Foundation/Data_Types/Boolean'
         upperBound = 1
         lowerBound = 1
+        sortPosn = 0
+    
+    class subvertex(_model.StructuralFeature):
+        referencedType = 'StateVertex'
+        referencedEnd = 'container'
+        isReference = True
         sortPosn = 1
     
 
@@ -239,16 +239,16 @@ class ChangeEvent(Event):
 
 class Guard(Core.ModelElement):
     
-    class transition(_model.StructuralFeature):
-        referencedType = 'Transition'
-        referencedEnd = 'guard'
-        isReference = True
+    class expression(_model.StructuralFeature):
+        referencedType = 'Foundation/Data_Types/BooleanExpression'
         upperBound = 1
         lowerBound = 1
         sortPosn = 0
     
-    class expression(_model.StructuralFeature):
-        referencedType = 'Foundation/Data_Types/BooleanExpression'
+    class transition(_model.StructuralFeature):
+        referencedType = 'Transition'
+        referencedEnd = 'guard'
+        isReference = True
         upperBound = 1
         lowerBound = 1
         sortPosn = 1

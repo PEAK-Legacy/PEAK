@@ -23,6 +23,29 @@ class Multiplicity(_model.Element):
         sortPosn = 0
     
 
+class MultiplicityRange(_model.Element):
+    
+    class lower(_model.StructuralFeature):
+        referencedType = 'Integer'
+        upperBound = 1
+        lowerBound = 1
+        sortPosn = 0
+    
+    class upper(_model.StructuralFeature):
+        referencedType = 'UnlimitedInteger'
+        upperBound = 1
+        lowerBound = 1
+        sortPosn = 1
+    
+    class multiplicity(_model.StructuralFeature):
+        referencedType = 'Multiplicity'
+        referencedEnd = 'range'
+        isReference = True
+        upperBound = 1
+        lowerBound = 1
+        sortPosn = 2
+    
+
 class Expression(_model.Element):
     
     class language(_model.StructuralFeature):
@@ -54,29 +77,6 @@ class ActionExpression(Expression):
     pass
     
 
-class MultiplicityRange(_model.Element):
-    
-    class multiplicity(_model.StructuralFeature):
-        referencedType = 'Multiplicity'
-        referencedEnd = 'range'
-        isReference = True
-        upperBound = 1
-        lowerBound = 1
-        sortPosn = 0
-    
-    class lower(_model.StructuralFeature):
-        referencedType = 'Integer'
-        upperBound = 1
-        lowerBound = 1
-        sortPosn = 1
-    
-    class upper(_model.StructuralFeature):
-        referencedType = 'UnlimitedInteger'
-        upperBound = 1
-        lowerBound = 1
-        sortPosn = 2
-    
-
 class IterationExpression(Expression):
     pass
     
@@ -97,45 +97,12 @@ class ProcedureExpression(Expression):
     pass
     
 
-class AggregationKind(_model.Enumeration):
-    ak_none = _model.enum()
-    ak_aggregate = _model.enum()
-    ak_composite = _model.enum()
-    
-
-class Boolean(_datatypes.Boolean):
-    pass
-    
-
-class ChangeableKind(_model.Enumeration):
-    ck_changeable = _model.enum()
-    ck_frozen = _model.enum()
-    ck_addOnly = _model.enum()
-    
-
-class Name(_datatypes.String):
-    length = 0
-    
-
 class Integer(_datatypes.Long):
     pass
     
 
-class ParameterDirectionKind(_model.Enumeration):
-    pdk_in = _model.enum()
-    pdk_inout = _model.enum()
-    pdk_out = _model.enum()
-    pdk_return = _model.enum()
-    
-
-class MessageDirectionKind(_model.Enumeration):
-    mdk_activation = _model.enum()
-    mdk_return = _model.enum()
-    
-
-class ScopeKind(_model.Enumeration):
-    sk_instance = _model.enum()
-    sk_classifier = _model.enum()
+class UnlimitedInteger(_datatypes.Long):
+    pass
     
 
 class String(_datatypes.String):
@@ -146,10 +113,44 @@ class Time(_datatypes.Float):
     pass
     
 
-class VisibilityKind(_model.Enumeration):
-    vk_public = _model.enum()
-    vk_protected = _model.enum()
-    vk_private = _model.enum()
+class AggregationKind(_model.Enumeration):
+    ak_none = _model.enum()
+    ak_aggregate = _model.enum()
+    ak_composite = _model.enum()
+    
+
+class Boolean(_datatypes.Boolean):
+    pass
+    
+
+class CallConcurrencyKind(_model.Enumeration):
+    cck_sequential = _model.enum()
+    cck_guarded = _model.enum()
+    cck_concurrent = _model.enum()
+    
+
+class ChangeableKind(_model.Enumeration):
+    ck_changeable = _model.enum()
+    ck_frozen = _model.enum()
+    ck_addOnly = _model.enum()
+    
+
+class MessageDirectionKind(_model.Enumeration):
+    mdk_activation = _model.enum()
+    mdk_return = _model.enum()
+    
+
+class OrderingKind(_model.Enumeration):
+    ok_unordered = _model.enum()
+    ok_ordered = _model.enum()
+    ok_sorted = _model.enum()
+    
+
+class ParameterDirectionKind(_model.Enumeration):
+    pdk_in = _model.enum()
+    pdk_inout = _model.enum()
+    pdk_out = _model.enum()
+    pdk_return = _model.enum()
     
 
 class PseudostateKind(_model.Enumeration):
@@ -163,28 +164,27 @@ class PseudostateKind(_model.Enumeration):
     pk_final = _model.enum()
     
 
-class CallConcurrencyKind(_model.Enumeration):
-    cck_sequential = _model.enum()
-    cck_guarded = _model.enum()
-    cck_concurrent = _model.enum()
+class ScopeKind(_model.Enumeration):
+    sk_instance = _model.enum()
+    sk_classifier = _model.enum()
+    
+
+class VisibilityKind(_model.Enumeration):
+    vk_public = _model.enum()
+    vk_protected = _model.enum()
+    vk_private = _model.enum()
     
 
 class Mapping(_datatypes.String):
     length = 0
     
 
-class UnlimitedInteger(_datatypes.Long):
-    pass
+class Name(_datatypes.String):
+    length = 0
     
 
 class LocationReference(_datatypes.String):
     length = 0
-    
-
-class OrderingKind(_model.Enumeration):
-    ok_unordered = _model.enum()
-    ok_ordered = _model.enum()
-    ok_sorted = _model.enum()
     
 
 class Geometry(_datatypes.String):

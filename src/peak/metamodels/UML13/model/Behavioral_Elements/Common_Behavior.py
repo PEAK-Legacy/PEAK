@@ -46,23 +46,23 @@ class Instance(Core.ModelElement):
         isReference = True
         sortPosn = 4
     
+    class stimulus2(_model.StructuralFeature):
+        referencedType = 'Stimulus'
+        referencedEnd = 'receiver'
+        isReference = True
+        sortPosn = 5
+    
     class stimulus3(_model.StructuralFeature):
         referencedType = 'Stimulus'
         referencedEnd = 'sender'
         isReference = True
-        sortPosn = 5
+        sortPosn = 6
     
     class componentInstance(_model.StructuralFeature):
         referencedType = 'ComponentInstance'
         referencedEnd = 'resident'
         isReference = True
         upperBound = 1
-        sortPosn = 6
-    
-    class stimulus2(_model.StructuralFeature):
-        referencedType = 'Stimulus'
-        referencedEnd = 'receiver'
-        isReference = True
         sortPosn = 7
     
 
@@ -90,47 +90,47 @@ class Action(Core.ModelElement):
     
     mdl_isAbstract = True
     
+    class recurrence(_model.StructuralFeature):
+        referencedType = 'Foundation/Data_Types/IterationExpression'
+        upperBound = 1
+        lowerBound = 1
+        sortPosn = 0
+    
+    class target(_model.StructuralFeature):
+        referencedType = 'Foundation/Data_Types/ObjectSetExpression'
+        upperBound = 1
+        lowerBound = 1
+        sortPosn = 1
+    
+    class isAsynchronous(_model.StructuralFeature):
+        referencedType = 'Foundation/Data_Types/Boolean'
+        upperBound = 1
+        lowerBound = 1
+        sortPosn = 2
+    
+    class script(_model.StructuralFeature):
+        referencedType = 'Foundation/Data_Types/ActionExpression'
+        upperBound = 1
+        lowerBound = 1
+        sortPosn = 3
+    
     class actualArgument(_model.StructuralFeature):
         referencedType = 'Argument'
         referencedEnd = 'action'
         isReference = True
-        sortPosn = 0
+        sortPosn = 4
     
     class actionSequence(_model.StructuralFeature):
         referencedType = 'ActionSequence'
         referencedEnd = 'action'
         isReference = True
         upperBound = 1
-        sortPosn = 1
+        sortPosn = 5
     
     class stimulus(_model.StructuralFeature):
         referencedType = 'Stimulus'
         referencedEnd = 'dispatchAction'
         isReference = True
-        sortPosn = 2
-    
-    class recurrence(_model.StructuralFeature):
-        referencedType = 'Foundation/Data_Types/IterationExpression'
-        upperBound = 1
-        lowerBound = 1
-        sortPosn = 3
-    
-    class target(_model.StructuralFeature):
-        referencedType = 'Foundation/Data_Types/ObjectSetExpression'
-        upperBound = 1
-        lowerBound = 1
-        sortPosn = 4
-    
-    class isAsynchronous(_model.StructuralFeature):
-        referencedType = 'Foundation/Data_Types/Boolean'
-        upperBound = 1
-        lowerBound = 1
-        sortPosn = 5
-    
-    class script(_model.StructuralFeature):
-        referencedType = 'Foundation/Data_Types/ActionExpression'
-        upperBound = 1
-        lowerBound = 1
         sortPosn = 6
     
 
@@ -252,50 +252,50 @@ class ActionSequence(Action):
 
 class Argument(Core.ModelElement):
     
+    class value(_model.StructuralFeature):
+        referencedType = 'Foundation/Data_Types/Expression'
+        upperBound = 1
+        lowerBound = 1
+        sortPosn = 0
+    
     class action(_model.StructuralFeature):
         referencedType = 'Action'
         referencedEnd = 'actualArgument'
         isReference = True
         upperBound = 1
-        sortPosn = 0
-    
-    class value(_model.StructuralFeature):
-        referencedType = 'Foundation/Data_Types/Expression'
-        upperBound = 1
-        lowerBound = 1
         sortPosn = 1
     
 
 class Reception(Core.BehavioralFeature):
     
-    class signal(_model.StructuralFeature):
-        referencedType = 'Signal'
-        referencedEnd = 'reception'
-        isReference = True
-        upperBound = 1
-        lowerBound = 1
-        sortPosn = 0
-    
     class specification(_model.StructuralFeature):
         referencedType = 'Foundation/Data_Types/String'
         upperBound = 1
         lowerBound = 1
-        sortPosn = 1
+        sortPosn = 0
     
     class isRoot(_model.StructuralFeature):
         referencedType = 'Foundation/Data_Types/Boolean'
         upperBound = 1
         lowerBound = 1
-        sortPosn = 2
+        sortPosn = 1
     
     class isLeaf(_model.StructuralFeature):
         referencedType = 'Foundation/Data_Types/Boolean'
         upperBound = 1
         lowerBound = 1
-        sortPosn = 3
+        sortPosn = 2
     
     class isAbstract(_model.StructuralFeature):
         referencedType = 'Foundation/Data_Types/Boolean'
+        upperBound = 1
+        lowerBound = 1
+        sortPosn = 3
+    
+    class signal(_model.StructuralFeature):
+        referencedType = 'Signal'
+        referencedEnd = 'reception'
+        isReference = True
         upperBound = 1
         lowerBound = 1
         sortPosn = 4

@@ -88,20 +88,20 @@ class CallState(ActionState):
 
 class ObjectFlowState(State_Machines.SimpleState):
     
+    class isSynch(_model.StructuralFeature):
+        referencedType = 'Foundation/Data_Types/Boolean'
+        upperBound = 1
+        lowerBound = 1
+        sortPosn = 0
+    
     class parameter(_model.StructuralFeature):
         referencedType = 'Foundation/Core/Parameter'
         isReference = True
-        sortPosn = 0
+        sortPosn = 1
     
     class type(_model.StructuralFeature):
         referencedType = 'Foundation/Core/Classifier'
         isReference = True
-        upperBound = 1
-        lowerBound = 1
-        sortPosn = 1
-    
-    class isSynch(_model.StructuralFeature):
-        referencedType = 'Foundation/Data_Types/Boolean'
         upperBound = 1
         lowerBound = 1
         sortPosn = 2

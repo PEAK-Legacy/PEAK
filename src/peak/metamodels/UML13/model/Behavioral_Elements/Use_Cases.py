@@ -17,15 +17,15 @@ Common_Behavior      = _lazy(__name__, '../Common_Behavior')
 
 class UseCase(Core.Classifier):
     
-    class extend2(_model.StructuralFeature):
-        referencedType = 'Extend'
-        referencedEnd = 'base'
-        isReference = True
-        sortPosn = 0
-    
     class extend(_model.StructuralFeature):
         referencedType = 'Extend'
         referencedEnd = 'extension'
+        isReference = True
+        sortPosn = 0
+    
+    class extend2(_model.StructuralFeature):
+        referencedType = 'Extend'
+        referencedEnd = 'base'
         isReference = True
         sortPosn = 1
     
@@ -58,13 +58,19 @@ class UseCaseInstance(Common_Behavior.Instance):
 
 class Extend(Core.Relationship):
     
+    class condition(_model.StructuralFeature):
+        referencedType = 'Foundation/Data_Types/BooleanExpression'
+        upperBound = 1
+        lowerBound = 1
+        sortPosn = 0
+    
     class base(_model.StructuralFeature):
         referencedType = 'UseCase'
         referencedEnd = 'extend2'
         isReference = True
         upperBound = 1
         lowerBound = 1
-        sortPosn = 0
+        sortPosn = 1
     
     class extension(_model.StructuralFeature):
         referencedType = 'UseCase'
@@ -72,18 +78,12 @@ class Extend(Core.Relationship):
         isReference = True
         upperBound = 1
         lowerBound = 1
-        sortPosn = 1
+        sortPosn = 2
     
     class extensionPoint(_model.StructuralFeature):
         referencedType = 'ExtensionPoint'
         referencedEnd = 'extend'
         isReference = True
-        lowerBound = 1
-        sortPosn = 2
-    
-    class condition(_model.StructuralFeature):
-        referencedType = 'Foundation/Data_Types/BooleanExpression'
-        upperBound = 1
         lowerBound = 1
         sortPosn = 3
     
@@ -109,24 +109,24 @@ class Include(Core.Relationship):
 
 class ExtensionPoint(Core.ModelElement):
     
+    class location(_model.StructuralFeature):
+        referencedType = 'Foundation/Data_Types/LocationReference'
+        upperBound = 1
+        lowerBound = 1
+        sortPosn = 0
+    
     class useCase(_model.StructuralFeature):
         referencedType = 'UseCase'
         referencedEnd = 'extensionPoint'
         isReference = True
         upperBound = 1
         lowerBound = 1
-        sortPosn = 0
+        sortPosn = 1
     
     class extend(_model.StructuralFeature):
         referencedType = 'Extend'
         referencedEnd = 'extensionPoint'
         isReference = True
-        sortPosn = 1
-    
-    class location(_model.StructuralFeature):
-        referencedType = 'Foundation/Data_Types/LocationReference'
-        upperBound = 1
-        lowerBound = 1
         sortPosn = 2
     
 # ------------------------------------------------------------------------------

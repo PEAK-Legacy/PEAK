@@ -42,20 +42,20 @@ class Collaboration(Core.GeneralizableElement, Core.Namespace):
 
 class ClassifierRole(Core.Classifier):
     
+    class multiplicity(_model.StructuralFeature):
+        referencedType = 'Foundation/Data_Types/Multiplicity'
+        upperBound = 1
+        lowerBound = 1
+        sortPosn = 0
+    
     class base(_model.StructuralFeature):
         referencedType = 'Foundation/Core/Classifier'
         isReference = True
         lowerBound = 1
-        sortPosn = 0
+        sortPosn = 1
     
     class availableFeature(_model.StructuralFeature):
         referencedType = 'Foundation/Core/Feature'
-        isReference = True
-        sortPosn = 1
-    
-    class message2(_model.StructuralFeature):
-        referencedType = 'Message'
-        referencedEnd = 'sender'
         isReference = True
         sortPosn = 2
     
@@ -65,56 +65,56 @@ class ClassifierRole(Core.Classifier):
         isReference = True
         sortPosn = 3
     
-    class availableContents(_model.StructuralFeature):
-        referencedType = 'Foundation/Core/ModelElement'
+    class message2(_model.StructuralFeature):
+        referencedType = 'Message'
+        referencedEnd = 'sender'
         isReference = True
         sortPosn = 4
     
-    class multiplicity(_model.StructuralFeature):
-        referencedType = 'Foundation/Data_Types/Multiplicity'
-        upperBound = 1
-        lowerBound = 1
+    class availableContents(_model.StructuralFeature):
+        referencedType = 'Foundation/Core/ModelElement'
+        isReference = True
         sortPosn = 5
     
 
 class AssociationRole(Core.Association):
     
+    class multiplicity(_model.StructuralFeature):
+        referencedType = 'Foundation/Data_Types/Multiplicity'
+        upperBound = 1
+        lowerBound = 1
+        sortPosn = 0
+    
     class base(_model.StructuralFeature):
         referencedType = 'Foundation/Core/Association'
         isReference = True
         upperBound = 1
-        sortPosn = 0
+        sortPosn = 1
     
     class message(_model.StructuralFeature):
         referencedType = 'Message'
         referencedEnd = 'communicationConnection'
         isReference = True
-        sortPosn = 1
-    
-    class multiplicity(_model.StructuralFeature):
-        referencedType = 'Foundation/Data_Types/Multiplicity'
-        upperBound = 1
-        lowerBound = 1
         sortPosn = 2
     
 
 class AssociationEndRole(Core.AssociationEnd):
     
-    class base(_model.StructuralFeature):
-        referencedType = 'Foundation/Core/AssociationEnd'
-        isReference = True
-        upperBound = 1
-        sortPosn = 0
-    
-    class availableQualifier(_model.StructuralFeature):
-        referencedType = 'Foundation/Core/Attribute'
-        isReference = True
-        sortPosn = 1
-    
     class collaborationMultiplicity(_model.StructuralFeature):
         referencedType = 'Foundation/Data_Types/Multiplicity'
         upperBound = 1
         lowerBound = 1
+        sortPosn = 0
+    
+    class base(_model.StructuralFeature):
+        referencedType = 'Foundation/Core/AssociationEnd'
+        isReference = True
+        upperBound = 1
+        sortPosn = 1
+    
+    class availableQualifier(_model.StructuralFeature):
+        referencedType = 'Foundation/Core/Attribute'
+        isReference = True
         sortPosn = 2
     
 
@@ -135,19 +135,13 @@ class Message(Core.ModelElement):
         upperBound = 1
         sortPosn = 1
     
-    class message4(_model.StructuralFeature):
-        referencedType = 'Message'
-        referencedEnd = 'activator'
-        isReference = True
-        sortPosn = 2
-    
     class sender(_model.StructuralFeature):
         referencedType = 'ClassifierRole'
         referencedEnd = 'message2'
         isReference = True
         upperBound = 1
         lowerBound = 1
-        sortPosn = 3
+        sortPosn = 2
     
     class receiver(_model.StructuralFeature):
         referencedType = 'ClassifierRole'
@@ -155,32 +149,38 @@ class Message(Core.ModelElement):
         isReference = True
         upperBound = 1
         lowerBound = 1
-        sortPosn = 4
-    
-    class message3(_model.StructuralFeature):
-        referencedType = 'Message'
-        referencedEnd = 'predecessor'
-        isReference = True
-        sortPosn = 5
+        sortPosn = 3
     
     class predecessor(_model.StructuralFeature):
         referencedType = 'Message'
         referencedEnd = 'message3'
         isReference = True
-        sortPosn = 6
+        sortPosn = 4
     
     class communicationConnection(_model.StructuralFeature):
         referencedType = 'AssociationRole'
         referencedEnd = 'message'
         isReference = True
         upperBound = 1
-        sortPosn = 7
+        sortPosn = 5
     
     class action(_model.StructuralFeature):
         referencedType = 'Common_Behavior/Action'
         isReference = True
         upperBound = 1
         lowerBound = 1
+        sortPosn = 6
+    
+    class message3(_model.StructuralFeature):
+        referencedType = 'Message'
+        referencedEnd = 'predecessor'
+        isReference = True
+        sortPosn = 7
+    
+    class message4(_model.StructuralFeature):
+        referencedType = 'Message'
+        referencedEnd = 'activator'
+        isReference = True
         sortPosn = 8
     
 

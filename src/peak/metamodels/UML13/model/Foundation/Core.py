@@ -22,102 +22,102 @@ class ModelElement(Element):
     
     mdl_isAbstract = True
     
+    class name(_model.StructuralFeature):
+        referencedType = 'Data_Types/Name'
+        upperBound = 1
+        lowerBound = 1
+        sortPosn = 0
+    
+    class visibility(_model.StructuralFeature):
+        referencedType = 'Data_Types/VisibilityKind'
+        upperBound = 1
+        lowerBound = 1
+        sortPosn = 1
+    
+    class isSpecification(_model.StructuralFeature):
+        referencedType = 'Data_Types/Boolean'
+        upperBound = 1
+        lowerBound = 1
+        sortPosn = 2
+    
     class namespace(_model.StructuralFeature):
         referencedType = 'Namespace'
         referencedEnd = 'ownedElement'
         isReference = True
         upperBound = 1
-        sortPosn = 0
+        sortPosn = 3
     
     class clientDependency(_model.StructuralFeature):
         referencedType = 'Dependency'
         referencedEnd = 'client'
         isReference = True
-        sortPosn = 1
+        sortPosn = 4
     
     class constraint(_model.StructuralFeature):
         referencedType = 'Constraint'
         referencedEnd = 'constrainedElement'
         isReference = True
-        sortPosn = 2
+        sortPosn = 5
     
     class supplierDependency(_model.StructuralFeature):
         referencedType = 'Dependency'
         referencedEnd = 'supplier'
         isReference = True
-        sortPosn = 3
+        sortPosn = 6
     
     class presentation(_model.StructuralFeature):
         referencedType = 'PresentationElement'
         referencedEnd = 'subject'
         isReference = True
-        sortPosn = 4
+        sortPosn = 7
     
     class targetFlow(_model.StructuralFeature):
         referencedType = 'Flow'
         referencedEnd = 'target'
         isReference = True
-        sortPosn = 5
+        sortPosn = 8
     
     class sourceFlow(_model.StructuralFeature):
         referencedType = 'Flow'
         referencedEnd = 'source'
         isReference = True
-        sortPosn = 6
+        sortPosn = 9
     
     class templateParameter3(_model.StructuralFeature):
         referencedType = 'TemplateParameter'
         referencedEnd = 'defaultElement'
         isReference = True
-        sortPosn = 7
+        sortPosn = 10
     
     class binding(_model.StructuralFeature):
         referencedType = 'Binding'
         referencedEnd = 'argument'
         isReference = True
         upperBound = 1
-        sortPosn = 8
+        sortPosn = 11
     
     class comment(_model.StructuralFeature):
         referencedType = 'Comment'
         referencedEnd = 'annotatedElement'
         isReference = True
-        sortPosn = 9
+        sortPosn = 12
     
     class elementResidence(_model.StructuralFeature):
         referencedType = 'ElementResidence'
         referencedEnd = 'resident'
         isReference = True
-        sortPosn = 10
+        sortPosn = 13
     
     class templateParameter(_model.StructuralFeature):
         referencedType = 'TemplateParameter'
         referencedEnd = 'modelElement'
         isReference = True
-        sortPosn = 11
+        sortPosn = 14
     
     class templateParameter2(_model.StructuralFeature):
         referencedType = 'TemplateParameter'
         referencedEnd = 'modelElement2'
         isReference = True
-        sortPosn = 12
-    
-    class name(_model.StructuralFeature):
-        referencedType = 'Data_Types/Name'
-        upperBound = 1
-        lowerBound = 1
-        sortPosn = 13
-    
-    class visibility(_model.StructuralFeature):
-        referencedType = 'Data_Types/VisibilityKind'
-        upperBound = 1
-        lowerBound = 1
-        sortPosn = 14
-    
-    class isSpecification(_model.StructuralFeature):
-        referencedType = 'Data_Types/Boolean'
-        upperBound = 1
-        lowerBound = 1
         sortPosn = 15
     
 
@@ -125,34 +125,34 @@ class GeneralizableElement(ModelElement):
     
     mdl_isAbstract = True
     
-    class generalization(_model.StructuralFeature):
-        referencedType = 'Generalization'
-        referencedEnd = 'child'
-        isReference = True
-        sortPosn = 0
-    
-    class specialization(_model.StructuralFeature):
-        referencedType = 'Generalization'
-        referencedEnd = 'parent'
-        isReference = True
-        sortPosn = 1
-    
     class isRoot(_model.StructuralFeature):
         referencedType = 'Data_Types/Boolean'
         upperBound = 1
         lowerBound = 1
-        sortPosn = 2
+        sortPosn = 0
     
     class isLeaf(_model.StructuralFeature):
         referencedType = 'Data_Types/Boolean'
         upperBound = 1
         lowerBound = 1
-        sortPosn = 3
+        sortPosn = 1
     
     class isAbstract(_model.StructuralFeature):
         referencedType = 'Data_Types/Boolean'
         upperBound = 1
         lowerBound = 1
+        sortPosn = 2
+    
+    class generalization(_model.StructuralFeature):
+        referencedType = 'Generalization'
+        referencedEnd = 'child'
+        isReference = True
+        sortPosn = 3
+    
+    class specialization(_model.StructuralFeature):
+        referencedType = 'Generalization'
+        referencedEnd = 'parent'
+        isReference = True
         sortPosn = 4
     
 
@@ -207,17 +207,17 @@ class Feature(ModelElement):
     
     mdl_isAbstract = True
     
+    class ownerScope(_model.StructuralFeature):
+        referencedType = 'Data_Types/ScopeKind'
+        upperBound = 1
+        lowerBound = 1
+        sortPosn = 0
+    
     class owner(_model.StructuralFeature):
         referencedType = 'Classifier'
         referencedEnd = 'feature'
         isReference = True
         upperBound = 1
-        sortPosn = 0
-    
-    class ownerScope(_model.StructuralFeature):
-        referencedType = 'Data_Types/ScopeKind'
-        upperBound = 1
-        lowerBound = 1
         sortPosn = 1
     
 
@@ -225,27 +225,27 @@ class StructuralFeature(Feature):
     
     mdl_isAbstract = True
     
-    class type(_model.StructuralFeature):
-        referencedType = 'Classifier'
-        isReference = True
-        upperBound = 1
-        lowerBound = 1
-        sortPosn = 0
-    
     class multiplicity(_model.StructuralFeature):
         referencedType = 'Data_Types/Multiplicity'
         upperBound = 1
         lowerBound = 1
-        sortPosn = 1
+        sortPosn = 0
     
     class changeability(_model.StructuralFeature):
         referencedType = 'Data_Types/ChangeableKind'
         upperBound = 1
         lowerBound = 1
-        sortPosn = 2
+        sortPosn = 1
     
     class targetScope(_model.StructuralFeature):
         referencedType = 'Data_Types/ScopeKind'
+        upperBound = 1
+        lowerBound = 1
+        sortPosn = 2
+    
+    class type(_model.StructuralFeature):
+        referencedType = 'Classifier'
+        isReference = True
         upperBound = 1
         lowerBound = 1
         sortPosn = 3
@@ -253,67 +253,67 @@ class StructuralFeature(Feature):
 
 class AssociationEnd(ModelElement):
     
+    class isNavigable(_model.StructuralFeature):
+        referencedType = 'Data_Types/Boolean'
+        upperBound = 1
+        lowerBound = 1
+        sortPosn = 0
+    
+    class ordering(_model.StructuralFeature):
+        referencedType = 'Data_Types/OrderingKind'
+        upperBound = 1
+        lowerBound = 1
+        sortPosn = 1
+    
+    class aggregation(_model.StructuralFeature):
+        referencedType = 'Data_Types/AggregationKind'
+        upperBound = 1
+        lowerBound = 1
+        sortPosn = 2
+    
+    class targetScope(_model.StructuralFeature):
+        referencedType = 'Data_Types/ScopeKind'
+        upperBound = 1
+        lowerBound = 1
+        sortPosn = 3
+    
+    class multiplicity(_model.StructuralFeature):
+        referencedType = 'Data_Types/Multiplicity'
+        upperBound = 1
+        lowerBound = 1
+        sortPosn = 4
+    
+    class changeability(_model.StructuralFeature):
+        referencedType = 'Data_Types/ChangeableKind'
+        upperBound = 1
+        lowerBound = 1
+        sortPosn = 5
+    
     class association(_model.StructuralFeature):
         referencedType = 'Association'
         referencedEnd = 'connection'
         isReference = True
         upperBound = 1
         lowerBound = 1
-        sortPosn = 0
+        sortPosn = 6
     
     class qualifier(_model.StructuralFeature):
         referencedType = 'Attribute'
         referencedEnd = 'associationEnd'
         isReference = True
-        sortPosn = 1
+        sortPosn = 7
     
     class type(_model.StructuralFeature):
         referencedType = 'Classifier'
         isReference = True
         upperBound = 1
         lowerBound = 1
-        sortPosn = 2
+        sortPosn = 8
     
     class specification(_model.StructuralFeature):
         referencedType = 'Classifier'
         referencedEnd = 'participant'
         isReference = True
-        sortPosn = 3
-    
-    class isNavigable(_model.StructuralFeature):
-        referencedType = 'Data_Types/Boolean'
-        upperBound = 1
-        lowerBound = 1
-        sortPosn = 4
-    
-    class ordering(_model.StructuralFeature):
-        referencedType = 'Data_Types/OrderingKind'
-        upperBound = 1
-        lowerBound = 1
-        sortPosn = 5
-    
-    class aggregation(_model.StructuralFeature):
-        referencedType = 'Data_Types/AggregationKind'
-        upperBound = 1
-        lowerBound = 1
-        sortPosn = 6
-    
-    class targetScope(_model.StructuralFeature):
-        referencedType = 'Data_Types/ScopeKind'
-        upperBound = 1
-        lowerBound = 1
-        sortPosn = 7
-    
-    class multiplicity(_model.StructuralFeature):
-        referencedType = 'Data_Types/Multiplicity'
-        upperBound = 1
-        lowerBound = 1
-        sortPosn = 8
-    
-    class changeability(_model.StructuralFeature):
-        referencedType = 'Data_Types/ChangeableKind'
-        upperBound = 1
-        lowerBound = 1
         sortPosn = 9
     
 
@@ -323,16 +323,16 @@ class Interface(Classifier):
 
 class Constraint(ModelElement):
     
-    class constrainedElement(_model.StructuralFeature):
-        referencedType = 'ModelElement'
-        referencedEnd = 'constraint'
-        isReference = True
-        sortPosn = 0
-    
     class body(_model.StructuralFeature):
         referencedType = 'Data_Types/BooleanExpression'
         upperBound = 1
         lowerBound = 1
+        sortPosn = 0
+    
+    class constrainedElement(_model.StructuralFeature):
+        referencedType = 'ModelElement'
+        referencedEnd = 'constraint'
+        isReference = True
         sortPosn = 1
     
 
@@ -353,15 +353,15 @@ class Association(GeneralizableElement, Relationship):
 
 class Attribute(StructuralFeature):
     
+    class initialValue(_model.StructuralFeature):
+        referencedType = 'Data_Types/Expression'
+        upperBound = 1
+        sortPosn = 0
+    
     class associationEnd(_model.StructuralFeature):
         referencedType = 'AssociationEnd'
         referencedEnd = 'qualifier'
         isReference = True
-        upperBound = 1
-        sortPosn = 0
-    
-    class initialValue(_model.StructuralFeature):
-        referencedType = 'Data_Types/Expression'
         upperBound = 1
         sortPosn = 1
     
@@ -370,81 +370,81 @@ class BehavioralFeature(Feature):
     
     mdl_isAbstract = True
     
-    class parameter(_model.StructuralFeature):
-        referencedType = 'Parameter'
-        referencedEnd = 'behavioralFeature'
-        isReference = True
-        sortPosn = 0
-    
     class isQuery(_model.StructuralFeature):
         referencedType = 'Data_Types/Boolean'
         upperBound = 1
         lowerBound = 1
+        sortPosn = 0
+    
+    class parameter(_model.StructuralFeature):
+        referencedType = 'Parameter'
+        referencedEnd = 'behavioralFeature'
+        isReference = True
         sortPosn = 1
     
 
 class Operation(BehavioralFeature):
     
-    class method(_model.StructuralFeature):
-        referencedType = 'Method'
-        referencedEnd = 'specification'
-        isReference = True
-        sortPosn = 0
-    
     class concurrency(_model.StructuralFeature):
         referencedType = 'Data_Types/CallConcurrencyKind'
         upperBound = 1
         lowerBound = 1
-        sortPosn = 1
+        sortPosn = 0
     
     class isRoot(_model.StructuralFeature):
         referencedType = 'Data_Types/Boolean'
         upperBound = 1
         lowerBound = 1
-        sortPosn = 2
+        sortPosn = 1
     
     class isLeaf(_model.StructuralFeature):
         referencedType = 'Data_Types/Boolean'
         upperBound = 1
         lowerBound = 1
-        sortPosn = 3
+        sortPosn = 2
     
     class isAbstract(_model.StructuralFeature):
         referencedType = 'Data_Types/Boolean'
         upperBound = 1
         lowerBound = 1
-        sortPosn = 4
+        sortPosn = 3
     
     class specification(_model.StructuralFeature):
         referencedType = 'Data_Types/String'
         upperBound = 1
         lowerBound = 1
+        sortPosn = 4
+    
+    class method(_model.StructuralFeature):
+        referencedType = 'Method'
+        referencedEnd = 'specification'
+        isReference = True
         sortPosn = 5
     
 
 class Parameter(ModelElement):
+    
+    class defaultValue(_model.StructuralFeature):
+        referencedType = 'Data_Types/Expression'
+        upperBound = 1
+        sortPosn = 0
+    
+    class kind(_model.StructuralFeature):
+        referencedType = 'Data_Types/ParameterDirectionKind'
+        upperBound = 1
+        lowerBound = 1
+        sortPosn = 1
     
     class behavioralFeature(_model.StructuralFeature):
         referencedType = 'BehavioralFeature'
         referencedEnd = 'parameter'
         isReference = True
         upperBound = 1
-        sortPosn = 0
+        sortPosn = 2
     
     class type(_model.StructuralFeature):
         referencedType = 'Classifier'
         isReference = True
-        upperBound = 1
-        lowerBound = 1
-        sortPosn = 1
-    
-    class defaultValue(_model.StructuralFeature):
-        referencedType = 'Data_Types/Expression'
-        upperBound = 1
-        sortPosn = 2
-    
-    class kind(_model.StructuralFeature):
-        referencedType = 'Data_Types/ParameterDirectionKind'
         upperBound = 1
         lowerBound = 1
         sortPosn = 3
@@ -452,16 +452,16 @@ class Parameter(ModelElement):
 
 class Method(BehavioralFeature):
     
-    class specification(_model.StructuralFeature):
-        referencedType = 'Operation'
-        referencedEnd = 'method'
-        isReference = True
+    class body(_model.StructuralFeature):
+        referencedType = 'Data_Types/ProcedureExpression'
         upperBound = 1
         lowerBound = 1
         sortPosn = 0
     
-    class body(_model.StructuralFeature):
-        referencedType = 'Data_Types/ProcedureExpression'
+    class specification(_model.StructuralFeature):
+        referencedType = 'Operation'
+        referencedEnd = 'method'
+        isReference = True
         upperBound = 1
         lowerBound = 1
         sortPosn = 1
@@ -469,13 +469,19 @@ class Method(BehavioralFeature):
 
 class Generalization(Relationship):
     
+    class discriminator(_model.StructuralFeature):
+        referencedType = 'Data_Types/Name'
+        upperBound = 1
+        lowerBound = 1
+        sortPosn = 0
+    
     class child(_model.StructuralFeature):
         referencedType = 'GeneralizableElement'
         referencedEnd = 'generalization'
         isReference = True
         upperBound = 1
         lowerBound = 1
-        sortPosn = 0
+        sortPosn = 1
     
     class parent(_model.StructuralFeature):
         referencedType = 'GeneralizableElement'
@@ -483,19 +489,13 @@ class Generalization(Relationship):
         isReference = True
         upperBound = 1
         lowerBound = 1
-        sortPosn = 1
+        sortPosn = 2
     
     class powertype(_model.StructuralFeature):
         referencedType = 'Classifier'
         referencedEnd = 'powertypeRange'
         isReference = True
         upperBound = 1
-        sortPosn = 2
-    
-    class discriminator(_model.StructuralFeature):
-        referencedType = 'Data_Types/Name'
-        upperBound = 1
-        lowerBound = 1
         sortPosn = 3
     
 
@@ -608,24 +608,24 @@ class Flow(Relationship):
 
 class ElementResidence(_model.Element):
     
+    class visibility(_model.StructuralFeature):
+        referencedType = 'Data_Types/VisibilityKind'
+        upperBound = 1
+        lowerBound = 1
+        sortPosn = 0
+    
     class resident(_model.StructuralFeature):
         referencedType = 'ModelElement'
         referencedEnd = 'elementResidence'
         isReference = True
         upperBound = 1
         lowerBound = 1
-        sortPosn = 0
+        sortPosn = 1
     
     class implementationLocation(_model.StructuralFeature):
         referencedType = 'Component'
         referencedEnd = 'residentElement'
         isReference = True
-        upperBound = 1
-        lowerBound = 1
-        sortPosn = 1
-    
-    class visibility(_model.StructuralFeature):
-        referencedType = 'Data_Types/VisibilityKind'
         upperBound = 1
         lowerBound = 1
         sortPosn = 2
