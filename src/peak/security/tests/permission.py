@@ -91,14 +91,14 @@ class Owner(security.Permission): pass
 class SelfOrManager(security.Permission): pass
 class ShipmentViewer(security.Permission): pass
 
-class Facility(object):
+class Facility:
 
     security.allow(
         viewShipments = ShipmentViewer,
         manageWorkers = Manager,
     )
 
-class Batch(object):
+class Batch:
     security.allow(
         edit = ManageBatch,
         delete = Owner,

@@ -289,20 +289,22 @@ class PermissionType(binding.ActiveClass):
 
     """A permission type (abstract and/or concrete)"""
 
-    protocols.advise(
-        instancesProvide = [IAbstractPermission]
-    )
+    protocols.advise(instancesProvide = [IAbstractPermission])
 
     abstractBase = None
 
     __cache = binding.Make(WeakKeyDictionary, attrName='_PermissionType__cache')
-
+    __classic = binding.Make(dict,attrName='_PermissionType__classic')
+    
     def of(self,protectedObjectType):
         if self.abstractBase is not None:
             return self.abstractBase.of(protectedObjectType)
 
         try:
-            return self.__cache[protectedObjectType]
+            try:
+                return self.__cache[protectedObjectType]
+            except TypeError:
+                return self.__classic[protectedObjectType]
         except KeyError:
             pass
 
@@ -317,7 +319,10 @@ class PermissionType(binding.ActiveClass):
             bases, {'__module__': self.__module__, 'abstractBase': self}
         )
 
-        self.__cache[protectedObjectType] = subtype
+        try:
+            self.__cache[protectedObjectType] = subtype
+        except TypeError:
+            self.__classic[protectedObjectType] = subtype
         return subtype
 
 
@@ -348,11 +353,6 @@ class PermissionType(binding.ActiveClass):
 class Permission:
     """Base class for permissions"""
     __metaclass__ = PermissionType
-
-
-
-
-
 
 
 
