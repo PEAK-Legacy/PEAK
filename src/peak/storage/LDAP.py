@@ -2,7 +2,7 @@ from __future__ import generators
 from peak.api import *
 from connections import ManagedConnection, AbstractCursor
 from urllib import quote, unquote
-
+from peak.util.Struct import makeStructType
 
 __all__ = [
     'LDAPConnection', 'LDAPCursor', 'ldapURL'
