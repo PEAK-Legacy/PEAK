@@ -44,14 +44,12 @@ int main(int argc, char **argv) {
     char **useargs = argv;
     char **newargs;
     char *p;
-    int argct = argcount(argv[1]);
-
-    /* printf("argct=%d\n", argct); */
+    int argct;
 
     if ( argc>1 ) {
 
         /* printf("2 or more args\n"); */
-
+        argct = argcount(argv[1]);      /* printf("argct=%d\n", argct); */
         newargs = useargs = (char **)calloc(argct+argc+1, sizeof(char *));
         *newargs++ = argv[0];
 
@@ -73,10 +71,12 @@ int main(int argc, char **argv) {
             *newargs++ = *argv++;
 
         *newargs = NULL;
+
+        /* printf("doing exec\n"); */
+        execvp(useargs[1], useargs+1);
     }
-    /* printf("doing exec\n"); */
-    execvp(useargs[1], useargs+1);
     return 2; /* if we're still here, it's a usage error */
 }
+
 
 
