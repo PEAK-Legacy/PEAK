@@ -76,8 +76,15 @@ class SQLCursor(AbstractCursor):
         return getattr(self._cursor,attr)
 
 
+
+
+
+
     def nextset(self):
-        return getattr(self._cursor, 'nextset', _nothing)()
+        try:
+            return getattr(self._cursor, 'nextset', _nothing)()
+        except self.conn.NotSupportedError:
+            pass
 
 
     def execute(self, *args):
@@ -107,13 +114,6 @@ class SQLCursor(AbstractCursor):
             self.getParentComponent().joinTxn()
 
     joinTxn = property(fset=joinTxn, doc="Set to true to join transaction")
-
-
-
-
-
-
-
 
 
 
@@ -179,7 +179,7 @@ class SQLConnection(ManagedConnection):
     Error               = binding.bindTo("API/Error")
     Warning             = binding.bindTo("API/Warning")
     Exceptions          = binding.bindSequence("Error", "Warning")
-
+    NotSupportedError   = binding.bindTo("API/NotSupportedError")
     Date                = binding.bindTo("API/Date")
     Time                = binding.bindTo("API/Time")
     Binary              = binding.bindTo("API/Binary")
