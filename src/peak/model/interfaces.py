@@ -265,9 +265,6 @@ class IFeatureSPI(Interface):
     def set(element,value):
         """Set the value of the feature for 'element'"""
 
-    def _getList(element):
-        """Return the value(s) of the feature for 'element' as a sequence"""
-
     def _notifyLink(element,posn=None):
         """Link to element, inserting it at 'posn' in our value"""
         

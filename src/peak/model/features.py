@@ -244,47 +244,6 @@ class StructuralFeature(object):
 
 
 
-    def _getList_many(feature, element):      
-        try:
-            return getattr(element,feature.attrName)    # XXX hack to force load
-        except AttributeError:
-            return []
-
-    _getList_many.installIf = lambda f,m: f.isMany
-    _getList_many.verb      = '_getList'
-
-
-    def _getList_one_derived(feature, element):
-        try:
-            return [feature.get(element)]
-        except AttributeError:
-            return []
-
-    _getList_one_derived.installIf = lambda f, m: not f.isMany and f.isDerived
-    _getList_one_derived.verb      = '_getList'
-
-
-    def _getList_one(feature, element):   
-        try:
-            getattr(element,feature.attrName)   # XXX hack to force load
-            return [feature._doGet(element)]
-        except AttributeError,x:
-            return []
-
-    _getList_one.installIf = lambda f, m: not f.isMany and not f.isDerived
-    _getList_one.verb      = '_getList'
-
-
-
-
-
-
-
-
-
-
-
-
     def _set_one(feature, element, val):
         feature.__delete__(element)
         feature._notifyLink(element,val)
@@ -295,15 +254,15 @@ class StructuralFeature(object):
 
 
     def _unset_one(feature, element):
-        l = feature._getList(element)
-        if l:
-            feature._notifyUnlink(element,l[0])
+        try:
+            item = feature._doGet(element)
+        except AttributeError:
+            pass
+        else:
+            feature._notifyUnlink(element,item)
 
     _unset_one.installIf = lambda f,m: f.isChangeable and not f.isMany
     _unset_one.verb      = 'unset'
-
-
-
 
 
 
@@ -340,7 +299,7 @@ class StructuralFeature(object):
 
     def replace(feature, element, oldItem, newItem):
 
-        d = feature._getList(element)
+        d = feature.get(element)
 
         if oldItem in d:
             p = d.index(oldItem)
@@ -371,7 +330,7 @@ class StructuralFeature(object):
 
         """Unset the value of the feature (like __delattr__)"""
 
-        d = feature._getList(element)
+        d = feature.get(element)
 
         items = zip(range(len(d)),d)
         items.reverse()
@@ -385,7 +344,7 @@ class StructuralFeature(object):
         for posn,item in items:
             remove(element,item,posn)
             
-        feature._doDel(element) #._delBinding(feature.implAttr,feature.useSlot)
+        feature._doDel(element)
 
 
     _unset_many.installIf = lambda f,m: f.isChangeable and f.isMany
@@ -449,20 +408,27 @@ class StructuralFeature(object):
 
     _notifyUnlink.installIf = installIfChangeable
 
-    def _link(feature,element,item,posn=None):
+    def _link_one(feature,element,item,posn=None):
+
+        item = feature.normalize(item)
+        feature._onLink(element,item,posn)
+        feature._doSet(element,item)
+        return item
+
+    _link_one.installIf = lambda f,m: f.isChangeable and not f.isMany
+    _link_one.verb      = '_link'
+
+
+    def _link_many(feature,element,item,posn=None):
 
         ub = feature.upperBound
-        d=feature._getList(element)
+        d=feature.get(element)
 
         if ub and len(d)>=ub:
             raise ValueError("Too many items")
 
         item = feature.normalize(item)
         feature._onLink(element,item,posn)
-
-        if ub==1:
-            feature._doSet(element,item)
-            return item
 
         feature._doSet(element,d)
 
@@ -472,15 +438,8 @@ class StructuralFeature(object):
             d.insert(posn,item)
         return item
 
-    _link.installIf = installIfChangeable
-    _link.verb      = '_link'
-
-
-
-
-
-
-
+    _link_many.installIf = lambda f,m: f.isChangeable and f.isMany
+    _link_many.verb      = '_link'
 
 
 
@@ -493,10 +452,11 @@ class StructuralFeature(object):
     def _unlink(feature,element,item,posn=None):
 
         feature._onUnlink(element,item,posn)
+
         if not feature.isMany:
             return feature._doDel(element)
 
-        d=feature._getList(element)
+        d=feature.get(element)
         feature._doSet(element,d)
 
         if posn is None:
@@ -514,7 +474,6 @@ class StructuralFeature(object):
 
     def _onUnlink(feature,element,item,posn):
         pass
-
 
 
 
@@ -574,16 +533,16 @@ class StructuralFeature(object):
 
     def insertBefore(feature, element, oldItem, newItem):
 
-        d = feature._getList(element)
+        d = feature.get(element)
 
         if oldItem in d:
             feature._notifyLink(element,newItem,d.index(oldItem))
         else:
             raise ValueError("Can't insert before missing item", oldItem)
 
-    insertBefore.installIf = lambda f,m: f.isOrdered and f.isChangeable
-
-
+    insertBefore.installIf = lambda f,m: (
+        f.isOrdered and f.isMany and f.isChangeable
+    )
 
 
 

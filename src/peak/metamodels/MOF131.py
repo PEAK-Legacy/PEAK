@@ -177,12 +177,12 @@ class ModelElement(model.Element):
 
         upperBound = 1  # singular
 
-        def _getList(feature, element):
+        def get(feature, element):
             names = [element.name]
             while element.container is not None:
                 element = element.container
                 names.insert(0,element.name)
-            return [names]
+            return names
 
     class container(model.Attribute):
         referencedType = 'Namespace'
@@ -190,7 +190,7 @@ class ModelElement(model.Element):
         defaultValue = None
 
     class requiredElements(model.DerivedFeature):
-        def _getList(feature, element):
+        def get(feature, element):
             return element.findRequiredElements()
 
     class constraints(model.Collection):

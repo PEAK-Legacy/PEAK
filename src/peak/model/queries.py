@@ -1,4 +1,5 @@
 from __future__ import generators
+from peak.api import NOT_FOUND
 
 __all__ = [
     'query', 'ANY','ALL','AND','OR','NOT', 'FEATURE','EQ','NE','GE','GT',
@@ -55,12 +56,13 @@ def traverse(obs, name, recurse=0):
 
         for item in iters.pop():
 
-            gl = getattr(getattr(item.__class__,name,None),'_getList',None)
+            isMany = getattr(getattr(item.__class__,name,None),'isMany',NOT_FOUND)
+            values = getattr(item,name,NOT_FOUND)
 
-            if gl:
-                values = gl(item)                   
-            else:
-                values = getattr(item,name,())
+            if values is NOT_FOUND:
+                continue
+                
+            elif isMany is NOT_FOUND:
                 if isinstance(values,(str,unicode)):
                     values = [values]
                 else:
@@ -69,15 +71,14 @@ def traverse(obs, name, recurse=0):
                     except TypeError:
                         values = [values]
 
-            if values:
-                if recurse:
-                    values = list(values)
-                    iters.append(values)
+            elif not isMany:
+                values = [values]
+
+            if recurse:
+                values = list(values)
+                iters.append(values)
                     
-                for v in values: yield v
-
-
-
+            for v in values: yield v
 
 
 class query(object):
