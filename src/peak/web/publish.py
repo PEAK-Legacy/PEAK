@@ -258,7 +258,7 @@ class CGIPublisher(binding.Component):
     to run as a CGI or FastCGI application."""
 
     protocols.advise(
-        instancesProvide=[running.IRerunnableCGI],
+        instancesProvide=[running.IWSGIApplication],
     )
 
     # The fromApp method is registered as an adapter factory for
@@ -276,52 +276,11 @@ class CGIPublisher(binding.Component):
     policy = binding.Obtain('app', adaptTo = IInteractionPolicy)
 
 
-
-
-
-
-
-
-
-
-
-    def runCGI(self, input, output, errors, env, argv=()):
-
-        """Process one request"""
-
-        try:
-            env['wsgi.input'] = input
-            env['wsgi.errors'] = errors
-            s,h,b = self._handle_http(env)
-        except:
-            self.policy.log.exception("Unexpected error")
-            s,h,b = (
-                '500 Unexpected Error',
-                [('Content-type','text/plain')],
-                ['An error occurred']
-            )
-
-        print >>output, "Status: %s" % s
-        for header in h:
-            print >>output, "%s: %s" % header
-        print >>output
-
-        for data in b:
-            output.write(data)
-
-        return 0
-
-
-
-
-
-
-
-
-
-
-
-
+    def __call__(self, environ, start_response):
+        """PEP 333 "application" callable"""
+        s,h,b = self._handle_http(environ)
+        start_response(s,h)
+        return b            
 
 
 

@@ -900,10 +900,53 @@ class CGICommand(EventDriven):
 
 
 
+class WSGIAsRerunnableCGI(protocols.Adapter):
+
+    protocols.advise(
+        instancesProvide=[IRerunnableCGI],
+        asAdapterForProtocols=[IWSGIApplication]
+    )
+
+    def runCGI(self, input, output, errors, env, argv=()):
+        from wsgiref.handlers import BaseCGIHandler
+        BaseCGIHandler(
+            input, output, errors, env, multithread=False, multiprocess=True
+        ).run(self.subject)
+
+
+class WSGIInterpreter(Bootstrap):
+    """Run arbitrary WSGI applications by declaring them IWSGIApplication"""
+
+    usage = """
+Usage: peak launch_command WSGI name_or_url
+
+Use 'launch_command' to run 'name_or_url' as a WSGI application.  (Typical
+"launch commands" include 'launch', 'CGI', and 'supervise'.)  You should only
+add the 'WSGI' command into the mix if the target name or URL doesn't
+declare that it implements 'IWSGIApplication'.  In other words, it's solely for
+running non-PEAK WSGI applications.
+"""
+    protocols.advise(instancesDoNotProvide=[IWSGIApplication,IRerunnableCGI])
+
+    def interpret(self,filename):
+        name = filename
+        ob = lookupCommand(
+            self, name, default=NOT_FOUND, acceptURLs=self.acceptURLs
+        )
+        if ob is NOT_FOUND:
+            raise InvocationError("Name not found: %s" % name)
+        wsgi = IWSGIApplication(ob,None)
+        if wsgi is None:
+            protocols.adviseObject(ob,[IWSGIApplication])
+        return ob
+
+
 class CGIInterpreter(Bootstrap):
     """Run an application as a CGI, by adapting it to IRerunnableCGI"""
 
     cgiWrapper = CGICommand
+    cgiProtocol = IRerunnableCGI
+
     usage = """
 Usage: peak CGI NAME_OR_URL arguments...
 
@@ -929,7 +972,7 @@ to invoke it.
         if factory is ob:   # XXX ???
             ob = factory(self, 'cgi')
 
-        cgi = adapt(ob, IRerunnableCGI, None)
+        cgi = adapt(ob, self.cgiProtocol, None)
 
         if cgi is not None:
             return self.cgiWrapper(self, cgiCommand = cgi, argv=self.argv[:1])

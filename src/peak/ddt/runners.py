@@ -3,7 +3,7 @@ from interfaces import *
 from peak.naming.factories.openable import FileURL
 from html_doc import HTMLDocument
 from urllib import basejoin
-
+from cStringIO import StringIO
 
 
 
@@ -48,37 +48,37 @@ Launch a DDT viewer in a web browser, initially retrieving and displaying
 the specified base URL.
 """
     protocols.advise(
-        instancesProvide=[running.IRerunnableCGI]
+        instancesProvide=[running.IWSGIApplication]
     )
 
     argv    = binding.Obtain(commands.ARGV)
     baseURL = binding.Make(lambda self: self.argv[1])
 
-    def runCGI(self,stdin,stdout,stderr,environ):
+    def __call__(self,environ,response):
         path = environ.get('PATH_INFO','/')
         for suffix in ('/','.htm','.html','.HTM','.HTML'):
             if path.endswith(suffix):
                 break
         else:
-            print >>stdout,"Location:", basejoin(self.baseURL,path)
-            print >>stdout
-            return
+            response("302 Found",[("Location",basejoin(self.baseURL,path))])
+            return []
 
         sane_path = '/'.join([p for p in path.split('/') if p and p<>'..'])
         sane_path = sane_path and '/'+sane_path or ''
 
-        print >>stdout, "Content-type: text/html"
-        print >>stdout
+        response("200 OK",[("Content-type","text/html")])
+        output = StringIO()
         HTMLRunner(
             self,
             argv = ['HTMLRunner', self.baseURL+sane_path],
-            stdin = stdin,
-            stdout = stdout,
-            stderr = stderr,
+            stdin = environ['wsgi.input'],
+            stdout = output,
+            stderr = environ['wsgi.errors'],
             environ = environ
         ).run()
-
+        return [output.getvalue()]
         # XXX error trapping
+
 
 class HTMLRunner(commands.AbstractCommand):
 

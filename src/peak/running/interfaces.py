@@ -20,7 +20,7 @@ __all__ = [
 
     'IPeriodicTask', 'ITaskQueue', 'IMainLoop', 'IRerunnableCGI',
 
-    'IAdaptiveTask', 'IAdaptiveTaskSPI', 'ILock',
+    'IAdaptiveTask', 'IAdaptiveTaskSPI', 'ILock', 'IWSGIApplication',
 
     'IBasicReactor', 'ITwistedReactor', 'ICheckableResource',
 
@@ -147,19 +147,19 @@ class IRerunnableCGI(Interface):
     def runCGI(stdin,stdout,stderr,environ,argv=()):
         """Perform function and return exit code"""
 
+class IWSGIApplication(Interface):
+    """A WSGI (PEP 333) application object"""
+    def __call__(environ,start_response):
+        """See PEP 333"""
 
-def CGIFromComponent(ob):
+def WSGIFromComponent(ob):
     """Turn PEAK components into publishable web apps"""
     from peak.web.publish import CGIPublisher
     return CGIPublisher.fromApp(ob)
 
-declareAdapter(CGIFromComponent,
-    provides=[IRerunnableCGI], forProtocols=[IComponent]
+declareAdapter(WSGIFromComponent,
+    provides=[IWSGIApplication], forProtocols=[IComponent]
 )
-
-
-
-
 
 
 class IPeriodicTask(Interface):

@@ -104,7 +104,7 @@ class DOMletAsHTTP(binding.Component):
             ctx,
             DOMletState(ctx.current, write=data.append)
         )
-        return '200 OK', [], [unicodeJoin(data)]    # XXX content-type
+        return '200 OK', [], [str(unicodeJoin(data))]    # XXX content-type
 
 
 

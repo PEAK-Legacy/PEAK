@@ -48,7 +48,7 @@ class WSGIRequestHandler(BaseHTTPRequestHandler):
         env = self.server.base_environ.copy()
 
         env['SERVER_SOFTWARE'] = self.version_string()
-        env['SERVER_PROTOCOL'] = self.protocol_version
+        env['SERVER_PROTOCOL'] = self.request_version
         env['REQUEST_METHOD'] = self.command
 
         if '?' in self.path:
@@ -131,9 +131,11 @@ class WSGIRequestHandler(BaseHTTPRequestHandler):
         stdout = StringIO()
         stderr = StringIO()
         env = self.get_environ()
-        host = env['HTTP_HOST']
-        self.server.get_service().runCGI(self.rfile,stdout,stderr,env)
-        self.dump_to_stderr(stderr.getvalue())
+        host = env.setdefault('HTTP_HOST',env['SERVER_NAME'])
+        try:
+            self.server.get_service().runCGI(self.rfile,stdout,stderr,env)
+        finally:
+            self.dump_to_stderr(stderr.getvalue())
 
         # Parse headers output by the script
         stdout.reset()

@@ -1,5 +1,37 @@
 Fixes and Enhancements since Version 0.5 alpha 3
 
+ - Added a 'WSGI' command to the 'peak' script, to allow you to run "foreign"
+   (i.e. non-PEAK) PEP 333 applications in PEAK's various servers and
+   launchers.  Basically, by prefixing 'WSGI' before the import specifier, you
+   can now run such foreign apps.
+
+   For example::
+
+       peak launch WSGI import:some_app.application
+
+   will run 'some_app.application' in the local web browser, and::
+
+       peak CGI WSGI import:some_app.application
+   
+   will run it under the CGI/FastCGI runner.  Similarly, you can use this in
+   the "Command" spec for the "peak supervise" pre-forking FastCGI supervisor
+   subsystem.
+   
+ - There is a new 'running.IWSGIApplication' interface, for PEP 333-compliant
+   "application" objects, and all of PEAK's provided applications now implement
+   it instead of 'running.IRerunnableCGI'.  If you write your apps to the newer
+   interface, they'll be portable to any PEP 333-compliant web server, not just
+   the PEAK CGI, FastCGI, and "supervisor" containers.  There is a simple
+   adapter that allows 'IWSGIApplication' objects to run in the CGI-based
+   containers, but not the other way around, so using 'IRerunnableCGI' directly
+   now limits your portability.  (For example, the "peak launch" and "peak
+   serve" commands will soon require 'IWSGIApplication', and will not support
+   'IRerunnableCGI' any more.)
+
+   Of course, if you use the 'peak.web' framework, you don't need to worry
+   about any of this; your apps will automatically be wrapped as
+   'IWSGIApplication', and run in any PEAK server or gateway.
+
  - Most 'peak.web' interfaces have changed significantly.  If you implemented
    anything based on the older interfaces, and it still works, it's sheer
    bloody luck.  In particular, note that every method in 'web.IWebTraversable'
@@ -182,14 +214,14 @@ Fixes and Enhancements since Version 0.5 alpha 3
 
  - Added a 'zconfig.schema' factory, so that 'ref:zconfig.schema@streamURL'
    will load a schema loader.  Schema loaders are themselves object factories,
-   so you can do something like:
+   so you can do something like::
 
      [Named Services]
      peak.naming.factories.myschema = \
          naming.LinkRef('ref:zconfig.schema@pkgfile:mypkg/Schema.xml')
 
    in order to make URLs like 'ref:myschema@filename' work.  Note, by the way,
-   that the above could also read:
+   that the above could also read::
 
      [Named Services]
      peak.naming.factories.myschema = \

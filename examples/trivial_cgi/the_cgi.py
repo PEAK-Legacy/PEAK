@@ -1,27 +1,28 @@
 from peak.api import *
 from types import ModuleType
+from StringIO import StringIO
 
 class DemoCGI(binding.Component):
 
     protocols.advise(
-        instancesProvide = [running.IRerunnableCGI]
+        instancesProvide = [running.IWSGIApplication]
     )
 
     runCount = 0
 
-    def runCGI(self, input, output, errors, env, argv=()):
+    def __call__(self, env, start_response):
 
         self.runCount += 1
 
-        print >>output, 'Content-Type: text/plain'
-        print >>output
+        output = StringIO()
 
         print >>output, "I've been run %d times." % self.runCount
         print >>output
         print >>output, "Environment"
         print >>output, "-----------"
 
-        for k,v in env.items():
+        ei = env.items(); ei.sort()
+        for k,v in ei:
             print >>output, '%-20s = %r' % (k,v)
 
         print >>output
@@ -40,3 +41,8 @@ class DemoCGI(binding.Component):
 
         for n in names:
             print >>output, n
+
+        start_response("200 OK", [('Content-Type','text/plain')])
+        return [output.getvalue()]
+
+

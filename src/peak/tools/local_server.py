@@ -138,24 +138,24 @@ attempts to open the application in a web browser window.
     cgiWrapper = WSGILauncher
 
 
-class DemoService(binding.Component):
+def demo_service(environ,start_response):
+    stdout = StringIO()
+    print >>stdout, "Hello world!"
+    print >>stdout
+    h = environ.items(); h.sort()
+    for k,v in h:
+        print >>stdout, k,'=',`v`
+    start_response("200 OK", [('Content-Type','text/plain')])
+    return [stdout.getvalue()]
 
-    protocols.advise(
-        instancesProvide=[running.IRerunnableCGI]
-    )
-
-    def runCGI(self,stdin,stdout,stderr,environ):
-        print >>stdout, "Content-type: text/plain"
-        print >>stdout
-        print >>stdout, "Hello world!"
-        print >>stdout
-        h = environ.items(); h.sort()
-        for k,v in h:
-            print >>stdout, k,'=',`v`
-
+protocols.adviseObject(demo_service, [running.IWSGIApplication])
 
 if __name__ == '__main__':
-    WSGIServer(config.makeRoot(), cgiCommand=DemoService()).run()
+    WSGIServer(config.makeRoot(), cgiCommand=demo_service()).run()
+
+
+
+
 
 
 
