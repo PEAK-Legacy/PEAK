@@ -39,7 +39,7 @@ __all__ = [
 
 
 
-class TaskQueue(binding.Base):
+class TaskQueue(binding.Component):
 
     __implements__ = ITaskQueue
 

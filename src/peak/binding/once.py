@@ -39,7 +39,7 @@ def getInheritedRegistries(klass, registryName):
 
 
 
-def New(obtype, bindToOwner=None, name=None, provides=None, doc=None, 
+def New(obtype, bindToOwner=None, name=None, provides=None, doc=None,
     activateUponAssembly=False):
 
     """One-time binding of a new instance of 'obtype'
@@ -106,7 +106,7 @@ def Copy(obj, name=None, provides=None, doc=None, activateUponAssembly=False):
 
 
     from copy import copy
-    return Once( 
+    return Once(
         (lambda s,d,a: copy(obj)), name, provides, doc, activateUponAssembly
     )
 
@@ -211,7 +211,7 @@ class classAttr(object):
     to its instances.  This can be useful for creating bindings in a base
     class that will summarize metadata about subclasses.  Usage example::
 
-        class SomeClass(binding.Base):
+        class SomeClass(binding.Component):
 
             CLASS_NAME = binding.classAttr(
                 binding.Once(
@@ -226,7 +226,7 @@ class classAttr(object):
         assert aSubclass.CLASS_NAME == "ASUBCLASS"
 
     Class attributes will only work in subclasses of classes like
-    'binding.Base', whose metaclass derives from 'binding.Activator'.
+    'binding.Component', whose metaclass derives from 'binding.Activator'.
 
     Implementation note: class attributes actually cause a new metaclass to
     be created on-the-fly to contain them.  The generated metaclass is named

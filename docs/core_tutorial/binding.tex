@@ -6,7 +6,7 @@ What's in a component, anyway?  Why use them to develop software?  Software
 developers have dreamed for decades of a future where applications could be
 built by simply plugging together off-the-shelf components.  In some
 development environments, this is at least partly reality today.  Many GUI
-programming tools let you construct at least the visual parts of an 
+programming tools let you construct at least the visual parts of an
 application by assembling components.
 
 The promised benefits of component-based development architectures include
@@ -41,13 +41,13 @@ Let's look at how PEAK addresses these issues.
 
 \subsection{Composing vs. Connecting}
 
-Imagine a car.  It's composed from a variety of parts: the wheels, engine, 
+Imagine a car.  It's composed from a variety of parts: the wheels, engine,
 battery, frame, and so on.  Some of these parts are also composed of parts:
 the engine has a block, cylinders, pistons, spark plugs, and so on.
 
 Each part in this ``component assembly" can be a part of only one larger part:
 its \strong{parent component}.  The hubcaps are part of the wheels,
-and so they can't also be part of the engine.  (They wouldn't fit there in 
+and so they can't also be part of the engine.  (They wouldn't fit there in
 any case, but that's beside the point.)  Consider that screws or bolts may
 be used in many parts of the car: each is part of only one other part of
 the car, although more than one of the same \emph{kind} of part may be used
@@ -143,13 +143,13 @@ Interfaces in PEAK are used primarily as documentation and as a way of finding
 compatible components and services.  When used with the Zope 3 component
 architecture, interfaces can also be used to register adapters (which convert
 a component from one interface to another), declare web views of application
-components, and even define security restrictions based on interfaces.  
+components, and even define security restrictions based on interfaces.
 
 \vfill
 \begin{seealso}\begin{itemize}
 
-\item \citetitle{A Quick Introduction to Python Interfaces} at 
-\url{http://www.zope.org/Wikis/Interfaces/InterfaceUserDocumentation}.  
+\item \citetitle{A Quick Introduction to Python Interfaces} at
+\url{http://www.zope.org/Wikis/Interfaces/InterfaceUserDocumentation}.
 
 \item And, if you're interested in developing Zope 3 applications and want to
 learn more about what you can do with interfaces in the Zope 3 component
@@ -222,7 +222,7 @@ of Demeter} and write ``adaptive programs".
 
 \begin{seealso}
 
-\url{http://www.ccs.neu.edu/home/lieber/LoD.html} has lots of links about the 
+\url{http://www.ccs.neu.edu/home/lieber/LoD.html} has lots of links about the
 \citetitle{Law of Demeter}, and you can also see
 \url{http://www.ccs.neu.edu/research/demeter/demeter-method/LawOfDemeter/object-formulation.html
 } for its ``object-oriented" version, if you'd like to know more about this
@@ -231,8 +231,8 @@ that code which references even a collaborator class must do so via an
 instance attribute or other ``neighbor" as defined by the Law.
 
 You don't have to know or follow the \citetitle{Law of Demeter} to use PEAK.
-(Your programs just won't be as flexible.)  But all of our example programs 
-will obey the Law, so you'll have a chance to see how -- and how easy it 
+(Your programs just won't be as flexible.)  But all of our example programs
+will obey the Law, so you'll have a chance to see how -- and how easy it
 is -- to follow it.
 
 \end{seealso}
@@ -250,17 +250,17 @@ So what's an application made of?  The PEAK approach describes application
 components in terms of their lifecycles and roles, as follows:
 
 \begin{description}
-\item[Services] \hfill \\ 
+\item[Services] \hfill \\
 Similar in concept to ``singletons", Services are ``well-known" instance objects
 which exist for the lifetime of the application.  For example, a database
 connection object in an application could be a service component, and so could
 a top-level window in a GUI application.  J2EE ``session beans" and
 ``message-driven beans" are also good examples of service components.  (Note:
 don't confuse this general concept of services with the Zope 3 concept of a
-``Service"; the latter is an example of the former, but not the other way 
+``Service"; the latter is an example of the former, but not the other way
 around.)
 
-\item[Elements] \hfill \\ 
+\item[Elements] \hfill \\
 Elements are typically ``problem-domain" objects or their proxies in
 the user interface.  They are created and destroyed by other Elements or
 by the application's Services.  Typical Elements might be ``business objects"
@@ -271,7 +271,7 @@ mail filtering program, for example, e-mail messages, mailboxes, and
 
 \item[Features] \hfill \\
 Features are ``solution-domain" objects used to compose Elements, and less
-often, to compose Services.  Features are typically used to represent 
+often, to compose Services.  Features are typically used to represent
 the properties, methods, associations, user interface views, database fields,
 and other ``features" of a problem-domain Element.  Feature objects are often
 used as a class attribute in an Element's class, and shared between instances.
@@ -281,14 +281,14 @@ techniques such as generative programming.
 \end{description}
 
 This breakdown of application components is called the
-\strong{Service-Element-Feature (SEF) Pattern}.  PEAK makes it easy to create 
+\strong{Service-Element-Feature (SEF) Pattern}.  PEAK makes it easy to create
 components of each kind, but this pattern certainly isn't limited to PEAK.
 You'll find Services, Elements, and Features in almost any object-based
 application, regardless of language or platform.  But, the pattern is often
 implemented in a rather haphazard fashion, and without the benefit of explicit
 ``wiring" between components.
 
-When you design an application using the SEF Pattern, your top-level 
+When you design an application using the SEF Pattern, your top-level
 application object is itself a Service.  You construct that service from
 lower-level services, such as database connections, object managers,
 and maybe even a top-level window object for a GUI application.  If your
@@ -299,7 +299,7 @@ of J2EE session beans.
 The top-level application object may provide various methods or ``value-added"
 services on top of its subcomponents' services, or it may just serve to start
 them up in an environment that defines their mutual collaborators.  You may
-find later that what you thought was an ``application" component, is really 
+find later that what you thought was an ``application" component, is really
 just another service that you want to use as part of a larger application.
 Fortunately, it's easy to change a PEAK component's bindings and
 incorporate it into a larger system.
@@ -330,7 +330,7 @@ components, shall we?
 
 \subsection{Binding Fundamentals}
 
-It's time to write some code!  Our objective: create a ``car" class 
+It's time to write some code!  Our objective: create a ``car" class
 that keeps track of its passengers.
 
 \begin{verbatim%
@@ -388,7 +388,7 @@ in complex programs.
 
 But PEAK's attribute bindings are \strong{lazy}.  They do not compute their
 value until they are used.  If we take a new instance of our \class{Car}
-class, and print its dictionary before and after referencing the 
+class, and print its dictionary before and after referencing the
 \member{passengers} attribute:
 
 \begin{verbatim%
@@ -415,19 +415,19 @@ is computed at most once, the first time its value is referenced.  In PEAK,
 virtually all attribute bindings are based on \class{binding.Once}, a class
 that handles most of the mechanics needed to make these ``once attributes" work.
 
-\subsubsection{Deriving from \class{binding.Base}}
+\subsubsection{Deriving from \class{binding.Component}}
 
-As we've already seen, attribute bindings can be made to work with 
+As we've already seen, attribute bindings can be made to work with
 ``old-style" or ``classic" Python classes.  There are some drawbacks to that,
 however.  Most visibly, it's necessary to specify an attribute binding's
-name in its definition, as we saw in our example, i.e. 
+name in its definition, as we saw in our example, i.e.
 \samp{passengers = binding.New(dict, 'passengers')}.
 
-However, if we derive our class from \class{binding.Base}, we no longer have
-to do this:
+However, if we derive our class from \class{binding.Component}, we no longer
+have to do this:
 
 \begin{verbatim%
-}>>> class Car(binding.Base):
+}>>> class Car(binding.Component):
         passengers = binding.New(dict)
 
 >>> aCar=Car()
@@ -436,7 +436,7 @@ to do this:
 \end{verbatim}
 
 Now, it's sufficient to use \samp{binding.New(dict)} to define the attribute.
-What would happen if we did this \emph{without} \class{binding.Base}?
+What would happen if we did this \emph{without} \class{binding.Component}?
 
 
 
@@ -472,23 +472,23 @@ has without help from either you or the base class.  (Actually, it's the
 metaclass, not the base class, but that's not important right now).  There
 are some circumstances where PEAK will try to guess the attribute name for you,
 such as when you use a class or a  function to define an attribute binding, but
-for the most part you must either have a base class (such as 
-\class{binding.Base}) whose metaclass supports activating bindings, or else
+for the most part you must either have a base class (such as
+\class{binding.Component}) whose metaclass supports activating bindings, or else
 you must supply the attribute name yourself when defining the binding.
 
 So, if you plan to use attribute bindings in your program, it's probably best
-to subclass \class{binding.Base}; it'll save you a lot of typing!
-
-There are other \module{peak.binding} base classes which you'll use that
-derive from \class{binding.Base}, though, like \class{binding.Component}.
-You'll likely use \class{binding.Component} a lot when defining
-Service components.  \class{binding.Base} is designed to be a minimalist
-component base, without a lot of the extra features found in its subclasses.
-
-
-
+to subclass \class{binding.Component}; it'll save you a lot of typing!  Most
+PEAK framework classes for ``service" components derive from \class{%
+binding.Component} alredy.
 
 \newpage
+
+
+
+
+
+
+
 
 \subsubsection{\class{binding.Once} - The Basis for all Bindings}
 
@@ -497,7 +497,7 @@ subclass thereof.  It provides the basic machinery needed to lazily compute an
 attribute "on-the-fly".  Here's a simple example of its use:
 
 \begin{verbatim%
-}class Car(binding.Base):
+}class Car(binding.Component):
 
     def height(self,instDict,attrName):
         baseHeight = self.roof.top - self.chassis.bottom
@@ -539,7 +539,7 @@ we could do ``by hand".
 
 By the way, although we've been only showing uses of \class{binding.Once} with
 one argument (the function to be called), \class{binding.Once} does actually
-take other arguments, such as a default attribute name, a ``provides" 
+take other arguments, such as a default attribute name, a ``provides"
 specification (more on this later) and a docstring.  Check out the PEAK
 API Reference or the source code for more details.
 
@@ -588,7 +588,7 @@ But what if there's something already in the dictionary?  Or what if you remove
 the value from the dictionary?  Well, it's pretty much as you'd expect.  If you
 set a value for an attribute, then the binding will not compute a value.  If
 you delete the attribute, and try to access it, the binding will recompute the
-value.  This behavior can actually be quite useful in the context of 
+value.  This behavior can actually be quite useful in the context of
 transactions: many PEAK transactional components delete certain bindings at the
 conclusion of a transaction, allowing them to be recomputed in the next
 transaction.
@@ -632,13 +632,13 @@ supply them as keyword arguments.
 The \var{name} parameter specifies the attribute name that the binding will
 have.  As mentioned previously, this is only needed when the binding is being
 used in a class that doesn't support active descriptors.  If you're using
-a class that inherits from \class{binding.Base}, you don't need to supply this
-parameter.
+a class that inherits from \class{binding.Component}, you don't need to supply
+this parameter.
 
 \item[\var{provides}] \hfill \\
 The \var{provides} parameter is a (possibly nested) tuple of
 \strong{configuration keys}, which are either interfaces or \class{PropertyName}
-objects.  This is used for integration with the configuration system, so we'll 
+objects.  This is used for integration with the configuration system, so we'll
 explore it in more detail later on.  For now, you can just ignore it.
 
 \item[\var{doc}] \hfill \\
@@ -664,7 +664,7 @@ of your own:
 The most basic of all binding types, the \class{binding.Once} class requires
 only a callable object such as a function or lambda.  If you don't supply a
 \var{name}, the \samp{__name__} attribute of the \var{func} parameter is used,
-if available.  Similarly, if you don't supply a \var{doc}, the \samp{__doc__} 
+if available.  Similarly, if you don't supply a \var{doc}, the \samp{__doc__}
 attribute of the \var{func} parameter is used, if available.
 \end{funcdesc}
 
@@ -673,11 +673,12 @@ doc=None}
 As we've already seen, the \function{binding.New} function just needs a class or
 type object as its \var{obtype} parameter, and it creates a new instance of that
 type.  The optional \var{bindToOwner} flag, if specified, tells
-\function{binding.New} whether it should pass the owning object and 
+\function{binding.New} whether it should pass the owning object and
 attribute name into the type's constructor.  If you don't specify a value for
 this parameter, the \function{binding.New} function will ``guess" by checking
-whether the constructor supports the \class{binding.IBindingFactory} interface.
-Ordinarily, you can ignore this parameter, and the ``right thing" will happen.
+whether the constructor supports the \class{binding.IComponentFactory}
+interface.  Ordinarily, you can ignore this parameter, and the ``right thing"
+will happen.
 
 \function{binding.New} will also accept a string for its \var{obtype} parameter,
 in which case it will interpret the string as an \strong{import specification},
@@ -694,7 +695,6 @@ function from the Python standard library's \module{copy} module.
 
 
 
-
 \begin{funcdesc}{bindToSelf}{name=None, provides=None, doc=None}
 This one is pretty self-explanatory, no pun intended.  This class supplies
 the owning object itself as an instance attribute.  What good is that?  Well,
@@ -708,7 +708,7 @@ instance by default.
 \begin{funcdesc}{requireBinding}{description="", name=None, provides=None,
 doc=None}
 The \function{binding.requireBinding} class is the odd one out in this group.
-It doesn't compute a value at all!  Instead, it raises an error when the 
+It doesn't compute a value at all!  Instead, it raises an error when the
 attribute is accessed.  This is so that you can easily define an attribute that
 you expect a subclass or instance to provide, and thus get a clearer error
 message if the expected attribute is never defined.
@@ -750,11 +750,11 @@ a component and its container or \strong{parent component} is particularly
 important.  Let's look at an example:
 
 \begin{verbatim%
-}>>> class Wheel(binding.Base):
+}>>> class Wheel(binding.Component):
         def spin(self):
             print "I'm moving at %d mph" % self.getParentComponent().speed
 
->>> class Car(binding.Base):
+>>> class Car(binding.Component):
         wheel = binding.New(Wheel)
         speed = 50
 
@@ -764,7 +764,7 @@ important.  Let's look at an example:
 I'm moving at 50 mph
 \end{verbatim}
 
-The \class{binding.Base} class defines two methods for dealing with parent
+The \class{binding.Component} class defines two methods for dealing with parent
 components: \function{getParentComponent} and \function{setParentComponent}.
 \function{setParentComponent} is automatically called for you when you
 create an instance via \function{binding.New}, which is why our \class{Wheel}
@@ -778,12 +778,12 @@ example:
 
 
 \begin{verbatim%
-}>>> class Wheel(binding.Base):
+}>>> class Wheel(binding.Component):
         def spin(self):
             print "I'm moving at %d mph" % self.speed
         speed = binding.bindTo('../speed')
 
->>> class Car(binding.Base):
+>>> class Car(binding.Component):
         wheel = binding.New(Wheel)
         speed = 50
 
@@ -874,7 +874,7 @@ parents.  In the process of answering that question, we'll pass through
 lots of interesting or important points along the way.
 
 The short answer to how an object knows what its parent is, is that you
-tell it.  The constructor for \class{binding.Base} takes as its very first
+tell it.  The constructor for \class{binding.Component} takes as its very first
 argument, the object which should be its parent.
 
 In our examples above, however, we never passed a parent into a constructor.
@@ -885,7 +885,7 @@ parent, which is why when we inspect them, they show up as parentless or
 
 In PEAK, a root component is any object without a parent.  Only objects whose
 classes provide a \function{getParentComponent} method can have parents, and
-even then they are only considered to have a parent if that method returns 
+even then they are only considered to have a parent if that method returns
 something other than \samp{None}.  Classes without such a method, such as
 Python built-in types, are always root components.  For example:
 
@@ -905,7 +905,7 @@ will work with just about any kind of object, and will provide results
 consistent with the interpretation that objects without a \function{%
 getParentComponent} method are root components.
 
-Notice also that an object doesn't have to be based on \class{binding.Base}
+Notice also that an object doesn't have to be based on \class{binding.Component}
 to work in a component hierarchy; all it needs is a \function{%
 getParentComponent} method defined in its class.  For example:
 
@@ -947,15 +947,12 @@ method to its class.
 
 But how do we know what methods to add, and what values they should accept
 or return?  The \module{peak.binding} framework defines an \strong{interface},
-\class{binding.IBindingSPI}, that defines what methods are used by the binding
-framework.  SPI stands for \strong{Service Provider Interface}, which is kind
-of like the opposite of an API.  APIs are provided \emph{by} frameworks to
-applications, while SPIs define what a framework expects an application or
-plug-in to provide \emph{to} the framework.  Anyway, the \class{binding.%
-IBindingSPI} interface looks basically like this:
+\class{binding.IBindingNode}, that defines what methods the binding framework
+calls on objects that it expects to be nodes in a component tree.  The
+\class{binding.IBindingNode} interface looks basically like this:
 
 \begin{verbatim%
-}class IBindingSPI(config.IConfigSource):
+}class IBindingNode(config.IConfigSource):
 
     """Minimum requirements to join a component hierarchy"""
 
@@ -964,6 +961,10 @@ IBindingSPI} interface looks basically like this:
 
     def getComponentName():
         """Return this component's name relative to its parent, or 'None'"""
+        
+    def notifyUponAssembly(child):
+        """Call 'child.uponAssembly()' when component knows its root"""
+
 \end{verbatim}
 
 By convention, interface names in Python are usually begun with a captial
@@ -981,26 +982,25 @@ return values are as documented.
 
 
 
-
 This interface also inherits from \class{config.IConfigSource}, which defines
-some additional methods which a Binding SPI component should implement.  We'll
+some additional methods that a binding component should implement.  We'll
 look at those in the coming chapter on the configuration system.  Notice
 that this does \emph{not} mean a component has to inherit from \class{%
 IConfigSource}!  It simply means that a class which promises to implement the
-\class{binding.IBindingSPI} interface is also promising to implement the
+\class{binding.IBindingNode} interface is also promising to implement the
 \class{config.IConfigSource} interface as well.
 
 Did our example \class{myGUIControl} class promise to implement \class{%
-binding.IBindingSPI}?  No.  It doesn't have an \samp{__implements__} attribute
-or inherit one, so it's not promising to implement the full \class{IBindingSPI}
+binding.IBindingNode}?  No.  It doesn't have an \samp{__implements__} attribute
+or inherit one, so it's not promising to implement the full \class{IBindingNode}
 interface.  This is acceptable because \module{peak.binding} verifies the
 presence of needed methods automatically, and it isn't required that a
-component implement all of the \class{IBindingSPI} methods.  Many other
+component implement all of the \class{IBindingNode} methods.  Many other
 interfaces however, \emph{must} be promised by a class in order for the
 functionality to work.
 
-The \class{binding.IBindingFactory} interface is a good example of this.
-\class{IBindingFactory} is the interface which defines how component 
+The \class{binding.IComponentFactory} interface is a good example of this.
+\class{IComponentFactory} is the interface which defines how component
 constructors work - at least if they're to be supported by \module{%
 peak.binding}!
 
@@ -1011,20 +1011,20 @@ with parents when we never supplied any arguments to any constructors.  Well,
 we're about to see how that works.
 
 When a \function{binding.New} binding is activated, it checks to see if
-its \var{obtype} parameter implements \class{IBindingFactory}.  If so,
+its \var{obtype} parameter implements \class{IComponentFactory}.  If so,
 it knows that the constructor accepts the appropriate parameters, and supplies
 them when constructing the new instance.  If the \var{obtype} parameter
-doesn't implement \class{IBindingFactory}, it's simply called without any
+doesn't implement \class{IComponentFactory}, it's simply called without any
 parameters.  (If you should need to, you can always override this behavior
 of \function{binding.New} using the \var{bindToOwner} flag.)
 
-Let's take a look at the \class{binding.IBindingFactory} interface in more
+Let's take a look at the \class{binding.IComponentFactory} interface in more
 detail.
 
 
 
 \begin{verbatim%
-}class IBindingFactory(Interface):
+}class IComponentFactory(Interface):
 
     """Class interface for creating bindable components"""
 
@@ -1040,14 +1040,14 @@ detail.
 
 Notice that this interface describes a \function{__call__} method.  This
 doesn't mean that you'll need a \function{__call__} method on your object
-instances or in your class.  It simply means that an object which implements
-the interface should be callable.  Because \class{IBindingFactory} is an
+instances or in your class.  It simply means that an object that implements
+the interface should be callable.  Because \class{IComponentFactory} is an
 interface for functions or classes, the \function{__call__} method simply
 documents what behavior the function or class constructor should have.
 
 XXX show how to implement in a class, __init__, __class_implements__, etc.
 
-XXX IBindingAPI interface;  setParentComponent
+XXX IComponent interface;  setParentComponent
 
 \subsubsection{Names and Paths}
 
@@ -1055,7 +1055,7 @@ XXX lookupComponent
 
 \subsection{Hierarchy-Building Tools}
 
-XXX Base, Component, bindToParent, ...
+XXX Component, bindToParent, ...
 
 
 \section{Connecting Components by Name or Interface}

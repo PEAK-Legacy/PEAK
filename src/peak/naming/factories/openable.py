@@ -39,7 +39,7 @@ def urlToLocalFile(url):
 
 
 
-class URLStreamFactory(binding.Base):
+class URLStreamFactory(binding.Component):
 
     """Stream factory for a 'urllib2.urlopen()'
 
@@ -48,7 +48,7 @@ class URLStreamFactory(binding.Base):
 
     __implements__ = naming.IStreamFactory
 
-    target = binding.requireBinding("urllib2 URL or request")
+    target = binding.requireBinding("urllib2 URL or request", "target")
 
 
     def open(self,mode,seek=False,writable=False,autocommit=False):
@@ -121,14 +121,14 @@ class URLStreamFactory(binding.Base):
 
 
 
-class FileFactory(binding.Base):
+class FileFactory(binding.Component):
 
     """Stream factory for a local file object"""
 
     __implements__ = naming.IStreamFactory
 
 
-    filename = binding.requireBinding("Filename to open/modify")
+    filename = binding.requireBinding("Filename to open/modify", "filename")
 
 
     def open(self,mode,seek=False,writable=False,autocommit=False):

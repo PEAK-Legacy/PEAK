@@ -496,13 +496,13 @@ def delegateTo(delegateAttr, name=None, provides=None, doc=None):
 
     Usage::
 
-        class PasswordFile(binding.Base):
+        class PasswordFile(binding.Component):
             shadow = binding.bindTo('config:etc.shadow/')
             checkPwd = changePwd = binding.delegateTo('shadow')
 
     The above is equivalent to this longer version::
 
-        class PasswordFile(binding.Base):
+        class PasswordFile(binding.Component):
             shadow = binding.bindTo('config:etc.shadow/')
             checkPwd = binding.bindTo('shadow/checkPwd')
             changePwd = binding.bindTo('shadow/changePwd')
@@ -834,7 +834,7 @@ class Component(_Base):
     def uponAssembly(self):
 
         tba = self.__objectsToBeAssembled__
-        
+
         if tba is None:
             return
 

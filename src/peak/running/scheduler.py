@@ -39,7 +39,7 @@ __all__ = [
 
 
 
-class MainLoop(binding.Base):
+class MainLoop(binding.Component):
 
     """Top-level application event loop, with timeout management"""
 
@@ -162,7 +162,7 @@ def getTwisted(appConfig):
     return peak_reactor
 
 
-class UntwistedReactor(binding.Base):
+class UntwistedReactor(binding.Component):
 
     """Primitive partial replacement for 'twisted.internet.reactor'"""
 

@@ -4,7 +4,7 @@ from unittest import TestCase, makeSuite, TestSuite
 from peak.api import *
 from peak.tests import testApp
 
-class baseWithClassAttr(binding.Base):
+class baseWithClassAttr(binding.Component):
 
     myName = binding.classAttr( binding.Once( lambda s,d,a: s.__name__ ) )
 
@@ -216,10 +216,12 @@ class DescriptorTest(TestCase):
 
     def checkSuggestions(self):
         data = DescriptorData(None, 'data',
-            thing1 = binding.Base(),
-            thing2 = DescriptorData(thing4 = [binding.Base(), binding.Base()]),
+            thing1 = binding.Component(),
+            thing2 = DescriptorData(
+                thing4 = [binding.Component(), binding.Component()]
+            ),
             thing3 = "foo",
-            thing4 = binding.Base(1)
+            thing4 = binding.Component(1)
         )
         assert binding.getParentComponent(data.thing1) is data
         assert binding.getParentComponent(data.thing2) is data
@@ -235,13 +237,11 @@ class DescriptorTest(TestCase):
         assert len(data.thing2.thing4) == 2
 
         for ob in data.thing2.thing4:
-            assert ob.__class__ is binding.Base
+            assert ob.__class__ is binding.Component
             assert binding.getParentComponent(ob) is data.thing2
             assert binding.getComponentName(ob) == 'thing4'
             assert ob is not data.thing2.thing1
             assert ob is not data.thing2.thing2
-
-
 
 
 TestClasses = (

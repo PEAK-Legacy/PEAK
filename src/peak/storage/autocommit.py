@@ -39,7 +39,7 @@ class AutoCommitter(storage.TransactionComponent):
 
 
 
-class Untransactable(binding.Base):
+class Untransactable(binding.Component):
 
     """Untransactable object that *requires* a true setting for 'autocommit'
 
@@ -88,9 +88,9 @@ class autocommitted(advice):
     atomic operations in an 'autocommitted()' advice.  For example::
 
         from peak.storage.autocommit import *
-        
+
         class QueuedMessageSender(AutoCommitter):
-        
+
             def send(self,message):
                 # ...
 
@@ -122,7 +122,7 @@ class autocommitted(advice):
     autocommit is turned off.)"""
 
     __slots__ = ()
-    
+
 
     def __call__(__advice, self, *__args, **__kw):
 
@@ -145,4 +145,20 @@ class autocommitted(advice):
         else:
             # Just call the method
             return __advice._func(self, *__args, **__kw)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 

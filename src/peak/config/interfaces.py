@@ -50,7 +50,7 @@ class IConfigSource(Interface):
         Note that 'configKey' is an 'IConfigKey' instance and may therefore be
         a 'PropertyName' or an 'Interface' object.
 
-        Also note that 'binding.Base' implements this method by simply
+        Also note that 'binding.Component' implements this method by simply
         returning 'NOT_FOUND', and that is a perfectly acceptable
         implementation for many purposes."""
 

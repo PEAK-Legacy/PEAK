@@ -42,12 +42,12 @@ abort  = abortTransaction
 class BasicTxnErrorHandler(object):
 
     """Simple error handling policy, w/simple logging, no retries"""
-    
+
     __implements__ = ITransactionErrorHandler
 
 
     def voteFailed(self, txnService, participant):
-    
+
         t,v,tb = sys.exc_info()
 
         try:
@@ -92,10 +92,10 @@ class BasicTxnErrorHandler(object):
             # remove and retry after fail
             txnService.removeParticipant(participant)
             raise t,v,tb
-            
+
         finally:
             del t,v,tb
-        
+
 
     def finishFailed(self, txnService, participant, committed):
 
@@ -121,7 +121,7 @@ class BasicTxnErrorHandler(object):
 
 
 
-class TransactionState(binding.Base):
+class TransactionState(binding.Component):
 
     """Helper object representing a single transaction's state"""
 
@@ -136,13 +136,13 @@ class TransactionState(binding.Base):
 class TransactionService(binding.Component):
 
     """Basic transaction service component"""
-    
+
     __implements__ = ITransactionService
     _provides      = __implements__
 
     state          = binding.New(TransactionState)
     errorHandler   = binding.New(BasicTxnErrorHandler)
-    
+
     def join(self, participant):
 
         if self.state.cantCommit:
@@ -174,7 +174,7 @@ class TransactionService(binding.Component):
         false value from its readyToVote() method.
 
         Once all participants are ready, ask them all to vote."""
-    
+
         tries = 0
         unready = True
         state = self.state
@@ -188,7 +188,7 @@ class TransactionService(binding.Component):
 
 
         self.state.safeToJoin = False
-        
+
         for p in state.participants:
             try:
                 p.voteForCommit(self)
@@ -207,7 +207,7 @@ class TransactionService(binding.Component):
 
         if self.isActive():
             raise exceptions.TransactionInProgress
-            
+
         self.state.timestamp = time()
         self.addInfo(**info)
 
@@ -250,7 +250,7 @@ class TransactionService(binding.Component):
             raise exceptions.OutsideTransaction
 
         self.fail()
-        
+
         for p in self.state.participants[:]:
             try:
                 p.abortTransaction(self)
@@ -269,7 +269,7 @@ class TransactionService(binding.Component):
 
 
     def addInfo(self, **info):
-    
+
         if self.state.cantCommit:
             raise exceptions.BrokenTransaction
 
@@ -278,7 +278,7 @@ class TransactionService(binding.Component):
 
         else:
             raise exceptions.TransactionInProgress
-    
+
 
 
     def getInfo(self):
@@ -403,27 +403,8 @@ class TransactionComponent(binding.Component, AbstractParticipant):
 
         d = self.__dict__
         have = d.has_key
-        
+
         for attr in self.txnAttrs:
             if have(attr):
                 del d[attr]
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 

@@ -2,7 +2,7 @@ from __future__ import generators
 
 from peak.api import *
 from peak.util.imports import importString, importObject
-from peak.binding.components import Component, New, Base, Once, getParentComponent
+from peak.binding.components import Component, New, Once, getParentComponent
 
 from peak.util.EigenData import EigenCell, AlreadyRead
 from peak.util.FileParsing import AbstractConfigParser
@@ -121,12 +121,12 @@ def findUtility(iface, component, default=NOT_GIVEN):
 
 
 
-class PropertyMap(Base):
+class PropertyMap(Component):
 
     rules     = New(dict)
     provided  = New(dict)
     _provides = IPropertyMap
-    __implements__ = IPropertyMap, Base.__implements__
+    __implements__ = IPropertyMap, Component.__implements__
 
     def setRule(self, propName, ruleObj):
         _setCellInDict(self.rules, PropertyName(propName), ruleObj)

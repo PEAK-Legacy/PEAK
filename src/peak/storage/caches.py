@@ -8,10 +8,10 @@ __all__ = [
 ]
 
 
-class CacheBase(binding.Base):
+class CacheBase(binding.Component):
 
     __implements__  = ICache
-    
+
 
 class WeakCache(CacheBase, WeakValueDictionary):
 
@@ -25,7 +25,7 @@ class WeakCache(CacheBase, WeakValueDictionary):
 class PermanentCache(CacheBase, dict):
 
     """Keeps items in cache until explicitly cleared"""
-    
+
     def __new__(klass, parent=None):
         return super(PermanentCache,klass).__new__(klass)
 
@@ -42,7 +42,7 @@ class PermanentCache(CacheBase, dict):
 class NullCache(CacheBase):
 
     """Never keeps anything in cache"""
-    
+
     def get(self, key, default=None):
         return default
 
@@ -54,4 +54,29 @@ class NullCache(CacheBase):
 
     def values(self):
         return ()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
