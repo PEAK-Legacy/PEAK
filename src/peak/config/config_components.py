@@ -294,7 +294,7 @@ def loadMapping(pMap, mapping, prefix='*', includedFrom=None):
     prefix = PropertyName(prefix).asPrefix()
 
     for k,v in mapping.items():
-        pMap.setValue(PropertyName(prefix+k), v)
+        pMap.setValue(PropertyName.fromString(prefix+k), v)
 
 protocols.adviseObject(loadMapping, provides=[ISettingLoader])
 
