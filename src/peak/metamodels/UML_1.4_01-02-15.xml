@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<!-- <!DOCTYPE XMI SYSTEM 'Model.dtd'> -->
+<!DOCTYPE XMI SYSTEM 'Model.dtd'>
 <XMI xmi.version='1.1' xmlns:Model='omg.org/mof.Model/1.3'>
   <XMI.header>
     <XMI.model xmi.name='UML' xmi.version='1.4'/>

@@ -3,7 +3,7 @@
 # File:    peak\metamodels\UML13\model\__init__.py
 # ------------------------------------------------------------------------------
 
-"""Structural Model for UML 1.3"""
+"""Structural Model for UML 1.3 - Generated from peak/metamodels/UML_1.3_01-12-02.xml"""
 
 # ------------------------------------------------------------------------------
 
