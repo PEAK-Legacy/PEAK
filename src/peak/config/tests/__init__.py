@@ -9,8 +9,9 @@ from peak.config.interfaces import *
 class PropertyTest(TestCase):
 
     def checkSystemProp(self):
+        app = config.getSysConfig() #Application()
         config.setSystemProperty('peak.config.tests.foo',1)
-        assert config.getProperty('peak.config.tests.foo')==1
+        assert config.getProperty('peak.config.tests.foo',app)==1
 
 
     def checkEnviron(self):

@@ -7,11 +7,11 @@ from once import *
 from interfaces import *
 from weakref import WeakValueDictionary
 from types import ModuleType
-
 from peak.naming.names import toName, AbstractName, COMPOUND_KIND
 from peak.naming.syntax import PathSyntax
 from peak.util.EigenData import EigenCell, AlreadyRead
-from peak.config.interfaces import IConfigKey, IPropertyMap
+from peak.config.interfaces import IConfigKey, IPropertyMap, \
+    IConfigurationRoot, NullConfigRoot
 from peak.util.imports import importString
 from peak.interface import adapt
 from warnings import warn, warn_explicit
@@ -143,11 +143,30 @@ def globalLookup(name, component=None, targetName=None):
     )
 
 
-def acquireComponent(name, component=None, targetName=None):
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+
+def acquireComponent(name, component, targetName=None):
 
     """Acquire 'name' relative to 'component', w/fallback to globalLookup()"""
 
-    target = component
+    prev = target = component
 
     while target is not None:
 
@@ -156,12 +175,34 @@ def acquireComponent(name, component=None, targetName=None):
         if ob is not NOT_FOUND:
             return ob
 
+        prev = target
         target = getParentComponent(target)
 
     else:
-        return globalLookup(name, component, targetName)
+        return adapt(
+            prev, IConfigurationRoot, NullConfigRoot
+        ).nameNotFound(
+            prev, name, component, targetName
+        )
 
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
 
+        
+        
+        
+        
+        
 class ComponentName(AbstractName):
 
     """Path between components

@@ -1,16 +1,16 @@
 from peak.interface import Interface, Attribute, addDeclarationToType
-from peak.api import exceptions, PropertyName
+from peak.api import exceptions, PropertyName, NOT_GIVEN
 
 __all__ = [
-    'IConfigKey', 'IConfigurable', 'IConfigSource',
-    'IRule', 'IPropertyMap', 'ISettingLoader',
+    'IConfigKey', 'IConfigurable', 'IConfigSource', 'IConfigurationRoot',
+    'IRule', 'IPropertyMap', 'ISettingLoader', 'NullConfigRoot',
 ]
 
 
 class IConfigKey(Interface):
 
     """Marker interface for configuration data keys
-    
+
     Both 'PropertyName()' and 'Interface' objects are usable as
     configuration keys.  The common interface required is a subset of
     'Interface.IInterface' that's needed by property maps and EigenRegistry
@@ -76,6 +76,47 @@ class IConfigurable(IConfigSource):
             unless a provider was previously registered under a base of
             the supplied key.
         """
+
+
+
+
+class IConfigurationRoot(IConfigSource):
+
+    """A root component that acknowledges its configuration responsibilities"""
+
+    def propertyNotFound(root,propertyName,forObj,default=NOT_GIVEN):
+        """Property search failed"""
+
+    def noMoreUtilities(root,configKey,forObj):
+        """A utility search has completed"""
+
+    def nameNotFound(root,name,forObj,bindName):
+        """A (non-URL) component name was not found"""
+
+
+class _NullConfigRoot(object):
+
+    """Adapter to handle missing configuration root"""
+
+    def propertyNotFound(self,root,propertyName,forObj,default=NOT_GIVEN):
+        raise exceptions.InvalidRoot(
+            "Root component %r does not implement 'IConfigurationRoot'"
+            " (was looking up %s for %r)" % (root, propertyName, forObj)
+        )
+
+    def noMoreUtilities(self,root,configKey,forObj):
+        raise exceptions.InvalidRoot(
+            "Root component %r does not implement 'IConfigurationRoot'"
+            " (was looking up %s for %r)" % (root, configKey, forObj)
+        )
+
+    def nameNotFound(self,root,name,forObj,bindName):
+        raise exceptions.NameNotFound(
+            remainingName = name, resolvedObj = root
+        )
+
+NullConfigRoot = _NullConfigRoot()
+
 
 
 
@@ -201,4 +242,5 @@ class IPropertyMap(IConfigurable):
 
 
 
-        
+
+

@@ -8,14 +8,14 @@ from peak.util.EigenData import EigenCell, AlreadyRead
 from peak.util.FileParsing import AbstractConfigParser
 
 from interfaces import *
-from peak.interface import Interface
+from peak.interface import Interface, adapt, implements
 
 
 __all__ = [
     'SystemConfig', 'AppConfig', 'PropertyMap', 'LazyLoader', 'ConfigReader',
     'loadConfigFile', 'loadMapping', 'PropertySet', 'fileNearModule',
     'Provider','CachingProvider','iterParents','findUtilities','findUtility',
-    'instancePerApp',
+    'instancePerApp', 'Application',
 ]
 
 
@@ -39,7 +39,7 @@ def fileNearModule(moduleName,filename):
     import os; return os.path.join(os.path.dirname(filebase), filename)
 
 
-def iterParents(component=None):
+def iterParents(component):
 
     """Return iterator for all parents of 'component', including config roots
     """
@@ -58,7 +58,7 @@ def iterParents(component=None):
         component = config.getAppConfig(last)
 
 
-def findUtilities(iface, component=None):
+def findUtilities(iface, component):
 
     """Return iterator over all utilities providing 'iface' for 'component'"""
 
@@ -76,11 +76,11 @@ def findUtilities(iface, component=None):
         if utility is not NOT_FOUND:
             yield utility
 
+    adapt(
+        component,IConfigurationRoot,NullConfigRoot
+    ).noMoreUtilities(component, iface, forObj)
 
-
-
-
-def findUtility(iface, component=None, default=NOT_GIVEN):
+def findUtility(iface, component, default=NOT_GIVEN):
 
     """Return first utility supporting 'iface' for 'component', or 'default'"""
 
@@ -369,6 +369,8 @@ class ConfigReader(AbstractConfigParser):
 
 class BasicConfig(Component):
 
+    implements(IConfigurationRoot)
+
     def __instance_provides__(self,d,a):
         pm=PropertyMap()
         pm.setParentComponent(self)
@@ -387,32 +389,32 @@ class BasicConfig(Component):
     def setup(self, propertyMap):
         pass
         
+        
+    def propertyNotFound(self,root,propertyName,forObj,default=NOT_GIVEN):
+        if default is NOT_GIVEN:
+            raise exceptions.PropertyNotFound(propertyName, forObj)    
+        return default
+
+    def noMoreUtilities(self,root,configKey,forObj):
+        pass
+
+    def nameNotFound(self,root,name,forObj,bindName):
+        return naming.lookup(name, component,
+            creationParent=forObj, creationName=bindName
+        )
 
 
 
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-class SystemConfig(BasicConfig):
+class Application(BasicConfig):
 
     def setup(self, propertyMap):
         loadConfigFile(propertyMap, fileNearModule('peak','peak.ini'))
-            
+
+        
+class SystemConfig(Application):
 
     def setParentComponent(self,parentComponent,componentName=None):
         if parentComponent is not None or componentName is not None:
@@ -430,8 +432,6 @@ class AppConfig(BasicConfig):
         super(AppConfig,self).setParentComponent(
             parentComponent,componentName
         )
-
-
 
 
 

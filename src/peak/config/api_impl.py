@@ -5,6 +5,7 @@ from interfaces import *
 from peak.util.EigenData import *
 from config_components import *
 from weakref import WeakKeyDictionary
+from peak.interface import adapt
 
 __all__ = [
     'getSysConfig', 'setSysConfig', 'registerSystemProvider',
@@ -27,9 +28,8 @@ def getSysConfig():
         cfg = SystemConfig()
         setAppConfig(cfg, None) # force app config for sys. config to be None
         return cfg
-        
-    return _systemCfg.get(defaultSysConfig)
 
+    return _systemCfg.get(defaultSysConfig)
 
 def setSysConfig(cfg):
 
@@ -54,7 +54,7 @@ def getAppConfig(forRoot=None):
 
     if type(forRoot).__weakrefoffset__ and forRoot in _appConfigs:
         return _appConfigs[forRoot]
-        
+
     return _defaultCfg.get( lambda: AppConfig(getSysConfig()) )
 
 
@@ -80,7 +80,7 @@ def setAppConfig(forRoot, cfg):
 
 
 
-def getProperty(propName, obj=None, default=NOT_GIVEN):
+def getProperty(propName, obj, default=NOT_GIVEN):
 
     """Find property 'propName' for 'obj'
 
@@ -100,24 +100,24 @@ def getProperty(propName, obj=None, default=NOT_GIVEN):
             "getProperty() can't use wildcard/default properties", propName
         )
 
-    prop = findUtility(propName, obj, NOT_FOUND)
+    forObj = component = obj
 
-    if prop is not NOT_FOUND:
-        return prop
+    for component in iterParents(obj):
+        try:
+            prop = component.__class__._getConfigData
+        except AttributeError:
+            continue
 
-    if default is NOT_GIVEN:
-        raise exceptions.PropertyNotFound(propName, obj)
+        prop = prop(component, propName, forObj)
 
-    return default
+        if prop is not NOT_FOUND:
+            return prop
 
-
-
-
-
-
-
-
-
+    return adapt(
+        component, IConfigurationRoot, NullConfigRoot
+    ).propertyNotFound(
+        component, propName, forObj, default
+    )
 
 
 
@@ -182,5 +182,24 @@ def setDefaultFor(obj, propName, defaultObj):
 
     pm = findUtility(IPropertyMap, obj)
     pm.setDefault(propName, defaultObj)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 

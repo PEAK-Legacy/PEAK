@@ -76,8 +76,8 @@ class NotAContext(NamingException):
 class EnumerationError(KeyError,ValueError):
     """Invalid name or value for enumeration"""
 
-
-
+class InvalidRoot(TypeError):
+    """Root component doesn't support 'config.IConfigurationRoot'"""
 
 
 # Config
@@ -120,6 +120,4 @@ class TooFewResults(Exception):
 
 class StopRunning(Exception):
     """Task doesn't want to be rescheduled"""
-
-
 
