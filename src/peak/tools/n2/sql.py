@@ -35,6 +35,7 @@ class SQLInteractor(binding.Component):
 
     shell = binding.Obtain('..')
     con = binding.Require('The SQL connection')
+    txnSvc = binding.Obtain(storage.ITransactionService)
 
     state = ''
     pushbuf = binding.Make(list)
@@ -208,7 +209,7 @@ class SQLInteractor(binding.Component):
 
         cmd = cmd.lower()
         if cmd[0] == '\\' or cmd in (
-            'go','commit','abort','rollback','help'
+            'go','commit','abort','begin','rollback','help'
         ):
             if cmd[0] == '\\':
                 cmd = cmd[1:]
@@ -476,16 +477,23 @@ xacts\t\tnumber of times to repeat execution of the input. Only results
 
             try:
                 con = self.interactor.con
-                con.joinTxn()
+                act = self.interactor.txnSvc.isActive()
+                
                 if xacts > 1:
                     for j in range(xacts - 1):
-                        c = con(sql)
+                        if act:
+                            c = con(sql)
+                        else:
+                            c = con(sql, outsideTxn=True)
                         c.fetchall()    # XXX doesn't handle multiresults!
 
                         time.sleep(secs)
 
-                c = con(sql,multiOK=True)
-            except:
+                if act:
+                    c = con(sql, multiOK=True)
+                else:
+                    c = con(sql, multiOK=True, outsideTxn=True)
+            except ZeroDivisionError:
                 # currently the error is logged
                 # sys.excepthook(*sys.exc_info()) # XXX
                 self.interactor.resetBuf()
@@ -521,6 +529,25 @@ rollback -- abort current transaction"""
 
 
 
+    class cmd_begin(ShellCommand):
+        """begin -- begin a new transaction"""
+
+        noBackslash = True
+
+        args = ('', 0, 0)
+
+        def cmd(self, cmd, stderr, **kw):
+            if self.interactor.txnSvc.isActive():
+                print >>stderr, "Already in a transaction."
+            else:
+                storage.beginTransaction(self)
+
+            self.interactor.resetBuf()
+
+    cmd_begin = binding.Make(cmd_begin)
+
+
+
     class cmd_commit(ShellCommand):
         """commit -- commit current transaction"""
 
@@ -550,6 +577,23 @@ rollback -- abort current transaction"""
             self.interactor.resetBuf()
 
     cmd_reset = binding.Make(cmd_reset)
+
+
+
+    class cmd_outside(ShellCommand):
+        """\\outside -- begin execution outside a transaction"""
+
+        args = ('', 0, 0)
+
+        def cmd(self, cmd, stderr, **kw):
+            if self.interactor.con in self.interactor.txnSvc:
+                print >>stderr, "Already active in a transaction; commit or abort first."
+            else:
+                storage.abortTransaction(self)
+
+            self.interactor.resetBuf()
+
+    cmd_outside = binding.Make(cmd_outside)
 
 
 
