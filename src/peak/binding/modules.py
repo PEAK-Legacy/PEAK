@@ -101,6 +101,7 @@
         use something like 'Eval("property(__previous__,setter)",globals())'
         instead.
 
+
     To-do Items
 
         * The 'adviseModule()' API is as-yet untested, and setupModule() is
@@ -119,7 +120,47 @@
           go to full 2.2 support, there should be some sugar for this, e.g.
           'x += MakeProperty' or 'x += MakeStatic'.  Or maybe the whole thing
           will be moot due to metaclasses.  We'll have to see how it goes.
+
+        * TW is a little too eager to build anything that you happen to import,
+          intentionally or otherwise.  It would be nice to be able to exclude
+          imports, declare them for building, etc.  Right now the default is
+          to not build bundles (since that would make it impossible to export
+          the bundle) or classes which were defined in another module.  It's
+          possible, however, that you'd *want* to build a class from another
+          module, in which case you should be able to specify it.
+
+        * Vertical inheritance from outside modules is only detected when the
+          module defining the inherited class is present as a global; it
+          doesn't work for dotted access from a package.  E.g::
+
+            from TW.API import SEF
+
+            class foo(SEF.Service):
+                pass
+
+          works, but::
+
+            import TW.API.SEF
+
+            class foo(TW.API.SEF.Service):
+                pass
+                
+          does not.  This is only a problem for inheriting from legacy code,
+          since code written specifically for TransWarp can easily work around
+          it, but it's still a nit to pick.          
 """
+
+
+
+
+
+
+
+
+
+
+
+
 
 from TW.API import *
 from TW.Utils.ClassTypes import isClass
@@ -198,10 +239,10 @@ def setupModule(dict=None):
         bases.append(getSpecForModule(m))
         bases.append(adviceForModule(m.__name__))
 
-    bases.reverse()
-    spec = Recipe(ModuleDictInterpreter, *tuple(bases))
-    dict.clear(); dict.update(spec(FunctionRebindingBuildTarget, globals=dict))
-    dict['__specification__'] = spec    # save module spec
+    bases.reverse(); spec = Recipe(ModuleDictInterpreter, *tuple(bases))
+    new = spec(FunctionRebindingBuildTarget, globals=dict); dict.clear();
+    dict.update(new); dict['__specification__'] = spec    # save module spec
+    
 
 def adviseModule(moduleName, withDict=None):
 
@@ -351,8 +392,8 @@ class _ModuleDictInterpreter(AbstractInterpreter):
             moduleName = dict['__name__']
 
             for name,spec in items:
-                if isClass(spec) and spec.__module__<>moduleName:
-                    # Don't interpret external classes!
+                if isBundle(spec) or isClass(spec) and spec.__module__<>moduleName:
+                    # Don't interpret bundles and external classes!
                     spec = Overwrite(spec)  # XXX might not work right :(
 
                 implementFeature(name, spec, peerContext)
