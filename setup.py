@@ -124,13 +124,13 @@ class happy(Command):
 setup(
 
     name="PEAK",
-    version="0.2pre1",
+    version="0.5a1",
     description="The Python Enterprise Application Kit",
     
     author="Phillip J. Eby",
     author_email="transwarp@eby-sarna.com",
     
-    url="http://telecommunity.com/TransWarp/",
+    url="http://www.telecommunity.com/PEAK/",
     
     packages=[
         'peak', 'peak.api', 'peak.binding', 'peak.model', 'peak.metamodels',
