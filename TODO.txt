@@ -2,13 +2,13 @@ Open Issues/To-Do Items
 
  Targeted for 0.5 Alpha 3
 
-    * peak.events migration
-
-      - Add tests for Twisted support
-
     * peak.ddt
 
       - A bit more doc and demos
+
+
+
+
 
 
 

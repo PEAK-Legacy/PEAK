@@ -12,7 +12,7 @@ class BasicTests(TestCase,object):
     singleBuffered = False
 
     def setUp(self):
-        self.source = self.sourceType()
+        self.source = adapt(self.sourceType(),self.requiredInterface)
         self.log = []
 
     def sink(self,source,event):
@@ -31,7 +31,7 @@ class BasicTests(TestCase,object):
 
     def testSuspend(self):
         # Verify that source always suspends
-        self.failUnless( self.source.nextAction() is None )
+        self.failIf( self.source.nextAction() )
 
     def testCallback(self):
         # Verify simple callback

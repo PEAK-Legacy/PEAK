@@ -1,7 +1,7 @@
 from __future__ import generators
 from peak.api import *
 from interfaces import *
-import io_events
+import io_events, sources
 from twisted.internet import defer
 from twisted.python import failure
 
@@ -39,12 +39,53 @@ Reactor = getTwisted  # for easy reference in peak.ini
 
 
 
-class DeferredAsEventSource(protocols.Adapter):
+class DeferredAsEventSource(sources.Value,protocols.StickyAdapter):
 
     protocols.advise(
-        instancesProvide=[ITaskSwitch],
+        instancesProvide=[IWritableSource,IValue,IPausableSource],
         asAdapterForTypes=[defer.Deferred],
     )
+
+    def __init__(self,ob,proto):
+        protocols.StickyAdapter.__init__(self,ob,proto)
+        sources.Value.__init__(self)
+
+
+    def _fire(self,event):
+        super(DeferredAsEventSource,self)._fire(event)
+        if not isinstance(event,failure.Failure):
+            return event
+
+    def set(self,value,force=False):
+        if self.subject.called:
+            cb = lambda v: self._fire(value)
+            self.subject.addCallbacks(cb,cb)
+        else:
+            self.subject.callback(value)
+
+    def addCallback(self,func):
+        if self.subject.called:
+            func(self.subject.result)
+            return
+
+        haveCB = len(self._callbacks)
+        super(DeferredAsEventSource,self).addCallback(func)
+        if not haveCB:
+            self.subject.addCallbacks(self._fire, self._fire)
+
+    def __call__(self):
+        if self.subject.called:
+            return self.subject.result
+        else:
+            return NOT_GIVEN
+
+
+    def derive(self,func):
+        b = sources.Value()
+        self.subject.addCallback(lambda v: [b.set(func(v)),v][1])
+        return b
+
+
 
     def nextAction(self, thread=None, state=None):
 
@@ -58,15 +99,22 @@ class DeferredAsEventSource(protocols.Adapter):
                     yield v
 
             state.CALL(handler())
-                
+
             if self.subject.called:
                 state.YIELD(self.subject.result)
             else:
-                cb = lambda v: (thread.step(self,v),v)[1]
-                self.subject.addCallbacks(cb,cb)
+                self.addCallback(thread.step)
 
         return self.subject.called
-            
+
+
+
+
+
+
+
+
+
 
 
 
