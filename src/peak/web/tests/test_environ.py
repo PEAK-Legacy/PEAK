@@ -1,8 +1,10 @@
 from unittest import TestCase, makeSuite, TestSuite
 from peak.api import *
 from peak.tests import testRoot
+from wsgiref.util import request_uri
 
 class TestTraversals(TestCase):
+
     default_url_base = 'http://127.0.0.1'
     script_name = '/x'
 
@@ -33,6 +35,9 @@ class TestTraversals(TestCase):
     def checkURLs(self,url):
         self.assertEqual(self.ctx.absoluteURL,self.url_base+url)
         self.assertEqual(self.ctx.traversedURL,self.url_base+url)
+        if request_uri(self.ctx.environ,False)==self.url_base:
+            self.assertEqual(self.ctx.url,self.script_name[1:]+url)
+            
 
     def setName(self,name,ob,url):
         self.ctx = self.ctx.traverseName(name)
@@ -69,6 +74,12 @@ class TestTraversals(TestCase):
         self.setParent(self.root)    # test return-to-empty case
         self.checkURLs('')
 
+
+
+
+
+
+
     def testGotoName(self):
         from test_templates import TestApp
         app = TestApp(testRoot())
@@ -102,6 +113,14 @@ class TestTraversals(TestCase):
         self.assertEqual(self.diffCtx(ctx2,ctx3),['skin'])
         self.assertRaises(TypeError,ctx3.clone,foo="bar")
 
+
+
+
+
+
+
+
+
     def testChangeRoot(self):
         self.setChild('test',self.ob1)
         self.setChild('test2',self.ob2)
@@ -110,6 +129,28 @@ class TestTraversals(TestCase):
         self.url_base += '/++skin++foo'
         self.ctx = self.ctx.clone(rootURL=self.url_base)
         self.checkURLs('/test/test2/test3')
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -351,7 +392,7 @@ class TestNamespaces(TestCase):
         # check direct find, with path
         item.registerProvider(key2,config.Value(web.TraversalPath('../foo')))
         self.failUnless(ctx1.traverseName(id2).current is self.app.foo)
-        
+
         # check indirect find, with path
         self.failUnless(ctx3.traverseName(id2).current is self.app.foo)
 
@@ -367,38 +408,38 @@ class TestNamespaces(TestCase):
 
 
 
+base_url = "http://a/b/c/d"
+
+relative_urls = [ line.strip().split() for line in """
+      g:h         g:h
+      d           http://a/b/c/d
+      g           http://a/b/c/g
+      g/          http://a/b/c/g/
+      ../../g     http://a/g
+      http://g    http://g
+      d?y         http://a/b/c/d?y
+      g?y         http://a/b/c/g?y
+      g?y/./x     http://a/b/c/g?y/./x
+      ./          http://a/b/c/
+      ../         http://a/b/
+      ../g        http://a/b/g
+      ../../      http://a/
+      g/h         http://a/b/c/g/h
+""".strip().split('\n')]
+
+class RelativeURLTests(TestCase):
+    def testRelativeURLs(self):
+        for relurl,absurl in relative_urls:
+            self.assertEqual(web.relativeURL(base_url,absurl),relurl)
+
 NO_SUCH_NAME = '__nonexistent__$$@'
 
 TestClasses = (
-    TestTraversals, TestContext, TestNamespaces,
+    TestTraversals, TestContext, TestNamespaces, RelativeURLTests
 )
 
 def test_suite():
     return TestSuite([makeSuite(t,'test') for t in TestClasses])
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

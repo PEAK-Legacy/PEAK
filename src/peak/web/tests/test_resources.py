@@ -55,7 +55,7 @@ class MethodTest2(MethodTest1):
 
 <ul><li>1</li><li>2</li><li>3</li></ul>
 
-<a href="http://127.0.0.1/++resources++/peak.running/EventDriven.xml">
+<a href="++resources++/peak.running/EventDriven.xml">
 The EventDriven.xml file, found at
 http://127.0.0.1/++resources++/peak.running/EventDriven.xml
 </a>

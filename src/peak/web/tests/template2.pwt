@@ -7,7 +7,7 @@
 
 <a href="ignored" this:url.href="xml">
 The EventDriven.xml file, found at
-<span this:url=".">this URL</span>
+<span this:replace="/absoluteURL">this URL</span>
 </a>
 
 </body>

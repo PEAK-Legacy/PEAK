@@ -157,9 +157,9 @@ def finishElement(parser,data):
         this = content        
     for f in data.get('this.register',()):
         f(this)
+    if 'previous' in data:
+        data['previous']['pwt.content'].addChild(this)
     return this
-
-
 
 
 def negotiateDomlet(parser, data, name, value):
@@ -204,14 +204,14 @@ def nodeIs(mode, parser, data, name, value):
 
 
 def setupElement(parser,data):
+
     d = dict(data.get('attributes',()))
+
     if 'domlet' in d:
         negotiateDomlet(parser,data,'domlet',d['domlet'])
+
     if 'define' in d:
         negotiateDefine(parser,data,'define',d['define'])
-
-    def child(result):
-        data['pwt.content'].addChild(result)
 
     def text(xml):
         top = data['pwt.content']
@@ -223,7 +223,6 @@ def setupElement(parser,data):
 
     data['start'] = startElement
     data['finish'] = finishElement
-    data['child'] = child
     data['text'] = text
     data['literal'] = literal
     
@@ -231,6 +230,7 @@ def setupElement(parser,data):
 def setupDocument(parser,data):
     setupElement(parser,data)
     data['pwt.content'] = TemplateDocument(data['parent'])
+
 
 
 
@@ -583,7 +583,7 @@ class URLAttribute(Element):
         if self.dataSpec:
             data, state = self._traverse(data, state)
 
-        url = unicode(data.absoluteURL)
+        url = unicode(data.url)
 
         if not self.optimizedChildren and not self.nonEmpty:
             state.write(self._emptyTag % locals())
@@ -607,7 +607,7 @@ class URLText(ContentReplacer):
         write = state.write
 
         write(self._openTag)
-        write(unicode(data.absoluteURL))
+        write(unicode(data.url))
         write(self._closeTag)
 
 class TaglessURLText(URLText):

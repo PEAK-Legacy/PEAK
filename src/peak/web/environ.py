@@ -14,7 +14,7 @@ __all__ = [
     'Context', 'StartContext',
     'simpleRedirect', 'clientHas','parseName', 'traverseResource',
     'traverseView', 'traverseSkin', 'traverseAttr', 'traverseItem',
-    'traverseDefault', 'traverseLocationId',
+    'traverseDefault', 'traverseLocationId', 'relativeURL',
 ]
 
 from interfaces import *
@@ -23,8 +23,49 @@ from cStringIO import StringIO
 from peak.api import binding, adapt, NOT_GIVEN, NOT_FOUND, PropertyName
 import errors
 from peak.security.interfaces import IInteraction, IGuardedObject
-from wsgiref.util import shift_path_info, setup_testing_defaults
-from peak.security.api import Anybody
+from wsgiref.util import shift_path_info, setup_testing_defaults, request_uri
+from peak.security.api import Anybody, allow
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+def relativeURL(base,url):
+    """Convert absolute 'url' to be relative to 'base', if possible"""
+
+    same = 0
+    base_parts = base.split('/')
+    url_parts = url.split('/')
+
+    for b,u in zip(base_parts,url_parts):
+        if b==u:
+            same+=1
+        else:
+            break
+    if same<3:
+        return url
+
+    parts = []
+    if len(base_parts)==same:
+        parts.append(base_parts[-1])
+
+    parts.extend(['..'] * (len(base_parts)-same-1))
+    parts.extend(url_parts[same:])
+    return '/'.join(parts) or './'
+
+
+
+
+
 
 
 
@@ -195,13 +236,13 @@ class Context:
             )
 
 
+    url = binding.Make(
+        lambda self: relativeURL(
+            request_uri(self.environ,False), self.absoluteURL
+        ), permissionNeeded = Anybody
+    )
 
-
-
-
-
-
-
+    allow() # XXX needed to jumpstart permission facility
 
 class StartContext(Context):
 

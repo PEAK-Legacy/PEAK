@@ -88,14 +88,14 @@ class ITraversalContext(IInteraction):
     the 'user' attribute, 'allows()' method, and so on.
     """
 
-    name     = Attribute("""Name of 'current'""")
-    current  = Attribute("""Current object location""")
-    environ  = Attribute("""WSGI (PEP 333) 'environ' mapping""")
-    policy   = Attribute("""'IInteractionPolicy' for this hit""")
-    skin     = Attribute("""Current 'ISkin' for this hit""")
-
+    name         = Attribute("""Name of 'current'""")
+    current      = Attribute("""Current object location""")
+    environ      = Attribute("""WSGI (PEP 333) 'environ' mapping""")
+    policy       = Attribute("""'IInteractionPolicy' for this hit""")
+    skin         = Attribute("""Current 'ISkin' for this hit""")
+    url          = Attribute("""Current object's standard URL""")
     rootURL      = Attribute("""Application root URL""")
-    absoluteURL  = Attribute("""Current object's absolute URL""")
+    absoluteURL  = Attribute("""Absolute canonical URL""")
     traversedURL = Attribute("""URL traversed to get to this context""")
 
 
@@ -302,7 +302,7 @@ class IViewTarget(Interface):
 
             protocols.declareAdapter(
                 adapter,[protocol],forProtocols=[self.subject]
-            )           
+            )
         """
 
 
