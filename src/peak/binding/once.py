@@ -72,11 +72,11 @@ class Once(NamedDescriptor):
         attribute access will fail with a 'TypeError'.
     """
 
-    
+    attrName = None
+
     def __init__(self, func, name=None):
         self.computeValue = func
         self.attrName = name or getattr(func,'__name__',None)
-
 
 
 
@@ -107,14 +107,14 @@ class Once(NamedDescriptor):
 
 
     def copyWithName(self,newName):
+    
+        if newName==self.attrName:
+            return self
+            
         from copy import copy
         newOb = copy(self)
         newOb.attrName = newName
         return newOb
-
-
-
-
 
 
 
@@ -132,7 +132,7 @@ class OnceClass(Once, type):
                 class inner(object):
                     __metaclass__ = OnceClass
 
-                    def __init__(self, contextObject):
+                    def __init__(self, obj, instDict, attrName):
                         ...
 
         When 'anOuterInstance.inner' is accessed, an instance of
@@ -146,9 +146,11 @@ class OnceClass(Once, type):
         super(Once,klass).__init__(name,bases,dict)
         klass.attrName = name
 
-    def computeValue(self, obj, instanceDict, attrName):
-        return self(obj)
+    def computeValue(self, *args):
+        return self(*args)
     
     def copyWithName(self, newName):
+        if newName==self.attrName:
+            return self
         return Once(self.computeValue, newName)
 
