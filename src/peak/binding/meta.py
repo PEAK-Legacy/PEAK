@@ -228,9 +228,9 @@ class MethodExporter(ActiveDescriptor, type):
 
                 slap_thick.namingConvention = "slap%(initCap)s"
 
-                slap_thick.installIf = \
+                slap_thick.installIf = (
                     lambda feature,func: feature.thickness > 10
-
+                )
                 slap_thick.verb = "slap"
 
                 def slap_thick(self):
@@ -239,9 +239,9 @@ class MethodExporter(ActiveDescriptor, type):
 
                 slap_thin.namingConvention = "slap%(initCap)s"
 
-                slap_thin.installIf = \
+                slap_thin.installIf = (
                     lambda feature,func: feature.thickness <= 10
-
+                )
                 slap_thin.verb = "slap"
 
             class Person(object):
