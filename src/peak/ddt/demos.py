@@ -1,15 +1,53 @@
 from peak.api import *
 import peak.ddt.api as ddt
 
-class ArithmeticDemo(ddt.ColumnProcessor):
+class ArithmeticModel(model.Element):
+
+    """Simple arithmetic model that's testable via 'ddt.ModelProcessor'"""
+
+    class x(model.Attribute):
+        referencedType = model.Integer
+
+    class y(model.Attribute):
+        referencedType = model.Integer
+
+    def plus(self):
+        return self.x+self.y
+
+    def minus(self):
+        return self.x-self.y
+
+    def times(self):
+        return self.x*self.y
+
+    def divide(self):
+        return self.x/float(self.y)
+        
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class ArithmeticDemo(ddt.MethodProcessor):
     """Demo processor for http://fit.c2.com/files/arithmetic.html
 
     Try running::
 
-        peak ddt http://fit.c2.com/files/arithmetic.html out.html
+        peak ddt.web http://fit.c2.com/files/arithmetic.html
 
-    And then view 'out.html' in your browser, comparing the original
-    text, and the annotated version."""
+    to view the test output in your browser, comparing the original
+    text and the annotated version."""
 
     symbols = {'+':'plus','-':'minus','*':'times', '/':'divide'}
 
@@ -40,3 +78,5 @@ class ArithmeticDemo(ddt.ColumnProcessor):
         cell.assertEqual(self._x/float(self._y), model.Float)
 
     floating = divide
+    
+

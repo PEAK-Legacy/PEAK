@@ -11,11 +11,11 @@ Open Issues/To-Do Items
 
     * peak.ddt
 
-      - Row and Action processors, better heading->property name translation
+      - Test Action processor
 
+      - Add Row processor, maybe cursor processor
 
-
-
+      - A bit more doc and demos
 
 
 

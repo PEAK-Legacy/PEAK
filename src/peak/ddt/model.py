@@ -244,14 +244,14 @@ class Cell(Item):
     def getParent(self):
         return self.row
 
-    def assertEqual(self,value,modelType=model.String):
-        """Check that text matches 'value', using 'modelType' for conversions
+    def assertEqual(self, value, dataType=model.String):
+        """Check that text matches 'value', using 'dataType' for conversions
 
         If the value doesn't match, the cell will be flagged as "wrong",
         and the actual value is added to the cell."""
 
-        if value<>modelType.mdl_fromString(self.text):
-            self.wrong(modelType.mdl_toString(value))
+        if dataType.mdl_normalize(value)<>dataType.mdl_fromString(self.text):
+            self.wrong(dataType.mdl_toString(value))
         else:
             self.right()
 

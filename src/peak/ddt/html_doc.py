@@ -211,7 +211,7 @@ class HTMLDocument(storage.EntityDM):
         if tagText:
             self._insertText(content-1,tagText)
 
-        if cell.text<>self.unescape(self.text[ts:te]):
+        if cell.text<>self.unescape(self.text[ts:te]).strip():
             insort(self.edits, (content,close,self.escape(cell.text)))
 
         bodyText = self._bodyAdditions(cell)
@@ -296,7 +296,7 @@ class HTMLDocument(storage.EntityDM):
         return pos, self.preloadState(
             (Cell,tag,content,close),
             {'document':self.document,
-             'text':self.unescape(self.text[ts:te])
+             'text':self.unescape(self.text[ts:te]).strip()
             }
         )
 

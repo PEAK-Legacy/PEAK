@@ -47,14 +47,13 @@ class WebRunner(binding.Component):
 Launch a DDT viewer in a web browser, initially retrieving and displaying
 the specified base URL.
 """
-
     protocols.advise(
         instancesProvide=[running.IRerunnableCGI]
     )
 
     argv    = binding.Require("Command line arguments")
     baseURL = binding.Make(lambda self: self.argv[1])
-    
+
     def runCGI(self,stdin,stdout,stderr,environ):
         path = environ.get('PATH_INFO','/')
         for suffix in ('/','.htm','.html','.HTM','.HTML'):
@@ -66,12 +65,13 @@ the specified base URL.
             return
 
         sane_path = '/'.join([p for p in path.split('/') if p and p<>'..'])
+        sane_path = sane_path and '/'+sane_path or ''
+
         print >>stdout, "Content-type: text/html"
         print >>stdout
-                
         HTMLRunner(
             self,
-            argv = ['HTMLRunner', self.baseURL+'/'+sane_path],
+            argv = ['HTMLRunner', self.baseURL+sane_path],
             stdin = stdin,
             stdout = stdout,
             stderr = stderr,
