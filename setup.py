@@ -110,16 +110,16 @@ class sdist(old_sdist):
     """Variant of 'sdist' that (re)builds the documentation first"""
    
     def run(self):
-
         # Build docs before source distribution
-        self.run_command('happy')
+        try:
+            import happydoclib
+        except ImportError:
+            pass
+        else:
+            self.run_command('happy')
 
         # Run the standard sdist command
         old_sdist.run(self)
-
-
-
-
 
 class test(Command):
 

@@ -2,7 +2,7 @@ Installing PEAK
 
  PEAK Release 0.5 alpha 1
 
- Copyright (C) 1996-2002 by Phillip J. Eby and Tyler C. Sarna.
+ Copyright (C) 1996-2003 by Phillip J. Eby and Tyler C. Sarna.
  All rights reserved.  This software may be used under the same terms
  as Zope or Python.  THERE ARE ABSOLUTELY NO WARRANTIES OF ANY KIND.
  Code quality varies between modules, from "beta" to "experimental
@@ -11,12 +11,8 @@ Installing PEAK
 
  SYSTEM REQUIREMENTS
 
-  Basic installation requires Python 2.2.1, and the Zope 'Interface' package.
-  If you want to run the test suite or use any of PEAK's frameworks
-  (e.g. database interaction, UML/XMI processing, etc.), you will also need
-  Aaron Watters' 'kjbuckets' library for your version of Python.  See
-  "Obtaining and Installing Dependencies" below if you do not already have
-  the 'Interface' package or the 'kjbuckets' module.
+  Python 2.2.2 is required.  Some portions of PEAK may support only
+  POSIX-like and/or Windows operating systems.
 
   Note: if you have installed previous versions of PEAK or TransWarp, be
   sure to remove them before installing this one.  A lot of things have
@@ -34,6 +30,10 @@ Installing PEAK
   installation.  (Unless directed elsewhere; see the "Installing Python 
   Modules" section of the Python manuals for details on customizing
   installation locations, etc.).
+
+
+
+
 
 
 
@@ -87,7 +87,7 @@ Installing PEAK
 
    python setup.py test
 
-  This will run 40+ tests on various parts of PEAK.  If you have
+  This will run several dozen tests on various parts of PEAK.  If you have
   installed everything correctly, 100% of the tests should succeed.  If
   you're missing any needed parts, you will probably be unable to run the
   tests at all.
@@ -105,6 +105,6 @@ Installing PEAK
   By default, 'python setup.py test' only runs 'peak.api.tests', which cover
   the basic, currently supported functionality of PEAK.  If you specify
   the 'peak.tests' module (as in the second example above), the full suite of
-  80+ tests will be run.  These tests will take longer to run, as they perform
+  100+ tests will be run.  These tests will take longer to run, as they perform
   some rather complex XMI and UUID tests.
 

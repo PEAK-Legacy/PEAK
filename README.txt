@@ -1,6 +1,6 @@
 PEAK Release 0.5 alpha 1
 
- Copyright (C) 1996-2002 by Phillip J. Eby and Tyler C. Sarna.
+ Copyright (C) 1996-2003 by Phillip J. Eby and Tyler C. Sarna.
  All rights reserved.  This software may be used under the same terms
  as Zope or Python.  THERE ARE ABSOLUTELY NO WARRANTIES OF ANY KIND.
  Code quality varies between modules, from "beta" to "experimental
