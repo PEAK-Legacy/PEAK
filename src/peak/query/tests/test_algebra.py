@@ -476,18 +476,6 @@ class DatabaseTests(SimpleFixtures):
 
         for tbl in 'Branch','Employee','Speaks','Drives','Car','LangUse':
 
-            # table objects must be unique
-            self.failUnless(db[tbl] is not db[tbl])
-            # but equal!
-            self.assertEqual(db[tbl],db[tbl])
-            # column objects must be unique
-            for col in db[tbl].keys():
-                self.failUnless(db[tbl][col] is not db[tbl][col])
-            # but equal!
-            self.assertEqual(
-                db[tbl].attributes(), db[tbl].attributes()
-            )
-
             tbl = db[tbl]
 
             # table's db should be db
@@ -501,35 +489,6 @@ class DatabaseTests(SimpleFixtures):
             for colName in tbl.keys():
                 self.failUnless(tbl[colName].getRV() is tbl)
                 self.failUnless(tbl[colName].getDB() is db)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
     def testSimpleSQL(self):
 

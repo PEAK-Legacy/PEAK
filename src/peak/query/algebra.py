@@ -105,21 +105,62 @@ class EMPTY(binding.Singleton):
         return ''
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 class PhysicalDB(binding.Component):
 
     tables = binding.Make(list)
 
     tableMap = binding.Make(
-        lambda self: dict(self.tables)
+        lambda self: dict(
+            [(name,Table(name,columns,self)) for name,columns in self.tables]
+        )
     )
 
     def __getitem__(self,name):
-        return Table(name,self.tableMap[name],self)
+        return self.tableMap[name]
 
     def __getattr__(self,attr):
         if not attr.startswith('_') and attr in self.tableMap:
             return self[attr]
         raise AttributeError,attr
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 class SQLDriver:
 
