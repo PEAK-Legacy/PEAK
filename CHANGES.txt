@@ -2,6 +2,15 @@ Fixes and Enhancements since Version 0.5 alpha 2
 
  Changed, Enhanced, or Newly Deprecated Features
 
+ - Added 'peak.core' as a minimal subset of 'peak.api'.  'peak.core' offers
+   only "core" API packages and primitives, not the full set of available
+   framework APIs.  'peak.api' will continue to expand as frameworks are added,
+   but 'peak.core' will stay as small as practical.  ('peak.exceptions' may in
+   fact end up being removed from 'peak.core', or at least renamed.)
+
+ - Added 'peak.util.symbol' module, to contain 'NOT_GIVEN', 'NOT_FOUND', and
+   the 'Symbol' class used to create them.
+
  - 'peak.running.tools' was promoted to 'peak.tools'.  'peak.running.supervisor'
    was also moved to 'peak.tools.supervisor', and a new 'peak help' command was
    added in 'peak.tools.api_help'.

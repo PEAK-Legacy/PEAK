@@ -56,8 +56,8 @@
         - Moving speed-critical parts to C
 """
 
-
-from peak.api import exceptions, NOT_GIVEN, adapt, protocols
+from peak.util.symbols import NOT_GIVEN
+import protocols; from protocols import adapt
 
 import re
 
@@ -74,11 +74,11 @@ class ParseError(Exception):
 class MissingData(Exception):
     pass
 
-
-from peak.binding.once import Make
+from peak.binding.once import Make  # XXX Core being used in a utility!
 
 def uniquechars(s):
     return ''.join(dict([(c,c) for c in s]))
+
 
 class IRule(protocols.Interface):
 

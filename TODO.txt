@@ -39,11 +39,6 @@ Open Issues/To-Do Items
        - try/catch DOMlet (and related error rendering interface/framework)
 
 
-    * Misc.
-
-      - API consolidation? (some users only want core API's in peak.api)
-
-
  Targeted for 0.5 Alpha 4
 
     * Transaction/storage refactorings
@@ -56,6 +51,15 @@ Open Issues/To-Do Items
 
       - DM.find()/DM.get() queries
 
+    * peak.running.commands
+
+       - Add option parsing framework based on optparse (backported to 2.2)
+
+    * peak.config
+
+       - Iterable keys to PropertyMap (rename to configMap?)
+
+       - Writable and subscribable config sources, including editable .ini's
 
     * peak.web
 
@@ -73,10 +77,8 @@ Open Issues/To-Do Items
       create a subclass component with specified 'Obtain' or 'Make' bindings to
       get its configuration).
 
-    * Implement "contextual protocols" (c.f. "object teams") and "parameterized
-      protocols" (E.g. 'ListOf(IFoo)', 'MappingOf(keys=IBar,values=IBaz)')
-
-
+    * Drop 'persistence' package, since ZODB 4 has been derailed.  Change to
+      "state-delegation" model, which will integrate better with 'peak.query'.
 
  Targeted for 0.5 Beta 1
 

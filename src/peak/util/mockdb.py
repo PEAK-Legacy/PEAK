@@ -246,13 +246,13 @@ def TimestampFromTicks(ticks):
 
 # DBAPI Type Objects
 
-from peak.api import _Symbol
+from peak.util.symbols import Symbol
 
-STRING   = _Symbol("STRING",   __name__)
-NUMBER   = _Symbol("NUMBER",   __name__)
-BINARY   = _Symbol("BINARY",   __name__)
-DATETIME = _Symbol("DATETIME", __name__)
-ROWID    = _Symbol("ROWID",    __name__)
+STRING   = Symbol("STRING",   __name__)
+NUMBER   = Symbol("NUMBER",   __name__)
+BINARY   = Symbol("BINARY",   __name__)
+DATETIME = Symbol("DATETIME", __name__)
+ROWID    = Symbol("ROWID",    __name__)
 
 
 
