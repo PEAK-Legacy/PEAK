@@ -781,15 +781,17 @@ class Component(_Base):
 
         """Classmethod: Create an instance from a ZConfig 'section'"""
 
-        data = section.__dict__.copy()
+        # ZConfig uses unicode for keys and defaults unsupplied values to None
+        data = dict([(str(k),v) for k,v in section.__dict__.items()
+            if v is not None])
 
-        if not hasattr(klass,'_name'):
+        if not hasattr(klass,'_name') and '_name' in data:
             del data['_name']
 
-        if not hasattr(klass,'_matcher'):
+        if not hasattr(klass,'_matcher') and '_matcher' in data:
             del data['_matcher']
 
-        return klass(**section.__dict__)
+        return klass(**data)
 
     fromZConfig = classmethod(fromZConfig)
 
@@ -815,8 +817,6 @@ class Component(_Base):
 
     __parentSetting = NOT_GIVEN
     __componentName = None
-
-
 
     def __parentComponent(self,d,a):
 

@@ -1,0 +1,93 @@
+<?xml version = '1.0' encoding = 'ISO-8859-1' ?>
+<!DOCTYPE component SYSTEM '../../ZConfig/doc/schema.dtd' >
+
+<component prefix="peak.running">
+
+  <abstracttype name='running.Task'>
+    <description>
+      Any component that can be part of a running.commands.EventDriven
+      application.
+    </description>
+  </abstracttype>
+  
+  <sectiontype name="running.AdaptiveTask"
+               datatype=".daemons.AdaptiveTask.fromZConfig"
+	           implements="running.Task">
+
+    <description>
+    # Maximum idle defaults to increasing three times
+
+    maximumIdle = binding.Once(
+	</description>
+    
+    <key name="RunEvery"
+         attribute="runEvery"
+	 datatype="time-interval"
+	 required="yes">
+	 <description>
+	 The default number of seconds between attempts to run this task.
+	 </description>
+    </key>
+
+    <key name="Priority"
+         attribute="priority"
+         datatype="integer"
+         required="yes">
+         <description>
+         The priority of this task, relative to others.  Higher numbers
+         are higher priority.  Tasks with higher priority will run before
+         tasks with lower priority, if more than one task is ready to run.
+         Higher priority tasks will *starve* lower priority tasks if there
+         continues to be work available for the higher priority task, and its
+         'MinimumIdle' setting is low.
+         </description>
+    </key>
+
+    <key name="MinimumIdle"
+         attribute="minimumIdle"
+	 datatype="time-interval">
+	 <description>
+	 The minimum number of seconds the task will wait between *successful*
+	 attempts to run.  Defaults to the same as 'RunEvery'.
+	 </description>
+    </key>
+    
+    <key name="IncreaseIdleBy"
+         attribute="increaseIdleBy"
+         datatype="time-interval">
+         <description>
+         Each time the task is attempted and fails (i.e. has no work to do),
+         increase the idle interval by this duration, until 'MaximumIdle' is
+         reached.  The idle interval will reset to the 'MinimumIdle' once the
+         task successfully does work, otherwise it will stay at 'MaximumIdle'.
+         'IncreaseIdleBy' defaults to zero if not set.
+         </description>
+    </key>
+    
+    <key name="MultiplyIdleBy"
+         attribute="multiplyIdleBy"
+         datatype="float">
+         <description>
+         Each time the task is attempted and fails (i.e. has no work to do),
+         multiply the idle interval by this number before adding
+         'IncreaseIdleBy' (if set), until 'MaximumIdle' is reached.  The idle
+         interval will reset to the 'MinimumIdle' once the task successfully
+         does work, otherwise it will stay at 'MaximumIdle'.
+         'MultiplyIdleBy' Defaults to 1 if not set.
+         </description>
+    </key>
+    
+    <key name="MaximumIdle"
+         attribute="maximumIdle"
+	 datatype="time-interval">
+	 <description>
+	 The maximum number of seconds the task will wait between *unsuccessful*
+	 attempts to run.  Defaults to a number that will allow the idle interval
+     to increase three times, if either 'MultiplyIdleBy' or 'IncreaseIdleBy'
+     are set.  Otherwise, defaults to the same as 'RunEvery'.
+	 </description>
+    </key>
+
+  </sectiontype>
+
+</component>

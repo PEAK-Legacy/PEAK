@@ -541,6 +541,7 @@ class EventDriven(AbstractCommand):
 
     mainLoop = binding.bindTo(IMainLoop)
 
+    components = None   # Placeholder to allow adding components via ZConfig
 
     def run(self):
 

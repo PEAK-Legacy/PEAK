@@ -11,8 +11,8 @@ Open Issues/To-Do Items
     * ZConfig Integration
 
       - Sample 'AdaptiveTask' classes that perform the same functions as those
-        in the MetaDaemon package, with a ZConfig schema to run them in a
-	daemon-like application.
+        in the MetaDaemon package, integrated into the 'peak.running'
+        ZConfig schema component.
 
 
  Targeted for 0.5 Beta 1

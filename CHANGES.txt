@@ -2,6 +2,17 @@ Fixes and Enhancements since Version 0.5 alpha 1
 
  Changed, Enhanced, or Newly Deprecated Features
 
+ - Added a ZConfig schema for 'running.commands.EventDriven' applications,
+   a ZConfig component definition for adaptive tasks, and a running shortcut
+   called 'EventDriven'.  It should now be possible to do this::
+
+     #!/usr/bin/env peak EventDriven
+
+   at the top of a ZConfig file formatted according to the new schema, and
+   have it run.  Unfortunately, so far the only type of task that can be
+   included is 'running.daemons.AdaptiveTask', which doesn't actually *do*
+   anything.
+
  - Added 'zconfig.schema' URL scheme that loads an enhanced ZConfig schema
    object that can act as a command line interpreter using the 'peak' script.
    To use it, run 'peak zconfig.schema:urlToSchema urlOfConfig'.  Or, add
@@ -196,6 +207,11 @@ Fixes and Enhancements since Version 0.5 alpha 1
 
  Corrected Problems
 
+ - Fixed a problem in ZConfig 'schema.dtd'; I used 'PCDATA' where I should've
+   used 'CDATA'.
+
+ - Fixed misc. problems with 'fromZConfig()' component constructor
+ 
  - Fixed source distributions missing essential setup files
 
  - Fixed a problem with assembly events, where a parent component that didn't
