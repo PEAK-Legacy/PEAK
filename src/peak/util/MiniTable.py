@@ -101,7 +101,7 @@ class Table(UserList):
 
         """
 
-        self.data.extend( [kjDict(zip(colNames,row)) for row in rowList] )
+        self.data.extend( [kjUndump(colNames,row) for row in rowList] )
 
 
     def DELETE(self, whereItems):

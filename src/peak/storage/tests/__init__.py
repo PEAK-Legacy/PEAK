@@ -203,8 +203,131 @@ class VotingTest(TestCase):
 
 
 
+from peak.util.MiniTable import Table
+
+class TxnTable(storage.TransactionComponent):
+
+    stableState = ()
+    colNames = ()
+
+    def table(self,d,a):
+        return Table( self.colNames, self.stableState )
+
+    table = binding.Once(table)
+
+    def dump(self):
+        colNames = self.colNames
+        return [row.dump(colNames) for row in self.table]
+
+    def commitTransaction(self, txnService):
+        self.stableState = self.dump()            
+
+    def abortTransaction(self, txnService):
+        if self.hasBinding('table'): del self.table
+
+    def DELETE(self, whereItems):
+        self.txnSvc
+        self.table.DELETE(whereItems)
+
+    def INSERT(self, items):
+        self.txnSvc
+        self.table.INSERT(items)
+
+    def INSERT_ROWS(self, rowList):
+        self.txnSvc
+        self.table.INSERT_ROWS(self.colNames, rowList)
+
+    def SELECT(self, whereItems=()):
+        return self.table.SELECT(whereItems)
+
+    def SET(self, whereItems, setItems):
+        self.txnSvc
+        self.table.SET(whereItems, setItems)
+
+class Harness(binding.Component):
+
+    ts = binding.New(
+        storage.TransactionService,
+        provides=storage.ITransactionService
+    )
+
+    class sampleTable(TxnTable):
+        colNames = 'a', 'b'
+        
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class TableTest(TestCase):
+
+    def setUp(self):
+        self.harness = Harness()
+        self.table = self.harness.sampleTable
+        self.ts    = self.harness.ts
+        
+    def checkNoChangeOutsideTxn(self):
+        self.assertRaises(exceptions.OutsideTransaction,
+            self.table.INSERT, Items(a=1,b=2)
+        )
+
+    def checkRollback(self):
+
+        assert self.table.dump()==[]
+
+        self.ts.begin()
+        self.table.INSERT(Items(a=1,b=2))
+        assert self.table.dump()==[(1,2)]
+        self.ts.abort()
+
+        assert self.table.dump()==[]
+
+
+    def checkCommit(self):
+
+        assert self.table.dump()==[]
+
+        self.ts.begin()
+        self.table.INSERT(Items(a=1,b=2))
+        assert self.table.dump()==[(1,2)]
+        self.ts.commit()
+
+        assert self.table.dump()==[(1,2)]
+
+        self.ts.begin()
+        self.table.INSERT(Items(a=3,b=4))
+        assert self.table.dump()==[(1,2),(3,4)]
+        self.ts.abort()
+        assert self.table.dump()==[(1,2)]
+        
 TestClasses = (
-    TxnStateTest, VotingTest,
+    TxnStateTest, VotingTest, TableTest
 )
 
 
