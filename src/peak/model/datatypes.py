@@ -1,4 +1,5 @@
-from structural import PrimitiveType, structField, Immutable, Type
+from elements import PrimitiveType, Immutable, Type
+from features import structField
 from enumerations import Enumeration, enum
 from peak.api import binding
 
@@ -8,7 +9,6 @@ __all__ = [
     'WChar', 'LongLong', 'ULongLong', 'LongDouble', 'PrimitiveTC', 'SimpleTC',
     'Fixed','basicTypes', 'Any'
 ]
-
 
 class PrimitiveTC(Enumeration):
 

@@ -3,7 +3,7 @@
 from peak.api import *
 
 from interfaces import *
-from structural import PrimitiveTypeClass, PrimitiveType
+from elements import PrimitiveTypeClass, PrimitiveType
 from peak.util.hashcmp import HashAndCompare
 
 __all__ = [

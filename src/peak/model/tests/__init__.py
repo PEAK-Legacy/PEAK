@@ -2,7 +2,7 @@
 
 from unittest import TestCase, makeSuite, TestSuite
 from peak.api import *
-from peak.model.structural import FeatureClass
+from peak.model.features import FeatureClass
 
 class featureBase(object):
 
