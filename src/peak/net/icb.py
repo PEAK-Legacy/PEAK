@@ -12,6 +12,8 @@ class ICB_URL(naming.URL.Base):
         lambda self: self.supportedSchemes[self.scheme]
     )
     
+    class nick(naming.URL.Field): pass
+
     class user(naming.URL.Field): pass
 
     class passwd(naming.URL.Field): pass
@@ -21,10 +23,13 @@ class ICB_URL(naming.URL.Base):
     class port(naming.URL.IntField):
         defaultValue = 7326
         
-    class nick(naming.URL.Field): pass
+    class group(naming.URL.Field): pass
 
+    # icb://[nick[:user[:passwd]@]server[:port][/[group]]
+    
     syntax = naming.URL.Sequence(
-        ('//',), (user, (':', passwd), '@'), server, (':', port), ('/', (nick,))
+        ('//',), (nick, (':', user, (':', passwd)), '@'),
+        server, (':', port), ('/', (group,))
     )
 
    
@@ -34,7 +39,6 @@ class ICBConnection(binding.Component):
         "Address used to create the actual connection",
         suggestParent=False
     )
-
 
     target = binding.requireBinding(
         "an IICBListener we'll tell what's happening")
@@ -74,7 +78,7 @@ class ICBConnection(binding.Component):
 
         self._i_buf = ''; self._i_queue = []; self._o_queue = []
         self.sendPacket('a', self.address.user, self.address.nick,
-            '', 'login', self.address.passwd or '')
+            '', 'login', self.address.passwd or '') # XXX group
 
         return sock
 
@@ -172,7 +176,7 @@ class ICBConnection(binding.Component):
         elif kind == 'k':
             target.beepFrom(data[0])
         elif kind == 'l':
-            target.gotPinf(data[0])
+            target.gotPing(data[0])
         else:
             target.unknownPacket(kind, data)
 
