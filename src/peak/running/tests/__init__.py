@@ -83,10 +83,19 @@ class ClusterTests(TestCase):
 class TestClock(binding.Component):
 
     now = 0
+    cpu = 0
     log = binding.Require("function to call with event data")
 
     def time(self):
         return self.now
+
+    def clock(self):
+        return self.cpu
+
+    def run(self,secs):
+        self.log(("Running for",secs))
+        self.now += secs
+        self.cpu += secs
 
     def sleep(self,secs):
         self.log(("Sleeping for",secs))
@@ -95,6 +104,21 @@ class TestClock(binding.Component):
     def select(self,i,o,e,timeout):
         self.log(("Select:",i,o,e,timeout))
         self.sleep(timeout)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 class ScheduleTestTask(AdaptiveTask):
@@ -110,9 +134,26 @@ class ScheduleTestTask(AdaptiveTask):
         self.log(("doing work", job))
         return job
 
+
 class QuietTask(ScheduleTestTask):
+
     def getWork(self):
         return self.job
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -347,16 +388,57 @@ class ReactiveTests(TestCase):
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 TestClasses = (
     ClusterTests, ReactiveTests
 )
 
-def test_suite():
+def _suite():
     s = []
     for t in TestClasses:
         s.append(makeSuite(t,'check'))
 
     return TestSuite(s)
+
+
+allSuites = [
+    'peak.running.tests:_suite',
+    'test_timers:test_suite',
+]
+
+
+def test_suite():
+    from peak.util.imports import importSuite
+    return importSuite(allSuites, globals())
+
+
+
+
+
+
+
+
+
+
 
 
 
