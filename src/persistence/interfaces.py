@@ -15,7 +15,7 @@ try:
     from zope.interface import Interface
     from zope.interface import Attribute
 except ImportError:
-    from peak.interface import Interface, Attribute
+    from protocols import Interface, Attribute
 
 class IPersistent(Interface):
     """Python persistence interface

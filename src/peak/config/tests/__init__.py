@@ -203,8 +203,6 @@ class UtilityTest(TestCase):
 
 
 
-from peak.interface import Interface
-
 #   IA
 #    |
 #   IB
@@ -243,6 +241,8 @@ class RegistryBase(TestCase):
         for ob in self.obs:
             for i in ob.__implements__:
                 reg.register(i, ob)
+
+
 
 class RegForward(RegistryBase):
 
