@@ -39,7 +39,7 @@ MetaModel = MMX.load(mmx,plurals,cache,name='UML_MetaModel')
 
 
 
-class UMLModel:
+class _UMLModel:    # stuff that still needs refactoring
 
     class Integer:
 
@@ -120,6 +120,8 @@ class UMLModel:
 
 
 
+
+class UMLModel:
 
     class ModelElement(ComputedFeatures):
     
