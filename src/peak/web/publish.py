@@ -3,7 +3,6 @@
 from peak.api import *
 from interfaces import *
 from peak.running.commands import EventDriven
-from skins import Skin
 
 __all__ = [
     'Interaction', 'NullAuthenticationService', 'InteractionPolicy',
@@ -31,6 +30,7 @@ class DefaultExceptionHandler(binding.Singleton):
             # Don't allow exc_info to leak, even if the above resulted in
             # an error
             exc_info = None
+
 
 
 
@@ -80,19 +80,45 @@ class TraversalPath(naming.CompoundName):
 
 
 
-class NullSkinService(binding.Singleton):
+class NullSkinService(binding.Component):
+
+    app = binding.bindTo('policy/app')
+
+    policy = binding.bindTo('..')
+
+    root = binding.Once(
+        lambda self, d, a: adapt(self.app, self.policy.pathProtocol)
+    )
+
+    defaultSkin = binding.Once(
+        lambda self, d, a:
+            web.Skin(self.app, root=self.root, policy=self.policy, layers=[])
+            # XXX needs to create a default layer
+    )
 
     def getSkin(self, interaction):
-        root = adapt(interaction.app, interaction.pathProtocol)
-        # Should we suggest a parent component?  No point, if the parent
-        # we'd suggest is the interaction, since the interaction's binding
-        # would do it anyway.
-        return Skin(interaction.app, root=root)
+        return self.defaultSkin
+
 
 class NullAuthenticationService(binding.Singleton):
 
     def getUser(self, interaction):
         return None
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 class InteractionPolicy(binding.Component, protocols.StickyAdapter):
@@ -110,6 +136,7 @@ class InteractionPolicy(binding.Component, protocols.StickyAdapter):
 
     fromComponent = classmethod(fromComponent)
 
+    app           = binding.bindTo('./subject')
     log           = binding.bindTo(APPLICATION_LOG)
     errorProtocol = binding.bindTo(ERROR_PROTOCOL)
     pathProtocol  = binding.bindTo(PATH_PROTOCOL)
@@ -117,7 +144,21 @@ class InteractionPolicy(binding.Component, protocols.StickyAdapter):
     authSvc       = binding.bindTo(AUTHENTICATION_SERVICE)
     skinSvc       = binding.bindTo(SKIN_SERVICE)
     defaultMethod = binding.bindTo(DEFAULT_METHOD)
-    resourcePrefix= binding.bindTo(RESOURCE_PREFIX)
+
+    resourcePrefix   = binding.bindTo(RESOURCE_PREFIX)
+    interactionClass = binding.bindTo(INTERACTION_CLASS)
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -125,11 +166,14 @@ class Interaction(security.Interaction):
 
     """Base publication policy/interaction implementation"""
 
-    app      = binding.requireBinding("Application root to publish")
+    policy   = binding.requireBinding(
+        "IInteractionPolicy for application", adaptTo=IInteractionPolicy
+    )
     request  = binding.requireBinding("Request object")
+
     response = binding.bindTo("request/response")
 
-    policy   = binding.bindTo('app', adaptTo = IInteractionPolicy)
+    app      = binding.bindTo('policy/app')
     log      = binding.bindTo('policy/log')
 
     errorProtocol  = binding.bindTo('policy/errorProtocol')
@@ -159,9 +203,6 @@ class Interaction(security.Interaction):
 
 
 
-
-
-
     def traverseName(self, request, ob, name, check_auth=1):
 
         nextOb = TraversalPath([name]).traverse(ob,self)
@@ -176,7 +217,8 @@ class Interaction(security.Interaction):
 
 
     def afterTraversal(self, request, ob):
-        pass    # nothing to do after traversal yet
+        # Let the found object know it's being traversed
+        ob.preTraverse(self)
 
 
     def getDefaultTraversal(self, request, ob):
@@ -197,7 +239,6 @@ class Interaction(security.Interaction):
         # object is renderable, default traversal will fail, or no default
         # is in use: just render the object directly
         return ob, ()
-
 
 
 
@@ -343,9 +384,9 @@ class CGIPublisher(binding.Component):
     fromApp = classmethod(fromApp)
 
 
-    app = binding.requireBinding("Application root to publish")
-
-    interactionClass = binding.bindTo(INTERACTION_CLASS)
+    app              = binding.requireBinding("Application root to publish")
+    policy           = binding.bindTo('app', adaptTo = IInteractionPolicy)
+    interactionClass = binding.bindTo('policy/interactionClass')
 
 
     # items to (potentially) replace in subclasses
@@ -385,7 +426,7 @@ class CGIPublisher(binding.Component):
 
         request.setPublication(
             self.interactionClass(
-                self, None, app = self.app, request = request
+                self, None, policy = self.policy, request = request
             )
         )
         return self.publish(request) or 0

@@ -56,7 +56,7 @@ class BasicTest(TestCase):
     def setUp(self):
         r = testRoot()
         self.app = TestApp(r, show = self.mkTemplate())
-        self.interaction = web.Interaction(r, app = self.app)
+        self.interaction = web.Interaction(r, policy = self.app)
 
     def mkTemplate(self):
         d = web.TemplateDocument(testRoot())

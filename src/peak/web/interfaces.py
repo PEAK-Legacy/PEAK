@@ -10,7 +10,7 @@ __all__ = [
     'DEFAULT_METHOD', 'APPLICATION_LOG', 'AUTHENTICATION_SERVICE',
     'ERROR_PROTOCOL', 'SKIN_SERVICE', 'IWebException', 'IDOMletState',
     'IDOMletNode',    'IDOMletNodeFactory',
-    'IDOMletElement', 'IDOMletElementFactory',
+    'IDOMletElement', 'IDOMletElementFactory', 'ISkin', 'IPolicyInfo'
 ]
 
 PATH_PROTOCOL  = PropertyName('peak.web.pathProtocol')
@@ -39,7 +39,20 @@ else:
         IPublication, IBrowserPublication, IXMLRPCPublication
     )
 
-class IWebInteraction(IInteraction):
+class IPolicyInfo(Interface):
+
+    """Standard attributes for interaction policy info"""
+
+    app = Attribute("""The underlying application object""")
+    log = Attribute("""Default 'running.ILogger' for interactions""")
+
+    resourcePrefix = Attribute("""Name that starts path to resources""")
+    errorProtocol  = Attribute("""Protocol for exception handling""")
+    pathProtocol   = Attribute("""Protocol for traversing""")
+    pageProtocol   = Attribute("""Protocol for rendering pages""")
+
+
+class IWebInteraction(IInteraction, IPolicyInfo):
 
     """Component representing a web hit"""
 
@@ -47,36 +60,23 @@ class IWebInteraction(IInteraction):
         protocolExtends = zopePublicationInterfaces
     )
 
+    policy   = Attribute("""The IInteractionPolicy for this interaction""")
     request  = Attribute("""The web request""")
     response = Attribute("""The web response""")
 
-    app = Attribute("""The underlying application object""")
-
-    errorProtocol = Attribute("""Protocol for exception handling""")
-    pathProtocol  = Attribute("""Protocol for traversing""")
-    pageProtocol  = Attribute("""Protocol for rendering pages""")
-
-    log = Attribute("""Default 'running.ILogger' for interactions""")
-
     skin = Attribute("""Root namespace for presentation resources""")
-    resourcePrefix = Attribute("""Name that starts path to resources""")
 
 
-class IInteractionPolicy(Interface):
+class IInteractionPolicy(IPolicyInfo):
 
     """Component holding cross-hit configuration"""
-
-    errorProtocol = Attribute("""Protocol for exception handling""")
-    pathProtocol  = Attribute("""Protocol for traversing""")
-    pageProtocol  = Attribute("""Protocol for rendering pages""")
-
-    log = Attribute("""Default 'running.ILogger' for interactions""")
 
     authSvc = Attribute("""Authentication service component""")
     skinSvc = Attribute("""Skin service component""")
 
     defaultMethod = Attribute("""Default method name (e.g. 'index_html')""")
-    resourcePrefix = Attribute("""Name that starts path to resources""")
+    interactionClass = Attribute("Factory for interaction instances")
+
 
 
 
@@ -113,13 +113,13 @@ class IWebException(Interface):
         """Perform necessary recovery actions"""
 
 
+class ISkin(IWebTraversable):
 
+    def getResource(path):
+        """Return the named resource"""
 
-
-
-
-
-
+    def getResourceURL(path, interaction):
+        """Return the URL for the named resource"""
 
 class IDOMletState(IComponent):
 
