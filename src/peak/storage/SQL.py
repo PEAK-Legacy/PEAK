@@ -135,7 +135,7 @@ class SQLConnection(ManagedConnection):
 class SybaseConnection(SQLConnection):
 
     def _open(self):
-        user,pass,server,db = self.address[:4]
+        user,passwd,server,db = self.address[:4]
         from Sybase import Connection
         return Connection(server, user, pass, db)
             
@@ -171,7 +171,7 @@ class GenericSQL_URL(naming.ParsedURL):
     (   # optional user:pass@
     
         (?P<user>[^:]+)
-        (:(?P<pass>[^@]+))?
+        (:(?P<passwd>[^@]+))?
         @
     )?  
 
@@ -179,11 +179,11 @@ class GenericSQL_URL(naming.ParsedURL):
     (/(?P<db>).+)?
     """
 
-    __fields__ = tuple('user pass server db scheme body'.split())
+    __fields__ = tuple('user passwd server db scheme body'.split())
 
     
     def fromArgs(klass,
-                 user=None, pass=None, server=None, db=None,
+                 user=None, passwd=None, server=None, db=None,
                  scheme=None, body=None
         ):
 
