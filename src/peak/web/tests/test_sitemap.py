@@ -3,12 +3,13 @@ from peak.api import *
 from peak.tests import testRoot
 import peak.web.sitemaps as sm
 from urllib import quote
+from test_resources import ResourceApp1
 
 class ParserTests(TestCase):
 
     def setUp(self,**kw):
         self.xml_parser = config.XMLParser(
-            config.lookup(testRoot(), 'peak.web.sitemap_schema'),
+            web.SITEMAP_SCHEMA(testRoot()),
             parent = testRoot(), sm_globals=globals(), **kw
         )
         self.parse = self.xml_parser.parse
@@ -18,7 +19,7 @@ class ParserTests(TestCase):
         self.endElement = nparser.endElement
         nparser._beforeParsing(self.xml_parser.parseFunctions())
         self.finish = nparser._afterParsing
-        self.policy = web.TestPolicy(testRoot())
+        self.policy = web.TestPolicy(ResourceApp1(testRoot()))
 
     def traverse(self,start,name):
         return self.policy.newContext(start=start).traverseName(name)
@@ -28,7 +29,6 @@ class ParserTests(TestCase):
         v = self.endElement('location')
         self.failUnless(web.IPlace(v) is v)
         self.assertEqual(v.place_url,'')
-
 
 
 
@@ -212,6 +212,9 @@ class ParserTests(TestCase):
         self.startElement('view',['name','baz','expr','ob','helper','repr'])
         end()
         self.startElement('view',['name','fiz','function','nullHandler']);end()
+        self.startElement('view',
+            ['name','fuz','resource','peak.web.tests/template1']
+        );end()
         end('content')
         loc = end('location')
         ctx = self.policy.newContext(start=loc).childContext('test',123)
@@ -220,7 +223,9 @@ class ParserTests(TestCase):
         self.assertEqual(ctx.traverseName("bar").current, int)
         self.assertEqual(ctx.traverseName("baz").current, "123")
         self.assertEqual(ctx.traverseName("fiz").current, 123)
-
+        self.failUnless(isinstance(ctx.traverseName("fuz").current,
+                web.TemplateDocument)
+        )
 
     def testViewHandlers(self):
         ctx = self.policy.newContext()
@@ -228,7 +233,9 @@ class ParserTests(TestCase):
         self.assertEqual(handler(ctx,ctx,'','x','x').current, ctx.url)
         handler = sm.objectView(123)
         self.assertEqual(handler(ctx,ctx,'','x','x').current, 123)
-
+        handler = sm.resourceView('peak.web.tests/template1')
+        self.failUnless(isinstance(handler(ctx,ctx,'','x','x').current,
+            web.TemplateDocument))
 
     def testExtendedLocation(self):
         self.setUp(sm_included_from={'name':'foo','class':'TestLocation'})
@@ -236,13 +243,6 @@ class ParserTests(TestCase):
         loc = self.endElement('location')
         self.assertEqual(loc.getComponentName(), 'foo')
         self.failUnless(isinstance(loc,TestLocation))
-
-
-
-
-
-
-
 
     def testLocationExtends(self):
         self.startElement('location', ['extends','data:,'+quote("""
@@ -259,16 +259,19 @@ class ParserTests(TestCase):
         self.failUnless(self.traverse(loc,'++id++root').current is loc)
         self.failUnless(self.traverse(loc,'++id++nested.root').current is loc)
         
-    # allow(attributes+interfaces)[permission]
-
     # content [location]
-
-    # view(resource)[id?]
 
     # location[configure]
 
+    # Extending location's views should override extendee's
+
+    # XXX Containers in extending are *after* those in extendee!
+
+    # allow(attributes+interfaces)[permission]
+
     # XXX Location should support direct permissions, and ignore redundant ones
 
+    # view[id?]
 
 class TestLocation(web.Location):
     pass
@@ -277,11 +280,49 @@ def nullHandler(ctx, ob, namespace, name, qname, default=NOT_GIVEN):
     return ctx.childContext(qname,ob)
 
 
+
+
+
+
+
 TestClasses = (
     ParserTests,
 )
 
 def test_suite():
     return TestSuite([makeSuite(t,'test') for t in TestClasses])
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 

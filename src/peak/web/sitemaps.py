@@ -107,10 +107,10 @@ def objectView(target):
         return ctx.childContext(qname,target)
     return handler
 
-
-
-
-
+def resourceView(path):
+    def handler(ctx, ob, namespace, name, qname, default=NOT_GIVEN):
+        return ctx.childContext(qname,ctx.getResource(path))
+    return handler
 
 
 
@@ -131,7 +131,7 @@ def makeLocation(parser,data,attrs,parent,name):
             naming.parseURL(parent, attrs['extends'], parser._url)
         )
         return config.processXML(
-            config.lookup(parent, 'peak.web.sitemap_schema'),
+            web.SITEMAP_SCHEMA(parent),
             naming.lookup(parent,
                 # Might be a relative URL, so parse w/parser URL as base
                 naming.parseURL(parent, attrs['extends'], parser._url)
@@ -268,7 +268,7 @@ def doView(parser,data):
     elif mode=='attribute':
         handler = attributeView(expr)
     elif mode=='resource':
-        pass # XXX
+        handler = resourceView(expr)
 
     if helper is not None:
         handler = addHelper(handler,helper)
