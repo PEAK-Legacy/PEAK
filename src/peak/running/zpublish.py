@@ -43,7 +43,7 @@ class BasePublication(binding.Base, DefaultPublication):
 
     """Base publication policy"""
 
-    app = self.requireBinding("Application to be published")
+    app = binding.requireBinding("Application to be published")
 
 
     def beforeTraversal(self, request):
@@ -104,7 +104,7 @@ class XMLRPC(HTTP):
         return super(XMLRPC,self).traverseName(request,ob,name)
 
 
-class BrowserPublication(HTTP):
+class Browser(HTTP):
 
     """DWIM features for human viewers"""
 

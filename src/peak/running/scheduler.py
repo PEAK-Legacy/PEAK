@@ -220,15 +220,28 @@ class UntwistedReactor(binding.Base):
 
         delay = max(delay, 0)
 
+        if not self.running:
+            delay = 0
+
         if self.readers or self.writers:
 
             r, w, e = select.select(self.readers, self.writers, [], delay)
 
-            for reader in r: r.doRead()
-            for writer in w: w.doWrite()
+            for reader in r: reader.doRead()
+            for writer in w: writer.doWrite()
 
         elif delay:
             sleep(delay)
+
+
+
+
+
+
+
+
+
+
 
 
 class _Appt(object):
@@ -240,7 +253,10 @@ class _Appt(object):
     def __init__(self,t,f,a,k):
         self.time = t; self.func = f; self.args = a; self.kw = k
 
-    def __call__(self): return self.func(*self.args, **self.kw)
-    def __cmp__(self, other):  return cmp(self.time, other.time)
+    def __call__(self):
+        return self.func(*self.args, **self.kw)
+
+    def __cmp__(self, other):
+        return cmp(self.time, other.time)
 
 

@@ -309,9 +309,9 @@ class CGIPublisher(binding.Component):
     mkBrowser = binding.bindTo("import:zope.publisher.browser:BrowserRequest")
     mkHTTP    = binding.bindTo("import:zope.publisher.http:HTTPRequest")
 
-    xmlrpcPubClass  = binding.bindTo("peak.running.zpublish:XMLRPC")
-    browserPubClass = binding.bindTo("peak.running.zpublish:Browser")
-    httpPubClass    = binding.bindTo("peak.running.zpublish:HTTP")
+    xmlrpcPubClass  = binding.bindTo("import:peak.running.zpublish:XMLRPC")
+    browserPubClass = binding.bindTo("import:peak.running.zpublish:Browser")
+    httpPubClass    = binding.bindTo("import:peak.running.zpublish:HTTP")
 
     _browser_methods = binding.Copy( {'GET':1, 'POST':1, 'HEAD':1} )
 
@@ -392,7 +392,7 @@ class FastCGIAcceptor(binding.Base):
         i,o,e,env = self.accept()
 
         try:
-            self.handler(i,o,e,env)
+            self.command.run(i,o,e,dict(env))
 
         finally:
             self.finish()
@@ -409,7 +409,6 @@ class FastCGIAcceptor(binding.Base):
 
 
 class CGICommand(EventDriven):
-
     """Run CGI/FastCGI in an event-driven loop
 
     If the 'fcgiapp' module is available and 'sys.stdin' is a socket, this
@@ -417,16 +416,11 @@ class CGICommand(EventDriven):
     arrive.  Otherwise, it will assume that it is being run as a CGI, and
     use its environment attributes as the environment for the CGI command.
 
-    If running in CGI mode, a 'CGICommand' will exit its reactor loop at
-    the earliest possible moment after the request is served, unless its
-    'exitAfterCGI' flag is set to False (in which case the normal
-    'EventDriven' command parameters will apply, as they do in FastCGI mode).
-
-    Note that "earliest possible moment" means "after any events which were
-    scheduled to execute before the 'CGICommand' finished executing.  This
-    means that you can use 'reactor.callLater(0,aCallable)' to schedule
-    events which will happen after the CGI command is finished, but before
-    the script executes.
+    Note that if running in CGI mode, a 'CGICommand' will exit its reactor
+    loop immediately upon completion of the request, without running any
+    subsequent scheduled events, unless 'os.fork()' is available and
+    the 'forkAfterCGI' parameter is true (it defaults to false), in which
+    case the process will fork and finish out one reactor iteration.
 
     Here's a "dirt simple" CGI/FastCGI script example::
 
@@ -447,8 +441,6 @@ class CGICommand(EventDriven):
             CGICommand(publisher=myPublisher).run()
         )
 
-
-
     where you've first defined 'myPublisher' as an appropriately tweaked
     'CGIPublisher' object, e.g.::
 
@@ -465,29 +457,78 @@ class CGICommand(EventDriven):
     'publisher', as in the above examples, you do not need to also give
     the 'CGICommand' an 'app'."""
 
-
     app          = binding.requireBinding("Application to publish")
-    exitAfterCGI = True
+    forkAfterCGI = False
+
     reactor      = binding.bindTo(IBasicReactor)
     newAcceptor  = FastCGIAcceptor
+
     publisher    = binding.Once(
         lambda self,d,a: CGIPublisher(app = self.app)
     )
 
-
     def isFastCGI(self):
+
         """Check for 'fcgiapp' and whether 'sys.stdin' is a listener socket"""
+
         try:
             import fcgiapp
         except ImportError:
             return False    # Assume no FastCGI if module not present
 
-        return not fcgiapp.isCGI()
+        import socket, sys
+
+        for family in (socket.AF_UNIX, socket.AF_INET):
+            try:
+                s=socket.fromfd(sys.stdin.fileno(),family,socket.SOCK_STREAM)
+                s.getsockname()
+            except:
+                pass
+            else:
+                return True
+
+        return False
 
 
-    def scheduleShutdown(self):
-        # Schedule reactor to shutdown on subsequent iteration
-        self.reactor.callLater(0, self.reactor.stop)
+    def detatchAfterCGI(self):
+
+        try:
+            from os import fork
+        except ImportError:
+            # We can't fork; force an immediate shutdown
+            self.reactor.stop()
+            return
+
+        # Flush output to web server
+        self.stdout.flush()
+        self.stderr.flush()
+        
+        if fork():
+            # Parent process; shutdown and exit
+            self.reactor.stop()
+
+        else:
+            # Child process; close file handles and proceed
+            self.stdin.close()
+            self.stdout.close()
+            self.stderr.close()
+
+            # Schedule to exit after next iteration
+            self.reactor.callLater(0, self.reactor.stop)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
     def setup(self, parent=None):
@@ -499,36 +540,28 @@ class CGICommand(EventDriven):
             )
 
         else:
+            # Setup CGI
             self.reactor.callLater(
                 0, self.publisher.run,
                 self.stdin, self.stdout, self.stderr, self.environ, self.argv
             )
-            if self.exitAfterCGI:
 
-                # schedule ourselves to schedule a shutdown; doing it in
-                # two steps ensures that events scheduled during the CGI
-                # for execution immediately after it have a chance to
-                # be processed.
+            if self.forkAfterCGI:
+                # Schedule fork
+                self.reactor.callLater(0, self.detatchAfterCGI)
 
-                self.reactor.callLater(0, self.scheduleShutdown)
+            else:
+                # Schedule straight shutdown
+                self.reactor.callLater(0, self.reactor.stop)
 
 
-        # Any periodic tasks, etc., should be scheduled for *after* the
-        # main CGI process, if applicable.  Note that this arrangement
-        # can still put them ahead of I/O checking, because reactors process
-        # events before they go into their I/O loops.  However, for
-        # PEAK 'IPeriodicTask' objects this isn't an issue because 'TaskQueue'
-        # forward-schedules itself to execute the tasks.  This means that,
-        # for a reasonable 'time()'-granularity, it shouldn't be possible for
-        # a periodic task to get executed before the first 'select()' occurs,
-        # although that 'select()' may be arbitrarily brief.  In effect,
-        # 'callLater(0,...)' can only schedule things to occur on the *next*
-        # iteration of the event loop, and since 'TaskQueue' uses this to
-        # schedule its task execution, it is thus guaranteed that tasks will
-        # not execute until the next iteration...  provided that 'time()'
-        # has adequate resolution (i.e., you're not on Windows).
+        # Cause periodic tasks, etc., to be scheduled for setup *after* the
+        # main CGI process, if applicable.  This means that if
+        # you want a periodic task to be executed *before* the first
+        # I/O check or CGI execution, you will need to subclass this
+        # to change it.  XXX this may change after we reconsider setup() API
 
-        super(CGICommand, self).setup(parent)
+        self.reactor.callLater(0, super(CGICommand, self).setup, parent)
 
 
 
