@@ -2,28 +2,28 @@ Open Issues/To-Do Items
 
  Short Term Project Support
 
-    * Add support for finding/registering plugins to 'peak.config'
+    * peak.running.timers
 
-      - Add 'config.PluginsFor' key that finds plugins
+      - Factor out state into separate object so timers aren't shared state
 
-        - May need 'suggestParentComponent()' to support dictionaries so plugin
-          dictionaries will work correctly
+      - Fix 'win32' problem (should be checking sys.platform not os.name)
 
-        - Should it implement the "smart property" interface?
+      - Look at possible integration of peak.query and cursor formatters, in
+        order to view stats as an in-memory mini-DB w/reporting.
 
-      - Lock namespaces that have been iterated over (do we need this?)
 
-      - Things to look at during refactorings:
 
-        - Better consolidation of config/component key and recipe interfaces?
 
-        - Rule chaining
 
-        - Use objects for section parsing instead of functions?
 
-    * peak.storage
 
-      - 'storage.dbType()'
+
+
+
+
+
+
+
 
 
 

@@ -5,7 +5,7 @@ from peak.api import *
 from protocols import Interface
 from peak.config.interfaces import *
 from peak.tests import testRoot
-
+from peak.util.EigenData import AlreadyRead
 
 class I1(Interface):
     pass
@@ -281,31 +281,31 @@ class SimpleMapTest(TestCase):
             self.keysFor('foo.bar.*'),
             [k for k in self.foundKeys if k.startswith('foo.bar.')]
         )
-        self.assertEqual(
-            self.keysFor('*'), self.foundKeys
-        )
+        self.assertEqual(self.keysFor('*'), self.foundKeys)
+        self.assertRaises(AlreadyRead, self.register, 'foo.bar.new')
+
 
 class KeysViaAPI:
-
     def keysFor(self,key):
         keys = list(config.iterKeys(self.map,key))
         keys.sort()
         return keys
 
+class KeysViaPlugin:
+    def keysFor(self,key):
+        return binding.PluginKeys(key).findComponent(self.map)
 
-class SimpleMapViaAPI(KeysViaAPI, SimpleMapTest):
-    pass
+
+class SimpleMapViaAPI(KeysViaAPI, SimpleMapTest):       pass
+class SimpleMapViaPlugin(KeysViaPlugin, SimpleMapTest): pass
 
 
 class ComponentMapDirect(SimpleMapTest):
-
     def setUp(self):
         self.map = binding.Component()
 
-
-class ComponentMapViaAPI(KeysViaAPI, ComponentMapDirect):
-    # Verify iterKeys() on component
-    pass
+class ComponentMapViaAPI(KeysViaAPI, ComponentMapDirect): pass
+class ComponentMapViaPlugin(KeysViaPlugin, ComponentMapDirect): pass
 
 
 class Case1(binding.Component):
@@ -321,17 +321,17 @@ class ComponentWithBinding(SimpleMapTest):
 
     mapType = Case1
 
-class ComponentWithBindingViaAPI(KeysViaAPI, ComponentWithBinding):
-    pass
+class ComponentWithBindingViaAPI(KeysViaAPI, ComponentWithBinding): pass
+class ComponentWithBindingViaPlugin(KeysViaPlugin, ComponentWithBinding): pass
 
 
 
-class ParentComponent(ComponentWithBindingViaAPI):
+class ParentComponent(ComponentWithBindingViaPlugin):
 
     def setUp(self):
         self.map = self.mapType(binding.Component())
 
-class ChildComponent(ComponentWithBindingViaAPI):
+class ChildComponent(ComponentWithBindingViaPlugin):
 
     def setUp(self):
         self.map = binding.Component(self.mapType())
@@ -368,8 +368,10 @@ class InheritedChild(InheritedComponentAPI):
 
 
 TestClasses = (
-    BasicKeyTests, SimpleMapTest, SimpleMapViaAPI, ComponentMapDirect,
-    ComponentMapViaAPI, ComponentWithBinding, ComponentWithBindingViaAPI,
+    BasicKeyTests, SimpleMapTest, SimpleMapViaAPI, SimpleMapViaPlugin,
+    ComponentMapDirect, ComponentMapViaAPI, ComponentMapViaPlugin,
+    ComponentWithBinding, ComponentWithBindingViaAPI,
+    ComponentWithBindingViaPlugin,
     ParentComponent, ChildComponent, InheritedComponent, InheritedComponentAPI,
     InheritedParent, InheritedChild,
 )

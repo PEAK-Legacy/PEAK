@@ -5,7 +5,7 @@ from peak.api import *
 from protocols import Interface
 from peak.config.interfaces import *
 from peak.tests import testRoot
-from peak.config.registries import EigenRegistry
+from peak.config.registries import ImmutableConfig
 
 
 def makeAUtility(context):
@@ -216,11 +216,11 @@ class IC(IB): pass
 class ID(IB): pass
 
 
-class PA(object): __implements__ = IA,
-class PB(object): __implements__ = IB,
-class PC(object): __implements__ = IC,
-class PD(object): __implements__ = ID,
-class PE(object): __implements__ = IC, ID
+class PA(object): ifaces = IA,
+class PB(object): ifaces = IB,
+class PC(object): ifaces = IC,
+class PD(object): ifaces = ID,
+class PE(object): ifaces = IC, ID
 
 
 pA = PA()
@@ -236,11 +236,11 @@ class RegistryBase(TestCase):
 
     def setUp(self):
 
-        reg = self.reg = EigenRegistry()
+        reg = self.reg = ImmutableConfig(
+            items=[(i,ob) for ob in self.obs for i in ob.ifaces]
+        )
 
-        for ob in self.obs:
-            for i in ob.__implements__:
-                reg.register(i, ob)
+
 
 
 
@@ -250,10 +250,10 @@ class RegForward(RegistryBase):
 
         reg = self.reg
 
-        assert reg[IA] is pA
-        assert reg[IB] is pB
-        assert reg[IC] is pE    # Note changed behavior; now the latest wins
-        assert reg[ID] is pE    # ...same here
+        assert reg.lookup(adapt(IA,IConfigKey)) is pA
+        assert reg.lookup(adapt(IB,IConfigKey)) is pB
+        assert reg.lookup(adapt(IC,IConfigKey)) is pE    # latest wins
+        assert reg.lookup(adapt(ID,IConfigKey)) is pE    # ...same here
 
 
 class RegBackward(RegForward):
@@ -268,19 +268,19 @@ class RegUpdate(TestCase):
 
     def checkUpdate(self):
 
-        reg1 = EigenRegistry()
-        reg2 = EigenRegistry()
+        reg1 = ImmutableConfig(items=[(IA,pA)])
+        reg2 = ImmutableConfig(items=[(IB,pB)])
 
-        reg1.register(IA,pA)
-        reg2.register(IB,pB)
+        assert reg1.lookup(adapt(IA,IConfigKey)) is pA
+        assert reg2.lookup(adapt(IA,IConfigKey)) is pB
 
-        assert reg1[IA] is pA
-        assert reg2[IA] is pB
+        reg3 = ImmutableConfig([reg1,reg2])
 
-        reg1.update(reg2)
+        assert reg3.lookup(adapt(IA,IConfigKey)) is pA
+        assert reg3.lookup(adapt(IB,IConfigKey)) is pB
 
-        assert reg1[IA] is pA
-        assert reg1[IB] is pB
+
+
 
 
 

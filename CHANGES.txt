@@ -2,6 +2,17 @@ Fixes and Enhancements since Version 0.5 alpha 2
 
  Changed, Enhanced, or Newly Deprecated Features
 
+ - Added 'binding.PluginKeys' and 'binding.PluginsFor'.  These are component
+   keys that can be used to 'Obtain' plugins registered within a property
+   namespace.  'PluginKeys' obtains a list of the plugins' configuration keys,
+   while 'PluginsFor' obtains a list of the actual plugins.
+
+ - Replaced 'peak.config.registries.EigenRegistry' with
+   'peak.config.registries.ImmutableConfig'.  The only use we had for
+   'EigenRegistry' was to keep track of 'offerAs' settings within classes, and
+   it didn't need all the extra complexity of eigenstate management.  The new,
+   more-specialized class is shorter, simpler, and easier to use.
+
  - Added 'config.iterKeys()' which iterates over all available configuration
    keys in a given namespace (just property names for now).  The 'config:'
    namespace is now a 'naming.IReadContext', so you can navigate it with the

@@ -11,7 +11,7 @@ from peak.naming.syntax import PathSyntax
 from peak.util.EigenData import AlreadyRead
 from peak.config.interfaces import IConfigKey, IPropertyMap, \
     IConfigurationRoot, NullConfigRoot
-from peak.config.registries import EigenRegistry
+from peak.config.registries import ImmutableConfig
 from peak.util.imports import importString
 
 
@@ -19,7 +19,7 @@ __all__ = [
     'Base', 'Component', 'whenAssembled', 'Obtain', 'Require', 'Delegate',
     'bindTo', 'requireBinding', 'bindSequence', 'bindToParent', 'bindToSelf',
     'getRootComponent', 'getParentComponent', 'lookupComponent',
-    'acquireComponent', 'notifyUponAssembly',
+    'acquireComponent', 'notifyUponAssembly', 'PluginsFor', 'PluginKeys',
     'bindToUtilities', 'bindToProperty', 'Constant', 'delegateTo',
     'getComponentName', 'getComponentPath', 'Acquire', 'ComponentName',
 ]
@@ -398,6 +398,88 @@ class ConfigFinder(object):
         return repr(self.ob)
 
 
+
+
+
+
+
+
+
+
+
+
+class PluginKeys(object):
+
+    """Component key that finds the keys of plugins matching a given key
+
+    Usage::
+
+        # get a sorted list of the keys to all 'foo.bar' plugins
+        pluginNames = binding.Obtain( binding.PluginKeys('foo.bar') )
+
+        # get an unsorted list of the keys to all 'foo.bar' plugins
+        pluginNames = binding.Obtain(
+            binding.PluginKeys('foo.bar', sortBy=None)
+        )
+
+    'sortBy' is either a false value or a callable that will be applied to
+    each key to get a value for sorting purposes.  If set to a false value,
+    the keys will be in the same order as yielded by 'config.iterKeys()'.
+    'sortBy' defaults to 'str', which means the keys will be sorted based
+    on their string form.  
+    """
+
+    def __init__(self, configKey, sortBy=str):
+        self.configKey = adapt(configKey, IConfigKey)
+        self.sortBy = sortBy
+
+
+    def findComponent(self, component, default=NOT_GIVEN):
+
+        keys = config.iterKeys(component, self.configKey)
+
+        if self.sortBy:
+            sortBy = self.sortBy
+            keys = [(sortBy(k),k) for k in keys]
+            keys.sort()
+            return [k for (sortedBy,k) in keys]
+
+        return list(keys)
+
+
+
+
+class PluginsFor(PluginKeys):
+
+    """Component key that finds plugins matching a configuration key
+
+    Usage::
+
+        # get a list of 'my.plugins.X' plugins, sorted by property name
+        myPlugins = binding.Obtain( binding.PluginsFor('my.plugins') )
+
+        # get an unsorted list of all 'foo.bar' plugins
+        myPlugins = binding.Obtain(
+            binding.PluginsFor('foo.bar', sortKeys=False)
+        )
+
+    This key type works similarly to 'PluginKeys()', except that it returns the
+    plugins themselves, rather than their configuration keys.
+
+    'sortBy' is either a false value or a callable that will be applied to
+    each plugin's key to get a value for sorting purposes.  If set to a false
+    value,  plugins will be in the same order as their keys are yielded by
+    'config.iterKeys()'.  'sortBy' defaults to 'str', which means the plugins
+    will be sorted based on the string form of the keys used to retrieve them.
+    """
+
+    protocols.advise(
+        instancesProvide = [IComponentKey],
+    )
+
+    def findComponent(self, component, default=NOT_GIVEN):
+        keys = super(PluginsFor,self).findComponent(component)
+        return [adapt(k,IComponentKey).findComponent(component) for k in keys]
 
 
 
@@ -943,18 +1025,14 @@ class Component(_Base):
 
     def __class_offers__(klass,d,a):
 
-        cp = EigenRegistry()
-        map(cp.update, getInheritedRegistries(klass, '__class_offers__'))
+        return ImmutableConfig(
+            baseMaps = getInheritedRegistries(klass, '__class_offers__'),
+            items = [(adapt(key,IConfigKey), attrName)
+                for attrName, descr in klass.__class_descriptors__.items()
+                    for key in getattr(descr,'offerAs',())
+            ]
+        )
 
-        register = cp.register
-
-        for attrName, descr in klass.__class_descriptors__.items():
-            offerAs = getattr(descr,'offerAs',())
-            for key in offerAs:
-                register(adapt(key,IConfigKey), attrName)
-
-        cp.lock()   # make it immutable
-        return cp
 
     __class_offers__ = classAttr(Make(__class_offers__))
 
@@ -963,6 +1041,10 @@ class Component(_Base):
 
 
 Base = Component    # XXX backward compatibility; deprecated
+
+
+
+
 
 
 

@@ -205,7 +205,7 @@ class CreateViaFactory(object):
 
 class ConfigMap(Component):
 
-    rules = depth = keyIndex = Make(dict)
+    rules = depth = keyIndex = lockedNamespaces = Make(dict)
 
     protocols.advise(
         instancesProvide=[IPropertyMap]     # XXX make just IConfigMap later
@@ -225,24 +225,24 @@ class ConfigMap(Component):
 
 
     def registerProvider(self, configKey, provider):
-
         """Register 'provider' under 'configKey'"""
 
         for key,depth in adapt(configKey, IConfigKey).registrationKeys():
 
             if self.depth.get(key,depth)>=depth:
                 # The new provider is at least as good as the one we have
+                lockedNamespaces = self.lockedNamespaces
+                ckey = adapt(key, IConfigKey)
+                for k in ckey.parentKeys():
+                    if k in lockedNamespaces:
+                        raise AlreadyRead(
+                            "A namespace containing %r "
+                            "has already been examined" % (configKey,)
+                        )
+                for k in ckey.parentKeys():
+                    self.keyIndex.setdefault(k,{})[ckey] = True
                 _setCellInDict(self.rules, key, provider)
                 self.depth[key]=depth
-
-            key = adapt(key, IConfigKey)
-            for k in key.parentKeys():
-                self.keyIndex.setdefault(k,{})[key] = True
-
-
-
-
-
 
     def _configKeysMatching(self, configKey):
 
@@ -261,9 +261,9 @@ class ConfigMap(Component):
             return
 
         for key,depth in adapt(configKey,IConfigKey).registrationKeys():
+            self.lockedNamespaces[key] = True
             for k in index.get(key,()):
                 yield k
-
 
 
 

@@ -1,13 +1,12 @@
 from __future__ import generators
 from peak.api import *
 from interfaces import *
-from peak.util.EigenData import EigenDict
 from peak.util.imports import whenImported
 from protocols.advice import getMRO
 from types import ClassType
 
 __all__ = [
-    'EigenRegistry', 'MultiKey', 'UnionOf', 'ProviderOf', 'FactoryFor',
+    'MultiKey', 'UnionOf', 'ProviderOf', 'FactoryFor',
 ]
 
 
@@ -31,6 +30,7 @@ def permuteReg(seq, prev=None):
         for outer,d1 in prev:
             for inner,d2 in seq:
                 yield outer+(inner,), d1+d2
+
 
 
 
@@ -244,36 +244,57 @@ whenImported('zope.interface',
 )
 
 
-class EigenRegistry(EigenDict):
+class ImmutableConfig(object):
 
-    """EigenDict that takes IConfigKey objects as keys, handling inheritance"""
+    def __init__(self, baseMaps=(), items=()):
 
-    def __init__(self):
-        self.depth = {}
-        self.keysIndex = {}
-        super(EigenRegistry,self).__init__()
+        self.depth = depths = {}
+        self.keysIndex = keysIndex = {}
+        self.data = data = {}
 
-    def lookup(self, configKey, failobj=None):
-        sc = self._setCell
+        for base in baseMaps:
+            adapt(base,ImmutableConfig)
+            for key, depth in base.depth.items():
+                old = depths.get(key,depth)
+                if old>=depth:
+                    data[key] = base.data[key]
+                    depths[key] = depth
+
+            for ns,keysMap in base.keysIndex.items():
+                keysIndex.setdefault(ns,{}).update(keysMap)
+
+        for configKey,value in items:
+
+            for key,depth in adapt(configKey,IConfigKey).registrationKeys():
+
+                if depths.get(key,depth)>=depth:
+
+                    ckey = adapt(key, IConfigKey)
+
+                    for k in ckey.parentKeys():
+                        keysIndex.setdefault(k,{})[ckey] = True
+
+                    data[key]=value
+                    depths[key] = depth
+
+
+
+
+
+
+
+
+
+    def lookup(self, configKey, failObj=None):
+        data = self.data
         for key in configKey.lookupKeys():
-            cell = sc(key)
-            if cell.exists():
-                return cell.get()
-        else:
-            return failobj
-
-    def register(self, configKey, item, depth=0):
-        """Register 'item' under 'configKey'"""
-        for key,depth in adapt(configKey,IConfigKey).registrationKeys():
-            if self.depth.get(key,depth)>=depth:
-                self[key]=item
-                self.depth[key] = depth
-            key = adapt(key, IConfigKey)
-            for k in key.parentKeys():
-                self.keysIndex.setdefault(k,{})[key] = True
+            if key in data:
+                return data[key]
+        return failObj
 
 
     def _configKeysMatching(self, configKey):
+
         index = self.keysIndex
 
         if not index:
@@ -285,33 +306,12 @@ class EigenRegistry(EigenDict):
 
 
 
-    def update(self,other):
-        """Conservatively merge in another EigenRegistry"""
-
-        if not isinstance(other,EigenRegistry):
-            raise TypeError("Not an EigenRegistry", other)
-
-        mydepth = self.depth
-        get = mydepth.get
-        sc = self._setCell
-        for iface, depth in other.depth.items():
-            old = get(iface,depth)
-            if old>=depth:
-                sc(iface).set(other[iface])
-                mydepth[iface] = depth
-
-        for k,v in other.keysIndex.items():
-            self.keysIndex.setdefault(k,{}).update(v)
 
 
-    def setdefault(self,key,failobj=None):
-        raise NotImplementedError
 
-    def __delitem__(self,key):
-        raise NotImplementedError
 
-    def clear(self):
-        raise NotImplementedError
+
+
 
 
 
