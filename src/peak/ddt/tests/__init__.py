@@ -6,6 +6,7 @@ from peak.tests import testRoot
 from cStringIO import StringIO
 from peak.ddt.api import *
 from peak.ddt.html_doc import GREEN,RED,YELLOW,GREY,HTMLDocument
+import sys
 
 sample_input = """
     <body>
@@ -17,26 +18,25 @@ sample_input = """
     </body>
 """
 
+MY = HTMLDocument.actual('my')
+SANDAL = HTMLDocument.annotation('(or sandal)')
+
+try:
+    raise NotImplementedError
+except:
+    dummy_exc = sys.exc_info()
+
+ERROR = HTMLDocument.exception(dummy_exc)
+    
 sample_output = """
     <body>
     <table>
-        <tr><td%(GREY)s>test parser</td></tr>
-        <tr><td%(GREEN)s>one</td><td%(RED)s>two</td></tr>
-        <tr><td>buckle</td><td%(RED)s>your</td><td>shoe</td></tr>
-    </table>
+        <tr><td%(GREY)s>TESTED</td><td%(GREY)s>extra</td></tr>
+        <tr><td%(GREEN)s>a one</td><td%(RED)s>&amp; a two</td></tr>
+        <tr><td>buckle</td><td%(RED)s>your%(MY)s</td><td>shoe%(SANDAL)s</td></tr>
+    <tr><td>extra</td><td%(YELLOW)s>stuff%(ERROR)s</td></tr></table>
     </body>
-""" % locals()
-
-
-
-
-
-
-
-
-
-
-
+""" % locals()  #<td>extra</td>
 
 
 class BasicTests(TestCase):
@@ -133,25 +133,25 @@ class BasicTests(TestCase):
             table, = doc.tables
             r1,r2,r3 = table.rows
             r1.cells[0].ignore()
-            r2.cells[0].right()
-            r2.cells[1].wrong()
-            r3.cells[1].wrong()
+            r1.cells[0].text = 'TESTED'
+            r2.cells[0].right(); r2.cells[0].text="a one"
+            r2.cells[1].wrong(); r2.cells[1].text="& a two"
+            r3.cells[1].wrong('my'); r3.cells[2].annotation="(or sandal)"
+            r1.addCell(dm.newItem(Cell))
+            r1.cells[-1].text = 'extra'
+            r1.cells[-1].ignore()
+            r4 = dm.newItem(Row)
+            table.addRow(r4)
+            r4.addCell(dm.newItem(Cell))
+            r4.addCell(dm.newItem(Cell))
+            r4.cells[0].text = 'extra'
+            r4.cells[1].text = 'stuff'; r4.cells[1].exception(dummy_exc)
             storage.commitTransaction(dm)
         except:
             storage.abortTransaction(dm)
             raise
 
         self.assertEqual(s.getvalue(), sample_output)
-
-
-
-
-
-
-
-
-
-
 
 
 

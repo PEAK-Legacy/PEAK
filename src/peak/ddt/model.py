@@ -127,6 +127,7 @@ class Document(Item):
 
     class tables(children):
         referencedType = 'Table'
+        singularName = 'table'
 
     class score(model.Attribute):
         referencedType = Score
@@ -142,6 +143,9 @@ class Document(Item):
         def get(feature,element):
             return element
 
+    def getParent(self):
+        return None
+
 
 class Table(Item):
 
@@ -149,6 +153,13 @@ class Table(Item):
 
     class rows(children):
         referencedType = 'Row'
+        referencedEnd  = 'table'
+        singularName = 'row'
+
+    def getParent(self):
+        return self.document
+
+
 
 
 class Row(Item):
@@ -157,6 +168,36 @@ class Row(Item):
 
     class cells(children):
         referencedType = 'Cell'
+        referencedEnd = 'row'
+        singularName = 'cell'
+
+    class table(model.Attribute):
+        referencedType = Table
+        referencedEnd  = 'rows'
+
+    def getParent(self):
+        return self.table
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -166,10 +207,13 @@ class Cell(Item):
 
     """An individual data value or action, with concrete results"""
 
+    class row(model.Attribute):
+        referencedType = Row
+        referencedEnd = 'cells'
+
     class text(model.Attribute):
         """Text contents of the cell (read-only)"""
         referencedType = model.String
-        isChangeable = False
 
     class score(model.Attribute):
         """This cell's status"""
@@ -193,15 +237,12 @@ class Cell(Item):
     class actual(model.Attribute):
         """The actual output for this cell, as opposed to expected"""
 
+    class annotation(model.Attribute):
+        referencedType = model.String
+        defaultValue = ''
 
-
-
-
-
-
-
-
-
+    def getParent(self):
+        return self.row
 
     def right(self):
         """Flag the cell as correct"""

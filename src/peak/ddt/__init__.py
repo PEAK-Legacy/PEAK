@@ -26,18 +26,13 @@
     * Use PEAK development idioms (e.g. domain model objects separated from
       parse/format implementation, property namespace to look up fixture types,
       'commands' framework for command-line tools, etc.)
-      
+
     TODO:
 
-        * HTML unescaping of cell text
+        * Interfaces
 
-        * format tracebacks and expected vs. actual
-
-        * allow adding annotation to cells (grey text)
-
-        * allow adding/removing rows or cells from output
+        * Fixture base classes (Column, Row, Action, Summary, etc.)
 """
-
 
 
 

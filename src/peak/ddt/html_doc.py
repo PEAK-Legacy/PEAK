@@ -7,37 +7,6 @@ RED    = ' bgcolor="#FFCFCF"'
 GREY   = ' bgcolor="#EFEFEF"'
 YELLOW = ' bgcolor="#FFFFCF"'
 
-def label(text):
-    return ' <font size="-1" color="#C08080"><i>%s</i></font>' % text
-
-def diminish(text):
-    return ' <font color="#808080">%s</font>' % text
-
-def escape(text):
-    return text.replace(
-        '&','&amp;'
-    ).replace('<','&lt;').replace('>','&gt;').replace('"','&quot;')
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 def parseTags(text,tag,startAt,startBy,contentProcessor):
 
@@ -64,16 +33,6 @@ def parseTags(text,tag,startAt,startBy,contentProcessor):
         items.append(item)
 
     return pos,items
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -121,32 +80,112 @@ class HTMLDocument(storage.EntityDM):
 
 
 
-    def insertText(self,pos,text):
+    def _insertText(self,pos,text):
         insort(self.edits, (pos,pos,text))
 
 
+    def _tagAdditions(self,cell):
+        score = cell.score
+
+        if score.right:
+            return GREEN
+
+        elif score.wrong:
+            return RED
+
+        elif score.ignored:
+            return GREY
+
+        elif score.exceptions:
+            return YELLOW
+
+        return ''
+
+
+    def _bodyAdditions(self,cell):
+
+        score = cell.score
+        additions = ''
+
+        if cell.annotation:
+            additions += self.annotation(cell.annotation)
+
+        if score.wrong:
+            if hasattr(cell,'actual'):
+                additions += self.actual(str(cell.actual))
+
+        if score.exceptions:
+            additions += self.exception(cell.exc_info)
+
+        return additions
+
+
+
+    def _cellAsText(self,cell):
+        return '<td%s>%s%s</td>' % (
+            self._tagAdditions(cell), self.escape(cell.text),
+            self._bodyAdditions(cell)
+        )
+
+    def _rowAsText(self,row):
+        return '<tr>%s</tr>' % ''.join(
+            [self._cellAsText(cell) for cell in row.cells]
+        )
+
+    def _tableAsText(self,table):
+        return '<table>%s</table>' % ''.join(
+            [self._rowAsText(row) for row in table.rows]
+        )
+
     def _save(self,ob):
+
         if ob._p_oid is Document:
+            self._saveChildren(
+                ob,0,0,len(self.text),ob.tables,self._tableAsText
+            )
             return  # nothing to save
 
         kind,tag,content,close = ob._p_oid
 
-        if kind is not Cell:
-            return  # still nothing to save
+        if kind is Cell:
+            self._saveCell(ob,tag,content,close)
+        elif kind is Row:
+            self._saveChildren(ob,tag,content,close,ob.cells,self._cellAsText)
+        elif kind is Table:
+            self._saveChildren(ob,tag,content,close,ob.rows,self._rowAsText)
+        else:
+            raise AssertionError("Unexpected item type", ob)
 
-        if ob.score.right:
-            self.insertText(content-1,GREEN)
 
-        elif ob.score.wrong:
-            self.insertText(content-1,RED)
-            if hasattr(ob,'actual'):
-                pass    # XXX
+    def _new(self,ob):
+        return None  # leave oid as None, allow parent to save us
 
-        elif ob.score.ignored:
-            self.insertText(content-1,GREY)
 
-        elif ob.score.exceptions:
-            self.insertText(content-1,YELLOW)
+
+    def _saveCell(self,cell,tag,content,close):
+
+        tagText = self._tagAdditions(cell)
+        if tagText:
+            self._insertText(content-1,tagText)
+
+        if self.escape(cell.text)<>self.text[content:close]:
+            insort(self.edits, (content,close,self.escape(cell.text)))
+
+        bodyText = self._bodyAdditions(cell)
+        if bodyText:
+            self._insertText(close,bodyText)
+
+
+    def _saveChildren(self,ob,tag,content,close,children,toText):
+        toInsert = ''
+        for item in children:
+            if item._p_oid is None:
+                toInsert += toText(item)
+            elif toInsert:
+                self._insertText(item._p_oid[1],toInsert)
+                toInsert = ''
+        if toInsert:
+            self._insertText(close,toInsert)
 
 
     def flush(self,ob=None):
@@ -162,23 +201,35 @@ class HTMLDocument(storage.EntityDM):
 
 
 
+
+
     def makeTable(self,tag,content,close):
+
         pos, rows = parseTags(
             self.lctext, "tr", content, close, self.makeRow
         )
-        return pos, self.preloadState(
+
+        table = self.preloadState(
             (Table,tag,content,close),
             {'rows':rows, 'document':self.document}
         )
 
+        for row in rows: row.__dict__['table'] = table
+        return pos, table
+
     def makeRow(self,tag,content,close):
+
         pos, cells = parseTags(
             self.lctext, "td", content, close, self.makeCell
         )
-        return pos, self.preloadState(
+
+        row = self.preloadState(
             (Row,tag,content,close),
             {'cells':cells, 'document':self.document}
         )
+
+        for cell in cells: cell.__dict__['row'] = row
+        return pos, row
 
     def makeCell(self,tag,content,close):
         pos, subTables = parseTags(
@@ -186,29 +237,51 @@ class HTMLDocument(storage.EntityDM):
         )
         return pos, self.preloadState(
             (Cell,tag,content,close),
-            {'document':self.document, 'text':self.text[content:close]}
+            {'document':self.document,
+             'text':self.unescape(self.text[content:close])
+            }
         )
 
 
 
+    def exception(exc_info):
+        from traceback import format_exception
+        return "<hr><pre><font size=-2>%s</font></pre>" % format_exception(
+            *exc_info
+        )
+    exception = staticmethod(exception)
 
 
+    def actual(klass,text):
+        return "%s<hr>%s%s" % (
+            klass.smallLabel("expected"), klass.escape(text),
+            klass.smallLabel("actual")
+        )
+    actual = classmethod(actual)
 
 
+    def smallLabel(text):
+        return ' <font size="-1" color="#C08080"><i>%s</i></font>' % text
+    smallLabel = staticmethod(smallLabel)
 
 
+    def annotation(text):
+        return ' <font color="#808080">%s</font>' % text
+    annotation = staticmethod(annotation)
 
 
+    def escape(text):
+        return text.replace(
+            '&','&amp;'
+        ).replace('<','&lt;').replace('>','&gt;').replace('"','&quot;')
+    escape = staticmethod(escape)
 
 
-
-
-
-
-
-
-
-
+    def unescape(text):
+        return text.replace(
+            '&quot;','"'
+        ).replace('&gt;','>').replace('&lt;','<').replace('&amp;', '&')
+    unescape = staticmethod(unescape)
 
 
 
