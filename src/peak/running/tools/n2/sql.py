@@ -288,6 +288,7 @@ class SQLInteractor(binding.Component):
             w = r[2]
             if not w or w <= 0: w = r[3]
             if not w or w <= 0: w = 20 # XXX
+            if w<len(r[0]): w = len(r[0])
 
             t.append(self.toStr(r[0], w)); d.append('-' * w); l.append(w)
 
