@@ -135,6 +135,7 @@ class AdaptiveTask(binding.Component):
     increaseIdleBy = 0
     multiplyIdleBy = 1
 
+    priority = 0
 
     # Maximum idle defaults to increasing three times
 
@@ -157,7 +158,6 @@ class AdaptiveTask(binding.Component):
 
         activateUponAssembly=True
     )
-
 
 
 
