@@ -7,14 +7,14 @@ __all__ = [
 
     'IName', 'ISyntax', 'IOpaqueURL',
 
-    'IResolver', 'IBasicContext', 'IReadContext', 'IWriteContext',
+    'IObjectFactory', 'IStateFactory', 'IURLContextFactory',
+
+    'I_NNS_Binding', 'IBasicContext', 'IReadContext', 'IWriteContext',
 
     'NamingException', 'InvalidNameException', 'NameNotFoundException',
     'CannotProceedException', 'NotContextException',
 
 ]
-
-
 
 
 
@@ -165,31 +165,31 @@ class CannotProceedException(NamingException):
 class ISyntax(Interface.Base):
     """Syntax object"""
 
+
 class IName(Interface.Base):
     """Abstract name object"""
+
 
 class IOpaqueURL(IName):
     """Opaque URL (scheme+body only)"""
 
 
-class IResolver(Interface.Base):
+class IObjectFactory(Interface.Base):
 
-    """Bare minimum context support"""
-
-    def resolveToInterface(compositeName, opInterface, newName=None):
-        """Resolve compositeName to find a context supporting opInterface"""
+    def getObjectInstance(refInfo, name, context, environment, attrs=None):
+        """Return the object that should be constructed from 'refInfo'"""
 
 
+class IStateFactory(Interface.Base):
+
+    def getStateToBind(obj, name, context, environment, attrs=None):
+        """Return the state that should be used to save 'obj'"""
 
 
+class IURLContextFactory(Interface.Base):
 
-
-
-
-
-
-
-
+    def getURLContext(scheme, context=None, environ=None, iface=IBasicContext):
+        """Return a context that can provide 'iface' for 'scheme' URLs"""
 
 
 
@@ -208,7 +208,22 @@ class IBasicContext(Interface.Base):
     """Basic naming context; supports only configuration and name handling"""
     
     def lookup(name):
-        """Lookup 'name' --> object"""
+        """Lookup 'name' --> object; synonym for __getitem__"""
+
+    def lookup_nns(name=None):
+        """Lookup 'name' to retrieve a "next naming system" pointer"""
+
+    def __getitem__(name):
+        """Lookup 'name' and return an object"""
+
+    def get(name, default=None):
+        """Lookup 'name' and return an object, or 'default' if not found"""
+
+    def __contains__(name):
+        """Return a true value if 'name' has a binding in context"""
+
+    def has_key(name):
+        """Synonym for __contains__"""
 
     def getEnvironment():
         """Return a mapping representing the context's configuration"""
@@ -228,16 +243,52 @@ class IBasicContext(Interface.Base):
     # lookupLink, composeName, getNameParser, getNameInNamespace
 
 
+
 class IReadContext(IBasicContext):
 
     """Context that supports iteration/inspection of contents"""
 
-    # list, listBindings, search, getAttributes
+    def keys():
+        """Return a sequence of the names present in the context"""
+
+    def __iter__():
+        """Return an iterator of the names present in the context"""
+
+    def items():
+        """Return a sequence of (name,boundItem) pairs"""
+
+    def info():
+        """Return a sequence of (name,(refInfo,attrs)) pairs"""
+
+    # search, getAttributes
 
 
 class IWriteContext(IBasicContext):
 
     """Context that supports adding/changing its contents"""
 
-    # bind, rebind, unbind, rename,
+    def rename(oldName,newName):
+        """Rename 'oldName' to 'newName'"""
+
+    def __setitem__(name,object,attrs=None):
+        """Bind 'object' under 'name'"""
+        
+    def __delitem__(name):
+        """Remove any binding associated with 'name'"""
+
+    def bind(name,object,attrs=None):
+        """Synonym for __setitem__"""
+
+    def unbind(name,object):
+        """Synonym for __delitem__"""
+
     # createSubcontext, destroySubcontext, modifyAttributes
+
+
+class I_NNS_Binding(IBasicContext):
+
+    def bind_nns_ptr(name, object):
+        """Bind 'object' as the NNS pointer for 'name'"""
+
+    def unbind_nns_ptr(name):
+        """Remove any NNS pointer bound to 'name'"""

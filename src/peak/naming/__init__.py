@@ -7,22 +7,9 @@
 
     To Do (no particular ordering)
 
-        * Refactor interfaces/AbstractContext to be more Pythonic/containerish
-          (get/set/delitem, has_key, keys, get, items...?)
-
         * create FederationContext, set up to handle '+:' URL scheme, whose
           operations simply do a series of lookup/lookup_nns operations on the
           composite name path in order to implement all the "standard" operations
-
-        * replace operation classes with boilerplate methods in AbstractContext
-          that check for URL vs. compound vs. composite names, and delegate
-          composite names to FederationContext
-
-        * Add 'I_NNS_Binding' to interfaces, and 'lookup_nns' to 'IBasicContext';
-          Get rid of 'IResolver' and SPI.getContinuationContext().
-
-        * Add default 'lookup_nns' operation to AbstractContext, and remove
-          name splitting/other NNS logic.
 
         * Create Reference, RefAddr, LinkRef, and associated classes
 
@@ -36,10 +23,8 @@
         * Unit tests!!!!
 """
 
-
-
-
 from Interfaces import *
 from Names      import *
 from API        import *
 import SPI
+

@@ -6,7 +6,7 @@ import SPI
 
 _marker = object()
 
-
+__all__ = ['AbstractContext']
 
 
 
@@ -43,18 +43,19 @@ class AbstractContext(object):
 
     __implements__ = IBasicContext
 
-    _envWritten = 0
-    _scheme = None
+    _envShared = 1
+    _supportedSchemes = ()
     _acceptURLs = 1
     _makeName = CompoundName
-
+    _allowCompositeNames = 0
+    
     def __init__(self, env):
         self._environ = env
 
     def _beforeEnvWrite(self, key, value=_marker):
-        if self._envWritten: return
+        if not self._envShared: return
         self._environ = self._environ.copy()
-        self._envWritten = 1
+        self._envShared = 0
 
 
     def addToEnvironment(self, key, value):
@@ -66,10 +67,7 @@ class AbstractContext(object):
         del self._environ[key]
 
     def getEnvironment(self):
-
-        if self._envWritten:
-            return self._environ.copy()
-
+        if not self._envShared: self._envShared = 1
         return self._environ
 
 
@@ -80,100 +78,277 @@ class AbstractContext(object):
     def copy(self):
         return self.__class__(self.getEnvironment())
 
-    def _getNextContext(self, operation):
+
+
+    def _getTargetCtx(self, name, iface=IBasicContext):
+
+        name = toName(name, self._makeName, self._acceptURLs)
+
+        if name.isComposite:
+        
+            if self._allowCompositeNames:
+                return self, name
+                
+            else:
+                # convert to URL
+                name=toName('+:'+str(name), acceptURL=1)
+
+
+        if name.isURL:
+
+            if self._supportsScheme(name.scheme):
+                return self, name
+
+            ctx = SPI.getURLContext(
+                name.scheme, self, None, iface
+            )
+
+            if ctx is None:
+                raise InvalidNameException(
+                    "Unknown scheme %s in %r" % (name.scheme,name)
+                )
+
+            return ctx, name
+
+        return self, name
+
+
+
+
+
+
+
+
+
+
+    def lookup_nns(self, name=None):
 
         """Find the next naming system after resolving local part"""
 
-        if not operation.localName:
+        if name is None:
         
-            # It's on the NNS itself...
-            
-            operation.skipNNSboundary()
+            # We're the NNS
             return RefAddr("nns", self)  # XXX???
 
 
-        obj = self._lookup(operation)
+        obj = self[name]
+
 
         if isinstance(obj,self.__class__):
           
             # Same or subclass, must not be a junction;
             # so delegate the NNS lookup to it
             
-            operation.forceNNSboundary()
-            return obj
-                
+            return obj.lookup_nns()
+
 
         elif not IBasicContext.isImplementedBy(obj):
             
             # Not a context?  make it an NNS reference
-
-            operation.skipNNSboundary()
             return RefAddr("nns", obj)  # XXX???
+
 
         else:
             # It's a context, so just return it
             return obj
 
 
+
     def _supportsScheme(self, scheme):
-        return scheme==self._scheme
+        return scheme.lower() in self._supportedSchemes
 
 
 
 
-    def _numberOfLocalNameParts(self, name):
-
-        """Override this to change from "strong" to "weak" NS separation
-
-            * For static weak separation, parse 'name' and return the number
-              of elements which are considered part of the current namespace
-
-            * For dynamic weak separation, simply 'return len(name)', which
-              will treat all the name portions as local until proven otherwise.
-
-            By default, this method assumes "strong" namespace separation,
-            which means the first name component is assumed to be in the
-            current namespace, and all others are assumed to be in subsequent
-            namespaces.
-        """
-        return 1
 
 
-    def _splitName(self, name):
+    def __getitem__(self,name):
+    
+        """Lookup 'name' and return an object"""
+        
+        ctx, name = self._getTargetCtx(name)
+        if ctx is not self: return ctx[name]
+        
+        obj = self._getOb(name,_marker)
+        if obj is _marker:
+            raise NameNotFoundException(name)
 
-        """Return a tuple '(localpart,nonlocalpart)' from 'name'"""
+        return obj
 
-        if name.isCompound:
-            return CompositeName([name]), None
 
-        if not name or not name[0]:
-            localElements = 0
-        else:
-            localElements = self._numberOfLocalNameParts(name)
+    def get(self, name, default=None):
+    
+        """Lookup 'name' and return an object, or 'default' if not found"""
+        
+        ctx, name = self._getTargetCtx(name)
+        if ctx is not self: return ctx.get(name,default)
 
-        makeName = self._makeName
+        return self._getOb(name, default)
 
-        mine = CompositeName(
-            [ toName(part, makeName) for part in name[:localElements] ]
+
+    def _getOb(self, name, default):
+
+        info = self._get(name,default)
+        if info is default: return info
+
+        state, attrs = info
+
+        return SPI.getObjectInstance(
+            state, name, self, self.getEnvironment(), attrs
         )
 
-        rest = name[localElements:]
-        return mine, rest
 
 
 
-    # The real implementation stuff goes here...
 
-    def _lookup(self, operation):
+
+
+    def __contains__(self,name):
+        """Return a true value if 'name' has a binding in context"""
+
+        ctx, name = self._getTargetCtx(name)
+        
+        if ctx is not self:
+            return name in ctx
+
+        return self._get(name,_marker,None) is not _marker
+
+
+    def lookup(self,name):
+        """Lookup 'name' --> object; synonym for __getitem__"""
+        return self[name]
+
+    def has_key(self,name):
+        """Synonym for __contains__"""
+        return name in self
+
+    def keys():
+        """Return a sequence of the names present in the context"""
+        return [name for name in self]
+        
+    def items():
+        """Return a sequence of (name,boundItem) pairs"""
+        return [ (name,self._getOb(name)) for name in self ]
+
+    def info():
+        """Return a sequence of (name,refInfo) pairs"""
+        return [ (name,self._get(name,retrieve=RETRIEVE_INFO))
+                    for name in self
+        ]
+
+
+
+
+
+
+
+
+
+    def bind(name,object,attrs=None):
+
+        """Synonym for __setitem__, with attribute support"""
+
+        self.__setitem__(name,object,attrs)
+
+
+    def unbind(name,object):
+
+        """Synonym for __delitem__"""
+
+        del self[name]
+
+
+    def rename(oldName,newName):
+
+        """Rename 'oldName' to 'newName'"""
+
+        ctx, name = self._getTargetCtx(oldName,IWriteContext)
+        
+        if ctx is not self:
+            ctx.rename(oldName,newName)
+            return
+            
+        ctx, newName = self._getTargetCtx(newName)
+       
+        self._rename(name,newName)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    def __setitem__(name,object,attrs=None):
+
+        """Bind 'object' under 'name'"""
+
+        ctx, name = self._getTargetCtx(name,IWriteContext)
+        
+        if ctx is not self:
+            ctx[name]=object
+
+        else:
+            
+            state,bindattrs = SPI.getStateToBind(
+                object,name,self,self.getEnvironment(),attrs
+            )
+
+            self._bind(name, state, bindAttrs)
+
+
+    def __delitem__(name):
+        """Remove any binding associated with 'name'"""
+
+        ctx, name = self._getTargetCtx(name,IWriteContext)
+        
+        if ctx is not self:
+            del ctx[name]
+        else:
+            self._unbind(name)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    # The actual implementation....
+
+    def _get(self, name, default=None, retrieve=1):
+
+        """Lookup 'name', returning 'default' if not found
+
+        If 'retrieve' is true, return a '(state,attrs)' tuple of
+        binding info.  Otherwise, return the key.  In either case,
+        return 'default' if the name is not bound.
+        """
+
         raise NotImplementedError
 
-    _search = _list = _rename = _getAttributes = _modifyAttributes = \
-    _unbind = _createSubcontext = _destroySubcontext = _lookupLink = \
-    _listBindings = _lookup
 
-    def _bind(self, operation, rebind=0):
+    def __iter__():
+        """Return an iterator of the names present in the context"""
         raise NotImplementedError
 
+    def _bind(self,name,state,attrs=None):
+        raise NotImplementedError
 
+    def _unbind(self,name):
+        raise NotImplementedError
 
-
+    def _rename(self,old,new):
+        raise NotImplementedError
