@@ -555,8 +555,8 @@ class RecordChecker(ModelChecker):
                 missing, extra = self.compare(list(rows), self.records)
     
                 for row in missing:
-                    row.cell[0].annotation = "missing"
-                    row.cell[0].wrong()
+                    row.cells[0].annotation = "missing"
+                    row.cells[0].wrong()
     
                 for record in extra:
                     newRow = table.newRow(

@@ -6,7 +6,7 @@ from peak.tests import testRoot
 from cStringIO import StringIO
 from peak.ddt.api import *
 from peak.ddt.html_doc import GREEN,RED,YELLOW,GREY,HTMLDocument
-import sys
+import sys,whrandom
 
 sample_input = """
     <body>
@@ -48,6 +48,88 @@ def tableTexts(table):
 def docTexts(doc):
     return [tableTexts(table) for table in doc.tables]
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class SevenNumbers(model.Struct):
+    class first(model.structField): referencedType = model.Integer
+    class second(model.structField): referencedType = model.Integer
+    class third(model.structField): referencedType = model.Integer
+    class fourth(model.structField): referencedType = model.Integer
+    class fifth(model.structField): referencedType = model.Integer
+    class sixth(model.structField): referencedType = model.Integer
+    class seventh(model.structField): referencedType = model.Integer
+
+def makeSeven((first,second,third,fourth,fifth,sixth,seventh)):
+    return SevenNumbers(
+        first=first,second=second,third=third,fourth=fourth,fifth=fifth,
+        sixth=sixth,seventh=seventh
+    )
+
+InterestingNumbers = [
+    ( 1, 2, 3, 4, 5, 6, 7),     # "natural" numbers
+    ( 1, 1, 2, 3, 5, 8,13),     # Fibonacci numbers
+    ( 2, 3, 5, 7,11,13,17),     # Primes
+    ( 1, 4, 9,16,25,36,49),     # Squares
+    ( 1, 2, 4, 8,16,32,64),     # Powers of 2
+    ( 2, 4, 6, 8,10,12,14),     # Products of 2
+]
+
+forwards = map(makeSeven,InterestingNumbers)
+backwards = forwards[:]; backwards.reverse()
+sorted = InterestingNumbers[:]; sorted.sort(); sorted = map(makeSeven,sorted)
+revsorted = sorted[:]; revsorted.reverse()
+seed = forwards[:]
+
+random = []
+while seed:
+     random.append(whrandom.choice(seed))
+     seed.remove(random[-1])
+
+
+
+
+
+
+
+class NumbersApp(binding.Component):
+
+    checker = binding.Make(
+        lambda self: RecordChecker(records=self.records),
+        suggestParent=False, noCache = True,
+        offerAs = ['peak.ddt.processors.Interesting.Numbers']
+    )
+
+    records = forwards
 
 
 
@@ -187,6 +269,47 @@ class BasicTests(TestCase):
 
         finally:
             storage.abortTransaction(dm)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    def testRecords(self):
+
+        # Test recordchecker with lots of variants of the same data
+
+        app = NumbersApp(testRoot())
+        from peak.ddt.runners import HTMLRunner
+
+        testURL   = 'pkgfile:peak.ddt.tests/RecordChecker_Tests.html'
+        resultURL = 'pkgfile:peak.ddt.tests/RecordChecker_Results.html'
+
+        output = app.lookupComponent(resultURL).open('t').read()
+
+        for records in forwards,backwards,sorted,revsorted,random:
+            app.records = records
+            runner = HTMLRunner(
+                app, argv=['ddt',testURL],
+                stdout = StringIO(), stderr = StringIO(),
+            )
+            runner.run()
+            self.assertEqual(runner.stdout.getvalue(), output)
+
+
+
+
+
 
 
 
