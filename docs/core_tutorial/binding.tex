@@ -333,15 +333,14 @@ components, shall we?
 It's time to write some code!  Our objective: create a ``car" class 
 that keeps track of its passengers.
 
-\begin{verbatim}
->>> from peak.api import binding
+\begin{verbatim%
+}>>> from peak.api import binding
 >>> class Car:
         passengers = binding.New(dict, 'passengers')
 	
 >>> aCar=Car()
 >>> print aCar.passengers
 {}
-
 \end{verbatim}
 
 Let's go through this sample line by line.  In the first line we import the
@@ -354,10 +353,9 @@ attribute, which contains a new (hence the name, \function{binding.New})
 dictionary.  If you're new to Python, you might wonder why we don't place a
 dictionary directly in the class, like this:
 
-\begin{verbatim}
->>> class Car:
+\begin{verbatim%
+}>>> class Car:
         passengers = {}
-
 \end{verbatim}
 
 The problem is that attributes defined in a Python class body are shared, so
@@ -367,11 +365,12 @@ method to initialize the structure, like so:
 
 
 
-\begin{verbatim}
->>> class Car:
+
+
+\begin{verbatim%
+}>>> class Car:
         def __init__(self):
             self.passengers = {}
-
 \end{verbatim}
 
 This works alright for simple situations, but gets more complex when you use
@@ -392,20 +391,21 @@ value until they are used.  If we take a new instance of our \class{Car}
 class, and print its dictionary before and after referencing the 
 \member{passengers} attribute:
 
-\begin{verbatim}
->>> anotherCar=Car()
+\begin{verbatim%
+}>>> anotherCar=Car()
 >>> print anotherCar.__dict__
 {}
 >>> print anotherCar.passengers
 {}
 >>> print anotherCar.__dict__
 {'passengers': {}}
-
 \end{verbatim}
 
 We find that the object doesn't really \emph{have} the attribute until we
 try to access it, but once we do access it, it springs into being as though
 it had always been there, and it acts like a normal attribute thereafter.
+
+
 
 
 If you're familiar with the Eiffel programming language, you'll notice that
@@ -426,14 +426,13 @@ name in its definition, as we saw in our example, i.e.
 However, if we derive our class from \class{binding.Base}, we no longer have
 to do this:
 
-\begin{verbatim}
->>> class Car(binding.Base):
+\begin{verbatim%
+}>>> class Car(binding.Base):
         passengers = binding.New(dict)
 	
 >>> aCar=Car()
 >>> print aCar.passengers
 {}
-
 \end{verbatim}
 
 Now, it's sufficient to use \samp{binding.New(dict)} to define the attribute.
@@ -449,8 +448,9 @@ What would happen if we did this \emph{without} \class{binding.Base}?
 
 
 
-\begin{verbatim}
->>> class Car:
+
+\begin{verbatim%
+}>>> class Car:
         passengers = binding.New(dict)
 	
 >>> aCar=Car()
@@ -465,7 +465,6 @@ Traceback (most recent call last):
 TypeError: <peak.binding.once.Once object at 0x01491EE0> was used in a type which
     does not support ActiveDescriptors, but a valid attribute name was not
     supplied
-
 \end{verbatim}
 
 Ouch!  It doesn't work, because PEAK can't tell what name the attribute
@@ -489,6 +488,7 @@ component base, without a lot of the extra features found in its subclasses.
 
 
 
+\newpage
 
 \subsubsection{\class{binding.Once} - The Basis for all Bindings}
 
@@ -496,15 +496,14 @@ All PEAK bindings are created using the class \class{binding.Once}, or a
 subclass thereof.  It provides the basic machinery needed to compute an
 attribute "on-the-fly".  Here's a simple example of its use:
 
-\begin{verbatim}
-class Car(binding.Base):
+\begin{verbatim%
+}class Car(binding.Base):
 
     def height(self,instDict,attrName):
         baseHeight = self.roof.top - self.chassis.bottom
         return self.wheels.radius + baseHeight
 
     height = binding.Once(height)
-
 \end{verbatim}
 
 In this example, we want to compute the car's height based on various other
@@ -520,21 +519,17 @@ Note, by the way, that there's no need for this function passed to
 \class{binding.Once} to be a method, or for the parameters to have specific
 names.  If we continued the class above as follows:
 
-\begin{verbatim}
-    verticalCenter = binding.Once(lambda s,d,a: s.height/2)
-
+\begin{verbatim%
+}    verticalCenter = binding.Once(lambda s,d,a: s.height/2)
 \end{verbatim}
 
 This would be a perfectly valid way to express the idea that the car's vertical
 center is half of its height.  It's also true that we could say:
 
-
-
-
-\begin{verbatim}
-    passengers = binding.Once(lambda s,d,a: {})
-
+\begin{verbatim%
+}    passengers = binding.Once(lambda s,d,a: {})
 \end{verbatim}
+
 
 as another way of saying \samp{binding.New(dict)}.  However, the
 \function{binding.New} function is more compact, and clearer as to intention.
@@ -547,6 +542,11 @@ one argument (the function to be called), \class{binding.Once} does actually
 take other arguments, such as a default attribute name, a ``provides" 
 specification (more on this later) and a docstring.  Check out the PEAK
 API Reference or the source code for more details.
+
+
+
+
+
 
 
 
@@ -621,8 +621,8 @@ name, provides, doc
 
 \subsubsection{Basic Binding Classes/Functions}
 
-\begin{classdesc}{Once}{func, name=None, provides=None, doc=None}
-\end{classdesc}
+\begin{funcdesc}{Once}{func, name=None, provides=None, doc=None}
+\end{funcdesc}
 
 \begin{funcdesc}{New}{obtype, bindToOwner=None, name=None, provides=None,
 doc=None}
@@ -631,14 +631,16 @@ doc=None}
 \begin{funcdesc}{Copy}{obj, name=None, provides=None, doc=None}
 \end{funcdesc}
 
-\begin{classdesc}{requireBinding}{description="", provides=None, doc=None}
-\end{classdesc}
+\begin{funcdesc}{requireBinding}{description="", provides=None, doc=None}
+\end{funcdesc}
 
 \begin{funcdesc}{bindToSelf}{provides=None, doc=None}
 \end{funcdesc}
 
 XXX AutoCreated, OnceClass
 
+
+\newpage
 
 \section{Composing Hierarchies with \class{binding.Component} Objects}
 
