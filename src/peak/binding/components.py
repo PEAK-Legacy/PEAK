@@ -409,7 +409,6 @@ class ConfigFinder(object):
 
 
 class PluginKeys(object):
-
     """Component key that finds the keys of plugins matching a given key
 
     Usage::
@@ -426,8 +425,12 @@ class PluginKeys(object):
     each key to get a value for sorting purposes.  If set to a false value,
     the keys will be in the same order as yielded by 'config.iterKeys()'.
     'sortBy' defaults to 'str', which means the keys will be sorted based
-    on their string form.  
+    on their string form.
     """
+
+    protocols.advise(
+        instancesProvide = [IComponentKey],
+    )
 
     def __init__(self, configKey, sortBy=str):
         self.configKey = adapt(configKey, IConfigKey)
@@ -445,9 +448,6 @@ class PluginKeys(object):
             return [k for (sortedBy,k) in keys]
 
         return list(keys)
-
-
-
 
 class PluginsFor(PluginKeys):
 
@@ -473,13 +473,13 @@ class PluginsFor(PluginKeys):
     will be sorted based on the string form of the keys used to retrieve them.
     """
 
-    protocols.advise(
-        instancesProvide = [IComponentKey],
-    )
-
     def findComponent(self, component, default=NOT_GIVEN):
         keys = super(PluginsFor,self).findComponent(component)
         return [adapt(k,IComponentKey).findComponent(component) for k in keys]
+
+
+
+
 
 
 
