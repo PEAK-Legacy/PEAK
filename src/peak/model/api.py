@@ -23,7 +23,7 @@ from UserList import UserList
 from peak.model.method_exporter import MethodExporter
 
 __all__ = [
-    'App','Service', 'MethodExporter', 'FeatureMC',
+    'Model', 'MethodExporter', 'FeatureMC',
     'StructuralFeature', 'Field', 'Collection', 'Reference', 'Sequence',
     'Classifier','PrimitiveType','Enumeration','DataType','Element',
 ]
@@ -39,21 +39,21 @@ __all__ += allInterfaces
 
 
 
-class Service(binding.AutoCreated):
-
-    """Well-known instances"""
-
-    __implements__ = IService
-
-
-
-class App(Service):
+class Model(binding.Base):
 
     """Application class"""
 
     def newElement(self,elementType,*args,**kw):
-        element = apply(getattr(self,elementType),args,kw)  # XXX won't do dotted names
+        # XXX won't do dotted names
+        element = apply(getattr(self,elementType),args,kw)
         return element
+
+
+
+
+
+
+
 
 
 

@@ -39,7 +39,7 @@ __bases__ = MetaModel,
 
 
 
-class UMLClass(model.App):
+class UMLClass(model.Model):
 
     class ModelElement:
     
