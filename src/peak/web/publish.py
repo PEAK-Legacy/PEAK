@@ -3,7 +3,7 @@
 from peak.api import *
 from interfaces import *
 from peak.running.commands import EventDriven
-
+from skins import Skin
 
 __all__ = [
     'Interaction', 'NullAuthenticationService', 'InteractionPolicy',
@@ -83,8 +83,11 @@ class TraversalPath(naming.CompoundName):
 class NullSkinService(binding.Singleton):
 
     def getSkin(self, interaction):
-        return interaction.app
-
+        root = adapt(interaction.app, interaction.pathProtocol)
+        # Should we suggest a parent component?  No point, if the parent
+        # we'd suggest is the interaction, since the interaction's binding
+        # would do it anyway.
+        return Skin(interaction.app, root=root)
 
 class NullAuthenticationService(binding.Singleton):
 
@@ -114,10 +117,7 @@ class InteractionPolicy(binding.Component, protocols.StickyAdapter):
     authSvc       = binding.bindTo(AUTHENTICATION_SERVICE)
     skinSvc       = binding.bindTo(SKIN_SERVICE)
     defaultMethod = binding.bindTo(DEFAULT_METHOD)
-
-
-
-
+    resourcePrefix= binding.bindTo(RESOURCE_PREFIX)
 
 
 
@@ -132,16 +132,10 @@ class Interaction(security.Interaction):
     policy   = binding.bindTo('app', adaptTo = IInteractionPolicy)
     log      = binding.bindTo('policy/log')
 
-    def root(self,d,a):
-        root = adapt(self.app, self.pathProtocol)
-        binding.suggestParentComponent(self.skin,None,root)
-        return root
-
-    root = binding.Once(root, suggestParent=False)
-
-    errorProtocol = binding.bindTo('policy/errorProtocol')
-    pathProtocol  = binding.bindTo('policy/pathProtocol')
-    pageProtocol  = binding.bindTo('policy/pageProtocol')
+    errorProtocol  = binding.bindTo('policy/errorProtocol')
+    pathProtocol   = binding.bindTo('policy/pathProtocol')
+    pageProtocol   = binding.bindTo('policy/pageProtocol')
+    resourcePrefix = binding.bindTo('policy/resourcePrefix')
 
     user = binding.Once(
         lambda self,d,a: self.policy.authSvc.getUser(self)
@@ -156,10 +150,16 @@ class Interaction(security.Interaction):
         storage.beginTransaction(self.app)
 
     def getApplication(self,request):
-        return self.root
+        return self.skin
 
     def callTraversalHooks(self, request, ob):
         ob.preTraverse(self)
+
+
+
+
+
+
 
 
     def traverseName(self, request, ob, name, check_auth=1):
@@ -183,24 +183,36 @@ class Interaction(security.Interaction):
 
         """Find default method if object isn't renderable"""
 
-        if adapt(ob.getObject(), self.pageProtocol, None) is None:
-            # Not renderable, try for default method
-            return ob, (self.policy.defaultMethod,)
+        default = self.policy.defaultMethod
 
-        # object is renderable, no need for further traversal
+        if default and adapt(ob.getObject(), self.pageProtocol, None) is None:
+
+            # Not renderable, try for default method
+            newOb = ob.traverseTo(default, self)
+
+            if newOb is not NOT_FOUND:
+                # The traversal will succeed, so tell the request to proceed
+                return ob, (default,)
+
+        # object is renderable, default traversal will fail, or no default
+        # is in use: just render the object directly
         return ob, ()
 
 
+
+
+
+
     def callObject(self, request, ob):
-        page = adapt(ob.getObject(), self.pageProtocol)
+
+        page = adapt(ob.getObject(), self.pageProtocol, None)
+
+        if page is None:
+            # Render the found object directly
+            return ob.getObject()
+
         binding.suggestParentComponent(ob.getParentComponent(),None,page)
         return page.render(self)
-
-
-
-
-
-
 
 
     def afterCall(self, request):
@@ -240,6 +252,35 @@ class Interaction(security.Interaction):
     def notAllowed(self, ob, name):
         from zope.publisher.interfaces import Unauthorized
         raise Unauthorized(name=name)   # XXX
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

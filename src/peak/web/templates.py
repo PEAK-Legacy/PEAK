@@ -665,6 +665,7 @@ class List(ContentReplacer):
         i = infiniter(self.params['listItem'])
         interaction = state.interaction
         pathProtocol = interaction.pathProtocol
+        suggest = binding.suggestParentComponent
         ct = 0
 
         if not isNull(data):
@@ -679,7 +680,7 @@ class List(ContentReplacer):
 
                 # XXX this should probably use an iteration location, or maybe
                 # XXX put some properties in execution context for loop vars?
-
+                suggest(data,None,loc)  # XXX use numeric name?
                 i.next().renderFor(loc, state)
                 ct += 1
 
@@ -689,7 +690,6 @@ class List(ContentReplacer):
                 child.renderFor(data, state)
 
         state.write(self._closeTag)
-
 
 
 

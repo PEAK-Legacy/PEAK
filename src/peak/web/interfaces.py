@@ -6,13 +6,12 @@ from peak.binding.interfaces import IComponent
 
 __all__ = [
     'IWebInteraction', 'IWebTraversable', 'IWebPage', 'IInteractionPolicy',
-    'PATH_PROTOCOL', 'PAGE_PROTOCOL', 'INTERACTION_CLASS',
+    'PATH_PROTOCOL', 'PAGE_PROTOCOL', 'INTERACTION_CLASS', 'RESOURCE_PREFIX',
     'DEFAULT_METHOD', 'APPLICATION_LOG', 'AUTHENTICATION_SERVICE',
     'ERROR_PROTOCOL', 'SKIN_SERVICE', 'IWebException', 'IDOMletState',
     'IDOMletNode',    'IDOMletNodeFactory',
     'IDOMletElement', 'IDOMletElementFactory',
 ]
-
 
 PATH_PROTOCOL  = PropertyName('peak.web.pathProtocol')
 PAGE_PROTOCOL  = PropertyName('peak.web.pageProtocol')
@@ -20,6 +19,7 @@ ERROR_PROTOCOL = PropertyName('peak.web.errorProtocol')
 
 INTERACTION_CLASS = PropertyName('peak.web.interactionClass')
 DEFAULT_METHOD    = PropertyName('peak.web.defaultMethod')
+RESOURCE_PREFIX   = PropertyName('peak.web.resourcePrefix')
 APPLICATION_LOG   = PropertyName('peak.web.appLog')
 
 AUTHENTICATION_SERVICE = PropertyName('peak.web.authenticationService')
@@ -59,6 +59,7 @@ class IWebInteraction(IInteraction):
     log = Attribute("""Default 'running.ILogger' for interactions""")
 
     skin = Attribute("""Root namespace for presentation resources""")
+    resourcePrefix = Attribute("""Name that starts path to resources""")
 
 
 class IInteractionPolicy(Interface):
@@ -75,8 +76,7 @@ class IInteractionPolicy(Interface):
     skinSvc = Attribute("""Skin service component""")
 
     defaultMethod = Attribute("""Default method name (e.g. 'index_html')""")
-
-
+    resourcePrefix = Attribute("""Name that starts path to resources""")
 
 
 
@@ -93,6 +93,9 @@ class IWebTraversable(Interface):
     def getObject():
         """Return the underlying object that would be traversed"""
 
+    def getAbsoluteURL(interaction):
+        """Return an absolute URL for this traversable"""
+
 
 class IWebPage(Interface):
 
@@ -108,9 +111,6 @@ class IWebException(Interface):
 
     def handleException(interaction, thrower, exc_info, retry_allowed=1):
         """Perform necessary recovery actions"""
-
-
-
 
 
 

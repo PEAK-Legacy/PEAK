@@ -3,11 +3,43 @@ from interfaces import *
 from types import FunctionType, MethodType
 
 __all__ = [
-    'SimpleTraversable', 'ComponentAsTraversable', 'ContainerAsTraversable'
+    'Traversable', 'Decorator', 'ContainerAsTraversable',
+    'MultiTraverser',
 ]
 
 
-class SimpleTraversable(binding.Component):
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class Traversable(binding.Component):
 
     """Basic traversable object; uses self as its subject and for security"""
 
@@ -35,13 +67,22 @@ class SimpleTraversable(binding.Component):
     def preTraverse(self, interaction):
         pass    # Should do any traversal requirements checks
 
+    def getAbsoluteURL(self, interaction):
+
+        name = self.getComponentName()
+
+        if name:
+            base = self.getParentComponent().getAbsoluteURL(interaction)
+            return '%s/%s' % base, name
+
+        raise ValueError("Traversable was not assigned a name", self)
 
 
 
 
-class ComponentAsTraversable(SimpleTraversable):
+class Decorator(Traversable):
 
-    """Traversal adapter for simple objects; uses subject's security"""
+    """Traversal adapter whose local attributes add/replace the subject's"""
 
     protocols.advise(
         instancesProvide = [IWebTraversable],
@@ -56,31 +97,31 @@ class ComponentAsTraversable(SimpleTraversable):
 
     asTraversableFor = classmethod(asTraversableFor)
 
+
     def getObject(self):
         return self.ob
 
+    def traverseTo(self, name, interaction):
+
+        loc = getattr(self, name, NOT_FOUND)
+
+        if loc is not NOT_FOUND:
+
+            if interaction.allows(self, name):
+                return adapt(loc, interaction.pathProtocol)
+
+            # Access failed, see if attribute is private
+            guard = adapt(self,IGuardedObject,None)
+
+            if guard is not None and guard.getPermissionsForName(name):
+                # We have explicit permissions defined, so reject access
+                return NOT_ALLOWED
+
+        # attribute is absent or private, fall through to underlying object
+        return super(Decorator,self).traverseTo(name, interaction)
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-class ContainerAsTraversable(ComponentAsTraversable):
+class ContainerAsTraversable(Decorator):
 
     """Traversal adapter for container components"""
 
@@ -118,6 +159,47 @@ class ContainerAsTraversable(ComponentAsTraversable):
 
 
 
+
+
+
+class MultiTraverser(Traversable):
+
+    """Aggregate traversal across a sequence of delegate traversables"""
+
+    items = binding.requireBinding("traversables to traversed")
+
+    def getObject(self):
+        # Return the first item
+        for item in self.items:
+            return item.getObject()
+
+
+    def preTraverse(self, interaction):
+        for item in self.items:
+            item.preTraverse(interaction)
+
+
+    def traverseTo(self, name, interaction):
+
+        newItems = []
+
+        for item in self.items:
+
+            loc = item.traverseTo(name, interaction)
+
+            if loc is NOT_ALLOWED:
+                return NOT_ALLOWED
+
+            if loc is not NOT_FOUND:
+                # we should suggest the parent, since our caller won't
+                binding.suggestParentComponent(item, name, loc)
+                newItems.append(loc)
+
+        if not newItems:
+            return NOT_FOUND
+
+        loc = self.__class__(items = newItems)
+        return adapt(loc, interaction.pathProtocol)
 
 
 

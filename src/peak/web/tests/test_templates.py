@@ -17,7 +17,7 @@ from peak.tests import testRoot
 from cStringIO import StringIO
 
 
-class TestApp(web.SimpleTraversable):
+class TestApp(web.Traversable):
 
     security.allow(
         foo = [security.Anybody],
@@ -65,7 +65,7 @@ class BasicTest(TestCase):
 
     def render(self):
         meth = web.TraversalPath('show').traverse(
-            self.interaction.root, self.interaction
+            self.interaction.skin, self.interaction
         )
         return self.interaction.callObject(None, meth)
 
