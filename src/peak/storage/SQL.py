@@ -295,7 +295,7 @@ class ValueBasedTypeConn(SQLConnection):
 
         for k in self.supportedTypes:
 
-            c = ps.get(k,NullConverter)
+            c = importObject(ps.get(k,NullConverter))
 
             for v in getattr(api,k).values:
                 try:
