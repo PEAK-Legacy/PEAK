@@ -1,5 +1,5 @@
 from peak.api import binding, NOT_GIVEN
-from dispatch import functions, combiners, NoApplicableMethods
+from dispatch import combiners, NoApplicableMethods
 from protocols.advice import addClassAdvisor, add_assignment_advisor
 
 __all__ = [
@@ -8,7 +8,7 @@ __all__ = [
     'AbstractOption',
 ]
 
-class _OptionCombiner(combiners.MapCombiner):
+class OptionDispatcher(combiners.MapDispatcher):
 
     """Method combiner for options"""
 
@@ -18,7 +18,7 @@ class _OptionCombiner(combiners.MapCombiner):
     def shouldStop(self,signature,method):
         return not method   # () means stop, as per 'reject_inheritance' below
 
-OptionRegistry = functions.Dispatcher(['ob'], _OptionCombiner)
+OptionRegistry = OptionDispatcher(['ob'])
 
 _optcount = 0
 
