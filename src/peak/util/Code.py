@@ -39,7 +39,6 @@ globals().update(opcode) # opcodes are now importable at will
 
 
 
-
 class Code(object):
     """Editable version of Python 'code' objects"""
 
@@ -124,9 +123,10 @@ class Code(object):
 
     def const_index(self,const):
         """Return the offset for 'const', extending 'co_consts' if needed"""
-        if const not in self.co_consts:
-            self.co_consts.append(const)
-        return self.co_consts.index(const)
+        c = self.co_consts
+        if const not in c:
+            c.append(const); return len(c)-1
+        return c.index(const)
 
     def local_index(self,name):
         """Return the offset for 'name', extending 'co_varnames' if needed"""
@@ -161,7 +161,6 @@ class Code(object):
         cursor = self.findOps(LOAD_NAME)
         for op in cursor: used[cursor.arg]=1
         return [name for (name,wasUsed) in zip(names,used) if wasUsed]
-
 
     def renumberLines(self, toLine):
 
@@ -432,7 +431,7 @@ def _bindAll(f):
     return f
 
 for f in (
-        codeIter.next, codeIter.write, Code.renumberLines,
+        codeIter.next, codeIter.write, Code.renumberLines, Code.append,
         FunctionBinder.__init__, FunctionBinder._rebind,
     ):
     _bindAll(f.im_func)
