@@ -255,11 +255,14 @@ class SQLInteractor(binding.Component):
     def showResults(self, c, shower, opts, stdout):
         shower = self.showers.get(shower, 'showHoriz')
         shower = getattr(self, shower)
-        nr = shower(c, opts, stdout)
-        if not opts.has_key('-f'):
-            print >>stdout, "(%d rows)" % nr
+        if c._cursor.description:
+            nr = shower(c, opts, stdout)
+            if not opts.has_key('-f'):
+                print >>stdout, "(%d rows)" % nr
 
         while c.nextset():
+            if not c._cursor.description:
+                continue
             print >>stdout
             nr = shower(c, opts, stdout)
             if not opts.has_key('-f'):
