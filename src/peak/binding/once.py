@@ -15,7 +15,7 @@ __all__ = [
 
 def metamethod(func):
     """Wrapper for metaclass method that might be confused w/instance method"""
-    return property(lambda ob: func.__get__(ob))
+    return property(lambda ob: func.__get__(ob,ob.__class__))
 
 def getInheritedRegistries(klass, registryName):
 
@@ -158,8 +158,8 @@ class Once(OnceDescriptor):
     declareAsProviderOf = None
     activateUponAssembly = False
 
-
-
+    def __repr__(self):
+        return "Once binding: %s" % (self.__doc__ or '')
 
 
     def __init__(self,

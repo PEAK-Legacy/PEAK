@@ -209,7 +209,7 @@ class ModuleTest(TestCase):
         assert adapt(m1Foo,IConfigKey) is m1Foo
         assert adapt(m2Foo,IRule) is m2Foo
         assert adapt(m1Foo,IRule, None) is None
-        assert adapt(m2Foo,IConfigKey,None) is None
+        assert adapt(m2Foo,IConfigKey) is m2Foo
 
 
 class AdviceTest(ModuleTest):

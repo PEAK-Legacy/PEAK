@@ -12,7 +12,6 @@ from peak.interface import implements
 from peak.config.interfaces import *
 
 class FooThing(binding.Component):
-    implements(IRule)
     implements(IConfigKey)
 
 

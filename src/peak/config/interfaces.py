@@ -1,4 +1,4 @@
-from peak.interface import Interface, Attribute, addDeclarationToType
+from peak.interface import Interface, Attribute
 from peak.api import exceptions, PropertyName, NOT_GIVEN
 
 __all__ = [
@@ -25,17 +25,17 @@ class IConfigKey(Interface):
            if object is a property name"""
 
 
+IConfigKey.registerImplementation(Interface.__class__)
+IConfigKey.registerImplementation(PropertyName)
 
 
-# XXX when we can 'adapt()' to protocols, IConfigKey can just know that
-# XXX Interface and PropertyName are valid supporters.
-#from peak.interface import InterfaceClass, NO_ADAPTER_NEEDED
 
-#IConfigKey.registerAdapter(InterfaceClass,NO_ADAPTER_NEEDED)
-#IConfigKey.registerAdapter(PropertyName,NO_ADAPTER_NEEDED)
 
-addDeclarationToType(Interface.__class__, IConfigKey)
-addDeclarationToType(PropertyName, IConfigKey)
+
+
+
+
+
 
 
 

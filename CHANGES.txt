@@ -2,10 +2,39 @@ Fixes and Enhancements since Version 0.5 alpha 1
 
  Changed, Enhanced, or Newly Deprecated Features
 
- - DEPRECATED use of '__implements__' and '__class_implements__' to declare
-   support for interfaces.  Use 'implements()', 'classProvides()',
+ - REMOVED ability to use '__implements__' and '__class_implements__' to
+   declare support for interfaces.  Use 'implements()', 'classProvides()',
    'directlyProvides()', 'moduleProvides()', etc. to do this now; they
    are now available automatically from 'peak.api'.
+
+ - Replaced all use of 'zope.interface' with 'peak.interface', because
+   the new 'peak.interface':
+
+   * is considerably smaller and simpler than 'zope.interface'
+
+   * produces Interface objects that can be inspected with the Python
+     'pydoc' and 'help()' tools
+
+   * supports and implements the PEP 246 'adapt()' protocol
+
+   * can interoperate with other interface packages, including Zope's, but
+     does not require them
+
+   * works with module inheritance (for everything but moduleProvides())
+
+   * lets you use Interfaces as abstract base classes (i.e., you can
+     inherit from an interface and turn it into an implementation, and
+     you can define default attribute values or method implementations in
+     your interfaces
+
+   * Lets you mix interface declarations from any number of frameworks and
+     any number of interface types, in a single 'implements()' or
+     'classProvides()'
+
+   Most of these features are unavailable in 'zope.interface', and some have
+   been declared by the Zope Pope to be unacceptable or undesirable features
+   for Zope interfaces.  Others may be available in some form in future
+   versions of Zope X3.
 
  - The signatures of the 'getObjectInstance()', 'getStateToBind()', and
    'getURLContext()' methods in the 'peak.naming' package have changed, to

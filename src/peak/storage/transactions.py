@@ -371,10 +371,6 @@ class TransactionComponent(binding.Component, AbstractParticipant):
 
     """Object that has a 'txnSvc' and auto-joins transactions"""
 
-    implements(
-        binding.Component.__implements__, AbstractParticipant.__implements__
-    )
-
     inTransaction = False
 
     txnAttrs = 'joinedTxn', 'inTransaction'
@@ -407,4 +403,8 @@ class TransactionComponent(binding.Component, AbstractParticipant):
         for attr in self.txnAttrs:
             if have(attr):
                 del d[attr]
+
+
+
+
 

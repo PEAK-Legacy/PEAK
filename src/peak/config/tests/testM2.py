@@ -7,7 +7,6 @@ import testM1
 __bases__ = testM1,
 
 class FooThing:
-    implements(IConfigKey)
     implements(IRule)
 
 

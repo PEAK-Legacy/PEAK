@@ -164,6 +164,9 @@ def addClassAdvisor(callback, depth=2):
 
     def advise(name,bases,cdict):
 
+        if '__metaclass__' in cdict:
+            del cdict['__metaclass__']
+
         if previousMetaclass is None:
              if bases:
                  # find best metaclass or use global __metaclass__ if no bases
@@ -196,9 +199,6 @@ def addClassAdvisor(callback, depth=2):
 def isClassAdvisor(ob):
     """True if 'ob' is a class advisor function"""
     return isinstance(ob,FunctionType) and hasattr(ob,'previousMetaclass')
-
-
-
 
 
 

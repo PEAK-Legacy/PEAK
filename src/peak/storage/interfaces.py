@@ -204,10 +204,10 @@ class ITransactionErrorHandler(Interface):
 
 
 # DM interfaces
-
+from peak.interface import implyProtocols
 from peak.persistence import IPersistentDataManager
 
-class IDataManager(IComponent,ITransactionParticipant,IPersistentDataManager):
+class IDataManager(IComponent,ITransactionParticipant):
 
     """Data manager for persistent objects or queries"""
 
@@ -240,7 +240,7 @@ class IWritableDM(IKeyableDM):
     def flush(ob=None):
         """Sync stored state to in-memory state of 'ob' or all objects"""
 
-
+    implyProtocols(IPersistentDataManager)
 
 
 
