@@ -24,8 +24,7 @@ class LinkRef(Reference):
 
     def __new__(klass, linkName):
         return super(LinkRef,klass).__new__(
-            klass, None,
-            (RefAddr('LinkAddress',linkName),)
+            klass, RefAddr('LinkAddress',linkName)
         )
 
     def linkName(self):
