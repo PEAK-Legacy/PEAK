@@ -1,4 +1,4 @@
-from TW.SOX import Node, Document
+from TW.SOX import Node, Document, load
 from TW.Aspects import Aspect
 
 class XMINode(Node):
@@ -118,4 +118,14 @@ class XMIReading(Aspect):
 
     def _fromXMI(self,node):
         return node
+
+
+        
+    def _XMIroot(self,*args,**kw):
+        document = apply(XMIDocument,args,kw)
+        document.factory = self
+        return document
+        
+    def importFromXMI(self,filename_or_stream):
+        self.roots.extend(load(filename_or_stream,self._XMIroot))
 
