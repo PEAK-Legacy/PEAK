@@ -8,9 +8,10 @@ from test_resources import ResourceApp1
 class ParserTests(TestCase):
 
     def setUp(self,**kw):
+        kw.setdefault('parent',testRoot())
         self.xml_parser = config.XMLParser(
             web.SITEMAP_SCHEMA(testRoot()),
-            parent = testRoot(), sm_globals=globals(), **kw
+            sm_globals=globals(), **kw
         )
         self.parse = self.xml_parser.parse
 
@@ -29,7 +30,6 @@ class ParserTests(TestCase):
         v = self.endElement('location')
         self.failUnless(web.IPlace(v) is v)
         self.assertEqual(v.place_url,'')
-
 
 
 
@@ -59,10 +59,10 @@ class ParserTests(TestCase):
 
     def testLocationClassAndGlobals(self):
         self.startElement('location',['class','TestLocation'])
-        self.failUnless(isinstance(self.endElement('location'),TestLocation))
-        self.startElement('location',['class','TestLocation'])
+        self.startElement('location',['name','x','class','TestLocation'])
         self.startElement('location',['name','y'])
         self.failIf(isinstance(self.endElement('location'),TestLocation))
+        self.failUnless(isinstance(self.endElement('location'),TestLocation))
         self.failUnless(isinstance(self.endElement('location'),TestLocation))
 
     def testImportElement(self):
@@ -224,8 +224,7 @@ class ParserTests(TestCase):
         self.assertEqual(ctx.traverseName("fiz").current, 123)
         self.assertEqual(ctx.url, "123")
         self.failUnless(isinstance(ctx.traverseName("fuz").current,
-                web.TemplateDocument)
-        )
+                web.TemplateDocument))
 
     def testViewHandlers(self):
         ctx = self.policy.newContext()
@@ -238,7 +237,8 @@ class ParserTests(TestCase):
             web.TemplateDocument))
 
     def testExtendedLocation(self):
-        self.setUp(sm_included_from={'name':'foo','class':'TestLocation'})
+        self.setUp(sm_included_from={'name':'foo','class':'TestLocation'},
+            parent=web.Location(testRoot()))
         self.startElement('location', [])
         loc = self.endElement('location')
         self.assertEqual(loc.getComponentName(), 'foo')

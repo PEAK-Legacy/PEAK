@@ -15,17 +15,17 @@ __all__ = [
     'simpleRedirect', 'clientHas','parseName', 'traverseResource',
     'traverseView', 'traverseSkin', 'traverseAttr', 'traverseItem',
     'traverseDefault', 'traverseLocationId', 'relativeURL',
+    'viewProtocol', 'registerView',
 ]
 
 from interfaces import *
 import protocols, posixpath, os, re
 from cStringIO import StringIO
-from peak.api import binding, adapt, NOT_GIVEN, NOT_FOUND, PropertyName
+from peak.api import *
 import errors
 from peak.security.interfaces import IInteraction, IGuardedObject
 from wsgiref.util import shift_path_info, setup_testing_defaults, request_uri
 from peak.security.api import Anybody, allow
-
 
 
 
@@ -63,20 +63,24 @@ def relativeURL(base,url):
     return '/'.join(parts) or './'
 
 
+def viewProtocol(component, name):
+    """'IViewProtocol' for views of 'name', in context of 'component'"""
+    parents = list(binding.iterParents(component));parents.reverse()
+    key = str(VIEW_NAMES+'.'+name)
+    for c in parents:
+        if config.IConfigurable(c,None) is not None:
+            proto = config.registeredProtocol(c,key)
+    proto.view_name = name
+    protocols.adviseObject(proto,[IViewProtocol])
+    return proto
 
-
-
-
-
-
-
-
-
-
-
-
-
-
+    
+def registerView(component, target, name, handler):
+    """Use 'handler' for view 'name' of 'target' in context of 'component'"""
+    IViewTarget(target).registerWithProtocol(
+        viewProtocol(component,name),
+        lambda ob:(ob,handler)
+    )
 
 
 

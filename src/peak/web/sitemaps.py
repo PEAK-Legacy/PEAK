@@ -122,6 +122,7 @@ def locationView(spec):
     return handler
 
 def registerView(parser,data,attrs,name,handler):
+
     perm = acquirePermission(data,attrs)
     helper = acquireHelper(data,attrs)
     loc = acquire(data,'sm.component')
@@ -133,7 +134,7 @@ def registerView(parser,data,attrs,name,handler):
     if perm is not security.Anybody:
         handler = addPermission(handler,perm)
 
-    addSetting(parser, data, (loc,typ,name),
+    addSetting(parser, data, (typ,name),
         lambda: loc.registerView(typ,str(name),handler))
 
 
@@ -148,7 +149,6 @@ def addSetting(parser,data,key,setting):
 def evalObject(data,expr):
     g = getGlobals(data['previous'])
     return eval(expr,g,g)
-
 
 
 
@@ -207,7 +207,6 @@ locRequired = ()
 locOptional = 'name','class','id','permission', 'extends', 'config'
 
 def makeLocation(parser,data,attrs,parent,name):
-
     if 'extends' in attrs:
         factory = naming.lookup(parent,
             naming.parseURL(parent, attrs['extends'], parser._url)
@@ -235,7 +234,8 @@ def makeLocation(parser,data,attrs,parent,name):
         config.loadConfigFile(
             loc,relativeResource(parser,attrs['config'],parent)
         )
-
+    if name:
+        registerView(parser,data,attrs,name,objectView(loc))
     return loc
 
 def relativeResource(parser, attr, parent):
@@ -273,17 +273,17 @@ def startLocation(parser,data):
     data.setdefault('sm_conflict_manager',ConflictManager())
     loc = makeLocation(parser,data,attrs,parent,name)
     data['sm.component'] = loc
-    data['sm.sublocations'] = subloc = {}
-    loc.addContainer(subloc)
-
+    
 
 def defineLocation(parser,data):
     data['finish'] = finishComponent
     data['start'] = startLocation
     prev = findComponentData(data)
-    def addLocation(loc):
-        data['sm.sublocations'][loc.getComponentName()] = loc
-    data['child'] = addLocation
+
+
+
+
+
 
 content_req = ('type',)
 content_opt = ('permission','helper','location')

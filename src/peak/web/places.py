@@ -3,13 +3,13 @@ from interfaces import *
 from types import FunctionType, MethodType, ClassType
 import posixpath
 from errors import NotFound, NotAllowed, WebException
-from environ import traverseAttr, traverseDefault, traverseView
+from environ import traverseAttr, traverseDefault, traverseView, registerView
 from urlparse import urljoin
+from peak.util.EigenData import AlreadyRead
 
 __all__ = [
     'Traversable', 'Place', 'Decorator', 'MultiTraverser', 'Location',
 ]
-
 
 
 
@@ -212,7 +212,7 @@ class Location(Place,binding.Configurable):
 
     containers = binding.Make(list)
     have_views = False
-
+    local_views = binding.Make(dict)
     security.allow(security.Anybody)    # XXX
 
     def beforeHTTP(self,ctx):
@@ -224,24 +224,24 @@ class Location(Place,binding.Configurable):
         if self.have_views:
             ctx = ctx.clone(view_protocol=VIEW_NAMES.of(self).get)
 
-        result = Place.traverseTo(self,name,ctx,NOT_FOUND)
+        for perm,cont in self.containers:
+            if perm is not None:
+                if not ctx.allows(cont,permissionNeeded=perm):
+                    continue
+            context = ctx.clone(current=cont)
+            result = context.traverseName(name,NOT_FOUND)
+            if result is not NOT_FOUND:
+                context = context.parentContext()
+                if context.current is cont:
+                    context.current = self
+                return result
 
-        if result is NOT_FOUND:
-            for perm,cont in self.containers:
-                if perm is not None:
-                    if not ctx.allows(cont,permissionNeeded=perm):
-                        continue
-                context = ctx.clone(current=cont)
-                result = context.traverseName(name,NOT_FOUND)
-                if result is not NOT_FOUND:
-                    context = context.parentContext()
-                    if context.current is cont:
-                        context.current = self
-                    return result
+        return traverseDefault(ctx, self, '', name, name, default)
 
-        if default is NOT_GIVEN:
-            raise NotFound(ctx,name)
-        return default
+
+
+
+
 
 
     def registerLocation(self,location_id,path):
@@ -249,24 +249,24 @@ class Location(Place,binding.Configurable):
         self.registerProvider(LOCATION_ID(location_id),config.Value(path))
 
     def registerView(self,target,name,handler):
-        self.have_views = True
-        IViewTarget(target).registerWithProtocol(
-            config.registeredProtocol(self,VIEW_NAMES+'.'+name),
-            lambda ob:(ob,handler)
-        )
+        if target is None:
+            try:
+                web.viewProtocol(self.getParentComponent(),name)    # XXX!!!
+            except AlreadyRead:
+                pass
+            self.local_views[name] = handler
+        else:
+            self.have_views = True
+            registerView(self,target,name,handler)
 
     def addContainer(self,container,permissionNeeded=None):
         binding.suggestParentComponent(self,None,container)
         self.containers.append((permissionNeeded,container))
 
-
-
-
-
-
-
-
-
+    def __conform__(self,proto):
+        p = IViewProtocol(proto,None)
+        if p is not None and p.view_name in self.local_views:
+            return self, self.local_views[p.view_name]
 
 
 

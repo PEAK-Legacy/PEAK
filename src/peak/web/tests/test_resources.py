@@ -135,9 +135,9 @@ class LocationTests(TestCase):
         self.checkView(loc,int,123)
         self.checkView(loc,protocols.IOpenProtocol,web.IWebTraversable)
 
-
-
-
+    def testLocationView(self):
+        loc = web.Location(self.root)
+        self.checkView(loc,None,loc)
 
 
 
