@@ -7,7 +7,8 @@ from once import *
 from interfaces import *
 from weakref import WeakValueDictionary
 
-from peak.naming.names import toName, Syntax, AbstractName, COMPOUND_KIND
+from peak.naming.names import toName, AbstractName, COMPOUND_KIND
+from peak.naming.syntax import PathSyntax
 from peak.util.EigenData import EigenRegistry, EigenCell
 from peak.config.interfaces import IConfigKey, IPropertyMap
 from peak.util.imports import importString
@@ -188,7 +189,7 @@ class ComponentName(AbstractName):
 
     nameKind = COMPOUND_KIND
 
-    syntax = Syntax(
+    syntax = PathSyntax(
         direction = 1,
         separator = '/',
     )

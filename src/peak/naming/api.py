@@ -1,19 +1,22 @@
 """API functions and classes for the peak.naming package"""
 
 from interfaces import *
+from syntax     import *
 from names      import *
+from contexts   import *
 
 import spi
 
 
-def InitialContext(parent=None, ctxName=None, **options):
+def InitialContext(parent=None, componentName=None, **options):
 
     """Get an initial naming context, based on 'parent' and keyword options
 
     'parent' is the component which will be used as the naming context's
     parent component, to obtain any required configuration data.  The
-    'options' keyword arguments are used to set up the context attributes,
-    just as with a normal PEAK component constructor.
+    'componentName' argument and 'options' keyword arguments are used
+    to set up the context's name and attributes, just as with a normal
+    PEAK component constructor.
 
     This function implements the 'binding.IBindingFactory' interface, and
     thus can be used as a factory for a 'binding.New()' attribute.  That
@@ -26,16 +29,13 @@ def InitialContext(parent=None, ctxName=None, **options):
     an initial context.
     """
 
-    return spi.getInitialContext(parent, ctxName, **options)
+    return spi.getInitialContext(parent, componentName, **options)
 
 
 from peak.binding.interfaces import IBindingFactory
 InitialContext.__implements__ = IBindingFactory
 
 del IBindingFactory
-
-
-
 
 
 
@@ -66,7 +66,8 @@ def parseURL(name, parent=None):
     url = toName(name)
 
     if url.nameKind != URL_KIND:
-        raise exceptions.InvalidName("Not a URL", name)
+        from peak.exceptions import InvalidName
+        raise InvalidName("Not a URL", name)
 
     scheme, body = url.scheme, url.body
 

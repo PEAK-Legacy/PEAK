@@ -13,7 +13,7 @@ from peak.util.imports import importObject
 
 
 __all__ = [
-    'NameContext', 'AddressContext', 'AbstractContext', 'GenericURLContext'
+    'NameContext', 'AddressContext',
 ]
 
 
@@ -597,17 +597,6 @@ class AddressContext(NameContext):
         return self.resolveToInterface(
             self.namingAuthority + name, iface
         )
-
-
-
-
-# XXX Backward compatibility
-
-AbstractContext = NameContext
-GenericURLContext = AddressContext
-
-
-
 
 
 

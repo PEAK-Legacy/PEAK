@@ -51,7 +51,8 @@ def getInitialContext(parentComponent=None, componentName=None, **options):
     for it.)
 
     Keyword options and the component name desired for the initial context
-    are passed through to the actual factory, along with the parent component.
+    are passed through to the actual factory, along with the parent component
+    and component name.
     
     As with all 'IBindingFactory' providers, if no 'parentComponent' is
     supplied, the new initial context will be a root component, and acquire
@@ -79,7 +80,6 @@ getInitialContext.__implements__ = IBindingFactory
 
 
 
-
 def getURLContext(scheme, iface, parent=None, componentName=None, **options):
 
     """Return a context object for the given URL scheme and interface
@@ -87,7 +87,8 @@ def getURLContext(scheme, iface, parent=None, componentName=None, **options):
         This is done by looking up 'scheme' in the 'peak.naming.schemes.*'
         property namespace.  (That is, the '"ldap:"' URL scheme is retrieved
         from the 'peak.naming.schemes.ldap' property.  Per RFC 1738, the
-        lowercase form of the scheme name is always used.)  The property value
+        lowercase form of the scheme name is always used; note that the '":"'
+        should not be included in the scheme name.)  The property value
         found, if a string, will be treated as an import specification, and
         the relevant object imported.
 
@@ -118,8 +119,6 @@ def getURLContext(scheme, iface, parent=None, componentName=None, **options):
     if factory is not None:
 
         factory = importObject(factory)
-
-
 
 
         if IURLContextFactory.isImplementedBy(factory):

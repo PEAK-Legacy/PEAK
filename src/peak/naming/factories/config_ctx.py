@@ -7,14 +7,13 @@
 """
 
 from peak.api import *
-from peak.naming.contexts import NameContext
 
 
 class PropertyPath(naming.CompoundName):
 
     """Property paths are dot-separated, left-to-right, compound names"""
 
-    syntax = naming.Syntax(
+    syntax = naming.PathSyntax(
         direction = 1,
         separator = '.',
     )
@@ -39,7 +38,8 @@ class PropertyURL(naming.ParsedURL):
 
 
 
-class PropertyContext(NameContext):
+
+class PropertyContext(naming.NameContext):
 
     schemeParser   = PropertyURL
     compoundParser = PropertyPath

@@ -244,13 +244,17 @@ class IWriteContext(IBasicContext):
 
 
 
+# Framework interfaces
+
 class IInitialContextFactory(Interface):
+    """Get access to an initial naming context"""
 
     def getInitialContext(parentComponent=None, componentName=None, **options):
         """Return a naming context for 'parentComponent' with 'options'"""
 
 
 class IObjectFactory(Interface):
+    """Convert data in a naming system into a useful retrieved object"""
 
     def getObjectInstance(refInfo, name, context, attrs=None):
 
@@ -275,18 +279,16 @@ class IObjectFactory(Interface):
         behavior."""
 
 
-
 class IStateFactory(Interface):
+    """Convert an object into state that can be stored in a naming system"""
 
     def getStateToBind(obj, name, context, attrs=None):
         """Return the '(obj,attrs)' state that should be used to save 'obj'"""
 
-
-
-
-
 class IURLContextFactory(Interface):
 
+    """Obtain a context implementation for a URL scheme"""
+    
     def getURLContext(scheme,iface,parent=None,componentName=None,**options):
 
         """Return a context that can provide 'iface' for 'scheme' URLs

@@ -1,6 +1,5 @@
 from __future__ import generators
 from peak.api import *
-from peak.naming.contexts import AbstractContext
 import nis
 
 class nisURL(naming.ParsedURL):
@@ -10,7 +9,7 @@ class nisURL(naming.ParsedURL):
     pattern = "((?P<mapname>[^/]+)(/(?P<key>.+)?)?)?"
 
 
-class nisURLContext(AbstractContext):
+class nisURLContext(naming.NameContext):
 
     __implements__ = naming.IReadContext
 
@@ -39,7 +38,8 @@ class nisURLContext(AbstractContext):
 
 
 
-class nisMapContext(AbstractContext):
+
+class nisMapContext(naming.NameContext):
 
     __implements__ = naming.IReadContext
 

@@ -205,7 +205,7 @@ class LDAPConnection(ManagedConnection):
 
 class distinguishedName(naming.CompoundName):
 
-    syntax = naming.Syntax(
+    syntax = naming.PathSyntax(
     
         direction    = -1,      # DN's go right-to-left
         separator    = ',',     # are comma-separated
