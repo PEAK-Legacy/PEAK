@@ -16,11 +16,9 @@ import sys
 if sys.version<'2.1':
 
     def importAllFrom(name,g=None):
+
         g = g or globals()
-        try:
-            exec "from %s import __all__" % name
-        except:
-            __all__ = ['*']
+        exec "import %s; __all__=getattr(%s,'__all__',['*'])" % (name,name)
 
         import string
         exec "from %s import %s" % (name,string.join(__all__,",")) in g
