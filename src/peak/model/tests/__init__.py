@@ -9,7 +9,7 @@ class featureBase(object):
     __metaclass__ = FeatureClass
 
     singular = 1
-
+    isDerived = False
     newVerbs = Items(
         get     = 'get%(initCap)s',
         set     = 'set%(initCap)s',

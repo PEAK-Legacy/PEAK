@@ -29,7 +29,7 @@ class HashAndCompare(object):
         return cmp(self._hashAndCompare,other)
 
 
-
+installIfChangeable = lambda f,m: f.isChangeable
 
 
 
@@ -114,18 +114,20 @@ class FeatureClass(HashAndCompare,MethodExporter):
 
 
     def __set__(self, ob, val):
-
         """Set the feature's value by delegating to 'ob.setX()'"""
 
-        return self.getMethod(ob,'set')(val)
-
-
+        if self.isChangeable:
+            self.getMethod(ob,'set')(val)
+        else:
+            raise AttributeError("Unchangeable feature",self.attrName)
 
     def __delete__(self, ob):
-
         """Delete the feature's value by delegating to 'ob.delattrX()'"""
 
-        return self.getMethod(ob,'unset')()
+        if self.isChangeable:
+            self.getMethod(ob,'unset')()
+        else:
+            raise AttributeError("Unchangeable feature",self.attrName)
 
 
     def typeObject(self,d,a):
@@ -160,8 +162,6 @@ class FeatureClass(HashAndCompare,MethodExporter):
 
 
 
-
-
     isMany     = binding.Once(lambda s,d,a: s.upperBound<>1)
     isRequired = binding.Once(lambda s,d,a: s.lowerBound >0)
 
@@ -169,6 +169,7 @@ class FeatureClass(HashAndCompare,MethodExporter):
         lambda s,d,a: not s.isDerived,
         doc = "Feature is changeable; defaults to 'True' if not 'isDerived'"
     )
+
 
     implAttr   = binding.Once(
         lambda s,d,a: s.attrName,
@@ -202,11 +203,13 @@ class FeatureClass(HashAndCompare,MethodExporter):
 
 
 
-
 class StructuralFeature(object):
 
     __metaclass__ = FeatureClass
-    __class_implements__ = IFeature, IFeatureSPI
+
+    __class_implements__ = IFeature, IFeatureSPI        # XXX
+    __class_implements__ = IReference, IReferenceSPI
+
 
     isDerived     = False
     isComposite   = False
@@ -224,6 +227,10 @@ class StructuralFeature(object):
         get     = 'get%(initCap)s',
         set     = 'set%(initCap)s',
         unset   = 'unset%(initCap)s',
+        add     = 'add%(initCap)s',
+        remove  = 'remove%(initCap)s',
+        replace = 'replace%(initCap)s',
+        insertBefore = 'insert%(initCap)sBefore',
     )
 
 
@@ -232,13 +239,6 @@ class StructuralFeature(object):
 
     _get_many.installIf = lambda f,m: f.isMany
     _get_many.verb      = 'get'
-
-
-
-
-
-
-
 
 
 
@@ -261,23 +261,23 @@ class StructuralFeature(object):
     _get_one.verb      = 'get'
 
 
-    def _assertChangeable(feature):
-        if not feature.isChangeable:
-            raise AttributeError("Unchangeable feature", feature.attrName)
+
+    def _set_one(feature, element, val):
+        feature.getMethod(element,'add')(val)
+
+    _set_one.installIf = lambda f,m: f.isChangeable and not f.isMany
+    _set_one.verb      = 'set'
 
 
-    def set(feature, element, val):
-        feature._assertChangeable()
-        element._setBinding(feature.implAttr,val)
 
-    set.installIf = lambda f,m: f.isChangeable
+    def _unset_one(feature, element):
+        l = feature._getList(element)
+        if l:
+            feature.getMethod(element,'remove')(l[0])
 
+    _unset_one.installIf = lambda f,m: f.isChangeable and not f.isMany
+    _unset_one.verb      = 'unset'
 
-    def unset(feature, element):
-        feature._assertChangeable()
-        element._delBinding(feature.implAttr)
-
-    unset.installIf = lambda f,m: f.isChangeable
 
 
 
@@ -326,60 +326,48 @@ class StructuralFeature(object):
 
 
 
-class Collection(StructuralFeature):
-
-    __class_implements__ = IReference, IReferenceSPI
-
-    isReference = True
-
-    newVerbs = Items(
-        add     = 'add%(initCap)s',
-        remove  = 'remove%(initCap)s',
-        replace = 'replace%(initCap)s',
-        insertBefore = 'insert%(initCap)sBefore',
-    )
-
-
-    def set(feature, element, val):
+    def _set_many(feature, element, val):
         feature.__delete__(element)
-        if feature.isMany:
-            map(feature.getMethod(element,'add'),val)
-        else:
-            feature.getMethod(element,'add')(val)
+        map(feature.getMethod(element,'add'),val)
 
-
-    def add(feature, element, item):
-        """Add the item to the collection/relationship"""      
-        feature._notifyLink(element,item)
-
-
-    def remove(feature, element, item):
-        """Remove the item from the collection/relationship, if present"""
-        feature._notifyUnlink(element,item)
-
-
-
-
-
-
-
-
-
+    _set_many.installIf = lambda f,m: f.isChangeable and f.isMany
+    _set_many.verb      = 'set'
 
 
     def replace(feature, element, oldItem, newItem):
 
         d = feature._getList(element)
-        p = d.index(oldItem)
 
-        if p!=-1:
-            feature._notifyUnlink(element,oldItem,p)
-            feature._notifyLink(element,newItem,p)
+        if oldItem in d:
+            p = d.index(oldItem)
+            feature.getMethod(element,'remove')(oldItem,p)
+            feature.getMethod(element,'add')(newItem,p)
+
         else:
-            raise ValueError(oldItem,"not found")
+            raise ValueError("Can't replace missing item", oldItem)
+
+    replace.installIf = installIfChangeable
 
 
-    def unset(feature, element):
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    def _unset_many(feature, element):
 
         """Unset the value of the feature (like __delattr__)"""
 
@@ -388,18 +376,20 @@ class Collection(StructuralFeature):
         items = zip(range(len(d)),d)
         items.reverse()
 
-        unlink = feature._notifyUnlink
+        remove = feature.getMethod(element,'remove')
 
         # remove items in reverse order, to simplify deletion and
         # to preserve any invariant that was relevant for addition
         # order...
         
         for posn,item in items:
-            unlink(element,item,posn)
+            remove(element,item,posn)
             
         element._delBinding(feature.implAttr)
 
 
+    _unset_many.installIf = lambda f,m: f.isChangeable and f.isMany
+    _unset_many.verb      = 'unset'
 
 
 
@@ -408,7 +398,19 @@ class Collection(StructuralFeature):
 
 
 
-    def _notifyLink(feature, element, item, posn=None):
+
+
+
+
+
+
+
+
+
+
+    def add(feature, element, item, posn=None):
+
+        """Add the item to the collection/relationship"""      
 
         feature._link(element,item,posn)
         referencedEnd = feature.referencedEnd
@@ -417,8 +419,12 @@ class Collection(StructuralFeature):
             otherEnd = getattr(item.__class__,referencedEnd)
             otherEnd._link(item,element)
 
+    add.installIf = installIfChangeable
 
-    def _notifyUnlink(feature, element, item, posn=None):
+
+    def remove(feature, element, item, posn=None):
+
+        """Remove the item from the collection/relationship, if present"""
 
         feature._unlink(element,item,posn)
         referencedEnd = feature.referencedEnd
@@ -427,10 +433,23 @@ class Collection(StructuralFeature):
             otherEnd = getattr(item.__class__,referencedEnd)
             otherEnd._unlink(item,element)
 
+    remove.installIf = installIfChangeable
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     def _link(feature,element,item,posn=None):
-
-        feature._assertChangeable()
 
         ub = feature.upperBound
         d=feature._getList(element)
@@ -448,10 +467,10 @@ class Collection(StructuralFeature):
         else:
             d.insert(posn,item)
 
+    _link.installIf         = installIfChangeable
+
 
     def _unlink(feature,element,item,posn=None):
-
-        feature._assertChangeable()
 
         if not feature.isMany:
             return element._delBinding(feature.implAttr)
@@ -464,30 +483,57 @@ class Collection(StructuralFeature):
         else:
             del d[posn]
 
+    _unlink.installIf       = installIfChangeable
+
+
+
+
+
 
     def insertBefore(feature, element, oldItem, newItem):
 
-        if not feature.isOrdered:
-            raise TypeError("Unordered feature", feature)
-
         d = feature._getList(element)
-        
-        ub = feature.upperBound
-        if ub and len(d)>=ub:
-            raise ValueError("Too many items")
 
-        i = -1
-
-        if d:
-            i = d.index(oldItem)
-
-        if i!=-1:
-            feature._notifyLink(element,newItem,i)
+        if oldItem in d:
+            feature.getMethod(element,'add')(newItem,d.index(oldItem))
         else:
-            raise ValueError(oldItem,"not found")
+            raise ValueError("Can't insert before missing item", oldItem)
+
+    insertBefore.installIf = lambda f,m: f.isOrdered and f.isChangeable
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class Collection(StructuralFeature):
+
+    isReference = 1
 
 
 class Field(StructuralFeature):
@@ -519,11 +565,6 @@ class DerivedAssociation(Collection):
 class Sequence(Collection):
 
     isOrdered = True
-
-
-
-
-
 
 
 
@@ -740,7 +781,8 @@ class Immutable(Classifier, HashAndCompare):
 
     __metaclass__  = ImmutableClass
     __implements__ = binding.IBindingAPI
-    mdl_isAbstract     = True   # Immutable itself is abstract
+
+    mdl_isAbstract = True   # Immutable itself is abstract
 
     def _hashAndCompare(s,d,a):
         return tuple([
@@ -767,7 +809,6 @@ class Immutable(Classifier, HashAndCompare):
 
     def __setattr__(self,attr,value):
         raise TypeError("Immutable object", self)
-
 
 
 
