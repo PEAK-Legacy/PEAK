@@ -13,6 +13,6 @@ del lazyModule
 
 def DMFor(*classes):
     from peak.api import config
-    return config.ProviderFor(IDataManager,*classes)
+    return config.ProviderOf(IDataManager,*classes)
 
 
