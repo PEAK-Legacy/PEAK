@@ -30,14 +30,14 @@
 
 
 from xml.sax import ContentHandler, parse
+from xml.sax.saxutils import XMLGenerator
 from Interface import Interface
 from kjbuckets import kjGraph
 
-
-
-
-
-
+__all__ = [
+    'load', 'ISOXNode', 'ISOXNode_NS', 'ObjectMakingHandler', 'NSHandler',
+    'Node', 'Node_NS', 'Document', 'Document_NS', 'IndentedXML',
+]
 
 class ISOXNode(Interface):
 
@@ -357,6 +357,47 @@ def load(filename_or_stream, documentObject=None, namespaces=False):
 
 
 
+
+
+
+
+
+
+
+
+
+
+class IndentedXML(XMLGenerator):
+    
+    """SAX handler that writes its output to an IndentedStream"""
+    
+    def __init__(self, out=None, encoding="iso-8859-1"):
+        if out is None:
+            from IndentedStream import IndentedStream
+            out = IndentedStream()
+        XMLGenerator.__init__(self,out,encoding)
+
+    def startElement(self,name,attrs):
+        XMLGenerator.startElement(self,name,attrs)
+        self._out.push(1)
+
+    def startElementNS(self,name,qname,attrs):
+        XMLGenerator.startElementNS(self,name,qname,attrs)
+        self._out.push(1)
+
+    def characters(self,content):
+        self._out.push()
+        self._out.setMargin(absolute=0)
+        XMLGenerator.characters(self,content)
+        self._out.pop()
+
+    def endElement(self,name):
+        self._out.pop()
+        XMLGenerator.endElement(self,name)
+
+    def endElementNS(self,name,qname):
+        self._out.pop()
+        XMLGenerator.endElementNS(self,name,qname)
 
 
 
