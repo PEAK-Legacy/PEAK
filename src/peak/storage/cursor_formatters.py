@@ -270,9 +270,6 @@ class cursorToCSV(AbstractCursorFormatter):
 
 class cursorToHTML(AbstractCursorFormatter):
     def formatRows(self, c, stdout):
-        out = stdout.write
-        t, d, l = [], [], []
-        first = 1
         nr = 0
 
         print >>stdout, "<table border>"
