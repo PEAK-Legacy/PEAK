@@ -5,7 +5,7 @@ __all__ = ['randbytes', 'rand16']
 
 
 import sys, os, time
-from whrandom import random, seed
+from whrandom import random
 seeded = 0
 
 try:

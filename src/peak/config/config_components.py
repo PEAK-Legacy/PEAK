@@ -4,7 +4,7 @@ from peak.api import *
 from peak.util.imports import importString, importObject
 from peak.binding.components import Component, New, Once, getParentComponent
 
-from peak.util.EigenData import EigenCell, AlreadyRead
+from peak.util.EigenData import EigenCell
 from peak.util.FileParsing import AbstractConfigParser
 
 from interfaces import *

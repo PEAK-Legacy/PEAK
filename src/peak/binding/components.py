@@ -5,16 +5,15 @@ from peak.api import *
 
 from once import *
 from interfaces import *
-from weakref import WeakValueDictionary, ref
 from types import ModuleType
 from peak.naming.names import toName, AbstractName, COMPOUND_KIND
 from peak.naming.syntax import PathSyntax
-from peak.util.EigenData import EigenCell, AlreadyRead, EigenRegistry
+from peak.util.EigenData import AlreadyRead, EigenRegistry
 from peak.config.interfaces import IConfigKey, IPropertyMap, \
     IConfigurationRoot, NullConfigRoot
 from peak.util.imports import importString
 from peak.interface import adapt
-from warnings import warn, warn_explicit
+from warnings import warn
 
 class ComponentSetupWarning(UserWarning):
     """Large iterator passed to suggestParentComponent"""
@@ -38,6 +37,7 @@ class _proxy(Once):
         raise AttributeError, self.attrName
 
     def computeValue(self,d,a): raise AttributeError, a
+
 
 def getComponentPath(component, relativeTo=None):
 
@@ -755,7 +755,7 @@ class Component(_Base):
             % (self,pc,parentComponent)
         )
 
-    __parentSetting = NOT_GIVEN #New(EigenCell)
+    __parentSetting = NOT_GIVEN
     __componentName = None
 
 

@@ -9,12 +9,12 @@ import spi
 
 from peak.binding.components import Component, Once, Acquire
 
-from peak.util.imports import importObject
 
 
 __all__ = [
     'NameContext', 'AddressContext',
 ]
+
 
 
 

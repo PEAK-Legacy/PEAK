@@ -677,7 +677,6 @@ from peak.util.Code import BUILD_CLASS, STORE_NAME, MAKE_CLOSURE, \
     STORE_SUBSCR, DELETE_SUBSCR, DELETE_ATTR, DELETE_NAME, DELETE_GLOBAL
 
 from peak.util.Meta import makeClass
-from sys import _getframe
 from warnings import warn, warn_explicit
 
 class ModuleInheritanceWarning(UserWarning):
@@ -688,6 +687,7 @@ mutableOps = (
     DELETE_SLICE, DELETE_SLICE+1, DELETE_SLICE+2, DELETE_SLICE+3,
     STORE_ATTR,   DELETE_ATTR,    STORE_SUBSCR,   DELETE_SUBSCR,
 )
+
 
 
 

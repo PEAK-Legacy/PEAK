@@ -11,7 +11,7 @@ The host may not have one, or may have more than one.  In fact, if the
 host has more than one, there is no guarantee that you will get the same
 one every time. """
 
-import sys, os, time, re
+import sys, os, re
 
 try:
     import posix

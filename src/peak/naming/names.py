@@ -6,13 +6,12 @@ from peak.api import *
 
 import re
 from types import StringTypes
-from urllib import quote,unquote
+from urllib import unquote
 
 from interfaces import *
 from syntax import *
 from arithmetic import *
 
-from peak.util.Struct import struct, structType
 from peak.binding.once import Activator, Once
 from peak.interface import implements, classProvides
 
@@ -30,6 +29,7 @@ def isBoundary(name):
 def crossesBoundaries(name):
     return name and name.nameKind==COMPOSITE_KIND and ( len(name)>1
         or name and not name[0] )
+
 
 
 

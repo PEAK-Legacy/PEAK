@@ -2,7 +2,7 @@
 
 from unittest import TestCase, makeSuite, TestSuite
 from peak.util.uuid import *
-import sys
+
 
 class UUIDTests(TestCase):
 

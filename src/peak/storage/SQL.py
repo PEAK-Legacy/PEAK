@@ -4,7 +4,6 @@ from interfaces import *
 from peak.util.Struct import makeStructType
 from peak.util.imports import importObject
 from connections import ManagedConnection, AbstractCursor
-import sys
 
 __all__ = [
     'SQLCursor', 'GenericSQL_URL', 'SQLConnection', 'SybaseConnection',
@@ -17,6 +16,7 @@ def _nothing():
 
 def NullConverter(descr,value):
     return value
+
 
 
 

@@ -8,7 +8,7 @@
 
 from peak.binding.components import Component, Once, New, requireBinding
 from peak.naming.names import ParsedURL
-from peak.interface import implements, Interface
+from peak.interface import implements
 from peak.api import NOT_GIVEN
 
 from interfaces import ILogger

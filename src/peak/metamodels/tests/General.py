@@ -127,10 +127,10 @@ class XMILoad(TestCase):
     def checkLoad(self):
         global LoadedUML
         self.m = m = LoadedUML = UML_DM(testRoot())
-        from os import path
         m.roots = storage.xmi.fromFile(
             config.fileNearModule(__name__,'MetaMeta.xml'), testRoot()
         )
+
 
 class XMITests(TestCase):
 

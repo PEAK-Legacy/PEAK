@@ -18,7 +18,7 @@
 
 from array import array
 import new
-from types import CodeType, StringType
+from types import CodeType
 from dis import HAVE_ARGUMENT, EXTENDED_ARG, opname
 
 __all__ = ['Code', 'Function', 'opcode', 'codeIter', 'FunctionBinder', 'bind_func']
@@ -185,7 +185,7 @@ class Code(object):
 
         """Append opcode 'op', w/optional argument 'arg'; arg can be 32 bit"""
 
-        #if isinstance(op,StringType): op = opcode[op]
+        #if isinstance(op,str): op = opcode[op]
 
         append = self.co_code.append
 
@@ -263,7 +263,7 @@ class codeIter(object):
         if findOps:
             opmap = self.findOps = [0]*256
             for f in findOps:
-                #if isinstance(f,StringType): f = opcode[f]
+                #if isinstance(f,str): f = opcode[f]
                 opmap[f]=1
         else:
             self.findOps = allOps
@@ -330,7 +330,7 @@ class codeIter(object):
 
         """Write 'op' (w/optional 'arg') at current position"""
 
-        #if isinstance(op,StringType): op = opcode[op]
+        #if isinstance(op,str): op = opcode[op]
 
         ca=self.codeArray
         start = self.start

@@ -1,7 +1,7 @@
 from peak.api import *
 from interfaces import *
 from time import time
-import sys
+
 
 __all__ = [
     'TransactionService', 'AbstractParticipant', 'TransactionComponent',

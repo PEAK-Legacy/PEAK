@@ -1,6 +1,6 @@
 from peak.naming.api import *
 from peak.util.uuid import UUID
-from peak.api import exceptions
+
 
 class uuidURL(ParsedURL):
     """

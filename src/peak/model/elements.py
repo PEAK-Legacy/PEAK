@@ -11,7 +11,6 @@
 
 from peak.api import *
 from interfaces import *
-from method_exporter import MethodExporter
 from peak.util.hashcmp import HashAndCompare
 from types import FunctionType
 
@@ -23,6 +22,7 @@ from peak.binding.components import _Base
 __all__ = [
     'Type', 'PrimitiveType', 'Immutable', 'Struct', 'Element',
 ]
+
 
 
 

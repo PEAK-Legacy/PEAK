@@ -1,11 +1,11 @@
 from peak.api import *
 from interfaces import *
 from bisect import insort_left
-from time import time
 
 __all__ = [
     'AdaptiveTask', 'TaskQueue',
 ]
+
 
 
 

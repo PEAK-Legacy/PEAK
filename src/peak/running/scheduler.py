@@ -3,7 +3,6 @@
 from peak.api import *
 from interfaces import *
 from peak.util.EigenData import EigenCell, AlreadyRead
-from peak.util.imports import lazyModule
 
 from bisect import insort_right
 
@@ -12,6 +11,7 @@ __all__ = [
     'setReactor', 'getReactor', 'getTwisted',
     'MainLoop', 'UntwistedReactor',
 ]
+
 
 
 

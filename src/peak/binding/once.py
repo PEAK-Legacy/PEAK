@@ -2,16 +2,16 @@
 
 from __future__ import generators
 from peak.api import NOT_FOUND
-from peak.util.EigenData import EigenRegistry
 from peak.util.imports import importObject, importString
 from interfaces import IComponentFactory
 from _once import *
-from types import FunctionType
+
 
 __all__ = [
     'Once', 'New', 'Copy', 'Activator', 'ActiveClass', 'ActiveClasses',
     'getInheritedRegistries', 'classAttr', 'Singleton', 'metamethod',
 ]
+
 
 def metamethod(func):
     """Wrapper for metaclass method that might be confused w/instance method"""

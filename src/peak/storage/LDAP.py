@@ -1,7 +1,7 @@
 from __future__ import generators
 from peak.api import *
 from connections import ManagedConnection, AbstractCursor
-from urllib import quote, unquote
+from urllib import unquote
 from interfaces import *
 from peak.util.Struct import makeStructType
 from peak.util.imports import importObject

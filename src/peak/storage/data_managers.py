@@ -3,7 +3,7 @@ from interfaces import *
 from transactions import TransactionComponent
 from peak.persistence import Persistent, isGhost
 from peak.util.ListProxy import ListProxy
-from lazy_loader import LazyLoader
+
 
 __all__ = [
     'FacadeDM', 'QueryDM', 'EntityDM', 'PersistentQuery', 'QueryLink',

@@ -1,8 +1,6 @@
 from peak.naming.api import *
 from peak.util.imports import importString
 
-from types import StringTypes
-
 
 class importURL(ParsedURL):
 
