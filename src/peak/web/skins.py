@@ -99,12 +99,12 @@ class Skin(MultiTraverser,Place):
             self.dummyEnviron.copy(), self, self, self.dummyInteraction
         )
 
-        resourceCtx = path.traverse(start, getRoot = lambda ctx: start)
+        if not path[0]:
+            path = path[1:]
+
+        resourceCtx = path.traverse(start)
         self.cache[path] = subject = resourceCtx.current
         return subject
-
-
-
 
 
 

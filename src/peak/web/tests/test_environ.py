@@ -130,30 +130,30 @@ class TestTraversals(TestCase):
         self.ctx = self.ctx.clone(rootURL=self.url_base)
         self.checkURLs('/test/test2/test3')
 
+    def getPath(self,path):
+        return web.TraversalPath(path).traverse(self.ctx)
+
+    def checkPath(self,path,ob):
+        self.assertEqual(self.getPath(path).current,ob)
+
+       
+    def testContextAttrs(self):
+        self.failUnless(self.getPath('/').current is self.ctx)
+        self.assertRaises(TypeError, lambda: self.getPath('/').traversedURL)
+        for attr in """
+            url previous environ interaction policy skin rootURL
+            traversedURL absoluteURL user
+        """.strip().split():
+            self.checkPath('/'+attr, getattr(self.ctx,attr))
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    def testPolicyAttrs(self):
+        for attr in "defaultMethod resourcePrefix app".strip().split():
+            self.checkPath('/policy/'+attr, getattr(self.policy,attr))
+        
+    def testEnvironItems(self):
+        for key in self.ctx.environ:
+            self.checkPath('/environ/'+key, self.ctx.environ[key])
 
 
 

@@ -3,7 +3,7 @@
 from peak.api import *
 from interfaces import *
 from errors import NotFound, NotAllowed
-from environ import StartContext
+from environ import StartContext, Context
 from wsgiref.util import application_uri, setup_testing_defaults
 from cStringIO import StringIO
 from peak.security.api import Anybody
@@ -48,13 +48,17 @@ class TraversalPath(naming.CompoundName):
         separator='/'
     )
 
-    def traverse(self, ctx, getRoot = lambda ctx: ctx.clone(current=ctx)):
+    def traverse(self, ctx):
 
         path = iter(self)
         part = path.next()
 
         if not part:
-            ctx = getRoot(ctx)
+            # Deliberately set 'name' of context to 'None' so that
+            # 'traversedURL' will break with a TypeError if you try
+            # to access it; going to an "absolute" traversal path is
+            # an "escape" reserved for template paths, not URLs
+            ctx = Context(None,ctx,ctx.environ,ctx,clone_from=ctx)
         else:
             # reset to beginning
             path = iter(self)
@@ -74,10 +78,6 @@ class NullAuthenticationService:
 
     def getUser(self, environ):
         return None
-
-
-
-
 
 
 class InteractionPolicy(binding.Configurable, protocols.StickyAdapter):
