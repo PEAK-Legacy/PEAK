@@ -190,17 +190,17 @@ class ManagedConnection(TransactionComponent):
         """Join the current transaction, if not already joined"""
         return self.joinedTxn
 
-
     def voteForCommit(self, txnService):
         self.closeCursors()
 
     def abortTransaction(self, txnService):
         self.closeCursors()
 
-
-
-
-
+    def assertUntransacted(self):
+        if self in self.txnSvc:
+            raise exceptions.TransactionInProgress(
+                """Connection has already joined transaction"""
+            )
 
 
     _cursors = binding.New(WeakValueDictionary)

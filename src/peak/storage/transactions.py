@@ -300,8 +300,8 @@ class TransactionService(binding.Component):
         return self.state.timestamp is not None
 
 
-
-
+    def __contains__(self,ob):
+        return ob in self.state.participants
 
 
 

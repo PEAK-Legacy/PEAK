@@ -55,6 +55,9 @@ class ITransactionService(Interface):
         progressed too far for the new participant to join in, a
         TransactionInProgress error will be raised."""
         
+    def __contains__(participant):
+        """Has 'participant' joined?"""
+
     def removeParticipant(participant):
         """Force participant to be removed; for error handler use only"""
 
@@ -75,6 +78,7 @@ class ITransactionService(Interface):
         nothing with this information. Transaction participants will
         need to retrieve the information with 'getInfo()' and record
         it at the appropriate point during the transaction."""
+
 
     def getInfo():
         """Return a copy of the transaction's metadata dictionary"""
@@ -157,10 +161,6 @@ class ITransactionParticipant(Interface):
         the commit.  DB connections will probably issue COMMIT TRAN
         here. Transactional caches might use this message to reset
         themselves."""
-
-
-
-
 
     def abortTransaction(txnService):
         """This message can be received at any time, and means the
@@ -313,15 +313,15 @@ class IManagedConnection(IComponent,ITransactionParticipant):
 
     def joinTxn():
         """Join the current transaction, if not already joined"""
-        
+
+    def assertUntransacted():
+        """Raise 'TransactionInProgress' if transaction already joined"""
+
     def closeASAP():
         """Close the connection as soon as it's not in a transaction"""
         
     def close():
         """Close the connection immediately"""
-
-
-
 
 
 

@@ -46,10 +46,12 @@ class SQLCursor(AbstractCursor):
     conn = binding.bindToParent()
     typeMap = binding.bindTo('conn/typeMap')
 
+
     def _cursor(self,d,a):
         return self._conn.cursor()
 
     _cursor = binding.Once(_cursor)
+
 
     def close(self):
 
@@ -78,8 +80,6 @@ class SQLCursor(AbstractCursor):
 
 
 
-
-
     def nextset(self):
         try:
             return getattr(self._cursor, 'nextset', _nothing)()
@@ -87,7 +87,43 @@ class SQLCursor(AbstractCursor):
             pass
 
 
+    def _setOutsideTxn(self,value):
+        self._delBinding('setTxnState')
+        self._setBinding('outsideTxn',value)
+
+    def _getOutsideTxn(self):
+        return self._getBinding('outsideTxn',False)
+
+    outsideTxn = property(_getOutsideTxn,_setOutsideTxn)
+
+
+    def setTxnState(self,d,a):
+        if self.outsideTxn:
+            return self.conn.assertUntransacted
+        else:
+            return self.conn.joinTxn
+
+    setTxnState = binding.Once(setTxnState)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     def execute(self, *args):
+
+        self.setTxnState()
 
         try:
 
@@ -109,11 +145,16 @@ class SQLCursor(AbstractCursor):
             raise
 
 
-    def joinTxn(self,value):
-        if value:
-            self.getParentComponent().joinTxn()
 
-    joinTxn = property(fset=joinTxn, doc="Set to true to join transaction")
+
+
+
+
+
+
+
+
+
 
 
 
