@@ -69,11 +69,11 @@ class AdviceTests(TestCase):
                 "Should have detected advice outside class body"
             )
 
-
-
-
-
-
+    def checkDoubleType(self):
+        class aType(type,type):
+            ping([],1)
+        aType, = aType
+        assert aType.__class__ is type
 
 
 
@@ -109,7 +109,7 @@ class AdviceTests(TestCase):
             raise AssertionError("Should have gotten incompatibility error")
 
         class M3(M1,M2): pass
-        
+
         class C(B1,B2):
             __metaclass__ = M3
             ping([],1)
@@ -121,28 +121,44 @@ class AdviceTests(TestCase):
 
 
 
-    def checkRootMetas(self):
-
-        # Create a new root metaclass; this is akin to an ExtensionClass,
-        # one of the Don Beaudry metaclasses, or 'type' itself.
-
-        class _boot(type): pass
-        class _type(_boot): __metaclass__ = _boot
-        _type.__class__ = _type
-
-        try:
-            class C(type,_type):
-                ping([],1)
-        except TypeError:
-            pass
-        else:
-            raise AssertionError("Should have found incompatible roots")
-
-
 TestClasses = (
     AdviceTests,
 )
 
 def test_suite():
     return TestSuite([makeSuite(t,'check') for t in TestClasses])
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 

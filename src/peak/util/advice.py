@@ -109,9 +109,9 @@ class advice(object):
 
     # __doc__ is a special case; our class wants to supply it, and so won't
     # let __getattr__ near it.
-    
+
     __doc__ = property(lambda s: s._func.__doc__)
-    
+
 
 
 
@@ -148,7 +148,7 @@ def addClassAdvisor(callback, depth=2):
 
     frame = sys._getframe(depth)
     caller_locals = frame.f_locals
-    caller_globals = frame.f_globals  
+    caller_globals = frame.f_globals
 
     if (caller_locals is caller_globals
         or '__module__' not in caller_locals
@@ -158,7 +158,7 @@ def addClassAdvisor(callback, depth=2):
                 "Advice must be in the body of a class statement"
             )
 
-    previousMetaclass = caller_locals.get('__metaclass__')    
+    previousMetaclass = caller_locals.get('__metaclass__')
     defaultMetaclass  = caller_globals.get('__metaclass__', ClassType)
 
 
@@ -196,7 +196,7 @@ def addClassAdvisor(callback, depth=2):
 def isClassAdvisor(ob):
     """True if 'ob' is a class advisor function"""
     return isinstance(ob,FunctionType) and hasattr(ob,'previousMetaclass')
-    
+
 
 
 
@@ -209,11 +209,6 @@ def determineMetaclass(bases, explicit_mc=None):
 
     meta = [getattr(b,'__class__',type(b)) for b in bases]
 
-    if tuple(meta)==bases:
-        # This would happen if mixing 'type' and 'ExtensionClass'
-        # (for example)
-        raise TypeError("Incompatible root metatypes", bases)
-
     if explicit_mc is not None:
         # The explicit metaclass needs to be verified for compatibility
         # as well, and allowed to resolve the incompatible bases, if any
@@ -222,7 +217,7 @@ def determineMetaclass(bases, explicit_mc=None):
     if len(meta)==1:
         # easy case
         return meta[0]
-       
+
 
     candidates = []
 
@@ -234,11 +229,18 @@ def determineMetaclass(bases, explicit_mc=None):
     if not candidates:
         # they're all "classic" classes
         return ClassType
-        
+
     elif len(candidates)>1:
         # We could auto-combine, but for now we won't...
         raise TypeError("Incompatible metatypes",bases)
 
     # Just one, return it
     return candidates[0]
+
+
+
+
+
+
+
 
