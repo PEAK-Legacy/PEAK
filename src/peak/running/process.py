@@ -127,7 +127,7 @@ class ChildProcess(binding.Component):
             event.disable()
 
         self.exitedBecause.set(None)
-        self.stoppedBecause.set = None
+        self.stoppedBecause.set(None)
 
         self.isStopped.set(self.os.WIFSTOPPED(status))
 
