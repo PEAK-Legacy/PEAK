@@ -2,19 +2,14 @@ Open Issues/To-Do Items
 
  Release Checklist for 0.5 Alpha 1
 
-    - Unit tests for event-driven operations: IMainLoop, IPeriodicTask, and ITaskQueue
-
     - Cleanup/document attribute binding mechanism as an 'IAttributeBinding' interface
 
     - Make all API signatures start with context component
-
-    - Finalize name for 'config.Application' - probably 'config.DefaultContext'
 
     - Review binding tutorial and correct any errors relative to current APIs
 
     - Add 'fcgiapp' module sources to distribution; update README/INSTALL to credit
       DC and OpenMarket and reference their licenses.
-
 
 
 Targeted for 0.5 Alpha 2
@@ -57,6 +52,11 @@ Targeted for 0.5 Alpha 2
 
     * On-the-fly class combination (think "runtime module inheritance",
       without the modules) for DMs.
+
+
+
+
+
 
 
 

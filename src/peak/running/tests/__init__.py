@@ -149,16 +149,16 @@ class TestApp(binding.Component):
     clock = binding.Once(clock)
 
 
+ping = ('doing work','ping')
+pong = ('doing work','pong')
+spam = ('doing work','spam')
+foo = ('doing work','foo')
+bar = ('doing work','bar')
+sleep = lambda n: ('Sleeping for',n)
 
-
-
-
-
-
-
-
-
-
+notWork = ('getting work',False)
+gotWork = ('getting work',True)
+didWork = ('doing work',True)
 
 
 
@@ -203,6 +203,47 @@ class ReactiveTests(TestCase):
 
 
 
+    def checkPrioritized1(self):
+
+        log = self.append
+        app = self.app
+
+        t1 = QuietTask(app, runEvery = 1, job = "ping", log = log, priority=1)
+        t2 = QuietTask(app, runEvery = 2, job = "pong", log = log, priority=2)
+
+        app.mainLoop.run(4)
+
+        assert self.log == [
+            pong, ping, sleep(1), ping, sleep(1), pong, ping, sleep(1), ping,
+            sleep(1), pong, ping
+        ]
+
+
+    def checkPrioritized2(self):
+
+        log = self.append
+        app = self.app
+
+        t1 = QuietTask(app, runEvery = 1, job = "ping", log = log, priority=2)
+        t2 = QuietTask(app, runEvery = 2, job = "pong", log = log, priority=1)
+
+        app.mainLoop.run(4)
+
+        assert self.log == [
+            ping, pong, sleep(1), ping, sleep(1), ping, pong, sleep(1), ping,
+            sleep(1), ping, pong
+        ]
+
+
+
+
+
+
+
+
+
+
+
     def checkIntervalsAndMainLoop(self):
 
         log = self.append
@@ -212,10 +253,6 @@ class ReactiveTests(TestCase):
         t7 = QuietTask(app, runEvery = 7, job = "pong", log = log)
 
         app.mainLoop.run(60, 5, 20.5)
-
-        ping = ('doing work','ping')
-        pong = ('doing work','pong')
-        sleep = lambda n: ('Sleeping for',n)
 
         # Note: this does not match exactly what would happen with a "real"
         # clock; execution times will make a difference, and the finish-out
@@ -244,6 +281,10 @@ class ReactiveTests(TestCase):
 
 
 
+
+
+
+
     def checkAdaptativeScheduling(self):
 
         log = self.append
@@ -265,21 +306,42 @@ class ReactiveTests(TestCase):
             log((i,task(),task.pollInterval))
 
         assert self.log == [
-            ('getting work',False), (0,False,5),
-            ('getting work',False), (1,False,17),
-            ('getting work',False), (2,False,41),
-            ('getting work',False), (3,False,89),
-            ('getting work',False), (4,False,150),
-            ('getting work',False), (5,False,150),
-            ('getting work',True), ('doing work',True), (6,True,1),
-            ('getting work',True), ('doing work',True), (7,True,1),
-            ('getting work',False), (8,False,5),
-            ('getting work',False), (9,False,17),
+            notWork, (0,False,5),
+            notWork, (1,False,17),
+            notWork, (2,False,41),
+            notWork, (3,False,89),
+            notWork, (4,False,150),
+            notWork, (5,False,150),
+            gotWork, didWork, (6,True,1),
+            gotWork, didWork, (7,True,1),
+            notWork, (8,False,5),
+            notWork, (9,False,17),
         ]
 
 
 
 
+
+
+
+
+
+    def checkRoundRobin(self):
+
+        log = self.append
+        app = self.app
+
+        t1 = QuietTask(app, runEvery = 1, job = "ping", log = log, priority=1)
+        t2 = QuietTask(app, runEvery = 1, job = "pong", log = log, priority=1)
+        t3 = QuietTask(app, runEvery = 1, job = "spam", log = log, priority=1)
+        t4 = QuietTask(app, runEvery = 1, job = "foo", log = log, priority=1)
+        t5 = QuietTask(app, runEvery = 1, job = "bar", log = log, priority=1)
+
+        app.mainLoop.run(5)
+
+        all = [ping,pong,spam,foo,bar]
+
+        assert self.log == (all+[sleep(1)]) * 5 + all
 
 
 
@@ -295,27 +357,6 @@ def test_suite():
         s.append(makeSuite(t,'check'))
 
     return TestSuite(s)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
