@@ -3,35 +3,35 @@
     This module implements most of the overhead needed for turning SAX
     events into a hierarchy of objects.  E.g., stack handling,
     delegation to node classes, etc.
-    
-    Note: I originally wrote this module because the Python default DOM
-    for XML (way back in the XML-SIG for Python 1.5.2 days) was horrendously
-    slow for processing (typically enormous) XMI files.  If 2.2 minidom
-    is fast enough and easy enough to use, this package may go away once
-    I've ported the XMI support to minidom.  So let me know if you're using
-    this module for anything;  I have some non-TransWarp uses for it myself,
-    but depending on how easy using minidom turns out to be...  I may switch
-    them over too!    
+
+    If all you need is to read an XML file and turn it into objects, you
+    came to the right place.  If you need an actual model of the XML file
+    that you can manipulate, with absolute fidelity to the original, you
+    might be better off with a DOM, since this doesn't retain processing
+    instructions or comments.
+
+    SOX is faster than 'minidom' or any other DOM that I know of.  On the
+    other hand, SOX is slower than PyRXP, but SOX handles Unicode correctly.
+
+    To use this module, you will need a "document" object that implements
+    either 'ISOXNode' or 'ISOXNode_NS', depending on whether you want
+    namespace support.  The interfaces are very similar, except that
+    the 'NS' version has some enhancements/simplifications that can't be
+    added to the non-namespace version for backward-compatibility reasons.
+
+    Once you have your document object, just call
+    'SOX.load(filenameOrStream,documentObject,namespaces=flag)' to get back
+    the result of your document object's '_finish()' method after it has
+    absorbed all of the XML data supplied.
+
+    If you need a simple document or node class, 'Document', 'Document_NS',
+    'Node', and 'Node_NS' are available for subclassing or idea-stealing.
 """
 
 
 from xml.sax import ContentHandler, parse
 from Interface import Interface
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+from kjbuckets import kjGraph
 
 
 
@@ -68,12 +68,53 @@ class ISOXNode(Interface):
         """Add text string 'text' to node"""
 
     def _addNode(self,subObj):
-        """Add sub-node 'subObj' to node"""
+        """Add finished sub-node 'subObj' to node"""
         
     def _finish(self):
         """Return an object to be used in place of this node in call to the
             parent's '_addNode()' method.  Returning 'None' will result in
             nothing being added to the parent."""
+
+
+
+
+
+
+class ISOXNode_NS(Interface):
+
+    def _newNode(self, handler, name, attributeMap):
+
+        """Create new child node from 'name' and 'attributeMap'
+
+           Child node must implement the 'ISOX2Node' interface."""
+
+
+    def _addText(self,text):
+        """Add text string 'text' to node"""
+
+
+    def _addNode(self,subObj):
+        """Add finished sub-node 'subObj' to node"""
+        
+
+    def _finish(self):
+        """Return an object to be used in place of this node in call to the
+            parent's '_addNode()' method.  Returning 'None' will result in
+            nothing being added to the parent."""
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -97,7 +138,7 @@ class ObjectMakingHandler(ContentHandler):
     def characters(self, ch):
         self.stack[-1]._addText(ch)
 
-    def endElement(self, name):    
+    def endElement(self, name):
         stack = self.stack
         top = stack.pop()
         
@@ -121,6 +162,88 @@ class ObjectMakingHandler(ContentHandler):
 
 
 
+class NSHandler(ObjectMakingHandler):
+
+    """Namespace-handling SAX handler; uses newer interface"""
+
+    def __init__(self,documentRoot):
+
+        ObjectMakingHandler.__init__(self,documentRoot)
+
+        self.ns2uri = {}
+        self.uri2ns = kjGraph()
+        self.nsStack = []
+
+
+    def startElement(self, name, atts):
+
+        a = {}
+
+        for k,v in atts.items():
+            a[k]=v
+
+            if k.startswith('xmlns'):
+
+                rest = k[5:]
+
+                if rest:
+                    if rest[0]==':':
+                        prefix=rest[1:]
+                    else:
+                        continue
+                else:
+                    prefix=''
+
+                del a[k]
+                self.add_prefix(prefix,v)
+
+        top = self.stack[-1]
+        node = top._newNode(self,name,atts)
+        self.stack.append(node)
+
+
+
+    def add_prefix(self, prefix, uri):
+
+        while len(self.nsStack) <= len(self.stack):
+            self.nsStack.append( (self.ns2uri, self.uri2ns) )
+
+        self.ns2uri = self.ns2uri.copy()
+        self.ns2uri[prefix] = uri
+        self.uri2ns = ~kjGraph( self.ns2uri.items() )
+
+
+    def endElement(self, name):
+
+        while len(self.nsStack) >= len(self.stack):
+            self.ns2uri, self.uri2ns = self.nsStack.pop()
+
+        ObjectMakingHandler.endElement(self, name)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 class Node:
 
     """Simple, DOM-like ISOXNode implementation"""
@@ -131,10 +254,7 @@ class Node:
         self._name = name
         self._subNodes = []
         self._allNodes = []        
-        d=self.__dict__
-        for a in atts.keys():
-            d[a]=atts[a]
-
+        self.__dict__.update(atts)
         self.__dict__.update(kw)
         
     def _addNode(self,name,node):
@@ -164,6 +284,7 @@ class Node:
 
     def _finish(self): return self
 
+
     _acquiredAttrs = ()
 
     def _acquireFrom(self,parentNode):
@@ -183,15 +304,45 @@ class Document(Node):
         return Node(name,atts)
 
 
+class Node_NS(Node):
 
-def load(filename_or_stream, documentObject=None):
+    def _newNode(self,handler,name,atts):
+        node = self.__class__(
+            name, atts, ns2uri=handler.ns2uri, uri2ns=handler.uri2ns
+        )
+        return node
+
+
+class Document_NS(Node_NS):
+
+    _finish = Document._finish.im_func
+
+    def _newNode(self,handler,name,atts):
+        node = Node_NS(
+            name, atts, ns2uri=handler.ns2uri, uri2ns=handler.uri2ns
+        )
+        return node
+
+
+
+
+def load(filename_or_stream, documentObject=None, namespaces=False):
 
     """Build a tree from a filename/stream, rooted in a document object"""
     
-    if documentObject is None:
-        documentObject = Document()
-        
-    handler = ObjectMakingHandler(documentObject)
+    if namespaces:
+
+        if documentObject is None:
+            documentObject = Document_NS()
+
+        handler = NSHandler(documentObject)
+
+    else:
+        if documentObject is None:
+            documentObject = Document()
+
+        handler = ObjectMakingHandler(documentObject)
+
     parse(filename_or_stream, handler)
     return handler.document
 
