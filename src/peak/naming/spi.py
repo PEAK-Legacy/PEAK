@@ -97,8 +97,8 @@ def getURLContext(scheme, context=None, iface=IBasicContext):
             return factory(context)
 
         elif isAddressClass(factory):
-            from contexts import GenericURLContext
-            return GenericURLContext(context, schemeParser=factory)
+            from contexts import AddressContext
+            return AddressContext(context, schemeParser=factory)
 
     return None
 
