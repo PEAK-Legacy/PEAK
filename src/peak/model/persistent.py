@@ -41,65 +41,44 @@ class ElementClass(Classifier.__class__, Persistent.__class__):
 
 class Element(Classifier, Persistent):
 
-    """A (potentially persistent) domain element"""
+    """A persistent domain element"""
 
     __implements__ = binding.IBindingAPI
-
     __metaclass__  = ElementClass
-
-    def _setBinding(self,attr,value):
-        d = self.__dict__
-        
-        if d.get(attr) is not value or not isinstance(value,Persistent):
-            self._p_changed = True
-            d[attr]=value
-
-    def _getBinding(self,attr,default=None):
-
-        ob = self.__dict__.get(attr,default)
-
-        if isinstance(ob,LazyLoader):
-            del self.__dict__[attr]
-            ob.load(self,attr)
-            return self._getBinding(attr,default)
-
-        return ob
-
-    def _delBinding(self,attr):
-        if attr in self.__dict__:
-            self._p_changed = True
-            del self.__dict__[attr]
 
     def setParentComponent(self, parentComponent, componentName=None):
         if parentComponent is not None:
             self._p_jar = parentComponent
         self._p_oid = componentName
 
-    def getParentComponent(self):   return self._p_jar
-    def getComponentName(self):     return self._p_oid
+    def getParentComponent(self):
+        return self._p_jar
+
+    def getComponentName(self):
+        return self._p_oid
 
 
+    def _bindingChanging(self, attr, value=NOT_FOUND, isSlot=False):
+
+        old = self._getBinding(attr,NOT_FOUND,isSlot)
+
+        if old is not value or not isinstance(value,Persistent):
+            self._p_changed = True
 
 
+    def _postGet(self,attr,value,isSlot=False):
+    
+        if isinstance(value,LazyLoader):
 
+            if isSlot:
+                getattr(self.__class__,attr).__delete__(self)
+            else:
+                del self.__dict__[attr]
 
+            value.load(self,attr)   # XXX           
+            return self._getBinding(attr,NOT_FOUND)
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+        return value
 
 
 

@@ -172,7 +172,7 @@ class FeatureClass(HashAndCompare,MethodExporter):
 
 
     implAttr   = binding.Once(
-        lambda s,d,a: s.attrName,
+        lambda s,d,a: (s.useSlot and '_f_'+s.attrName or s.attrName),
         doc = "The underlying (private) attribute implementing this feature"
     )
 
@@ -214,6 +214,8 @@ class StructuralFeature(object):
     isOrdered     = False
     isReference   = False
 
+    useSlot       = False
+
     lowerBound    = 0
     upperBound    = None    # None means unbounded upper end
 
@@ -237,8 +239,6 @@ class StructuralFeature(object):
 
     _get_many.installIf = lambda f,m: f.isMany
     _get_many.verb      = 'get'
-
-
 
 
 
@@ -286,7 +286,7 @@ class StructuralFeature(object):
 
 
     def _getList_many(feature, element):
-        return element._getBinding(feature.implAttr, [])
+        return element._getBinding(feature.implAttr, [], feature.useSlot)
 
     _getList_many.installIf = lambda f,m: f.isMany and not f.isDerived
     _getList_many.verb      = '_getList'
@@ -294,7 +294,9 @@ class StructuralFeature(object):
 
     def _getList_one(feature, element):
     
-        value = element._getBinding(feature.implAttr, NOT_FOUND)
+        value = element._getBinding(
+            feature.implAttr, NOT_FOUND, feature.useSlot
+        )
 
         if value is NOT_FOUND:
             return []
@@ -310,8 +312,6 @@ class StructuralFeature(object):
         raise NotImplementedError
 
     _getList.installIf = lambda f, m: f.isDerived
-
-
 
 
 
@@ -385,7 +385,7 @@ class StructuralFeature(object):
         for posn,item in items:
             remove(element,item,posn)
             
-        element._delBinding(feature.implAttr)
+        element._delBinding(feature.implAttr,feature.useSlot)
 
 
     _unset_many.installIf = lambda f,m: f.isChangeable and f.isMany
@@ -460,9 +460,9 @@ class StructuralFeature(object):
         feature._onLink(element,item,posn)
 
         if ub==1:
-            return element._setBinding(feature.implAttr, item)
+            return element._setBinding(feature.implAttr, item, feature.useSlot)
 
-        element._setBinding(feature.implAttr, d)
+        element._setBinding(feature.implAttr, d, feature.useSlot)
 
         if posn is None:
             d.append(item)
@@ -480,7 +480,7 @@ class StructuralFeature(object):
             return element._delBinding(feature.implAttr)
 
         d=feature._getList(element)
-        element._setBinding(feature.implAttr, d)
+        element._setBinding(feature.implAttr, d, feature.useSlot)
 
         if posn is None:
             d.remove(item)
@@ -500,22 +500,35 @@ class StructuralFeature(object):
 
     def _setup(feature,element,value):
 
-        if feature.isMany:
+        if feature.isChangeable:
+            return feature.set(element,value)
 
+        doLink = feature._onLink
+
+        if feature.isMany:
             p = 0
             value = tuple(value)
 
             for v in value:
-                feature._onLink(element,value,p)
+                doLink(element,value,p)
                 p+=1
 
         else:
-            feature._onLink(element,value,0)
+            doLink(element,value,0)
 
-        return value
+        element._setBinding(feature.implAttr,value,feature.useSlot)
 
-    _setup.verb = '_setup'
-    _setup.installIf = lambda f,m: not f.isChangeable
+
+
+
+
+
+
+
+
+
+
+
 
 
     def insertBefore(feature, element, oldItem, newItem):
@@ -528,6 +541,34 @@ class StructuralFeature(object):
             raise ValueError("Can't insert before missing item", oldItem)
 
     insertBefore.installIf = lambda f,m: f.isOrdered and f.isChangeable
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -736,6 +777,47 @@ class Classifier(Namespace):
 
 
 
+    def __init__(self,*__args,**__kw):
+
+        super(Classifier,self).__init__(*__args)
+
+        klass = self.__class__
+
+        for k,v in __kw.items():
+
+            try:
+                f = getattr(klass,k)
+                s = f._setup    # XXX
+
+            except AttributeError:
+                raise TypeError(
+                    "%s constructor has no keyword argument %s" %
+                    (klass, k)
+                )
+
+            s(self,v)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 class ImmutableClass(ClassifierClass):
 
     def __init__(klass,name,bases,dict):
@@ -784,40 +866,6 @@ class Immutable(Classifier, HashAndCompare):
 
     mdl_isAbstract = True   # Immutable itself is abstract
 
-
-    def __init__(self,**__kw):
-
-        super(Immutable,self).__init__()
-        klass = self.__class__
-        d = dict([
-            (f.attrName,f.defaultValue)
-                for f in klass.mdl_features
-                    if f.defaultValue is not NOT_GIVEN
-        ])
-
-        d.update(__kw)
-
-        for k,v in d.items():
-            try:
-                f = getattr(klass,k)
-                s = f._setup
-            except AttributeError:
-                raise TypeError(
-                    "%s constructor has no keyword argument %s" %
-                    (klass, k)
-                )
-
-            v = s(self,v)
-
-            if f.attrName == f.implAttr or not hasattr(klass,f.implAttr):
-                self.__dict__[f.implAttr] = v
-            else:
-                # It's a slot, call the descriptor directly to set its value
-                getattr(klass,f.implAttr).__set__(self,v)
-
-
-
-
     def _hashAndCompare(s,d,a):
         return tuple([
             getattr(s,n,None) for n in s.__class__.mdl_featureNames
@@ -836,59 +884,11 @@ class Immutable(Classifier, HashAndCompare):
     def getComponentName(self):
         return None
 
-    def _setBinding(self,attr,value):
-        raise TypeError("Immutable object", self)
-
-    def _delBinding(self,attr):
-        raise TypeError("Immutable object", self)
-
     def __setattr__(self,attr,value):
         raise TypeError("Immutable object", self)
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    def _getBinding(self,attr,default=None):
-
-        try:
-            return self.__dict__[attr]
-
-        except AttributeError:
-            return getattr(self.__class__,attr).__get__(self)
-
-        except KeyError:
-            f = getattr(self.__class__,attr,None)
-
-            if not f or IFeature.isImplementedBy(f):
-                return default
-
-            try:
-                return f.__get__(self)
-            except AttributeError:
-                return default
-        
-
-
-
-
-
-
-
-
-
-
-
+    def __delattr__(self,attr,value):
+        raise TypeError("Immutable object", self)
 
 
 

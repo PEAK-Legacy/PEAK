@@ -507,18 +507,100 @@ class Base(object):
     def _getConfigData(self, configKey, forObj):
         return NOT_FOUND
 
-    def _hasBinding(self,attr):
-        return attr in self.__dict__
 
-    def _getBinding(self,attr,default=None):
-        return self.__dict__.get(attr,default)
+    def _hasBinding(self,attr,useSlot=False):
 
-    def _setBinding(self,attr,value):
-        self.__dict__[attr]=value
+        if useSlot:
+            return hasattr(self,attr)
+        else:
+            return attr in self.__dict__
 
-    def _delBinding(self,attr):
-        if attr in self.__dict__:
+
+    def _bindingChanging(self,attr,newval,isSlot=False):
+        pass
+
+
+    def _postGet(self,attr,value,isSlot=False):
+        return value
+
+
+
+
+
+
+
+
+
+    def _setBinding(self, attr, value, useSlot=False):
+
+        self._bindingChanging(attr,value,useSlot)
+
+        if useSlot:
+            getattr(self.__class__,attr).__set__(self,value)
+
+        else:
+            self.__dict__[attr] = value
+
+
+    def _getBinding(self, attr, default=None, useSlot=False):
+
+        if useSlot:
+            val = getattr(self,attr,default)
+           
+        else:
+            val = self.__dict__.get(attr,default)
+
+        if val is not default:
+
+            val = self._postGet(attr,val,useSlot)
+
+            if val is NOT_FOUND:
+                return default
+
+        return val
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    def _delBinding(self, attr, useSlot=False):
+
+        self._bindingChanging(attr, NOT_FOUND, useSlot)
+
+        if useSlot:
+            d = getattr(self.__class__,attr).__delete__
+
+            try:
+                d(self)
+            except AttributeError:
+                pass
+
+        elif attr in self.__dict__:
             del self.__dict__[attr]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

@@ -54,16 +54,16 @@ class IBindingAPI(IBindingSPI):
         the parent has already been used by the component for any purpose."""
         
 
-    def _hasBinding(attr):
+    def _hasBinding(attr,useSlot=False):
         """Return true if binding named 'attr' has been activated"""
 
-    def _getBinding(attr,default=None):
+    def _getBinding(attr,default=None,useSlot=False):
         """Return binding named 'attr' if activated, else return 'default'"""
 
-    def _setBinding(attr,value):
+    def _setBinding(attr,value,useSlot=False):
         """Set binding 'attr' to 'value'"""
 
-    def _delBinding(attr):
+    def _delBinding(attr,useSlot=False):
         """Ensure that no binding for 'attr' is active"""
 
 
