@@ -1,3 +1,5 @@
+from __future__ import generators
+
 """Name and Syntax Objects"""
 
 import re
@@ -8,7 +10,8 @@ from peak import exceptions
 
 __all__ = [
     'Name', 'toName', 'CompositeName', 'CompoundName', 'OpaqueURL',
-    'Syntax', 'UnspecifiedSyntax', 'NNS_NAME', 'ParsedURL', 'URLMatch'
+    'Syntax', 'UnspecifiedSyntax', 'NNS_NAME', 'ParsedURL', 'URLMatch',
+    'PropertyName',
 ]
 
 
@@ -21,9 +24,6 @@ class UnspecifiedSyntax(object):
 
     def format(self,name):
         return "%s(%r)" % (name.__class__.__name__, list(name))
-
-
-
 
 
 
@@ -559,4 +559,94 @@ def toName(aName, nameClass=CompoundName, acceptURL=1):
 
 
 NNS_NAME = CompositeName('/')
+
+
+
+
+
+
+
+
+
+
+
+
+
+pnameValidChars = re.compile( r"([-+*?._a-z0-9]+)", re.I ).match
+
+class PropertyName(str):
+
+    def __new__(klass, *args):
+
+        self = super(PropertyName,klass).__new__(klass,*args)
+
+        valid = pnameValidChars(self)
+
+        if valid.end()<len(self):
+            raise exceptions.InvalidName(
+                "Invalid characters in property name", self
+            )
+
+        parts = self.split('.')
+
+        if '' in parts or not parts:
+            raise exceptions.InvalidName(
+                "Empty part in property name", self
+            )
+
+        if '*' in self:
+            if '*' not in parts or parts.index('*') < (len(parts)-1):
+                raise exceptions.InvalidName(
+                    "'*' must be last part of wildcard property name", self
+                )
+            
+        if '?' in self:
+            if '?' in parts or self.index('?') < (len(self)-1):
+                    raise exceptions.InvalidName(
+                        "'?' must be at end of a non-empty part", self
+                    )
+
+        return self
+
+
+
+
+
+
+    def isWildcard(self):
+        return self.endswith('*')
+
+    def isDefault(self):
+        return self.endswith('*')
+
+    def isPlain(self):
+        return self[-1:] not in '?*'
+
+
+    def matchPatterns(self):
+
+        if not self.isPlain():
+            raise exceptions.InvalidName(
+                "Can't match patterns against special property names", self
+            )
+
+        yield self
+
+        name = self
+        
+        while '.' in name:
+            name = name[:name.rindex('.')]
+            yield name+'.*'
+
+        yield '*'
+        yield self
+        yield self+'?'
+
+
+    def getBases(self):
+        return ()
+
+
+    def extends(self, other, strict=1):
+        return not strict and self==other
 

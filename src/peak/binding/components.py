@@ -7,7 +7,7 @@ import meta
 
 from weakref import WeakValueDictionary
 
-from peak.naming.names import toName, Syntax, CompoundName
+from peak.naming.names import toName, Syntax, CompoundName, PropertyName
 from peak.util.EigenData import EigenRegistry, EigenCell
 
 from peak.api import config, NOT_FOUND, NOT_GIVEN, exceptions
@@ -482,7 +482,7 @@ def bindToProperty(propName, default=NOT_GIVEN, provides=None, doc=None):
         will result in a 'config.PropertyNotFound' exception.
     """
 
-    propName = config.Property(propName)
+    propName = PropertyName(propName)
 
     return Once(lambda s,d,a: config.getProperty(s,propName,default),
         provides=provides, doc=doc

@@ -5,7 +5,7 @@ from interfaces import *
 from peak.util.EigenData import *
 from config_components import *
 from weakref import WeakKeyDictionary
-
+from peak.naming.names import PropertyName
 
 __all__ = [
     'getGlobal','setGlobal', 'registerGlobalProvider',
@@ -92,8 +92,8 @@ def getProperty(obj, propName, default=NOT_GIVEN):
         and global configuration objects, if applicable.
     """
 
-    if not isinstance(propName,Property):
-        propName = Property(propName)
+    if not isinstance(propName,PropertyName):
+        propName = PropertyName(propName)
 
     if not propName.isPlain():
         raise exceptions.InvalidName(

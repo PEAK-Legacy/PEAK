@@ -1,9 +1,11 @@
 from __future__ import generators
 
-from peak.binding.components import Component, New, AutoCreated
+from peak.binding.components import Component, New, AutoCreated, Provider
 
 from peak.api import NOT_FOUND, NOT_GIVEN
 from peak.util.EigenData import EigenCell, AlreadyRead
+
+from peak.naming.names import PropertyName
 
 from interfaces import *
 from Interface import Interface
@@ -37,8 +39,6 @@ _emptyRuleCell.exists()
 
 
 
-
-
 class PropertyMap(AutoCreated):
 
     rules     = New(dict)
@@ -48,13 +48,13 @@ class PropertyMap(AutoCreated):
 
     def setRule(self, propName, ruleFactory):
         ruleObj = ruleFactory(self, propName)
-        _setCellInDict(self.rules, Property(propName), ruleObj)
+        _setCellInDict(self.rules, PropertyName(propName), ruleObj)
 
     def setDefault(self, propName, defaultRule):
-        _setCellInDict(self.rules, Property(propName+'?'), defaultRule)
+        _setCellInDict(self.rules, PropertyName(propName+'?'), defaultRule)
 
     def setValue(self, propName, value):
-        _setCellInDict(self.rules, Property(propName), lambda *args: value)
+        _setCellInDict(self.rules, PropertyName(propName), lambda *args: value)
 
     def registerProvider(self, ifaces, provider):
 
@@ -90,7 +90,7 @@ class PropertyMap(AutoCreated):
 
         xRules     = []
 
-        if isinstance(configKey,Property):
+        if isinstance(configKey,PropertyName):
             lookups = configKey.matchPatterns()
         else:
             lookups = configKey,
@@ -165,12 +165,21 @@ def loadEnviron(factory, pMap, prefix, name):
 class GlobalConfig(Component):
 
     def __init__(self):
-        self.setup()
+        self.setup(self.__instance_provides__)
 
-    def setup(self):
-        self.__instance_provides__.setRule(
+    def setup(self, propertyMap):
+        
+        propertyMap.setRule(
             'environ.*', LoadingRule(loadEnviron)
         )
+
+        from peak.naming import factories
+
+        propertyMap.registerProvider(
+            factories.__implements__, Provider(lambda *x: factories)
+        )
+
+        factories.register(propertyMap)
 
     def setParentComponent(self,parent):
         raise TypeError("Global config can't have a parent")

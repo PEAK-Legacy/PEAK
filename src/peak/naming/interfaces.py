@@ -9,8 +9,6 @@ __all__ = [
     'IName', 'ISyntax', 'IAddress', 'IInitialContextFactory',
     'IObjectFactory', 'IStateFactory', 'IURLContextFactory',
     'I_NNS_Binding', 'IBasicContext', 'IReadContext', 'IWriteContext',
-    'IParentForRetrievedObject',
-
 ]
 
 
@@ -34,8 +32,10 @@ class IAddress(IName):
         """Retrieve the address"""
 
 
-class IParentForRetrievedObject(Interface):
-    """Marker for component which will be a newly created target's parent"""
+
+
+
+
 
 
 
@@ -132,7 +132,7 @@ class I_NNS_Binding(IBasicContext):
 
 class IInitialContextFactory(Interface):
 
-    def getInitialContext(parentComponent, **options):
+    def getInitialContext(parentComponent=None, **options):
         """Return a naming context for 'parentComponent' with 'options'"""
 
 

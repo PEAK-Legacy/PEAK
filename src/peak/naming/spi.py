@@ -14,17 +14,14 @@
 """
 
 from peak.binding.components import findUtilities, findUtility, Provider
+from peak.binding.imports import importObject
 from peak.api import config
 
 from interfaces import *
 from references import *
 from names import *
+from properties import *
 
-import factories
-
-config.registerGlobalProvider(
-    factories.__implements__, Provider(lambda x: factories)
-)
 
 __all__ = [
     'getInitialContext',
@@ -34,8 +31,11 @@ __all__ = [
 ]
 
 __implements__ = (
-    IObjectFactory, IStateFactory, IURLContextFactory, IInitialContextFactory
+    IURLContextFactory, IInitialContextFactory
 )
+
+
+
 
 
 
@@ -57,61 +57,57 @@ def getInitialContext(parentComponent=None, **options):
     return factory.getInitialContext(parentComponent, **options)
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 def getURLContext(scheme, context, iface=IBasicContext):
 
     """Return a 'Context' object for the given URL scheme and interface."""
 
-    for factory in findUtilities(context,IURLContextFactory):
+    factory = config.getProperty(context, SCHEMES_PREFIX+scheme, None)
 
-        context = factory.getURLContext(scheme, context, iface)
+    if factory is not None:
 
-        if context is not None:
-            return context
+        factory = importObject(factory)
+    
+        if IURLContextFactory.isImplementedBy(factory):
+            return factory.getURLContext(scheme, context, iface)
 
+        elif iface.isImplementedByInstancesOf(factory):
+            return factory(context)
 
+        elif IAddress.isImplementedByInstancesOf(factory):
+            from contexts import GenericURLContext
+            return GenericURLContext(context, schemeParser=factory)
 
-
-
-
-
-
-
-
-
-
-
-def getStateToBind(obj, name, context, attrs=None):
-
-    if IReferenceable.isImplementedBy(obj):
-        return (obj.getReference(obj), attrs)
-
-    for factory in findUtilities(context,IStateFactory):
-
-        result = factory.getStateToBind(
-            obj, name, context, attrs
-        )
-
-        if result is not None:
-            return result
-
-    return obj, attrs
+    return None
 
 
-def getObjectInstance(refInfo, name, context, attrs=None):
 
-    if isinstance(refInfo,LinkRef):
-        return context[refInfo.linkName]
 
-    for factory in findUtilities(context,IObjectFactory):
 
-        result = factory.getObjectInstance(
-            refInfo, name, context, attrs
-        )
 
-        if result is not None:
-            return result                      
 
-    return refInfo
 
 
 

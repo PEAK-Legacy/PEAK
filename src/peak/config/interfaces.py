@@ -1,11 +1,11 @@
-from __future__ import generators
 from Interface import Interface
 from Interface.Attribute import Attribute
 from peak.api import exceptions
 
 __all__ = [
-    'IRuleFactory', 'IRule', 'IPropertyMap', 'IConfigKey', 'Property',
+    'IRuleFactory', 'IRule', 'IPropertyMap', 'IConfigKey',
 ]
+
 
 
 
@@ -140,7 +140,10 @@ class IConfigKey(Interface):
 
 
 from Interface.Implements import implements
+from peak.naming.names import PropertyName
+
 implements(Interface, IConfigKey)
+implements(PropertyName, IConfigKey)
 
 
 
@@ -159,84 +162,4 @@ implements(Interface, IConfigKey)
 
 
 
-
-
-
-import re
-
-validChars = re.compile( r"([-+*?._a-z0-9]+)", re.I ).match
-
-class Property(str):
-
-    __implements__ = IConfigKey
-
-    def __new__(klass, *args):
-
-        self = super(Property,klass).__new__(klass,*args)
-
-        valid = validChars(self)
-
-        if valid.end()<len(self):
-            raise exceptions.InvalidName(
-                "Invalid characters in property name", self
-            )
-
-        parts = self.split('.')
-
-        if '' in parts or not parts:
-            raise exceptions.InvalidName(
-                "Empty part in property name", self
-            )
-
-        if '*' in self:
-            if '*' not in parts or parts.index('*') < (len(parts)-1):
-                raise exceptions.InvalidName(
-                    "'*' must be last part of wildcard property name", self
-                )
-            
-        if '?' in self:
-            if '?' in parts or self.index('?') < (len(self)-1):
-                    raise exceptions.InvalidName(
-                        "'?' must be at end of a non-empty part", self
-                    )
-
-        return self
-
-
-    def isWildcard(self):
-        return self.endswith('*')
-
-    def isDefault(self):
-        return self.endswith('*')
-
-    def isPlain(self):
-        return self[-1:] not in '?*'
-
-
-    def matchPatterns(self):
-
-        if not self.isPlain():
-            raise exceptions.InvalidName(
-                "Can't match patterns against special property names", self
-            )
-
-        yield self
-
-        name = self
-        
-        while '.' in name:
-            name = name[:name.rindex('.')]
-            yield name+'.*'
-
-        yield '*'
-        yield self
-        yield self+'?'
-
-
-    def getBases(self):
-        return ()
-
-
-    def extends(self, other, strict=1):
-        return not strict and self==other
         

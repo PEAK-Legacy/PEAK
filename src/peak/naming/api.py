@@ -2,6 +2,7 @@
 
 from interfaces import *
 from names      import *
+from properties import *
 from references import *
 
 import spi

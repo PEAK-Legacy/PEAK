@@ -2,21 +2,21 @@
 
 from interfaces import *
 from names import *
+from properties import *
 from references import *
 from peak.binding.imports import importObject
-from peak.binding.components import Component, bindTo, Once
+
+from peak.binding.components import Component, bindToProperty, Once, \
+    bindToUtilities
+
 from peak import exceptions
+from peak.api import config
 
 import spi
 
 _marker = object()
 
 __all__ = ['AbstractContext', 'BasicInitialContext', 'GenericURLContext']
-
-
-
-
-
 
 
 
@@ -51,7 +51,12 @@ class AbstractContext(Component):
 
     _allowCompositeNames = 0
 
-    creationParent = bindTo(IParentForRetrievedObject)
+    creationParent = bindToProperty(CREATION_PARENT, provides=CREATION_PARENT)
+
+    objectFactories= bindToProperty(OBJECT_FACTORIES,provides=OBJECT_FACTORIES)
+
+    stateFactories = bindToProperty(STATE_FACTORIES,provides=STATE_FACTORIES)
+
 
     def __init__(self, parent=None, **kw):
         if kw:
@@ -59,18 +64,13 @@ class AbstractContext(Component):
         if parent is not None:
             self.setParentComponent(parent)
 
+
     def close(self):
         pass
 
+
     def __del__(self):
         self.close()
-
-
-
-
-
-
-
 
 
 
@@ -164,9 +164,43 @@ class AbstractContext(Component):
 
     def _deref(self, state, name, attrs=None):
 
-        return spi.getObjectInstance(
-            state, name, self, attrs
-        )
+        if isinstance(state,LinkRef):
+            return self[state.linkName]
+
+        for factory in self.objectFactories:
+
+            result = factory.getObjectInstance(state, name, self, attrs)
+
+            if result is not None:
+                return result                      
+
+        return state
+
+
+    def _mkref(self, object, name, attrs):
+
+        if IReferenceable.isImplementedBy(object):
+            return (object.getReference(object), attrs)
+
+        for factory in self.stateFactories:
+
+            result = factory.getStateToBind(object, name, self, attrs)
+
+            if result is not None:
+                return result
+
+        return object, attrs
+
+
+
+
+
+
+
+
+
+
+
 
 
     def lookupLink(self, name):
@@ -182,7 +216,6 @@ class AbstractContext(Component):
             raise exceptions.NameNotFound(name)
 
         state, attrs = info
-
         if isinstance(state,LinkRef):
             return state
 
@@ -190,7 +223,7 @@ class AbstractContext(Component):
 
 
     def __getitem__(self, name):
-    
+
         """Lookup 'name' and return an object"""
         
         ctx, name = self._getTargetCtx(name)
@@ -201,6 +234,14 @@ class AbstractContext(Component):
             raise exceptions.NameNotFound(name)
 
         return obj
+
+
+
+
+
+
+
+
 
 
     def get(self, name, default=None):
@@ -295,11 +336,7 @@ class AbstractContext(Component):
             ctx[name]=object
 
         else:
-            
-            state,bindattrs = spi.getStateToBind(
-                object,name,self,attrs
-            )
-
+            state,bindattrs = self._mkref(object,name,attrs)
             self._bind(name, state, bindAttrs)
 
 
@@ -312,6 +349,10 @@ class AbstractContext(Component):
             del ctx[name]
         else:
             self._unbind(name)
+
+
+
+
 
 
 
@@ -371,9 +412,11 @@ class GenericURLContext(AbstractContext):
 
     """Handler for address-only URL namespaces"""
 
+    schemeParser = bindToProperty(SCHEME_PARSER, provides=SCHEME_PARSER)
+
     def _getParserFor(self, scheme):
-        from factories import schemeParsers
-        return importObject(schemeParsers.get(scheme.lower()))
+        # XXX this will break if parser doesn't support 'scheme' !
+        return self.schemeParser
 
 
     def _getTargetCtx(self, name, iface=IBasicContext):
@@ -406,8 +449,6 @@ class GenericURLContext(AbstractContext):
         return (name, None)     # refInfo, attrs
 
 
-
-
 class BasicInitialContext(AbstractContext):
 
     def creationParent(self, d, a):
@@ -422,4 +463,6 @@ class BasicInitialContext(AbstractContext):
         from peak.config.api import getLocal
         return getLocal(self)
 
-    creationParent = Once(creationParent)
+    creationParent = Once(creationParent,            provides=CREATION_PARENT)
+    objectFactories= bindToUtilities(IObjectFactory, provides=OBJECT_FACTORIES)
+    stateFactories = bindToUtilities(IStateFactory,  provides=STATE_FACTORIES)
