@@ -4,9 +4,13 @@ from peak.running.commands import AbstractInterpreter, ICmdLineAppFactory
 from peak.naming.factories.openable import FileURL
 import os
 
-class BaseLoader(binding.Component, ZConfig.loader.BaseLoader):
+class BaseLoader(ZConfig.loader.BaseLoader, binding.Component):
 
     protocols.advise(instancesProvide=[naming.IObjectFactory])
+
+    def __init__(self,*__args,**__kw):
+        binding.Component.__init__(self,*__args,**__kw)
+        super(BaseLoader,self).__init__()
 
     def openResource(self, url):
         url = str(url)
@@ -22,7 +26,6 @@ class BaseLoader(binding.Component, ZConfig.loader.BaseLoader):
             raise error
         return self.createResource(file, url)
 
-
     def normalizeURL(self, url):
         url = naming.parseURL(self, url)
         if getattr(url,'fragment',None) is not None:
@@ -30,20 +33,16 @@ class BaseLoader(binding.Component, ZConfig.loader.BaseLoader):
                 "fragment identifiers are not supported")
         return str(url)
 
-
     def getObjectInstance(self, context, refInfo, name, attrs=None):
         url, = refInfo.addresses
         url = naming.toName(url, FileURL.fromFilename)
         ob = adapt(naming.lookup(context,url), naming.IStreamFactory)
         return self.loadFile(ob.open('t'), str(url))
 
-
-
 class SchemaLoader(BaseLoader, ZConfig.loader.SchemaLoader):
 
     registry = binding.Make(ZConfig.datatypes.Registry)
     _cache   = binding.Make(dict)
-    __init__ = binding.Component.__init__.im_func
 
     def loadResource(self, resource):
         result = super(SchemaLoader,self).loadResource(resource)
@@ -53,6 +52,11 @@ class SchemaLoader(BaseLoader, ZConfig.loader.SchemaLoader):
 class ConfigLoader(BaseLoader,ZConfig.loader.ConfigLoader):
 
     schema = binding.Require("ZConfig schema to use")
+
+    def __init__(self,*__args,**__kw):
+        binding.Component.__init__(self,*__args,**__kw)
+        # NB: we use BaseLoader below so as to skip its __init__
+        super(BaseLoader,self).__init__(self.schema)
 
     def loadResource(self, resource):
         sm = self.createSchemaMatcher()
@@ -64,6 +68,7 @@ class ConfigLoader(BaseLoader,ZConfig.loader.ConfigLoader):
             sm.handlers, self.schema
         )
         return result
+
 
 
 
