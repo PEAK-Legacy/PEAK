@@ -84,15 +84,14 @@ class MainLoop(binding.Component):
 
         yield self.eventLoop.sleep(runAtLeast); events.resume()
 
-        idle = self.eventLoop.now() - self.lastActivity()
+        untilActivityOrTimeout = events.AnyOf(
+            self.lastActivity, self.eventLoop.sleep(timeout)
+        )
 
-        while idle<timeout:
-            # Next check is at the earliest point at which
-            # we could have been idle for the requisite amount of time
-            yield self.eventLoop.sleep(timeout-idle); events.resume()
+        src = self.lastActivity
 
-            # Check whether we've been idle long enough to stop
-            idle = self.eventLoop.now() - self.lastActivity()
+        while src is self.lastActivity:
+            yield untilActivityOrTimeout; src,evt = events.resume()
 
         self.exitWith(None)
 
@@ -101,6 +100,7 @@ class MainLoop(binding.Component):
 
     def exitWith(self, exitCode):
         self.exitCode.set((exitCode,), force=True)
+
 
 
 
