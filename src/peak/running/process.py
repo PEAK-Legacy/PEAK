@@ -2,7 +2,7 @@ from peak.api import *
 from interfaces import *
 import os
 from weakref import WeakValueDictionary, ref
-from commands import EventDriven
+from commands import EventDriven, Bootstrap, AbstractInterpreter
 from peak.net.interfaces import IListeningSocket
 
 try:
@@ -221,10 +221,10 @@ class ProcessSupervisor(EventDriven):
     from time import time
 
 
-
-
-
-
+    def setup(self):
+        template = adapt(self.template, ISupervisorPluginProvider, None)
+        if template is not None:
+            self.plugins.extend(template.getSupervisorPlugins(self))
 
 
 
@@ -251,7 +251,7 @@ class ProcessSupervisor(EventDriven):
             return 1        # exit with errorlevel 1
 
         try:
-            self.template   # ensure template is ready first
+            self.setup()
             self.killPredecessor()
             self.writePidFile()
         finally:
@@ -572,12 +572,53 @@ class AbstractProcessTemplate(binding.Component):
 
 
 
+class FCGITemplateCommand(AbstractInterpreter):
+
+    """Command to process a socket URL + a FastCGI command to run on it"""
+
+    def interpret(self, filename):
+
+        stdin = self.lookupComponent(filename, adaptTo=IListeningSocket)
+        parent = self.getCommandParent()
+
+        return FastCGITemplate(
+            stdin=stdin,
+            command = self.getSubcommand(
+                Bootstrap,
+                parentComponent=parent,
+                componentName  =self.commandName,
+                stdin = stdin
+            )
+        )
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 class FastCGITemplate(AbstractProcessTemplate):
 
     """Process template for FastCGI subprocess w/busy monitoring"""
 
     protocols.advise(
-        instancesProvide=[IRerunnableCGI]
+        instancesProvide=[IRerunnableCGI, ISupervisorPluginProvider]
     )
 
     proxyClass = BusyProxy
@@ -602,14 +643,14 @@ class FastCGITemplate(AbstractProcessTemplate):
         finally:
             self.busyStream.write('-')  # finish being busy
 
-
     def _redirect(self):
         self.os.dup2(self.stdin.fileno(),0)
-
 
     def makeStub(self):
         from peak.running.commands import CGICommand
         return CGICommand(self, cgiCommand=self, stdin=self.stdin)
 
+    def getSupervisorPlugins(self, supervisor):
+        return [BusyStarter(supervisor, template=self, stream=self.stdin)]
 
 

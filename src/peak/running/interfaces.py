@@ -19,9 +19,9 @@ __all__ = [
 
     'ISignalManager', 'IProcessProxy', 'IMainCmdFactory', 'IProcessTemplate',
 
+    'ISupervisorPluginProvider'
+
 ]
-
-
 
 
 
@@ -641,11 +641,11 @@ class IProcessTemplate(Interface):
             # ...
         """
 
+class ISupervisorPluginProvider(IProcessTemplate):
+    """Process template that also provides plugins for a supervisor process"""
 
-
-
-
-
+    def getSupervisorPlugins(supervisor):
+        """Return a sequence of plugins for 'supervisor' to use"""
 
 
 
