@@ -4,20 +4,22 @@ from time import time
 
 __all__ = [
     'NullSavepoint', 'FailureSavepoint', 'MultiSavepoint',
-    'ZODBTransactionService', 'AbstractParticipant'
+    'TransactionService', 'ZODBTransactionService',
+    'AbstractParticipant', 'TransactionComponent',
 ]
 
 
-class AbstractTransactionService(binding.Component):
+class TransactionService(binding.AutoCreated):
 
     """Basic implementation for stuff needed by pretty much any txn service"""
     
     __implements__ = ITransactionService
-
+    _provides      = __implements__
 
     participants = binding.New(list)
+    info         = binding.New(dict)
+    timestamp    = None
 
-    timestamp = None
 
     def subscribe(self, participant):
 
@@ -34,8 +36,6 @@ class AbstractTransactionService(binding.Component):
 
         if participant in self.participants:
             self.participants.remove(participant)
-
-
 
 
 
@@ -163,19 +163,44 @@ class AbstractTransactionService(binding.Component):
 
 
     def addInfo(self, **info):
-        raise NotImplementedError
+        self.info.update(info)
     
+
     def getInfo(self):
-        raise NotImplementedError
+        return self.info
+
 
     def _begin(self):        
-        raise NotImplementedError
+        pass
 
     def _cleanup(self):
-        raise NotImplementedError
+        try:
+            for p in self.participants:
+                p.finishTransaction(self)
+        finally:
+            del self.info, self.timestamp
+
 
     def isActive(self):
-        raise NotImplementedError
+        return self.timestamp is not None
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 class AbstractParticipant(object):
@@ -200,6 +225,63 @@ class AbstractParticipant(object):
 
     def abortTransaction(self, txnService):
         pass
+
+    def finishTransaction(self, txnService):
+        pass
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class TransactionComponent(binding.Component, AbstractParticipant):
+
+    txnSvc    = binding.bindTo(ITransactionService)
+    txnActive = False
+
+
+    def setParentComponent(self, parent):
+
+        super(TransactionComponent,self).setParentComponent(parent)
+        ts = self.txnSvc
+        ts.subscribe(self)
+
+        if ts.isActive():
+            self.beginTransaction(ts)
+
+
+    def beginTransaction(self, txnService):
+        self.txnActive = True
+
+
+    def finishTransaction(self, txnService):
+        self.txnActive = False
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -244,7 +326,7 @@ class _ZODBTxnProxy(object):
 
 
 
-class ZODBTransactionService(AbstractTransactionService):
+class ZODBTransactionService(TransactionService):
 
     ztxn = None
     
@@ -256,10 +338,14 @@ class ZODBTransactionService(AbstractTransactionService):
 
     def abort(self):
     
-        if not self.isActive():
-            raise OutsideTransaction
+        try:
+            if not self.isActive():
+                raise OutsideTransaction
 
-        self.ztxn.abort()
+            self.ztxn.abort()
+
+        finally:
+            self._cleanup()
 
 
     def commit(self):
@@ -268,6 +354,7 @@ class ZODBTransactionService(AbstractTransactionService):
             raise OutsideTransaction
 
         self.ztxn.commit()
+        self._cleanup()
 
 
     def savepoint(self):
@@ -278,12 +365,48 @@ class ZODBTransactionService(AbstractTransactionService):
         return self.ztxn.savepoint()
 
 
-    def isActive(self):
-        return self.ztxn is not None
+
+
+    def addInfo(self, **info):
+
+        super(ZODBTransactionService,self).addInfo(**info)
+
+        if 'note' in info or 'user_name' in info:
+            info = info.copy()
+            
+            if 'note' in info:
+                self.ztxn.note(info['note'])
+                del info['note']
+
+            if 'user_name' in info:
+                self.ztxn.setUser(info['user_name'],info.get('user_path','/'))
+                    
+                del info['user_name']
+
+                if 'user_path' in info:
+                    del info['user_path']
+
+        for k,v in info.items():
+            self.ztxn.setExtendedInfo(k,v)
 
 
     def _cleanup(self):
+        super(ZODBTransactionService,self)._cleanup()
         self.ztxn = None
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 class _NullSavepoint(object):
 

@@ -4,7 +4,7 @@ from Interface import Interface
 from Interface.Attribute import Attribute
 
 __all__ = [
-    'ITransactionService', 'ITransactionParticipant', 'ISavepoint'
+    'ITransactionService', 'ITransactionParticipant', 'ISavepoint',
     'NotReadyError', 'CannotRevertException', 'TransactionInProgress',
     'OutsideTransaction'
 ]
@@ -268,6 +268,8 @@ class ITransactionParticipant(Interface):
         entire transaction must be rolled back.  Transactional caches
         might use this message to reset themselves."""
 
+    def finishTransaction(txnService):
+        """The transaction is over, whether it aborted or committed."""
 
 
 class CannotRevertException(Exception):
