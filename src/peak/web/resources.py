@@ -23,14 +23,14 @@ RESOURCE_VISIBLE  = PropertyName('peak.web.file_resources.visible')
 
 ALLOWED_PACKAGES = PropertyName('peak.web.resource_packages')
 PACKAGE_FACTORY  = PropertyName('peak.web.packageResourceFactory')
-
+PERMISSION_NS    = PropertyName(RESOURCE_BASE+'permission')
+MIMETYPE_NS      = PropertyName(RESOURCE_BASE+'mime_type')
 
 def filenameAsProperty(name):
     """Convert a filename (base, no path) into a usable property name"""
     parts = filter(None,name.split('.'))
     parts.reverse()
     return PropertyName.fromString('.'.join(parts), keep_wildcards=True)
-
 
 def parseFileResource(parser, section, name, value, lineInfo):
     """Handle a line from a [Files *.foo] section"""
@@ -92,8 +92,13 @@ class FSResource(Resource):
         lambda self: filenameAsProperty(os.path.basename(self.filename))
     )
 
-    permissionNeeded = binding.Obtain(PropertyName(RESOURCE_BASE+'permission'))
-    mime_type        = binding.Obtain(PropertyName(RESOURCE_BASE+'mime_type'))
+    permissionNeeded = binding.Make(
+        lambda self: PERMISSION_NS.of(self)[self.filenameAsProperty]
+    )
+
+    mime_type = binding.Make(
+        lambda self: MIMETYPE_NS.of(self)[self.filenameAsProperty]
+    )
 
     def getObjectInstance(klass, context, refInfo, name, attrs=None):
         url, = refInfo.addresses
@@ -101,11 +106,6 @@ class FSResource(Resource):
         return klass(filename = url.getFilename())
 
     getObjectInstance = classmethod(getObjectInstance)
-
-
-
-
-
 
 
 
@@ -273,7 +273,9 @@ class ResourceProxy(object):
         return interaction.skin.getResource(self.path)
 
     def preTraverse(self, ctx):
-        self.getObject(ctx.interaction).preTraverse(ctx)
+        interaction = ctx.interaction
+        ob = adapt(self.getObject(interaction),interaction.pathProtocol)
+        ob.preTraverse(ctx)
 
     def traverseTo(self, name, ctx):
         interaction = ctx.interaction
@@ -282,8 +284,6 @@ class ResourceProxy(object):
 
     def getURL(self,ctx):
         return self.getObject(ctx.interaction).getURL(ctx)
-
-
 
 def bindResource(path, pkg=None, **kw):
 
