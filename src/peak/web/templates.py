@@ -572,22 +572,22 @@ Element.tagFactory = Element
 
 
 
-class TemplateDocument(Element):
+class TaglessElement(Element):
 
-    """Document-level template element"""
+    """Element w/out tags"""
 
     _openTag = _closeTag = _emptyTag = ''
+
+
+class TemplateDocument(TaglessElement):
+
+    """Document-level template element"""
 
     parserClass = DOMletParser
 
     def parseFile(self, stream):
         parser = self.parserClass(self)
         parser.parseFile(stream,self)
-
-
-
-
-
 
 
 
@@ -627,18 +627,59 @@ class ContentReplacer(Element):
 
 class Text(ContentReplacer):
 
-    """Replace element contents w/data"""
+    """Replace element contents w/data (XML-quoted)"""
 
     def renderFor(self, data, state):
-
         if self.dataSpec:
             data, state = self._traverse(data, state)
 
         write = state.write
+        write(self._openTag)
+        write(escape(unicode(data.subject)))
+        write(self._closeTag)
 
+
+class XML(ContentReplacer):
+
+    """Replace element contents w/data (XML structure)"""
+
+    def renderFor(self, data, state):
+        if self.dataSpec:
+            data, state = self._traverse(data, state)
+
+        write = state.write
         write(self._openTag)
         write(unicode(data.subject))
         write(self._closeTag)
+
+
+
+class TaglessText(Text):
+
+    """Text w/out open/close tag"""
+
+    _openTag = _closeTag = _emptyTag = ''
+
+
+class TaglessXML(XML):
+
+    """XML w/out open/close tag"""
+
+    _openTag = _closeTag = _emptyTag = ''
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

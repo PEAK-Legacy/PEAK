@@ -59,8 +59,6 @@ Open Issues/To-Do Items
 
     * peak.web (some of this may get bumped to alpha 4)
 
-       - fix 'text' DOMlet quoting (i.e., the lack thereof)
-
        - clean up DOMlet parse/build framework (e.g. add line number info)
 
        - default error templates, w/useful info
@@ -74,6 +72,8 @@ Open Issues/To-Do Items
          a later release)
 
        - try/catch DOMlet (and related error rendering interface/framework)
+
+
 
 
 

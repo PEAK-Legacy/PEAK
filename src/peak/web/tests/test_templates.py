@@ -22,11 +22,14 @@ class TestApp(web.Traversable):
     security.allow(
         foo = security.Anybody,
         bar = security.Anybody,
+        someXML = security.Anybody,
     )
 
-    foo = "The title"
+    foo = "The title (with <xml/> & such in it)"
 
     bar = 1,2,3
+
+    someXML = "<li>This has &lt;xml/&gt; in it</li>"
 
     show = binding.Require(
         "Template to dump this out with",
@@ -36,22 +39,19 @@ class TestApp(web.Traversable):
 
 
 
-
-
-
 class BasicTest(TestCase):
 
-    template = """<body>
-<h1 domlet="text:foo">Title Goes Here</h1>
-<ul domlet="list:bar">
-    <li define="listItem" domlet="text"></li>
-</ul>
-</body>"""
+    template = open(config.fileNearModule(__name__,'template1.pwt')).read()
 
-    rendered = """<body>
-<h1>The title</h1>
+    rendered = """<html><head>
+<title>Template test: The title (with &lt;xml/&gt; &amp; such in it)</title>
+</head>
+<body>
+<h1>The title (with &lt;xml/&gt; &amp; such in it)</h1>
 <ul><li>1</li><li>2</li><li>3</li></ul>
-</body>"""
+<ul><li>This has &lt;xml/&gt; in it</li></ul>
+<ul><li>This has &lt;xml/&gt; in it</li></ul>
+</body></html>"""
 
     def setUp(self):
         r = testRoot()
@@ -67,7 +67,7 @@ class BasicTest(TestCase):
         return self.interaction.simpleTraverse('show')
 
     def checkRendering(self):
-        assert self.render() == self.rendered, (self.render(), self.rendered)
+        self.assertEqual(self.render(),self.rendered)
 
 
 
@@ -90,7 +90,7 @@ class NSTest(BasicTest):
 </body>"""
 
     rendered = """<body xmlns:pwt="http://peak.telecommunity.com/DOMlets/">
-<h1>The title</h1>
+<h1>The title (with &lt;xml/&gt; &amp; such in it)</h1>
 <ul><li>1</li><li>2</li><li>3</li></ul>
 </body>"""
 

@@ -51,7 +51,7 @@ class MethodTest2(MethodTest1):
     appClass = ResourceApp2
 
     rendered = """<body>
-<h1>The title</h1>
+<h1>The title (with &lt;xml/&gt; &amp; such in it)</h1>
 
 <ul><li>1</li><li>2</li><li>3</li></ul>
 
