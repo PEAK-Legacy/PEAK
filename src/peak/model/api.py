@@ -120,10 +120,14 @@ class FeatureMC(MethodExporter):
         """Delete the feature's value by delegating to 'ob.delattrX()'"""
 
         return self.getMethod(ob,'delattr')()
+        
+class SFMC(binding.Component.__class__, FeatureMC):
+    pass
+
 
 class StructuralFeature(binding.Component):
 
-    __metaclasses__ = FeatureMC,
+    __metaclass__ = SFMC
 
     isRequired    = 0
     lowerBound    = 0
@@ -153,10 +157,6 @@ class StructuralFeature(binding.Component):
         element._delBinding(feature.attrName)
 
     config.setupObject(delete, verb='delattr')
-
-
-
-
 
 
 

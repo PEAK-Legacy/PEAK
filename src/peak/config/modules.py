@@ -53,32 +53,6 @@
         either a function or 'None', so you must include 'self' as a parameter
         when calling it from a method definition.
 
-    Inheritance of Metaclass Constraints
-
-        Python 2.2 enforces metaclass constraints for "new-style" classes.
-        That is, it requires that a new class' metaclass be "compatible" with
-        the metaclass of each of the base classes of the class, where
-        "compatible" means "is the same as, or is a subclass of".
-
-        Python, however, does not automatically generate such a metaclass for
-        you.  You must ordinarily supply that metaclass yourself, either as
-        an explicit '__metaclass__' definition, or by having one of the base
-        classes supply a suitable metaclass.  This is fine for simple programs,
-        where metaclasses are infrequently mixed, but more problematic for
-        complex frameworks like PEAK, where a variety of metaclasses are
-        mixed and matched to supply various properties.
-
-        So, using 'setupModule()' gives you an additional bonus: PEAK
-        will automatically generate the necessary metaclasses for you, so long
-        as you use PEAK's alternate API for specifying metaclasses.
-        Please see the documentation of the 'makeClass' function in the
-        'peak.util.Meta' module for more information about how this works.
-
-        Please note that metaclasses are not combined *across* modules, unless
-        they are specified with same-named 'class' statements in both modules.
-        (In which case, they are combined because they are following the normal
-        class combination rules of module inheritance, not because of anything
-        to do with metaclasses.)
 
     Pickling Instances of Nested Classes and the '__name__' Attribute
 
@@ -175,6 +149,19 @@
           call 'setupModule()'.
 """
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 import sys
 from types import ModuleType
 
@@ -200,6 +187,19 @@ def setupObject(obj, **attrs):
     for k,v in attrs.items():
         if not hasattr(obj,k):
             setattr(obj,k,v)
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -267,18 +267,18 @@ def setupModule():
 
     codelist = getCodeListForModule(module, code)
     
-    saved = {}
-    for name in '__file__', '__path__', '__name__', '__codeList__':
-        try:
-            saved[name] = dict[name]
-        except KeyError:
-            pass
+    if len(codelist)>1:
+        saved = {}
+        for name in '__file__', '__path__', '__name__', '__codeList__':
+            try:
+                saved[name] = dict[name]
+            except KeyError:
+                pass
 
-    dict.clear(); dict.update(saved)    
-    sim = Simulator(dict)   # Must happen after!
+        dict.clear(); dict.update(saved)    
+        sim = Simulator(dict)   # Must happen after!
 
-    # XXX Should we *not* do this if len(codelist)==1???
-    map(sim.execute, codelist); sim.finish()
+        map(sim.execute, codelist); sim.finish()
     
     if dict.has_key('__init__'):
         dict['__init__']()
