@@ -18,7 +18,7 @@ class uuidURL(URL.Base):
 
     class quals(URL.Collection):
         referencedType = model.Any
-        syntax = URL.Tuple(URL.Extract(),'=',URL.Extract())
+        syntax = URL.Tuple(URL.ExtractQuoted(),'=',URL.ExtractQuoted())
         separator = ';'
 
     class uuid(URL.Field):

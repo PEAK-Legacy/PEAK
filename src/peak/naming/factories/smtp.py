@@ -21,7 +21,7 @@ class smtpURL(naming.URL.Base):
     syntax = naming.URL.Sequence(
         '//',
         (   user,
-            (naming.URL.Text(';AUTH=',False), auth),
+            (naming.URL.StringConstant(';AUTH=',False), auth),
             '@',
         ),
         host, (':', port)

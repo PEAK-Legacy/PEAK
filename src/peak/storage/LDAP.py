@@ -294,7 +294,7 @@ class ldapURL(URL.Base):
     class basedn(URL.NameField):
         defaultValue=''
         syntax = URL.Conversion(
-            URL.Extract(unquote=False), canBeEmpty = True,
+            canBeEmpty = True,
             converter = lambda x:
                 naming.CompositeName.parse(x,distinguishedName),
             formatter = lambda x:
@@ -304,7 +304,7 @@ class ldapURL(URL.Base):
         )
 
     class attrs(URL.Field):
-        syntax = URL.Repeat(URL.Extract(),separator = ',')  # XXX
+        syntax = URL.Repeat(URL.ExtractQuoted(),separator = ',')  # XXX
 
     class scope(URL.IntField):
         defaultValue=SCOPE_BASE
@@ -332,7 +332,8 @@ class ldapURL(URL.Base):
         syntax = URL.Conversion(
             URL.Repeat(
                 URL.Tuple(
-                    URL.Extract(URL.Optional('!')), URL.Extract(),'=',URL.Extract()
+                    URL.ExtractQuoted(('!',)),  # optional '!' means critical
+                    URL.ExtractQuoted(),'=',URL.ExtractQuoted()
                 ),
                 separator=','
             ),
