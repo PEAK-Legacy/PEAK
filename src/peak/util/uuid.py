@@ -2,9 +2,14 @@ from nodeid48 import getnodeid48
 from peak.util.random import rand16, randbytes
 from time import time
 from md5 import md5
+from threads import allocate_lock
 
-lasttime = 0
-offset   = 0
+lasttime   = 0
+offset     = 0
+timelock   = allocate_lock()
+begin_lock = timelock.acquire
+end_lock   = timelock.release
+
 
 __all__ = [
     'UUID',
@@ -28,11 +33,6 @@ def getClockSeq():
 
 
 clock_seq = getClockSeq()
-
-
-
-
-
 
 
 
@@ -108,19 +108,19 @@ class UUID(str):
                 # avoid "jumping the clock" for millisecond or better-resolution
                 # clocks.  Assuming, of course, that you're not running this on
                 # a machine where Python can run the entire constructor fifty
-                # or more times per millisecond!  NOTE: THIS IS NOT THREADSAFE!
-                # To be thread-safe, access to lasttime and offset should be
-                # wrapped in a lock acquire/release pair.
+                # or more times per millisecond!
 
-                t = time()
-                if t==lasttime:
-                    offset += (rand16() % 191) + 1
-                else:
-                    lasttime = t
-                    offset   = 0
+                begin_lock()
 
-                ut = long(t * 10000000.0) + 0x01B21DD213814000L + offset
-                
+                try:
+                    t = time()
+                    if t==lasttime: offset += (rand16() % 191) + 1
+                    else:           lasttime, offset = t, 0
+                    ut = long(t * 10000000.0) + 0x01B21DD213814000L + offset
+
+                finally:
+                    end_lock()
+
                 ut = "%015x" % ut
 
                 from_string = "%s-%s-1%s-%04x-%s" % (
