@@ -24,12 +24,12 @@ class _expr:
         return Not(self)
 
     def __and__(self,other):
-        if self==other:
+        if self==other or other is None:
             return self
         return And(self,other)
 
     def __or__(self,other):
-        if self==other:
+        if self==other or other is None:
             return self
         return Or(self,other)
 
@@ -53,33 +53,6 @@ class PhysicalDB(binding.Component):
         return self.tableMap[name]
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 def getColumns(base,relvars):
     cols = kjGraph(base)
     for rv in relvars:
@@ -87,7 +60,33 @@ def getColumns(base,relvars):
     return cols #tuple(cols)
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 class Table:
+
+    protocols.advise(
+        instancesProvide = [IRelationVariable],
+    )
+    condition = None
+    outers = ()
 
     def __init__(self,name,columns,db=None):
         self.name = name
@@ -98,10 +97,16 @@ class Table:
         return self.columns
 
     def thetaJoin(self,condition,*relvars):
-        return BasicJoin(condition,(self,)+relvars, (), getColumns(self.columns,relvars))
+        return BasicJoin(
+            condition & self.condition, (self,)+relvars, (),
+            getColumns(self.columns,relvars)
+        )
 
     def starJoin(self,condition,*relvars):
-        return BasicJoin(condition,(self,),relvars, getColumns(self.columns,relvars))
+        return BasicJoin(
+            condition & self.condition, (self,), relvars,
+            getColumns(self.columns,relvars)
+        )
 
     select = thetaJoin      # XXX
 
@@ -109,70 +114,21 @@ class Table:
         return self.name
 
     def project(self,columns):
-        return Projection(self,columns)
+        return BasicJoin(self.condition, (self,), (), kjSet(columns)*self.columns)
 
     def getDB(self):
         return self.db
 
 
 
-
-
-
-
-
-class Projection(Table,HashAndCompare):
-
-    def __init__(self,relvar,columns):
-        self.relvar = relvar
-        self.columns = kjSet(columns) * relvar.attributes()
-        self._hashAndCompare = self.__class__.__name__,relvar,self.columns
-
-    def project(self,columns):
-        return Projection(self.relvar,columns)
-
-    def __repr__(self):
-        return "%s(%r,%r)" % self._hashAndCompare
-
-    def getDB(self):
-        return self.relvar.getDB()
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-class BasicJoin(HashAndCompare):
-
-    protocols.advise(
-        instancesProvide = [IRelationVariable],
-    )
+class BasicJoin(Table, HashAndCompare):
 
     def __init__(self,condition,relvars,outers=(),columns=()):
-        myrels = []
+        myrels = []; outers=list(outers)
         for rv in relvars:
             if isinstance(rv,self.__class__):   # XXX
                 myrels.extend(rv.relvars)
+                outers.extend(rv.outers)
                 condition = condition & rv.condition
             else:
                 myrels.append(rv)
@@ -183,27 +139,13 @@ class BasicJoin(HashAndCompare):
                 (self.__class__.__name__, self.minRV)
             )
         self.relvars = tuple(myrels)
-        outers = list(outers); outers.sort()
+        outers.sort()
         self.outers = tuple(outers)
         self.condition = condition
         self.columns = kjGraph(columns)
         self._hashAndCompare = (
             self.__class__.__name__, condition, self.relvars, self.outers, self.columns
         )
-
-    def project(self,columns):
-        rvs = [rv.project(columns) for rv in self.relvars] #XXX outerjoins too
-        return BasicJoin(self.condition, tuple(rvs), self.outers, getColumns((),rvs))
-
-    def starJoin(self,condition,*relvars):
-        return BasicJoin(condition & self.condition, self.relvars, relvars+self.outers, getColumns(self.columns,relvars))
-
-    def thetaJoin(self,condition,*relvars):
-        return BasicJoin(condition & self.condition, (self.relvars+relvars), self.outers, getColumns(self.columns,relvars))
-
-
-
-    select = thetaJoin  # XXX
 
     def __repr__(self):
         parms=(
@@ -212,36 +154,12 @@ class BasicJoin(HashAndCompare):
         )
         return '%s%r' % (self._hashAndCompare[0], parms)
 
-    def attributes(self):
-        return self.columns
-
     def getDB(self):
         db = self.relvars[0].getDB()
         for rv in self.relvars[1:]:
             if rv.getDB() is not db:
                 return None
         return db
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 class _compound(_expr,HashAndCompare):
@@ -315,11 +233,11 @@ class Not(_compound):
         self.operands = operand,
         self._hashAndCompare = self.__class__.__name__, self.operands
 
-    def _getPromotable(self,op):
-        return [op]
-
     def __invert__(self):
         return self.operands[0]
+
+
+
 
 
 
