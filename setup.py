@@ -14,7 +14,8 @@ PACKAGE_NAME = "PEAK"
 PACKAGE_VERSION = "0.5a1"
 
 HAPPYDOC_IGNORE = [
-    '-i', 'examples',  '-i', 'old', '-i', 'tests',
+    '-i', 'examples',  '-i', 'old', '-i', 'tests', '-i', 'zope', '-i', 'setup',
+    '-i', 'kjbuckets', '-i', 'ZConfig', '-i', 'persistence',
 ]
 
 
@@ -37,7 +38,6 @@ extensions = [
     Extension("peak.util.buffer_gap", ["src/peak/util/buffer_gap" + EXT]),
     Extension("peak.util._Code", ["src/peak/util/_Code" + EXT]),
 ]
-
 
 # Base data files
 

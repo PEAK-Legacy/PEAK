@@ -1,2 +1,2 @@
-"""Metamodelling/CASE Tools (obsolete/unsupported for now)"""
+"""Metamodelling/CASE Tools"""
 
