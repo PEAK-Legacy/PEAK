@@ -132,6 +132,9 @@ class AbstractInterpreter(AbstractCommand):
                 raise InvocationError("missing argument(s)")
             return self.interpret(self.argv[1]).run()
 
+        except SystemExit, v:
+            return v.args[0]
+
         except InvocationError, msg:
             return self.invocationError(msg)
 
@@ -156,9 +159,6 @@ class AbstractInterpreter(AbstractCommand):
         return basename(self.argv[1])
 
     commandName = binding.Once(commandName)
-
-
-
 
 
 
@@ -260,8 +260,10 @@ class _caller(AbstractCommand):
                 setattr(sys,v,getattr(self,v))
 
             os.environ = self.environ
-
-            return self.callable()
+            try:
+                return self.callable()
+            except SystemExit, v:
+                return v.args[0]
 
         finally:
             # Ensure it's back to normal when we leave
@@ -275,14 +277,12 @@ class _runner(AbstractCommand):
     runnable = binding.requireBinding("An IRerunnable")
 
     def run(self):
-        return self.runnable.run(
-            self.stdin, self.stdout, self.stderr, self.environ, self.argv
-        )
-
-
-
-
-
+        try:
+            return self.runnable.run(
+                self.stdin, self.stdout, self.stderr, self.environ, self.argv
+            )
+        except SystemExit, v:
+            return v.args[0]
 
 
 def callableAsFactory(callable):
