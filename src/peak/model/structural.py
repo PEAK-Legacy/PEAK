@@ -262,7 +262,8 @@ class Collection(StructuralFeature):
 
     def set(feature, element, val):
         feature.__delete__(element)
-        element._setBinding(feature.attrName, val)
+        map(feature.getMethod(element,'add'),val)
+
 
     def add(feature, element, item):
         """Add the item to the collection/relationship"""      
@@ -271,15 +272,14 @@ class Collection(StructuralFeature):
 
         if not ub or len(feature._getList(element))<ub:
             feature._notifyLink(element,item)
-            feature._link(element,item)
         else:
             raise ValueError("Too many items")
 
 
     def remove(feature, element, item):
         """Remove the item from the collection/relationship, if present"""
-        feature._unlink(element,item)
         feature._notifyUnlink(element,item)
+
 
 
 
@@ -291,27 +291,30 @@ class Collection(StructuralFeature):
         p = d.index(oldItem)
 
         if p!=-1:
-            element._setBinding(feature.attrName, d)
-            d[p]=newItem
-            feature._notifyUnlink(element,oldItem)
-            feature._notifyLink(element,newItem)
+            feature._notifyUnlink(element,oldItem,p)
+            feature._notifyLink(element,newItem,p)
         else:
             raise ValueError(oldItem,"not found")
 
 
     def unset(feature, element):
+
         """Unset the value of the feature (like __delattr__)"""
 
-        referencedEnd = feature.referencedEnd
+        d = feature._getList(element)
 
-        if referencedEnd:
+        items = zip(range(len(d)),d)
+        items.reverse()
 
-            d = feature._getList(element)
+        unlink = feature._notifyUnlink
+
+        # remove items in reverse order, to simplify deletion and
+        # to preserve any invariant that was relevant for addition
+        # order...
+        
+        for posn,item in items:
+            unlink(element,item,posn)
             
-            for item in d:
-                otherEnd = getattr(item.__class__,referencedEnd)
-                otherEnd._unlink(item,element)
-
         element._delBinding(feature.attrName)
 
 
@@ -323,11 +326,9 @@ class Collection(StructuralFeature):
 
 
 
+    def _notifyLink(feature, element, item, posn=None):
 
-
-
-    def _notifyLink(feature, element, item):
-
+        feature._link(element,item,posn)
         referencedEnd = feature.referencedEnd
 
         if referencedEnd:
@@ -335,8 +336,9 @@ class Collection(StructuralFeature):
             otherEnd._link(item,element)
 
 
-    def _notifyUnlink(feature, element, item):
+    def _notifyUnlink(feature, element, item, posn=None):
 
+        feature._unlink(element,item,posn)
         referencedEnd = feature.referencedEnd
 
         if referencedEnd:
@@ -344,28 +346,26 @@ class Collection(StructuralFeature):
             otherEnd._unlink(item,element)
 
 
-    def _link(feature,element,item):
+    def _link(feature,element,item,posn=None):
+
         d=feature._getList(element)
         element._setBinding(feature.attrName, d)
-        d.append(item)
+
+        if posn is None:
+            d.append(item)
+        else:
+            d.insert(posn,item)
         
 
-    def _unlink(feature,element,item):
+    def _unlink(feature,element,item,posn=None):
+
         d=feature._getList(element)
         element._setBinding(feature.attrName, d)
-        d.remove(item)
 
-
-
-
-
-
-
-
-
-
-
-
+        if posn is None:
+            d.remove(item)
+        else:
+            del d[posn]
 
 class Reference(Collection):
 
@@ -431,11 +431,11 @@ class Sequence(Collection):
         if d: i = d.index(oldItem)
 
         if i!=-1:
-            element._setBinding(feature.attrName, d)
-            d.insert(i,newItem)
-            feature._notifyLink(element,newItem)
+            feature._notifyLink(element,newItem,i)
         else:
             raise ValueError(oldItem,"not found")
+
+
 
 
 
