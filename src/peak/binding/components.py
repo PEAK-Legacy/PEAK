@@ -89,10 +89,11 @@ def _setupCriterion(strategy):
             if oid in table:
                 return table[oid]
         return table[None]
-    
+
     class HasParentCriterion(strategy.IdentityCriterion):
-        
+
         dispatch_function = staticmethod(dispatch_by_hierarchy)
+        matches = strategy.AbstractCriterion.matches.im_func
 
         def __init__(self,component):
             super(HasParentCriterion,self).__init__(strategy.Pointer(component))
@@ -111,14 +112,13 @@ def _setupParse(predicates):
         " and len(expr.argexprs)==2 and expr.argexprs[1] in predicates.Const"
     )]
     def convertHasParentToCriterion(expr,criterion):
-        typecheck = HasParentCriterion(expr.argexprs[1].value)   
+        typecheck = HasParentCriterion(expr.argexprs[1].value)
         if not criterion.truth:
             typecheck = ~typecheck
         return dispatch.strategy.Signature([(expr.argexprs[0],typecheck)])
 
 whenImported('dispatch.strategy',_setupCriterion)
 whenImported('dispatch.predicates',_setupParse)
-
 
 
 def getComponentPath(component, relativeTo=None):
@@ -168,7 +168,7 @@ def getParentComponent(component):
 
     This also works for module objects, and 'binding.ActiveClass' objects,
     for which the containing module or package is returned.
-    
+
     This is a generic function, so you can add cases for additional object
     types using 'binding.getParentComponent.when()' as a decorator.
     """
@@ -209,7 +209,7 @@ def getComponentName(component):
 
     This also works for module objects, and 'binding.ActiveClass' objects,
     for which the module or class' '__name__' is returned.
-    
+
     This is a generic function, so you can add cases for additional object
     types using 'binding.getComponentName.when()' as a decorator.
     """

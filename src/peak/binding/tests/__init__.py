@@ -3,6 +3,7 @@
 from unittest import TestCase, makeSuite, TestSuite
 from peak.api import *
 from peak.tests import testRoot
+from sets import Set
 
 class baseWithClassAttr(binding.Component):
 
@@ -29,7 +30,6 @@ class ClassAttrTest(TestCase):
     def testMetaTypes(self):
         assert anotherSubclass.__class__ is baseWithClassAttr.__class__
         assert anotherSubclass.__class__.__name__ == 'baseWithClassAttrClass'
-
 
 
 
@@ -251,8 +251,10 @@ class DescriptorTest(TestCase):
         from peak.binding.components import dispatch_by_hierarchy
 
         data = HPC(self.data)
+        svc  = HPC(self.data.aService)
         table = {data.ptr:"pass", None:"fail"}
         strategy.validateCriterion(data, dispatch_by_hierarchy)
+        self.failUnless(svc.implies(data))
 
         for item in self.data, self.data.aService.thing5, self.data.thing8:
             self.failUnless(strategy.Pointer(item) in data)
@@ -262,11 +264,13 @@ class DescriptorTest(TestCase):
             self.failIf(strategy.Pointer(item) in data)
             self.assertEqual(dispatch_by_hierarchy(item,table),"fail")
 
+        table[svc.ptr] = "pass"
+        self.assertEqual(Set(data.matches(table)), Set([svc.ptr,data.ptr]))
+
         gf = functions.GenericFunction(lambda x:None)
         d = locals()
         parse = gf.parse
         pe = lambda e: parse(e,d,globals())
-
         self.assertEqual(pe('binding.hasParent(x,self.data)'),
             strategy.Signature(x=data))
 
@@ -280,11 +284,6 @@ class DescriptorTest(TestCase):
         self.assertEqual(gf(self.data.thing8),"in service")
         self.assertEqual(gf(self.data.aService.thing5),"in data")
         self.assertEqual(gf(self.data.aService.nestedService),"in service")
-
-
-
-
-
 
     def testParents(self):
 
