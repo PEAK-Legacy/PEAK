@@ -6,8 +6,8 @@ from peak.binding.interfaces import IComponent
 
 __all__ = [
     'IWebTraversable', 'IInteractionPolicy', 'IAuthService', 'IWebException',
-    'RESOURCE_PREFIX', 'DEFAULT_METHOD', 'APPLICATION_LOG',
-    'IDOMletState', 'IHTTPHandler', 'IHTTPApplication',
+    'RESOURCE_PREFIX', 'DEFAULT_METHOD', 'APPLICATION_LOG', 'NAMESPACE_NAMES',
+    'IDOMletState', 'IHTTPHandler', 'IHTTPApplication', 'INamespaceHandler',
     'IDOMletNode',    'IDOMletNodeFactory', 'IResource', 'ITraversalContext',
     'IDOMletElement', 'IDOMletElementFactory', 'ISkin', 'IPolicyInfo'
 ]
@@ -15,7 +15,7 @@ __all__ = [
 DEFAULT_METHOD    = PropertyName('peak.web.defaultMethod')
 RESOURCE_PREFIX   = PropertyName('peak.web.resourcePrefix')
 APPLICATION_LOG   = PropertyName('peak.web.appLog')
-
+NAMESPACE_NAMES   = PropertyName('peak.web.namespaces')
 
 class IPolicyInfo(Interface):
 
@@ -55,10 +55,11 @@ class IInteractionPolicy(IAuthService, IPolicyInfo):
     def newContext(environ={},start=NOT_GIVEN,skin=None,interaction=None):
         """Create an initial 'ITraversalContext' based on 'environ', etc.
 
-        If 'start' is not supplied, the 'skin' will be used as the 'current'
-        location of the created context.  If 'skin' is not supplied, the
-        default skin is used.  If 'interaction' is not supplied, a fresh
-        interaction is created (via the 'newInteraction()' method).
+        If 'start' is not supplied, the policy's application object will be
+        used as the 'current' location of the created context.  If 'skin' is
+        not supplied, the default skin is used.  If 'interaction' is not
+        supplied, a fresh interaction is created (via the 'newInteraction()'
+        method).
         """
 
     def beforeTraversal(environ):
@@ -70,9 +71,8 @@ class IInteractionPolicy(IAuthService, IPolicyInfo):
     def handleException(environ, exc_info, retry_allowed=1):
         """Convert exception to a handler, and invoke it"""
 
-
-
-
+    def ns_handler(ns,default=None):
+        """Return an 'INamespaceHandler' for namespace 'ns', or 'default'"""
 
 
 
@@ -230,8 +230,6 @@ class IWebException(Interface):
 
 class IResourceService(Interface):
 
-    resources = Attribute("""ITraversable for resource root""")
-
     def getResource(path):
         """Return the named resource"""
 
@@ -241,6 +239,23 @@ class ISkin(IResource, IResourceService):
 
 
 
+
+
+
+
+
+class INamespaceHandler(Interface):
+    """A function returning a new context for a given context/ns/name"""
+
+    def __call__(ctx,ns,nm,qname):
+        """Return a new context relative to 'ctx' for 'ns' and 'nm'
+
+        'ctx' is an 'ITraversalContext'.  'ns' is the namespace identifier
+        of 'qname', and 'nm' is the remainder of 'qname'.  'qname' is the
+        original URL path component that was being traversed.
+
+        The handler must return an appropriate new 'ITraversalContext', or
+        raise an appropriate error."""
 
 
 
@@ -258,21 +273,6 @@ class IDOMletState(IComponent):
         the state's parent components are searched and the first parent
         supporting the interface is returned.  'None' is returned if no parent
         supports the requested interface."""
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

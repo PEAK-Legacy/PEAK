@@ -176,6 +176,22 @@ class TestContext(TestCase):
         self.checkShift('/a/b', '/x//', 'x', '/a/b/x', '/')
         self.checkShift('/a/b', '/.', None, '/a/b', '')
 
+    def assertEmptyNS(self,name):
+        self.assertEqual(web.parseName(name), ('',name))
+
+    def testSplitNS(self):
+        self.assertEmptyNS('xyz')
+        self.assertEmptyNS('++abcdef')
+        self.assertEmptyNS('++abc+def')
+        self.assertEmptyNS('++++def')
+        self.assertEmptyNS('+++def+++')
+        self.assertEmptyNS('++abc+foo++def')
+        self.assertEmptyNS('++9abc++def')
+        self.assertEmptyNS('++9abc++def++')
+
+        self.assertEqual(web.parseName('@@xyz'), ('view','xyz'))
+        self.assertEqual(web.parseName('++abc++def'), ('abc','def'))
+        self.assertEqual(web.parseName('++abc9++def'), ('abc9','def'))
 
 
 
@@ -187,10 +203,35 @@ class TestContext(TestCase):
 
 
 
+class TestNamespaces(TestCase):
 
+    def setUp(self):
+        self.policy = web.TestPolicy(testRoot())
+        self.policy.registerProvider(
+            'peak.web.namespaces.foo', config.Value(lambda *args: self)
+        )
+        self.policy.registerProvider(
+            'peak.web.namespaces.bar', config.Value(lambda *args: "baz")
+        )
 
+    def testRegisteredNS(self):
+        ctx = self.policy.newContext(start=123)
+        args = ctx, '', '', ''
+        self.failUnless(self.policy.ns_handler('foo')(*args) is self)
+        self.assertEqual(self.policy.ns_handler('bar')(*args), "baz")
 
+    def testTraverseResource(self):
+        RESOURCE_NS = self.policy.resourcePrefix
+        ctx = self.policy.newContext(start=123)
+        res = web.traverseResource(ctx, RESOURCE_NS[2:-2], '', RESOURCE_NS)
+        self.failUnless(res.current is ctx.skin)
+        self.failUnless(res.parentContext() is ctx)
+        self.assertEqual(res.name, RESOURCE_NS)
 
+    def testTraverseName(self):
+        ctx = self.policy.newContext(start=123)
+        self.failUnless(ctx.traverseName('++foo++bar') is self)
+        self.assertEqual(ctx.traverseName('++bar++baz'), 'baz')
 
 
 
@@ -204,7 +245,7 @@ class TestContext(TestCase):
 
 
 TestClasses = (
-    TestTraversals, TestContext,
+    TestTraversals, TestContext, TestNamespaces,
 )
 
 def test_suite():

@@ -80,7 +80,7 @@ class NullAuthenticationService:
 
 
 
-class InteractionPolicy(binding.Component, protocols.StickyAdapter):
+class InteractionPolicy(binding.Configurable, protocols.StickyAdapter):
 
     protocols.advise(
         instancesProvide = [IInteractionPolicy],
@@ -114,10 +114,10 @@ class InteractionPolicy(binding.Component, protocols.StickyAdapter):
         return self._mkInteraction(self,None,**options)
 
 
-
-
-
-
+    ns_handler = binding.Make(
+        lambda self: \
+            config.Namespace(NAMESPACE_NAMES, self).get
+    )
 
 
 
@@ -133,7 +133,7 @@ class InteractionPolicy(binding.Component, protocols.StickyAdapter):
             interaction = self.newInteraction(user=self.getUser(environ))
 
         if start is NOT_GIVEN:
-            start = skin
+            start = self.app
 
         environ.setdefault('HTTP_HOST',environ['SERVER_NAME'])
         root_url = "http://%(HTTP_HOST)s%(SCRIPT_NAME)s" % environ  # XXX

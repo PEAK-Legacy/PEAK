@@ -55,8 +55,8 @@ class Resource(Traversable):
 
 
     def getURL(self, ctx):
-        # We want an absolute URL based on the interaction
-        return posixpath.join(ctx.rootURL,self.resourcePath)
+        # We want an absolute URL
+        return ctx.rootURL+'/'+self.resourcePath
 
 
     def _getResourcePath(self):
@@ -259,13 +259,12 @@ def findPackage(pkg):
 
 class ResourceProxy(object):
 
-    __slots__ = 'path', 'resourcePath'
+    __slots__ = 'path'
 
     protocols.advise(instancesProvide = [IHTTPHandler, IWebTraversable])
 
-    def __init__(self, path, resourcePath):
+    def __init__(self, path):
         self.path = path
-        self.resourcePath = resourcePath
 
     def handle_http(self, ctx):
         return IHTTPHandler(ctx.getResource(self.path)).handle_http(ctx)
@@ -285,9 +284,12 @@ class ResourceProxy(object):
 
 
 
+
 def bindResource(path, pkg=None, **kw):
 
     """Attribute binding to look up a resource"""
+
+    kw.setdefault('suggestParent',False)
 
     path = adapt(path, TraversalPath)
 
@@ -300,11 +302,9 @@ def bindResource(path, pkg=None, **kw):
         # /package/whatever
         path = TraversalPath('/'+pkg) + path
 
-    def getResource(self):
-        return ResourceProxy(path, RESOURCE_PREFIX(self)+'/'+str(path))
+    proxy = ResourceProxy(path)
+    return binding.Make(lambda: proxy, **kw)
 
-    kw.setdefault('suggestParent',False)
-    return binding.Make(getResource, **kw)
 
 
 

@@ -12,15 +12,56 @@
 
 __all__ = [
     'traverseAttr', 'default_for_testing', 'Context', 'StartContext',
-    'simpleRedirect', 'clientHas',
+    'simpleRedirect', 'clientHas','parseName', 'traverseResource',
 ]
 
 from interfaces import *
-import protocols, posixpath, os
+import protocols, posixpath, os, re
 from cStringIO import StringIO
 from peak.api import binding, adapt, NOT_GIVEN, NOT_FOUND
 import errors
 from peak.security.interfaces import IInteraction
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ns_match = re.compile(r"\+\+([A-Za-z_]\w*)\+\+|").match
+
+def parseName(name):
+    """Return 'ns,nm' pair for 'name'
+
+    If 'name' begins with '"@@"', 'ns' will equal 'view', and 'nm' will be
+    the remainder of 'name'.  If 'name' begins with a '"++"'-bracketed
+    Python identifier, such as '"++foo_27++"', the identifier will be returned
+    in 'ns', and the remainder of 'name' in 'nm'.  Otherwise, 'ns' will be
+    an empty string, and 'nm' will be 'name'.
+    """
+    if name.startswith('@@'):
+        return 'view',name[2:]
+    match = ns_match(name)
+    return (match.group(1) or ''), name[match.end(0):]
+
+
+def traverseResource(ctx, ns, nm, qname):
+    return ctx.childContext(qname, ctx.skin)
+
+
+
+
 
 
 
@@ -84,16 +125,6 @@ class Context:
         return IHTTPHandler(self.current).handle_http(self)
 
 
-    def traverseName(self,name):
-        if name=='..':
-            return self.parentContext()
-        elif not name or name=='.':
-            return self
-        else:
-            ob = IWebTraversable(self.current).traverseTo(name,self)
-            return self.childContext(name,ob)
-
-
     def clone(self,**kw):
         for attr in 'name','current','environ':
             if attr not in kw:
@@ -119,6 +150,16 @@ class Context:
                     "%s constructor has no keyword argument %s" %
                     (klass, k)
                 )
+
+
+
+
+
+
+
+
+
+
 
 
     def shift(self):
@@ -151,6 +192,47 @@ class Context:
             name = None
 
         return name
+
+
+
+
+
+
+
+
+
+
+
+    def traverseName(self,name):
+        ns, nm = parseName(name)
+        if ns:
+            handler = self.policy.ns_handler(ns,None)
+            if handler is None:
+                raise errors.NotFound(self,name,self.current)
+            return handler(self, ns, nm, name)
+        if name=='..':
+            return self.parentContext()
+        elif not name or name=='.':
+            return self
+        else:
+            ob = IWebTraversable(self.current).traverseTo(name,self)
+            return self.childContext(name,ob)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

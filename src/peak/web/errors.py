@@ -42,7 +42,7 @@ class WebException(Exception):
     def handle_http(self,ctx):
         return (
             self.httpStatus, [('Content-type','text/plain')],
-            [self.__class__.__name__+str(self)]
+            [self.__class__.__name__+str(self.args)]
         )
 
 

@@ -39,7 +39,7 @@ __all__ = [
 
 
 
-class Skin(Traversable):
+class Skin(MultiTraverser):
 
     """Skins provide a branch-point between the app root and resources"""
 
@@ -53,7 +53,8 @@ class Skin(Traversable):
     root       = binding.Delegate("policy")
 
     layerNames = binding.Require("Sequence of layer names")
-    layers     = binding.Make(
+    
+    items     = binding.Make(
         lambda self: map(self.policy.getLayer, self.layerNames)
     )
 
@@ -64,14 +65,13 @@ class Skin(Traversable):
     dummyEnviron = {}
     default_for_testing(dummyEnviron)
 
-    def traverseTo(self, name, ctx):
+    def getURL(self, ctx):
+        # We want an absolute URL
+        return ctx.rootURL+'/'+self.resourcePath
 
-        if name == ctx.policy.resourcePrefix:
-            return self.resources
+    resourcePath = binding.Obtain('policy/resourcePrefix')
 
-        return self.root.traverseTo(name, ctx)
 
-    resourcePath = ''  # skin is at root
 
 
 
@@ -91,12 +91,12 @@ class Skin(Traversable):
             self.dummyEnviron.copy(), self, self, self.dummyInteraction
         )
 
-        # start at ++resources++
-        start = start.traverseName(self.policy.resourcePrefix)
-
         resourceCtx = path.traverse(start, getRoot = lambda ctx: start)
         self.cache[path] = subject = resourceCtx.current
         return subject
+
+
+
 
 
 
