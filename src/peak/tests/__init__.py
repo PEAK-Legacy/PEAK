@@ -1,18 +1,23 @@
 """
-TransWarp master test suite package.  Use with unittest.py to run all
-tests, or use the suite() function in an individual module to run just
-those tests.
+TransWarp master test suite package.  Use with unittest.py to run all tests,
+or use the 'test_suite()' function in an individual module to get just those
+tests.
 """
 
-def suite():
+allSuites = [
+    'TW.API.tests:test_suite',
+    'TW.SEF.tests:test_suite',
+    'TW.Database.tests:test_suite',
+    'TW.Utils.tests:test_suite',
+    'TW.tests.Callbacks:test_suite',
+]
+
+def test_suite():
 
     from unittest import TestSuite
-    s = []
-    
-    import Components, Callbacks, SOX, StructuralModel, Database
-    
-    for t in Components, Callbacks, SOX, StructuralModel, Database:
-        s.append(t.suite())
+    from TW.Utils.Import import importString
 
-    return TestSuite(s)
+    return TestSuite(
+        [importString(t)() for t in allSuites]
+    )
 

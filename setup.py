@@ -25,7 +25,8 @@ setup(
     
     packages=[
         'TW', 'TW.API', 'TW.Database', 'TW.MOF', 'TW.SEF', 'TW.UML', 'TW.XMI',
-        'TW.Utils', 'TW.tests', 'TW.tests.Database', 'TW.tests.StructuralModel'
+        'TW.Utils', 'TW.API.tests', 'TW.Database.tests', 'TW.SEF.tests',
+        'TW.Utils.tests', 'TW.tests', 
     ],
     
     package_dir = {'':'src'},
@@ -33,7 +34,7 @@ setup(
     cmdclass = {'install_data': install_data},
     
     data_files = [
-        ('TW/tests/StructuralModel', ['src/TW/tests/StructuralModel/MetaMeta.xml']),
+        ('TW/SEF/tests', ['src/TW/SEF/tests/MetaMeta.xml']),
     ],
 )
 

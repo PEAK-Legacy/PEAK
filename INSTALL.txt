@@ -72,7 +72,7 @@ TransWarp Release 0.2 preview 1
   the Python "unittest" module installed in your Python path, you can use
   it to run the test suites, like this::
 
-   python unittest.py TW.tests.suite
+   python unittest.py TW.tests.test_suite
 
   This will run about 53 tests on various parts of TransWarp.  If you have
   installed everything correctly, 100% of the tests should succeed.  If
