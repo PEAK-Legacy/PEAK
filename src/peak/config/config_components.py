@@ -12,10 +12,10 @@ from peak.interface import Interface, adapt, implements
 
 
 __all__ = [
-    'SystemConfig', 'AppConfig', 'PropertyMap', 'LazyLoader', 'ConfigReader',
+    'PropertyMap', 'LazyLoader', 'ConfigReader',
     'loadConfigFile', 'loadMapping', 'PropertySet', 'fileNearModule',
-    'Provider','CachingProvider','iterParents','findUtilities','findUtility',
-    'instancePerApp', 'Application',
+    'iterParents','findUtilities','findUtility',
+    'provideInstance', 'instancePerComponent', 'Application',
 ]
 
 
@@ -45,17 +45,12 @@ def iterParents(component):
     """
 
     last = component
-        
-    for part in ".":
 
-        while component is not None:
+    while component is not None:
 
-            yield component
+        yield component
 
-            last      = component
-            component = getParentComponent(component)
-
-        component = config.getAppConfig(last)
+        component = getParentComponent(component)
 
 
 def findUtilities(iface, component):
@@ -79,6 +74,11 @@ def findUtilities(iface, component):
     adapt(
         component,IConfigurationRoot,NullConfigRoot
     ).noMoreUtilities(component, iface, forObj)
+
+
+
+
+
 
 def findUtility(iface, component, default=NOT_GIVEN):
 
@@ -124,7 +124,7 @@ def findUtility(iface, component, default=NOT_GIVEN):
 class PropertyMap(Base):
 
     rules     = New(dict)
-    provided  = New(dict)   
+    provided  = New(dict)
     _provides = IPropertyMap
     __implements__ = IPropertyMap, Base.__implements__
 
@@ -153,7 +153,7 @@ class PropertyMap(Base):
 
         # We want to keep more-general registrants
         if old is None or old.extends(primary_iface, False):
-        
+
             _setCellInDict(self.rules, iface, item)
             self.provided[iface]=primary_iface
 
@@ -198,7 +198,7 @@ class PropertyMap(Base):
 
         for name in xRules:
             rules.setdefault(name,_emptyRuleCell)
-       
+
         return value
 
     _getConfigData = getValueFor
@@ -316,7 +316,7 @@ class ConfigReader(AbstractConfigParser):
                 prefix = name
             )
         )
-            
+
 
     def provide_utility(self, section, name, value, lineInfo):
         self.pMap.registerProvider(importString(name), eval(value))
@@ -337,7 +337,7 @@ class ConfigReader(AbstractConfigParser):
 
         if section is None:
             section='*'
-            
+
         s = ' '.join(section.strip().lower().split())
 
         if ' ' in s:
@@ -347,7 +347,7 @@ class ConfigReader(AbstractConfigParser):
                 handler = getattr(self,handler)
             else:
                 raise SyntaxError("Invalid section type", section, lineInfo)
-        
+
         else:
             section = self.prefix + PropertyName(section).asPrefix()
             handler = self.add_setting
@@ -367,7 +367,7 @@ class ConfigReader(AbstractConfigParser):
 
 
 
-class BasicConfig(Component):
+class Application(Component):
 
     implements(IConfigurationRoot, Component.__implements__)
 
@@ -379,20 +379,20 @@ class BasicConfig(Component):
         return pm
 
     __instance_provides__ = Once(__instance_provides__, provides=IPropertyMap)
-    
+
 
     def _getConfigData(self, configKey, forObj):
         self.__instance_provides__  # ensure existence & setup
-        return super(BasicConfig,self)._getConfigData(configKey,forObj)
+        return super(Application,self)._getConfigData(configKey,forObj)
 
 
     def setup(self, propertyMap):
-        pass
-        
-        
+        loadConfigFile(propertyMap, fileNearModule('peak','peak.ini'))
+
+
     def propertyNotFound(self,root,propertyName,forObj,default=NOT_GIVEN):
         if default is NOT_GIVEN:
-            raise exceptions.PropertyNotFound(propertyName, forObj)    
+            raise exceptions.PropertyNotFound(propertyName, forObj)
         return default
 
     def noMoreUtilities(self,root,configKey,forObj):
@@ -402,47 +402,6 @@ class BasicConfig(Component):
         return naming.lookup(name, component,
             creationParent=forObj, creationName=bindName
         )
-
-
-
-
-
-
-class Application(BasicConfig):
-
-    def setup(self, propertyMap):
-        loadConfigFile(propertyMap, fileNearModule('peak','peak.ini'))
-
-        
-class SystemConfig(Application):
-
-    def setParentComponent(self,parentComponent,componentName=None):
-        if parentComponent is not None or componentName is not None:
-            raise TypeError("System config can't have a parent or name")
-
-
-
-class AppConfig(BasicConfig):
-
-    def setParentComponent(self,parentComponent,componentName=None):
-
-        assert isinstance(parentComponent,SystemConfig), \
-            "AppConfig parent must be SystemConfig instance"
-
-        super(AppConfig,self).setParentComponent(
-            parentComponent,componentName
-        )
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -466,7 +425,7 @@ class PropertySet(object):
 
     def of(self, target):
         return self.__class__(self.prefix[:-1], target)
-    
+
     def __call__(self, default=None, forObj=NOT_GIVEN):
 
         if forObj is NOT_GIVEN:
@@ -490,44 +449,44 @@ class PropertySet(object):
 
 
 
-def Provider(callable):
-    return lambda foundIn, configKey, forObj: callable(forObj)
+def instancePerComponent(factorySpec):
+    """Use this to provide a utility instance for each component"""
+    return lambda foundIn, configKey, forObj: importObject(factorySpec)(forObj)
 
 
-def CachingProvider(callable, weak=False, local=False):
-
-    def provider(foundIn, configKey, forObj):
-
-        if local:
-
-            foundIn = config.getAppConfig(forObj)
-
-            if foundIn is None:
-                foundIn = config.getSysConfig()
-
-        else:
-            # get the owner of the property map
-            foundIn = binding.getParentComponent(foundIn)
-
-        utility = provider.cache.get(foundIn)
-
-        if utility is None:
-            utility = provider.cache[foundIn] = callable(foundIn)
-
-        return utility
-
-    if weak:
-        provider.cache = WeakValueDictionary()
-    else:
-        provider.cache = {}
-
-    return provider
+def provideInstance(factorySpec):
+    """Use this to provide a single utility instance for all components"""
+    _ob = []
+    def rule(foundIn, configKey, forObj):
+        if not _ob:
+            _ob.append(importObject(factorySpec)(
+                binding.getParentComponent(foundIn))
+            )
+        return _ob[0]
+    return rule
 
 
-def instancePerApp(factorySpec):
-    """Provider that returns an instance per application"""
-    return CachingProvider(
-        lambda foundIn: importObject(factorySpec)(foundIn), local=True
-    )
-    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 

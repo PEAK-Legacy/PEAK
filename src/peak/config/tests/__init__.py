@@ -88,12 +88,12 @@ class UtilityTest(TestCase):
 
         self.data.aService.registerProvider(
             ISampleUtility1,
-            config.Provider(makeAUtility)
+            config.instancePerComponent(makeAUtility)
         )
 
         self.data.aService.registerProvider(
             ISampleUtility2,
-            config.CachingProvider(makeAUtility)
+            config.provideInstance(makeAUtility)
         )
 
 
@@ -124,6 +124,7 @@ class UtilityTest(TestCase):
     def checkAcquireSingleton(self):
 
         data = self.data
+        root = data.getParentComponent()
         ob1 = config.findUtility(ISampleUtility2,data,None)
         ob2 = config.findUtility(ISampleUtility2,data.aService,None)
         ob3 = config.findUtility(ISampleUtility2,data.aService.nestedService,
@@ -140,7 +141,6 @@ class UtilityTest(TestCase):
         assert ob2.getParentComponent() is data.aService
         assert ob3.getParentComponent() is data.aService
         assert ob4.getParentComponent() is data.aService
-
 
 
 

@@ -1,80 +1,39 @@
 """Configuration Management API"""
 
-from peak.api import binding, exceptions, NOT_FOUND, NOT_GIVEN, PropertyName
+from peak.api import exceptions, NOT_FOUND, NOT_GIVEN, PropertyName
 from interfaces import *
-from peak.util.EigenData import *
 from config_components import *
-from weakref import WeakKeyDictionary
 from peak.interface import adapt
 
 __all__ = [
-    'getSysConfig', 'setSysConfig', 'registerSystemProvider',
-    'getAppConfig', 'setAppConfig', 'registerAppProvider',
-
-    'getProperty',
-
-    'setSystemProperty', 'setSystemRule', 'setSystemDefault',
-    'setPropertyFor',    'setRuleFor',    'setDefaultFor',
+    'getProperty', 'setPropertyFor', 'setRuleFor', 'setDefaultFor',
 ]
 
-_systemCfg = EigenCell()
 
 
-def getSysConfig():
+def setPropertyFor(obj, propName, value):
 
-    """Return the system (per-interpreter) configuration object"""
-
-    def defaultSysConfig():
-        cfg = SystemConfig()
-        setAppConfig(cfg, None) # force app config for sys. config to be None
-        return cfg
-
-    return _systemCfg.get(defaultSysConfig)
-
-def setSysConfig(cfg):
-
-    """Replace the system configuration, as long as it hasn't been used yet"""
-
-    _systemCfg.set(cfg)
-    setAppConfig(cfg, None)     # force app config for system config to be None
+    pm = findUtility(IPropertyMap, obj)
+    pm.setValue(propName, value)
 
 
-_defaultCfg = EigenCell()
-_appConfigs = EigenDict()
-_appConfigs.data = WeakKeyDictionary()
+def setRuleFor(obj, propName, ruleObj):
+
+    pm = findUtility(IPropertyMap, obj)
+    pm.setRule(propName, ruleObj)
 
 
-def getAppConfig(forRoot=None):
+def setDefaultFor(obj, propName, defaultObj):
 
-    """Return app configuration object for 'forRoot'"""
-
-    forRoot = binding.getRootComponent(forRoot)
-
-    # Only weakref-able objects can have a root assigned
-
-    if type(forRoot).__weakrefoffset__ and forRoot in _appConfigs:
-        return _appConfigs[forRoot]
-
-    return _defaultCfg.get( lambda: AppConfig(getSysConfig()) )
+    pm = findUtility(IPropertyMap, obj)
+    pm.setDefault(propName, defaultObj)
 
 
-def setAppConfig(forRoot, cfg):
 
-    """Replace app config for 'forRoot', as long as it hasn't been used"""
 
-    forRoot = binding.getRootComponent(forRoot)
 
-    if forRoot is None:
-        _defaultCfg.set(cfg)
 
-    elif type(forRoot).__weakrefoffset__:
-        _appConfigs[forRoot] = cfg
 
-    else:
-        raise TypeError(
-            "Root object w/custom AppConfig must be weak-referenceable",
-            forRoot
-        )
 
 
 
@@ -121,67 +80,10 @@ def getProperty(propName, obj, default=NOT_GIVEN):
 
 
 
-def registerSystemProvider(ifaces, provider):
-    getSysConfig().registerProvider(ifaces, provider)
-
-
-def setSystemProperty(propName, value):
-
-    pm = findUtility(IPropertyMap, getSysConfig())
-    pm.setValue(propName, value)
-
-
-def setSystemRule(propName, ruleObj):
-
-    pm = findUtility(IPropertyMap, getSysConfig())
-    pm.setRule(propName, ruleObj)
-
-
-def setSystemDefault(propName, defaultObj):
-
-    pm = findUtility(IPropertyMap, getSysConfig())
-    pm.setDefault(propName, defaultObj)
 
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-def registerAppProvider(forRoot, ifaces, provider):
-    getAppConfig(forRoot).registerProvider(ifaces, provider)
-
-
-def setPropertyFor(obj, propName, value):
-
-    pm = findUtility(IPropertyMap, obj)
-    pm.setValue(propName, value)
-
-
-def setRuleFor(obj, propName, ruleObj):
-
-    pm = findUtility(IPropertyMap, obj)
-    pm.setRule(propName, ruleObj)
-
-
-def setDefaultFor(obj, propName, defaultObj):
-
-    pm = findUtility(IPropertyMap, obj)
-    pm.setDefault(propName, defaultObj)
 
 
 

@@ -143,24 +143,24 @@ def globalLookup(name, component=None, targetName=None):
     )
 
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 def acquireComponent(name, component, targetName=None):
 
@@ -185,24 +185,24 @@ def acquireComponent(name, component, targetName=None):
             prev, name, component, targetName
         )
 
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
 
-        
-        
-        
-        
-        
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 class ComponentName(AbstractName):
 
     """Path between components

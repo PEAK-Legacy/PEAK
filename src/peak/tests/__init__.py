@@ -26,5 +26,5 @@ def testApp():
     if _app is None:
         from peak.api import config
         _app = config.Application()
-        
+
     return _app

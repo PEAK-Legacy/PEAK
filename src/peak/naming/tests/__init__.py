@@ -15,7 +15,7 @@ validNames = {
     'ldap://cn=root:somePw@localhost:9912/cn=monitor':
         Items(
             host='localhost', port=9912, basedn=('cn=monitor',),
-            extensions={'bindname':(1,'cn=root'), 'x-bindpw':(1,'somePw')}    
+            extensions={'bindname':(1,'cn=root'), 'x-bindpw':(1,'somePw')}
         ),
 
     'ldap://localhost/cn=Bar,ou=Foo,o=eby-sarna.com':
@@ -36,9 +36,9 @@ validNames = {
         Items(uuid='00000000-0000-0000-0000-000000000000',
               quals=(('ext1','1'), ('ext2','2'))
         ),
-        
-        
-        
+
+
+
     'sybase:foo:bar@baz/spam':
         Items(server='baz', db='spam', user='foo', passwd='bar'),
 
@@ -46,7 +46,7 @@ validNames = {
         Items(server='server', db=None, user='user', passwd='p@ss'),
 
     'gadfly://drinkers@c:\\temp': Items(db='drinkers', dir=r'c:\temp'),
-        
+
     'import:bada.bing':
         Items(body='bada.bing'),
 
