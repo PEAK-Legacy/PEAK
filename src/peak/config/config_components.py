@@ -372,10 +372,10 @@ class Application(Component):
     implements(IConfigurationRoot, Component.__implements__)
 
     def __instance_provides__(self,d,a):
-        pm=PropertyMap()
-        pm.setParentComponent(self)
+        pm=PropertyMap(self)
         d[a]=pm
         self.setup(pm)
+        self.uponAssembly()
         return pm
 
     __instance_provides__ = Once(__instance_provides__, provides=IPropertyMap)

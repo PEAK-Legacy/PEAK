@@ -764,8 +764,9 @@ class Component(_Base):
     __componentName = None
 
     def getParentComponent(self):
-        cell = self.__parentCell
-        parent = cell.get(lambda: None)   # default to None if not set
+        get = self.getParentComponent = self.__parentCell.get
+        parent = get(lambda: None)   # default to None if not set
+
         if parent is None:
             self.uponAssembly()
         else:
@@ -773,7 +774,6 @@ class Component(_Base):
                 or self._getBinding('__objectsToBeAssembled__')):
                 notifyUponAssembly(parent,self)
 
-        self.getParentComponent = cell.get
         return parent
 
 
@@ -834,29 +834,29 @@ class Component(_Base):
     def uponAssembly(self):
 
         tba = self.__objectsToBeAssembled__
-
+        
         if tba is None:
             return
 
-        while tba:
-            ob = tba[-1]()
-            if ob is not None:
-                ob.uponAssembly()
-                tba.pop()
-
-        for attr in self.__class__.__attrsToBeAssembled__:
-            getattr(self,attr)
-
         self.__objectsToBeAssembled__ = None
 
+        try:
+            while tba:
+                ref = tba.pop()
+                ob = ref()
+                if ob is not None:
+                    try:
+                        ob.uponAssembly()
+                    except:
+                        tba.append(ref)
+                        raise
 
+            for attr in self.__class__.__attrsToBeAssembled__:
+                getattr(self,attr)
 
-
-
-
-
-
-
+        except:
+            self.__objectsToBeAssembled__ = tba
+            raise
 
 
     def __class_provides__(klass,d,a):

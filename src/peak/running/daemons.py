@@ -150,13 +150,13 @@ class AdaptiveTask(binding.Component):
         return cmp(self.priority, other.priority)
 
 
+    __addToQueue = binding.Once(
 
+        lambda self,d,a:
+            self.lookupComponent(ITaskQueue).addTask(self),
 
-
-
-
-
-
+        activateUponAssembly=True
+    )
 
 
 

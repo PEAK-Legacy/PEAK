@@ -498,24 +498,12 @@ class EventDriven(AbstractCommand):
     idleTimeout = binding.bindToProperty('peak.running.idleTimeout', 0)
     runAtLeast  = binding.bindToProperty('peak.running.runAtLeast',  0)
 
-    handlers = binding.New(list)
-
-
-    def setup(self, parent=None):
-        """Install contents of event loop"""
-
-        for handler in self.handlers:
-            handler.setup(self)
-
-
     mainLoop = binding.bindTo(IMainLoop)
 
 
     def run(self):
 
         """Perform setup, then run the event loop until done"""
-
-        self.setup()
 
         self.mainLoop.run(
             self.stopAfter,
@@ -541,6 +529,5 @@ class EventDriven(AbstractCommand):
 
 
 
-
-
-
+        
+        

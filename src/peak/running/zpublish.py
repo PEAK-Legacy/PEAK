@@ -39,7 +39,7 @@ __all__ = [
 
 
 
-class BasePublication(binding.Base, DefaultPublication):
+class BasePublication(binding.Component, DefaultPublication):
 
     """Base publication policy"""
 
@@ -85,7 +85,7 @@ class HTTPPublication(BasePublication):
     def afterCall(self,request):
 
         """Handle "HEAD" method by truncating output"""
-        
+
         super(HTTP,self).afterCall(request)
 
         if request.method=="HEAD":
@@ -221,7 +221,7 @@ class CGIPublisher(binding.Component):
         else:
             request = self.mkHTTP(input, output, env)
             request.setPublication(self.httpPublication)
-        
+
         return self.publish(request)
 
 
@@ -244,7 +244,7 @@ class CGIPublisher(binding.Component):
 
 
 
-class FastCGIAcceptor(binding.Base):
+class FastCGIAcceptor(binding.Component):
 
     """Accept FastCGI connections"""
 
@@ -265,7 +265,7 @@ class FastCGIAcceptor(binding.Base):
     def doRead(self):
 
         self.ping()
-        
+
         i,o,e,env = self.accept()
 
         try:
@@ -304,9 +304,9 @@ class CGICommand(EventDriven):
 
         from peak.running.commands import CGICommand
         from my.app import myAppClass
-        
+
         myApp = myAppClass()
-        
+
         sys.exit(
             CGICommand(app=myApp).run()
         )
@@ -379,7 +379,7 @@ class CGICommand(EventDriven):
         # Flush output to web server
         self.stdout.flush()
         self.stderr.flush()
-        
+
         if fork():
             # Parent process; shutdown and exit
             self.reactor.stop()
@@ -408,7 +408,7 @@ class CGICommand(EventDriven):
 
 
 
-    def setup(self, parent=None):
+    def __setupCGI(self, d, a):
 
         if self.isFastCGI():
 
@@ -432,21 +432,22 @@ class CGICommand(EventDriven):
                 self.reactor.callLater(0, self.reactor.stop)
 
 
-        # Cause periodic tasks, etc., to be scheduled for setup *after* the
-        # main CGI process, if applicable.  This means that if
-        # you want a periodic task to be executed *before* the first
-        # I/O check or CGI execution, you will need to subclass this
-        # to change it.  XXX this may change after we reconsider setup() API
+            # Disable the task queue immediately, so that tasks won't run
+            # before the main CGI process, but schedule it to be re-enabled
+            # afterwards.
 
-        self.reactor.callLater(0, super(CGICommand, self).setup, parent)
-
-
+            tq = self.lookupComponent(ITaskQueue)
+            tq.disable()
+            self.reactor.callLater(0, tq.enable)
 
 
-
+    __setupCGI = binding.Once(__setupCGI, activateUponAssembly=True)
 
 
 
 
 
-    
+
+
+
+

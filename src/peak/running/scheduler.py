@@ -75,7 +75,7 @@ class MainLoop(binding.Base):
         finally:
             del self.lastActivity
 
-
+        # XXX we should probably log start/stop events
 
 
 
@@ -161,7 +161,7 @@ def getTwisted(appConfig):
     _twisted = True
     return peak_reactor
 
-    
+
 class UntwistedReactor(binding.Base):
 
     """Primitive partial replacement for 'twisted.internet.reactor'"""
@@ -258,5 +258,30 @@ class _Appt(object):
 
     def __cmp__(self, other):
         return cmp(self.time, other.time)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
