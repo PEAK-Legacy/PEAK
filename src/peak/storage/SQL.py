@@ -296,6 +296,15 @@ class SybaseConnection(ValueBasedTypeConn):
     textlimit = binding.bindToProperty('Sybase.client.textlimit', default=None)
     textsize  = binding.bindToProperty('Sybase.client.textsize',  default=None)
 
+    otmap = {
+        'systable' : 'S',
+        'fkey' : 'RI',
+        'defaults' : 'D',
+        'proc' : 'P',
+        'table' : 'U',
+        'view' : 'V',
+    }
+
 
     def _open(self):
 
@@ -340,6 +349,27 @@ class SybaseConnection(ValueBasedTypeConn):
     txnTime = binding.Once(txnTime)
 
 
+    def listObjects(self, full=False, obtypes=NOT_GIVEN):
+        addsel = addwhere = ''
+
+        if full:
+            addsel = ', id, uid, type, userstat, sysstat, sysstat2, indexdel, schemacnt, expdate, deltrig, instrig, updtrig, seltrig, ckfirst, cache, objspare '
+
+        if obtypes is not NOT_GIVEN:
+            addwhere = ' where type in (%s)' % \
+                ', '.join(["'%s'" % self.otmap.get(s, '') for s in obtypes])
+
+        typecase = ' '.join([
+            ("when type = '%s' THEN '%s'" % (v, k))
+            for (k, v) in self.otmap.items()
+        ])
+
+        return self('''select name as obname, obtype = CASE %s END, crdate%s
+            from sysobjects%s''' % (typecase, addsel, addwhere))
+
+    protocols.advise(
+        instancesProvide=[ISQLIntrospector]
+    )
 
 
 
@@ -428,11 +458,11 @@ class SqliteConnection(ValueBasedTypeConn):
             addsel = ', rootpage, sql '
 
         if obtypes is not NOT_GIVEN:
-            addwhere = 'where type in (%s)' % \
+            addwhere = ' where type in (%s)' % \
                 ', '.join(["'%s'" % s for s in obtypes])
             
         return self('''select name as obname, type as obtype%s
-            from SQLITE_MASTER %s''' % (addsel, addwhere))
+            from SQLITE_MASTER%s''' % (addsel, addwhere))
 
     protocols.advise(
         instancesProvide=[ISQLIntrospector]
