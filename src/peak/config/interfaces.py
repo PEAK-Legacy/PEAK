@@ -2,7 +2,7 @@ from Interface import Interface
 from Interface.Attribute import Attribute
 
 __all__ = [
-    'IRule', 'IDefault', 'IPropertyMap',
+    'IRuleFactory', 'IRule', 'IDefault', 'IPropertyMap',
     'PropertyNotFound', 'NoPropertyMap', 'ObjectOutOfScope',
 ]
 
@@ -39,11 +39,17 @@ class ObjectOutOfScope(Exception):
 
 
 
+class IRuleFactory(Interface):
+
+    def __call__(propertyMap, propName):
+        """Return an IRule instance suitable for the given IPropertyMap"""
+
+
 class IRule(Interface):
 
     """Rule to compute a property value for a target object"""
 
-    def __call__(propertyMap, propName, targetObject):
+    def __call__(propName, targetObject):
 
         """Compute property 'propName' for 'targetObject' or return 'NOT_FOUND'
 
@@ -71,6 +77,9 @@ class IRule(Interface):
         """
 
 
+
+
+
 class IDefault(Interface):
 
     """Rule to compute a default property value, irrespective of target"""
@@ -80,10 +89,42 @@ class IDefault(Interface):
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 class IPropertyMap(Interface):
 
-    def setRule(propName, ruleObj):
-        """Use IRule 'ruleObj' to compute 'propName' in future
+    def setRule(propName, ruleFactory):
+        """Add IRuleFactory's rule to rules for computing a property
 
         Note that if a rule or value for the specified property has already
         been accessed for any target object, an 'AlreadyRead' exception
@@ -97,7 +138,7 @@ class IPropertyMap(Interface):
 
 
     def setDefault(propName, defaultObj):
-        """Use IDefault 'defaultObj' to compute 'propName' default
+        """Set IDefault 'defaultObj' as function to compute 'propName' default
 
         Note that if a default for the specified property has already been
         accessed, an 'AlreadyRead' exception results.  Also, if a value has

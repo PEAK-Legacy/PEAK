@@ -127,28 +127,26 @@ def registerGlobalProvider(ifaces, provider):
 
 def setGlobalProperty(propName, value):
 
-    g = getGlobal()
-
-    pm = binding.findUtility(g, IPropertyMap)
+    pm = binding.findUtility(getGlobal(), IPropertyMap)
 
     if pm is None:
         raise NoPropertyMap(
             "No global property map for setGlobalProperty:", propName, value
         )
 
-    pm.setPropertyFor(g, propName, value)
+    pm.setPropertyFor(getGlobal(), propName, value)
 
 
-def setGlobalRule(propName, ruleObj):
+def setGlobalRule(propName, ruleFactory):
 
     pm = binding.findUtility(getGlobal(), IPropertyMap)
 
     if pm is None:
         raise NoPropertyMap(
-            "No global property map for setGlobalRule:", propName, ruleObj
+            "No global property map for setGlobalRule:", propName, ruleFactory
         )
 
-    pm.setRule(propName, ruleObj)
+    pm.setRule(propName, ruleFactory)
 
 
 def setGlobalDefault(propName, defaultObj):
@@ -161,6 +159,8 @@ def setGlobalDefault(propName, defaultObj):
         )
 
     pm.setDefault(propName, ruleObj)
+
+
 
 def registerLocalProvider(forRoot, ifaces, provider):
     getLocal(forRoot).registerProvider(ifaces, provider)
@@ -178,27 +178,27 @@ def setPropertyFor(obj, propName, value):
     pm.setPropertyFor(obj, propName, value)
 
 
-def setRuleFor(obj, propName, ruleObj):
+def setRuleFor(obj, propName, ruleFactory):
 
     pm = binding.findUtility(obj, IPropertyMap)
 
     if pm is None:
         raise NoPropertyMap(
-            "No property map found for setRuleFor:", obj, propName, ruleObj
+            "No property map found for setRuleFor:", obj, propName, ruleFactory
         )
 
-    pm.setRule(propName, ruleObj)
+    pm.setRule(propName, ruleFactory)
 
 
-def setDefaultFor(obj, propName, ruleObj):
+def setDefaultFor(obj, propName, defaultObj):
 
     pm = binding.findUtility(obj, IPropertyMap)
 
     if pm is None:
         raise NoPropertyMap(
-            "No property map found for setDefaultFor:", obj, propName, ruleObj
+            "No property map found for setDefaultFor:", obj, propName, defaultObj
         )
 
-    pm.setDefault(propName, ruleObj)
+    pm.setDefault(propName, defaultObj)
 
 

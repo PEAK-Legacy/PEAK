@@ -9,7 +9,7 @@ from interfaces import *
 
 
 __all__ = [
-    'GlobalConfig', 'LocalConfig', 'PropertyMap'
+    'GlobalConfig', 'LocalConfig', 'PropertyMap', 'LoadingRule',
 ]
 
 
@@ -18,8 +18,8 @@ def _enumWildcards(name):
     yield name
 
     while '.' in name:
-        name = name[:name.rindex('.')-1]
-        yield name+'*'
+        name = name[:name.rindex('.')]
+        yield name+'.*'
 
     yield '*'
 
@@ -49,32 +49,32 @@ class PropertyMap(AutoCreated):
     _provides = IPropertyMap
 
 
-    def setRule(self, propName, ruleObj):
+    def setRule(self, propName, ruleFactory):
+
+        ruleObj = ruleFactory(self, propName)
 
         if propName in self.values or propName in self.used:
-            raise AlreadyRead
+            raise AlreadyRead, propName
 
         _setCellInDict(self.rules, propName, ruleObj)
 
 
     def setDefault(self, propName, defaultRule):
+
         _setCellInDict(self.defaults, propName, defaultRule)
 
 
     def setPropertyFor(self, obj, propName, value):
 
-        if obj is not self.getParentComponent():
+        if obj is not None and obj is not self.getParentComponent():
             raise ObjectOutOfScope(
                 "PropertyMap only sets properties for its parent"
             )
 
         if propName in self.used:
-            raise AlreadyRead
+            raise AlreadyRead, propName
 
         _setCellInDict(self.values, propName, value)
-
-
-
 
 
 
@@ -108,7 +108,7 @@ class PropertyMap(AutoCreated):
 
             elif rule is not _emptyRuleCell:
 
-                value = rule.get()(self, propName, obj)
+                value = rule.get()(propName, obj)
 
                 if value is NOT_GIVEN:
                     value = NOT_FOUND
@@ -162,9 +162,54 @@ class PropertyMap(AutoCreated):
 
 
 
+class LoadingRule(object):
+
+    def __init__(self, loadFunc, **kw):
+        self.load = loadFunc
+        self.__dict__.update(kw)
+
+    def __call__(self, propertyMap, propName):
+
+        mask = propName
+
+        assert mask.endswith('*'), "LoadingRules are for wildcard rules only"
+        prefix = mask[:-1]
+
+        if prefix and not prefix.endswith('.'):
+            prefix+='.'
+        
+        def compute(propName,targetObj):
+
+            if compute.loadNeeded:
+
+                try:
+                    compute.loadNeeded = False
+                    return self.load(self, propertyMap, prefix, propName)
+                except:
+                    compute.loadNeeded = True
+                    raise
+
+            return NOT_GIVEN
+
+        compute.loadNeeded = True
+        return compute
+
+
+def loadEnviron(factory, pMap, prefix, name):
+    from os import environ
+
+    for k,v in environ.items():
+        pMap.setPropertyFor(None, prefix+k, v)
+
+    return NOT_GIVEN
+
 class GlobalConfig(Component):
 
     propertyMap = PropertyMap
+
+    def __init__(self):
+        self.propertyMap.setRule('environ.*', LoadingRule(loadEnviron))
+
 
     def _getUtility(self, iface, forObj):
 
@@ -190,10 +235,6 @@ class GlobalConfig(Component):
 
     def setParentComponent(self,parent):
         raise TypeError("Global config can't have a parent")
-
-
-
-
 
 
 

@@ -6,24 +6,24 @@ from peak.api import *
 
 class PropertyTest(TestCase):
 
+    def setUp(self):
+        self.local = config.getLocal()
+
     def checkGlobalProp(self):
         config.setGlobalProperty('peak.config.tests.foo',1)
-        assert config.getProperty(config.getLocal(),'peak.config.tests.foo')==1
+        assert config.getProperty(self.local, 'peak.config.tests.foo')==1
 
 
+    def checkEnviron(self):
+        from os import environ
 
+        l = self.local
 
-
-
-
-
-
-
-
-
-
-
-
+        # retry multiple times to verify re-get is safe...
+        
+        for r in range(3):
+            for k,v in environ.items():
+                assert config.getProperty(l, 'environ.'+k) is v
 
 
 
