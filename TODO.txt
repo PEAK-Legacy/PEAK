@@ -2,11 +2,13 @@ Open Issues/To-Do Items
 
  Targeted for 0.5 Alpha 2
 
-    * Finish 'protocols' breakout and prepare for possible PEP
+    * Finish 'protocols' breakout
 
-      - Add reference docs
+      - Finish reference docs
 
-      - Create tutorial
+      - Publish/link to the docs from PEAK tutorial and main website
+
+      - Tests for 'Attribute' class
 
     * ZConfig Integration
 
@@ -22,8 +24,7 @@ Open Issues/To-Do Items
 
  Targeted for 0.5 Beta 1
 
-    * Updated reference docstrings for 'peak.api', 'peak.binding',
-      'peak.config', 'peak.exceptions', and 'peak.naming'.
+    * Up-to-date reference docstrings for all packages
 
     * Finish tutorial chapter 2 (?)
 
@@ -38,59 +39,26 @@ Open Issues/To-Do Items
 
 
 
-
  Targeted for 0.5 Final Release (or sooner)
-
-    General
-
-        * Tutorial complete through chapter 4
 
     peak.storage
 
         - unit tests for more complex object scenarios: references, thunks..?
-
-        - lock management interfaces/API
-
-        - docstrings for reference
-
-    peak.model
-
-        - clean up TW docstrings & interfaces
 
     peak.naming
 
         - useful example "flat" naming context (e.g. like AppUtils.URLkeys)
 
         - useful example hierarchical naming context (e.g. like JNDI's LDAP
-          context or filesystem context)
+          context or a filesystem context)
 
         - rework smtp: to return a factory object that supports open().
           Also think about whether smtp should move elsewhere. Maybe
           there should be peak.network or peak.internet for things like
           smtp, ftp, etc contexts?
 
-    peak.running
-
-        - make 'cluster' parser complain about things that would cause
-          the clusterit tools to choke or barf on the file, or which would
-          produce ambiguous or unintended results.
-
-        - simple daemons comparable to those in MetaDaemon, unit tests
-
-        - docstrings for reference
-
-
-    peak.config
-
-        - "Rule"-oriented configuration files (section specifies component
-          rather than property name prefix), so that daemons and other simple
-          apps can be fully configured and run via a config file.
-
-    peak.util
-
-        - docstrings for reference
-
-        - more unit tests?
+        - add in Ty's cool "n2" (Namespace Navigator) shell for working with
+          naming providers.
 
 
  Targeted for version 0.6
@@ -101,24 +69,15 @@ Open Issues/To-Do Items
      'setup.py' package lists.
 
    * On-the-fly class combination (think "runtime module inheritance",
-     without the modules) for DMs.
+     but possibly without the modules) for DMs.
 
+   * Lock management interfaces/API for peak.storage
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+   * Make 'cluster' parser complain about things that would cause
+     the clusterit tools to choke or barf on the file, or which would
+     produce ambiguous or unintended results.  (Or replace with ZConfig
+     schema that can generate clusterit files.  And/or replace clusterit
+     tools with PEAK ones.)
 
 
  Future Releases
