@@ -1,9 +1,9 @@
 from peak.api import binding, NOT_GIVEN
-from dispatch import functions, combiners
+from dispatch import functions, combiners, NoApplicableMethods
 from protocols.advice import addClassAdvisor, add_assignment_advisor
 
 __all__ = [
-    'parse', 'make_parser', 'get_help',
+    'parse', 'make_parser', 'get_help', 'Group',
     'Set', 'Add', 'Append', 'Handler', 'reject_inheritance', 'option_handler',
     'AbstractOption',
 ]
@@ -22,10 +22,10 @@ OptionRegistry = functions.Dispatcher(['ob'], _OptionCombiner)
 
 _optcount = 0
 
-
-
-
-
+def _gen_key():
+    global _optcount
+    _optcount +=1
+    return _optcount
 
 
 
@@ -80,11 +80,52 @@ def reject_inheritance(*names):
 
 
 
+class Group:
+    """Designate a group of options to be displayed under a common heading
+
+    Example usage::
+
+        class MyClass(commands.AbstractCommand):
+
+            db_options = options.Group("Database Options")
+
+            dbURL = binding.Obtain(
+                PropertyName('myapp.dburl'),
+                [options.Set(
+                    '--db', type=str, metavar="URL", help="Database URL",
+                    group = db_options)
+                ]
+            )
+    When help is displayed for the above class, it will list the '--db' option
+    under a heading with the title "Database Options", along with any other
+    options that have their 'group' set to the 'db_options' object.
+
+    In addition to a title, you may also specify a 'description' (explanatory
+    text that will appear under the group's heading and before the options),
+    and a 'sortKey'.  If specified, the 'sortKey' will determine the relative
+    order of groups' display (groups with lower keys appear first).  Groups
+    with the same sort key appear in the same order that they were created in.
+    """
+
+    def __init__(self,title,description=None,sortKey=0):
+        self.title, self.description, self.sortKey = title,description,sortKey
+        self.sort_stable = _gen_key()
+
+    def __repr__(self):
+        return "Group"+`(self.title,self.description,self.sortKey)`
+
+    def makeGroup(self,parser):
+        from peak.util.optparse import OptionGroup
+        return ((self.sortKey,self.sort_stable),
+            OptionGroup(parser,self.title,self.description)
+        )
+
+
 class AbstractOption:
     """Base class for option metadata objects"""
 
     repeatable = True; sortKey = 0
-    metavar = help = None
+    metavar = help = group = None
     value = type = option_names = NOT_GIVEN
 
     def __init__(self,*option_names,**kw):
@@ -118,8 +159,8 @@ class AbstractOption:
         else:
             self.nargs = 0
 
-        global _optcount
-        _optcount +=1; self.sort_stable = _optcount
+        self.sort_stable = _gen_key()
+
 
     def makeOption(self, attrname,optmap=None):
         options = self.option_names
@@ -255,33 +296,74 @@ def make_parser(ob,**kw):
     """
 
     kw.setdefault('usage','')
+    prog = kw.setdefault('prog','')+':'
     kw.setdefault('add_help_option',False)
     from peak.util.optparse import OptionParser
     parser = OptionParser(**kw)
-
     def _exit_parser(status=0, msg=None):
         if msg:
             from commands import InvocationError
+            if msg.startswith(prog):
+                msg = msg[len(prog):]
             raise InvocationError(msg.strip())
         if status:
             raise SystemExit(status)
 
     parser.exit = _exit_parser
+    try:
+        optinfo = OptionRegistry[ob,].items()
+    except NoApplicableMethods:
+        optinfo = []
 
-    optinfo = OptionRegistry[ob,].items()
     optmap = dict([(k,opt)for k,(a,opt) in optinfo if opt is not None])
     optsused = {}
-    optlist = []
+    optlists = {}
     for optname,(attrname,option) in optinfo:
         if option in optsused or option is None:
             continue
-        optlist.append( option.makeOption(attrname,optmap) )
+        optlists.setdefault(option.group,[]).append(
+            option.makeOption(attrname,optmap)
+        )
         optsused[option] = True
 
-    optlist.sort()
-    for key,popt in optlist:
-        parser.add_option(popt)
+    groups = []
+    for group,optlist in optlists.items():
+        if group is None:
+            container = parser
+        else:
+            key,container = group.makeGroup(parser)
+            groups.append((key,container))
+
+        optlist.sort()
+        for key,popt in optlist:
+            container.add_option(popt)
+
+    groups.sort()
+    for key,group in groups:
+        parser.add_option_group(group)
+
     return parser
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -289,7 +371,7 @@ def option_handler(*option_names, **kw):
     """Decorate a method to be called when option is encountered
 
     Usage::
-        
+
         class Bar:
             [options.option_handler('-z', type=int, help="Zapify!")]
             def zapify(self, parser, optname, optval, remaining_args):

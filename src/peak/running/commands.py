@@ -4,7 +4,7 @@ from peak.api import *
 from interfaces import *
 from peak.util.imports import importObject
 from os.path import isfile
-import sys, os
+import sys, os, options
 from types import ClassType, FunctionType
 
 __all__ = [
@@ -134,21 +134,32 @@ class AbstractCommand(binding.Component):
     stdout  = binding.Obtain(STDOUT,  offerAs=[STDOUT])
     stderr  = binding.Obtain(STDERR,  offerAs=[STDERR])
     environ = binding.Obtain(ENVIRON, offerAs=[ENVIRON])
-    commandName = None
+
 
     def _run(self):
         """Override this in subclasses to implement desired behavior"""
         raise NotImplementedError
 
-    usage = """
+    usage = """\
 Either this is an abstract command class, or somebody forgot to
 define a usage message for their subclass.
 """
 
+    option_parser = binding.Make(
+        lambda self: options.make_parser(self)
+    )
+
+    parsed_args = binding.Make(
+        lambda self: self.option_parser.parse_args(self.argv[1:],self)[1]
+    )
+
     def showHelp(self):
         """Display usage message on stderr"""
         print >>self.stderr, self.usage
+        print >>self.stderr, self.option_parser.format_help()
         return 0
+
+
 
 
     def isInteractive(self):
@@ -161,6 +172,7 @@ define a usage message for their subclass.
             return isatty()
 
     isInteractive = binding.Make(isInteractive)
+
 
     def getSubcommand(self, executable, **kw):
 
@@ -183,6 +195,14 @@ define a usage message for their subclass.
         return factory(**kw)
 
 
+
+
+
+
+
+
+
+
     def _invocationError(self, msg):
 
         """Write msg and usage to stderr if interactive, otherwise re-raise"""
@@ -201,8 +221,6 @@ define a usage message for their subclass.
         return self
 
 
-
-
     def run(self):
 
         """Run the command"""
@@ -217,12 +235,20 @@ define a usage message for their subclass.
             return self._invocationError(msg)
 
 
+    [options.option_handler('--help',value=None,help="Show help",sortKey=1000)]
+    def show_help(self, parser, optname, optval, remaining_args):
+        sys.exit(self.showHelp())
+
+
+
+
+
 
 class ErrorSubcommand(AbstractCommand):
     """Subcommand that displays an error/usage message"""
 
-    usage = binding.Obtain('usage', default="")
-
+    showHelp = binding.Obtain('showHelp')   # Delegate to parent command
+    
     msg = "Undefined error"
 
     def _run(self):
@@ -244,21 +270,36 @@ class InvalidSubcommandName(ErrorSubcommand):
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 class AbstractInterpreter(AbstractCommand):
 
     """Creates and runs a subcommand by interpreting 'argv[1]'"""
 
     subCmdArgs = binding.Make(
-        lambda self: self.argv[1:], offerAs=[ARGV]
+        lambda self: self.parsed_args, offerAs=[ARGV]
     )
 
     def _run(self):
         """Interpret argv[1] and run it as a subcommand"""
 
-        if len(self.argv)<2:
+        if not self.parsed_args:
             raise InvocationError("missing argument(s)")
 
-        return ICmdLineApp(self.interpret(self.argv[1])).run()
+        return ICmdLineApp(self.interpret(self.parsed_args[0])).run()
 
 
     def interpret(self, argument):
@@ -275,12 +316,12 @@ class AbstractInterpreter(AbstractCommand):
         return super(AbstractInterpreter,self).getSubcommand(executable, **kw)
 
 
-    def commandName(self):
-        """Basename of the file being interpreted"""    # XXX ???
-        from os.path import basename
-        return basename(self.argv[1])
 
-    commandName = binding.Make(commandName)
+
+
+
+
+
 
 
 
@@ -295,10 +336,10 @@ class AbstractInterpreter(AbstractCommand):
 
         # Return the subcommand instance in place of the interpreter instance
         try:
-            if len(cmd.argv)<2:
+            if not cmd.parsed_args:
                 # No args, we can't do this.
                 raise InvocationError("missing argument(s)")
-            return cmd.interpret(cmd.argv[1])
+            return cmd.interpret(cmd.parsed_args[0])
 
         except InvocationError,msg:
             sys.exit(cmd._invocationError(msg))
@@ -684,9 +725,9 @@ list of available shortcut names, see '%s'""" % config.packageFile(
 
     def showHelp(self):
         """Display usage message on stderr"""
-        print >>self.stderr, self.usage
-        from peak.util.columns import lsFormat
+        super(Bootstrap,self).showHelp()
 
+        from peak.util.columns import lsFormat
         print >>self.stderr, "Available commands:"
         print >>self.stderr
         self.stderr.writelines(lsFormat(80,config.Namespace('peak.running.shortcuts',self).keys()))
@@ -968,7 +1009,7 @@ to invoke it.
         factory = adapt(ob, binding.IComponentFactory, None)
 
         if factory is ob:   # XXX ???
-            ob = factory(self, 'cgi')    
+            ob = factory(self, 'cgi')
 
         cgi = IWSGIApplication(ob, None)
 

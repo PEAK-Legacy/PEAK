@@ -167,6 +167,11 @@ names, followed by some combination of these keyword arguments:
     insert new options in the display order, ahead of previously-defined
     options.)
 
+``group``
+    Set this to an ``options.Group()`` instance, if you want the option to
+    appear under that group's heading in any generated help messages.  (See the
+    section on `Option Groups`_ for more details.)
+
 Note that an option must have either  a ``type`` (in which case it accepts an
 argument), or a ``value`` (in which case it does not accept an argument).  It
 must have one or the other, not both.
@@ -185,7 +190,7 @@ set it to ``True``.
 
 
 Option Handlers
-===============
+---------------
 
 Sometimes, however, it's necessary to do more complex option processing than
 just altering an attribute value.  So, you can also create option handler
@@ -213,7 +218,7 @@ options.  It may also manipulate other attributes of `parser`, if desired.
 
 
 Inheriting Options
-==================
+------------------
 
 By default, options defined in a base class are inherited by subclasses::
 
@@ -404,14 +409,170 @@ Option Groups
 -------------
 
 Finally, if you have a class with many options, you may want the help to
-display the options in groups.
+display the options in groups, using ``options.Group``.  Groups have the
+following properties that can be set:
 
-TODO: implement this feature and write docs
+``title``
+    This sets the title that will be displayed for the option group in help
+    messages.
 
-TODO: forward reference to ``peak.running.commands`` doc, once integration has
-      taken place.
+``description``
+    This sets additional text, if any, that should appear after the group
+    title, but before the options in that group are listed.
+    
+``sortKey``
+    The sort key is a value used to arrange groups in a specified order.
+    Groups with lower ``sortKey`` values appear earlier in generated help than
+    groups with higher ``sortKey`` values.  The default ``sortKey`` is ``0``.
+
+    Groups that have the same ``sortKey`` will be sorted in the order in which
+    they were created, so you don't ordinarily need to set this, except to
+    insert new groups in the display order, ahead of previously-defined
+    groups.
+
+These arguments may be specified positionally, or with keywords::
+
+    >>> silly = options.Group(
+    ...     "Silly Options",
+    ...     "Forward aerial half turn every alternate step",
+    ... )
+    >>> silly.title
+    'Silly Options'
+    >>> silly.description
+    'Forward aerial half turn every alternate step'
+    >>> silly.sortKey
+    0
+
+    >>> trendy = options.Group(title="Trendy Options", sortKey=10)
+    >>> trendy.title
+    'Trendy Options'
+    >>> trendy.sortKey
+    10
+    >>> trendy.description is None
+    1
+
+Option groups are then specified as part of the definition of an option, to
+place that option in the corresponding group::
+
+    >>> dangerous = options.Group("DANGER")
+    >>> opt_explode = options.Set('--explode', value="BOOM", help="Explode!",
+    ...     group=dangerous)
+
+    >>> opt_r = options.Set('-r', '--request-grant', type=float,
+    ...     help="Request grant from the Ministry", group = silly
+    ... )
+    >>> opt_r.group
+    Group('Silly Options', 'Forward aerial half turn every alternate step', 0)
+
+Once this is done, the option can be placed in a class with other options::
+
+    >>> class Groupy(Foo):
+    ...     binding.metadata(money=opt_r, bang=opt_explode)
+    >>> print options.get_help(Groupy())
+    options:
+      -v, --verbose         Be verbose
+      -q, --quiet           Be quiet
+    ...
+      Silly Options:
+        Forward aerial half turn every alternate step
+    ...
+        -r FLOAT, --request-grant=FLOAT
+                            Request grant from the Ministry
+    ...
+      DANGER:
+        --explode           Explode!
+
+As you can see, even though ``--explode`` is defined *before*
+``--request-grant``, it is in a group that is defined *after* the group that
+``--request-grant`` is in, so it appears later, because the options are
+separated according to group.  Meanwhile, options that don't appear in any
+group are simply placed under the first heading.  If you don't have any
+ungrouped options, then the output looks more like this::
+
+    >>> class GroupsOnly:
+    ...     binding.metadata(money=opt_r, bang=opt_explode)
+    >>> print options.get_help(GroupsOnly())
+    options:
+      Silly Options:
+        Forward aerial half turn every alternate step
+    ...
+        -r FLOAT, --request-grant=FLOAT
+                            Request grant from the Ministry
+    ...
+      DANGER:
+        --explode           Explode!
 
 
+Using Options with Commands
+===========================
+
+Now let's take a look at how to integrate options with command objects from
+``peak.running.commands``.  First, we'll define a command class with a few
+options::
+
+    >>> class MyCommand(commands.AbstractCommand):
+    ...     binding.metadata(
+    ...         bang=[opt_explode, opt_v, opt_q]
+    ...     )
+    ...     bang = NOT_GIVEN
+
+And let's see what its help output now looks like::
+
+    >>> import sys
+    >>> from peak.tests import testRoot
+    >>> exitcode = MyCommand(testRoot(),stderr=sys.stdout).showHelp()
+    Either this is an abstract command class, or somebody forgot to
+    define a usage message for their subclass.
+    ...
+    options:
+      -v, --verbose  Be verbose
+      -q, --quiet    Be quiet
+      --help         Show help
+    ...
+      DANGER:
+        --explode    Explode!
+    ...
+
+As you can see, the option information is now part of the help output produced
+by the command.  Also, we see that the ``--help`` option is automatically
+defined for us by ``commands.AbstractCommand``.  It will invoke the command's
+``showHelp()`` method, so we can override how it actually works in our subclass
+if we need to.
+
+To actually parse the options supplied to a command, we need only reference its
+``parsed_args`` attribute.  This will cause argument parsing to occur if it
+hasn't already, updating any attributes associated with the options, and
+returning the non-option arguments from the command line::
+
+    >>> cmd = MyCommand(testRoot(),argv=['foo','--explode','spam'])
+    >>> cmd.bang
+    NOT_GIVEN
+    >>> cmd.parsed_args
+    ['spam']
+    >>> cmd.bang
+    'BOOM'
+
+As you can see, the ``bang`` attribute had its default value until we looked
+at ``parsed_args``, at which point it was set according to the supplied
+options.  (Note: the ``"foo"`` in the ``argv`` parameter is the "program name";
+that's why it doesn't appear in ``cmd.parsed_args``.)
+
+Finally, you should be aware that both the help generation and option parsing
+are done via the ``option_parser`` attribute of the command, which is
+automatically populated using ``options.make_parser(self)``.  You can therefore
+access it directly, or override the binding in a subclass to change how the
+parser gets set up.
+
+::
+
+    >>> cmd.option_parser
+    <...OptionParser...>
+
+So there you have it.  Metadata-driven option parsing, seamlessly integrated
+with the ``peak.running.commands`` framework.  The rest of this document
+deals strictly with implementation details, so you don't need or want to read
+it unless you're trying to track down a bug in the framework itself, or want
+to learn more about how it works internally.
 
 
 
@@ -571,8 +732,6 @@ example::
 To Do
 -----
 
-* Option groups; sort groups by ``sortKey``
-* Integrate with ``commands`` framework
 * Help formatter column setting, style setting
 * Allow use of interspersed args+options
 * Allow multi-valued args (``nargs>1``)?
