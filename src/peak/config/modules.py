@@ -164,7 +164,7 @@
 
 import sys
 from types import ModuleType
-
+from peak.util._Code import codeIndex
 
 # Make the default value of '__proceed__' a built-in, so that code written for
 # an inheriting module won't fail with a NameError if there's no base module
@@ -616,7 +616,7 @@ class Simulator:
 def prepForSimulation(code, path='', depth=0):
 
     code = Code(code)
-    idx = code.index(); opcode, operand = idx.opcode, idx.operand
+    idx = codeIndex(code); opcode, operand = idx.opcode, idx.operand
     offset = idx.offset
     name_index = code.name_index
     const_index = code.const_index
@@ -637,41 +637,41 @@ def prepForSimulation(code, path='', depth=0):
     spc = '    ' * depth
 
     for op in mutableOps:
-        for i in idx.opcodeLocations[op]:
+        for i in idx.opcodeLocations(op):
             warn_explicit(
                 "Modification to mutable during initialization",
                 ModuleInheritanceWarning,
                 code.co_filename,
-                idx.byteLine[offset[i]],
+                idx.byteLine(offset(i)),
             )
 
     for op in (DELETE_NAME, DELETE_GLOBAL):
-        for i in idx.opcodeLocations[op]:
+        for i in idx.opcodeLocations(op):
             warn_explicit(
                 "Deletion of global during initialization",
                 ModuleInheritanceWarning,
                 code.co_filename,
-                idx.byteLine[offset[i]],
+                idx.byteLine(offset(i)),
             )
 
     ### Fix up IMPORT_STAR operations
 
-    for i in idx.opcodeLocations[IMPORT_STAR]:
+    for i in idx.opcodeLocations(IMPORT_STAR):
 
-        backpatch = offset[i]
+        backpatch = offset(i)
         
-        if opcode[i-1] != IMPORT_NAME:
-            line = idx.byteLine[backpatch]
+        if opcode(i-1) != IMPORT_NAME:
+            line = idx.byteLine(backpatch)
             raise AssertionError(
                 "Unrecognized 'import *' at line %(line)d" % locals()
             )
 
         patchTarget = len(co_code)
-        go(offset[i-1])
+        go(offset(i-1))
         patch(JUMP_ABSOLUTE, patchTarget, 0)
         
         # rewrite the IMPORT_NAME
-        emit(IMPORT_NAME, operand[i-1])
+        emit(IMPORT_NAME, operand(i-1))
 
         # Call __PEAK_Simulator__.IMPORT_STAR(module, locals, prefix)
         emit(LOAD_GLOBAL, Simulator)
@@ -683,7 +683,7 @@ def prepForSimulation(code, path='', depth=0):
         emit(JUMP_ABSOLUTE, backpatch)
 
         # Replace IMPORT_STAR w/remove of the return val from IMPORT_STAR()
-        co_code[offset[i]] = POP_TOP
+        co_code[offset(i)] = POP_TOP
 
         #print "%(line)04d import * (into %(path)s)" % locals()
 
@@ -697,17 +697,19 @@ def prepForSimulation(code, path='', depth=0):
 
     ### Fix up all other operation types
 
-    for i in idx.opcodeLocations[STORE_NAME]+idx.opcodeLocations[STORE_GLOBAL]:
+    for i in list(idx.opcodeLocations(STORE_NAME))+list(
+        idx.opcodeLocations(STORE_GLOBAL)
+    ):
 
-        op     = opcode[i]
-        arg    = operand[i]
-        prevOp = opcode[i-1]
+        op     = opcode(i)
+        arg    = operand(i)
+        prevOp = opcode(i-1)
         qname = name = names[arg]
 
-        backpatch = offset[i]
+        backpatch = offset(i)
         patchTarget = len(co_code)
 
-        if path and opcode[i]==STORE_NAME:
+        if path and opcode(i)==STORE_NAME:
             qname = path+name
 
         namArg = const_index(qname)
@@ -734,29 +736,27 @@ def prepForSimulation(code, path='', depth=0):
 
 
 
-
-
         ### Handle class operations
         
         if prevOp == BUILD_CLASS:
 
             bind = "class"
             
-            if opcode[i-2]!=CALL_FUNCTION or \
-               opcode[i-3] not in (MAKE_CLOSURE, MAKE_FUNCTION) or \
-               opcode[i-4]!=LOAD_CONST:
+            if opcode(i-2)!=CALL_FUNCTION or \
+               opcode(i-3) not in (MAKE_CLOSURE, MAKE_FUNCTION) or \
+               opcode(i-4)!=LOAD_CONST:
                
-                line = idx.byteLine[backpatch]
+                line = idx.byteLine(backpatch)
                 raise AssertionError(
                     "Unrecognized class %(qname)s at line %(line)d" % locals()
                 )
 
-            const = operand[i-4]
+            const = operand(i-4)
             suite = consts[const]
             consts[const] = prepForSimulation(suite, qname+'.', depth+1)
 
             backpatch -= 1  # back up to the BUILD_CLASS instruction...
-            nextI = offset[i+1]
+            nextI = offset(i+1)
             
             # and fill up the space to the next instruction with POP_TOP, so
             # that if you disassemble the code it looks reasonable...
@@ -802,7 +802,7 @@ def prepForSimulation(code, path='', depth=0):
         patch(JUMP_ABSOLUTE, patchTarget, 0)
         
         emit(op, arg)
-        emit(JUMP_ABSOLUTE, offset[i+1])
+        emit(JUMP_ABSOLUTE, offset(i+1))
         
         #print "%(line)04d %(spc)s%(bind)s %(qname)s" % locals()
 

@@ -5,7 +5,16 @@
 from distutils.core import setup, Command, Extension
 from distutils.command.install_data import install_data
 from distutils.command.sdist import sdist as old_sdist
+from distutils.command.build_ext import build_ext as old_build_ext
 import sys
+
+try:
+    from Pyrex.Distutils.build_ext import build_ext
+    EXT = '.pyx'
+except ImportError:
+    build_ext = old_build_ext
+    EXT = '.c'
+
 
 class install_data(install_data):
 
@@ -29,15 +38,6 @@ class sdist(old_sdist):
 
         # Run the standard sdist command
         old_sdist.run(self)
-
-
-
-
-
-
-
-
-
 
 class test(Command):
 
@@ -158,13 +158,13 @@ setup(
         Extension("Persistence.cPersistence",
             ["src/Persistence/cPersistence.c"]
         ),
-        Extension("peak.util.buffer_gap", ["src/peak/util/buffer_gap.c"]),
+        Extension("peak.util.buffer_gap", ["src/peak/util/buffer_gap" + EXT]),
+        Extension("peak.util._Code", ["src/peak/util/_Code" + EXT]),
     ],
-
 
     cmdclass = {
         'install_data': install_data, 'sdist': sdist, 'happy': happy,
-        'test': test, 'sdist_nodoc': old_sdist,
+        'test': test, 'sdist_nodoc': old_sdist, 'build_ext': build_ext,
     },
 
     data_files = [
