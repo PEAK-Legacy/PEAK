@@ -8,13 +8,13 @@ from weakref import WeakKeyDictionary
 
 
 __all__ = [
-    'getGlobal','setGlobal', 
-    'getLocal', 'setLocal',  'newDefaultConfig',
+    'getGlobal','setGlobal', 'registerGlobalProvider',
+    'getLocal', 'setLocal',  'registerLocalProvider',  'newDefaultConfig',
 
     'getProperty',
 
-    'registerGlobalProvider', 'setGlobalProperty', 'setGlobalRule',
-    'registerLocalProvider',  'setPropertyFor',    'setRuleFor',
+    'setGlobalProperty', 'setGlobalRule', 'setGlobalDefault',
+    'setPropertyFor',    'setRuleFor',    'setDefaultFor',
 ]
 
 
@@ -127,14 +127,16 @@ def registerGlobalProvider(ifaces, provider):
 
 def setGlobalProperty(propName, value):
 
-    pm = binding.findUtility(getGlobal(), IPropertyMap)
+    g = getGlobal()
+
+    pm = binding.findUtility(g, IPropertyMap)
 
     if pm is None:
         raise NoPropertyMap(
             "No global property map for setGlobalProperty:", propName, value
         )
 
-    pm.setProperty(propName, value)
+    pm.setPropertyFor(g, propName, value)
 
 
 def setGlobalRule(propName, ruleObj):
@@ -149,18 +151,16 @@ def setGlobalRule(propName, ruleObj):
     pm.setRule(propName, ruleObj)
 
 
+def setGlobalDefault(propName, defaultObj):
 
+    pm = binding.findUtility(getGlobal(), IPropertyMap)
 
+    if pm is None:
+        raise NoPropertyMap(
+            "No global property map for setGlobalDefault:", propName, ruleObj
+        )
 
-
-
-
-
-
-
-
-
-
+    pm.setDefault(propName, ruleObj)
 
 def registerLocalProvider(forRoot, ifaces, provider):
     getLocal(forRoot).registerProvider(ifaces, provider)
@@ -175,7 +175,7 @@ def setPropertyFor(obj, propName, value):
             "No property map found for setPropertyFor:", obj, propName, value
         )
 
-    pm.setProperty(propName, value)
+    pm.setPropertyFor(obj, propName, value)
 
 
 def setRuleFor(obj, propName, ruleObj):
@@ -188,5 +188,17 @@ def setRuleFor(obj, propName, ruleObj):
         )
 
     pm.setRule(propName, ruleObj)
+
+
+def setDefaultFor(obj, propName, ruleObj):
+
+    pm = binding.findUtility(obj, IPropertyMap)
+
+    if pm is None:
+        raise NoPropertyMap(
+            "No property map found for setDefaultFor:", obj, propName, ruleObj
+        )
+
+    pm.setDefault(propName, ruleObj)
 
 
