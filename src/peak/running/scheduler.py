@@ -261,10 +261,8 @@ class UntwistedReactor(binding.Component):
                 delay = 0
             elif self.laters:
                 delay = self.laters[0].time - self.time()
-            elif self.readers or self.writers:
-                delay = self.checkInterval
             else:
-                delay = 0
+                delay = self.checkInterval
 
         delay = max(delay, 0)
 
@@ -281,6 +279,8 @@ class UntwistedReactor(binding.Component):
 
         elif delay:
             self.sleep(delay)
+
+
 
 
 

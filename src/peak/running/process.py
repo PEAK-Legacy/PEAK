@@ -149,7 +149,7 @@ class ChildProcess(binding.Component):
             self.exitedBecause is not None or self.exitStatus is not None
         )
         if self.isFinished:
-            self.signalmanager.removeHandler(self)
+            self.signalManager.removeHandler(self)
 
         self.isRunning = not self.isFinished and not self.isStopped
 

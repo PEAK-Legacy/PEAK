@@ -60,7 +60,7 @@ class ProcessSupervisor(EventDriven):
     template = binding.Make(
         lambda self: self.getSubcommand(
             Bootstrap,
-            argv = self.cmdLine,
+            argv = ['supervise'] + self.cmdLine,
             parentComponent = config.makeRoot(),
             componentName = self.commandName
         ),
@@ -190,13 +190,13 @@ class ProcessSupervisor(EventDriven):
         if proxy.isFinished:
             # XXX log exited
             del self.processes[proxy.pid]
+            if len(self.processes)<self.minChildren:
+                self.requestStart()
 
 
     def killProcesses(self):
         for pid,proxy in self.processes.items():
             proxy.sendSignal('SIGTERM')
-
-
 
 
 
