@@ -1,7 +1,7 @@
 from types import StringType, FunctionType
 from TW.StructuralModel.Queries import NodeList, ComputedFeature
 
-from TW.Utilities import Pluralizer
+from TW.Utils.Pluralizer import Pluralizer
 
 UMLPlurals = Pluralizer(
     stimulus='stimuli',
@@ -47,7 +47,7 @@ class _ComputedFeatures(Catalyst):
     
         if featureDict:
             for k,v in featureDict.items():
-                if type(v) is FunctionType:
+                if isinstance(v,FunctionType):
                     featureDict[k]=ComputedFeature(v)
                     
         return featureDict
@@ -125,10 +125,9 @@ class _UMLModel:    # stuff that still needs refactoring
     
         def _convert(self,value):
         
-            if type(value) is StringType:
-                from string import split
+            if isinstance(value,StringType):
                 rl=[]
-                for r in map(MultiplicityRange,split(value,',')):
+                for r in map(MultiplicityRange,value.split(',')):
                     rl.append(r.__of__(self.keyToItem.im_self))
                 return self.newItem(self._ElementType,ranges=rl)
 
@@ -137,9 +136,8 @@ class _UMLModel:    # stuff that still needs refactoring
 
         def _convert(self,value):
     
-            if type(value) is StringType:
-                from string import split
-                l = split(value,'..')
+            if isinstance(value,StringType):
+                l = value.split('..')
                 if len(l)>2:
                     raise ValueError,"Invalid multiplicity range '%s'" % value
                 if len(l)==2:
@@ -162,6 +160,8 @@ class _UMLModel:    # stuff that still needs refactoring
 
 
 
+
+
 class UMLModel:
 
     class ModelElement(ComputedFeatures):
@@ -174,8 +174,7 @@ class UMLModel:
             names = self.Get('namespace*').Get('name')
             names.reverse(); names.append(name)
             
-            from string import join
-            return NodeList([join(names,'.')])
+            return NodeList(['.'.join(names)])
 
 
     class GeneralizableElement(ComputedFeatures):

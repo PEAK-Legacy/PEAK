@@ -1,5 +1,5 @@
 from TW import *
-from TW.SOX import Node, Document, load
+from TW.Utils.SOX import Node, Document, load
 from kjbuckets import kjGraph
 
 
@@ -176,8 +176,7 @@ class XMIReading(Bundle):
             elif node._subNodes:
                 self.set(node._subNodes[0])
             elif node._allNodes:
-                from string import join
-                self.set(join(node._allNodes,''))
+                self.set(''.join(node._allNodes))
             else:
                 return node
 
@@ -192,7 +191,8 @@ class XMIReading(Bundle):
     class Reference:
         def _fromXMI(self,node):
             map(self.set,node._subNodes)
-    
+
+
     class Collection:
         def _fromXMI(self,node):
             add = self.addItem

@@ -1,8 +1,9 @@
 from kjbuckets import *
-import TW.SOX
+from TW.Utils import SOX
 
 from TW import Template, SEF
-from TW.Utilities import Pluralizer, upToDate, toString
+from TW.Utils.Misc import upToDate
+from TW.Utils.Pluralizer import Pluralizer
 
 
 
@@ -38,8 +39,7 @@ from TW.Utilities import Pluralizer, upToDate, toString
 
 
 
-
-class MetaModelNode(TW.SOX.Node):
+class MetaModelNode(SOX.Node):
 
     contentMap = kjGraph([
         ('', 'metamodel'), ('metamodel','package'),
@@ -92,10 +92,10 @@ class MetaModelNode(TW.SOX.Node):
         if disallowed:
             raise SyntaxError,"Invalid attributes %s in element %s" % (disallowed.items(),name)
             
-        apply(TW.SOX.Node.__init__.im_func,(self,name,atts or {}),kw)
+        apply(SOX.Node.__init__.im_func,(self,name,atts or {}),kw)
 
         for a in atts.keys():
-            setattr(self,a,toString(atts[a]))   # Un-unicode-ify all attributes!
+            setattr(self,a,str(atts[a]).encode('latin-1'))   # De-unicode attrs!
 
 
     def _newNode(self,name,atts):
@@ -254,7 +254,7 @@ class _Loader:
 
         template = apply(makerType,args,kw)
 
-        TW.SOX.load(modelFile, nodeClass(factory=template, pluralize=pluralize))
+        SOX.load(modelFile, nodeClass(factory=template, pluralize=pluralize))
 
         if cacheFile is not None:
             self._saveToCache(cacheFile,template)
