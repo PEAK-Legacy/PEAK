@@ -245,7 +245,7 @@ class ITransactionErrorHandler(Interface):
 
 
 # DM interfaces
-from peak.persistence import IPersistentDataManager
+from peak.persistence.interfaces import IPersistentDataManager
 
 class IDataManager(IComponent,ITransactionParticipant):
 

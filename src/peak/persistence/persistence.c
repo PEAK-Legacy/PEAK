@@ -19,7 +19,7 @@
 static char PyPersist_doc_string[] =
 "Defines Persistent mixin class for persistent objects.\n"
 "\n"
-"$Id: persistence.c,v 1.1 2003/04/17 18:38:53 pje Exp $\n";
+"$Id: persistence.c,v 1.1 2004/06/11 04:06:01 pje Exp $\n";
 
 /* A custom metaclass is only needed to support Python 2.2. */
 #if PY_MAJOR_VERSION == 2 && PY_MINOR_VERSION == 2
@@ -740,7 +740,7 @@ static PyMemberDef persist_members[] = {
 static PyTypeObject PyPersist_Type = {
     PyObject_HEAD_INIT(DEFERRED_ADDRESS(&PyPersist_MetaType))
     0,					/* ob_size */
-    "persistence.Persistent",		/* tp_name */
+    "peak.persistence.Persistent",		/* tp_name */
     sizeof(PyPersistObject),		/* tp_basicsize */
     0,					/* tp_itemsize */
     (destructor)persist_dealloc,	/* tp_dealloc */
@@ -842,7 +842,7 @@ PyPersist_New(PyTypeObject *type, PyObject *args, PyObject *kwds)
        define __slots__, in which case it shouldn't have a dict.
        We have to look in the dictionary supplied to the keyword arguments,
        however, or we can be fooled by a base type having __slots__.
-       (See 'persistence.tests.test_persistence.Test.testSlots')
+       (See 'peak.persistence.tests.test_persistence.Test.testSlots')
     */
     if (PyMapping_HasKeyString(PyTuple_GetItem(args,2), "__slots__")) {
 	return (PyObject *)new;
@@ -885,7 +885,7 @@ PyPersist_New(PyTypeObject *type, PyObject *args, PyObject *kwds)
 static PyTypeObject PyPersist_MetaType = {
     PyObject_HEAD_INIT(DEFERRED_ADDRESS(&PyType_Type))
     0,					/* ob_size */
-    "persistence.PersistentMetaClass",	/* tp_name */
+    "peak.persistence.PersistentMetaClass",	/* tp_name */
 };
 
 #endif
@@ -916,7 +916,7 @@ persist_set_interface(PyTypeObject *type)
     PyObject *mod = NULL, *iface = NULL, *implements = NULL;
     int r = -1;
 
-    mod = PyImport_ImportModule("persistence.interfaces");
+    mod = PyImport_ImportModule("peak.persistence.interfaces");
     if (mod == NULL)
 	goto err;
     iface = PyObject_GetAttrString(mod, "IPersistent");
@@ -977,7 +977,7 @@ init_persistence(void)
     /* Cheap hack to force us to be used instead of 'type' as '__base__';
        this ensures that we are always used for C-level layout, and can
        therefore interoperate with other (pure Python) metaclasses.
-       (See 'persistence.tests.test_persistence.Test.testMultipleMeta')
+       (See 'peak.persistence.tests.test_persistence.Test.testMultipleMeta')
        This costs us a (PyObject *) per subclass of Persistent, but it
        seems to be the only way to fix this in Python 2.2.x.  :(
     */

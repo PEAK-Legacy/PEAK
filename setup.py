@@ -9,7 +9,7 @@ PACKAGE_NAME = "PEAK"
 PACKAGE_VERSION = "0.5a4"
 HAPPYDOC_IGNORE = [
     '-i','datetime', '-i','old', '-i','tests', '-i','setup', '-i','examples',
-    '-i', 'kjbuckets', '-i', 'ZConfig', '-i', 'persistence', '-i', 'csv',
+    '-i', 'kjbuckets', '-i', 'ZConfig', '-i', 'csv',
 ]
 
 
@@ -27,11 +27,11 @@ extensions = [
     Extension("peak.util.buffer_gap", ["src/peak/util/buffer_gap.pyx"]),
     Extension("peak.util._Code", ["src/peak/util/_Code.pyx"]),
     Extension("protocols._speedups", ["src/protocols/_speedups.pyx"]),
-    Extension("persistence._persistence", ["src/persistence/persistence.c"]),
+    Extension(
+        "peak.persistence._persistence", ["src/peak/persistence/persistence.c"]
+    ),
     Extension('_csv', ['src/_csv.c']),
 ]
-
-
 
 
 
@@ -106,10 +106,6 @@ features = {
     'ZConfig': Feature(
         "ZConfig 2.0", standard = not zope_installed, remove = ['ZConfig']
     ),
-    'persistence': Feature(
-        "ZODB 4 persistence", standard = not zope_installed,
-        remove = ['persistence']
-    ),
     'uuidgen': Feature(
         "UUID generation via BSD system libraries",
         available = have_uuidgen, standard = have_uuidgen,
@@ -119,6 +115,10 @@ features = {
         ]
     ),
 }
+
+
+
+
 
 
 ALL_EXTS = [
@@ -153,7 +153,6 @@ setup(
     ext_modules = extensions,
     scripts = scripts,
 )
-
 
 
 

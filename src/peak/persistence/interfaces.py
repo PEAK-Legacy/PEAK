@@ -11,11 +11,7 @@
 # FOR A PARTICULAR PURPOSE.
 #
 ##############################################################################
-try:
-    from zope.interface import Interface
-    from zope.interface import Attribute
-except ImportError:
-    from protocols import Interface, Attribute
+from protocols import Interface, Attribute  # modified for PEAK
 
 class IPersistent(Interface):
     """Python persistence interface

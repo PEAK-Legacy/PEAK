@@ -13,9 +13,22 @@
 ##############################################################################
 """Provide access to Persistent C extension types."""
 
-from persistence._persistence import Persistent
-from persistence._persistence import PersistentMetaClass
-from persistence._persistence import simple_new
+# All below is modified/added for PEAK
+
+__all__ = ['Persistent', 'PersistentMetaClass', 'isGhost']
+
+
+from _persistence import Persistent, PersistentMetaClass, simple_new, GHOST
 
 import copy_reg
 copy_reg.constructor(simple_new)
+
+
+import protocols, interfaces
+protocols.declareImplementation(
+    Persistent, instancesProvide=[interfaces.IPersistent]
+)
+
+def isGhost(obj):
+    return obj._p_state == GHOST
+

@@ -1,5 +1,10 @@
 Fixes and Enhancements since Version 0.5 alpha 3
 
+ - The 'persistence' package has been moved to 'peak.persistence' to avoid
+   conflicts with ZODB3 and the latest version of Zope 3.  It will eventually
+   be phased out, but for now this move is the simplest way to get it out of
+   the way.
+   
  - The 'peak.util.SOX' module now uses only one parser, based directly on
    'expat', instead of using SAX.  The new parser expects a new node interface,
    'IXMLBuilder', but adapters from the previous interfaces ('ISOXNode' and

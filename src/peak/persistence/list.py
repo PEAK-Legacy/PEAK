@@ -13,7 +13,7 @@
 ##############################################################################
 """Python implementation of persistent list.
 
-$Id: list.py,v 1.1 2002/12/25 14:12:13 pje Exp $
+$Id: list.py,v 1.1 2004/06/11 04:06:01 pje Exp $
 """
 
 import persistence
