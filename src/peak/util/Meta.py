@@ -58,7 +58,7 @@ def makeClass(name,bases,dict):
         metaclasses.insert(0,dict['__metaclass__'])
 
     if dict.has_key('__metaclasses__'):
-        metaclasses[0:0] = dict['__metaclasses__']
+        metaclasses[0:0] = list(dict['__metaclasses__'])
 
     metaclasses = normalizeBases(metaclasses)
     
