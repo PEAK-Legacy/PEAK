@@ -137,7 +137,7 @@ class SybaseConnection(SQLConnection):
     def _open(self):
         user,passwd,server,db = self.address[:4]
         from Sybase import Connection
-        return Connection(server, user, pass, db)
+        return Connection(server, user, passwd, db)
             
     def onJoinTxn(self, txnService):
         # Sybase doesn't auto-chain transactions...
