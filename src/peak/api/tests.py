@@ -9,6 +9,7 @@ allSuites = [
     'peak.events.tests:test_suite',
     'peak.model.tests:test_suite',
     'peak.naming.tests:test_suite',
+    #'peak.net.tests:test_suite',
     'peak.query.tests:test_suite',
     'peak.running.tests:test_suite',
     'peak.security.tests:test_suite',

@@ -42,7 +42,7 @@ whenImported(
 class IConnectionFactory(Interface):
     """Thing that can create connections or listen for them"""
 
-    def connect():
+    def connect(timeout=None,attempts=1,delay=1,exponent=2,random=0.1):
         """Yield outgoing 'IRWConnection' objects (XXX timeouts,retries)"""
 
     def listen(queuesize=5):
