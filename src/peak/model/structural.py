@@ -263,6 +263,7 @@ class StructuralFeature(object):
 
 
     def _set_one(feature, element, val):
+        feature.__delete__(element)
         feature._notifyLink(element,val)
 
     _set_one.installIf = lambda f,m: f.isChangeable and not f.isMany
