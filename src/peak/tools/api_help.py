@@ -4,16 +4,40 @@ from peak.api import *
 from peak.running.commands import AbstractCommand, InvocationError
 from peak.util.imports import importString
 
+
 class APIHelp(AbstractCommand):
 
-    usage = "Usage: peak help expression [expr2 expr3...]"
+    usage = """Usage: peak help name [name2 name3...]
+
+For example, 'peak help core api' displays help on the
+'peak.core' and 'peak.api' modules."""
 
     def _run(self):
         if len(self.argv)>1:
             for arg in self.argv[1:]:
                 help(self.find(arg))
         else:
-            raise InvocationError("No expression specified")
+            raise InvocationError("No name(s) specified")
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     def find(self, name):
         if naming.URLMatch(name):
@@ -40,4 +64,19 @@ class APIHelp(AbstractCommand):
                 return ob
 
         raise InvocationError("Can't find help on %r" % name)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 

@@ -499,12 +499,14 @@ class Namespace(object):
                 return ob
         raise AttributeError,attr
 
+
     def __getitem__(self, key):
         """Return the value of property 'key' within this namespace"""
         ob = self.get(key,NOT_FOUND)
         if ob is not NOT_FOUND:
             return ob
         raise KeyError,key
+
 
     def get(self,key,default=None):
         """Return property 'key' within this namespace, or 'default'"""
@@ -514,22 +516,61 @@ class Namespace(object):
             )
         return default
 
+
     def __repr__(self):
         return "config.Namespace(%r,%r)" % (self._prefix,self._target)
 
+
+
+
+
+
+
+
+
+
+
+
     def keys(self):
+
         items = []
+
         if self._target is not NOT_GIVEN:
+
             prel = len(self._prefix)
             append = items.append
             yielded = {}
+
             for key in iterKeys(self._target,self._prefix+'*'):
                 key = key[prel:]
                 if key.endswith('?'):
                     key = key[:-1]
+                elif key.endswith('*'):
+                    continue
                 if key not in yielded:
-                    append(key); yielded[key]=1
+                    append(key)
+                    yielded[key]=1
+
         return items
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 class __NamespaceExtensions(protocols.Adapter):
 

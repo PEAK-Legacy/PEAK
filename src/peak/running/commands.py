@@ -682,13 +682,16 @@ list of available shortcut names, see '%s'""" % config.fileNearModule(
     usage += ".\n"
 
 
+    def showHelp(self):
+        """Display usage message on stderr"""
+        print >>self.stderr, self.usage
+        from peak.util.columns import lsFormat
 
-
-
-
-
-
-
+        print >>self.stderr, "Available commands:"
+        print >>self.stderr
+        self.stderr.writelines(lsFormat(80,config.Namespace('peak.running.shortcuts',self).keys()))
+        print >>self.stderr
+        return 0
 
 
 
