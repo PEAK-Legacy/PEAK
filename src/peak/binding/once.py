@@ -285,7 +285,7 @@ class classAttr(object):
     def __init__(self, binding): self.binding = binding
 
 
-class Activator(protocols.ProviderMixin, type):
+class Activator(type):
 
     """Descriptor metadata management"""
 

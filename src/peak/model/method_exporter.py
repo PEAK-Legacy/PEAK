@@ -9,6 +9,7 @@ from types import FunctionType
 from new import instancemethod
 from peak.binding.once import ActiveClass, getInheritedRegistries
 from kjbuckets import kjGraph
+import protocols
 
 
 
@@ -38,8 +39,7 @@ from kjbuckets import kjGraph
 
 
 
-
-class MethodExporter(ActiveClass):
+class MethodExporter(protocols.ProviderMixin,ActiveClass):
 
     """Support for generating "verbSubject()" methods from template functions
 

@@ -201,7 +201,7 @@ class FeatureClass(HashAndCompare,MethodExporter):
     def __conform__(feature,protocol):
         if protocol is fmtparse.Rule:
             return feature._syntax
-        return supermeta(MethodExporter,feature).__conform__(protocol)
+        return supermeta(FeatureClass,feature).__conform__(protocol)
 
 class StructuralFeature(object):
 
