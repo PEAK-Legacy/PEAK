@@ -2,6 +2,26 @@ Fixes and Enhancements since Version 0.5 alpha 2
 
  Changed, Enhanced, or Newly Deprecated Features
 
+ - 'peak.naming' no longer automatically converts all addresses to the
+   addressed objects.  You must specifically request the interface you want
+   by adapting the retrieved object to that interface.  This can be done by
+   supplying an 'adaptTo=ISomething' keyword argument to the attribute binding
+   definition or your 'lookupComponent()' call.
+
+   The naming system no longer has 'objectFactories' and 'stateFactories';
+   these have been replaced with adaptation.  Writable naming contexts must
+   have a 'serializationProtocol' attribute specifying what interface an object
+   should be adapted to before attempting to store it in that context.
+
+   The naming system no longer processes the 'creationName' keyword argument;
+   this is now considered the sole responsibility of 'peak.binding'.  The
+   'IComponent.lookupComponent()' method still accepts the keyword argument,
+   and attribute bindings still handle the creation name transparently.  It is
+   just not available via naming system APIs, and naming contexts no longer
+   have to deal with it.
+
+ - REMOVED 'naming.ParsedURL'; it was deprecated as of 0.5 alpha 2.
+
  - The 'provides' keyword argument to various 'peak.binding' APIs has been
    renamed to 'offerAs', and it must be a sequence of configuration keys.
    (Previously, it accepted either a single key or a tuple of keys.)
@@ -31,6 +51,27 @@ Fixes and Enhancements since Version 0.5 alpha 2
    notices, even when set via constructor keyword arguments.  If you want an
    attribute to do this, you must define the attribute with the binding API;
    e.g. via 'requireBinding()' or 'binding.Constant()'.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

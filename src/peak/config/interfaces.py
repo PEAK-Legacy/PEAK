@@ -110,7 +110,7 @@ class _NullConfigRoot(object):
             " (was looking up %s for %r)" % (root, configKey, forObj)
         )
 
-    def nameNotFound(self,root,name,forObj,bindName):
+    def nameNotFound(self,root,name,forObj):
         raise exceptions.NameNotFound(
             remainingName = name, resolvedObj = root
         )

@@ -463,12 +463,12 @@ class GadflyURL(naming.URL.Base):
         ('//',), db, '@', dir
     )
 
-    def retrieve(self, refInfo, name, context, attrs=None):
 
-        return GadflyConnection(
-            context.creationParent, context.creationName,
-            address = self
-        )
+protocols.declareAdapter(
+    lambda url, proto: GadflyConnection(address=url),
+    provides = [ISQLConnection],
+    forTypes = [GadflyURL],
+)
 
 
 
@@ -510,18 +510,18 @@ class GenericSQL_URL(naming.URL.Base):
         ('//',), (user, (':', passwd), '@'), server, ('/', db)
     )
 
-    def retrieve(self, refInfo, name, context, attrs=None):
-
-        return drivers[self.scheme](
-            context.creationParent, context.creationName,
-            address = self
-        )
-
-
 drivers = {
     'sybase': SybaseConnection,
     'pgsql':  PGSQLConnection,
 }
+
+protocols.declareAdapter(
+    lambda url, proto: drivers[url.scheme](address=url),
+    provides = [ISQLConnection],
+    forTypes = [GenericSQL_URL],
+)
+
+
 
 
 

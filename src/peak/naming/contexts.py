@@ -7,7 +7,7 @@ from names import *
 
 import spi
 
-from peak.binding.components import Component, Once, Acquire
+from peak.binding.components import Component, Once, Acquire, requireBinding
 
 
 
@@ -47,10 +47,7 @@ class NameContext(Component):
     )
 
     parseURLs       = True
-    creationName    = Acquire(CREATION_NAME)
     creationParent  = Acquire(CREATION_PARENT)
-    objectFactories = Acquire(OBJECT_FACTORIES)
-    stateFactories  = Acquire(STATE_FACTORIES)
     schemeParser    = Acquire(SCHEME_PARSER)
 
     compoundParser  = CompoundName
@@ -59,12 +56,15 @@ class NameContext(Component):
     namingAuthority = Once( lambda s,d,a: s.schemeParser() )
     nameInContext   = Once( lambda s,d,a: s.compoundParser(()) )
 
+    serializationProtocol = requireBinding(
+        "Protocol to adapt objects to before storing them"
+    )
+
     def getURLContext(klass, parent, scheme, iface, componentName, **options):
         if klass.schemeParser.supportsScheme(scheme):
             return adapt(klass(parent, componentName, **options), iface, None)
 
     getURLContext = classmethod(getURLContext)
-
 
 
 
@@ -290,31 +290,31 @@ class NameContext(Component):
         if isinstance(state,LinkRef):
             return self[state.linkName]
 
-        '''for factory in self.objectFactories:
-
-            result = factory.getObjectInstance(self, state, name, attrs)
-
-            if result is not None:
-                return result'''
-
         return state
 
 
-    def _mkref(self, object, name, attrs):
+    def _mkref(self, obj, name, attrs):
 
-        ref = adapt(object, IReferenceable, None)
+        ref = adapt(obj, self.serializationProtocol, None)
 
         if ref is not None:
-            return (ref.getReference(), attrs)
+            return ref, attrs
 
-        for factory in self.stateFactories:
+        return obj, attrs
 
-            result = factory.getStateToBind(self, object, name, attrs)
 
-            if result is not None:
-                return result
 
-        return object, attrs
+
+
+
+
+
+
+
+
+
+
+
 
 
 

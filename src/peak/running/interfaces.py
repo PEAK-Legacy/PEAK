@@ -13,7 +13,7 @@ __all__ = [
 
     'IPeriodicTask', 'ITaskQueue', 'IMainLoop',
 
-    'IAdaptiveTask', 'IAdaptiveTaskSPI',
+    'IAdaptiveTask', 'IAdaptiveTaskSPI', 'ILock',
 
     'IBasicReactor', 'ITwistedReactor', 'ILogger', 'ICheckableResource',
 
@@ -306,20 +306,20 @@ class IAdaptiveTaskSPI(Interface):
         """Override this for custom locking: ensure lock released"""
 
 
+class ILock(Interface):
 
+    def attempt():
+        """try to obtain the lock, return boolean success"""
 
+    def obtain():
+        """wait to obtain the lock, returns None"""
 
+    def release():
+        """release an obtained lock, returns None"""
 
-
-
-
-
-
-
-
-
-
-
+    def locked():
+        """returns True if any thread IN THIS PROCESS
+        has obtained the lock, else False"""
 
 
 

@@ -28,7 +28,7 @@ __all__ = [
 
 protocols.advise(
     moduleProvides = [
-        IURLContextFactory, IInitialContextFactory, IObjectFactory
+        IURLContextFactory, IInitialContextFactory
     ]
 )
 
@@ -151,47 +151,6 @@ def getURLContext(parent, scheme, iface, componentName=None, **options):
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-def getObjectInstance(context, refInfo, name, attrs=None):
-
-    """Default rules for loading objects from state
-
-    If 'refInfo' implements 'naming.IAddress', this will return the
-    result of invoking its 'retrieve()' method with the supplied
-    parameters.
-
-    Otherwise, if 'refInfo' is an instance of 'naming.NNS_Reference',
-    the reference will be unwrapped and the contained object returned.
-    This ensures that if no object factories are available that interpret
-    NNS references, name resolution will be able to continue in the same
-    naming system.  That is, this is a cushion to support "weak" naming
-    system boundaries.
-
-    Otherwise, 'None' is returned, allowing object factory lookups to
-    continue.
-
-    It is not recommended that you call this function directly.  It is
-    intended to be used by registering the 'peak.naming.spi' module as a
-    utility for the 'naming.IObjectFactory' interface, so that it will
-    be found by context objects searching for their object factories.
-    It is also intended to be found *last*, so that any more-specific
-    handlers will be tried first.
-    """
-
-    factory = adapt(refInfo, IObjectFactory, None)
-
-    if factory is not None:
-        return factory.getObjectInstance(context, refInfo, name, attrs)
 
 
 

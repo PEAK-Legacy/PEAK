@@ -262,17 +262,17 @@ class logfileURL(FileURL):
 
     querySyntax = URL.Sequence('level=', level)
 
-    def retrieve(self, refInfo, name, context, attrs=None):
-        return LogFile(
-            context.creationParent, context.creationName,
-            filename=self.getFilename(), level=self.level
-        )
 
 protocols.declareAdapter(
     lambda url, proto: LogFile(filename=url.getFilename(), level=url.level),
     provides = [ILogger],
     forTypes = [logfileURL],
 )
+
+
+
+
+
 
 
 

@@ -8,7 +8,7 @@ __all__ = [
     'ITransactionErrorHandler', 'ICursor', 'IRow',
     'IDataManager', 'IDataManager_SPI', 'IWritableDM', 'IWritableDM_SPI',
     'IManagedConnection', 'IManagedConn_SPI', 'IKeyableDM',
-    'ISQLConnection'
+    'ISQLConnection', 'ILDAPConnection', 'IDDEConnection',
 ]
 
 
@@ -350,16 +350,16 @@ class IManagedConnection(IComponent,ITransactionParticipant):
         """Close all registered cursors which are still active"""
 
 
-
+# XXX These need fleshing out w/API, exceptions, etc
 
 class ISQLConnection(IManagedConnection):
     """A ManagedConnection that talks SQL"""
 
-    # Needs fleshing out... API, exceptions, etc
+class ILDAPConnection(IManagedConnection):
+    """A ManagedConnection that talks LDAP"""
 
-
-
-
+class IDDEConnection(IManagedConnection):
+    """A ManagedConnection that talks DDE"""
 
 
 

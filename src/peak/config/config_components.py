@@ -402,10 +402,10 @@ class ConfigurationRoot(Component):
 
     def noMoreUtilities(self,root,configKey,forObj): pass
 
-    def nameNotFound(self,root,name,forObj,bindName):
-        return naming.lookup(forObj, name,
-            creationParent=forObj, creationName=bindName
-        )
+    def nameNotFound(self,root,name,forObj):
+        return naming.lookup(forObj, name, creationParent=forObj)
+
+
 
 
 class PropertySet(object):

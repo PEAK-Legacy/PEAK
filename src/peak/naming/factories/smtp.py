@@ -27,8 +27,8 @@ class smtpURL(naming.URL.Base):
         host, (':', port)
     )
 
-    def retrieve(self, refInfo, name, context, attrs=None):
-        return smtplib.SMTP(self.host, self.port)
+    # XXX def retrieve(self, refInfo, name, context, attrs=None):
+    # XXX    return smtplib.SMTP(self.host, self.port)
 
 
 

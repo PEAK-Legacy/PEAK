@@ -81,45 +81,7 @@ class GenericPathURL(URL.Base):
 
 
 class OpenableURL(GenericPathURL):
-
-    protocols.advise(
-        instancesProvide = [ naming.IStreamAddress ]
-    )
-
-    def retrieve(self, refInfo, name, context, attrs=None):
-        return URLStreamFactory(target = str(self))
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    pass
 
 class FileURL(OpenableURL):
 
@@ -146,9 +108,6 @@ class FileURL(OpenableURL):
         return url2pathname(pathFromURL(self))
 
 
-    def retrieve(self, refInfo, name, context, attrs=None):
-        return FileFactory( filename = self.getFilename() )
-
     def fromFilename(klass, aName):
         m = naming.URLMatch(aName)
         if m:
@@ -163,10 +122,6 @@ class FileURL(OpenableURL):
 
 
 class PkgFileURL(URL.Base):
-
-    protocols.advise(
-        instancesProvide = [ naming.IStreamAddress ]
-    )
 
     nameAttr = 'body'
 
@@ -188,8 +143,12 @@ class PkgFileURL(URL.Base):
             path = join(path,p)
         return path
 
-    def retrieve(self, refInfo, name, context, attrs=None):
-        return FileFactory( filename = self.getFilename() )
+
+
+
+
+
+
 
 
 

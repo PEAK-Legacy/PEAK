@@ -7,23 +7,20 @@ from peak.api import PropertyName
 __all__ = [
 
     'IName', 'IAddress', 'IInitialContextFactory', 'IResolver', 'IPath',
-    'IObjectFactory', 'IStateFactory', 'IURLContextFactory', 'IAddressFactory',
+    'IURLContextFactory', 'IAddressFactory',
     'IBasicContext', 'IReadContext', 'IWriteContext', 'IReferenceable',
     'COMPOUND_KIND', 'COMPOSITE_KIND', 'URL_KIND',
-    'IStreamFactory', 'IStreamAddress',
+    'IStreamFactory',
 
-    'CREATION_PARENT', 'OBJECT_FACTORIES', 'STATE_FACTORIES', 'SCHEMES_PREFIX',
-    'CREATION_NAME', 'INIT_CTX_FACTORY', 'SCHEME_PARSER',
+    'CREATION_PARENT', 'SCHEMES_PREFIX',
+    'INIT_CTX_FACTORY', 'SCHEME_PARSER',
 
 ]
 
 
 INIT_CTX_FACTORY = PropertyName('peak.naming.initialContextFactory')
 
-CREATION_NAME    = PropertyName('peak.naming.creationName')
 CREATION_PARENT  = PropertyName('peak.naming.creationParent')
-OBJECT_FACTORIES = PropertyName('peak.naming.objectFactories')
-STATE_FACTORIES  = PropertyName('peak.naming.stateFactories')
 SCHEME_PARSER    = PropertyName('peak.naming.schemeParser')
 
 SCHEMES_PREFIX   = PropertyName('peak.naming.schemes')
@@ -34,6 +31,9 @@ class IReferenceable(Interface):
 
     def getReference():
         """Return a reference object that can be saved in a naming context"""
+
+
+
 
 
 
@@ -369,60 +369,19 @@ class IStreamFactory(Interface):
 
 # Framework interfaces
 
-class IObjectFactory(Interface):
-    """Convert data in a naming system into a useful retrieved object"""
-
-    def getObjectInstance(context, refInfo, name, attrs=None):
-
-        """Return the object that should be constructed from 'refInfo'
-
-        This function or method should return the object which is referenced
-        by 'refInfo', or 'None' if it does not know how or does not wish to
-        interpret 'refInfo'.
-
-        'refInfo' is an object representing a reference, address, or state of
-        an object found in 'context' under 'name', with attributes 'attrs'.
-        The specific contents of 'refInfo', 'name', and 'attrs', are entirely
-        dependent upon the implementation details of the 'context' object.
-
-        (Note: the official semantics of the 'attrs' parameter is not yet
-        defined; it is reserved for implementing JNDI 'DirContext'-style
-        operations.  Currently 'None' is the only correct value for 'attrs'.)
-
-        There is a default implementation of this interface supplied by the
-        'peak.naming.spi' module, and registered by the '"peak.ini"' file.
-        See the 'peak.naming.spi' module for more details on the default
-        behavior."""
-
-
-class IAddress(IName, IObjectFactory):
+class IAddress(IName):
 
     """URL/Name that supports in-context self-retrieval (URL_KIND)"""
-
-    def retrieve(refInfo, name, context, attrs=None):
-        """Retrieve the address"""
 
     def getAuthorityAndName():
         """Return an 'authority,name' tuple"""
 
-class IStreamAddress(IAddress):
-    """Address that retrieves a stream factory"""
 
 class IInitialContextFactory(Interface):
     """Get access to an initial naming context"""
 
     def getInitialContext(parentComponent, componentName=None, **options):
         """Return a naming context for 'parentComponent' with 'options'"""
-
-
-class IStateFactory(Interface):
-    """Convert an object into state that can be stored in a naming system"""
-
-    def getStateToBind(context, obj, name, attrs=None):
-        """Return the '(obj,attrs)' state that should be used to save 'obj'"""
-
-
-
 
 
 

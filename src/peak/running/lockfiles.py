@@ -36,48 +36,7 @@ __all__ = ['LockFile', 'NullLockFile']
 import os, errno, time
 from peak.util.threads import allocate_lock
 from peak.api import naming, protocols
-from protocols import Interface
-
-
-class ILock(Interface):
-
-    def attempt():
-        """try to obtain the lock, return boolean success"""
-
-    def obtain():
-        """wait to obtain the lock, returns None"""
-
-    def release():
-        """release an obtained lock, returns None"""
-
-    def locked():
-        """returns True if any thread IN THIS PROCESS
-        has obtained the lock, else False"""
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+from interfaces import ILock
 
 
 class LockFileBase:
@@ -499,29 +458,29 @@ class lockfileURL(FileURL):
         'nulllockfile'
     )
 
-    def retrieve(self, refInfo, name, context, attrs=None):
 
-        filename = self.getFilename()
+def lockfileFromURL(url, protocol):
 
-        if self.scheme == 'lockfile':
-            return LockFile(filename)
+    filename = url.getFilename()
 
-        elif self.scheme == 'nulllockfile':
-            return NullLockFile()
+    if url.scheme == 'lockfile':
+        return LockFile(filename)
 
-        elif self.scheme == 'shlockfile':
-            return SHLockFile(filename)
+    elif url.scheme == 'nulllockfile':
+        return NullLockFile()
 
-        elif self.scheme == 'flockfile':
-            return FLockFile(filename)
+    elif url.scheme == 'shlockfile':
+        return SHLockFile(filename)
 
-        elif self.scheme == 'winflockfile':
-            return WinFLockFile(filename)
+    elif url.scheme == 'flockfile':
+        return FLockFile(filename)
 
+    elif url.scheme == 'winflockfile':
+        return WinFLockFile(filename)
 
 
 protocols.declareAdapter(
-    lambda url, proto: url.retrieve(None,None,None), # XXX cheap hack
+    lockfileFromURL,
     provides = [ILock],
     forTypes = [lockfileURL],
 )

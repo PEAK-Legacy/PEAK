@@ -203,7 +203,7 @@ def notifyUponAssembly(parent,child):
 
 
 
-def acquireComponent(component, name, creationName=None):
+def acquireComponent(component, name):
 
     """Acquire 'name' relative to 'component', w/fallback to naming.lookup()
 
@@ -230,7 +230,7 @@ def acquireComponent(component, name, creationName=None):
         return adapt(
             prev, IConfigurationRoot, NullConfigRoot
         ).nameNotFound(
-            prev, name, component, creationName
+            prev, name, component
         )
 
 
@@ -285,7 +285,7 @@ class ComponentName(AbstractName):
 
 
 
-    def lookup(self, component, default=NOT_GIVEN, creationName=None):
+    def lookup(self, component, default=NOT_GIVEN):
 
         if not self:  # empty name refers to self
             return component
@@ -296,7 +296,7 @@ class ComponentName(AbstractName):
 
 
         if pc:  ob = pc(component)
-        else:   ob = acquireComponent(component, attr, creationName)
+        else:   ob = acquireComponent(component, attr)
 
         resolved = []
         append = resolved.append
@@ -340,8 +340,8 @@ _getNextPathComponent = dict( (
 ) ).get
 
 
-
-def lookupComponent(component, name, default=NOT_GIVEN, creationName=None):
+def lookupComponent(component, name, default=NOT_GIVEN, adaptTo=None,
+    creationName=None, suggestParent=True):
 
     """Lookup 'name' relative to 'component'
 
@@ -357,15 +357,15 @@ def lookupComponent(component, name, default=NOT_GIVEN, creationName=None):
     Regardless of how the lookup is processed, an 'exceptions.NameNotFound'
     error will be raised if the name cannot be found."""
 
-    return adapt(name, IComponentKey).lookup(component, default, creationName)
+    result = adapt(name, IComponentKey).lookup( component, default )
 
+    if adaptTo is not None:
+        result = adapt(result,adaptTo)
 
+    if suggestParent:
+        suggestParentComponent(component,creationName,result)
 
-
-
-
-
-
+    return result
 
 class ConfigFinder(object):
 
@@ -381,7 +381,7 @@ class ConfigFinder(object):
     def __init__(self, ob, proto):
         self.ob = ob
 
-    def lookup(self, component, default, creationName=None):
+    def lookup(self, component, default):
         return config.findUtility(component, self.ob, default)
 
 
@@ -423,21 +423,21 @@ class NameFinder(object):
     def __init__(self, ob, proto):
         self.name = ob
 
-    def lookup(self, component, default=NOT_GIVEN, creationName=None):
+    def lookup(self, component, default=NOT_GIVEN):
         parsedName = toName(self.name, ComponentName, 1)
 
         if not parsedName.nameKind == COMPOUND_KIND:
             # URL's and composite names must be handled globally
             try:
                 return naming.lookup(component, self.name,
-                    creationParent=component, creationName=creationName
+                    creationParent=component
                 )
             except exceptions.NameNotFound:
                 if default is NOT_GIVEN:
                     raise
                 return default
 
-        return ComponentName(parsedName).lookup(component,default,creationName)
+        return ComponentName(parsedName).lookup(component,default)
 
 
 
@@ -465,7 +465,6 @@ class bindTo(Attribute):
     default = NOT_GIVEN
     singleValue = True
 
-
     def __init__(self,targetName,**kw):
         self.targetNames = (targetName,)
         kw.setdefault('doc', ("binding.bindTo(%r)" % targetName))
@@ -475,7 +474,9 @@ class bindTo(Attribute):
     def computeValue(self, obj, instanceDict, attrName):
         default = self.default
         names   = self.targetNames
-        obs     = [lookupComponent(obj,n,default,attrName) for n in names]
+        obs     = [
+            lookupComponent(obj,n,default,suggestParent=False) for n in names
+        ]
 
         for name,newOb in zip(names, obs):
 
@@ -488,7 +489,6 @@ class bindTo(Attribute):
                 return newOb
 
         return tuple(obs)
-
 
 class bindSequence(bindTo):
 

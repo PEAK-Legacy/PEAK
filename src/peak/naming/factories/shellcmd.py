@@ -5,10 +5,6 @@ class ShellCommandURL(naming.URL.Base):
 
     supportedSchemes = 'shellcmd',
 
-    def retrieve(self, refInfo, name, context, attrs=None):
-
-        def invoke():
-            return os.system(self.body)
-
-        return invoke
+    def __call__(self):
+        return os.system(self.body)
 

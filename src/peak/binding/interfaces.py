@@ -13,7 +13,7 @@ __all__ = [
 class IComponentKey(Interface):
     """Key that can be looked up via 'Component.lookupComponent()'"""
 
-    def lookup(context, default=NOT_GIVEN, creationName=None):
+    def lookup(context, default=NOT_GIVEN):
         """Return self up in 'context', 'default' or raise NameNotFound"""
 
 
@@ -84,7 +84,8 @@ class IComponent(IBindingNode, IBindableAttrs, IConfigurable):
 
     """API supplied by binding.Component and its subclasses"""
 
-    def lookupComponent(name, default=NOT_GIVEN, creationName=None):
+    def lookupComponent(name, default=NOT_GIVEN, adaptTo=None,
+        suggestParent=True, creationName=None):
         """Look up 'name' in context - see 'binding.lookupComponent()'"""
 
 
@@ -102,7 +103,6 @@ class IComponent(IBindingNode, IBindableAttrs, IConfigurable):
 
     def uponAssembly():
         """Notify the component that its parents and root are known+fixed"""
-
 
 
 

@@ -222,15 +222,15 @@ class ZConfigInterpreter(AbstractInterpreter):
     def interpret(self, filename):
 
         from peak.naming.factories.openable import FileURL
-        from peak.config.load_zconfig import SchemaLoader
-
         url = naming.toName(filename, FileURL.fromFilename)
 
         return self.getSubcommand(
-            naming.lookup(self, url,
-                objectFactories = [SchemaLoader(self)]
-            )
+            self.lookupComponent('zconfig.schema:'+str(url))
         )
+
+
+
+
 
 
 

@@ -41,10 +41,6 @@ class BaseLoader(binding.Component, ZConfig.loader.BaseLoader):
 
 class SchemaLoader(BaseLoader, ZConfig.loader.SchemaLoader):
 
-    protocols.advise(
-        instancesProvide = [naming.IObjectFactory]
-    )
-
     registry = binding.New(ZConfig.datatypes.Registry)
     _cache   = binding.New(dict)
     __init__ = binding.Component.__init__.im_func
@@ -80,6 +76,10 @@ command-line arguments.
 
 
 
+
+
+
+
 class ZConfigSchemaURL(naming.URL.Base):
 
     """'zconfig.schema:' URL scheme - loads body as a schema
@@ -103,7 +103,7 @@ class ZConfigSchemaContext(naming.AddressContext):
         ob = adapt(naming.lookup(self,url), naming.IStreamFactory)
 
         return ConfigLoader(
-            self.creationParent, self.creationName,
+            self.creationParent,
             schema = SchemaLoader(self.creationParent).loadFile(
                 ob.open('t'), str(url)
             )

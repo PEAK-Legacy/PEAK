@@ -231,12 +231,12 @@ class Base(Struct):
             return klass( None, aName)
 
 
-    def retrieve(self, refInfo, name, context, attrs=None):
-        pass
-
-
     def __str__(self):
         return "%s:%s" % (self.scheme, self.body)
+
+
+
+
 
 
 
@@ -356,8 +356,8 @@ class Base(Struct):
 
     getURLContext = classmethod(getURLContext)
 
-    def getObjectInstance(self, context, refInfo, name, attrs=None):
-        return self.retrieve(refInfo, name, context, attrs)
+
+
 
 
 

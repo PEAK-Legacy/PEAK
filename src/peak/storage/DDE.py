@@ -90,15 +90,15 @@ class ddeURL(naming.URL.Base):
     )
 
 
-    def retrieve(self, refInfo, name, context, attrs=None):
-        return DDEConnection(
-            context.creationParent, context.creationName,
-            serviceName=self.service,
-            topicName=self.topic,
-            launchFile=self.file,
-            retries=self.retries,
-            sleepFor=self.sleep,
-        )
+
+
+
+
+
+
+
+
+
 
 
 
@@ -125,6 +125,12 @@ class DDEConnection(storage.ManagedConnection):
 
     """Managed DDE connection"""
 
+    protocols.advise(
+        instancesProvide = [storage.IDDEConnection],
+        asAdapterForTypes = [ddeURL],
+        factoryMethod = 'adaptFromURL',
+    )
+
     serviceName = binding.requireBinding("Service name for DDE conversation")
     topicName   = binding.requireBinding("Topic name for DDE conversation")
     launchFile  = None
@@ -144,7 +150,6 @@ class DDEConnection(storage.ManagedConnection):
 
     ddeServer = binding.Once(ddeServer)
 
-
     def __call__(self, requestStr):
         """Issue a DDE request (requestStr -> responseStr)"""
         return self.connection.Request(requestStr)
@@ -156,11 +161,6 @@ class DDEConnection(storage.ManagedConnection):
     def poke(self, commandStr, data=None):
         """DDE Poke of command string and optional data buffer"""
         return self.connection.Poke(commandStr, data)
-
-
-
-
-
 
     def _open(self):
 
@@ -196,6 +196,47 @@ class DDEConnection(storage.ManagedConnection):
     def _close(self):
         self.ddeServer.close()
         del self.ddeServer  # force shutdown
+
+
+
+
+
+
+
+    def adaptFromURL(klass, url, protocol):
+        return klass(
+            serviceName=url.service, topicName=url.topic,
+            launchFile=url.file, retries=url.retries, sleepFor=url.sleep
+        )
+
+    adaptFromURL = classmethod(adaptFromURL)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

@@ -164,7 +164,13 @@ class LDAPCursor(AbstractCursor):
 
 class LDAPConnection(ManagedConnection):
 
+    protocols.advise(
+        instancesProvide = [ILDAPConnection]
+    )
+
     cursorClass = LDAPCursor
+
+
 
     def _open(self):
 
@@ -183,12 +189,6 @@ class LDAPConnection(ManagedConnection):
 
     def __getattr__(self, attr):
         return getattr(self.connection, attr)
-
-
-
-
-
-
 
 
 
@@ -367,12 +367,12 @@ class ldapURL(URL.Base):
 
 
 
-    def retrieve(self, refInfo, name, context, attrs=None):
+protocols.declareAdapter(
+    lambda url, proto: LDAPConnection(address=url),
+    provides = [ILDAPConnection],
+    forTypes = [ldapURL],
+)
 
-        return LDAPConnection(
-            context.creationParent, context.creationName,
-            address = self
-        )
 
 
 
