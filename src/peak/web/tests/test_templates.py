@@ -106,7 +106,7 @@ class NSTest2(NSTest):
 
 class ListHeaderFooterTest(BasicTest):
     template = "data:,"+quote("""<ul
-        this:is="page" this:uses="bar" content:list="." 
+        this:is="page" this:uses="bar" content:list="."
     ><li this:is="header">Header</li><li this:is="listItem" content:replace="."
     ></li><li this:is="footer">Footer</li></ul>""")
 
@@ -173,7 +173,7 @@ class MiscTests(TestCase):
         data = []
         doc.renderFor(ctx, pwt.DOMletState(doc, write=data.append))
         return ''.join(data)
-        
+
     def testContentType(self):
         s,h,b = self.renderDoc(
             pwt.TemplateDocument(
@@ -234,7 +234,7 @@ class MiscTests(TestCase):
 
 
 
-    
+
 
 
 
@@ -292,6 +292,7 @@ class ParserTests(TestCase):
                 this:is="page" with:content-type="text/plain"/>"""))
 
         self.assertEqual(doc.content_type,"text/plain")
+        self.assert_(isinstance(doc.content_type,str))
         self.assert_(isinstance(doc.page,pwt.Replace))
         self.assert_(isinstance(doc.fragment,pwt.Replace))
 
@@ -320,7 +321,6 @@ class ParserTests(TestCase):
         doc = self.parse("data:,"+quote("""<html/>"""))
         self.assert_(doc.fragment)
         self.assert_(not doc.page)
-
 
 
 

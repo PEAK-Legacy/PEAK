@@ -567,7 +567,7 @@ class Uses(Element):
 class Unless(Uses):
 
     """Skip child elements if target data is available"""
-    
+
     render_if = False
 
 
@@ -613,7 +613,9 @@ class TemplateDocument(TaglessElement):
     getObjectInstance = classmethod(getObjectInstance)
 
 
-    content_type = binding.Make(lambda self: self.params.get('content-type'))
+    content_type = binding.Make(lambda self:
+        str(self.params.get('content-type'))
+    )
 
     def layoutDOMlet(self,d,attrName):
 
@@ -634,8 +636,6 @@ class TemplateDocument(TaglessElement):
             return super(TemplateDocument,self)
 
     fragment = page = binding.Make(layoutDOMlet)
-
-
 
 
 
