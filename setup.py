@@ -158,6 +158,7 @@ setup(
         Extension("Persistence.cPersistence",
             ["src/Persistence/cPersistence.c"]
         ),
+        Extension("peak.binding.data_desc", ["src/peak/binding/data_desc" + EXT]),
         Extension("peak.util.buffer_gap", ["src/peak/util/buffer_gap" + EXT]),
         Extension("peak.util._Code", ["src/peak/util/_Code" + EXT]),
     ],

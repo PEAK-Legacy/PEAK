@@ -39,8 +39,35 @@ __all__ += allInterfaces
 
 
 
+class XMIRegistryClass(binding.ActiveClass):
+
+    def _XMIMap(self,d,a):
+
+        xm = {}
+
+        for m in binding.getInheritedRegistries(self,'_XMIMap'):
+            xm.update(m)
+
+        for k,v in self.__class_descriptors__.iteritems():
+            
+            for n in getattr(v,'_XMINames',()):
+
+                xm[n] = k
+
+                while '.' in n:
+                    n = n.split('.',1)[1]
+                    xm[n]=k
+
+        return xm
+
+    _XMIMap = binding.Once(_XMIMap)
+    
+
 class Package(binding.Base):
+
     """Package of Element Classes"""
+
+    __metaclass__ = XMIRegistryClass
 
 
 class Model(Package):
@@ -53,75 +80,7 @@ class Model(Package):
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-class XMIInjector(binding.ActiveClass):
-
-    def activate(self,klass,attrName):
-
-        self = super(XMIInjector,self).activate(klass,attrName)
-        
-        names = getattr(self,'_XMINames',None)
-
-        if names:
-
-            if not klass.__dict__.has_key('_XMIMap'):
-                m = {}
-                for c in klass.__mro__:
-                    if c.__dict__.has_key('_XMIMap'):
-                        m.update(c._XMIMap)
-                klass._XMIMap = m
-            else:
-                m = klass._XMIMap
-
-            for n in names:
-                m[n] = attrName
-                while '.' in n:
-                    n = n.split('.',1)[1]
-                    m[n]=attrName
-
-            
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-class FeatureMC(XMIInjector, MethodExporter):
+class FeatureMC(MethodExporter):
 
     """Method-exporting Property
     
@@ -143,8 +102,7 @@ class FeatureMC(XMIInjector, MethodExporter):
         more detail on how method templates are defined, the use of naming
         conventions, verbs, template variants, etc."""
 
-    __metaclass__ = binding.ActiveClass
-    
+    __metaclass__ = binding.Activator   # metaclasses can't be components
 
     def __get__(self, ob, typ=None):
 
@@ -152,6 +110,7 @@ class FeatureMC(XMIInjector, MethodExporter):
 
         if ob is None: return self
         return self.getMethod(ob,'get')()
+
 
     def __set__(self, ob, val):
 
@@ -494,7 +453,7 @@ class Classifier(binding.Base):
 
     """Basis for all flavors"""
 
-    __metaclass__ = XMIInjector
+    __metaclass__ = XMIRegistryClass
 
     def setParentComponent(self, parentComponent, componentName=None):
         if parentComponent is not None or componentName is not None:
@@ -531,7 +490,7 @@ class PrimitiveType(Classifier):
 
 
 
-class EnumerationMeta(XMIInjector):
+class EnumerationMeta(XMIRegistryClass):
 
     def __init__(klass, name, bases, cdict):
 

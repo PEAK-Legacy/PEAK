@@ -83,13 +83,13 @@ class QueryTests(TestCase):
 LoadedUML = None
 
 class XMILoad(TestCase):
-
     def checkLoad(self):
         global LoadedUML
         self.m = m = LoadedUML = UMLClass()
         from os import path
-        m.roots = m.importFromXMI(path.join(path.split(__file__)[0],'MetaMeta.xml'))
-
+        m.roots = m.importFromXMI(
+            config.fileNearModule(__name__,'MetaMeta.xml')
+        )
         
 class XMITests(TestCase):
 

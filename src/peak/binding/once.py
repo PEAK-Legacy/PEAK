@@ -1,13 +1,15 @@
 """'Once' objects and classes"""
 
+from __future__ import generators
 from peak.api import NOT_FOUND
 from peak.util.EigenData import EigenRegistry
 from peak.util.imports import importObject, importString
 from interfaces import IBindingFactory, IBindingSPI
+from data_desc import data_descr
 
 __all__ = [
-    'Once', 'New', 'Copy', 'OnceClass', 'ActiveClass',
-    'ActiveDescriptor',
+    'Once', 'New', 'Copy', 'OnceClass', 'ActiveClass', 'ActiveClasses',
+    'ActiveDescriptor', 'getInheritedRegistries', 'Activator',
 ]
 
 
@@ -19,6 +21,45 @@ class ActiveDescriptor(object):
     def activate(self,klass,attrName):
         """Informs the descriptor that it is in 'klass' with name 'attrName'"""
         return self
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+def getInheritedRegistries(klass, registryName):
+
+    """Minimal set of 'registryName' registries in reverse MRO order"""
+
+    bases = klass.__bases__
+
+    if len(bases)==1:
+        reg = getattr(bases[0],registryName,NOT_FOUND)
+        if reg is not NOT_FOUND:
+            yield reg
+
+    else:
+        mro = list(klass.__mro__)
+        bases = [(-mro.index(b),b) for b in bases]
+        bases.sort()
+        for (b,b) in bases:
+            reg = getattr(b,registryName,NOT_FOUND)
+            if reg is not NOT_FOUND:
+                yield reg
+
+
 
 
 
@@ -121,7 +162,7 @@ def Copy(obj, name=None, provides=None, doc=None):
 
 
 
-class Once(ActiveDescriptor):
+class Once(ActiveDescriptor,data_descr):
 
     """One-time Properties
     
@@ -156,37 +197,11 @@ class Once(ActiveDescriptor):
 
     attrName = None
     _provides = None
-    
+
     def __init__(self, func, name=None, provides=None, doc=None):
         self.computeValue = func
         self.attrName = self.__name__ = name or getattr(func,'__name__',None)
         self._provides = provides; self.__doc__ = doc or getattr(func,'__doc__','')
-
-    def __get__(self, obj, typ=None):
-    
-        """Compute the attribute value and cache it
-
-            Note: fails if attribute name not supplied or doesn't reference
-            this descriptor!
-        """
-        if obj is None: return self
-
-        n = self.attrName
-
-        if not n or getattr(obj.__class__,n,None) is not self:
-            self.usageError()
-
-        setattr(obj,n,NOT_FOUND)    # recursion guard
-
-        try:
-            value = self.computeValue(obj, obj.__dict__, n)
-        except:
-            delattr(obj,n)
-            raise
-
-        setattr(obj,n,value)
-        return value
-
 
     def usageError(self):            
         raise TypeError(
@@ -195,13 +210,8 @@ class Once(ActiveDescriptor):
             % self
         )
 
-
     def computeValue(self, obj, instanceDict, attrName):
         raise NotImplementedError
-
-
-
-
 
     def activate(self,klass,attrName):
 
@@ -231,16 +241,6 @@ class Once(ActiveDescriptor):
         newOb.attrName = newOb.__name__ = attrName
         return newOb
         
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -285,35 +285,63 @@ class OnceClass(Once, type):
 
 
 
-class ActiveClass(type):
+class Activator(type):
 
-    """Type which gives its descriptors a chance to find out their names"""
+    """Descriptor metadata management"""
 
-    __name__ = 'ActiveClass'    # trick to make instances' __name__ writable
+    __name__ = 'Activator'    # trick to make instances' __name__ writable
+
+    __class_descriptors__ = {}
+
+    __all_descriptors__ = {}
+    
 
     def __init__(klass, name, bases, dict):
 
         klass.__name__ = name
 
+        d = klass.__class_descriptors__ = {}
+
         for k,v in dict.items():
             if isinstance(v, ActiveClasses):
-                v.__class__.activate(v,klass,k)
+                d[k] = v.__class__.activate(v,klass,k)
 
-        super(ActiveClass,klass).__init__(name,bases,dict)
+        super(Activator,klass).__init__(name,bases,dict)
 
+        d = {}
+        r = getInheritedRegistries(klass,'__all_descriptors__')
+
+        for desc in r:
+            d.update(desc)
+
+        d.update(klass.__class_descriptors__)
+        klass.__all_descriptors__ = d
+
+
+
+
+
+
+
+
+
+
+class ActiveClass(Activator):
+
+    """Metaclass for classes that are themselves components"""
 
     def activate(self,klass,attrName):
 
         if klass.__module__ == self.__module__:
 
-            if '__parent__' not in self.__dict__:
+            if '__parent__' not in self.__dict__ and attrName!='__metaclass__':
                 # We use a tuple, so that if our parent is a descriptor,
                 # it won't interfere when our instance tries to set *its*
                 # parent!
                 self.__parent__ = klass,
 
         return self
-        
+
 
     def getParentComponent(self):
         return self.__parent__[0]
@@ -323,7 +351,6 @@ class ActiveClass(type):
 
     def _getConfigData(self, configKey, forObj):
         return NOT_FOUND
-
 
 
     def __parent__(self,d,a):
@@ -347,24 +374,4 @@ class ActiveClass(type):
 
 
 ActiveClasses = (ActiveDescriptor, ActiveClass)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 

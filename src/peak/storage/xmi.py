@@ -167,7 +167,7 @@ class XMINode(object):
         atts = self.attrs
 
         if 'xmi.value' in atts:
-            return atts['xmi.value']
+            return feature.fromString(atts['xmi.value'])
 
         for k in atts:
 
@@ -187,7 +187,7 @@ class XMINode(object):
         sub = [node for node in self.subNodes if not node.isExtension]
 
         if not sub:
-            return ''.join(self.allNodes)
+            return feature.fromString(''.join(self.allNodes))
 
         if len(sub)==1 and not sub[0]._name.startswith('XMI.'):
             return dm[sub[0].getRef()]
@@ -227,7 +227,7 @@ class XMINode(object):
             if f is None: continue
 
             if model.IValue.isImplementedBy(f):
-                d[f.attrName] = f.fromString(node.getValue(f, dm))
+                d[f.attrName] = node.getValue(f, dm)
             else:
                 d.setdefault(f.attrName,[]).extend(
                     [dm[n.getRef()]
