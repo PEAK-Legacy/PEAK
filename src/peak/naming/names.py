@@ -434,21 +434,7 @@ class ParsedURL(object):
 
         if body is not None:
             update(self.parse(scheme, body))
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+            
     def __setattr__(self, n, v):
         raise AttributeError, "Immutable object"
 
@@ -462,9 +448,9 @@ class ParsedURL(object):
         return tuple([(k,d[k]) for k in keys])
 
     __state = Once(__state)
+
     __hash  = Once( lambda s,d,a: hash(s.__state) )
     
-
     def __hash__(self):
         return self.__hash
 
@@ -492,6 +478,17 @@ class ParsedURL(object):
 
     def getAuthorityAndName(self):
         return self.__split
+
+
+
+
+
+
+
+
+
+
+
 
 class Syntax(object):
 
@@ -744,30 +741,31 @@ class CompositeName(AbstractName):
     """A name whose parts may belong to different naming systems
 
         Composite name strings consist of name parts separated by forward
-        slashes.  Each part can be double or single-quoted, and any enclosed
-        slashes or quotes of the opposite kind are ignored as separators.
-        Backslashes can be used to escape quotes, backslashes, and forward
-        slashes.
-    """
+        slashes.  URL-encoding (%2F) is used to quote any slashes in each
+        part.  Subclasses of 'CompositeName' may define a different
+        'separator' attribute instead of '"/"', to use a different syntax."""
 
     nameKind = COMPOSITE_KIND
+    separator = '/'
 
     def format(self):
-
-        n = [s.replace('/','%2F') for s in self]
+        sep = self.separator
+        enc = "%%%02X" % ord(sep)
+        n = [s.replace(sep,enc) for s in self]
 
         if not filter(None,n):
             n.append('')
+
         return '/'.join(n)
 
 
     def parse(klass, name, firstPartType=None):
 
-        # XXX Should we unescape anything besides '/'?
-
-        parts = [part.replace('%2F','/').replace('%2f','/')
-            for part in name.split('/')
-        ]
+        # XXX Should we unescape anything besides separator?
+        sep = klass.separator
+        en1 = "%%%02X" % ord(sep)
+        en2 = en1.lower()
+        parts = [p.replace(en1,sep).replace(en2,sep) for p in name.split(sep)]
 
         if not filter(None,parts):
             parts.pop()
@@ -778,7 +776,6 @@ class CompositeName(AbstractName):
         return klass(parts)
 
     parse = classmethod(parse)
-
 
 FlatSyntax = Syntax()
 
