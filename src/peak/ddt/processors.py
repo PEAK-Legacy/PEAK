@@ -24,7 +24,7 @@ class DocumentProcessor(binding.Component):
             self.processTable(table, tables)
 
     def processTable(self,table, tables):
-        name = table.rows[0].cells[0].text
+        name = table.rows[0].cells[0].text.strip()
         adapt(
             self.factories[name](self), ITableProcessor
         ).processTable(table, tables)
@@ -112,7 +112,7 @@ class ColumnProcessor(AbstractProcessor):
 
 
     def getHandler(self,text):
-        return getattr(self,text)
+        return getattr(self,text.strip())
 
 
 

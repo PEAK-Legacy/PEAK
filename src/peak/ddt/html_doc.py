@@ -25,7 +25,7 @@ def parseTags(text,tag,startAt,startBy,contentProcessor):
 
         firstClose = text.find("</"+tag, contentStart)
         if firstClose<0:
-            break
+            firstClose = startBy
 
         pos, item = contentProcessor(
             tag=tagStart, content=contentStart+1, close=firstClose

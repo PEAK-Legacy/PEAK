@@ -14,6 +14,7 @@ class ArithmeticDemo(ddt.ColumnProcessor):
     symbols = {'+':'plus','-':'minus','*':'times', '/':'divide'}
 
     def getHandler(self,text):
+        text = text.strip()
         if text in self.symbols:
             return getattr(self, self.symbols[text])
         if text.endswith("()"):
