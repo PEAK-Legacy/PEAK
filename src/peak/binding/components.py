@@ -687,7 +687,7 @@ class StructuralFeature(object):
         del self.__dict__[feature.__name__]
         feature._changed(self)
 
-    delete.verb = 'delattr'    
+    configure(delete, verb='delattr')
 
     def _changed(feature, element):
         pass
@@ -774,7 +774,7 @@ class Collection(StructuralFeature):
         del self.__dict__[feature.__name__]
         feature._changed(self)
 
-    delete.verb = 'delattr'    
+    configure(delete, verb='delattr')
 
 
     def _notifyLink(feature, element, item):

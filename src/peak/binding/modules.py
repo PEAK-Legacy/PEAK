@@ -165,18 +165,18 @@
 import sys
 from types import ModuleType
 __proceed__ = None
-__all__ = ['adviseModule', 'setupModule', '__proceed__']
+__all__ = ['adviseModule', 'setupModule', '__proceed__', 'configure']
 
 adviceMap = {}
 
 
+def configure(obj, **attrs):
 
+    """Set attributes without overwriting values defined in a derived module"""
 
-
-
-
-
-
+    for k,v in attrs.items():
+        if not hasattr(obj,k):
+            setattr(obj,k,v)
 
 
 
@@ -331,21 +331,21 @@ from TW.Utils.Code import *
 from TW.Utils.Code import BUILD_CLASS, STORE_NAME, MAKE_CLOSURE, \
     MAKE_FUNCTION, LOAD_CONST, STORE_GLOBAL, CALL_FUNCTION, IMPORT_STAR, \
     IMPORT_NAME, JUMP_ABSOLUTE, POP_TOP, ROT_FOUR, LOAD_ATTR, LOAD_GLOBAL, \
-    LOAD_CONST, ROT_TWO, LOAD_LOCALS
+    LOAD_CONST, ROT_TWO, LOAD_LOCALS, STORE_SLICE, DELETE_SLICE, STORE_ATTR, \
+    STORE_SUBSCR, DELETE_SUBSCR, DELETE_ATTR
 
 from TW.Utils.Meta import makeClass
 from sys import _getframe
+from warnings import warn_explicit
 
+class ModuleInheritanceWarning(UserWarning):
+    pass
 
-
-
-
-
-
-
-
-
-
+mutableOps = (
+    STORE_SLICE,  STORE_SLICE+1,  STORE_SLICE+2,  STORE_SLICE+3,
+    DELETE_SLICE, DELETE_SLICE+1, DELETE_SLICE+2, DELETE_SLICE+3,
+    STORE_ATTR,   DELETE_ATTR,    STORE_SUBSCR,   DELETE_SUBSCR,
+)
 
 
 
@@ -557,15 +557,15 @@ def prepForSimulation(code, path='', depth=0):
 
     spc = '    ' * depth
 
-
-
-
-
-
-
-
-
-
+    for op in mutableOps:
+        for i in idx.opcodeLocations[op]:
+            warn_explicit(
+                "Modification to mutable during initialization",
+                ModuleInheritanceWarning,
+                code.co_filename,
+                lineOf[offset[i]],
+            )
+        
 
 
 

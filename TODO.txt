@@ -6,8 +6,8 @@ Open Issues/To-Do Items
 
       * Add tests for 'adviseModule()' API
 
-      * Add checks and warnings for ambiguous re-assignments and operations
-        on mutables  (i.e. setting items or attrs), plus "safe" setattr
+      * Add checks and warnings for ambiguous re-assignments of global
+        variables and class attributes.
 
     Database
 
@@ -20,13 +20,13 @@ Open Issues/To-Do Items
 
       * Update tutorial documentation
 
-
  Ideas for 0.3 Release
 
     Dispatching
 
       * Virtual features to implement retrieving the other end of a
-        relationship from another Specialist.
+        relationship from another Specialist, and to handle rebinding to
+        records after record invalidation.
 
     SEF
 
@@ -46,6 +46,9 @@ Open Issues/To-Do Items
       * Support for field transformations and default values at RecordType
         level, e.g marshalling and type conversion.  This would be
         especially useful for LDAP.
+
+      * Support for sending and receiving remote cache invalidation
+        messages between RecordManagers.
 
     General
 
@@ -72,9 +75,6 @@ Open Issues/To-Do Items
     * Create tutorials/examples based on actual uses
 
     * Include dependencies in packaging?  Need to ask copyright owners first.
-
-
-
 
 
 
