@@ -133,7 +133,7 @@ class URLStreamFactory(object):
         instancesProvide=[naming.IStreamFactory],
     )
 
-    address = binding.Require("urllib2 URL or request")
+    address = binding.Require("urllib2 URL or request", attrName='address')
 
 
     def open(self,mode,seek=False,writable=False,autocommit=False):
