@@ -47,10 +47,13 @@ class IType(Interface):
         """Return an instance of type created based on 'aString'"""
 
     def mdl_toString(instance):
-        """Return a str() of 'instance'"""
+        """Return a str() of 'instance'; defaults to 'str' if not present"""
 
     def mdl_normalize(value):
-        """Return 'value' normalized to the type, or raise error if invalid"""
+        """Return 'value' normalized to the type, or raise error if invalid
+
+        If a type does not supply this method, features using the type
+        will accept any value."""
 
     mdl_syntax = Attribute(
         """Syntax rule for parsing/formatting this type, or None"""
@@ -61,7 +64,7 @@ class IType(Interface):
     )
 
     mdl_typeCode = Attribute(
-        """CORBA typecode for the type"""
+        """CORBA typecode for the type; if not present, 'Any' is assumed"""
     )
 
 
@@ -75,9 +78,6 @@ class IStructType(IType):
         'fieldSequence' must be an iterable object whose contents
         are the values of the features named by 'mdl_featureNames',
         in that order."""
-
-
-
 
 
 class ITypeInfo(IType):

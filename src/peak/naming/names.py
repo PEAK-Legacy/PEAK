@@ -101,20 +101,20 @@ class AbstractName(tuple):
     mdl_fromString = classmethod(mdl_fromString)
 
 
-    def mdl_toString(klass,instance):
-        return instance.format()
-
-    mdl_toString = classmethod(mdl_toString)
-
-
     def mdl_normalize(klass, value):
         return klass(value)
 
     mdl_normalize = classmethod(mdl_normalize)
 
 
-    mdl_syntax       = None       # XXX?
-    mdl_defaultValue = NOT_GIVEN
+
+
+
+
+
+
+
+
 
 
 

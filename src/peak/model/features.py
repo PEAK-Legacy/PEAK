@@ -105,9 +105,9 @@ class FeatureClass(HashAndCompare,MethodExporter):
 
     typeObject = binding.Once(typeObject)
     fromString = binding.bindTo('typeObject/mdl_fromString')
-    toString   = binding.bindTo('typeObject/mdl_toString')
+    toString   = binding.bindTo('typeObject/mdl_toString', default=str)
     fromFields = binding.bindTo('typeObject/mdl_fromFields')
-    normalize  = binding.bindTo('typeObject/mdl_normalize')
+    normalize  = binding.bindTo('typeObject/mdl_normalize', default=lambda x:x)
     sortPosn   = None
 
     def _hashAndCompare(self,d,a):
@@ -137,7 +137,7 @@ class FeatureClass(HashAndCompare,MethodExporter):
     def isReference(self,d,a):
         """Does the feature refer to a non-primitive/non-struct type?"""
         from datatypes import TCKind
-        return self.typeCode.kind==TCKind.tk_objref
+        return self.typeKind==TCKind.tk_objref
 
     isReference = binding.Once(isReference)
 
@@ -145,7 +145,7 @@ class FeatureClass(HashAndCompare,MethodExporter):
         try:
             return self.defaultValue
         except AttributeError:
-            return self.typeObject.mdl_defaultValue
+            return getattr(self.typeObject,'mdl_defaultValue',NOT_GIVEN)
 
     _defaultValue = binding.Once(_defaultValue)
 
@@ -162,7 +162,11 @@ class FeatureClass(HashAndCompare,MethodExporter):
 
 
 
-    rawTypeCode = binding.bindTo('typeObject/mdl_typeCode')
+    def rawTypeCode(self,d,a):
+        from datatypes import Any
+        return getattr(self.typeObject,'mdl_typeCode',Any)
+
+    rawTypeCode = binding.Once(rawTypeCode)
     typeKind    = binding.bindTo('typeCode/kind')
     typeCode    = binding.Once(lambda s,d,a: s.rawTypeCode.unaliased() )
 
@@ -197,10 +201,6 @@ class FeatureClass(HashAndCompare,MethodExporter):
     def __conform__(feature,protocol):
         if protocol is fmtparse.Rule:
             return feature._syntax
-
-
-
-
 
 
 class StructuralFeature(object):
