@@ -6,10 +6,10 @@ Open Issues/To-Do Items
 
       - Factor out state into separate object so timers aren't shared state
 
-      - Fix 'win32' problem (should be checking sys.platform not os.name)
-
       - Look at possible integration of peak.query and cursor formatters, in
         order to view stats as an in-memory mini-DB w/reporting.
+
+
 
 
 
