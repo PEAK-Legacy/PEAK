@@ -6,6 +6,7 @@ from cStringIO import StringIO
 from peak.api import *
 from peak.net.interfaces import IListeningSocket
 import socket
+from peak.running import options
 
 from wsgiref.simple_server import WSGIServer, WSGIRequestHandler
 
@@ -38,7 +39,6 @@ class Handler(WSGIRequestHandler):
 
 
 
-
 class WSGIServer(commands.EventDriven, WSGIServer):
 
     cgiCommand = binding.Require(
@@ -47,7 +47,7 @@ class WSGIServer(commands.EventDriven, WSGIServer):
     )
 
     fileno  = binding.Delegate('socket')
-    runInBrowser        = False   
+    runInBrowser        = False
     RequestHandlerClass = Handler
 
     socketURL = binding.Obtain(
@@ -105,12 +105,28 @@ class WSGILauncher(WSGIServer):
     runInBrowser = True
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 class Serve(commands.CGIInterpreter):
 
     usage = """
-Usage: peak serve NAME_OR_URL arguments...
+Usage: peak serve [options] NAME_OR_URL ...
 
-Run NAME_OR_URL as a CGI application in a local webserver on the port specified
+Run NAME_OR_URL as a WSGI application in a local webserver on the address given
 by the 'peak.tools.server.url' property.  The object found at the specified
 name or URL will be adapted to the 'running.IWSGIApplication' interface, and
 then run in a local web server.
@@ -118,15 +134,40 @@ then run in a local web server.
 
     cgiWrapper = WSGIServer
 
+    defaultURL = binding.Make(
+        lambda self:
+            naming.parseURL(self,
+                config.lookup(
+                    self,'peak.tools.server.url', default='tcp://localhost:0'
+                )
+            )
+    )
+
+    set_host = binding.Obtain('defaultURL/host',
+        [options.Set('-h','--host',type=str,metavar="HOST",
+            help="Host to listen on")]
+    )
+
+    set_port = binding.Obtain('defaultURL/port',
+        [options.Set('-p','--port',type=int,metavar="PORT",
+            help="Port to listen on")]
+    )
+
+    socketURL = binding.Make(
+        lambda self: "tcp://%s:%s" % (self.set_host,self.set_port),
+        offerAs = ['peak.tools.server.url']
+    )
 
 
 
-class Launch(commands.CGIInterpreter):
+
+
+class Launch(Serve):
 
     usage = """
-Usage: peak launch NAME_OR_URL arguments...
+Usage: peak launch [options] NAME_OR_URL ...
 
-Run NAME_OR_URL as a CGI application in a local webserver on the port specified
+Run NAME_OR_URL as a WSGI application in a local webserver on the address given
 by the 'peak.tools.server.url' property.  The object found at the specified
 name or URL will be adapted to the 'running.IWSGIApplication' interface, and
 then run in a local web server.
@@ -135,6 +176,7 @@ This command is similar to the 'peak serve' command, except that it also
 attempts to open the application in a web browser window.
 """
     cgiWrapper = WSGILauncher
+
 
 
 def demo_service(environ,start_response):
@@ -151,7 +193,6 @@ protocols.adviseObject(demo_service, [running.IWSGIApplication])
 
 if __name__ == '__main__':
     WSGIServer(config.makeRoot(), cgiCommand=demo_service()).run()
-
 
 
 
