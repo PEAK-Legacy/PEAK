@@ -12,9 +12,11 @@
  the corresponding name, using a lazy import.  Thus, 'from peak.api import
  binding' will get you a lazyImport of the 'peak.binding.api' module.  This
  allows you to get quick, easy access to most of the PEAK API, without complex
- import patterns, but also without a lot of namespace pollution.
+ import patterns, but also without a lot of namespace pollution.  In addition
+ to the 'api' modules, the 'peak.running.logs' module is also available as
+ 'logs', and 'peak.exceptions' is available as 'exceptions'.
 
- In addition to the lazily-imported API modules, this package also exports
+ In addition to the lazily-imported modules, 'peak.api' also exports
  the following objects for convenience in interacting with PEAK's APIs:
  
     'NOT_GIVEN' and 'NOT_FOUND' -- Singleton false values used for convenience
@@ -22,12 +24,20 @@
 
     'Items()' -- a convenience function that produces a 'dict.items()'-style
         list from a mapping and/or keyword arguments.
+
+    'LOG_*()' -- shortcut functions to call logs.LogEvent().publish() with a
+        preset priority, e.g. 'LOG_NOTICE("message",component)'
 """
 
 __all__ = [
     'NOT_GIVEN', 'NOT_FOUND', 'Items',
-    'binding', 'naming', 'model', 'config', 'running', 'storage', 'exceptions'
+    'binding', 'naming', 'model', 'config', 'running', 'logs', 'storage',
+    'exceptions',
+    'LOG_CRITICAL', 'LOG_ERROR', 'LOG_WARNING', 'LOG_NOTICE', 'LOG_INFO',
+    'LOG_DEBUG', 'LOG',
 ]
+
+
 
 from peak.binding.imports import lazyImport
 
@@ -38,11 +48,42 @@ config  = lazyImport('peak.config.api')
 running = lazyImport('peak.running.api')
 storage = lazyImport('peak.storage.api')
 exceptions = lazyImport('peak.exceptions')
+logs    = lazyImport('peak.running.logs')
+
+
+# Logging shortcuts
+
+def LOG_CRITICAL(message, parent=None, **info):
+    logs.Event(message,parent,priority=logs.PRI_CRITICAL,**info).publish()
+
+def LOG_ERROR(message, parent=None, **info):
+    logs.Event(message,parent,priority=logs.PRI_ERROR,**info).publish()
+
+def LOG_WARNING(message, parent=None, **info):
+    logs.Event(message,parent,priority=logs.PRI_WARNING,**info).publish()
+
+def LOG_NOTICE(message, parent=None, **info):
+    logs.Event(message,parent,priority=logs.PRI_NOTICE,**info).publish()
+
+def LOG_INFO(message, parent=None, **info):
+    logs.Event(message,parent,priority=logs.PRI_INFO,**info).publish()
+
+def LOG_DEBUG(message, parent=None, **info):
+    logs.Event(message,parent,priority=logs.PRI_DEBUG,**info).publish()
+
+def LOG(message, parent=None, **info):
+    logs.Event(message,parent,**info).publish()
+
+
+
+
+
+
 
 # Convenience features
 
-NOT_GIVEN = []
-NOT_FOUND = []
+NOT_GIVEN = object()
+NOT_FOUND = object()
 
 
 def Items(mapping=None, **kwargs):

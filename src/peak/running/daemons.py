@@ -1,3 +1,4 @@
+from peak.api import *
 from peak.binding.components import AutoCreated
 
 from time import time, sleep
@@ -13,10 +14,9 @@ except ImportError:
     SIGTERM = SIGINT = None
 
 
-__all__ = ['AbstractDaemon']
-
-
-
+__all__ = [
+    'AbstractDaemon', 'MultiDaemon',
+]
 
 
 
@@ -70,15 +70,15 @@ class AbstractDaemon(AutoCreated):
                 finally:
                     self.unlockMe()
 
-        except (KeyboardInterrupt, SystemExit): raise
-        #except MoveAlong,msg:      
-        #   if msg: apply(self.log,msg)
+        except (KeyboardInterrupt, SystemExit):
+            raise
+
+        #XXX except MoveAlong,msg:      
+        #XXX   if msg: apply(self.log,msg)
 
         # Log errors if any
-        #except:
-        #    self.log.ALERT(sys.exc_info())
-
-
+        except:
+            LOG_ERROR('', self, exc_info=True)
 
     HARD_LIFETIME  = 30 * 60    # Exit if this much time passes
     SOFT_LIFETIME  = 15 * 60    # How long till we exit when idle - 15 minutes default
@@ -96,7 +96,7 @@ class AbstractDaemon(AutoCreated):
         idle = self.MIN_IDLE
 
 
-        # XXX self.log.NOTICE("Beginning run")
+        LOG_NOTICE("Beginning run", self)
 
         oldsigterm = signal(SIGTERM, getsignal(SIGINT))
 
@@ -108,12 +108,12 @@ class AbstractDaemon(AutoCreated):
 
                 if time()+idle > soft_death: break
 
-                # XXX self.log.DEBUG('Sleeping for %d seconds' % idle)
+                LOG_DEBUG(('Sleeping for %d seconds' % idle), self)
                 
                 sleep(idle)
                 idle = min(idle + self.INC_IDLE, self.MAX_IDLE)
 
-            # XXX self.log.NOTICE("Finished run")
+            LOG_NOTICE("Finished run", self)
 
         finally:
             signal(SIGTERM,oldsigterm)
@@ -128,7 +128,7 @@ class AbstractDaemon(AutoCreated):
 
     def doWork(self,job):
         """Do the job; throw errors if unsuccessful"""
-        # XXX self.log.DEBUG(`job`)
+        LOG_DEBUG(`job`, self)
         return job
 
 
@@ -184,8 +184,9 @@ class MultiDaemon(AbstractDaemon):
         job=None
 
         while not job:
-            # XXX self.log.DEBUG('Checking %d of %d daemons' % (now + 1, len(daemons)))
-
+            LOG_DEBUG(('Checking %d of %d daemons' % (now + 1, len(daemons))),
+                self
+            )
             daemon = daemons[now]
             job = daemon()
             now = (now +1) % len(daemons)
@@ -200,7 +201,6 @@ class MultiDaemon(AbstractDaemon):
 
     def doWork(self, job):
         return job
-
 
 
     daemons = ()
