@@ -457,6 +457,8 @@ class StructuralFeature(object):
         if ub and len(d)>=ub:
             raise ValueError("Too many items")
 
+        feature._onLink(element,item,posn)
+
         if ub==1:
             return element._setBinding(feature.implAttr, item)
 
@@ -473,6 +475,7 @@ class StructuralFeature(object):
 
     def _unlink(feature,element,item,posn=None):
 
+        feature._onUnlink(element,item,posn)
         if not feature.isMany:
             return element._delBinding(feature.implAttr)
 
@@ -487,7 +490,32 @@ class StructuralFeature(object):
     _unlink.installIf = installIfChangeable
     _unlink.verb      = '_unlink'
 
+    def _onLink(feature,element,item,posn):
+        pass
 
+
+    def _onUnlink(feature,element,item,posn):
+        pass
+
+
+    def _setup(feature,element,value):
+
+        if feature.isMany:
+
+            p = 0
+            value = tuple(value)
+
+            for v in value:
+                feature._onLink(element,value,p)
+                p+=1
+
+        else:
+            feature._onLink(element,value,0)
+
+        return value
+
+    _setup.verb = '_setup'
+    _setup.installIf = lambda f,m: not f.isChangeable
 
 
     def insertBefore(feature, element, oldItem, newItem):
@@ -500,34 +528,6 @@ class StructuralFeature(object):
             raise ValueError("Can't insert before missing item", oldItem)
 
     insertBefore.installIf = lambda f,m: f.isOrdered and f.isChangeable
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -784,12 +784,47 @@ class Immutable(Classifier, HashAndCompare):
 
     mdl_isAbstract = True   # Immutable itself is abstract
 
+
+    def __init__(self,**__kw):
+
+        super(Immutable,self).__init__()
+        klass = self.__class__
+        d = dict([
+            (f.attrName,f.defaultValue)
+                for f in klass.mdl_features
+                    if f.defaultValue is not NOT_GIVEN
+        ])
+
+        d.update(__kw)
+
+        for k,v in d.items():
+            try:
+                f = getattr(klass,k)
+                s = f._setup
+            except AttributeError:
+                raise TypeError(
+                    "%s constructor has no keyword argument %s" %
+                    (klass, k)
+                )
+
+            v = s(self,v)
+
+            if f.attrName == f.implAttr or not hasattr(klass,f.implAttr):
+                self.__dict__[f.implAttr] = v
+            else:
+                # It's a slot, call the descriptor directly to set its value
+                getattr(klass,f.implAttr).__set__(self,v)
+
+
+
+
     def _hashAndCompare(s,d,a):
         return tuple([
             getattr(s,n,None) for n in s.__class__.mdl_featureNames
         ])
 
     _hashAndCompare = binding.Once(_hashAndCompare)
+
 
     def setParentComponent(self, parentComponent, componentName=None):
         if parentComponent is not None or componentName is not None:
@@ -809,6 +844,53 @@ class Immutable(Classifier, HashAndCompare):
 
     def __setattr__(self,attr,value):
         raise TypeError("Immutable object", self)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    def _getBinding(self,attr,default=None):
+
+        try:
+            return self.__dict__[attr]
+
+        except AttributeError:
+            return getattr(self.__class__,attr).__get__(self)
+
+        except KeyError:
+            f = getattr(self.__class__,attr,None)
+
+            if not f or IFeature.isImplementedBy(f):
+                return default
+
+            try:
+                return f.__get__(self)
+            except AttributeError:
+                return default
+        
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

@@ -23,7 +23,6 @@ class UMLTest(TestCase):
         assert not pkg.ownedElements
         pkg.addOwnedElements(Class)
         v = pkg.ownedElements
-
         assert len(v)==1
         assert v[0] is Class
 
@@ -32,12 +31,13 @@ class UMLTest(TestCase):
         pkg = self.pkg
         oe = pkg.ownedElements
         pkg.removeOwnedElements(oe[0])
-
         assert len(oe)==0
 
-
-
-
+    def checkImm(self):
+        mr = UMLClass.MultiplicityRange(lower=0,upper=-1)
+        m = UMLClass.Multiplicity(ranges=[mr])
+        assert m.ranges[0].lower==0
+        assert UMLClass.Multiplicity().ranges==[]
 
 class QueryTests(TestCase):
 
