@@ -295,7 +295,7 @@ class TransactionComponent(binding.AutoCreated, AbstractParticipant):
     
     def txnSvc(self,d,a):
 
-        """Join transaction when 'txnSvc' attribute is accessed"""
+        """Our TransactionService (auto-joined when attribute is accessed)"""
 
         ts = binding.findUtility(ITransactionService)
         ts.join(self)
@@ -303,7 +303,7 @@ class TransactionComponent(binding.AutoCreated, AbstractParticipant):
         
         return ts
 
-    txnSvc = binding.Once(ITransactionService)
+    txnSvc = binding.Once(txnSvc)
 
 
     def finishTransaction(self, txnService, committed):
