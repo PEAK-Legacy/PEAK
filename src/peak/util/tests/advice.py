@@ -126,7 +126,8 @@ class AdviceTests(TestCase):
         # Create a new root metaclass; this is akin to an ExtensionClass,
         # one of the Don Beaudry metaclasses, or 'type' itself.
 
-        class _type(type): pass
+        class _boot(type): pass
+        class _type(_boot): __metaclass__ = _boot
         _type.__class__ = _type
 
         try:
