@@ -253,7 +253,12 @@ class IRackImplementation(Interface):
     defaultClass = Attribute("Default class used for 'newItem()' method")
 
     def ghost(oid, state=None):
-        """Return a ghost of appropriate class, based on 'oid' and 'state'"""
+        """Return a ghost of appropriate class, based on 'oid' and 'state'
+
+        Note that 'state' will be loaded into the returned object via its
+        '__setstate__()' method.  If 'state' is 'None', the returned object's
+        '_p_deactivate()' method will be called instead."""
+
 
     def load(oid):
         """Load & return the state for 'oid', suitable for '__setstate__()'"""
@@ -269,11 +274,6 @@ class IRackImplementation(Interface):
 
     def thunk(ob):
         """Hook for implementing cross-database "thunk" references"""
-
-
-
-
-
 
 
 

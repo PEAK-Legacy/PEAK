@@ -5,7 +5,6 @@ from transactions import TransactionComponent
 __all__ = ['AbstractRack']
 
 
-
 class AbstractRack(TransactionComponent):
 
     __implements__ = IRack
@@ -14,29 +13,30 @@ class AbstractRack(TransactionComponent):
 
     def __getitem__(self, oid, state=None):
 
+        if self.resetStatesAfterTxn:
+            # must always be used in a txn
+            self.txnSvc
+        
         ob = self.cache.get(oid,self)
 
         if ob is not self:
             return ob
 
         ob = self.ghost(oid,state)
-        ob._p_oid = oid
+
         ob._p_jar = self
+        ob._p_oid = oid
+
+        if state is None:
+            ob._p_deactivate()
+        else:
+            ob.__setstate__(state)
+
         self.cache[oid] = ob
 
         return ob
 
     preloadState = __getitem__
-
-
-
-
-
-
-
-
-
-
 
 
     def oidFor(self, ob):
@@ -70,6 +70,7 @@ class AbstractRack(TransactionComponent):
         ob.__setstate__(self.defaultState(ob))
         ob._p_jar = self
 
+        self.register(ob)
         return ob
 
 
@@ -77,7 +78,6 @@ class AbstractRack(TransactionComponent):
 
     dirty = binding.New(dict)
     saved = binding.New(dict)
-
 
 
     def flush(self, ob=None):
@@ -134,11 +134,7 @@ class AbstractRack(TransactionComponent):
         if klass is None:
             raise NotImplementedError
 
-        ob = klass()
-
-        if state is not None:
-            ob.__setstate__(state)
-
+        return klass()
 
     def load(self, oid):
         raise NotImplementedError
@@ -162,9 +158,18 @@ class AbstractRack(TransactionComponent):
 
 
 
+
+
+
+
     # Persistence.IPersistentDataManager methods
 
     def setstate(self, ob):
+
+        if self.resetStatesAfterTxn:
+            # must always be used in a txn
+            self.txnSvc
+
         oid = ob._p_oid
         assert oid is not None
         ob.__setstate__(self.load(oid))
@@ -192,11 +197,6 @@ class AbstractRack(TransactionComponent):
 
     def mtime(self, ob):
         pass    # return None
-
-
-
-
-
 
 
 
@@ -232,7 +232,7 @@ class AbstractRack(TransactionComponent):
 
             set.clear()
 
-    def finishTransaction(self, txnService):
+    def finishTransaction(self, txnService, committed):
 
         if self.resetStatesAfterTxn:
 

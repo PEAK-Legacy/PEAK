@@ -3,10 +3,11 @@
 from unittest import TestCase, makeSuite, TestSuite
 from peak.api import *
 from Interface import Interface
+from peak.util.MiniTable import Table
+from Persistence import Persistent
 
 
 class TxnStateTest(TestCase):
-
 
     def setUp(self):
         self.ts = storage.TransactionService()
@@ -36,7 +37,6 @@ class TxnStateTest(TestCase):
 
         ts.abort()
         assert self.log == []
-
 
 
     def checkStampAndActive(self):
@@ -203,8 +203,6 @@ class VotingTest(TestCase):
 
 
 
-from peak.util.MiniTable import Table
-
 class TxnTable(storage.TransactionComponent):
 
     stableState = ()
@@ -244,6 +242,8 @@ class TxnTable(storage.TransactionComponent):
         self.txnSvc
         self.table.SET(whereItems, setItems)
 
+
+
 class Harness(binding.Component):
 
     ts = binding.New(
@@ -255,33 +255,33 @@ class Harness(binding.Component):
         colNames = 'a', 'b'
         
 
+    class testRack(storage.AbstractRack):
+
+        table = binding.bindTo('sampleTable')
+        
+        class defaultClass(Persistent):
+            pass
+
+        def load(self, oid):
+
+            rows = self.table.SELECT(Items(a=oid))
+
+            if rows:
+                return dict(rows[0].items())
+            else:
+                raise KeyError, oid
 
 
+        def save(self, ob):
+            self.table.SET(Items(a=ob._p_oid),Items(b=ob.b))
 
 
+        def new(self,ob):
+            self.table.INSERT(Items(a=ob.a,b=ob.b))
+            return ob.a
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+        def defaultState(self,ob):
+            return {}
 
 
 
@@ -326,8 +326,90 @@ class TableTest(TestCase):
         self.ts.abort()
         assert self.table.dump()==[(1,2)]
         
+class RackTest(TestCase):
+
+    def setUp(self):
+        self.harness = Harness()
+        self.table = self.harness.sampleTable
+        self.ts    = self.harness.ts
+        self.rack  = self.harness.testRack
+
+    def _addData(self):
+        self.ts.begin()
+        self.table.INSERT(Items(a=1,b=2))
+    
+    def checkExistence(self):
+        self._addData()
+        ob = self.rack[1]
+        assert ob.b==2
+        self.ts.abort()
+        self.assertRaises(KeyError, lambda: ob.b)
+
+
+    def checkFlush(self):
+
+        self._addData()
+        assert self.table.dump()==[(1,2)]
+        self.ts.commit()
+        
+        self.ts.begin()
+        ob = self.rack[1]
+        ob.b = 4
+        self.rack.flush()
+        assert self.table.dump()==[(1,4)]
+
+        self.ts.abort()
+        assert self.table.dump()==[(1,2)]
+
+
+
+
+
+
+
+    def checkModify(self):
+        self._addData()
+        ob = self.rack[1]
+        ob.b = 4
+        assert self.table.dump()==[(1,2)]
+        self.ts.commit()
+        assert self.table.dump()==[(1,4)]
+
+
+    def checkNew(self):
+        self.ts.begin()
+        ob = self.rack.newItem()
+        ob.a = 1
+        ob.b = 2
+        assert self.table.dump()==[]
+        self.ts.commit()
+        assert self.table.dump()==[(1,2)]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 TestClasses = (
-    TxnStateTest, VotingTest, TableTest
+    TxnStateTest, VotingTest, TableTest, RackTest
 )
 
 
