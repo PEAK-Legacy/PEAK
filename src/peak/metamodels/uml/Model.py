@@ -39,7 +39,7 @@ MetaModel = MMX.load(mmx,plurals,cache,name='UML_MetaModel')
 
 
 
-class UMLModel(MetaModel):  # XXX needs StructuralModel, too
+class UMLModel:
 
     class Integer:
 

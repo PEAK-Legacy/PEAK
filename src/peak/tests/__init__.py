@@ -9,9 +9,9 @@ def suite():
     from unittest import TestSuite
     s = []
     
-    import Aspects, SOX, StructuralModel
+    import Components, SOX, StructuralModel
     
-    for t in Aspects, SOX, StructuralModel:
+    for t in Components, SOX, StructuralModel:
         s.append(t.suite())
 
     return TestSuite(s)

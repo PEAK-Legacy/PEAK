@@ -1,5 +1,4 @@
 from TW.SOX import Node, Document, load
-from TW.Aspects import Aspect
 
 class XMINode(Node):
 
@@ -26,6 +25,7 @@ class XMIJunk(XMINode):
             
     def _finish(self):
         return self
+
 
 
 
@@ -80,7 +80,7 @@ class XMIDocument(Document):
 
 
 
-class XMIReading(Aspect):
+class XMIReading:
 
     class attribute_feature:
     
