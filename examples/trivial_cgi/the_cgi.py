@@ -1,4 +1,5 @@
 from peak.api import *
+from types import ModuleType
 
 class DemoCGI(binding.Component):
 
@@ -25,17 +26,17 @@ class DemoCGI(binding.Component):
 
         print >>output
 
-        print >>output, "Modules Loaded"
-        print >>output, "--------------"
-
         import sys
         names = dict(
             [(mod.__name__,None)
-                for mod in sys.modules.values() if mod is not None
+                for mod in sys.modules.values() if type(mod) is ModuleType
             ]
         ).keys()
 
         names.sort()
+
+        print >>output, "Modules Loaded (%d total)" % len(names)
+        print >>output, "--------------------------"
 
         for n in names:
             print >>output, n
