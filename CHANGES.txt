@@ -1,5 +1,9 @@
 Fixes and Enhancements since Version 0.5 alpha 3
 
+ - 'security.allow()' is now DEPRECATED; please use 'binding.metadata()'
+   instead.  (There is no change to the calling signature, but
+   'binding.metadata' accepts any metadata, not just permissions.)
+
  - Added 'peak.running.options', a new option-parsing framework that extends
    'optparse' to support the PEAK 'commands' framework.  Command instances
    can now refer to 'self.parsed_args' to find their non-option arguments,
