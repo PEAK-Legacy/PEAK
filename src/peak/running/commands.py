@@ -10,13 +10,13 @@ from types import ClassType, FunctionType
 __all__ = [
     'AbstractCommand', 'AbstractInterpreter', 'IniInterpreter', 'EventDriven',
     'ZConfigInterpreter', 'Bootstrap', 'rerunnableAsFactory',
-    'callableAsFactory', 'appAsFactory', 'InvocationError',
+    'callableAsFactory', 'appAsFactory', 'InvocationError', 'CGICommand',
+    'CGIInterpreter', 'FastCGIAcceptor',
 ]
 
 
 class InvocationError(Exception):
     """Problem with command arguments or environment"""
-
 
 
 
@@ -564,6 +564,252 @@ class EventDriven(AbstractCommand):
 
 
 
+
+
+
+
+
+
+
+
+class FastCGIAcceptor(binding.Component):
+
+    """Accept FastCGI connections"""
+
+    command  = binding.requireBinding("IRerunnableCGI command object")
+
+    mainLoop = binding.bindTo(IMainLoop)
+    ping     = binding.bindTo('mainLoop/activityOccurred')
+
+    fcgi     = binding.bindTo('import:fcgiapp')
+    accept   = binding.bindTo('fcgi/Accept')
+    finish   = binding.bindTo('fcgi/Finish')
+
+
+    def fileno(self):
+        return 0    # FastCGI is always on 'stdin'
+
+
+    def doRead(self):
+
+        self.ping()
+
+        i,o,e,env = self.accept()
+
+        try:
+            self.runCGI(i,o,e,dict(env))
+
+        finally:
+            self.finish()
+            self.ping()
+
+
+
+
+
+
+
+
+
+
+
+class CGICommand(EventDriven):
+
+    """Run CGI/FastCGI in an event-driven loop
+
+    If the 'fcgiapp' module is available and 'sys.stdin' is a socket, this
+    command will listen for FastCGI connections and process them as they
+    arrive.  Otherwise, it will assume that it is being run as a CGI, and
+    use its environment attributes as the environment for the CGI command.
+
+    Note that if running in CGI mode, a 'CGICommand' will exit its reactor
+    loop immediately upon completion of the request, without running any
+    subsequent scheduled events, unless 'os.fork()' is available and
+    the 'forkAfterCGI' parameter is true (it defaults to false), in which
+    case the process will fork and finish out one reactor iteration.
+
+    To use this class, you must define the value of 'cgiCommand', which must
+    be an 'IRerunnableCGI'.
+    """
+
+    cgiCommand   = binding.requireBinding(
+        "IRerunnableCGI to invoke on each hit", adaptTo = IRerunnableCGI
+    )
+
+    forkAfterCGI = False
+
+    reactor      = binding.bindTo(IBasicReactor)
+    newAcceptor  = FastCGIAcceptor
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    def isFastCGI(self):
+
+        """Check for 'fcgiapp' and whether 'sys.stdin' is a listener socket"""
+
+        try:
+            import fcgiapp
+        except ImportError:
+            return False    # Assume no FastCGI if module not present
+
+        import socket, sys
+
+        for family in (socket.AF_UNIX, socket.AF_INET):
+            try:
+                s=socket.fromfd(sys.stdin.fileno(),family,socket.SOCK_STREAM)
+                s.getsockname()
+            except:
+                pass
+            else:
+                return True
+
+        return False
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    def detatchAfterCGI(self):
+
+        try:
+            from os import fork
+        except ImportError:
+            # We can't fork; force an immediate shutdown
+            self.reactor.stop()
+            return
+
+        # Flush output to web server
+        self.stdout.flush()
+        self.stderr.flush()
+
+        if fork():
+            # Parent process; shutdown and exit
+            self.reactor.stop()
+
+        else:
+            # Child process; close file handles and proceed
+            self.stdin.close()
+            self.stdout.close()
+            self.stderr.close()
+
+            # Schedule to exit after next iteration
+            self.reactor.callLater(0, self.reactor.stop)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    def __setupCGI(self, d, a):
+
+        if self.isFastCGI():
+
+            self.reactor.addReader(
+                self.newAcceptor(command=self.command)
+            )
+
+        else:
+            # Setup CGI
+            self.reactor.callLater(
+                0, self.command.runCGI,
+                self.stdin, self.stdout, self.stderr, self.environ, self.argv
+            )
+
+            if self.forkAfterCGI:
+                # Schedule fork
+                self.reactor.callLater(0, self.detatchAfterCGI)
+
+            else:
+                # Schedule straight shutdown
+                self.reactor.callLater(0, self.reactor.stop)
+
+
+            # Disable the task queue immediately, so that tasks won't run
+            # before the main CGI process, but schedule it to be re-enabled
+            # afterwards.
+
+            tq = self.lookupComponent(ITaskQueue)
+            tq.disable()
+            self.reactor.callLater(0, tq.enable)
+
+
+    __setupCGI = binding.whenAssembled(__setupCGI)
+
+
+
+
+
+
+
+class CGIInterpreter(CGICommand):
+
+    """Run an application as a CGI, by adapting it to IRerunnableCGI"""
+
+    def cgiCommand(self, d, a):
+
+        if len(self.argv)<2:
+            raise InvocationError("missing argument(s)")
+
+        name = self.argv[1]
+
+        if not naming.URLMatch(name):
+            name = "config:peak.running.shortcuts.%s/" % name
+
+        try:
+            ob = self.lookupComponent(name, suggestParent=False)
+        except exceptions.NameNotFound, v:
+            raise InvocationError("Name not found: %s" % v)
+
+        # Is it a component factory?  If so, try to instantiate it first.
+        factory = adapt(ob, binding.IComponentFactory, None)
+        if factory is ob:   # XXX ???
+            ob = factory(self, 'cgi')
+
+        cgi = adapt(ob, IRerunnableCGI, None)
+        if cgi is not None:
+            return cgi
+
+        raise InvocationError(
+            "Can't convert", ob, "to CGI; found at", name
+        )
+
+    cgiCommand = binding.Once(cgiCommand)
 
 
 

@@ -2,6 +2,11 @@ Fixes and Enhancements since Version 0.5 alpha 2
 
  Changed, Enhanced, or Newly Deprecated Features
 
+ - CGI support has been moved from 'peak.running.zpublish' into
+   'peak.running.commands' (for "raw" CGI/FastCGI) and 'peak.web' (for the
+   PEAK high-level publishing framework).  You can use 'peak CGI someName' to
+   adapt 'someName' to a 'running.IRerunnableCGI' and run it as a CGI/FastCGI.
+
  - There is now a 'peak.security' package, available from 'peak.api' as
    'security'.  It provides permission management functions: you can define
    abstract permissions by subclassing 'security.Permission', then create

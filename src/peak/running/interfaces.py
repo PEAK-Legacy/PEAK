@@ -11,7 +11,7 @@ __all__ = [
 
     'IExecutable', 'ICmdLineAppFactory', 'ICmdLineApp', 'IRerunnable',
 
-    'IPeriodicTask', 'ITaskQueue', 'IMainLoop',
+    'IPeriodicTask', 'ITaskQueue', 'IMainLoop', 'IRerunnableCGI',
 
     'IAdaptiveTask', 'IAdaptiveTaskSPI', 'ILock',
 
@@ -132,6 +132,13 @@ class IRerunnable(IExecutable):
         """Perform function and return exit code"""
 
 
+class IRerunnableCGI(Interface):
+
+    """Like an IRerunnable, but specifically for CGI"""
+
+    def runCGI(stdin,stdout,stderr,environ,argv=[]):
+        """Perform function and return exit code"""
+
 
 class IPeriodicTask(Interface):
 
@@ -152,13 +159,6 @@ class IPeriodicTask(Interface):
 
     def __cmp__(other):
         """Compare to another daemon on the basis of priority"""
-
-
-
-
-
-
-
 
 
 
@@ -435,7 +435,7 @@ class ILogger(Interface):
 
     def getEffectiveLevel(lvl):
         """Get minimum priority level required for messages to be accepted"""
-        
+
     def debug(msg, *args, **kwargs):
         """Log 'msg' w/level DEBUG"""
 
