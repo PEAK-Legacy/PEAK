@@ -244,15 +244,15 @@ class Context:
 
     allow() # XXX needed to jumpstart permission facility
 
-    def view_protocol(self):
+    def viewHandler(self):
         vs = IViewService(self.current,None)
         if vs is not None:
-            return vs.lookupProtocol
+            return vs.viewHandler
         if self.previous is None:
-            return {}.get
-        return self.previous.view_protocol
+            return lambda name,ob,default=None: default
+        return self.previous.viewHandler
             
-    view_protocol = binding.Make(view_protocol)
+    viewHandler = binding.Make(viewHandler)
     
 
 class StartContext(Context):
@@ -328,11 +328,9 @@ def traverseItem(ctx, ob, ns, name, qname, default=NOT_GIVEN):
 
 def traverseView(ctx, ob, ns, name, qname, default=NOT_GIVEN):
 
-    p = ctx.view_protocol(name)
-    if p is not None:
-        target, handler = adapt(ob,p,(NOT_FOUND,NOT_FOUND))
-        if handler is not NOT_FOUND:
-            return handler(ctx, target, ns, name, qname, default)
+    handler = ctx.viewHandler(name,ob)
+    if handler is not None:
+        return handler(ctx, ob, ns, name, qname, default)
 
     if default is NOT_GIVEN:
         raise errors.NotFound(ctx,qname,ob)
@@ -351,6 +349,8 @@ def traverseDefault(ctx, ob, ns, name, qname, default=NOT_GIVEN):
             return traverseView(ctx,ob,ns,name,qname,default)
 
     return loc
+
+
 
 
 

@@ -10,7 +10,7 @@ __all__ = [
     'IDOMletState', 'IHTTPHandler', 'IHTTPApplication', 'INamespaceHandler',
     'IDOMletNode',    'IDOMletNodeFactory', 'IPlace', 'ITraversalContext',
     'IDOMletElement', 'IDOMletElementFactory', 'ISkin', 'IPolicyInfo',
-    'IViewTarget', 'IConfigurableLocation', 'IViewProtocol', 'IViewService',
+    'IViewTarget', 'IConfigurableLocation', 'IViewService',
     'VIEW_NAMES', 'TEMPLATE_SCHEMA', 'SITEMAP_SCHEMA', 'LOCATION_ID',
 ]
 
@@ -56,16 +56,10 @@ class IAuthService(Interface):
         """Return a user object for the given WSGI 'environ'"""
 
 
-class IViewProtocol(protocols.IOpenProtocol):
-    """A protocol used to register views of a particular name"""
-
-    view_name = Attribute("The name of the view this protoocol is for")
-
-
 class IViewService(Interface):
-    
-    def lookupProtocol(name):
-        """Return an 'IViewProtocol' for looking up view 'name'"""
+
+    def viewHandler(name,ob,default=None):
+        """Return an 'INamespaceHandler' for obtaining view 'name' on 'ob'"""
 
     def registerView(target,name,handler):
         """Register 'handler' to implement view 'name' for 'target'
@@ -76,7 +70,13 @@ class IViewService(Interface):
         """
 
     def registrationProtocol(name):
-        """Return an 'IViewProtocol' for registering views of 'name'"""
+        """Return a protocol for registering views of 'name'"""     # XXX
+
+
+
+
+
+
 
 
 
@@ -158,8 +158,8 @@ class ITraversalContext(IInteraction):
     def getResource(path):
         """Return the named resource"""
 
-    def view_protocol(viewname,default=None):
-        """Return the 'IViewProtocol' for 'viewname', or 'default'"""
+    def viewHandler(name,ob,default=None):
+        """Return an 'INamespaceHandler' for obtaining view 'name' on 'ob'"""
 
 
     def shift():

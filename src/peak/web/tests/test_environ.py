@@ -298,13 +298,6 @@ class TestNamespaces(TestCase):
         self.failUnless(res.current is ctx.skin)
         self.invokeHandler(ctx,web.traverseResource,RESOURCE_NS+"xyz",fail=1)
 
-    def testRegisteredView(self):
-        p = self.app.registrationProtocol('foo')
-        ctx = self.policy.newContext().childContext('x',123)
-        self.failUnless(ctx.view_protocol('foo') is p)
-        ctx = ctx.clone(current="123")
-        ctx = ctx.clone(current=[])
-
     def testTraverseView(self):
         ctx = self.policy.newContext().childContext('x',123)
         for handler in web.traverseView, web.traverseDefault:
@@ -320,6 +313,13 @@ class TestNamespaces(TestCase):
         self.failUnless(res.skin is self.foo_skin)
         self.assertEqual(res.rootURL, ctx.rootURL+'/++skin++foo')
         self.invokeHandler(ctx, web.traverseSkin, "++skin++"+NO_SUCH_NAME,fail=1)
+
+
+
+
+
+
+
 
 
 

@@ -238,20 +238,14 @@ class Location(Place,binding.Configurable):
         self.registerProvider(LOCATION_ID(location_id),config.Value(path))
 
 
-
-
-
+    def addContainer(self,container,permissionNeeded=None):
+        binding.suggestParentComponent(self,None,container)
+        self.containers.append((permissionNeeded,container))
 
 
 
     def registerView(self,target,name,handler):
         if target is None:
-            try:
-                self.registrationProtocol.im_func(
-                    self.getParentComponent(),name
-                )    # XXX!!!
-            except AlreadyRead:
-                pass
             self.local_views[name] = handler
         else:
             self.have_views = True
@@ -259,29 +253,35 @@ class Location(Place,binding.Configurable):
                 self.registrationProtocol(name), lambda ob:(ob,handler)
             )
 
-    def addContainer(self,container,permissionNeeded=None):
-        binding.suggestParentComponent(self,None,container)
-        self.containers.append((permissionNeeded,container))
-
-    def __conform__(self,proto):
-        p = IViewProtocol(proto,None)
-        if p is not None and p.view_name in self.local_views:
-            return self, self.local_views[p.view_name]
-
-
-    def lookupProtocol(self,name,default=None):
-        return VIEW_NAMES.of(self).get(name,default)
-
 
     def registrationProtocol(self,name):
-        parents = list(binding.iterParents(self));parents.reverse()
-        key = str(VIEW_NAMES+'.'+name)
-        for c in parents:
-            if config.IConfigurable(c,None) is not None:
-                proto = config.registeredProtocol(c,key)
-        proto.view_name = name
-        protocols.adviseObject(proto,[IViewProtocol])
-        return proto
+        parent = config.parentProviding(
+            self.getParentComponent(), IViewService, None
+        )
+
+        if parent is not None:
+            parent.registrationProtocol(name)   # force it to register first
+
+        return config.registeredProtocol(self,str(VIEW_NAMES+'.'+name))
+
+
+    def viewHandler(self,name,ob,default=None):
+        if ob is self and name in self.local_views:
+            return self.local_views[name]
+
+        p = VIEW_NAMES.of(self).get(name,None)
+        if p is not None:
+            target, handler = adapt(ob,p,(NOT_FOUND,NOT_FOUND))
+            if handler is not NOT_FOUND:
+                return lambda ctx,ob,ns,nm,qname,default=NOT_GIVEN: (
+                    handler(ctx, target, ns, nm, qname, default)
+                )
+        return default
+
+
+
+
+
 
 
 
