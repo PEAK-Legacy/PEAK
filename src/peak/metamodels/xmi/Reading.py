@@ -171,11 +171,6 @@ class XMINode(object):
         self.index[Id] = self
         return Id
 
-    def getListId(self):
-        Id = id(self),
-        self.index[Id] = self
-        return Id
-        
     def getRef(self):
         atts = self.attrs
         if 'xmi.uuidref' in atts:
@@ -199,6 +194,11 @@ class XMINode(object):
             f = node.findNode(name)
             if f is not None:
                 return f
+
+
+
+
+
 
 
 
@@ -256,7 +256,7 @@ class XMI_DM(storage.EntityDM):
 
 
     def ghost(self, oid, state=None):
-        if len(oid)<2:
+        if oid==():
             return model.PersistentQuery()
         klass = self.getClass(self.index[oid]._name)
         return klass()
@@ -289,12 +289,10 @@ class XMI_DM(storage.EntityDM):
         
         target = self.index[oid]
 
-        if len(oid)<2:
+        if oid==():
             return [
-                self[node.getRef()]
-                    for node in target.subNodes if not node.isExtension
+                self[n.getRef()] for n in target.subNodes if not n.isExtension
             ]
-            
         
         d = {}; klass = ob.__class__
         
@@ -304,13 +302,15 @@ class XMI_DM(storage.EntityDM):
                 continue
 
             f = self.getFeature(klass, node._name)
-            if f is None:
-                continue
+            if f is None: continue
 
             if model.IValue.isImplementedBy(f):
                 d[f.attrName] = node.getValue()
             else:
-                d[f.attrName] = model.QueryLink(self[node.getListId()])
+                d[f.attrName] = [
+                    self[n.getRef()]
+                        for n in node.subNodes if not n.isExtension
+                ]
 
         coll = target.parent
         if coll is None: return d
