@@ -4,11 +4,8 @@ from __future__ import generators
 from peak.api import *
 from kjbuckets import *
 from peak.util.imports import importObject
-from peak.model.datatypes import Name, String, Boolean, Integer, \
-    UnlimitedInteger, TypeCode
 
 __all__ = [
-    'Name', 'String', 'Boolean', 'Integer', 'UnlimitedInteger',
     'AnnotationType', 'DependencyKind', 'FormatType', 'CONTAINER_DEP',
     'CONTENTS_DEP', 'SIGNATURE_DEP', 'CONSTRAINED_ELEMENTS_DEP',
     'SPECIALIZATION_DEP', 'IMPORT_DEP', 'TYPE_DEFINITION_DEP',
@@ -20,7 +17,7 @@ __all__ = [
     'IllformedExternalizedObject',
 ]
 
-AnnotationType = DependencyKind = FormatType = String
+AnnotationType = DependencyKind = FormatType = model.String
 
 
 CONTAINER_DEP = 'container'
@@ -39,23 +36,26 @@ ALL_DEP = 'all'
 _readers = PropertyName('peak.metamodels.mof1.3.readers.*')
 _writers = PropertyName('peak.metamodels.mof1.3.writers.*')
 
+
+
+
 class MultiplicityType(model.DataType):
 
     class lower(model.structField):
         sortPosn = 1
-        referencedType = Integer
+        referencedType = model.Integer
 
     class upper(model.structField):
         sortPosn = 2
-        referencedType = UnlimitedInteger
+        referencedType = model.UnlimitedInteger
 
     class isOrdered(model.structField):
         sortPosn = 3
-        referencedType = Boolean
+        referencedType = model.Boolean
 
     class isUnique(model.structField):
         sortPosn = 4
-        referencedType = Boolean
+        referencedType = model.Boolean
 
 
 
@@ -109,7 +109,7 @@ class VerifyResultKind(model.Enumeration):
 class ViolationType(model.DataType):
 
     class errorKind(model.structField):
-        referencedType = String
+        referencedType = model.String
 
     class elementInError(model.structField):
         referencedType = 'ModelElement'
@@ -118,7 +118,7 @@ class ViolationType(model.DataType):
         referencedType = model.PrimitiveType    # XXX !
 
     class errorDescription(model.structField):
-        referencedType = String
+        referencedType = model.String
 
 
 import __builtin__  # Avoid confusion with MOF131.Exception during reload()
@@ -167,7 +167,7 @@ class ModelElement(model.Element):
     mdl_isAbstract = True
 
     class name(model.Attribute):
-        referencedType = Name
+        referencedType = model.Name
 
     class annotation(model.Attribute):
         referencedType = AnnotationType
@@ -417,15 +417,15 @@ class GeneralizableElement(Namespace):
         defaultValue = VisibilityKind.public_vis
 
     class isAbstract(model.Attribute):
-        referencedType = Boolean
+        referencedType = model.Boolean
         defaultValue = False
 
     class isRoot(model.Attribute):
-        referencedType = Boolean
+        referencedType = model.Boolean
         defaultValue = False
 
     class isLeaf(model.Attribute):
-        referencedType = Boolean
+        referencedType = model.Boolean
         defaultValue = False
 
 
@@ -543,7 +543,7 @@ class Import(ModelElement):
         defaultValue = VisibilityKind.public_vis
 
     class isClustered(model.Attribute):
-        referencedType = Boolean
+        referencedType = model.Boolean
         defaultValue = False
 
     class importedNamespace(model.Attribute):
@@ -561,7 +561,7 @@ class Constraint(ModelElement):
         referencedType = model.PrimitiveType    # XXX 'Any'
 
     class language(model.Attribute):
-        referencedType = String
+        referencedType = model.String
 
     class evaluationPolicy(model.Attribute):
         referencedType = EvaluationKind
@@ -580,7 +580,7 @@ class Tag(ModelElement):
         super(Tag,self)._visitDependencies(visitor)
 
     class tagId(model.Attribute):
-        referencedType = String
+        referencedType = model.String
 
     class values(model.Attribute):
         referencedType = model.PrimitiveType  # XXX 'Any'
@@ -664,7 +664,7 @@ class Classifier(GeneralizableElement):
 class Association(Classifier):
 
     class isDerived(model.Attribute):
-        referencedType = Boolean
+        referencedType = model.Boolean
         defaultValue = False
 
 
@@ -705,22 +705,22 @@ class DataType(Classifier):
 
 
     class typeCode(model.Attribute):
-        referencedType = TypeCode
+        referencedType = model.TypeCode
 
     class supertypes(model.Sequence):
         upperBound = 0  # no supertypes allowed
 
 
     class isRoot(model.structField):
-        referencedType = Boolean
+        referencedType = model.Boolean
         defaultValue = True
 
     class isLeaf(model.structField):
-        referencedType = Boolean
+        referencedType = model.Boolean
         defaultValue = True
 
     class isAbstract(model.structField):
-        referencedType = Boolean
+        referencedType = model.Boolean
         defaultValue = False
 
 
@@ -734,7 +734,7 @@ class Class(Classifier):
     )
 
     class isSingleton(model.Attribute):
-        referencedType = Boolean
+        referencedType = model.Boolean
         defaultValue = False
 
 
@@ -787,7 +787,7 @@ class BehavioralFeature(Namespace, Feature):
 class Operation(BehavioralFeature):
 
     class isQuery(model.Attribute):
-        referencedType = Boolean
+        referencedType = model.Boolean
         defaultValue = False
 
 
@@ -870,11 +870,11 @@ class AssociationEnd(TypedElement):
         referencedType = AggregationKind
 
     class isNavigable(model.Attribute):
-        referencedType = Boolean
+        referencedType = model.Boolean
         defaultValue = True
 
     class isChangeable(model.Attribute):
-        referencedType = Boolean
+        referencedType = model.Boolean
         defaultValue = True
 
     def otherEnd(self):
@@ -910,14 +910,14 @@ class StructuralFeature(Feature,TypedElement):
         referencedType = MultiplicityType
 
     class isChangeable(model.Attribute):
-        referencedType = Boolean
+        referencedType = model.Boolean
         defaultValue = True
 
 
 class Attribute(StructuralFeature):
 
     class isDerived(model.Attribute):
-        referencedType = Boolean
+        referencedType = model.Boolean
         defaultValue = False
 
 

@@ -168,7 +168,7 @@ from weakref import WeakValueDictionary
 from Persistence import Persistent
 from xml.sax import saxutils
 from types import StringTypes
-from peak.model.datatypes import TCKind, SimpleTC, Boolean, TypeCode
+from peak.model.api import TCKind, SimpleTC, Boolean, TypeCode
 
 
 _any_converters = {

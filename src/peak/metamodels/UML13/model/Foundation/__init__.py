@@ -7,7 +7,6 @@ from peak.util.imports import lazyModule as _lazy
 
 _model               = _lazy('peak.model.api')
 _config              = _lazy('peak.config.api')
-_datatypes           = _lazy('peak.model.datatypes')
 
 Data_Types           = _lazy(__name__, 'Data_Types')
 Core                 = _lazy(__name__, 'Core')

@@ -42,7 +42,6 @@
 from __future__ import generators
 
 from peak.api import *
-from peak.model.datatypes import TCKind, UnlimitedInteger, basicTypes
 from peak.util.IndentedStream import IndentedStream
 from cStringIO import StringIO
 from peak.util.advice import advice
@@ -61,6 +60,7 @@ class oncePerObject(advice):
         __args[0].objectsWritten[__args[1]]=True
 
         return self._func(*__args,**__kw)
+
 
 
 
@@ -346,7 +346,6 @@ from peak.util.imports import lazyModule as _lazy
 
 _model               = _lazy('peak.model.api')
 _config              = _lazy('peak.config.api')
-_datatypes           = _lazy('peak.model.datatypes')
 
 """)
 
@@ -494,15 +493,15 @@ _datatypes           = _lazy('peak.model.datatypes')
 
         tc = dtype.typeCode.unaliased()
 
-        if tc.kind == TCKind.tk_enum:
+        if tc.kind == model.TCKind.tk_enum:
             self.writeEnum(dtype, tc.member_names)
 
-        elif tc.kind == TCKind.tk_struct:
+        elif tc.kind == model.TCKind.tk_struct:
             self.writeStruct(dtype, zip(tc.member_names,tc.member_types))
             
         else:
 
-            base = basicTypes.get(tc.kind)
+            base = model.basicTypes.get(tc.kind)
 
             if base is None:
                 self.beginObject(dtype,'_model.PrimitiveType')
@@ -512,7 +511,7 @@ _datatypes           = _lazy('peak.model.datatypes')
 
             else:
 
-                self.beginObject(dtype,'_datatypes.'+base.__name__)
+                self.beginObject(dtype,'_model.'+base.__name__)
 
                 if hasattr(tc,'length'):
                     self.write('length = %d\n\n' % tc.length)
@@ -640,7 +639,7 @@ _datatypes           = _lazy('peak.model.datatypes')
 
         m = feature.multiplicity 
 
-        if m.upper <> UnlimitedInteger.UNBOUNDED:
+        if m.upper <> model.UnlimitedInteger.UNBOUNDED:
             self.write('upperBound = %r\n' % m.upper)
 
         if m.lower <> 0:

@@ -7,7 +7,6 @@ from peak.util.imports import lazyModule as _lazy
 
 _model               = _lazy('peak.model.api')
 _config              = _lazy('peak.config.api')
-_datatypes           = _lazy('peak.model.datatypes')
 
 
 # ------------------------------------------------------------------------------
@@ -96,19 +95,19 @@ class ProcedureExpression(Expression):
     pass
     
 
-class Integer(_datatypes.Long):
+class Integer(_model.Long):
     pass
     
 
-class UnlimitedInteger(_datatypes.Long):
+class UnlimitedInteger(_model.Long):
     pass
     
 
-class String(_datatypes.String):
+class String(_model.String):
     length = 0
     
 
-class Time(_datatypes.Float):
+class Time(_model.Float):
     pass
     
 
@@ -118,7 +117,7 @@ class AggregationKind(_model.Enumeration):
     ak_composite = _model.enum()
     
 
-class Boolean(_datatypes.Boolean):
+class Boolean(_model.Boolean):
     pass
     
 
@@ -174,19 +173,19 @@ class VisibilityKind(_model.Enumeration):
     vk_private = _model.enum()
     
 
-class Mapping(_datatypes.String):
+class Mapping(_model.String):
     length = 0
     
 
-class Name(_datatypes.String):
+class Name(_model.String):
     length = 0
     
 
-class LocationReference(_datatypes.String):
+class LocationReference(_model.String):
     length = 0
     
 
-class Geometry(_datatypes.String):
+class Geometry(_model.String):
     length = 0
     
 # ------------------------------------------------------------------------------
