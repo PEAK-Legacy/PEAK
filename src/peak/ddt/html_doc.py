@@ -49,6 +49,13 @@ def findText(text,startAt,endBy):
     while startAt<endBy:
 
         ts = text.find('<',startAt)
+
+        while ts>=0:
+            if text[ts:ts+4].lower()=='<br>':
+                ts = text.find('<',ts+4)
+            else:
+                break
+
         if ts<0:
             ts=endBy
 
@@ -65,13 +72,6 @@ def findText(text,startAt,endBy):
         startAt += 1
 
     return s,e
-
-
-
-
-
-
-
 
 
 
@@ -363,7 +363,7 @@ class HTMLDocument(storage.EntityDM):
         return text.replace(
             '&quot;','"'
         ).replace('&gt;','>').replace('&lt;','<'
-        ).replace('&nbsp;',' ').replace('&amp;', '&')
+        ).replace('&nbsp;',' ').replace('&amp;', '&'
+        ).replace('<br>','\n').replace('<BR>','\n')
     unescape = staticmethod(unescape)
-
 
