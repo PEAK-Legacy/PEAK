@@ -49,14 +49,16 @@ class Context:
     allows = user = permissionNeeded = binding.Delegate('interaction')
     getResource = binding.Delegate('skin')
 
-    def __init__(self,name,current,environ,**kw):
-        self._setup(kw)
+    def __init__(self,name,current,environ,previous=None,**kw):
+        if kw: self._setup(kw)
         self.current = current
         self.name = name
         self.environ = environ
+        if previous is not None:
+            self.previous = previous
 
     def childContext(self,name,ob):
-        return Context(name,ob,self.environ,previous=self,clone_from=self)
+        return Context(name,ob,self.environ,self)
 
     def peerContext(self,name,ob):
         return self.clone(name=name,current=ob)
@@ -78,15 +80,12 @@ class Context:
         return IHTTPHandler(self.current).handle_http(self)
 
 
-
-
     def traverseName(self,name):
         if name=='..':
             return self.parentContext()
         elif not name or name=='.':
             return self
         else:
-            # XXX error handling?
             ob = IWebTraversable(self.current).traverseTo(name,self)
             return self.childContext(name,ob)
 
@@ -101,10 +100,12 @@ class Context:
 
     def _setup(self,kw):
         if 'clone_from' in kw:
-            clone_from = kw['clone_from']
-            for attr in 'interaction','policy','skin','rootURL','previous':
-                setattr(self,attr,getattr(clone_from,attr))
+            cfg = kw['clone_from'].__getattribute__
             del kw['clone_from']
+            for attr in 'interaction','policy','skin','rootURL','previous':
+                if attr not in kw:
+                    kw[attr] = cfg(attr)
+
         klass = self.__class__
         for k,v in kw.iteritems():
             if hasattr(klass,k):
@@ -114,7 +115,6 @@ class Context:
                     "%s constructor has no keyword argument %s" %
                     (klass, k)
                 )
-
 
 
 
