@@ -26,7 +26,7 @@ class nisURLContext(naming.NameContext):
         if not name:
             return self, None
 
-        elif name in nis.maps():
+        elif str(name) in nis.maps():
             return nisMapContext(
                 namingAuthority = self.namingAuthority,
                 nameInContext   = self.nameInContext + name,
