@@ -5,8 +5,39 @@ from peak.util.hashcmp import HashAndCompare
 import interfaces
 from interfaces import *
 from kjbuckets import kjSet, kjGraph
+from copy import deepcopy, _deepcopy_dispatch
 
 __all__ = []
+
+def _dc_kjGraph(x,memo):
+    return kjGraph([(deepcopy(k,memo),deepcopy(v,memo)) for k,v in x.items()])
+
+def _dc_kjSet(x,memo):
+    return kjSet([deepcopy(k,memo) for k in x.items()])
+
+_deepcopy_dispatch[type(kjSet())] = _dc_kjSet
+_deepcopy_dispatch[type(kjGraph())] = _dc_kjGraph
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 class _expr:
 
@@ -32,6 +63,16 @@ class _expr:
         if self==other or other is EMPTY:
             return self
         return Or(self,other)
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -75,10 +116,10 @@ class PhysicalDB(binding.Component):
     def __getitem__(self,name):
         return Table(name,self.tableMap[name],self)
 
-
-
-
-
+    def __getattr__(self,attr):
+        if not attr.startswith('_') and attr in self.tableMap:
+            return self[attr]
+        raise AttributeError,attr
 
 class SQLDriver:
 
@@ -136,28 +177,31 @@ class AbstractRV(object):
         cols = kjGraph(self.columns)
         rename = ~kjGraph(rename)
         groupBy = kjSet(groupBy)
-
-        for rv in tuple(join)+tuple(outer):
-            cols = cols + rv.attributes()
-
-        if keep:
-            kjSet(~(rename * groupBy))
-            cols = (kjSet(keep)+kjSet(~rename)+groupBy) * cols
-
-        if rename:
-            cols = rename * cols + (cols-cols.restrict(~rename))
+        join = [self]+list(join)
+        outer = list(outer)
 
         if where is None:
             where = EMPTY
 
+        for rv in join+outer:
+            cols += rv.attributes()
+
+        if groupBy or keep is not None:
+            cols = (kjSet(keep or ())+kjSet(~rename)+groupBy) * cols
+
+        if rename:
+            cols = rename * cols + (cols-cols.restrict(~rename))
+
         rv = BasicJoin(
-            self.condition & where, (self,)+tuple(join), tuple(outer),
-            cols+kjGraph(calc)
+            where, join, outer, cols+kjGraph(calc)
         )
 
         if groupBy:
             return GroupBy(rv, groupBy.items())
+
         return rv
+
+
 
     def attributes(self):
         return self.columns
@@ -171,19 +215,16 @@ class AbstractRV(object):
     def getCondition(self):
         return self.condition
 
-    def getReferencedRVs(self):
-        all = kjSet([self])
-        for rv in self.getInnerRVs()+self.getOuterRVs():
-            if not all.has_key(rv):
-                all += kjSet(rv.getReferencedRVs())
-        return all.items()
-
     def __getitem__(self,key):
         return self.columns[key]
 
     def keys(self):
         return self.columns.keys()
 
+    def __getattr__(self,attr):
+        if not attr.startswith('_') and self.columns.has_key(attr):
+            return self.columns[attr]
+        raise AttributeError,attr
 
 
 
@@ -203,12 +244,15 @@ class AbstractRV(object):
 
 
 
-class Table(AbstractRV):
+class Table(AbstractRV, HashAndCompare):
 
     def __init__(self,name,columns,db=None):
         self.name = name
         self.columns = kjGraph([(c,Column(c,self)) for c in columns])
         self.db = db
+        self._hashAndCompare = (
+            self.__class__.__name__, self.db, self.name
+        )
 
     def __repr__(self):
         return self.name
@@ -222,15 +266,12 @@ class Table(AbstractRV):
     def asFromClause(self):
         return self.name
 
-
-
-
-
-
-
-
-
-
+    def __deepcopy__(self,memo):
+        # Avoid deepcopying self.db
+        newself = self.__class__(self.name,(),self.db)
+        memo[id(newself)] = newself
+        newself.columns = deepcopy(self.columns,memo)
+        return newself
 
 
 
@@ -326,7 +367,7 @@ class AbstractDV:
 
 
 
-class Column(AbstractDV):
+class Column(AbstractDV,HashAndCompare):
 
     protocols.advise(
         instancesProvide = [IRelationAttribute]
@@ -334,6 +375,9 @@ class Column(AbstractDV):
 
     def __init__(self,name,table):
         self.name, self.table = name, table
+        self._hashAndCompare = (
+            self.__class__.__name__, self.table, self.name
+        )
 
     def getRV(self):
         return self.table
@@ -343,9 +387,6 @@ class Column(AbstractDV):
 
     def simpleSQL(self,driver):
         return driver.getAlias(self.table)+'.'+self.name
-
-
-
 
 
 
@@ -408,28 +449,35 @@ def aggregate(name):
     return lambda *args: Aggregate(name,*args)
 
 
-class BasicJoin(Table, HashAndCompare):
+class BasicJoin(AbstractRV, HashAndCompare):
 
     def __init__(self,condition,relvars,outers=(),columns=()):
         myrels = []
-        outers=list(outers)
         relUsage = {}
+        memo = {}
+
+        def checkUsage(rv):
+            r = id(rv)
+            if r in relUsage:
+                return deepcopy(rv,memo)
+                raise ValueError("Relvar used more than once",rv)
+            else:
+                relUsage[r]=True
+            return rv
+
+        outers = map(checkUsage,outers)
 
         for rv in relvars:
-            myrels.extend(rv.getInnerRVs())
-            outers.extend(rv.getOuterRVs())
-            condition = condition & rv.getCondition()
-
-        for rv in myrels+outers:
-            for r in rv.getReferencedRVs():
-                relUsage[r] = relUsage.setdefault(r,0)+1
+            memo = {}
+            myrels.extend(map(checkUsage,rv.getInnerRVs()))
+            outers.extend(map(checkUsage,rv.getOuterRVs()))
+            cond = rv.getCondition()
+            if memo and cond is not EMPTY:
+                cond = deepcopy(cond,memo)
+            condition = condition & cond
 
         if len(myrels)<1:
             raise TypeError("BasicJoin requires at least 1 relvar")
-
-        for k,v in relUsage.items():
-            if v>1:
-                raise ValueError("Relvar used more than once",k)
 
         myrels.sort()
         outers.sort()
@@ -437,17 +485,10 @@ class BasicJoin(Table, HashAndCompare):
         self.outers = tuple(outers)
         self.condition = condition
         self.columns = kjGraph(columns)
-
         self._hashAndCompare = (
             self.__class__.__name__, condition,
             self.relvars, self.outers, self.columns
         )
-
-
-
-
-
-
 
     def __repr__(self):
         parms=(

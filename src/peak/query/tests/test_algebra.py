@@ -7,7 +7,39 @@ from peak.query.api import *
 from peak.query.algebra import BasicJoin, Not, And, Or, Table, PhysicalDB, function, aggregate
 from kjbuckets import kjSet
 
-class SimplificationAndEquality(TestCase):
+class SimpleFixtures(TestCase):
+
+    A_Columns = ('aa','ab','ac')
+    B_Columns = ('b1','b2')
+    C_Columns = ('CC','DD','EE')
+    D_Columns = ('d',)
+
+    def setUp(self):
+        self.rvA = A = Table('A',self.A_Columns)
+        self.rvB = B = Table('B',self.B_Columns)
+        self.rvC = C = Table('C',self.C_Columns)
+        self.rvD = D = Table('D',self.D_Columns)
+        self.condX = A.aa.eq(B.b1)
+        self.condY = B.b1.eq(C.CC)
+        self.condZ = C.CC.eq(D.d)
+
+    db = PhysicalDB(
+        tables = Items(
+            Branch = (
+                'headempnr','branchnr','cityname','statecode','country'
+            ),
+            Employee = (
+                'empnr','empname','branchnr','salary','cityname','statecode',
+                'country', 'supervisor_empnr', 'mainphone', 'otherphone'
+            ),
+            Speaks = ('empnr','languagename'),
+            Drives = ('empnr','carregnr'),
+            Car = ('carregnr','carmodelname','color'),
+            LangUse = ('languagename','country'),
+        )
+    )
+
+class SimplificationAndEquality(SimpleFixtures):
 
     """Verify that boolean expressions are equal to their simpler forms
 
@@ -31,23 +63,6 @@ class SimplificationAndEquality(TestCase):
     as possible, but no simpler.  :)
     """
 
-    A_Columns = ('aa','ab','ac')
-    B_Columns = ('b1','b2')
-    C_Columns = ('CC','DD','EE')
-    D_Columns = ('d',)
-
-
-
-
-    def setUp(self):
-        self.rvA = A = Table('A',self.A_Columns)
-        self.rvB = B = Table('B',self.B_Columns)
-        self.rvC = C = Table('C',self.C_Columns)
-        self.rvD = D = Table('D',self.D_Columns)
-        self.condX = A['aa'].eq(B['b1'])
-        self.condY = B['b1'].eq(C['CC'])
-        self.condZ = C['CC'].eq(D['d'])
-
     def testBooleanCommutativity(self):
         x,y,z = self.condX, self.condY, self.condZ
         self.assertEqual( (x & y & z), (z & y & x) )
@@ -64,20 +79,13 @@ class SimplificationAndEquality(TestCase):
         self.assertEqual( (x&x), x )
         self.assertEqual( (x&y)&(x&y&z), (x&y&z) )
 
+
     def testBooleanAssociativity(self):
         x,y,z = self.condX, self.condY, self.condZ
         self.assertEqual( (x&(y&z)), ((x&y)&z) )
         self.assertNotEqual( (x|(y&z)), (x&y)|z )
         self.assertEqual( (x|(y|z)), ((x|y)|z) )
         self.assertNotEqual( (x&(y|z)), ((x|y)&z) )
-
-
-
-
-
-
-
-
 
 
     def testNegation(self):
@@ -103,6 +111,14 @@ class SimplificationAndEquality(TestCase):
         self.assertEqual(A(join=[B],where=x), B(join=[A],where=x))
         self.assertEqual(A(join=[B,C],where=x&y), B(join=[A,C],where=x&y))
         self.assertEqual(A(join=[B,C],where=x&y), C(join=[B,A],where=x&y))
+
+
+
+
+
+
+
+
 
 
     def testJoinAssociativity(self):
@@ -131,10 +147,25 @@ class SimplificationAndEquality(TestCase):
         self.assertRaises(TypeError,BasicJoin,x)
         self.assertRaises(TypeError,Not,x,y)    # too many args
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     def testSelectionAssociativity(self):
 
         A,B,C,D = self.rvA, self.rvB, self.rvC, self.rvD
-        x,y,z = self.condX, A['ab'].eq(27), A['ac'].eq(42)
+        x,y,z = self.condX, A.ab.eq(27), A.ac.eq(42)
 
         self.assertEquals(
             A(join=[B],where=x)(where=y),
@@ -160,6 +191,16 @@ class SimplificationAndEquality(TestCase):
             A(where=y)(join=[B],where=x),
             A(join=[B],where=x&y)
         )
+
+
+
+
+
+
+
+
+
+
 
 
     def testOuterJoinInequalities(self):
@@ -244,16 +285,7 @@ class SimplificationAndEquality(TestCase):
 
 
 
-    def testReferences(self):
-        x,y,z = self.condX, self.condY, self.condZ
-        A,B,C,D = self.rvA, self.rvB, self.rvC, self.rvD
-
-        self.assertEqual(A.getReferencedRVs(),[A])
-        tmp = A(outer=[B,C,D],where=x)
-        self.assertEqual(kjSet(tmp.getReferencedRVs()),kjSet([A,B,C,D,tmp]))
-
-
-    def testRVReuseNotAllowed(self):
+    '''def testRVReuseNotAllowed(self):
         # The same RV may not appear more than once in a single expression
 
         x,y,z = self.condX, self.condY, self.condZ
@@ -261,23 +293,32 @@ class SimplificationAndEquality(TestCase):
 
         self.assertRaises(ValueError, B, join=[A,A])
         self.assertRaises(ValueError, B, outer=[A,A])
-        self.assertRaises(ValueError, B(join=[C]), join=[C(join=[D])])
+        self.assertRaises(ValueError, B(join=[C]), join=[C(join=[D])])'''
 
 
     def testComparison(self):
         A,B,C,D = self.rvA, self.rvB, self.rvC, self.rvD
-        x = A['aa'].eq(B['b1'])
+        x = A.aa.eq(B.b1)
         A(join=[B],where=x)
-        self.assertEqual(x, A['aa'].eq(B['b1']))
-        self.assertEqual(~x, A['aa'].ne(B['b1']))
-        self.assertEqual(x, ~A['aa'].ne(B['b1']))
-        self.assertEqual(A['aa'].lt(B['b1']), ~A['aa'].ge(B['b1']))
-        self.assertEqual(~A['aa'].lt(B['b1']), A['aa'].ge(B['b1']))
-        self.assertEqual(A['aa'].gt(B['b1']), ~A['aa'].le(B['b1']))
-        self.assertEqual(~A['aa'].gt(B['b1']), A['aa'].le(B['b1']))
+        self.assertEqual(x, A.aa.eq(B.b1))
+        self.assertEqual(~x, A.aa.ne(B.b1))
+        self.assertEqual(x, ~A.aa.ne(B.b1))
+        self.assertEqual(A.aa.lt(B.b1), ~A.aa.ge(B.b1))
+        self.assertEqual(~A.aa.lt(B.b1), A.aa.ge(B.b1))
+        self.assertEqual(A.aa.gt(B.b1), ~A.aa.le(B.b1))
+        self.assertEqual(~A.aa.gt(B.b1), A.aa.le(B.b1))
 
-        self.assertNotEqual(A['aa'].lt(B['b1']),A['aa'].gt(B['b1']))
-        self.assertNotEqual(A['aa'].le(B['b1']),A['aa'].eq(B['b1']))
+        self.assertNotEqual(A.aa.lt(B.b1),A.aa.gt(B.b1))
+        self.assertNotEqual(A.aa.le(B.b1),A.aa.eq(B.b1))
+
+
+
+
+
+
+
+
+
 
 
 
@@ -336,7 +377,7 @@ class SimplificationAndEquality(TestCase):
             Arenamed = A(rename=[(theColumn,'theColumn')])
 
             self.assertEqual(
-                A[theColumn], Arenamed['theColumn']
+                A[theColumn], Arenamed.theColumn
             )
             self.assertEqual(
                 kjSet(Arenamed.keys()),
@@ -367,31 +408,60 @@ class SimplificationAndEquality(TestCase):
 
 
 
-class DatabaseTests(TestCase):
+class CloningTests(SimpleFixtures):
 
-    db = PhysicalDB(
-        tables = Items(
-            Branch = (
-                'headempnr','branchnr','cityname','statecode','country'
-            ),
-            Employee = (
-                'empnr','empname','branchnr','salary','cityname','statecode',
-                'country', 'supervisor_empnr', 'mainphone', 'otherphone'
-            ),
-            Speaks = ('empnr','languagename'),
-            Drives = ('empnr','carregnr'),
-            Car = ('carregnr','carmodelname','color'),
-            LangUse = ('languagename','country'),
-        )
-    )
+    def testRVReuse(self):
+        # The same RV may not appear more than once in a single expression
+
+        x,y,z = self.condX, self.condY, self.condZ
+        A,B,C,D = self.rvA, self.rvB, self.rvC, self.rvD
+
+        B(join=[A,A])
+        B(outer=[A,A])
+        B(join=[C])(join=[C(join=[D])])
+
+    # Needed tests:
+    # * join-level cond (even subqs) referring to ambiguous table should fail
+    # * EXISTS() and IN() subqueries are unique
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class DatabaseTests(SimpleFixtures):
+
+    def setUp(self):
+        pass
+
 
     def testPhysicalDB(self):
 
         db = self.db
-        Branch = db['Branch']
-        Employee = db['Employee']
+        Branch = db.Branch
+        Employee = db.Employee
 
-        x = Branch['branchnr'].eq(Employee['branchnr'])
+        x = Branch.branchnr.eq(Employee.branchnr)
         A = Table('X',('foo','bar'))
 
         self.assertEqual(
@@ -404,17 +474,17 @@ class DatabaseTests(TestCase):
         # Mixed-db joins should have a DB of None (for now)
         self.failUnless(Branch(join=[A],where=x).getDB() is None)
 
-
-
-
-
         for tbl in 'Branch','Employee','Speaks','Drives','Car','LangUse':
 
             # table objects must be unique
             self.failUnless(db[tbl] is not db[tbl])
-
+            # but equal!
+            self.assertEqual(db[tbl],db[tbl])
             # column objects must be unique
-            self.assertNotEqual(
+            for col in db[tbl].keys():
+                self.failUnless(db[tbl][col] is not db[tbl][col])
+            # but equal!
+            self.assertEqual(
                 db[tbl].attributes(), db[tbl].attributes()
             )
 
@@ -449,18 +519,30 @@ class DatabaseTests(TestCase):
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
     def testSimpleSQL(self):
 
         db = self.db
-        Branch = db['Branch']
-        Employee = db['Employee']
+        Branch = db.Branch
+        Employee = db.Employee
 
         self.assertEqual(Branch.simpleSQL(), "SELECT * FROM Branch")
         self.assertEqual(Employee.simpleSQL(), "SELECT * FROM Employee")
 
         EmployeesByBranch = Branch(
             join=[Employee],
-            where=Branch['branchnr'].eq(Employee['branchnr'])
+            where=Branch.branchnr.eq(Employee.branchnr)
         )
 
         self.assertEqual(
@@ -470,18 +552,18 @@ class DatabaseTests(TestCase):
         )
 
         self.assertEqual(
-            Branch(where=Branch['branchnr'].eq(42)).simpleSQL(),
+            Branch(where=Branch.branchnr.eq(42)).simpleSQL(),
             "SELECT B1.* FROM Branch AS B1 WHERE B1.branchnr=42"
         )
 
         self.assertEqual(
-            Employee(where=Employee['empnr'].eq(42),keep=['empname']).simpleSQL(),
+            Employee(where=Employee.empnr.eq(42),keep=['empname']).simpleSQL(),
             "SELECT E1.empname FROM Employee AS E1 WHERE E1.empnr=42"
         )
 
         self.assertEqual(
             Employee(
-                where=Employee['empnr'].eq(42), keep=['empname','salary'],
+                where=Employee.empnr.eq(42), keep=['empname','salary'],
                 rename=Items(empname='Name')
             ).simpleSQL(),
             "SELECT E1.empname AS Name, E1.salary"
@@ -492,9 +574,9 @@ class DatabaseTests(TestCase):
 
     def testFunctions(self):
 
-        Employee = self.db['Employee']
+        Employee = self.db.Employee
         SQRT = function('SQRT')
-        sqrtSal = SQRT(Employee['salary'])
+        sqrtSal = SQRT(Employee.salary)
 
         self.assertEqual(
             Employee(calc=Items(salroot=sqrtSal)).simpleSQL(),
@@ -538,7 +620,7 @@ class DatabaseTests(TestCase):
         SQRT = function('SQRT')
         COMPLEX = function('COMPLEX')
 
-        salary = self.db['Employee']['salary']
+        salary = self.db.Employee.salary
 
         # An aggregate function of a non-aggregate, is an aggregate expression
         self.failUnless( MIN(salary).isAggregate() )
@@ -574,15 +656,15 @@ class DatabaseTests(TestCase):
 
     def testGroupBy(self):
 
-        Employee = self.db['Employee']
-        Branch = self.db['Branch']
+        Employee = self.db.Employee
+        Branch = self.db.Branch
         AVG = aggregate('AVG')
         COUNT = aggregate('COUNT')
 
-        empCount = COUNT(Employee['empnr'])
+        empCount = COUNT(Employee.empnr)
         EmpByBranch = Employee(
             calc=Items(employees=empCount),
-            groupBy=['branchnr'], keep=['branchnr']
+            groupBy=['branchnr']
         )
 
         self.assertEqual(
@@ -601,7 +683,7 @@ class DatabaseTests(TestCase):
         self.assertEqual(
             EmpByBranch(
                 join=[Branch],
-                where=Branch['branchnr'].eq(EmpByBranch['branchnr'])
+                where=Branch.branchnr.eq(EmpByBranch.branchnr)
             ).simpleSQL(),
             "SELECT B2.*, x1.*"
             " FROM (SELECT COUNT(E1.empnr) AS employees, E1.branchnr"
@@ -616,8 +698,8 @@ class DatabaseTests(TestCase):
         # All non-groupby columns of a grouping must be aggregates
 
         self.assertRaises(TypeError,Employee,
-            calc=Items(employees=COUNT(Employee['empnr'])),
-            groupBy=['branchnr']
+            calc=Items(employees=COUNT(Employee.empnr)),
+            groupBy=['branchnr'],keep=['empnr']
         )
 
 
@@ -655,7 +737,7 @@ class DatabaseTests(TestCase):
 
 
 TestClasses = (
-    SimplificationAndEquality, DatabaseTests,
+    SimplificationAndEquality, CloningTests, DatabaseTests,
 )
 
 
