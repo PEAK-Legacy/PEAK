@@ -57,25 +57,25 @@ class StructuralFeature(binding.AutoCreated):
     referencedType = None
 
     def getElement(self):
-        return self.getSEFparent()
+        return self.getParentComponent()
         
-    def getService(self,name=None):
-        return self.getSEFparent().getService(name)
+    def lookupComponent(self,name=None):
+        return self.getParentComponent().lookupComponent(name)
 
     def getReferencedType(self):
-        return self.getService(self.referencedType)
+        return self.lookupComponent(self.referencedType)
 
     def _getData(self,default=()):
-        return self.getSEFparent()._fData.get(self._componentName,default)
+        return self.getParentComponent()._fData.get(self._componentName,default)
 
     def _setData(self,value):
-        self.getSEFparent()._fData[self._componentName]=value
+        self.getParentComponent()._fData[self._componentName]=value
 
     def _delData(self):
-        del self.getSEFparent()._fData[self._componentName]
+        del self.getParentComponent()._fData[self._componentName]
 
     def _hasData(self):
-        return self.getSEFparent()._fData.has_key(self._componentName)
+        return self.getParentComponent()._fData.has_key(self._componentName)
 
 
 
@@ -310,4 +310,4 @@ class Sequence(Collection):
         else:
             raise ValueError    # XXX
     
-setupModule()
+binding.setupModule()

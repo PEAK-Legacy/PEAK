@@ -6,9 +6,9 @@
     generation of a satisfactory metaclass based on the information provided.
 
     TransWarp automatically uses this function to build your classes when
-    you use 'setupModule()', so you don't usually need to use this directly.
-    But if you want to know more about what it does and how it works, or have
-    a special need, this is the right place to look.
+    you use 'binding.setupModule()', so you don't usually need to use this
+    directly.  But if you want to know more about what it does and how it
+    works, or have a special need, this is the right place to look.
 """
 
 from weakref import WeakValueDictionary

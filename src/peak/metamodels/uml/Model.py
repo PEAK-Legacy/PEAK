@@ -69,7 +69,7 @@ class UMLClass(model.App):
         subclasses = ComputedFeature(subclasses)
 
 
-setupModule()
+binding.setupModule()
 
 
 

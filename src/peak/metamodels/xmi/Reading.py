@@ -261,4 +261,4 @@ class App(XMIMapMaker):
         return load(filename_or_stream, self._XMIroot())
 
 
-setupModule()
+binding.setupModule()

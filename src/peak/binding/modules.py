@@ -1,4 +1,4 @@
-"""Module Inheritance and Module Advice
+"""Module Inheritance and Patching
 
     The APIs defined here let you create modules which derive from other
     modules, by defining a module-level '__bases__' attribute which lists
@@ -14,7 +14,7 @@
         class MyClass:
             ...
 
-        setupModule()
+        binding.setupModule()
 
     The 'setupModule()' call will convert the calling module, 'BaseModule1',
     and 'BaseModule2' into specially altered bytecode objects and execute
@@ -27,7 +27,7 @@
 
     Note: All the modules listed in '__bases__' must call 'setupModule()', even
     if they do not define a '__bases__' or desire module inheritance
-    themselves.  This is because TransWarp cannot otherwise get access to
+    themselves.  This is because PEAK cannot otherwise get access to
     their bytecode in a way that is compatible with the many "import hook"
     systems that exist for Python.  (E.g. running bytecode from zip files or
     frozen into an executable, etc.)
@@ -65,12 +65,12 @@
         an explicit '__metaclass__' definition, or by having one of the base
         classes supply a suitable metaclass.  This is fine for simple programs,
         where metaclasses are infrequently mixed, but more problematic for
-        complex frameworks like TransWarp, where a variety of metaclasses are
+        complex frameworks like PEAK, where a variety of metaclasses are
         mixed and matched to supply various properties.
 
-        So, using 'setupModule()' gives you an additional bonus: TransWarp
+        So, using 'setupModule()' gives you an additional bonus: PEAK
         will automatically generate the necessary metaclasses for you, so long
-        as you use TransWarp's alternate API for specifying metaclasses.
+        as you use PEAK's alternate API for specifying metaclasses.
         Please see the documentation of the 'makeClass' function in the
         'peak.util.Meta' module for more information about how this works.
 
@@ -88,7 +88,7 @@
         doesn't know how to find them, using only 'someClass.__name__' and
         'someClass.__module__'.
 
-        TransWarp overcomes this problem by renaming nested classes so that
+        PEAK overcomes this problem by renaming nested classes so that
         they are defined with their full dotted name (e.g. 'Foo.Bar' for
         class 'Bar' nested in class 'Foo'), and saving a reference to the class
         under its dotted name in the module dictionary.  This means that
@@ -96,7 +96,7 @@
         doing 'del someClass' may not delete all references to a class.  But
         pickling and unpickling should work normally.
 
-        Note that some TransWarp classes and metaclasses provide a "short
+        Note that some PEAK classes and metaclasses provide a "short
         form" of the class name for use when appropriate.  For example,
         Feature classes have an 'attrName' class attribute, and instances
         of most SEF types have a '_componentName' instance attribute.  In
@@ -105,7 +105,7 @@
 
     Special Considerations for Mutables and Dynamic Initialization
 
-        Both inheritance and advice are implemented by running hacked,
+        Both inheritance and patching are implemented by running hacked,
         module-level code under a "simulator" that intercepts the setting of
         variables.  This works great for static definitions like 'class'
         and 'def' statements, constant assignments, 'import', etc.  It also
@@ -172,22 +172,26 @@
           'def', and 'class', in modules running under simulator control.
 
         * Add 'LegacyModule("name")' and 'loadLegacyModule("name")' APIs to
-          allow inheriting from and/or giving advice to modules which do not
+          allow inheriting from and/or patching modules which do not
           call 'setupModule()'.
 """
-
 
 import sys
 from types import ModuleType
 
-__proceed__ = None
+
+# Make the default value of '__proceed__' a built-in, so that code written for
+# an inheriting module won't fail with a NameError if there's no base module
+# definition of a function
+
+import __builtin__; __builtin__.__proceed__ = None
+
 
 __all__ = [
-    'adviseModule', 'setupModule', '__proceed__', 'configure',
-    'ModuleInheritanceWarning'
+    'patchModule', 'setupModule', 'configure', 'ModuleInheritanceWarning'
 ]
 
-adviceMap = {}
+patchMap = {}
 
 
 def configure(obj, **attrs):
@@ -199,10 +203,6 @@ def configure(obj, **attrs):
             setattr(obj,k,v)
 
 
-
-
-
-
 def getCodeListForModule(module, code=None):
 
     if hasattr(module,'__codeList__'):
@@ -212,7 +212,7 @@ def getCodeListForModule(module, code=None):
 
     name = module.__name__
     code = prepForSimulation(code)
-    codeList = module.__codeList__ = adviceMap.get(name,[])+[code]
+    codeList = module.__codeList__ = patchMap.get(name,[])+[code]
 
     bases = getattr(module,'__bases__',())
     if isinstance(bases,ModuleType):
@@ -246,7 +246,7 @@ def getCodeListForModule(module, code=None):
 
 def setupModule():
 
-    """setupModule() - Build module, w/advice and inheritance
+    """setupModule() - Build module, w/patches and inheritance
 
         'setupModule()' should be called only at the very end of a module's
         code.  This is because any code which follows 'setupModule()' will be
@@ -285,32 +285,32 @@ def setupModule():
 
 
 
-def adviseModule(moduleName):
+def patchModule(moduleName):
 
-    """"Advise" a module - like a runtime patch
+    """"Patch" a module - like a runtime (aka "monkey") patch, only better
 
         Usage::
             from peak.api import *
 
             ...
 
-            adviseModule('moduleToAdvise')
+            patchModule('moduleToPatch')
 
-    'adviseModule()' works much like 'setupModule()'.  The main difference
+    'patchModule()' works much like 'setupModule()'.  The main difference
     is that it applies the current module as a patch to the supplied module
-    name.  The module to be advised must not have been imported yet, and it
-    must call 'setupModule()'.  The result will be as though the advised
+    name.  The module to be patched must not have been imported yet, and it
+    must call 'setupModule()'.  The result will be as though the patched
     module had been replaced with a derived module, using the standard module
     inheritance rules to derive the new module.
 
-    Note that more than one advising module may advise a single target module,
-    in which case the order of importing is significant.  Advice modules
+    Note that more than one patching module may patch a single target module,
+    in which case the order of importing is significant.  Patch modules
     imported later take precedence over those imported earlier.  (The target
     module must always be imported last.)
 
-    Advice modules may advise other advice modules, but there is little point
-    to doing this, since both advice modules will still have to be explicitly
-    imported before their mutual target in order for the advice to take effect.
+    Patch modules may patch other patch modules, but there is little point
+    to doing this, since both patch modules will still have to be explicitly
+    imported before their mutual target for the patches to take effect.
     """    
 
     frame = sys._getframe(1)
@@ -321,14 +321,14 @@ def adviseModule(moduleName):
 
     if dict.has_key('__bases__'):
         raise SpecificationError(
-            "Advice modules cannot use '__bases__'"
+            "Patch modules cannot use '__bases__'"
         )
 
 
 
     if sys.modules.has_key(moduleName):
         raise SpecificationError(
-            "%s is already imported and cannot be advised" % moduleName
+            "%s is already imported and cannot be patched" % moduleName
         )
 
     code = frame.f_code
@@ -336,7 +336,7 @@ def adviseModule(moduleName):
     module = sys.modules[name]
 
     codelist = getCodeListForModule(module, code)
-    adviceMap.setdefault(moduleName, [])[0:0] = codelist
+    patchMap.setdefault(moduleName, [])[0:0] = codelist
 
 
 

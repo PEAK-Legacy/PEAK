@@ -53,7 +53,7 @@ class App(Service):
     def newElement(self,elementType,*args,**kw):
         element = apply(getattr(self,elementType),args,kw)  # XXX won't do dotted names
         element._fData = {}
-        element._setSEFparent(self)
+        element.setParentComponent(self)
         return element
 
 
@@ -322,7 +322,7 @@ class Specialist(Service):
 
         element = self.elementClass()
         element._fData = record
-        element._setSEFparent(self)
+        element.setParentComponent(self)
 
         return element
 
@@ -441,7 +441,7 @@ class StructuralFeature(binding.Component):
         del self.__dict__[feature.attrName]
         feature._changed(self)
 
-    configure(delete, verb='delattr')
+    binding.configure(delete, verb='delattr')
 
     def _changed(feature, element):
         pass
@@ -528,7 +528,7 @@ class Collection(StructuralFeature):
         del self.__dict__[feature.attrName]
         feature._changed(self)
 
-    configure(delete, verb='delattr')
+    binding.configure(delete, verb='delattr')
 
 
     def _notifyLink(feature, element, item):
@@ -671,7 +671,7 @@ class Element(DataType):
     __implements__ = IElement
 
 
-setupModule()
+binding.setupModule()
 
 
 

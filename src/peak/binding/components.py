@@ -1,8 +1,7 @@
 """Basic, in-memory implementation of the Service-Element-Feature pattern"""
 
-from peak.api import *
 from once import Once
-import meta
+import meta, modules
 
 
 __all__ = [
@@ -39,18 +38,19 @@ __all__ = [
 
 
 
+
 class bindTo(Once):
 
     """Automatically look up and cache a relevant service
 
         Usage::
 
-            class someClass(SEF.Service):
+            class someClass(binding.AutoCreated):
 
-                thingINeed = SEF.bindTo("path.to.service")
+                thingINeed = binding.bindTo("path.to.service")
 
         'someClass' can then refer to 'self.thingINeed' instead of
-        calling 'self.getService("path.to.service")' repeatedly.
+        calling 'self.lookupComponent("path.to.service")' repeatedly.
     """
 
     singleValue = 1
@@ -62,10 +62,10 @@ class bindTo(Once):
 
         instanceDict[attrName] = None   # recursion guard
 
-        parent = obj.getSEFparent()
+        parent = obj.getParentComponent()
         if parent is None: parent = obj
 
-        obs = map(parent.getService, self.targetNames)
+        obs = map(parent.lookupComponent, self.targetNames)
 
         for newOb in obs:
             if newOb is None:
@@ -86,14 +86,15 @@ class bindToNames(bindTo):
 
         Usage::
 
-            class someClass(SEF.Service):
+            class someClass(binding.AutoCreated):
 
-                thingINeed = SEF.bindToNames(
+                thingINeed = binding.bindToNames(
                     "path.to.service1", "another.path", ...
                 )
 
         'someClass' can then refer to 'self.thingINeed' to get a tuple of
-        services instead of calling 'self.getService()' on a series of names.
+        services instead of calling 'self.lookupComponent()' on a series of
+        names.
     """
 
     singleValue = 0
@@ -120,19 +121,18 @@ class bindToNames(bindTo):
 
 
 
-
 class bindToParent(Once):
 
     """Look up and cache a reference to the nth-level parent service
 
         Usage::
 
-            class someClass(SEF.Service):
+            class someClass(binding.AutoCreated):
 
-                grandPa = SEF.bindToParent(2)
+                grandPa = binding.bindToParent(2)
 
        'someClass' can then refer to 'self.grandPa' instead of calling
-       'self.getSEFparent().getSEFparent()'.
+       'self.getParentComponent().getParentComponent()'.
 
        This binding descriptor saves a weak reference to its target in
        the object's instance dictionary, and dereferences it on each access.
@@ -186,7 +186,7 @@ class bindToParent(Once):
     def computeValue(self, obj, instDict, attrName):
 
         for step in range(self.level):
-            newObj = obj.getSEFparent()
+            newObj = obj.getParentComponent()
             if newObj is None: break
             obj = newObj
 
@@ -252,10 +252,7 @@ class Component(object):
         meta.AssertInterfaces, meta.ActiveDescriptors
     )
 
-    # XXX __implements__ = ISEF
-    _sefParent     = None
-
-    def getService(self,name=None):
+    def lookupComponent(self,name=None):
 
         if name:
             if not isinstance(name,tuple):
@@ -266,24 +263,27 @@ class Component(object):
                 if len(name)==1:
                     return o
                 else:
-                    return o.getService(name[1:])
+                    return o.lookupComponent(name[1:])
             else:    
-                parent = self.getSEFparent()
+                parent = self.getParentComponent()
                 if parent is not None:
-                    return parent.getService(name)
+                    return parent.lookupComponent(name)
         else:                
-            return self.getSEFparent()
+            return self.getParentComponent()
 
 
-    def _setSEFparent(self,parent):
+    def setParentComponent(self,parent):
         from weakref import ref
-        self.getSEFparent = ref(parent)
+        self.getParentComponent = ref(parent)
 
-    def getSEFparent(self): return None
+    def getParentComponent(self):
+        return None
 
-    def _componentName(self): return self.__class__.__name__.split('.')[-1]
+    def _componentName(self, dict, name):
+        return self.__class__.__name__.split('.')[-1]
 
-    _componentName = property(_componentName)
+    _componentName = Once(_componentName)
+
 
 class AutoCreatable(type):
 
@@ -312,7 +312,7 @@ class AutoCreated(Component):
         super(AutoCreated,self).__init__()
 
         if parent is not None:
-            self._setSEFparent(parent)
+            self.setParentComponent(parent)
 
 
 
@@ -326,7 +326,7 @@ class AutoCreated(Component):
 
 
 
-setupModule()
+modules.setupModule()
 
 
 

@@ -47,7 +47,7 @@ class ISEF(Interface.Base):
         """Name of this component in its immediate context"""
     )
 
-    def getService(name=None):
+    def lookupComponent(name=None):
         """Locate a service in context
 
             If 'name' is not supplied, return the Service object which is
@@ -63,7 +63,7 @@ class ISEF(Interface.Base):
             does not exist.
         """
 
-    def getSEFparent():
+    def getParentComponent():
         """Return the parent of this object (in S-E-F terms)
 
             If this is a feature, returns the element.  If this is an element,
