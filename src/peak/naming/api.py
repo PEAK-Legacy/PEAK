@@ -71,7 +71,7 @@ def parseURL(parent, name):
 
     scheme, body = url.scheme, url.body
 
-    ctx = spi.getURLContext(scheme, IResolver, parent)
+    ctx = spi.getURLContext(parent, scheme, IResolver)
 
     if ctx is None:
         from peak.exceptions import InvalidName

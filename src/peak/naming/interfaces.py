@@ -379,7 +379,7 @@ class IInitialContextFactory(Interface):
 class IObjectFactory(Interface):
     """Convert data in a naming system into a useful retrieved object"""
 
-    def getObjectInstance(refInfo, name, context, attrs=None):
+    def getObjectInstance(context, refInfo, name, attrs=None):
 
         """Return the object that should be constructed from 'refInfo'
 
@@ -405,14 +405,14 @@ class IObjectFactory(Interface):
 class IStateFactory(Interface):
     """Convert an object into state that can be stored in a naming system"""
 
-    def getStateToBind(obj, name, context, attrs=None):
+    def getStateToBind(context, obj, name, attrs=None):
         """Return the '(obj,attrs)' state that should be used to save 'obj'"""
 
 class IURLContextFactory(Interface):
 
     """Obtain a context implementation for a URL scheme"""
 
-    def getURLContext(scheme,iface,parent=None,componentName=None,**options):
+    def getURLContext(parent,scheme,iface,componentName=None,**options):
 
         """Return a context that can provide 'iface' for 'scheme' URLs
 
@@ -447,7 +447,7 @@ class IURLContextFactory(Interface):
 
             __implements__ = naming.IURLContextFactory
 
-            def getURLContext(scheme,iface,parente,componentName,**options):
+            def getURLContext(parent,scheme,iface,componentName,**options):
                 # code to pick between 'foo.bar', 'foo.baz', etc. and
                 # return a context implementation
 

@@ -231,7 +231,7 @@ class NameContext(Component):
 
         # Delegate to the appropriate URL context
 
-        ctx = spi.getURLContext(name.scheme, iface, self)
+        ctx = spi.getURLContext(self, name.scheme, iface)
 
         if ctx is None:
             raise exceptions.InvalidName(
@@ -292,7 +292,7 @@ class NameContext(Component):
 
         for factory in self.objectFactories:
 
-            result = factory.getObjectInstance(state, name, self, attrs)
+            result = factory.getObjectInstance(self, state, name, attrs)
 
             if result is not None:
                 return result
@@ -307,7 +307,7 @@ class NameContext(Component):
 
         for factory in self.stateFactories:
 
-            result = factory.getStateToBind(object, name, self, attrs)
+            result = factory.getStateToBind(self, object, name, attrs)
 
             if result is not None:
                 return result

@@ -2,6 +2,13 @@ Fixes and Enhancements since Version 0.5 alpha 1
 
  Changed, Enhanced, or Newly Deprecated Features
 
+ - The signatures of the 'getObjectInstance()', 'getStateToBind()', and
+   'getURLContext()' methods in the 'peak.naming' package have changed, to
+   place the context or parent component as the first, non-optional argument.
+   (If you don't know what these methods are for, you don't need to do anything
+   about this, as they are part of the naming package's extensibility
+   framework.)
+
  - 'binding.bindTo()' now accepts a 'default=' argument, whose value will be
    used in case of a 'NameNotFound' error.
 
@@ -59,7 +66,12 @@ Fixes and Enhancements since Version 0.5 alpha 1
 
 
  Corrected Problems
- 
+
+ - Fixed 'naming.lookup()' and related APIs not setting the parent component
+   of created objects without an explicitly supplied 'creationParent' keyword
+   argument.  This used to "sort of work" when we had implicit configuration
+   parents, but was broken when we went "all explicit" for 0.5 alpha 1.
+
  - Fixed a problem where initializing single-valued immutable fields of
   'peak.model' types did not perform type/value normalization.
 

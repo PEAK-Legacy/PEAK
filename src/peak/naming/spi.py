@@ -52,14 +52,14 @@ def getInitialContext(parentComponent, componentName=None, **options):
 
     Keyword options and the component name desired for the initial context
     are passed through to the actual factory, along with the parent component
-    and component name.
-
-    As with all 'IComponentFactory' providers, if no 'parentComponent' is
-    supplied, the new initial context will be a root component, and acquire
-    its configuration options from a default local configuration object.
+    and component name.  If a 'creationParent' argument is not supplied,
+    it will be defaulted to 'parentComponent', in order to establish the
+    parent component for any newly created objects retrieved from the
+    resulting context object.
     """
 
     factory = importObject( INIT_CTX_FACTORY(parentComponent) )
+    options.setdefault('creationParent',parentComponent)
     return factory(parentComponent, componentName, **options)
 
 
@@ -80,7 +80,7 @@ getInitialContext.__implements__ = IComponentFactory
 
 
 
-def getURLContext(scheme, iface, parent=None, componentName=None, **options):
+def getURLContext(parent, scheme, iface, componentName=None, **options):
 
     """Return a context object for the given URL scheme and interface
 
@@ -124,7 +124,7 @@ def getURLContext(scheme, iface, parent=None, componentName=None, **options):
         if IURLContextFactory.isImplementedBy(factory):
 
             return factory.getURLContext(
-                scheme, iface, parent, componentName, **options
+                parent, scheme, iface, componentName, **options
             )
 
         elif iface.isImplementedByInstancesOf(factory):
@@ -162,7 +162,7 @@ def getURLContext(scheme, iface, parent=None, componentName=None, **options):
 
 
 
-def getObjectInstance(refInfo, name, context=None, attrs=None):
+def getObjectInstance(context, refInfo, name, attrs=None):
 
     """Default rules for loading objects from state
 
