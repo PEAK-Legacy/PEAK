@@ -11,7 +11,7 @@
 """
 
 __all__ = [
-    'default_for_testing', 'Context', 'StartContext',
+    'Context', 'StartContext',
     'simpleRedirect', 'clientHas','parseName', 'traverseResource',
     'traverseView', 'traverseSkin', 'traverseAttr', 'traverseItem',
     'traverseDefault',
@@ -23,7 +23,7 @@ from cStringIO import StringIO
 from peak.api import binding, adapt, NOT_GIVEN, NOT_FOUND
 import errors
 from peak.security.interfaces import IInteraction
-
+from wsgiref.util import shift_path_info, setup_testing_defaults
 
 
 
@@ -163,45 +163,15 @@ class Context:
 
 
     def shift(self):
-        environ = self.environ
-        path_info = environ.get('PATH_INFO','')
+        environ = self.environ       
+        part = shift_path_info(environ)
+        if part or part is None:
+            return part
 
-        if not path_info:
-            return None
-
-        path_parts = path_info.split('/')
-        path_parts[1:-1] = [p for p in path_parts[1:-1] if p and p<>'.']
-        name = path_parts[1] or self.policy.defaultMethod
-        del path_parts[1]
-
-        script_name = environ.get('SCRIPT_NAME','')
-        script_name = posixpath.normpath(script_name+'/'+name)
-        if script_name.endswith('/'):
-            script_name = script_name[:-1]
-
-        environ['SCRIPT_NAME'] = script_name
-        environ['PATH_INFO']   = '/'.join(path_parts)
-
-        # Special case: '/.' on PATH_INFO doesn't get stripped,
-        # because we don't strip the last element of PATH_INFO
-        # if there's only one path part left.  Instead of fixing this
-        # above, we fix it here so that PATH_INFO gets normalized to
-        # an empty string in the environ.
-
-        if name=='.':
-            name = None
-
-        return name
-
-
-
-
-
-
-
-
-
-
+        # We got an empty string, so we just hit a trailing slash;
+        # replace it with the default method:
+        environ['SCRIPT_NAME'] += self.policy.defaultMethod
+        return self.policy.defaultMethod
 
     def traverseName(self,name):
         ns, nm = parseName(name)
@@ -217,7 +187,6 @@ class Context:
         else:
             return IWebTraversable(self.current).traverseTo(name,self)
 
-
     def getView(self,name,default=NOT_GIVEN):
         ctx = traverseView(
             self, self.current, 'view', name, '@@'+name, default
@@ -226,22 +195,12 @@ class Context:
             return ctx.current
         return ctx
 
-
     def requireAccess(self,qname,*args,**kw):
         result = self.allows(*args,**kw)
         if not result:
             raise errors.NotAllowed(self,qname,
                 getattr(result,'message',"Permission denied")
             )
-
-
-
-
-
-
-
-
-
 
 
 class StartContext(Context):
@@ -261,19 +220,6 @@ class StartContext(Context):
         return self
 
 
-def default_for_testing(environ):
-    """Update 'environ' with trivial defaults for testing purposes"""
-
-    environ.setdefault('HTTP_HOST',
-        environ.setdefault('SERVER_NAME','127.0.0.1')
-    )
-    environ.setdefault('REQUEST_METHOD','GET')
-
-    if 'SCRIPT_NAME' not in environ and 'PATH_INFO' not in environ:
-        environ.setdefault('SCRIPT_NAME','')
-        environ.setdefault('PATH_INFO','/')
-
-
 def simpleRedirect(environ,location):
     if (environ.get("SERVER_PROTOCOL","HTTP/1.0")<"HTTP/1.1"):
         status="302 Found"
@@ -281,8 +227,21 @@ def simpleRedirect(environ,location):
         status="303 See Other"
     return status,[('Location',location)],()
 
+
 def clientHas(environ, lastModified=None, ETag=None):
     return False    # XXX
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 def traverseAttr(ctx, ob, ns, name, qname, default=NOT_GIVEN):

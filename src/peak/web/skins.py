@@ -3,7 +3,7 @@ from interfaces import *
 from places import Traversable, MultiTraverser
 from publish import TraversalPath
 from resources import Resource
-from environ import default_for_testing
+from wsgiref.util import setup_testing_defaults
 
 __all__ = [
     'Skin',
@@ -63,11 +63,11 @@ class Skin(MultiTraverser):
     )
 
     dummyEnviron = {}
-    default_for_testing(dummyEnviron)
+    setup_testing_defaults(dummyEnviron)
 
     def getURL(self, ctx):
         # We want an absolute URL
-        return ctx.rootURL+'/'+self.resourcePath
+        return ctx.rootURL+'/'[ctx.rootURL.endswith('/'):]+self.resourcePath
 
     resourcePath = binding.Obtain('policy/resourcePrefix')
 

@@ -55,7 +55,7 @@ class Resource(Traversable):
 
     def getURL(self, ctx):
         # We want an absolute URL
-        return ctx.rootURL+'/'+self.resourcePath
+        return ctx.rootURL+'/'[ctx.rootURL.endswith('/'):]+self.resourcePath
 
 
     def _getResourcePath(self):

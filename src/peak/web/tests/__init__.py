@@ -5,9 +5,10 @@ an individual module to get just those tests."""
 
 
 allSuites = [
+    'wsgiref.tests:test_suite',
     'test_environ:test_suite',
     'test_templates:test_suite',
-    'test_resources:test_suite',
+    'test_resources:test_suite',   
 ]
 
 

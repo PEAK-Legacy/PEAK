@@ -3,7 +3,8 @@
 from peak.api import *
 from interfaces import *
 from errors import NotFound, NotAllowed
-from environ import default_for_testing, StartContext
+from environ import StartContext
+from wsgiref.util import application_uri, setup_testing_defaults
 from cStringIO import StringIO
 import os,sys
 
@@ -32,7 +33,6 @@ class DefaultExceptionHandler(binding.Singleton):
             # Don't allow exc_info to leak, even if the above resulted in
             # an error
             exc_info = None
-
 
 
 
@@ -135,8 +135,7 @@ class InteractionPolicy(binding.Configurable, protocols.StickyAdapter):
         if start is NOT_GIVEN:
             start = self.app
 
-        environ.setdefault('HTTP_HOST',environ['SERVER_NAME'])
-        root_url = "http://%(HTTP_HOST)s%(SCRIPT_NAME)s" % environ  # XXX
+        root_url = application_uri(environ)
 
         return StartContext('', start, environ,
             policy=self, skin=skin, interaction=interaction, rootURL=root_url
@@ -151,6 +150,7 @@ class InteractionPolicy(binding.Configurable, protocols.StickyAdapter):
     def afterCall(self, ctx):
         """Commit transaction after successful hit"""
         storage.commitTransaction(self.app)
+
 
 
 
@@ -213,7 +213,7 @@ class TestPolicy(InteractionPolicy):
         # Set up defaults for test environment
         if environ is None:
             environ = {}
-        default_for_testing(environ)
+        setup_testing_defaults(environ)
         return super(TestPolicy,self).newContext(
             environ, start, skin, interaction
         )
@@ -237,8 +237,8 @@ class TestPolicy(InteractionPolicy):
             part = ctx.shift()
             if part is None:
                 return ctx
-            ctx = ctx.traverseName(part)            
-            
+            ctx = ctx.traverseName(part)
+
 
 
 
