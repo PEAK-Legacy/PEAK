@@ -12,7 +12,8 @@ __all__ = [
     'ZConfigInterpreter', 'Bootstrap', 'rerunnableAsFactory',
     'callableAsFactory', 'appAsFactory', 'InvocationError', 'CGICommand',
     'CGIInterpreter', 'FastCGIAcceptor', 'Alias', 'runMain',
-    'NoSuchSubcommand',
+    'lookupCommand', 'NoSuchSubcommand', 'InvalidSubcommandName',
+    'ErrorSubcommand',
 ]
 
 
@@ -20,21 +21,20 @@ class InvocationError(Exception):
     """Problem with command arguments or environment"""
 
 
+def lookupCommand(component,name,default,acceptURLs=False):
 
+    """Lookup 'name' as a command shortcut or URL; may raise InvalidName"""
 
+    if not naming.URLMatch(name):
+        # may raise exceptions.InvalidName
+        name = PropertyName('peak.running.shortcuts.'+name)
 
+    elif not acceptURLs:
+        raise exceptions.InvalidName("URL not allowed")
 
-
-
-
-
-
-
-
-
-
-
-
+    return adapt(name, binding.IComponentKey).findComponent(
+        component, default
+    )
 
 
 
@@ -218,27 +218,27 @@ define a usage message for their subclass.
 
 
 
-class NoSuchSubcommand(AbstractCommand):
-
-    msg = "No such subcommand %r"
+class ErrorSubcommand(AbstractCommand):
+    """Subcommand that displays an error/usage message"""
 
     usage = binding.Obtain('usage', default="")
 
+    msg = "Undefined error"
+
     def _run(self):
-        raise InvocationError(self.msg % self.argv[0])
+        raise InvocationError(self.msg)
 
 
+class NoSuchSubcommand(ErrorSubcommand):
+    """Subcommand that says there's no such command"""
+
+    msg = "No such subcommand"
 
 
+class InvalidSubcommandName(ErrorSubcommand):
+    """Subcommand that says its command name is invalid"""
 
-
-
-
-
-
-
-
-
+    msg = "Invalid subcommand name"
 
 
 
@@ -613,12 +613,17 @@ class Bootstrap(AbstractInterpreter):
     command line arguments.
     """
 
+    acceptURLs = True
+
     def interpret(self, name):
 
-        if not naming.URLMatch(name):
-            name = "config:peak.running.shortcuts.%s/" % name
-
-        factory = self.lookupComponent(name, default=NoSuchSubcommand)
+        try:
+            factory = lookupCommand(
+                self, name, default=NoSuchSubcommand,
+                acceptURLs=self.acceptURLs
+            )
+        except exceptions.InvalidName:
+            factory = InvalidSubcommandName
 
         try:
             return self.getSubcommand(factory)
@@ -627,11 +632,6 @@ class Bootstrap(AbstractInterpreter):
             raise InvocationError(
                 "Invalid command object", factory, "found at", name
             )
-
-
-
-
-
 
 
 
@@ -986,6 +986,8 @@ class CGIInterpreter(CGICommand):
 
     """Run an application as a CGI, by adapting it to IRerunnableCGI"""
 
+    acceptURLs = True
+
     def cgiCommand(self):
 
         if len(self.argv)<2:
@@ -993,16 +995,16 @@ class CGIInterpreter(CGICommand):
 
         name = self.argv[1]
 
-        if not naming.URLMatch(name):
-            name = "config:peak.running.shortcuts.%s/" % name
-
-        ob = self.lookupComponent(name, suggestParent=False, default=NOT_FOUND)
+        ob = lookupCommand(
+            self, name, default=NOT_FOUND, acceptURLs=self.acceptURLs
+        )
 
         if ob is NOT_FOUND:
             raise InvocationError("Name not found: %s" % name)
 
         # Is it a component factory?  If so, try to instantiate it first.
         factory = adapt(ob, binding.IComponentFactory, None)
+
         if factory is ob:   # XXX ???
             ob = factory(self, 'cgi')
 
@@ -1015,8 +1017,6 @@ class CGIInterpreter(CGICommand):
         )
 
     cgiCommand = binding.Make(cgiCommand)
-
-
 
 
 

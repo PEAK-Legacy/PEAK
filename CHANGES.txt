@@ -2,6 +2,11 @@ Fixes and Enhancements since Version 0.5 alpha 2
 
  Changed, Enhanced, or Newly Deprecated Features
 
+ - Added 'commands.lookupCommand()' to look up a command shortcut or URL, ala
+   the `peak` script or `commands.Bootstrap` class.  Also added various
+   `commands.ErrorSubcommand` subclasses to make it easier to issue errors
+   from subcommands.
+
  - Added 'peak.core' as a minimal subset of 'peak.api'.  'peak.core' offers
    only "core" API packages and primitives, not the full set of available
    framework APIs.  'peak.api' will continue to expand as frameworks are added,
