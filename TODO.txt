@@ -7,10 +7,10 @@ Open Issues/To-Do Items
       - 'running.IProcessProxy' should use conditions/values instead of
         listeners
 
-      - Implement basic 'events.ISelector'
+      - Implement basic 'events.ISelector' and 'IEventLoop'
 
       - 'UntwistedReactor' should use an 'events.ISelector' to implement
-        I/O functions
+        I/O functions, and 'IEventLoop' to implement 'run()'
 
       - Add 'events.twisted_support', with 'TwistedScheduler',
        'TwistedSelector', and 'DeferredAsTaskSwitch'
@@ -20,6 +20,8 @@ Open Issues/To-Do Items
       - 'ILoadingService', 'IObjectLoader' and 'load:kind@URL' scheme
 
     * peak.config
+
+      - "service zones" or "service groups" to do smarter service groupings
 
       - plugin keys ordered by definition sequence, rather than randomly
 
@@ -37,14 +39,16 @@ Open Issues/To-Do Items
       - Cleanup/document attribute binding interface
 
 
-
-
     * peak.running.timers
 
       - Factor out state into separate object so timers aren't shared state
 
       - Look at possible integration of peak.query and cursor formatters, in
         order to view stats as an in-memory mini-DB w/reporting.
+
+    * peak.running
+
+       - Add "error formatting" and "error reporting" services
 
     * peak.web (some of this may get bumped to alpha 4)
 
