@@ -1,5 +1,33 @@
 Fixes and Enhancements since Version 0.5 alpha 3
 
+ - There's a new class, 'config.IniLoader', that can be used to lazily load
+   .ini files as configuration.  'IniLoader' instances have an 'iniFiles'
+   attribute that lists the configuration sources (filenames/URLs/factories)
+   to be used, and automatically load the .ini files as soon as you try to get
+   any configuration data for them.  Previously, similar functionality was only
+   available via 'config.makeRoot()'.
+
+   Also, there's now an 'ini' reference type that instantiates an 'IniLoader'
+   for one or more addresses.  You can use it like this::
+
+     [Named Services]
+
+     some.example = naming.Reference('ini',
+         ['pkgfile:peak/peak.ini', '/etc/something.ini']
+      )
+
+     another.example = naming.LinkRef(
+         'ref:ini@pkgfile:peak/peak.ini||/etc/something.ini'
+      )
+         
+   The two examples above will each load the same pair of specified .ini files.
+   You can also directly instantiate an 'IniLoader', as in::
+
+     cfg = config.IniLoader(self, iniFiles=['pkgfile:peak/peak.ini'])
+
+   Attempting to look up any configuration properties via the 'cfg' object
+   will cause it to load the specified .ini file.
+     
  - 'config.fileNearModule()' is DEPRECATED, in favor of 'config.packageFile()'.
    The latter returns a 'naming.IStreamFactory', which is more suitable for
    working with e.g. module data files compressed in a zipfile.  Uses of

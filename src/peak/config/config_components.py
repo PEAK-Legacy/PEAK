@@ -2,7 +2,7 @@ from __future__ import generators
 from peak.api import *
 from peak.util.imports import importString, importObject, whenImported
 from peak.binding.components import Component, Make, getParentComponent
-from peak.binding.components import iterParents, Configurable
+from peak.binding.components import iterParents, Configurable, Require
 from peak.binding.interfaces import IAttachable, IRecipe
 from peak.naming.interfaces import IStreamFactory
 from peak.util.EigenData import EigenCell,AlreadyRead
@@ -12,7 +12,7 @@ from interfaces import *
 from protocols.advice import getMRO, determineMetaclass
 
 __all__ = [
-    'ConfigMap', 'LazyRule', 'fileNearModule', 'packageFile',
+    'ConfigMap', 'LazyRule', 'fileNearModule', 'packageFile', 'IniLoader',
     'Value', 'iterKeys', 'Namespace', 'iterValues',
     'CreateViaFactory', 'parentsProviding', 'parentProviding', 'lookup',
     'ServiceArea',
@@ -449,6 +449,47 @@ class NamingStateAsSmartProperty(protocols.Adapter):
 
 
 
+class IniLoader(Configurable):
+
+    """Component that lazily loads its configuration from .ini file(s)"""
+
+    protocols.advise(
+        classProvides=[naming.IObjectFactory],
+    )
+
+    def __instance_offers__(self,d,a):
+        pm = d[a] = ConfigMap(self)
+        self.setupDefaults(pm)
+        return pm
+
+    __instance_offers__ = Make(__instance_offers__,
+        offerAs=[IConfigurable], uponAssembly = True
+    )
+
+    iniFiles = Require("Sequence of filenames/URLs/factories to load")
+
+    def setupDefaults(self, propertyMap):
+        """Set up 'propertyMap' with default contents loaded from 'iniFiles'"""
+
+        for file in self.iniFiles:
+            if isinstance(file,tuple):
+                # XXX do we really want to continue supporting this, now that
+                # XXX you can call pkgFile directly?
+                file = packageFile(*file)
+            config.loadConfigFile(propertyMap, file)
+
+
+    def getObjectInstance(klass, context, refInfo, name, attrs=None):
+        return klass(iniFiles = refInfo.addresses)
+
+    getObjectInstance = classmethod(getObjectInstance)
+
+
+
+
+
+
+
 class ServiceArea(Configurable):
 
     """Component that acts as a home for "global"-ish services"""
@@ -462,35 +503,7 @@ class ServiceArea(Configurable):
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-class ConfigurationRoot(ServiceArea):
+class ConfigurationRoot(IniLoader, ServiceArea):
 
     """Default implementation for a configuration root.
 
@@ -500,30 +513,17 @@ class ConfigurationRoot(ServiceArea):
 
     protocols.advise(instancesProvide=[IConfigurationRoot])
 
-    def __instance_offers__(self,d,a):
-        pm = d[a] = ConfigMap(self)
-        self.setupDefaults(pm)
-        return pm
+    iniFiles = ( packageFile('peak','peak.ini'), )
 
-    __instance_offers__ = Make(__instance_offers__,
-        offerAs=[IConfigurable], uponAssembly = True
-    )
-
-    iniFiles = ( ('peak','peak.ini'), )
-
-    def setupDefaults(self, propertyMap):
-        """Set up 'propertyMap' with default contents loaded from 'iniFiles'"""
-
-        for file in self.iniFiles:
-            if isinstance(file,tuple):
-                file = packageFile(*file)
-            config.loadConfigFile(propertyMap, file)
-
-
-    def noMoreValues(self,root,configKey,forObj): pass
+    def noMoreValues(self,root,configKey,forObj):
+        pass
 
     def nameNotFound(self,root,name,forObj):
         return naming.lookup(forObj, name, creationParent=forObj)
+
+
+
+
 
 
 

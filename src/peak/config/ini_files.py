@@ -80,11 +80,6 @@ protocols.adviseObject(loadConfigFiles, provides=[ISettingLoader])
 
 
 
-
-
-
-
-
 class ConfigReader(AbstractConfigParser):
 
     protocols.advise(
