@@ -578,15 +578,9 @@ class QueryLink(ListProxy):
             del self.data[i:j]
     
 
-    def __iadd__(self, other):  # XXX
+    def __iadd__(self, other):
         if self.__isActive():
             self.data += self._cast(other)
-        return self
-
-
-    def __imul__(self, n):      # XXX
-        if self.__isActive():
-            self.data *= n
         return self
 
 
@@ -608,6 +602,12 @@ class QueryLink(ListProxy):
     def extend(self, other):
         if self.__isActive():
             self.data.extend(self._cast(other))
+
+
+
+
+
+
 
 
 

@@ -310,7 +310,7 @@ class XMI_DM(storage.EntityDM):
             if model.IValue.isImplementedBy(f):
                 d[f.attrName] = node.getValue()
             else:
-                d[f.attrName] = self[node.getListId()]
+                d[f.attrName] = model.QueryLink(self[node.getListId()])
 
         coll = target.parent
         if coll is None: return d
