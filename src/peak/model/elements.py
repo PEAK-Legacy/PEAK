@@ -109,7 +109,7 @@ class TypeClass(Namespace.__class__):
 
 
     mdl_isAbstract = binding.Constant(
-        None, False, doc =
+        False, doc =
         """Is this an abstract class?  Defaults to 'False'.
 
             To make a 'model.Type' subclass abstract, set this
@@ -422,7 +422,7 @@ class PrimitiveTypeClass(TypeClass):
     # Primitive types are not instantiable; they stand in for
     # a type that isn't derived from model.Type
 
-    mdl_isAbstract = binding.Constant(None, True)
+    mdl_isAbstract = binding.Constant(True)
 
 
 class PrimitiveType(Type):

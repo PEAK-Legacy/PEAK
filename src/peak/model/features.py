@@ -671,7 +671,7 @@ class structField(StructuralFeature):
 
     upperBound = 1
 
-    isChangeable = binding.classAttr( binding.Constant(None, False) )
+    isChangeable = binding.classAttr( binding.Constant(False) )
 
 
 

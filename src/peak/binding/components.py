@@ -80,9 +80,9 @@ def getComponentPath(component, relativeTo=None):
 
 
 
-def Constant(provides, value, doc=None):
+def Constant(value, offerAs=(), doc=None):
     """Supply a constant as a property or utility"""
-    return Once(lambda s,d,a: value, provides=provides, doc=doc)
+    return Once(lambda s,d,a: value, offerAs=offerAs, doc=doc)
 
 
 class ModuleAsNode(object):
@@ -465,11 +465,11 @@ class bindTo(Once):
     defaultValue = NOT_GIVEN
     singleValue = True
 
-    def __init__(self,targetName,provides=None,doc=None,default=NOT_GIVEN,
+    def __init__(self,targetName,offerAs=(),doc=None,default=NOT_GIVEN,
         activateUponAssembly=False):
         self.defaultValue = default
         self.targetNames = (targetName,)
-        self.declareAsProviderOf = provides
+        self.declareAsProviderOf = offerAs
         self.__doc__ = doc or ("binding.bindTo(%r)" % targetName)
         self.activateUponAssembly = activateUponAssembly
 
@@ -511,15 +511,15 @@ class bindSequence(bindTo):
 
     def __init__(self, *targetNames, **kw):
         self.targetNames = targetNames
-        self.declareAsProviderOf = kw.get('provides')
+        self.declareAsProviderOf = kw.get('offerAs',())
         self.__doc__ = kw.get('doc',("binding.bindSequence%s" % `targetNames`))
         self.activateUponAssembly = kw.get('activateUponAssembly')
 
 
-def whenAssembled(func, name=None, provides=None, doc=None):
+def whenAssembled(func, name=None, offerAs=(), doc=None):
     """'Once' function with 'activateUponAssembly' flag set"""
     return Once(
-        func, name=name, provides=provides, doc=doc, activateUponAssembly=True
+        func, name=name, offerAs=offerAs, doc=doc, activateUponAssembly=True
     )
 
 
@@ -572,7 +572,7 @@ def suggestParentComponent(parent,name,child):
 
 
 
-def delegateTo(delegateAttr, name=None, provides=None, doc=None):
+def delegateTo(delegateAttr, name=None, offerAs=(), doc=None):
 
     """Delegate attribute to the same attribute of another object
 
@@ -594,7 +594,7 @@ def delegateTo(delegateAttr, name=None, provides=None, doc=None):
     as you do when using 'bindTo()'."""
 
     return Once(
-        lambda s,d,a: getattr(getattr(s,delegateAttr),a), name, provides, doc
+        lambda s,d,a: getattr(getattr(s,delegateAttr),a), name, offerAs, doc
     )
 
 def Acquire(key, doc=None, default=NOT_GIVEN, activateUponAssembly=False):
@@ -609,11 +609,11 @@ def Acquire(key, doc=None, default=NOT_GIVEN, activateUponAssembly=False):
     attribute (e.g. via a constructor keyword)."""
 
     key = adapt(key,IConfigKey)
-    return bindTo(key,key,doc,default,activateUponAssembly=activateUponAssembly)
+    return bindTo(key,[key],doc,default,
+        activateUponAssembly=activateUponAssembly
+    )
 
-
-
-def bindToParent(level=1, name=None, provides=None, doc=None):
+def bindToParent(level=1, name=None, offerAs=(), doc=None):
 
     """Look up and cache a reference to the nth-level parent component
 
@@ -636,10 +636,10 @@ def bindToParent(level=1, name=None, provides=None, doc=None):
 
         return obj
 
-    return Once(computeValue, name=name, provides=provides, doc=doc)
+    return Once(computeValue, name=name, offerAs=offerAs, doc=doc)
 
 
-def bindToSelf(name=None, provides=None, doc=None):
+def bindToSelf(name=None, offerAs=(), doc=None):
 
     """Cached reference to the 'self' object
 
@@ -649,7 +649,7 @@ def bindToSelf(name=None, provides=None, doc=None):
     can refer to 'self.delegateForInterfaceX.someMethod()', and have
     'delegateForInterfaceX' be a 'bindToSelf()' by default."""
 
-    return bindToParent(0,name,provides,doc)
+    return bindToParent(0,name,offerAs,doc)
 
 
 
@@ -658,9 +658,9 @@ class requireBinding(Once):
 
     """Placeholder for a binding that should be (re)defined by a subclass"""
 
-    def __init__(self,description="",name=None,provides=None,doc=None):
+    def __init__(self,description="",name=None,offerAs=(),doc=None):
         self.description = description
-        self.declareAsProviderOf = provides
+        self.declareAsProviderOf = offerAs
         self.__doc__ = doc or ("binding.requireBinding: %s" % description)
         self.attrName = self.__name__ = name
 
@@ -671,16 +671,16 @@ class requireBinding(Once):
         )
 
 
-def bindToUtilities(iface,provides=None,doc=None,activateUponAssembly=False):
+def bindToUtilities(iface,offerAs=(),doc=None,activateUponAssembly=False):
 
     """Binding to a list of all 'iface' utilities above the component"""
 
     return Once(lambda s,d,a: list(config.findUtilities(s,iface)),
-        provides=provides, doc=doc, activateUponAssembly=activateUponAssembly
+        offerAs=offerAs, doc=doc, activateUponAssembly=activateUponAssembly
     )
 
 
-def bindToProperty(propName, default=NOT_GIVEN, provides=None, doc=None,
+def bindToProperty(propName, default=NOT_GIVEN, offerAs=(), doc=None,
     activateUponAssembly=False):
 
     """Binding to property 'propName', defaulting to 'default' if not found
@@ -692,7 +692,7 @@ def bindToProperty(propName, default=NOT_GIVEN, provides=None, doc=None,
     propName = PropertyName(propName)
 
     return Once(lambda s,d,a: config.getProperty(s,propName,default),
-        provides=provides, doc=doc, activateUponAssembly = activateUponAssembly
+        offerAs=offerAs, doc=doc, activateUponAssembly = activateUponAssembly
     )
 
 class _Base(object):
@@ -883,8 +883,8 @@ class Component(_Base):
     def getComponentName(self):
         return self.__componentName
 
-    __instance_provides__ = New(
-        'peak.config.config_components:PropertyMap', provides=IPropertyMap
+    __instance_offers__ = New(
+        'peak.config.config_components:PropertyMap', offerAs=[IPropertyMap]
     )
 
 
@@ -902,7 +902,7 @@ class Component(_Base):
 
     def _getConfigData(self, forObj, configKey):
 
-        attr = self._getBinding('__instance_provides__')
+        attr = self._getBinding('__instance_offers__')
 
         if attr:
             value = attr.getValueFor(forObj, configKey)
@@ -910,7 +910,7 @@ class Component(_Base):
             if value is not NOT_FOUND:
                 return value
 
-        attr = self.__class__.__class_provides__.get(configKey)
+        attr = self.__class__.__class_offers__.get(configKey)
 
         if attr:
             return getattr(self, attr, NOT_FOUND)
@@ -919,7 +919,7 @@ class Component(_Base):
 
 
     def registerProvider(self, configKeys, provider):
-        self.__instance_provides__.registerProvider(configKeys, provider)
+        self.__instance_offers__.registerProvider(configKeys, provider)
 
 
     def notifyUponAssembly(self,child):
@@ -982,28 +982,32 @@ class Component(_Base):
     __attrsToBeAssembled__ = classAttr(Once(__attrsToBeAssembled__))
 
 
-    def __class_provides__(klass,d,a):
+    def __class_offers__(klass,d,a):
 
         cp = EigenRegistry()
-        map(cp.update, getInheritedRegistries(klass, '__class_provides__'))
+        map(cp.update, getInheritedRegistries(klass, '__class_offers__'))
+
+        register = cp.register
 
         for attrName, descr in klass.__class_descriptors__.items():
-            provides = getattr(descr,'declareAsProviderOf',None)
-            if provides is not None:
-                cp.register(provides, attrName)
+            offerAs = getattr(descr,'declareAsProviderOf',())
+            try:
+                for key in offerAs:
+                    register(adapt(key,IConfigKey), attrName)
+            except TypeError:
+                print "Error:", klass, attrName, offerAs
+                raise
 
         cp.lock()   # make it immutable
         return cp
 
-    __class_provides__ = classAttr(Once(__class_provides__))
+    __class_offers__ = classAttr(Once(__class_offers__))
 
 
 
 
 
 Base = Component    # XXX backward compatibility; deprecated
-
-
 
 
 

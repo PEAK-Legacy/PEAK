@@ -136,10 +136,10 @@ class IC(IB): pass
 class ID(IB): pass
 
 
-class PA(object): __implements__ = IA
-class PB(object): __implements__ = IB
-class PC(object): __implements__ = IC
-class PD(object): __implements__ = ID
+class PA(object): __implements__ = IA,
+class PB(object): __implements__ = IB,
+class PC(object): __implements__ = IC,
+class PD(object): __implements__ = ID,
 class PE(object): __implements__ = IC, ID
 
 
@@ -159,8 +159,8 @@ class RegistryBase(TestCase):
         reg = self.reg = EigenRegistry()
 
         for ob in self.obs:
-            reg.register(ob.__implements__, ob)
-
+            for i in ob.__implements__:
+                reg.register(i, ob)
 
 class RegForward(RegistryBase):
 

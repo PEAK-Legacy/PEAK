@@ -80,7 +80,7 @@ def getInheritedRegistries(klass, registryName):
 
 
 
-def New(obtype, name=None, provides=None, doc=None, activateUponAssembly=False):
+def New(obtype, name=None, offerAs=(), doc=None, activateUponAssembly=False):
 
     """One-time binding of a new instance of 'obtype'
 
@@ -112,7 +112,7 @@ def New(obtype, name=None, provides=None, doc=None, activateUponAssembly=False):
         else:
             return factory()
 
-    return Once( mkNew, name, provides, doc, activateUponAssembly)
+    return Once( mkNew, name, offerAs, doc, activateUponAssembly)
 
 
 
@@ -121,7 +121,7 @@ def New(obtype, name=None, provides=None, doc=None, activateUponAssembly=False):
 
 
 
-def Copy(obj, name=None, provides=None, doc=None, activateUponAssembly=False):
+def Copy(obj, name=None, offerAs=(), doc=None, activateUponAssembly=False):
 
     """One-time binding of a copy of 'obj'
 
@@ -148,7 +148,7 @@ def Copy(obj, name=None, provides=None, doc=None, activateUponAssembly=False):
 
     from copy import copy
     return Once(
-        (lambda s,d,a: copy(obj)), name, provides, doc, activateUponAssembly
+        (lambda s,d,a: copy(obj)), name, offerAs, doc, activateUponAssembly
     )
 
 
@@ -195,7 +195,7 @@ class Once(OnceDescriptor):
         supply a valid name, attribute access will fail with a 'TypeError'.
     """
 
-    declareAsProviderOf = None
+    declareAsProviderOf = ()
     activateUponAssembly = False
 
     def __repr__(self):
@@ -204,11 +204,11 @@ class Once(OnceDescriptor):
 
 
     def __init__(self,
-        func, name=None, provides=None, doc=None, activateUponAssembly=False):
+        func, name=None, offerAs=(), doc=None, activateUponAssembly=False):
 
         self.computeValue = func
         self.attrName = self.__name__ = name or getattr(func,'__name__',None)
-        self.declareAsProviderOf = provides
+        self.declareAsProviderOf = offerAs
         self.__doc__ = doc or getattr(func,'__doc__',None) or self.attrName
         if activateUponAssembly:
             self.activateUponAssembly = True

@@ -241,7 +241,7 @@ class EnumerationClass(PrimitiveTypeClass):
     # Enumeration classes are never abstract and must always be
     # instantiable
 
-    mdl_isAbstract = binding.Constant(None, False)
+    mdl_isAbstract = binding.Constant(False)
 
 
     def __new__(meta, name, bases, cDict):

@@ -130,14 +130,14 @@ class TestApp(binding.Component):
             select=self.clock.select
         )
 
-    reactor = binding.Once(reactor, provides=running.IBasicReactor)
+    reactor = binding.Once(reactor, offerAs=[running.IBasicReactor])
 
     def mainLoop(self,d,a):
         return MainLoop(self, time = self.clock.time)
 
-    mainLoop = binding.Once(mainLoop, provides=running.IMainLoop)
+    mainLoop = binding.Once(mainLoop, offerAs=[running.IMainLoop])
 
-    tq = binding.New(TaskQueue, provides=running.ITaskQueue)
+    tq = binding.New(TaskQueue, offerAs=[running.ITaskQueue])
 
     log = binding.New(list)
 

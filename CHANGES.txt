@@ -1,3 +1,46 @@
+Fixes and Enhancements since Version 0.5 alpha 2
+
+ Changed, Enhanced, or Newly Deprecated Features
+
+ - The 'provides' keyword argument to various 'peak.binding' APIs has been
+   renamed to 'offerAs', and it must be a sequence of configuration keys.
+   (Previously, it accepted either a single key or a tuple of keys.)
+   The signature of 'binding.Constant()' was changed as well; the first
+   positional argument is now the constant value, and 'offerAs' is now a
+   keyword argument.  (Previously, 'provides' was the first positional argument
+   of 'binding.Constant()'.)  The 'registerProvider()' method of
+   'config.IConfigurable()' also now accepts only a single configuration key,
+   as does 'EigenRegistry.register()'.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 Fixes and Enhancements since Version 0.5 alpha 1
 
  Changed, Enhanced, or Newly Deprecated Features

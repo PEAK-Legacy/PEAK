@@ -293,15 +293,12 @@ class EigenRegistry(EigenDict):
         self.depth = {}
         super(EigenRegistry,self).__init__()
 
-    def register(self,implements,item, depth=0):
-        """Register 'item' under 'implements' (an Interface or nested tuple)"""
-        if isinstance(implements,tuple):
-            for iface in implements:
-                self.register(iface,item)
-        elif self.depth.get(implements,depth)>=depth:
-            self[implements]=item
-            self.depth[implements] = depth
-            for i in implements.getBases():
+    def register(self, configKey, item, depth=0):
+        """Register 'item' under 'configKey'"""
+        if self.depth.get(configKey,depth)>=depth:
+            self[configKey]=item
+            self.depth[configKey] = depth
+            for i in configKey.getBases():
                 self.register(i, item, depth+1)
 
 
@@ -329,11 +326,14 @@ class EigenRegistry(EigenDict):
     def clear(self):
         raise NotImplementedError
 
-
 # CollapsedCell is an empty (but read and locked) EigenCell
 
 CollapsedCell = EigenCell()
 CollapsedCell.exists()  # force locking
+
+
+
+
 
 
 

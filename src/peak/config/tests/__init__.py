@@ -50,12 +50,12 @@ class UtilityData(binding.Component):
 
     class aService(binding.Component):
 
-        thing5 = binding.bindToParent(provides=IS1U)
+        thing5 = binding.bindToParent(offerAs=[IS1U])
 
         class nestedService(binding.Component):
             pass
 
-        nestedService = binding.New(nestedService, provides=IS2U)
+        nestedService = binding.New(nestedService, offerAs=[IS2U])
 
     aService = binding.New(aService)
 

@@ -14,14 +14,14 @@ class TestCursor(LDAPCursor):
         if values: return values[0]
 
     fooCvt = binding.Constant(
-        PropertyName('peak.ldap.field_converters.foo'), fooCvt
+        fooCvt, offerAs=['peak.ldap.field_converters.foo']
     )
 
     def barCvt(name,values):
         if values: return int(values[0])
 
     barCvt = binding.Constant(
-        PropertyName('peak.ldap.field_converters.bar'), barCvt
+        barCvt, offerAs = ['peak.ldap.field_converters.bar']
     )
 
     class _conn(object):

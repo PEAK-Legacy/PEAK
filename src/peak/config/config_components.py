@@ -140,18 +140,18 @@ class PropertyMap(Component):
         _setCellInDict(self.rules, PropertyName(propName), lambda *args: value)
 
 
-    def registerProvider(self, ifaces, provider, depth=0):
-        """Register 'item' under 'implements' (an Interface or nested tuple)"""
+    def registerProvider(self, configKey, provider, depth=0):
+        """Register 'provider' under 'configKey'"""
 
-        if isinstance(ifaces,tuple):
-            for iface in ifaces:
-                self.registerProvider(iface,provider)
-        elif self.depth.get(ifaces,depth)>=depth:
-            # ifaces is a configKey
-            _setCellInDict(self.rules, ifaces, provider)
-            self.depth[ifaces]=depth
-            for i in ifaces.getBases():
-                self.registerProvider(i, provider,depth+1)
+        if self.depth.get(configKey,depth)>=depth:
+            # The registered provider is at least as good as the one we have
+            _setCellInDict(self.rules, configKey, provider)
+            self.depth[configKey]=depth
+            for i in configKey.getBases():
+                self.registerProvider(i, provider, depth+1)
+
+
+
 
 
 
@@ -376,13 +376,13 @@ class ConfigurationRoot(Component):
 
     protocols.advise(instancesProvide=[IConfigurationRoot])
 
-    def __instance_provides__(self,d,a):
+    def __instance_offers__(self,d,a):
         pm = d[a] = PropertyMap(self)
         self.setupDefaults(pm)
         return pm
 
-    __instance_provides__ = Once(__instance_provides__,
-        provides=IPropertyMap, activateUponAssembly = True
+    __instance_offers__ = Once(__instance_offers__,
+        offerAs=[IPropertyMap], activateUponAssembly = True
     )
 
     iniFiles = ( ('peak','peak.ini'), )
