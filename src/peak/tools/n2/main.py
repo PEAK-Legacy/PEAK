@@ -195,4 +195,4 @@ ls()\t\tshow contents of c
 
 
     def printColumns(self, stdout, l, sort=True, rev=False):
-        stdout.writelines(lsFormat(self.width, l, sort, rev))
+        stdout.writelines(lsFormat(self.width, l, sort=sort, reverse=rev))
