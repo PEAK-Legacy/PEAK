@@ -172,6 +172,7 @@ def processXML(context,source,**kw):
     In addition to XML attribute and element definitions, the context can
     also provide properties in 'peak.config.xml_namespaces' and
     'peak.config.xml_functions' to exert additional control over the parsing.
+    
     For example, this::
 
         [peak.config.xml_namespaces]
@@ -190,9 +191,12 @@ def processXML(context,source,**kw):
     'SOX.NegotiatingParser'.  (See 'peak.util.SOX.INegotiationData' for info
     on what each parsing function does.)  Note that these functions are used
     only for parsing the top-level document nodes, and not for any contained
-    XML elements.  You can also override or supplement these top-level
-    functions by passing keyword arguments to this function.  Note that this
-    function will only return a value if there is a 'finish' function defined.
+    XML elements.
+
+    You can also override or supplement these top-level functions by passing
+    keyword arguments to this function.  Note that this function will only
+    return a value if there is a 'finish' function defined (but you can use a
+    'start' function to set one up).
 
     The behavior for contained XML elements is determined by the XML element
     and attribute definitions provided by 'context'.  These must be
@@ -232,16 +236,12 @@ def processXML(context,source,**kw):
         return lookup(context,XMLKey('attribute',ns or '*',nm),None)
 
     p.setLookups(lookupElement,lookupAttribute)
-
     factory = IStreamSource(source).getFactory(context)
-    stream = factory.open('b')
+    stream = factory.open('t')
     try:
         return p.parseStream(stream,kw,factory.address)
     finally:
         stream.close()
-
-
-
 
 
 class StreamSource(protocols.Adapter):
