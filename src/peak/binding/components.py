@@ -392,7 +392,7 @@ class ConfigFinder(object):
         self.ob = ob
 
     def findComponent(self, component, default=NOT_GIVEN):
-        return config.findUtility(component, self.ob, default)
+        return config.lookup(component, self.ob, default)
 
     def __repr__(self):
         return repr(self.ob)
@@ -603,7 +603,7 @@ requireBinding = Require    # XXX DEPRECATED
 def bindToUtilities(iface, **kw):
     """DEPRECATED: bind list of all 'iface' utilities above the component"""
 
-    return Make(lambda self: list(config.findUtilities(self,iface)), **kw)
+    return Make(lambda self: list(config.iterValues(self,iface)), **kw)
 
 
 
@@ -804,6 +804,47 @@ class Component(_Base):
     __instance_offers__ = Make(
         'peak.config.config_components:PropertyMap', offerAs=[IPropertyMap]
     )
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    def _configKeysMatching(self, configKey):
+
+        """Iterable over defined keys that match 'configKey'
+
+        A key 'k' in the map is considered to "match" 'configKey' if any of
+        'k.parentKeys()' are listed as keys in 'configKey.registrationKeys()'.
+        You must not change the configuration map while iterating over the
+        keys.  Also, keep in mind that only explicitly-registered keys are
+        returned; for instance, load-on-demand rules will only show up as
+        wildcard keys."""
+
+        maps = [self.__class__.__class_offers__]
+        attr = self._getBinding('__instance_offers__')
+
+        if attr:
+            maps.append(attr)
+
+        yielded = {}
+
+        for cMap in maps:
+            for key in cMap._configKeysMatching(configKey):
+                if key in yielded:
+                    continue
+                yield key
+                yielded[key] = 1
+
+
 
 
 

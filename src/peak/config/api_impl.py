@@ -2,32 +2,32 @@
 
 from peak.api import exceptions, NOT_FOUND, NOT_GIVEN, PropertyName, adapt
 from interfaces import *
-from config_components import findUtility, iterParents, ConfigurationRoot
+from config_components import lookup, ConfigurationRoot, Value, parentProviding
 
 
 __all__ = [
-    'getProperty', 'setPropertyFor', 'setRuleFor', 'setDefaultFor',
+    'getProperty', 'setPropertyFor', 'setRuleFor', 'setDefaultFor', #DEPRECATED
     'makeRoot',
 ]
 
 
-
 def setPropertyFor(obj, propName, value):
-
-    pm = findUtility(obj, IPropertyMap)
-    pm.setValue(propName, value)
+    """DEPRECATED"""
+    parentProviding(obj, IConfigurable).registerProvider(
+        propName, Value(value)
+    )
 
 
 def setRuleFor(obj, propName, ruleObj):
-
-    pm = findUtility(obj, IPropertyMap)
-    pm.setRule(propName, ruleObj)
+    """DEPRECATED"""
+    parentProviding(obj, IConfigurable).registerProvider(propName, ruleObj)
 
 
 def setDefaultFor(obj, propName, defaultObj):
-
-    pm = findUtility(obj, IPropertyMap)
-    pm.setDefault(propName, defaultObj)
+    """DEPRECATED"""
+    parentProviding(obj, IConfigurable).registerProvider(
+        PropertyName(propName+'?'), defaultObj
+    )
 
 
 
@@ -64,60 +64,19 @@ def makeRoot(**options):
     return ConfigurationRoot(None, **options)
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 def getProperty(obj, propName, default=NOT_GIVEN):
 
-    """Find property 'propName' for 'obj'
+    """DEPRECATED: use 'config.lookup()' instead"""
+    return lookup(obj, propName, default)
 
-        Returns 'default' if the property is not found.  If no 'default'
-        is supplied, raises 'PropertyNotFound'.
 
-        Properties are located by querying all the 'IPropertyMap' utilities
-        available from 'obj' and its parent components, up through the local
-        and global configuration objects, if applicable.
-    """
 
-    if not isinstance(propName,PropertyName):
-        propName = PropertyName(propName)
 
-    if not propName.isPlain():
-        raise exceptions.InvalidName(
-            "getProperty() can't use wildcard/default properties", propName
-        )
 
-    forObj = component = obj
 
-    for component in iterParents(obj):
-        try:
-            prop = component._getConfigData
-        except AttributeError:
-            continue
 
-        prop = prop(forObj, propName)
 
-        if prop is not NOT_FOUND:
-            return prop
 
-    return adapt(
-        component, IConfigurationRoot, NullConfigRoot
-    ).propertyNotFound(
-        component, propName, forObj, default
-    )
 
 
 

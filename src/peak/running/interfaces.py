@@ -222,7 +222,7 @@ class ITaskQueue(Interface):
 
     Unlike many scheduling-related components, you may have as many of
     these as you like, but each must have access to an 'IBasicReactor'
-    utility and an 'IMainLoop' utility.
+    and an 'IMainLoop'.
 
     Note, by the way, that this interface does not include a way to
     remove tasks from the queue.  A task may remove itself from the

@@ -1,7 +1,7 @@
 """PEAK Component Binding Interfaces"""
 
 from protocols import Interface, Attribute
-from peak.config.interfaces import IConfigurable, IConfigSource
+from peak.config.interfaces import IConfigMap, IConfigSource
 from peak.api import NOT_GIVEN
 
 __all__ = [
@@ -121,7 +121,7 @@ class IAttachable(Interface):
 
 
 
-class IComponent(IAttachable, IBindingNode, IBindableAttrs, IConfigurable):
+class IComponent(IAttachable, IBindingNode, IBindableAttrs, IConfigMap):
 
     """API supplied by binding.Component and its subclasses"""
 

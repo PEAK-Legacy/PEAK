@@ -77,8 +77,8 @@ class ClassAsConfigKey(Wrapper):
     def lookupKeys(self):
         return getMRO(self.subject)
 
-
-
+    def parentKeys(self):
+        return ()   # XXX maybe use modules?
 
 class UnionOf(object):
 
@@ -108,11 +108,11 @@ class UnionOf(object):
             for k in key.lookupKeys():
                 yield k
 
+    def parentKeys(self):
+        return ()
+
     def __repr__(self):
         return 'config.UnionOf'+repr(self.subject)
-
-
-
 
 
 
@@ -146,11 +146,11 @@ class MultiKey(Wrapper):
         for k in i:
             yield MultiKey(*k)
 
+    def parentKeys(self):
+        return ()
+
     def __repr__(self):
         return 'config.MultiKey'+repr(self.subject)
-
-
-
 
 
 
@@ -231,6 +231,8 @@ class InterfaceAsConfigKey(Wrapper):
         """Iterate over keys that should be used for lookup"""
         return self.subject,
 
+    def parentKeys(self):
+        return ()
 
 whenImported('zope.interface',
     lambda interface: (
@@ -242,14 +244,13 @@ whenImported('zope.interface',
 )
 
 
-
-
 class EigenRegistry(EigenDict):
 
     """EigenDict that takes IConfigKey objects as keys, handling inheritance"""
 
     def __init__(self):
         self.depth = {}
+        self.keysIndex = {}
         super(EigenRegistry,self).__init__()
 
     def lookup(self, configKey, failobj=None):
@@ -267,6 +268,22 @@ class EigenRegistry(EigenDict):
             if self.depth.get(key,depth)>=depth:
                 self[key]=item
                 self.depth[key] = depth
+            key = adapt(key, IConfigKey)
+            for k in key.parentKeys():
+                self.keysIndex.setdefault(k,{})[key] = True
+
+
+    def _configKeysMatching(self, configKey):
+        index = self.keysIndex
+
+        if not index:
+            return
+
+        for key,depth in adapt(configKey,IConfigKey).registrationKeys():
+            for k in index.get(key,()):
+                yield k
+
+
 
     def update(self,other):
         """Conservatively merge in another EigenRegistry"""
@@ -283,6 +300,8 @@ class EigenRegistry(EigenDict):
                 sc(iface).set(other[iface])
                 mydepth[iface] = depth
 
+        for k,v in other.keysIndex.items():
+            self.keysIndex.setdefault(k,{}).update(v)
 
 
     def setdefault(self,key,failobj=None):
@@ -293,25 +312,6 @@ class EigenRegistry(EigenDict):
 
     def clear(self):
         raise NotImplementedError
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

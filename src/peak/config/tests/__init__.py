@@ -43,8 +43,9 @@ class PropertyTest(TestCase):
 
     def checkSetProp(self):
         app = testRoot()
-        config.setPropertyFor(app,'peak.config.tests.foo',1)
-        assert config.getProperty(app,'peak.config.tests.foo')==1
+        name = PropertyName('peak.config.tests.foo')
+        app.registerProvider(name,config.Value(1))
+        assert config.lookup(app,name)==1
 
 
     def checkEnviron(self):
@@ -68,16 +69,15 @@ class PropertyTest(TestCase):
         )
 
         for k in '.spew,.blue,.knew'.split(','):
-            prop = 'foo.bar.rule%s' % k
+            prop = PropertyName('foo.bar.rule%s' % k)
             suff = k.startswith('.') and k[1:] or k
-            assert config.getProperty(obj, prop) == (
-                obj.__instance_offers__, prop, 'foo.bar.rule.', suff, obj
-            ), config.getProperty(obj, prop)
+            self.assertEqual(
+                config.lookup(obj,prop),
+                (obj.__instance_offers__, prop, 'foo.bar.rule.', suff, obj)
+            )
 
-        assert config.getProperty(obj,'foo.bar.spam') is testRoot
-        assert config.getProperty(obj,'foo.bar.baz') is testRoot
-
-
+        assert config.lookup(obj,'foo.bar.spam') is testRoot
+        assert config.lookup(obj,'foo.bar.baz') is testRoot
 
 
 class A:
@@ -142,16 +142,16 @@ class UtilityTest(TestCase):
 
         data = self.data
         ns   = data.aService.nestedService
-        assert config.findUtility(ns,IS1U) is data
-        assert config.findUtility(ns,IS2U) is ns
+        assert config.lookup(ns,IS1U) is data
+        assert config.lookup(ns,IS2U) is ns
 
 
     def checkAcquireInst(self):
 
         data = self.data
-        ob1 = config.findUtility(data,ISampleUtility1,None)
-        ob2 = config.findUtility(data.aService,ISampleUtility1,None)
-        ob3 = config.findUtility(data.aService.nestedService,ISampleUtility1,
+        ob1 = config.lookup(data,ISampleUtility1,None)
+        ob2 = config.lookup(data.aService,ISampleUtility1,None)
+        ob3 = config.lookup(data.aService.nestedService,ISampleUtility1,
         None)
         assert ob1 is None
         assert ob2 is not None
@@ -166,11 +166,11 @@ class UtilityTest(TestCase):
 
         data = self.data
         root = data.getParentComponent()
-        ob1 = config.findUtility(data,ISampleUtility2,None)
-        ob2 = config.findUtility(data.aService,ISampleUtility2,None)
-        ob3 = config.findUtility(data.aService.nestedService,ISampleUtility2,
+        ob1 = config.lookup(data,ISampleUtility2,None)
+        ob2 = config.lookup(data.aService,ISampleUtility2,None)
+        ob3 = config.lookup(data.aService.nestedService,ISampleUtility2,
         None)
-        ob4 = config.findUtility(data.aService.nestedService,ISampleUtility2,
+        ob4 = config.lookup(data.aService.nestedService,ISampleUtility2,
         None)
 
         assert ob1 is None
@@ -186,8 +186,8 @@ class UtilityTest(TestCase):
     def checkFindProvider(self):
         data = self.data
         ns   = data.aService.nestedService
-        assert config.findUtility(ns,provides(A)) is data
-        assert config.findUtility(ns,provides(B)) is ns
+        assert config.lookup(ns,provides(A)) is data
+        assert config.lookup(ns,provides(B)) is ns
 
     def checkFindFactory(self):
         data = self.data

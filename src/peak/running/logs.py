@@ -426,7 +426,7 @@ class peakLoggerContext(naming.AddressContext):
         if name.body:
             prop = '%s.%s' % (prop, name.body)
 
-        ob = config.getProperty(self.creationParent, prop, default=NOT_FOUND)
+        ob = config.lookup(self.creationParent, prop, default=NOT_FOUND)
         if ob is NOT_FOUND:
             return NOT_FOUND
 

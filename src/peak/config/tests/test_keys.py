@@ -52,12 +52,13 @@ class BasicKeyTests(TestCase):
 
     def verifyKeygen(self,key):
 
-        # Verify the lookup and registration keys for 'key'
+        # Verify the parent, lookup, and registration keys for 'key'
 
         for k,d in key.registrationKeys():
             self.verifiedKey(k)
 
         map(self.verifiedKey, key.lookupKeys())
+        map(self.verifiedKey, key.parentKeys())
 
 
     def verifySelfReg(self, keys):
@@ -70,7 +71,6 @@ class BasicKeyTests(TestCase):
         # Verify that 'keys' only use themselves for lookup
         for k in keys:
             self.assertEqual( list(k.lookupKeys()), [k] )
-
 
 
 
@@ -244,8 +244,134 @@ class BasicKeyTests(TestCase):
 
 
 
+class SimpleMapTest(TestCase):
+
+    regKeys = [
+        'foo.bar.baz', 'spam.bar.foo', 'foo.bar.qux', 'foo.baz',
+        'foo.bar.widget.gizmo', 'foo.bar.baz.spam',
+    ]
+    regKeys.sort()
+    foundKeys = regKeys
+    mapType = config.ConfigMap
+
+    def setUp(self):
+        self.map = self.mapType()
+
+    def keysFor(self,key):
+        keys = list(self.map._configKeysMatching(key)); keys.sort()
+        return keys
+
+    def register(self,key):
+        self.map.registerProvider(key,config.Value(None))
+
+    def testKeysMatching(self):
+        map(self.register, self.regKeys)
+
+        self.assertEqual(
+            self.keysFor('foo.bar'),
+            [k for k in self.foundKeys
+                if k.startswith('foo.bar.') and '.' not in k[8:]
+            ]
+        )
+        self.assertEqual(
+            self.keysFor('foo.*'),
+            [k for k in self.foundKeys if k.startswith('foo.')]
+        )
+        self.assertEqual(
+            self.keysFor('foo.bar.*'),
+            [k for k in self.foundKeys if k.startswith('foo.bar.')]
+        )
+        self.assertEqual(
+            self.keysFor('*'), self.foundKeys
+        )
+
+class KeysViaAPI:
+
+    def keysFor(self,key):
+        keys = list(config.iterKeys(self.map,key))
+        keys.sort()
+        return keys
+
+
+class SimpleMapViaAPI(KeysViaAPI, SimpleMapTest):
+    pass
+
+
+class ComponentMapDirect(SimpleMapTest):
+
+    def setUp(self):
+        self.map = binding.Component()
+
+
+class ComponentMapViaAPI(KeysViaAPI, ComponentMapDirect):
+    # Verify iterKeys() on component
+    pass
+
+
+class Case1(binding.Component):
+
+    spam_qux = binding.Require(
+        "testing", offerAs=['spam.baz.qux','foo.bar.click']
+    )
+
+class ComponentWithBinding(SimpleMapTest):
+
+    foundKeys = SimpleMapTest.foundKeys + ['spam.baz.qux', 'foo.bar.click']
+    foundKeys.sort()
+
+    mapType = Case1
+
+class ComponentWithBindingViaAPI(KeysViaAPI, ComponentWithBinding):
+    pass
+
+
+
+class ParentComponent(ComponentWithBindingViaAPI):
+
+    def setUp(self):
+        self.map = self.mapType(binding.Component())
+
+class ChildComponent(ComponentWithBindingViaAPI):
+
+    def setUp(self):
+        self.map = binding.Component(self.mapType())
+
+
+class Case2(Case1):
+
+    other_thing = binding.Require(
+        "testing", offerAs=['foo.bar.quack.*']
+    )
+
+
+class InheritedComponent(ComponentWithBinding):
+
+    foundKeys = ComponentWithBinding.foundKeys + ['foo.bar.quack.*']
+    foundKeys.sort()
+    mapType = Case2
+
+
+class InheritedComponentAPI(KeysViaAPI, InheritedComponent):
+    pass
+
+
+class InheritedParent(InheritedComponentAPI):
+    setUp = ParentComponent.setUp.im_func
+
+
+class InheritedChild(InheritedComponentAPI):
+    setUp = ChildComponent.setUp.im_func
+
+
+
+
+
+
 TestClasses = (
-    BasicKeyTests,
+    BasicKeyTests, SimpleMapTest, SimpleMapViaAPI, ComponentMapDirect,
+    ComponentMapViaAPI, ComponentWithBinding, ComponentWithBindingViaAPI,
+    ParentComponent, ChildComponent, InheritedComponent, InheritedComponentAPI,
+    InheritedParent, InheritedChild,
 )
 
 
@@ -255,9 +381,6 @@ def test_suite():
         s.append(makeSuite(t,'test'))
 
     return TestSuite(s)
-
-
-
 
 
 

@@ -173,7 +173,7 @@ def parseCluster(prefix, fn):
 
 
 
-def loadCluster(propertyMap, filename=None, prefix='peak.running.cluster.*',
+def loadCluster(configMap, filename=None, prefix='peak.running.cluster.*',
                 propertyName=None, includedFrom=None
     ):
 
@@ -182,8 +182,8 @@ def loadCluster(propertyMap, filename=None, prefix='peak.running.cluster.*',
     r = parseCluster(prefix, filename)
 
     for k,v in r.items():
-        propertyMap.setValue(
-            PropertyName(k), v
+        configMap.registerProvider(
+            PropertyName(k), config.Value(v)
         )
 
     if propertyName:

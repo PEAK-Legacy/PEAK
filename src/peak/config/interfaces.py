@@ -4,18 +4,13 @@ from protocols import Interface, Attribute
 __all__ = [
     'IConfigKey', 'IConfigurable', 'IConfigSource', 'IConfigurationRoot',
     'ISmartProperty', 'IRule', 'IPropertyMap', 'ISettingLoader',
-    'IIniParser', 'ISettingParser', 'NullConfigRoot',
+    'IIniParser', 'ISettingParser', 'NullConfigRoot', 'IConfigMap',
 ]
 
 
 class IConfigKey(Interface):
 
-    """Marker interface for configuration data keys
-
-    Both 'PropertyName()' and 'Interface' objects are usable as
-    configuration keys.  The common interface required is a subset of
-    'Interface.IInterface' that's needed by property maps and EigenRegistry
-    instances to use as dictionary keys.
+    """Configuration data key, used for 'config.lookup()' et al
 
     Configuration keys may be polymorphic at registration or lookup time.
     IOW, when looking up a configuration key, you can search multiple values
@@ -23,7 +18,8 @@ class IConfigKey(Interface):
     for a configuration key, the key can supply alternate keys that it should
     be registered under.  Thus, an 'IConfigKey' is never itself directly used
     as a key, only the values supplied by its 'registrationKeys()' and
-    'lookupKeys()' methods are used.
+    'lookupKeys()' methods are used.  (However, those values must themselves
+    be adaptable to 'IConfigKey', and they must be usable as dictionary keys.)
     """
 
     def registrationKeys(depth=0):
@@ -31,6 +27,10 @@ class IConfigKey(Interface):
 
     def lookupKeys():
         """Iterate over keys that should be used for lookup"""
+
+    def parentKeys():
+        """Iterate over keys that are containing namespaces for this key"""
+
 
 
 
@@ -84,11 +84,11 @@ class IConfigurationRoot(IConfigSource):
 
     """A root component that acknowledges its configuration responsibilities"""
 
-    def propertyNotFound(root,propertyName,forObj,default=NOT_GIVEN):
-        """Property search failed"""
+    def noMoreValues(root,configKey,forObj):
+        """A value search has completed"""
 
     def noMoreUtilities(root,configKey,forObj):
-        """A utility search has completed"""
+        """DEPRECATED: Use 'noMoreValues()' method instead"""
 
     def nameNotFound(root,name,forObj,bindName):
         """A (non-URL) component name was not found"""
@@ -98,13 +98,7 @@ class _NullConfigRoot(object):
 
     """Adapter to handle missing configuration root"""
 
-    def propertyNotFound(self,root,propertyName,forObj,default=NOT_GIVEN):
-        raise exceptions.InvalidRoot(
-            "Root component %r does not implement 'IConfigurationRoot'"
-            " (was looking up %s for %r)" % (root, propertyName, forObj)
-        )
-
-    def noMoreUtilities(self,root,configKey,forObj):
+    def noMoreValues(self,root,configKey,forObj):
         raise exceptions.InvalidRoot(
             "Root component %r does not implement 'IConfigurationRoot'"
             " (was looking up %s for %r)" % (root, configKey, forObj)
@@ -115,7 +109,13 @@ class _NullConfigRoot(object):
             remainingName = name, resolvedObj = root
         )
 
+    def noMoreUtilities(self,root,configKey,forObj):
+        """DEPRECATED: Use 'noMoreValues()' method instead"""
+        return self.noMoreValues(root,configKey,forObj)
+
 NullConfigRoot = _NullConfigRoot()
+
+
 
 
 
@@ -147,7 +147,7 @@ class IIniParser(Interface):
 
 
     prefix = Attribute("""Prefix that should be added to all property names""")
-    pMap   = Attribute("""IPropertyMap that the parser is loading""")
+    pMap   = Attribute("""'IConfigMap' that the parser is loading""")
 
     globalDict = Attribute("""Globals dictionary used for eval()ing rules""")
 
@@ -189,15 +189,15 @@ class IRule(Interface):
 
         """Retrieve 'configKey' for 'targetObject' or return 'NOT_FOUND'
 
-        The rule object is allowed to call any 'IPropertyMap' methods on the
-        'propertyMap' that is requesting computation of this rule.  It is
-        also allowed to call 'config.getProperty()' relative to 'targetObject'
-        or 'propertyMap'.
+        The rule object is allowed to call any 'IConfigMap' methods on the
+        'propertyMap' that is requesting computation of this rule.
 
         What an IRule must *not* do, however, is return different results over
         time for the same input parameters.  If it cannot guarantee this
         algorithmically, it must cache its results keyed by the parameters it
         used, and not compute the results a second time."""
+
+
 
 
 
@@ -285,40 +285,40 @@ class ISettingLoader(Interface):
 
 
 
-class IPropertyMap(IConfigurable):
+class IConfigMap(IConfigurable):
 
-    """Specialized component for storing configuration data"""
+    """Configurable component that allows iteration over keys"""
 
-    def setRule(propName, ruleObj):
-        """Set rule for computing a property
+    def _configKeysMatching(configKey):
+        """Iterable over defined keys that match 'configKey'
 
-        Note that if the specified property (or any more-specific form)
-        has already been accessed, an 'AlreadyRead' exception results.
+        A key 'k' in the map is considered to "match" 'configKey' if any of
+        'k.parentKeys()' are listed as keys in 'configKey.registrationKeys()'.
+        You must not change the configuration map while iterating over the
+        keys.  Also, keep in mind that only explicitly-registered keys are
+        returned; for instance, load-on-demand rules will only show up as
+        wildcard keys.
 
-        'propName' may be a "wildcard", of the form '"part.of.a.name.*"'
-        or '"*"' by itself in the degenerate case.  Wildcard rules are
-        checked in most-specific-first order, after the non-wildcard name,
-        and before the property's default."""
+        Implementations may yield keys in any order, but must not yield the
+        same key more than once."""
+
+
+class IPropertyMap(IConfigMap):
+
+    """DEPRECATED: Use 'IConfigMap' instead"""
 
     def setDefault(propName, ruleObj):
-        """Set 'IRule' 'defaultObj' as function to compute 'propName' default
+        """DEPRECATED"""
 
-        Note that if a default for the specified property has already been
-        accessed, an 'AlreadyRead' exception results.  Also, if a value has
-        already been set for the property, the default will be ignored.  The
-        default will also be ignored if a rule exists for the same 'propName'
-        (or parent wildcard thereof), unless the rule returns 'NOT_FOUND' or
-        'NOT_GIVEN'.  Note: like values and unlike rules, defaults can *not*
-        be registered for a wildcard 'propName'."""
+    def setRule(propName, ruleObj):
+        """DEPRECATED"""
 
-    def setValue(propName, value):
-        """Set property 'propName' to 'value'
-
-        No wildcards allowed.  'AlreadyRead' is raised if the property
-        has already been accessed for the target object."""
+    def setValue(configKey, value):
+        """DEPRECATED"""
 
     def getValueFor(forObj, propName):
-        """Return value of property for 'forObj' or return 'NOT_FOUND'"""
+        """DEPRECATED"""
+
 
 
 

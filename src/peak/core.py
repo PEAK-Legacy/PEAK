@@ -190,8 +190,6 @@ class PropertyName(str):
         yield self+'?'
 
 
-
-
     def registrationKeys(self,depth=0):
         return (self,depth),
 
@@ -201,6 +199,22 @@ class PropertyName(str):
 
 
 
+
+
+
+
+    def parentKeys(self):
+
+        name = self
+
+        if '.' in name:
+            yield name[:self.rindex('.')]       # foo.bar.baz -> foo.bar
+
+        while '.' in name:
+            name = name[:name.rindex('.')]      # foo.bar.XXX -> foo.bar.*
+            yield name+'.*'
+
+        yield '*'
 
 
     def asPrefix(self):
@@ -217,8 +231,8 @@ class PropertyName(str):
 
 
     def __call__(self, forObj=None, default=NOT_GIVEN):
-        from peak.config.api import getProperty
-        return getProperty(forObj, self, default)
+        from peak.config.api import lookup
+        return lookup(forObj, self, default)
 
 
     def of(self, forObj):
@@ -228,20 +242,6 @@ class PropertyName(str):
 
     def __repr__(self):
         return 'PropertyName(%s)' % super(PropertyName,self).__repr__()
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
     def fromString(klass, value, keep_wildcards=False, keep_empties=False):

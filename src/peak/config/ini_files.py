@@ -2,7 +2,7 @@ from peak.api import *
 from peak.util.imports import importString, importObject, whenImported
 from peak.util.FileParsing import AbstractConfigParser
 from interfaces import *
-from config_components import FactoryFor, CreateViaFactory, LazyRule
+from config_components import FactoryFor, CreateViaFactory, LazyRule, Value
 import re
 
 __all__ = [
@@ -39,12 +39,12 @@ def ruleForExpr(name,expr,globalDict):
     protocols.adviseObject(f,provides=[IRule])
     return f
 
-def loadMapping(pMap, mapping, prefix='*', includedFrom=None):
+def loadMapping(cMap, mapping, prefix='*', includedFrom=None):
 
     prefix = PropertyName(prefix).asPrefix()
 
     for k,v in mapping.items():
-        pMap.setValue(PropertyName.fromString(prefix+k), v)
+        cMap.registerProvider(PropertyName.fromString(prefix+k),Value(v))
 
 protocols.adviseObject(loadMapping, provides=[ISettingLoader])
 

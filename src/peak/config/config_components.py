@@ -11,10 +11,10 @@ from interfaces import *
 from protocols.advice import getMRO, determineMetaclass
 
 __all__ = [
-    'PropertyMap', 'LazyRule', 'PropertySet', 'fileNearModule',
-    'iterParents','findUtilities','findUtility',
-    'provideInstance', 'instancePerComponent', 'Namespace',
-    'CreateViaFactory'
+    'ConfigMap', 'PropertyMap', 'LazyRule', 'PropertySet', 'fileNearModule',
+    'iterParents','findUtilities','findUtility', 'Value', 'iterKeys',
+    'provideInstance', 'instancePerComponent', 'Namespace', 'iterValues',
+    'CreateViaFactory', 'parentsProviding', 'parentProviding', 'lookup'
 ]
 
 
@@ -52,46 +52,87 @@ def iterParents(component):
         component = getParentComponent(component)
 
 
-def findUtilities(component, iface):
+def iterValues(component, configKey):
 
-    """Return iterator over all utilities providing 'iface' for 'component'"""
+    """Return iterator over all values of'configKey' for 'component'"""
 
     forObj = component
-    iface = adapt(iface,IConfigKey)
+    configKey = adapt(configKey,IConfigKey)
 
     for component in iterParents(component):
 
         try:
-            utility = component._getConfigData
+            gcd = component._getConfigData
         except AttributeError:
             continue
 
-        utility = utility(forObj, iface)
-
-        if utility is not NOT_FOUND:
-            yield utility
+        value = gcd(forObj, configKey)
+        if value is not NOT_FOUND:
+            yield value
 
     adapt(
         component,IConfigurationRoot,NullConfigRoot
-    ).noMoreUtilities(component, iface, forObj)
+    ).noMoreUtilities(component, configKey, forObj)
 
 
+def findUtilities(component, iface):
+    """DEPRECATED: Use 'config.iterValues()' instead"""
+    return iterValues(component,iface)
 
 
+def lookup(component, configKey, default=NOT_GIVEN):
 
+    """Return value for 'configKey' in context of 'component', or 'default'"""
 
-def findUtility(component, iface, default=NOT_GIVEN):
-
-    """Return first utility supporting 'iface' for 'component', or 'default'"""
-
-    for u in findUtilities(component, iface):
-        return u
+    for value in iterValues(component, configKey):
+        return value
 
     if default is NOT_GIVEN:
-        raise exceptions.NameNotFound(iface, resolvedObj = component)
+        raise exceptions.NameNotFound(configKey, resolvedObj = component)
 
     return default
 
+
+def findUtility(component, configKey, default=NOT_GIVEN):
+    """DEPRECATED: use 'config.lookup()' instead"""
+    return lookup(component, configKey, default)
+
+
+def parentsProviding(component, protocol):
+
+    """Iterate over all parents of 'component' that adapt to 'protocol'"""
+
+    for parent in iterParents(component):
+        c = adapt(parent,protocol,None)
+        if c is not None:
+            yield c
+
+
+def parentProviding(component, protocol, default=NOT_GIVEN):
+    """Return first parent providing 'protocol' for 'component', or 'default'"""
+
+    for u in parentsProviding(component, protocol):
+        return u
+
+    if default is NOT_GIVEN:
+        raise exceptions.NameNotFound(protocol, resolvedObj = component)
+
+    return default
+
+
+
+def iterKeys(component, configKey):
+
+    """Iterate sub-keys of 'configKey' that are available from 'component'"""
+
+    yielded = {}
+
+    for ob in parentsProviding(component,IConfigMap):
+        for key in ob._configKeysMatching(configKey):
+            if key in yielded:
+                continue
+            yielded[key] = 1
+            yield key
 
 
 
@@ -143,7 +184,7 @@ class CreateViaFactory(object):
 
         except AttributeError:
 
-            factory = findUtility(targetObj, FactoryFor(self.iface))
+            factory = lookup(targetObj, FactoryFor(self.iface))
 
             if factory is NOT_FOUND:
                 self.instance = factory
@@ -162,23 +203,25 @@ class CreateViaFactory(object):
 
 
 
-class PropertyMap(Component):
+class ConfigMap(Component):
 
-    rules = Make(dict)
-    depth = Make(dict)
+    rules = depth = keyIndex = Make(dict)
 
     protocols.advise(
-        instancesProvide=[IPropertyMap]
+        instancesProvide=[IPropertyMap]     # XXX make just IConfigMap later
     )
 
     def setRule(self, propName, ruleObj):
-        _setCellInDict(self.rules, PropertyName(propName), ruleObj)
+        """DEPRECATED - use registerProvider(propName,ruleObj)"""
+        self.registerProvider(propName, ruleObj)
 
     def setDefault(self, propName, defaultRule):
-        _setCellInDict(self.rules, PropertyName(propName+'?'), defaultRule)
+        """DEPRECATED - use registerProvider(propName+'?',defaultRule)"""
+        self.registerProvider(propName+'?', defaultRule)
 
     def setValue(self, propName, value):
-        _setCellInDict(self.rules, PropertyName(propName), lambda *args: value)
+        """DEPRECATED - use registerProvider(propName,config.Value(value))"""
+        self.registerProvider(propName, Value(value))
 
 
     def registerProvider(self, configKey, provider):
@@ -192,6 +235,34 @@ class PropertyMap(Component):
                 _setCellInDict(self.rules, key, provider)
                 self.depth[key]=depth
 
+            key = adapt(key, IConfigKey)
+            for k in key.parentKeys():
+                self.keyIndex.setdefault(k,{})[key] = True
+
+
+
+
+
+
+    def _configKeysMatching(self, configKey):
+
+        """Iterable over defined keys that match 'configKey'
+
+        A key 'k' in the map is considered to "match" 'configKey' if any of
+        'k.parentKeys()' are listed as keys in 'configKey.registrationKeys()'.
+        You must not change the configuration map while iterating over the
+        keys.  Also, keep in mind that only explicitly-registered keys are
+        returned; for instance, load-on-demand rules will only show up as
+        wildcard keys."""
+
+        index = self._getBinding('keyIndex')
+
+        if not index:
+            return
+
+        for key,depth in adapt(configKey,IConfigKey).registrationKeys():
+            for k in index.get(key,()):
+                yield k
 
 
 
@@ -203,7 +274,20 @@ class PropertyMap(Component):
 
 
 
-    def getValueFor(self, forObj, configKey):
+
+
+
+
+
+
+
+
+
+
+
+    def _getConfigData(self, forObj, configKey):
+
+        """Look up the requested value"""
 
         rules      = self._getBinding('rules')
         value      = NOT_FOUND
@@ -236,12 +320,15 @@ class PropertyMap(Component):
 
         return value
 
-    _getConfigData = getValueFor
+    getValueFor = _getConfigData    # DEPRECATED
 
 
+PropertyMap = ConfigMap             # DEPRECATED
 
 
-
+def Value(v):
+    """Return an 'IRule' that always returns 'v'"""
+    return lambda *args: v
 
 
 class LazyRule(object):
@@ -267,11 +354,6 @@ class LazyRule(object):
                 raise
 
         return NOT_FOUND
-
-
-
-
-
 
 
 
@@ -327,6 +409,7 @@ class NamingStateAsSmartProperty(protocols.Adapter):
 
 
 class ConfigurationRoot(Component):
+
     """Default implementation for a configuration root.
 
     If you think you want to subclass this, you're probably wrong.  Note that
@@ -354,16 +437,15 @@ class ConfigurationRoot(Component):
                 file = fileNearModule(*file)
             config.loadConfigFile(propertyMap, file)
 
-    def propertyNotFound(self,root,propertyName,forObj,default=NOT_GIVEN):
-        if default is NOT_GIVEN:
-            raise exceptions.PropertyNotFound(propertyName, forObj)
-        return default
 
-    def noMoreUtilities(self,root,configKey,forObj): pass
+    def noMoreValues(self,root,configKey,forObj): pass
+
+    def noMoreUtilities(self,root,configKey,forObj):
+        """DEPRECATED: Use 'noMoreValues()' method instead"""
+        return self.noMoreValues(root,configKey,forObj)
 
     def nameNotFound(self,root,name,forObj):
         return naming.lookup(forObj, name, creationParent=forObj)
-
 
 
 
@@ -427,7 +509,7 @@ class Namespace(object):
     def get(self,key,default=None):
         """Return property 'key' within this namespace, or 'default'"""
         if self._target is not NOT_GIVEN:
-            return config.getProperty(
+            return lookup(
                 self._target,PropertyName.fromString(self._prefix+key),default
             )
         return default
@@ -457,7 +539,7 @@ class __NamespaceExtensions(protocols.Adapter):
     )
 
     def computeProperty(self, propertyMap, name, prefix, suffix, targetObject):
-        return config.getProperty(
+        return config.lookup(
             propertyMap, self.subject._prefix+suffix, default=NOT_FOUND
         )
 
@@ -499,10 +581,10 @@ class PropertySet(object):
         self.target = targetObj
 
     def __getitem__(self, key, default=NOT_GIVEN):
-        return config.getProperty(self.target,self.prefix+key,default)
+        return config.lookup(self.target,self.prefix+key,default)
 
     def get(self, key, default=None):
-        return config.getProperty(self.target,self.prefix+key,default)
+        return config.lookup(self.target,self.prefix+key,default)
 
     def __getattr__(self,attr):
         return self.__class__(self.target, self.prefix+attr)
@@ -515,7 +597,7 @@ class PropertySet(object):
         if forObj is NOT_GIVEN:
             forObj = self.target
 
-        return config.getProperty(forObj, self.prefix[:-1], default)
+        return config.lookup(forObj, self.prefix[:-1], default)
 
 
 
@@ -532,7 +614,7 @@ class PropertySet(object):
 
 
 def instancePerComponent(factorySpec):
-    """Use this to provide a utility instance for each component"""
+    """DEPRECATED: use factory mechanisms instead"""
     return lambda foundIn, configKey, forObj: importObject(factorySpec)(forObj)
 
 

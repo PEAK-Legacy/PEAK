@@ -83,11 +83,7 @@ class InvalidRoot(TypeError):
 # Config
 
 class PropertyNotFound(NameNotFound):
-    """A required configuration property could not be found/computed"""
-
-
-class ObjectOutOfScope(Exception):
-    """Property map doesn't support managing properties for other objects"""
+    """DEPRECATED: Use 'NameNotFound' instead!"""
 
 
 # Storage
@@ -120,4 +116,8 @@ class TooFewResults(Exception):
 
 class StopRunning(Exception):
     """Task doesn't want to be rescheduled"""
+
+
+
+
 

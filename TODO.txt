@@ -4,22 +4,14 @@ Open Issues/To-Do Items
 
     * Add support for finding/registering plugins to 'peak.config'
 
-      - Refactor IConfigKey to support explicit "namespace" concept
-
-      - Refactor IPropertyMap -> IConfigMap, add iterability/search
-
-        - Add inverted indexes for namespace lookups/search
-
-        - Add 'IIterableConfigSource' (?) subclass, use for search funcs.
-
-        - Lock namespaces that have been iterated over
-
       - Add 'config.PluginsFor' key that finds plugins
 
         - May need 'suggestParentComponent()' to support dictionaries so plugin
           dictionaries will work correctly
 
         - Should it implement the "smart property" interface?
+
+      - Lock namespaces that have been iterated over (do we need this?)
 
       - Things to look at during refactorings:
 
@@ -32,6 +24,14 @@ Open Issues/To-Do Items
     * peak.storage
 
       - 'storage.dbType()'
+
+
+
+
+
+
+
+
 
 
 
@@ -98,8 +98,6 @@ Open Issues/To-Do Items
 
     * peak.config
 
-       - Iterable keys to PropertyMap (rename to configMap?)
-
        - Writable and subscribable config sources, including editable .ini's
 
     * peak.web
@@ -120,6 +118,8 @@ Open Issues/To-Do Items
 
     * Drop 'persistence' package, since ZODB 4 has been derailed.  Change to
       "state-delegation" model, which will integrate better with 'peak.query'.
+
+
 
  Targeted for 0.5 Beta 1
 

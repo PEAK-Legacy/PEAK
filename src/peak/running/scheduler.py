@@ -144,7 +144,7 @@ def getTwisted():
     try:
         from twisted.internet import reactor
     except ImportError:
-        raise exceptions.PropertyNotFound(
+        raise exceptions.NameNotFound(
             """twisted.internet.reactor could not be imported"""
         )
 

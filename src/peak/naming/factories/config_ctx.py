@@ -6,6 +6,7 @@
     naming system that support such contexts.
 """
 
+from __future__ import generators
 from peak.api import *
 
 
@@ -38,11 +39,15 @@ class PropertyURL(naming.URL.Base):
 
 
 
-
 class PropertyContext(naming.NameContext):
+
+    protocols.advise(
+        instancesProvide = [naming.IReadContext]
+    )
 
     schemeParser   = PropertyURL
     compoundParser = PropertyPath
+    compositeParser = PropertyPath.asCompositeType()
 
 
     def _get(self, name, retrieve=1):
@@ -55,14 +60,50 @@ class PropertyContext(naming.NameContext):
 
     def _contextNNS(self, attrs=None):
 
-        ob = config.getProperty(
-            self.creationParent, str(self.nameInContext), NOT_FOUND
+        ob = config.lookup(
+            self.creationParent, str(self.nameInContext),
+            NOT_FOUND
         )
 
         if ob is NOT_FOUND:
             return ob
 
         return ob
+
+    def __repr__(self):
+        return "PropertyContext(%r)" % str(self.nameInContext)
+
+
+
+
+
+
+
+
+    def __iter__(self):
+
+        name = str(self.nameInContext)+'.*'
+
+        if name=='.*':
+            name = '*'
+
+        name = PropertyName(name)
+        skip = len(name.asPrefix())
+
+        yielded = {}
+
+        for key in config.iterKeys(self.creationParent, name):
+
+            key = key[skip:]
+
+            if '.' in key:
+                key = key.split('.',1)[0]
+            else:
+                key = key+'/'
+
+            if key not in yielded:
+                yielded[key] = 1
+                yield self.compositeParser.mdl_fromString(key)
 
 
 

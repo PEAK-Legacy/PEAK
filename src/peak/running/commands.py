@@ -348,7 +348,7 @@ class IniInterpreter(AbstractInterpreter):
         # Set up a command factory based on the configuration setting
 
         executable = importObject(
-            config.getProperty(parent, 'peak.running.app', None)
+            config.lookup(parent, 'peak.running.app', None)
         )
 
         if executable is None:
