@@ -11,10 +11,10 @@ class WebException(Exception):
     )
 
     security.allow(
-        httpStatus = [security.Anybody],
-        args = [security.Anybody],
-        template = [security.Anybody],
-        exc_info = [security.Anybody],
+        httpStatus = security.Anybody,
+        args = security.Anybody,
+        template = security.Anybody,
+        exc_info = security.Anybody,
         # ...?
     )
 

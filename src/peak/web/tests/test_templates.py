@@ -20,8 +20,8 @@ from cStringIO import StringIO
 class TestApp(web.Traversable):
 
     security.allow(
-        foo = [security.Anybody],
-        bar = [security.Anybody],
+        foo = security.Anybody,
+        bar = security.Anybody,
     )
 
     foo = "The title"
@@ -30,7 +30,7 @@ class TestApp(web.Traversable):
 
     show = binding.requireBinding(
         "Template to dump this out with",
-        permissionsNeeded = [security.Anybody]
+        permissionNeeded = security.Anybody
     )
 
 

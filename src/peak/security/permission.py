@@ -10,20 +10,61 @@ from peak.binding.components import _Base
 
 __all__ = [
     'AccessAttempt', 'PermissionType', 'Permission', 'RuleSet',
-    'Anybody', 'Nobody', 'Interaction', 'allow'
+    'Anybody', 'Nobody', 'Interaction', 'allow', 'Denial',
 ]
 
 
-def allow(basePerms=None, **namesToPermLists):
+def allow(basePerm=None, **nameToPerm):
 
     """Use in the body of a class to declare permissions for attributes"""
 
     def callback(klass):
         gc = adapt(klass,IGuardedClass)
-        gc.declarePermissions(basePerms,**namesToPermLists)
+        gc.declarePermissions(basePerm,**nameToPerm)
         return klass
 
     addClassAdvisor(callback)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class Denial(object):
+
+    """Object representing denial of access"""
+
+    __slots__ = 'message'
+
+    def __init__(self,message):
+        self.message = message
+
+    def __nonzero__(self):
+        # A denial is always a false condition
+        return False
+
+    __len__ = __nonzero__
+
+    def __str__(self):
+        return str(self.message)
+
+    def __unicode__(self):
+        return unicode(self.message)
+
+    def __repr__(self):
+        return 'security.Denial(%r)' % self.message
+
+
+
 
 
 
@@ -56,7 +97,7 @@ class GuardedClassAdapter(protocols.Adapter):
         # Ensure that base classes have their act together...
         for base in klass.__bases__:
             if base is object: continue
-            adapt(base,IGuardedClass).getAttributePermissions(None)
+            adapt(base,IGuardedClass).getAttributePermission(None)
 
         map(m.update,
             binding.getInheritedRegistries(
@@ -66,8 +107,8 @@ class GuardedClassAdapter(protocols.Adapter):
 
         for k,v in klass.__dict__.items():
             v = adapt(v,IGuardedDescriptor,None)
-            if v is not None and v.permissionsNeeded is not None:
-                m[k] = v.permissionsNeeded
+            if v is not None and v.permissionNeeded is not None:
+                m[k] = v.permissionNeeded
 
         if m:
             klass._peak_nameToPermissions_map = m
@@ -76,11 +117,11 @@ class GuardedClassAdapter(protocols.Adapter):
 
     nameToPermissionsMap = binding.Once(nameToPermissionsMap)
 
-    def getAttributePermissions(self, name):
-        """Return (abstract) permission types needed to access 'name'"""
-        return self.nameToPermissionsMap.get(name,())
+    def getAttributePermission(self, name):
+        """Return (abstract) permission needed to access 'name', or 'None'"""
+        return self.nameToPermissionsMap.get(name)
 
-    def declarePermissions(self, objectPerms=None, **namePerms):
+    def declarePermissions(self, objectPerm=None, **namePerms):
 
         klass = self.subject
 
@@ -92,8 +133,8 @@ class GuardedClassAdapter(protocols.Adapter):
         klass._peak_nameToPermissions_map = m = self.nameToPermissionsMap
 
         m.update(namePerms)
-        if objectPerms is not None:
-            m[None] = objectPerms
+        if objectPerm is not None:
+            m[None] = objectPerm
 
         protocols.declareAdapter(
             NamePermissionsAdapter, provides = [IGuardedObject],
@@ -103,7 +144,7 @@ class GuardedClassAdapter(protocols.Adapter):
 
 class NamePermissionsAdapter(object):
 
-    __slots__ = 'getPermissionsForName'
+    __slots__ = 'getPermissionForName'
 
     protocols.advise(
         instancesProvide = [IGuardedObject],
@@ -111,9 +152,9 @@ class NamePermissionsAdapter(object):
     )
 
     def __init__(self,ob,proto):
-        self.getPermissionsForName = adapt(
+        self.getPermissionForName = adapt(
             ob.__class__,IGuardedClass
-        ).getAttributePermissions
+        ).getAttributePermission
 
 
 
@@ -163,7 +204,7 @@ class AccessAttempt(object):
 
 
     def allows(self,
-        subject=NOT_GIVEN, name=NOT_GIVEN, permissionsNeeded=NOT_GIVEN,
+        subject=NOT_GIVEN, name=NOT_GIVEN, permissionNeeded=NOT_GIVEN,
         user=NOT_GIVEN, interaction=NOT_GIVEN
     ):
         if subject is NOT_GIVEN:
@@ -183,10 +224,10 @@ class AccessAttempt(object):
         if user is NOT_GIVEN:
             user=self.user
 
-        if permissionsNeeded is NOT_GIVEN:
-            permissionsNeeded=[self.permission.getAbstract()]
+        if permissionNeeded is NOT_GIVEN:
+            permissionNeeded=self.permission.getAbstract()
 
-        return interaction.allows(subject,name,permissionsNeeded,user)
+        return interaction.allows(subject,name,permissionNeeded,user)
 
 
 
@@ -219,30 +260,30 @@ class Interaction(binding.Component):
     permissionProtocol = IPermissionChecker     # XXX
 
 
-    def checkPermission(self, attempt):
-        checker = adapt(attempt.permission, self.permissionProtocol)
-        return checker.checkPermission(attempt)
-
-
     def allows(self, subject,
-        name=None, permissionsNeeded=NOT_GIVEN, user=NOT_GIVEN
+        name=None, permissionNeeded=NOT_GIVEN, user=NOT_GIVEN
     ):
-        if permissionsNeeded is NOT_GIVEN:
+        if permissionNeeded is NOT_GIVEN:
             guard = adapt(subject,IGuardedObject,None)
             if guard is not None:
-                permissionsNeeded = guard.getPermissionsForName(name)
+                permissionNeeded = guard.getPermissionForName(name)
+                if permissionNeeded is None:
+                    return False
             elif name is None:
                 # Access w/out a name is okay for unprotected objects
                 # because none of their named attributes will be accessible!
                 return True
             else:
-                permissionsNeeded = ()
-        for permType in permissionsNeeded:
-            attempt = self.accessType(permType, subject, name, user, self)
-            ok = self.checkPermission(attempt)
-            if ok:
-                return ok
-        return False
+                return False
+
+        attempt = self.accessType(permissionNeeded, subject, name, user, self)
+        checker = adapt(attempt.permission, self.permissionProtocol)
+        result = checker.checkPermission(attempt)
+
+        if result==False:   # not a denial; supply a default
+            return attempt.permission.defaultDenial()
+
+        return result
 
 class PermissionType(binding.ActiveClass):
 
@@ -292,21 +333,21 @@ class PermissionType(binding.ActiveClass):
             return self.abstractBase
 
 
+    def defaultDenial(self):
+        return (self.abstractBase or self).__denial
+
+
+    __denial = binding.Once(
+        lambda s,d,a: Denial(
+            # XXX I18N issues here...
+            s.__doc__ or ("You must have the %s permission." % s.__name__)
+        ), attrName = '_PermissionType__denial'
+    )
+
 
 class Permission:
     """Base class for permissions"""
     __metaclass__ = PermissionType
-
-
-
-
-
-
-
-
-
-
-
 
 
 

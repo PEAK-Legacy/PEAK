@@ -277,7 +277,7 @@ class Decorator(Traversable):
             # Access failed, see if attribute is private
             guard = adapt(self,security.IGuardedObject,None)
 
-            if guard is not None and guard.getPermissionsForName(name):
+            if guard is not None and guard.getPermissionForName(name):
                 # We have explicit permissions defined, so reject access
                 return NOT_ALLOWED
 

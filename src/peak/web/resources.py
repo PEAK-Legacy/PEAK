@@ -45,11 +45,11 @@ class Resource(Traversable):
         instancesProvide = [IResource]
     )
 
-    permissionsNeeded = binding.requireBinding("Permissions needed for access")
+    permissionNeeded = binding.requireBinding("Permission needed for access")
 
     def preTraverse(self, ctx):
-        perms = self.permissionsNeeded
-        if not ctx.interaction.allows(self, permissionsNeeded = perms):
+        perm = self.permissionNeeded
+        if not ctx.interaction.allows(self, permissionNeeded = perm):
             ctx.interaction.notAllowed(self, self.getComponentName())
 
     def traverseTo(self, name, interaction):
@@ -92,8 +92,8 @@ class FSResource(Resource):
         lambda self,d,a: filenameAsProperty(os.path.basename(self.filename))
     )
 
-    permissionsNeeded = binding.bindToProperty(RESOURCE_BASE+'permissions')
-    mime_type         = binding.bindToProperty(RESOURCE_BASE+'mime_type')
+    permissionNeeded = binding.bindToProperty(RESOURCE_BASE+'permission')
+    mime_type        = binding.bindToProperty(RESOURCE_BASE+'mime_type')
 
     def getObjectInstance(klass, context, refInfo, name, attrs=None):
         url, = refInfo.addresses
@@ -130,12 +130,12 @@ class ResourceDirectory(FSResource):
     def __onSetup(self,d,a):
 
         if self.isRoot:
-            if not self._hasBinding('permissionsNeeded'):
-                self.permissionsNeeded = [security.Anybody]
+            # default permissionNeeded to Anybody
+            if not self._hasBinding('permissionNeeded'):
+                self.permissionNeeded = security.Anybody
+
             # load resource_defaults.ini
             config.loadConfigFile(self, RESOURCE_DEFAULTS(self))
-
-            # default permissionsNeeded to Anybody
 
         # load resources.ini, if found
         config.loadConfigFiles(self,

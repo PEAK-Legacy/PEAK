@@ -44,7 +44,7 @@ class ResourceApp2(ResourceApp1):
     show = web.bindResource('template2')
 
     xml = web.bindResource(
-        '/peak.running/EventDriven', permissionsNeeded=[security.Anybody]
+        '/peak.running/EventDriven', permissionNeeded=security.Anybody
     )
 
 class MethodTest2(MethodTest1):
@@ -68,10 +68,6 @@ TestClasses = (
 
 def test_suite():
     return TestSuite([makeSuite(t,'check') for t in TestClasses])
-
-
-
-
 
 
 

@@ -25,10 +25,10 @@ class IAccessAttempt(Interface):
 
     subject = Attribute("""The object to which access is desired""")
 
-    def allows(subject=NOT_GIVEN, name=NOT_GIVEN, permissionsNeeded=NOT_GIVEN,
+    def allows(subject=NOT_GIVEN, name=NOT_GIVEN, permissionNeeded=NOT_GIVEN,
         user=NOT_GIVEN
     ):
-        """Return true if 'user' has 'permisisonsNeeded' for 'subject'"""
+        """True if 'user' has 'permissionNeeded' for 'subject', or Denial()"""
 
 
 
@@ -57,26 +57,26 @@ class IInteraction(Interface):
 
     user = Attribute("""The IPrincipal responsible for the interaction""")
 
-    def checkPermission(attempt):
-        """Return true if 'IAccessAttempt' 'attempt' should be allowed"""
-
     permissionProtocol = Attribute(
         """The protocol to which permissions should be adapted for checking"""
     )
 
-    def allows(subject,name=None,permissionsNeeded=NOT_GIVEN,user=NOT_GIVEN):
-        """Return true if 'user' has 'permisisonsNeeded' for 'subject'
+    def allows(subject,name=None,permissionNeeded=NOT_GIVEN,user=NOT_GIVEN):
+        """Return true if 'user' has 'permissionNeeded' for 'subject'
 
         If 'user' is not supplied, the interaction's user should be used.  If
-        the permissions are not supplied, 'subject' should be adapted to
-        'IGuardedObject' in order to obtain the required permissions.
+        the permission is not supplied, 'subject' should be adapted to
+        'IGuardedObject' in order to obtain the required permission.
 
         Note that if 'subject' does not support 'IGuardedObject', and the
-        required permissions are not specified, then this method should always
+        required permission is not specified, then this method should always
         return true when the 'name' is 'None', and false otherwise.  That is,
         an unguarded object is accessible, but none of its attributes are.
         (This is so that value objects such as numbers and strings don't need
-        permissions.)"""
+        permissions.)
+
+        This method should return a true value, or a 'security.Denial()' with
+        an appropriate 'message' value."""
 
 
 
@@ -85,7 +85,10 @@ class IPermissionChecker(Interface):
     """An object that can verify the presence of a permission"""
 
     def checkPermission(attempt):
-        """Does the principal for 'attempt' have permission 'permType'?"""
+        """Does the principal for 'attempt' have permission 'permType'?
+
+        This method may return any false value to indicate failure, but
+        returning a 'security.Denial()' is preferred."""
 
 
 class IConcretePermission(Interface):
@@ -99,6 +102,10 @@ class IConcretePermission(Interface):
     __mro__ = Attribute(
         """Sequence of this type's supertypes, itself included, in MRO order"""
     )
+
+    def defaultDenial():
+        """Return a default security.Denial() to be used when a check fails"""
+
 
 class IAbstractPermission(IConcretePermission):
 
@@ -114,37 +121,30 @@ class IAbstractPermission(IConcretePermission):
 
 
 
-
-
-
-
-
-
-
 class IGuardedObject(Interface):
 
     """Object that knows permissions needed to access subobjects by name"""
 
-    def getPermissionsForName(name):
-        """Return (abstract) permission types needed to access 'name'"""
+    def getPermissionForName(name):
+        """Return (abstract) permission needed to access 'name', or 'None'"""
 
 
 class IGuardedClass(Interface):
 
     """Class that can accept permission declarations for its attributes"""
 
-    def declarePermissions(objectPerms=None, **namePerms):
+    def declarePermissions(objectPerm=None, **namePerms):
         """Declare permissions for named attributes"""
 
-    def getAttributePermissions(name):
-        """Return (abstract) permission types needed to access 'name'"""
+    def getAttributePermission(name):
+        """Return (abstract) permission needed to access 'name', or 'None'"""
 
 
 class IGuardedDescriptor(Interface):
 
-    """Descriptor that knows the permissions required to access it"""
+    """Descriptor that knows the permission required to access it"""
 
-    permissionsNeeded = Attribute(
+    permissionNeeded = Attribute(
         "Sequence of abstract permissions needed, or 'None' to keep default"
     )
 
@@ -184,7 +184,7 @@ whenImported(
 
 protocols.declareAdapter(
     # Functions can be guarded descriptors if they define 'permissionsNeeded'
-    lambda o,p: (getattr(o,'permissionsNeeded',None) is not None) and o or None,
+    lambda o,p: (getattr(o,'permissionNeeded',None) is not None) and o or None,
     provides = [IGuardedDescriptor],
     forTypes = [FunctionType]
 )

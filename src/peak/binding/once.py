@@ -41,7 +41,7 @@ def supertype(supertype,subtype):
 
 class Descriptor(BaseDescriptor):
 
-    permissionsNeeded = None    # IGuardedDescriptor; declared in peak.security
+    permissionNeeded = None    # IGuardedDescriptor; declared in peak.security
 
     def __init__(self,**kw):
 
@@ -255,7 +255,7 @@ class Attribute(Descriptor):
     offerAs = ()
     activateUponAssembly = False
     doc = None
-    adaptTo = permissionsNeeded = None
+    adaptTo = permissionNeeded = None
     suggestParent = True
 
     def activateInClass(self,klass,attrName):
@@ -268,7 +268,7 @@ class Attribute(Descriptor):
             computeValue = self.computeValue,
             ofClass      = self.ofClass,
             onSet        = self.onSet,
-            permissionsNeeded = self.permissionsNeeded
+            permissionNeeded = self.permissionNeeded
         )
 
 
