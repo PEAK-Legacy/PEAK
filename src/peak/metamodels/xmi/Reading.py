@@ -2,28 +2,23 @@ from TW import *
 from TW.SOX import Node, Document, load
 from kjbuckets import kjGraph
 
+
 class XMINode(Node):
 
-    def __init__(self,name,atts,factory,target=None):
-        Node.__init__.im_func(self,name,atts)
-        self.factory = factory
-        self.target  = target
-        
+    _acquiredAttrs = 'factory','target'
+
     def _finish(self):
         idref=getattr(self,'xmi.idref',None)
         if idref: return self.factory.get(idref)
     
-    def _newNode(self,name,atts):
-        return XMINode(name,atts,self.factory,self.target)
-
 
 class XMIJunk(XMINode):
 
     def _newNode(self,name,atts):
         if name=='XMI.content':
-            return XMIElement(name,atts,self.factory,self.target)
+            return XMIElement(name,atts)
         else:
-            return XMIJunk(name,atts,self.factory,self.target)
+            return XMIJunk(name,atts)
             
     def _finish(self):
         return self
@@ -32,10 +27,15 @@ class XMIJunk(XMINode):
 class XMIDocument(Document):
 
     def _newNode(self,name,atts):
-        return XMIJunk(name,atts,self.factory,self.target)
+        return XMIJunk(name,atts)
 
     def _finish(self):
         return self._findFirst('XMI.content')[0]._subNodes
+
+
+
+
+
 
 
 
@@ -43,41 +43,41 @@ class XMIElement(XMINode):
 
     def _newNode(self,name,atts):
 
-        factory = self.factory
-        target  = self.target
-
         if atts.has_key('xmi.id'):
 
             key = atts['xmi.id']
-            element = factory.newItem(name,key)         # creating new Element
+            element = self.factory.newItem(name,key)         # creating new Element
             
             if element is None:
-                return XMINode(name,atts,factory,target)    # ignore unknown types
+                return XMINode(name,atts)    # ignore unknown types
                 
-            return XMIElement(name,atts,factory,element)
+            return XMIElement(name,atts,target=element)
 
         elif atts.has_key('xmi.idref'):
         
             key = atts['xmi.idref']
             
-            if not factory.has_key(key):
-                factory.addForwardReference(key,target)
+            if not self.factory.has_key(key):
+                self.factory.addForwardReference(key,self.target)
                 
-            return XMINode(name,atts,factory,target)
+            return XMINode(name,atts)
 
 
         # Otherwise, it's a feature
         
-        newTarget = factory.getSubtarget(target,name)
+        newTarget = self.factory.getSubtarget(self.target,name)
         
         if newTarget is not None:
-            return XMIElement(name,atts,factory,newTarget)
+            return XMIElement(name,atts,target=newTarget)
         else:
-            return XMINode(name,atts,factory,target)    # ignore unknown features
+            return XMINode(name,atts)    # ignore unknown features
 
 
     def _finish(self):
         return self.target._fromXMI(self)
+
+
+
 
 
 class XMIFactory:
@@ -213,5 +213,5 @@ class XMIReading:
     
     def importFromXMI(self,filename_or_stream):
         self.roots = self.roots or []
-        self.roots.extend(load(filename_or_stream,self._XMIroot))
+        self.roots.extend(load(filename_or_stream,self._XMIroot()))
 
