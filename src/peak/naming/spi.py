@@ -50,12 +50,7 @@ def getInitialContext(environ={}):
 
     If the 'environ' does not contain a suitable entry, a default
     implementation ('TW.Naming.InitialContext.DefaultInitialContext')
-    is used.
-
-    This function is here for the convenience of those writing initial
-    context hooks which need to wrap this default policy in some way.
-    You should not normally call this function directly.  Use
-    'getInitialContext()' instead."""
+    is used."""
     
     factory = interpretSpec(
         environ.get(
@@ -65,6 +60,11 @@ def getInitialContext(environ={}):
     )
 
     return factory(environ)
+
+
+
+
+
 
 
 
@@ -121,11 +121,11 @@ def getObjectInstance(refInfo, name, context, environment, attrs=None):
 
 
 
-def getURLContext(scheme, environ={}):
+def getURLContext(scheme, context=None, environ=None, iface=IBasicContext):
 
     """Return a 'Context' object for the given URL scheme and interface.
 
-    This works by walking the list of context factory functions supplied in
+    This works by walking the list of context factory objects supplied in
     the 'NAMING_SCHEME_CONTEXT_FACTORIES' environment entry, and asking each
     one for an initial context that supports the specified 'scheme'.  If no
     'NAMING_SCHEME_CONTEXT_FACTORIES' entry is supplied, the default factory
@@ -133,20 +133,27 @@ def getURLContext(scheme, environ={}):
     package for more information on the default lookup policy.)
 
     Each context factory in the context factory list must be a callable with
-    the signature 'factory(scheme,environ)', returning an initial context
-    which supports the specified naming 'scheme', with 'environ' as its
-    environment.
+    the signature 'factory.getURLContext(scheme,ctx,environ,iface)', returning
+    a context which supports the specified naming 'scheme', with 'environ' as
+    its environment, 'ctx' as its relative context (if applicable), and
+    'iface' as a supported context interface.
     """
+
+    if environ is None:
+        if context is None:
+            environ = {}
+        else:
+            environ = context.getEnvironment()
 
     for contextFactory in interpretSequence(
             environ.get(
                 'NAMING_SCHEME_CONTEXT_FACTORIES',
-                'TW.Naming.Schemes:getURLContext'
+                'TW.Naming.Schemes'
             ) 
         ):
 
-        context = contextFactory(scheme, environ)
+        context = contextFactory.getURLContext(scheme, context, environ, iface)
 
-        if context is not None and context is not environ:
+        if context is not None:
             return context
 
