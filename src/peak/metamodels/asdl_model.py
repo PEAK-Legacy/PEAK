@@ -35,7 +35,7 @@ class Plus(field):
 class Id(field):
     pass
 
-class constructor(model.Struct):
+class constructor_def(model.Struct):
 
     mdl_isAbstract = True
 
@@ -44,7 +44,7 @@ class constructor(model.Struct):
     )
 
 
-class Constructor(constructor):
+class Constructor(constructor_def):
 
     class name(model.structField):
         referencedType = model.Name
@@ -76,7 +76,7 @@ class typedef(model.Struct):
 class Sum(typedef):
 
     class types(model.structField):
-        referencedType = 'constructor'
+        referencedType = 'constructor_def'
         lowerBound = 1
         upperBound = None
         sortPosn = 2

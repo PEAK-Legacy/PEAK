@@ -11,11 +11,11 @@ module ASDL {
 
         attributes (identifier typeName, identifier? name)
 
-    constructor
+    constructor_def
         = Constructor(identifier name, field* attributes)
 
     typedef
-        = Sum(constructor+ types, field* attributes)
+        = Sum(constructor_def+ types, field* attributes)
         | Product(field+ attributes)
 
         attributes (identifier name)
