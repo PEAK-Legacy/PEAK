@@ -80,6 +80,16 @@ class ddeURL(naming.URL.Base):
 
 
 
+    syntax = naming.URL.Sequence(
+        service, '::', topic,
+        naming.URL.Set(
+            naming.URL.Sequence(';file=',file),
+            naming.URL.Sequence(';retries=',retries),
+            naming.URL.Sequence(';sleep=',sleep),
+        ),
+    )
+
+
     def retrieve(self, refInfo, name, context, attrs=None):
         return DDEConnection(
             context.creationParent, context.creationName,
@@ -91,31 +101,21 @@ class ddeURL(naming.URL.Base):
         )
 
 
-    def parse(self, scheme, body):
 
-        _l = body.split(';')
-        _svct = _l[0].split('::',1)
 
-        if len(_svct)<2:
-            raise exceptions.InvalidName("Must contain 'service::topic'", body)
 
-        service, topic = _svct
 
-        _other = dict( [tuple(_x.split('=', 1)) for _x in _l[1:]] )
 
-        for _x in 'retries', 'sleep':
-            if _x in _other:
-                _other[_x] = int(_other[_x])
 
-        for _x in _other:
-            if _x not in ('file','retries','sleep'):
-                raise exceptions.InvalidName(
-                    "Unrecognized parameter %s=%s" % (_x,_other[_x])
-                )
 
-        _other['service'] = service
-        _other['topic'] = topic
-        return _other
+
+
+
+
+
+
+
+
 
 
 

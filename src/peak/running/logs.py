@@ -253,36 +253,36 @@ class logfileURL(URL.Base):
 
     class level(URL.IntField):
         defaultValue = ALL
+        syntax = URL.Conversion(
+            converter = lambda x:
+                getLevelFor(
+                    x.upper()[
+                        (x.upper()[:4] in ('PRI_','LOG_') and 4 or 0):
+                    ]
+                ),
+            formatter = lambda x: getLevelName(x,str(x)),
+        )
 
-
-    def parse(self, scheme, body):
-        filename, _qs = body, {}
-
-        if '?' in filename:
-            filename, _qs = filename.split('?', 1)
-
-            _qs = dict([x.split('=', 1) for x in _qs.split('&')])
-
-        _lvl = _qs.get('level', 'ALL').upper()
-
-        if _lvl.startswith('PRI_') or _lvl.startswith('LOG_'):
-            _lvl = _lvl[4:]
-
-        level = getLevelFor(_lvl, None)
-
-        if level is None:
-            raise InvalidNameError(
-                "Unrecognized log level", body
-            )
-
-        return {'level':level, 'filename':filename}
-
+    syntax = URL.Sequence( filename, ('?level=', level) )
 
     def retrieve(self, refInfo, name, context, attrs=None):
         return LogFile(
             context.creationParent, context.creationName,
             filename=self.filename, level=self.level
         )
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 class peakLoggerURL(URL.Base):

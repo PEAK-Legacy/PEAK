@@ -253,11 +253,18 @@ class StructuralFeature(object):
 
         elif f.isMany:
 
-            def get(feature,element):
-                try:
-                    return feature._doGet(element)
-                except AttributeError:
-                    return []
+            if f.isChangeable:
+                def get(feature,element):
+                    try:
+                        return feature._doGet(element)
+                    except AttributeError:
+                        return []
+            else:
+                def get(feature,element):
+                    try:
+                        return feature._doGet(element)
+                    except AttributeError:
+                        return ()
 
         else:
 
@@ -274,13 +281,6 @@ class StructuralFeature(object):
 
 
     get.isTemplate = True
-
-
-
-
-
-
-
 
 
 

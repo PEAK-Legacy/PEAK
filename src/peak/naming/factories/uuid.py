@@ -16,22 +16,18 @@ class uuidURL(URL.Base):
 
     supportedSchemes = 'uuid',
 
-    class quals(URL.Field):
-        upperBound = None
-        defaultValue = ()
+    class quals(URL.Collection):
         referencedType = model.Any
+        syntax = URL.Tuple(URL.Extract(),'=',URL.Extract())
+        separator = ';'
 
     class uuid(URL.Field):
         class referencedType(model.String):
             def mdl_normalize(klass,value):
                 return UUID(value)
 
-
-    def parse(self, scheme, body):
-        _l = body.split(';')
-        return {
-            'uuid':  UUID(_l[0]),
-            'quals': tuple([ tuple(v.split('=',1)) for v in _l[1:] ])
-        }
+    syntax = URL.Sequence(
+        uuid, (';', quals)
+    )
 
 

@@ -5,6 +5,7 @@ from urllib import unquote
 from interfaces import *
 from peak.util.Struct import makeStructType
 from peak.util.imports import importObject
+from peak.naming.api import URL
 
 __all__ = [
     'LDAPConnection', 'LDAPCursor', 'ldapURL', 'SCHEMA_PREFIX'
@@ -22,11 +23,10 @@ except:
 
 
 scope_map = {'one': SCOPE_ONELEVEL, 'sub': SCOPE_SUBTREE, '': SCOPE_BASE}
-
+scope_fmt = {SCOPE_ONELEVEL: 'one', SCOPE_SUBTREE: 'sub', SCOPE_BASE: ''}
 
 def NullConverter(descr,value):
     return value
-
 
 
 
@@ -244,7 +244,7 @@ class distinguishedName(naming.CompoundName):
 
 
 
-class ldapURL(naming.URL.Base):
+class ldapURL(URL.Base):
 
     """RFC2255 LDAP URLs, with the following changes:
 
@@ -263,7 +263,7 @@ class ldapURL(naming.URL.Base):
     We do this for backwards compatability with some applications which
     used the old AppUtils LDAP module, and because the standard
     second syntax is quite unpleasant, especially when the bindname
-    DN contains commas that have to be quoted as %2C.
+    DN contains commas that would have to be quoted as %2C in the extensions.
 
     Attributes provided:
 
@@ -285,137 +285,86 @@ class ldapURL(naming.URL.Base):
     nameAttr = 'basedn'
 
 
-    class host(model.structField):
-        referencedType=model.String
-        defaultValue=None
+    class host(URL.Field): pass
 
-    class port(model.structField):
-        referencedType=model.Integer
+    class port(URL.IntField):
         defaultValue=389
 
-    class basedn(model.structField):
-        referencedType=model.String
+    class basedn(URL.Field):
         defaultValue=''
+        syntax = URL.Conversion(
+            canBeEmpty = True,
+            converter = lambda x:
+                naming.CompositeName.parse(x,distinguishedName)
+        )
 
-    class attrs(model.structField):
-        referencedType=model.Any    # XXX
-        defaultValue=None
+    class attrs(URL.Field):
+        syntax = URL.Repeat(URL.Extract(),separator = ',')  # XXX
 
-    class scope(model.structField):
-        referencedType=model.Integer
+    class filter(URL.Field): pass
+
+    class scope(URL.IntField):
         defaultValue=SCOPE_BASE
+        syntax = URL.Conversion(
+            canBeEmpty = True,
+            converter = lambda x: scope_map[x.lower()],
+            formatter = lambda x: scope_fmt[x],
+        )
 
-    class filter(model.structField):
-        referencedType=model.String
-        defaultValue=None
-
-    class extensions(model.structField):
+    class extensions(URL.Field):
         referencedType=model.Any    # XXX
         defaultValue={}
+        syntax = URL.Conversion(
+            URL.Repeat(
+                URL.Tuple(
+                    URL.Extract(URL.Optional('!')), URL.Extract(),'=',URL.Extract()
+                ),
+                separator=','
+            ),
+            defaultValue={},
+            converter=lambda x: dict([(k,(c and 1 or 0, v)) for (c,k,v) in x]),
+            formatter=lambda d: [('!'[:c], k, v) for (k,(c,v)) in d.items()]
+        )
 
-    class critical(model.structField):
+    class critical(naming.URL.Field):
         referencedType=model.Any    # XXX
         defaultValue = ()
 
 
+    syntax = naming.URL.Sequence(
+        '//',
+        (
+            (URL.Named('_usr'), (':', URL.Named('_pw')), '@'), host, (':',port)
+        ),
+        ('/',basedn,
+            ('?',attrs,
+                ('?',scope,
+                    ('?', filter,
+                        ('?',extensions))))),
+    )
 
 
+    def parse(self, scheme, body):
 
+        data = URL.parse(body, self.syntax)
+        extensions = data.setdefault('extensions',{})
 
+        if '_pw' in data:
+            extensions['x-bindpw'] = (1, data['_pw'])
+            del data['_pw']
 
-
-
-
-    def parse(_self, _scheme, _body):
-
-        _bindinfo = None
-        _hostport = _body
-        extensions = {}
-
-        if _hostport[:2] == '//':
-            _hostport = _hostport[2:]
-        else:
-            raise exceptions.InvalidName('%s:%s' % (_scheme,_body))
-
-        if '/' in _hostport:
-            _hostport, _rest = _hostport.split('/', 1)
-        else:
-            _rest = ''
-
-        if _hostport:
-
-            if '@' in _hostport:
-                _bindinfo, _hostport = _hostport.split('@', 1)
-
-            if ':' in _hostport:
-                host, port = map(unquote, _hostport.split(':', 1))
-                try:
-                    port = int(port)
-                except:
-                    raise exceptions.InvalidName('%s:%s' % (_scheme,_body))
-            else:
-                host = unquote(_hostport)
-
-        if _bindinfo:
-
-            if ':' in _bindinfo:
-                _bindinfo, _bindpw = map(unquote, _bindinfo.split(':', 1))
-                extensions['x-bindpw'] = (1, _bindpw)
-
-            else:
-                _bindinfo = unquote(_bindinfo)
-
-            extensions['bindname'] = (1, _bindinfo)
-
-        if _rest:
-            if '?' in _rest:
-                basedn, _rest = rest.split('?', 1)
-                basedn = naming.CompositeName.parse(basedn,distinguishedName)
-
-            else:
-                basedn = naming.CompositeName.parse(_rest,distinguishedName)
-                _rest = ''
-
-        else:
-            basedn = naming.CompositeName('')
-
-        _rest = (_rest.split('?') + ['']*3)[:4]
-
-        if _rest[0]:
-            attrs = tuple(map(unquote, _rest[0].split(',')))
-
-        scope = scope_map.get(unquote(_rest[1]).lower())
-
-        if scope is None:
-            raise exceptions.InvalidName(str(self))
-
-        if _rest[2]:
-            filter = unquote(_rest[2])
-
-        if _rest[3]:
-
-            _exts = map(unquote, _rest[3].split(','))
-
-            for _e in _exts:
-
-                _crit = 0
-
-                if _e[0] == '!':
-                    _crit = 1; _e = e[1:]
-
-                _k, _v = _e.split('=', 1)
-                extensions[_k.lower()] = (_crit, _v)
-
-
+        if '_usr' in data:
+            extensions['bindname'] = (1, data['_usr'])
+            del data['_usr']
 
         critical = [_k for (_k, (_crit, _v)) in extensions.items() if _crit]
-        critical = tuple(critical)
 
-        return dict(
-            [(k,v) for (k,v) in locals().items()
-                if not k.startswith('_')
-            ]
-        )
+        data['critical'] = tuple(critical)
+        data['attrs'] = data.get('attrs') or None
+        return data
+
+
+
 
 
     def retrieve(self, refInfo, name, context, attrs=None):
@@ -425,7 +374,17 @@ class ldapURL(naming.URL.Base):
             address = self
         )
 
-    # XXX def getCanonicalBody(self):
+
+
+
+
+
+
+
+
+
+
+
 
 
 

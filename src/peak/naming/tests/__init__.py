@@ -6,7 +6,7 @@ from peak.tests import testRoot
 
 validNames = {
 
-    'smtp://foo':
+    'smtp://spaz@foo':
         Items(host='foo', port=25),
 
     'smtp://foo.bar:8025':
@@ -15,7 +15,8 @@ validNames = {
     'ldap://cn=root:somePw@localhost:9912/cn=monitor':
         Items(
             host='localhost', port=9912, basedn=('cn=monitor',),
-            extensions={'bindname':(1,'cn=root'), 'x-bindpw':(1,'somePw')}
+            extensions={'bindname':(1,'cn=root'), 'x-bindpw':(1,'somePw')},
+            critical=('bindname','x-bindpw'),
         ),
 
     'ldap://localhost/cn=Bar,ou=Foo,o=eby-sarna.com':
@@ -36,7 +37,6 @@ validNames = {
         Items(uuid='00000000-0000-0000-0000-000000000000',
               quals=(('ext1','1'), ('ext2','2'))
         ),
-
 
 
     'sybase:foo:bar@baz/spam':
@@ -69,12 +69,12 @@ def parse(url):
     return naming.parseURL(testRoot(),url)
 
 
-
-
-
-
-
-
+canonical = {
+    'ldap://cn=root:somePw@localhost:9912/cn=monitor':
+    'ldap://localhost:9912/cn=monitor????!bindname=cn=root,!x-bindpw=somePw',
+    'sybase://user:p%40ss@server': 'sybase:user:p%40ss@server',
+    'gadfly://drinkers@c:\\temp': 'gadfly:drinkers@c:\\temp',
+}
 
 
 
@@ -82,8 +82,11 @@ def parse(url):
 
 class NameParseTest(TestCase):
 
-    def checkValid(self):
-        map(parse,validNames.keys())
+    def checkValidAndCanonical(self):
+        for name in validNames:
+            stdform = canonical.get(name,name)
+            parsed = str(parse(name))
+            assert stdform == parsed, (name, stdform, parsed)
 
     def checkData(self):
         for name,values in validNames.items():
@@ -116,9 +119,6 @@ class NameAdditionTest(TestCase):
     def checkAdds(self):
         for n1,n2,res in additions:
             assert n1+n2==res, (n1,n2,n1+n2,res)
-
-
-
 
 
 TestClasses = (

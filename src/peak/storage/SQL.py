@@ -453,13 +453,15 @@ class GadflyURL(naming.URL.Base):
 
     supportedSchemes = ('gadfly',)
 
-    pattern = "(//)?(?P<db>[^@]+)@(?P<dir>.+)"
-
     class db(naming.URL.RequiredField):
         pass
 
     class dir(naming.URL.RequiredField):
         pass
+
+    syntax = naming.URL.Sequence(
+        ('//',), db, '@', dir
+    )
 
     def retrieve(self, refInfo, name, context, attrs=None):
 
@@ -488,23 +490,9 @@ class GadflyURL(naming.URL.Base):
 
 
 
-
-
 class GenericSQL_URL(naming.URL.Base):
 
     supportedSchemes = ('sybase', 'pgsql')
-
-    pattern = """(?x)
-    (//)?
-    (   # optional user:pass@
-        (?P<user>[^:]+)
-        (:(?P<passwd>[^@]+))?
-        @
-    )?
-
-    (?P<server>[^/]+)
-    (/(?P<db>.+))?
-    """
 
     class user(naming.URL.Field):
         pass
@@ -518,6 +506,10 @@ class GenericSQL_URL(naming.URL.Base):
     class db(naming.URL.Field):
         pass
 
+    syntax = naming.URL.Sequence(
+        ('//',), (user, (':', passwd), '@'), server, ('/', db)
+    )
+
     def retrieve(self, refInfo, name, context, attrs=None):
 
         return drivers[self.scheme](
@@ -530,4 +522,12 @@ drivers = {
     'sybase': SybaseConnection,
     'pgsql':  PGSQLConnection,
 }
+
+
+
+
+
+
+
+
 
