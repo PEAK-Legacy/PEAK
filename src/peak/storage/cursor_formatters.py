@@ -263,6 +263,36 @@ class cursorToCSV(AbstractCursorFormatter):
         return nr
 
 
+class cursorToInsert(AbstractCursorFormatter):
+    table   = 'MyTable'
+    footer  = False
+    delim   = None
+    null    = 'NULL'
+
+    def formatRows(self, c, stdout):
+        nr = 0
+        
+        stmt = 'INSERT INTO %s (%s) VALUES (%%s)\ngo' % (
+            self.table, ', '.join([x[0] for x in c._cursor.description])
+        )
+
+        for r in c:
+            nr += 1
+            rt = (', '.join([self.toStr(v) for v in r]))
+            print >>stdout, stmt % rt
+            
+        return nr
+
+    def toStr(self, v):
+        if v is None:
+            return self.null
+        elif isinstance(v,unicode):
+            return "'%s'" % v.encode('utf8').replace("'", "''")
+        elif isinstance(v,str):
+            return "'%s'" % str(v).replace("'", "''")
+        return str(v)
+
+
 class cursorToHTML(AbstractCursorFormatter):
     title = None
 
