@@ -5,6 +5,7 @@ and current test suite.
 allSuites = [
     'peak.binding.tests:test_suite',
     'peak.config.tests:test_suite',
+    'peak.storage.tests:test_suite',
 ]
 
 def test_suite():
