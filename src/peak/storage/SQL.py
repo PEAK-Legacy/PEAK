@@ -290,6 +290,7 @@ class PGSQLConnection(SQLConnection):
     API = binding.bindTo("import:pgdb")
 
     def _open(self):
+
         a = self.address
 
         return self.API.connect(
@@ -304,9 +305,26 @@ class PGSQLConnection(SQLConnection):
 
     txnTime = binding.Once(txnTime)
 
-    supportedTypes = SQLConnection.supportedTypes + (
-        'FLOAT','LONG','BOOL','MONEY',
+    supportedTypes = (
+        'BINARY','BOOL','DATETIME','FLOAT','INTEGER',
+        'LONG','MONEY','ROWID','STRING',
     )
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     def typeMap(self, d, a):
 
@@ -315,15 +333,38 @@ class PGSQLConnection(SQLConnection):
         api = self.API
 
         for k in self.supportedTypes:
-            t = getattr(api,k)
+
             c = ps.get(k,NullConverter)
-            for v in t.values:
+
+            for v in getattr(api,k).values:
                 # We support either '.int4' or '.INTEGER' style properties
                 tm[v] = importObject(ps.get(v,c))
 
         return tm
 
     typeMap = binding.Once(typeMap)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 class GadflyConnection(SQLConnection):
