@@ -317,7 +317,7 @@ class PGSQLConnection(SQLConnection):
         for k in self.supportedTypes:
             t = getattr(api,k)
             c = ps.get(k,NullConverter)
-            for v in k.values:
+            for v in t.values:
                 # We support either '.int4' or '.INTEGER' style properties
                 tm[v] = importObject(ps.get(v,c))
 
