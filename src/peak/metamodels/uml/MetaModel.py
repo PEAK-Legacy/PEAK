@@ -39,130 +39,114 @@ from peak.api import *
 
 
 
-class UnlimitedInteger(model.PrimitiveType):
-
-    def fromString(klass, value):
-        if value=='*': return '*'
-        return int(value)
-
-    fromString = classmethod(fromString)
-
-
-class Integer(model.PrimitiveType):
-    fromString = int
-
-
-class LocationReference(model.PrimitiveType):
-    pass
-
-
-class Time(model.PrimitiveType):
-    pass
-
-
-class String(model.PrimitiveType):
-    pass
-
-
-class Name(model.PrimitiveType):
-    pass
-
-
-class Mapping(model.PrimitiveType):
-    pass
-
-
-class Geometry(model.PrimitiveType):
-    pass
-
-
-class Boolean(model.Enumeration):
-    true = 1; false = 0
-
-
-class OrderingKind(model.Enumeration):
-    sorted = 'sorted'
-    ordered = 'ordered'
-    unordered = 'unordered'
-
-
-class VisibilityKind(model.Enumeration):
-    protected = 'protected'
-    public = 'public'
-    private = 'private'
-
-
-class PseudostateKind(model.Enumeration):
-    fork = 'fork'
-    shallowHistory = 'shallowHistory'
-    junction = 'junction'
-    branch = 'branch'
-    deepHistory = 'deepHistory'
-    initial = 'initial'
-    final = 'final'
-    join = 'join'
-
-
-class CallConcurrencyKind(model.Enumeration):
-    concurrent = 'concurrent'
-    guarded = 'guarded'
-    sequential = 'sequential'
-
-
-class AggregationKind(model.Enumeration):
-    aggregate = 'aggregate'
-    composite = 'composite'
-    none = 'none'
-
-
-
-
-
-
-
-
-class ParameterDirectionKind(model.Enumeration):
-
-    __values__ = dict([
-        ('in',     1),
-        ('out',    2),
-        ('inout',  3),
-        ('return', 4),
-    ])
-
-
-class ScopeKind(model.Enumeration):
-    instance = 'instance'
-    classifier = 'classifier'
-
-
-class ChangeableKind(model.Enumeration):
-    frozen = 'frozen'
-    addOnly = 'addOnly'
-    changeable = 'changeable'
-
-
-class MessageDirectionKind(model.Enumeration):
-    __values__ = dict([
-        ('activation', 1),
-        ('return',     2),
-    ])
-
-
-class OperationDirectionKind(model.Enumeration):
-    provide = 'provide'
-    require = 'require'
-
-
-
-
-
-
-
-
-
-
 class UMLClass:
+
+    class LocationReference(model.PrimitiveType):
+        pass
+
+
+    class Time(model.PrimitiveType):
+        pass
+
+
+    class Mapping(model.PrimitiveType):
+        pass
+
+
+    class Geometry(model.PrimitiveType):
+        pass
+
+
+    class OrderingKind(model.Enumeration):
+        sorted = 'sorted'
+        ordered = 'ordered'
+        unordered = 'unordered'
+
+
+    class VisibilityKind(model.Enumeration):
+        protected = 'protected'
+        public = 'public'
+        private = 'private'
+
+
+    class PseudostateKind(model.Enumeration):
+        fork = 'fork'
+        shallowHistory = 'shallowHistory'
+        junction = 'junction'
+        branch = 'branch'
+        deepHistory = 'deepHistory'
+        initial = 'initial'
+        final = 'final'
+        join = 'join'
+
+
+    class CallConcurrencyKind(model.Enumeration):
+        concurrent = 'concurrent'
+        guarded = 'guarded'
+        sequential = 'sequential'
+
+
+    class AggregationKind(model.Enumeration):
+        aggregate = 'aggregate'
+        composite = 'composite'
+        none = 'none'
+
+
+    class ParameterDirectionKind(model.Enumeration):
+
+        __values__ = dict([
+            ('in',     1),
+            ('out',    2),
+            ('inout',  3),
+            ('return', 4),
+        ])
+
+
+    class ScopeKind(model.Enumeration):
+        instance = 'instance'
+        classifier = 'classifier'
+
+
+    class ChangeableKind(model.Enumeration):
+        frozen = 'frozen'
+        addOnly = 'addOnly'
+        changeable = 'changeable'
+
+
+    class MessageDirectionKind(model.Enumeration):
+        __values__ = dict([
+            ('activation', 1),
+            ('return',     2),
+        ])
+
+
+
+    class OperationDirectionKind(model.Enumeration):
+        provide = 'provide'
+        require = 'require'
+
+    class UnlimitedInteger(model.PrimitiveType):
+
+        def fromString(klass, value):
+            if value=='*': return '*'
+            return int(value)
+
+        fromString = classmethod(fromString)
+
+
+    class Integer(model.PrimitiveType):
+        fromString = int
+
+    class Boolean(model.Enumeration):
+        true = 1; false = 0
+
+    class String(model.PrimitiveType):
+        pass
+
+    class Name(model.PrimitiveType):
+        pass
+
+
     class Multiplicity(model.DataType):
 
         class ranges(model.Sequence):
@@ -176,6 +160,8 @@ class UMLClass:
 
         _XMINames = ('Foundation.Data_Types.Multiplicity',)
 
+
+
     class MultiplicityRange(model.DataType):
 
         class upper(model.Field):
@@ -183,14 +169,14 @@ class UMLClass:
             qualifiedName = 'Foundation.Data_Types.MultiplicityRange.upper'
             _XMINames = ('Foundation.Data_Types.MultiplicityRange.upper',)
             name = 'upper'
-            referencedType = UnlimitedInteger
+            referencedType = 'UnlimitedInteger'
 
         class lower(model.Field):
             isRequired = 1
             qualifiedName = 'Foundation.Data_Types.MultiplicityRange.lower'
             _XMINames = ('Foundation.Data_Types.MultiplicityRange.lower',)
             name = 'lower'
-            referencedType = Integer
+            referencedType = 'Integer'
 
         _XMINames = ('Foundation.Data_Types.MultiplicityRange',)
 
@@ -203,6 +189,20 @@ class UMLClass:
             refTypeQN = 'Foundation.Data_Types.MultiplicityRange.multiplicity'
             referencedEnd = 'ranges'
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     class Expression(model.DataType):
 
         class body(model.Field):
@@ -210,7 +210,7 @@ class UMLClass:
             qualifiedName = 'Foundation.Data_Types.Expression.body'
             _XMINames = ('Foundation.Data_Types.Expression.body',)
             name = 'body'
-            referencedType = String
+            referencedType = 'String'
 
         _XMINames = ('Foundation.Data_Types.Expression',)
 
@@ -219,7 +219,7 @@ class UMLClass:
             qualifiedName = 'Foundation.Data_Types.Expression.language'
             _XMINames = ('Foundation.Data_Types.Expression.language',)
             name = 'language'
-            referencedType = Name
+            referencedType = 'Name'
 
     class TimeExpression(Expression):
         _XMINames = ('Foundation.Data_Types.TimeExpression',)
@@ -242,12 +242,48 @@ class UMLClass:
     class ArgListsExpression(Expression):
         _XMINames = ('Foundation.Data_Types.ArgListsExpression',)
 
+
+
     class TypeExpression(Expression):
         _XMINames = ('Foundation.Data_Types.TypeExpression',)
 
-
     class IterationExpression(Expression):
         _XMINames = ('Foundation.Data_Types.IterationExpression',)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     class Base(model.Element):
         _isAbstract = 1
@@ -263,9 +299,11 @@ class UMLClass:
     
         _XMINames = ('Base',)
 
+
     class Element(Base):
         _isAbstract = 1
         _XMINames = ('Foundation.Core.Element',)
+
 
     class ModelElement(Element):
     
@@ -274,7 +312,7 @@ class UMLClass:
             qualifiedName = 'Foundation.Core.ModelElement.isSpecification'
             _XMINames = ('Foundation.Core.ModelElement.isSpecification',)
             name = 'isSpecification'
-            referencedType = Boolean
+            referencedType = 'Boolean'
     
         _isAbstract = 1
     
@@ -334,7 +372,7 @@ class UMLClass:
             qualifiedName = 'Foundation.Core.ModelElement.visibility'
             _XMINames = ('Foundation.Core.ModelElement.visibility',)
             name = 'visibility'
-            referencedType = VisibilityKind
+            referencedType = 'VisibilityKind'
     
         _XMINames = ('Foundation.Core.ModelElement',)
     
@@ -446,7 +484,7 @@ class UMLClass:
             qualifiedName = 'Foundation.Core.ModelElement.name'
             _XMINames = ('Foundation.Core.ModelElement.name',)
             name = 'name'
-            referencedType = Name
+            referencedType = 'Name'
     
 
 
@@ -569,7 +607,7 @@ class UMLClass:
             qualifiedName = 'Behavioral_Elements.Common_Behavior.Action.isAsynchronous'
             _XMINames = ('Behavioral_Elements.Common_Behavior.Action.isAsynchronous',)
             name = 'isAsynchronous'
-            referencedType = Boolean
+            referencedType = 'Boolean'
     
 
 
@@ -653,7 +691,7 @@ class UMLClass:
             qualifiedName = 'Foundation.Core.AssociationEnd.isNavigable'
             _XMINames = ('Foundation.Core.AssociationEnd.isNavigable',)
             name = 'isNavigable'
-            referencedType = Boolean
+            referencedType = 'Boolean'
     
         _isAbstract = 0
     
@@ -662,7 +700,7 @@ class UMLClass:
             qualifiedName = 'Foundation.Core.AssociationEnd.changeability'
             _XMINames = ('Foundation.Core.AssociationEnd.changeability',)
             name = 'changeability'
-            referencedType = ChangeableKind
+            referencedType = 'ChangeableKind'
     
     
         class specifications(model.Collection):
@@ -688,7 +726,7 @@ class UMLClass:
             qualifiedName = 'Foundation.Core.AssociationEnd.aggregation'
             _XMINames = ('Foundation.Core.AssociationEnd.aggregation',)
             name = 'aggregation'
-            referencedType = AggregationKind
+            referencedType = 'AggregationKind'
     
     
         class ordering(model.Field):
@@ -696,7 +734,7 @@ class UMLClass:
             qualifiedName = 'Foundation.Core.AssociationEnd.ordering'
             _XMINames = ('Foundation.Core.AssociationEnd.ordering',)
             name = 'ordering'
-            referencedType = OrderingKind
+            referencedType = 'OrderingKind'
     
         class associationEndRoles(model.Collection):
             isNavigable = 0
@@ -723,7 +761,7 @@ class UMLClass:
             qualifiedName = 'Foundation.Core.AssociationEnd.targetScope'
             _XMINames = ('Foundation.Core.AssociationEnd.targetScope',)
             name = 'targetScope'
-            referencedType = ScopeKind
+            referencedType = 'ScopeKind'
     
         _XMINames = ('Foundation.Core.AssociationEnd',)
     
@@ -1015,7 +1053,7 @@ class UMLClass:
             qualifiedName = 'Behavioral_Elements.State_Machines.CompositeState.isConcurent'
             _XMINames = ('Behavioral_Elements.State_Machines.CompositeState.isConcurent',)
             name = 'isConcurent'
-            referencedType = Boolean
+            referencedType = 'Boolean'
     
         _XMINames = ('Behavioral_Elements.State_Machines.CompositeState',)
 
@@ -1059,7 +1097,7 @@ class UMLClass:
             qualifiedName = 'Behavioral_Elements.Activity_Graphs.SubactivityState.isDynamic'
             _XMINames = ('Behavioral_Elements.Activity_Graphs.SubactivityState.isDynamic',)
             name = 'isDynamic'
-            referencedType = Boolean
+            referencedType = 'Boolean'
     
         _XMINames = ('Behavioral_Elements.Activity_Graphs.SubactivityState',)
 
@@ -1181,7 +1219,7 @@ class UMLClass:
             qualifiedName = 'Foundation.Core.Feature.ownerScope'
             _XMINames = ('Foundation.Core.Feature.ownerScope',)
             name = 'ownerScope'
-            referencedType = ScopeKind
+            referencedType = 'ScopeKind'
     
 
 
@@ -1208,7 +1246,7 @@ class UMLClass:
             qualifiedName = 'Foundation.Core.BehavioralFeature.isQuery'
             _XMINames = ('Foundation.Core.BehavioralFeature.isQuery',)
             name = 'isQuery'
-            referencedType = Boolean
+            referencedType = 'Boolean'
     
         _XMINames = ('Foundation.Core.BehavioralFeature',)
     
@@ -1254,6 +1292,24 @@ class UMLClass:
         _XMINames = ('Foundation.Core.Method',)
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     class GeneralizableElement(ModelElement):
 
         _isAbstract = 1
@@ -1265,19 +1321,14 @@ class UMLClass:
             qualifiedName = 'Foundation.Core.GeneralizableElement.isRoot'
             _XMINames = ('Foundation.Core.GeneralizableElement.isRoot',)
             name = 'isRoot'
-            referencedType = Boolean
+            referencedType = 'Boolean'
 
         class isAbstract(model.Field):
             isRequired = 1
             qualifiedName = 'Foundation.Core.GeneralizableElement.isAbstract'
             _XMINames = ('Foundation.Core.GeneralizableElement.isAbstract',)
             name = 'isAbstract'
-            referencedType = Boolean
-
-
-
-
-
+            referencedType = 'Boolean'
     
         class generalizations(model.Collection):
             isNavigable = 1
@@ -1298,26 +1349,15 @@ class UMLClass:
             refTypeQN = 'Foundation.Core.GeneralizableElement.specialization'
             referencedEnd = 'parent'
     
-    
+
+
         class isLeaf(model.Field):
             isRequired = 1
             qualifiedName = 'Foundation.Core.GeneralizableElement.isLeaf'
             _XMINames = ('Foundation.Core.GeneralizableElement.isLeaf',)
             name = 'isLeaf'
-            referencedType = Boolean
+            referencedType = 'Boolean'
     
-
-
-
-
-
-
-
-
-
-
-
-
 
 
     class Namespace(ModelElement):
@@ -1334,7 +1374,8 @@ class UMLClass:
             referencedType = 'ModelElement'
             refTypeQN = 'Foundation.Core.Namespace.ownedElement'
             referencedEnd = 'namespace'
-    
+
+
 
 
     class Classifier(GeneralizableElement,Namespace):
@@ -1390,7 +1431,8 @@ class UMLClass:
             refTypeQN = 'Foundation.Core.Classifier.classifierInState'
             referencedEnd = 'type'
     
-    
+
+
         class participants(model.Collection):
             isNavigable = 1
             isRequired = 1
@@ -1400,7 +1442,6 @@ class UMLClass:
             refTypeQN = 'Foundation.Core.Classifier.participant'
             referencedEnd = 'specifications'
     
-
 
         class associationEnds(model.Collection):
             isNavigable = 0
@@ -1463,6 +1504,17 @@ class UMLClass:
             referencedEnd = 'bases'
     
 
+
+
+
+
+
+
+
+
+
+
+
     class Node(Classifier):
         _isAbstract = 0
     
@@ -1476,11 +1528,6 @@ class UMLClass:
             referencedEnd = 'deploymentLocations'
     
         _XMINames = ('Foundation.Core.Node',)
-
-
-
-
-
 
 
 
@@ -1517,12 +1564,6 @@ class UMLClass:
             referencedType = 'Link'
             refTypeQN = 'Foundation.Core.Association.link'
             referencedEnd = 'association'
-    
-
-
-
-
-
 
 
     class Class(Classifier):
@@ -1536,8 +1577,24 @@ class UMLClass:
             qualifiedName = 'Foundation.Core.Class.isActive'
             _XMINames = ('Foundation.Core.Class.isActive',)
             name = 'isActive'
-            referencedType = Boolean
+            referencedType = 'Boolean'
     
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
     class AssociationClass(Association,Class):
@@ -1561,11 +1618,6 @@ class UMLClass:
             referencedEnd = 'stimuli3'
 
 
-
-
-
-
-    
         class receiver(model.Reference):
             isNavigable = 1
             isRequired = 1
@@ -1605,6 +1657,26 @@ class UMLClass:
             refTypeQN = 'Behavioral_Elements.Common_Behavior.Stimulus.communicationLink'
             referencedEnd = 'stimuli'
     
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
     class StateMachine(ModelElement):
@@ -1709,8 +1781,6 @@ class UMLClass:
             _XMINames = ('Behavioral_Elements.State_Machines.TimeEvent.when',)
             name = 'when'
             referencedType = 'TimeExpression'
-    
-
 
 
     class Object(Instance):
@@ -1723,6 +1793,15 @@ class UMLClass:
         _XMINames = ('Behavioral_Elements.Common_Behavior.TerminateAction',)
 
 
+
+
+
+
+
+
+
+
+
     class ElementImport(Base):
 
         _isAbstract = 0
@@ -1732,7 +1811,7 @@ class UMLClass:
             qualifiedName = 'Model_Management.ElementImport.alias'
             _XMINames = ('Model_Management.ElementImport.alias',)
             name = 'alias'
-            referencedType = Name
+            referencedType = 'Name'
     
         _XMINames = ('Model_Management.ElementImport',)
     
@@ -1756,16 +1835,13 @@ class UMLClass:
             referencedEnd = 'elementImports'
     
 
-
-
-
-
         class visibility(model.Field):
             isRequired = 1
             qualifiedName = 'Model_Management.ElementImport.visibility'
             _XMINames = ('Model_Management.ElementImport.visibility',)
             name = 'visibility'
-            referencedType = VisibilityKind
+            referencedType = 'VisibilityKind'
+
 
     class DestroyAction(Action):
 
@@ -1798,6 +1874,13 @@ class UMLClass:
             referencedEnd = 'classifiersInState'
     
         _XMINames = ('Behavioral_Elements.Activity_Graphs.ClassifierInState',)
+
+
+
+
+
+
+
 
 
 
@@ -1894,7 +1977,7 @@ class UMLClass:
             qualifiedName = 'Behavioral_Elements.Activity_Graphs.ObjectFlowState.isSynch'
             _XMINames = ('Behavioral_Elements.Activity_Graphs.ObjectFlowState.isSynch',)
             name = 'isSynch'
-            referencedType = Boolean
+            referencedType = 'Boolean'
     
     
         class parameters(model.Collection):
@@ -1916,6 +1999,9 @@ class UMLClass:
             refTypeQN = 'Behavioral_Elements.Activity_Graphs.ObjectFlowState.type'
             referencedEnd = 'objectFlowStates'
     
+
+
+
 
 
 
@@ -2096,7 +2182,7 @@ class UMLClass:
             qualifiedName = 'Foundation.Core.StructuralFeature.targetScope'
             _XMINames = ('Foundation.Core.StructuralFeature.targetScope',)
             name = 'targetScope'
-            referencedType = ScopeKind
+            referencedType = 'ScopeKind'
     
     
         class changeability(model.Field):
@@ -2104,7 +2190,7 @@ class UMLClass:
             qualifiedName = 'Foundation.Core.StructuralFeature.changeability'
             _XMINames = ('Foundation.Core.StructuralFeature.changeability',)
             name = 'changeability'
-            referencedType = ChangeableKind
+            referencedType = 'ChangeableKind'
     
     
         class multiplicity(model.Field):
@@ -2190,6 +2276,9 @@ class UMLClass:
     class Actor(Classifier):
         _isAbstract = 0
         _XMINames = ('Behavioral_Elements.Use_Cases.Actor',)
+
+
+
 
 
 
@@ -2298,7 +2387,7 @@ class UMLClass:
             qualifiedName = 'Model_Management.Subsystem.isInstantiable'
             _XMINames = ('Model_Management.Subsystem.isInstantiable',)
             name = 'isInstantiable'
-            referencedType = Boolean
+            referencedType = 'Boolean'
     
 
 
@@ -2378,7 +2467,7 @@ class UMLClass:
             qualifiedName = 'Behavioral_Elements.State_Machines.StubState.referenceState'
             _XMINames = ('Behavioral_Elements.State_Machines.StubState.referenceState',)
             name = 'referenceState'
-            referencedType = Name
+            referencedType = 'Name'
     
 
 
@@ -2395,12 +2484,6 @@ class UMLClass:
             refTypeQN = 'Behavioral_Elements.Collaborations.AssociationEndRole.availableQualifier'
             referencedEnd = 'associationEndRoles'
 
-
-
-
-
-
-
     
         class base(model.Reference):
             isNavigable = 1
@@ -2414,6 +2497,8 @@ class UMLClass:
         _XMINames = ('Behavioral_Elements.Collaborations.AssociationEndRole',)
 
 
+
+
     class SynchState(StateVertex):
 
         _isAbstract = 0
@@ -2425,8 +2510,7 @@ class UMLClass:
             qualifiedName = 'Behavioral_Elements.State_Machines.SynchState.bound'
             _XMINames = ('Behavioral_Elements.State_Machines.SynchState.bound',)
             name = 'bound'
-            referencedType = UnlimitedInteger
-    
+            referencedType = 'UnlimitedInteger'
 
 
     class FinalState(State):
@@ -2473,16 +2557,6 @@ class UMLClass:
         _XMINames = ('Behavioral_Elements.Common_Behavior.LinkObject',)
 
 
-
-
-
-
-
-
-
-
-
-
     class Operation(BehavioralFeature):
 
         _isAbstract = 0
@@ -2495,7 +2569,6 @@ class UMLClass:
             referencedType = 'Collaboration'
             refTypeQN = 'Foundation.Core.Operation.collaboration'
             referencedEnd = 'representedOperation'
-    
     
         class callActions(model.Collection):
             isNavigable = 0
@@ -2529,7 +2602,7 @@ class UMLClass:
             qualifiedName = 'Foundation.Core.Operation.isRoot'
             _XMINames = ('Foundation.Core.Operation.isRoot',)
             name = 'isRoot'
-            referencedType = Boolean
+            referencedType = 'Boolean'
     
     
         class specification(model.Field):
@@ -2537,7 +2610,7 @@ class UMLClass:
             qualifiedName = 'Foundation.Core.Operation.specification'
             _XMINames = ('Foundation.Core.Operation.specification',)
             name = 'specification'
-            referencedType = String
+            referencedType = 'String'
     
     
         class isLeaf(model.Field):
@@ -2545,9 +2618,10 @@ class UMLClass:
             qualifiedName = 'Foundation.Core.Operation.isLeaf'
             _XMINames = ('Foundation.Core.Operation.isLeaf',)
             name = 'isLeaf'
-            referencedType = Boolean
+            referencedType = 'Boolean'
     
-    
+
+
         class occurrences(model.Collection):
             isNavigable = 0
             isRequired = 1
@@ -2575,7 +2649,7 @@ class UMLClass:
             qualifiedName = 'Behavioral_Elements.Activity_Graphs.ActionState.isDynamic'
             _XMINames = ('Behavioral_Elements.Activity_Graphs.ActionState.isDynamic',)
             name = 'isDynamic'
-            referencedType = Boolean
+            referencedType = 'Boolean'
     
         _XMINames = ('Behavioral_Elements.Activity_Graphs.ActionState',)
     
@@ -2586,6 +2660,7 @@ class UMLClass:
             name = 'dynamicMultiplicity'
             referencedType = 'Multiplicity'
     
+
 
 
     class SendAction(Action):
@@ -2627,22 +2702,15 @@ class UMLClass:
             refTypeQN = 'Foundation.Core.ElementResidence.implementationLocation'
             referencedEnd = 'residentElements'
     
-    
+
+
         class visibility(model.Field):
             isRequired = 1
             qualifiedName = 'Foundation.Core.ElementResidence.visibility'
             _XMINames = ('Foundation.Core.ElementResidence.visibility',)
             name = 'visibility'
-            referencedType = VisibilityKind
+            referencedType = 'VisibilityKind'
     
-
-
-
-
-
-
-
-
 
     class Binding(Dependency):
 
@@ -2673,7 +2741,10 @@ class UMLClass:
             refTypeQN = 'Foundation.Core.TemplateParameter.modelElement'
             referencedEnd = 'templateParameters'
     
-    
+
+
+
+
         class defaultElement(model.Reference):
             isNavigable = 1
             isRequired = 1
@@ -2713,6 +2784,8 @@ class UMLClass:
     
 
 
+
+
     class Parameter(ModelElement):
 
         _isAbstract = 0
@@ -2731,7 +2804,7 @@ class UMLClass:
             qualifiedName = 'Foundation.Core.Parameter.kind'
             _XMINames = ('Foundation.Core.Parameter.kind',)
             name = 'kind'
-            referencedType = ParameterDirectionKind
+            referencedType = 'ParameterDirectionKind'
     
         _XMINames = ('Foundation.Core.Parameter',)
     
@@ -2752,7 +2825,8 @@ class UMLClass:
             name = 'defaultValue'
             referencedType = 'Expression'
     
-    
+
+
         class type(model.Reference):
             isNavigable = 1
             isRequired = 1
@@ -2761,11 +2835,6 @@ class UMLClass:
             referencedType = 'Classifier'
             refTypeQN = 'Foundation.Core.Parameter.type'
             referencedEnd = 'parameters'
-    
-
-
-
-
 
         class event(model.Reference):
             isNavigable = 0
@@ -2776,7 +2845,6 @@ class UMLClass:
             refTypeQN = 'Foundation.Core.Parameter.event'
             referencedEnd = 'parameters'
     
-
     class ExtensionPoint(ModelElement):
 
         _isAbstract = 0
@@ -2801,12 +2869,6 @@ class UMLClass:
             referencedEnd = 'extensionPoints'
     
         _XMINames = ('Behavioral_Elements.Use_Cases.ExtensionPoint',)
-
-
-
-
-
-
 
         class location(model.Field):
             isRequired = 1
@@ -2839,6 +2901,9 @@ class UMLClass:
             referencedEnd = 'componentInstance'
     
         _XMINames = ('Behavioral_Elements.Common_Behavior.ComponentInstance',)
+
+
+
 
 
 
@@ -2881,7 +2946,10 @@ class UMLClass:
 
 
 
-    
+
+
+
+
         class interactions(model.Collection):
             isNavigable = 1
             isRequired = 1
@@ -2953,6 +3021,9 @@ class UMLClass:
     class CallState(ActionState):
         _isAbstract = 0
         _XMINames = ('Behavioral_Elements.Activity_Graphs.CallState',)
+
+
+
 
 
 
@@ -3040,6 +3111,9 @@ class UMLClass:
     
 
 
+
+
+
         class base(model.Reference):
             isNavigable = 1
             isRequired = 1
@@ -3080,6 +3154,7 @@ class UMLClass:
     
         _XMINames = ('Behavioral_Elements.Collaborations.Interaction',)
     
+
         class context(model.Reference):
             isNavigable = 1
             isRequired = 1
@@ -3100,8 +3175,6 @@ class UMLClass:
             _XMINames = ('Behavioral_Elements.State_Machines.ChangeEvent.changeExpression',)
             name = 'changeExpression'
             referencedType = 'BooleanExpression'
-    
-
 
 
     class Extension(Base):
@@ -3113,7 +3186,7 @@ class UMLClass:
             qualifiedName = 'Extension.extenderID'
             _XMINames = ('Extension.extenderID',)
             name = 'extenderID'
-            referencedType = String
+            referencedType = 'String'
     
     
         class extender(model.Field):
@@ -3121,8 +3194,7 @@ class UMLClass:
             qualifiedName = 'Extension.extender'
             _XMINames = ('Extension.extender',)
             name = 'extender'
-            referencedType = String
-    
+            referencedType = 'String'
     
         class baseElement(model.Reference):
             isNavigable = 1
@@ -3133,7 +3205,6 @@ class UMLClass:
             refTypeQN = 'Extension.baseElement'
             referencedEnd = 'extensions'
     
-
 
     class ActivityGraph(StateMachine):
         _isAbstract = 0
@@ -3149,14 +3220,6 @@ class UMLClass:
             referencedEnd = 'activityGraph'
     
 
-
-
-
-
-
-
-
-
     class Partition(ModelElement):
 
         _isAbstract = 0
@@ -3171,6 +3234,7 @@ class UMLClass:
             referencedEnd = 'partitions'
     
         _XMINames = ('Behavioral_Elements.Activity_Graphs.Partition',)
+
 
 
         class contents(model.Collection):
@@ -3191,7 +3255,7 @@ class UMLClass:
             qualifiedName = 'Behavioral_Elements.State_Machines.Pseudostate.kind'
             _XMINames = ('Behavioral_Elements.State_Machines.Pseudostate.kind',)
             name = 'kind'
-            referencedType = PseudostateKind
+            referencedType = 'PseudostateKind'
     
         _XMINames = ('Behavioral_Elements.State_Machines.Pseudostate',)
 
@@ -3223,7 +3287,7 @@ class UMLClass:
             qualifiedName = 'Behavioral_Elements.Common_Behavior.Reception.isAbstarct'
             _XMINames = ('Behavioral_Elements.Common_Behavior.Reception.isAbstarct',)
             name = 'isAbstarct'
-            referencedType = Boolean
+            referencedType = 'Boolean'
     
         _XMINames = ('Behavioral_Elements.Common_Behavior.Reception',)
     
@@ -3232,7 +3296,7 @@ class UMLClass:
             qualifiedName = 'Behavioral_Elements.Common_Behavior.Reception.isRoot'
             _XMINames = ('Behavioral_Elements.Common_Behavior.Reception.isRoot',)
             name = 'isRoot'
-            referencedType = Boolean
+            referencedType = 'Boolean'
 
 
 
@@ -3244,7 +3308,7 @@ class UMLClass:
             qualifiedName = 'Behavioral_Elements.Common_Behavior.Reception.specification'
             _XMINames = ('Behavioral_Elements.Common_Behavior.Reception.specification',)
             name = 'specification'
-            referencedType = String
+            referencedType = 'String'
 
         class signal(model.Reference):
             isNavigable = 1
@@ -3255,18 +3319,34 @@ class UMLClass:
             refTypeQN = 'Behavioral_Elements.Common_Behavior.Reception.signal'
             referencedEnd = 'receptions'
     
-    
         class isLeaf(model.Field):
             isRequired = 1
             qualifiedName = 'Behavioral_Elements.Common_Behavior.Reception.isLeaf'
             _XMINames = ('Behavioral_Elements.Common_Behavior.Reception.isLeaf',)
             name = 'isLeaf'
-            referencedType = Boolean
+            referencedType = 'Boolean'
 
 
     class Model(Package):
         _isAbstract = 0
         _XMINames = ('Model_Management.Model',)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -3339,6 +3419,9 @@ class UMLClass:
             referencedType = 'AssociationEnd'
             refTypeQN = 'Behavioral_Elements.Common_Behavior.LinkEnd.associationEnd'
             referencedEnd = 'linkEnds'
+
+
+
 
 
 
@@ -3435,6 +3518,12 @@ class UMLClass:
 
 
 
+
+
+
+
+
+
     class Generalization(Relationship):
 
         _isAbstract = 0
@@ -3474,7 +3563,7 @@ class UMLClass:
             qualifiedName = 'Foundation.Core.Generalization.discriminator'
             _XMINames = ('Foundation.Core.Generalization.discriminator',)
             name = 'discriminator'
-            referencedType = Name
+            referencedType = 'Name'
     
     class Stereotype(GeneralizableElement):
 
@@ -3514,7 +3603,7 @@ class UMLClass:
             qualifiedName = 'Foundation.Extension_Mechanisms.Stereotype.baseClass'
             _XMINames = ('Foundation.Extension_Mechanisms.Stereotype.baseClass',)
             name = 'baseClass'
-            referencedType = Name
+            referencedType = 'Name'
     
     
         class requiredTags(model.Collection):
@@ -3555,6 +3644,9 @@ class UMLClass:
 
 
 
+
+
+
     class TaggedValue(Element):
 
         _isAbstract = 0
@@ -3564,7 +3656,7 @@ class UMLClass:
             qualifiedName = 'Foundation.Extension_Mechanisms.TaggedValue.tag'
             _XMINames = ('Foundation.Extension_Mechanisms.TaggedValue.tag',)
             name = 'tag'
-            referencedType = Name
+            referencedType = 'Name'
     
         _XMINames = ('Foundation.Extension_Mechanisms.TaggedValue',)
     
@@ -3593,7 +3685,7 @@ class UMLClass:
             qualifiedName = 'Foundation.Extension_Mechanisms.TaggedValue.value'
             _XMINames = ('Foundation.Extension_Mechanisms.TaggedValue.value',)
             name = 'value'
-            referencedType = String
+            referencedType = 'String'
     
 
     class Message(ModelElement):
