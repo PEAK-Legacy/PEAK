@@ -547,23 +547,23 @@ class ScheduledThreadsTest(TestThreads):
         # This also verifies task-switch on sleep, and aborted/not isFinished
         # state of an aborted scheduled thread.
 
-        def gen():
-            yield self.scheduler.sleep(0); events.resume()
+        def gen(c):
+            yield c; events.resume()
             yield gen1(); events.resume()
 
         def gen1():
             yield events.Condition(1); events.resume()
             raise ValueError
 
-        thread = self.spawn(gen())
+        c = events.Condition()
+        thread = self.spawn(gen(c))
+        c.set(True) # enable proceeding
         self.assertRaises(ValueError, self.scheduler.tick)
 
         self.scheduler.tick()   # give the error handler a chance to clean up
 
         self.assertEqual(thread.isFinished(), False)
         self.assertEqual(thread.aborted(), True)
-
-
 
 
 
