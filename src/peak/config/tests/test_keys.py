@@ -132,10 +132,8 @@ class RegisteredProtocolTests(TestCase):
         p1 = config.registeredProtocol(self.S,'some.protocol')
         p2 = config.registeredProtocol(self.A,'some.protocol')
         p3 = config.registeredProtocol(self.B,'some.protocol')
-
         for p in p1,p2,p3:
             self.failUnless(isinstance(p,protocols.Protocol))
-
         for p in p2,p3:
             self.failUnless(isinstance(p,protocols.Variation))
             self.failUnless(p.baseProtocol is p1)
@@ -144,6 +142,9 @@ class RegisteredProtocolTests(TestCase):
         self.failIf(p1 is p3)
         for p, c in (p1,self.S), (p2,self.A), (p3,self.B):
             self.failUnless(p is config.registeredProtocol(c,'some.protocol'))
+
+    def testRoot(self):
+        config.registeredProtocol(testRoot(),'miscellaneous.thing')
 
     def testTooLate(self):
         p1 = config.registeredProtocol(self.S,'some')
@@ -160,7 +161,6 @@ class RegisteredProtocolTests(TestCase):
             self.failUnless(isinstance(p,protocols.Variation))           
             self.failUnless(p is p1 or p.baseProtocol is p1)
             self.failUnless(p is not p1 or p.baseProtocol is I1)
-
 
 class BasicKeyTests(TestCase):
 

@@ -81,7 +81,12 @@ def registeredProtocol(ob, configKey, baseProtocol=None):
 
 
     key = IConfigKey(configKey)
-    oldProtocol = lookup(binding.getParentComponent(ob), key, baseProtocol)
+    parent = binding.getParentComponent(ob)
+
+    if parent is not None:
+        oldProtocol = lookup(parent, key, baseProtocol)
+    else:
+        oldProtocol = baseProtocol
 
     if oldProtocol is None:
         newProtocol = protocols.Protocol()
@@ -99,11 +104,6 @@ def registeredProtocol(ob, configKey, baseProtocol=None):
         raise AlreadyRead("Too late to register protocol", configKey, ob)
 
     return newProtocol
-
-
-
-
-
 
 
 
