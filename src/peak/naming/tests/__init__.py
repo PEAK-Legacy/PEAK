@@ -11,8 +11,11 @@ validNames = {
     'smtp://foo.bar:8025':
         Items(host='foo.bar', port=8025),
 
-    'ldap://localhost:9912':
-        Items(host='localhost', port=9912),
+    'ldap://cn=root:somePw@localhost:9912/cn=monitor':
+        Items(
+            host='localhost', port=9912, basedn='cn=monitor',
+            extensions={'bindname':(1,'cn=root'), 'x-bindpw':(1,'somePw')}    
+        ),
 
     'uuid:6ba7b810-9dad-11d1-80b4-00c04fd430c8':
         Items(uuid='6ba7b810-9dad-11d1-80b4-00c04fd430c8', quals=()),
@@ -33,7 +36,9 @@ validNames = {
         
     'import:bada.bing':
         Items(body='bada.bing'),
-        
+
+
+
     'lockfile:c:\\spam.lock':
         Items(body='c:\\spam.lock'),
 }
