@@ -13,7 +13,7 @@ class I1(Interface):
 class I2(I1):
     pass
 
-class I3(I1,I2):
+class I3(I2,I1):
     pass
 
 
@@ -24,7 +24,7 @@ class C(A,B): pass
 
 class _A(object): pass
 class _B(_A): pass
-class _C(_A,_B): pass
+class _C(_B,_A): pass
 
 
 
@@ -111,7 +111,7 @@ class BasicKeyTests(TestCase):
 
         self.assertEqual( list(k1.registrationKeys()), [(I1,0)] )
         self.assertEqual( list(k2.registrationKeys()), [(I2,0),(I1,1)] )
-        self.assertEqual( list(k3.registrationKeys()), [(I3,0),(I1,1),(I2,1)] )
+        self.assertEqual( list(k3.registrationKeys()), [(I3,0),(I2,1),(I1,2)] )
 
         # Interfaces are looked up using only the interface itself
         self.verifySelfLookup( all )
@@ -179,7 +179,7 @@ class BasicKeyTests(TestCase):
         )
         self.assertEqual(
             list(k3.registrationKeys()),
-            [((I3,_C,B),0), ((I1,_C,B),1), ((I2,_C,B),1)]
+            [((I3,_C,B),0), ((I2,_C,B),1), ((I1,_C,B),2)]
         )
 
         self.assertEqual(
@@ -226,7 +226,7 @@ class BasicKeyTests(TestCase):
         )
 
         self.assertEqual(
-            list(k3.registrationKeys()), [(I3,0),(I1,1),(I2,1), (_C,0), (B,0)]
+            list(k3.registrationKeys()), [(I3,0),(I2,1),(I1,2), (_C,0), (B,0)]
         )
 
         self.assertEqual( list(k0.lookupKeys()), [] )
