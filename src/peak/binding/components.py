@@ -261,12 +261,12 @@ def lookupComponent(name, component=None):
 
     Component Path Syntax
 
-        Paths are '/'-separated attribute names.  Path segments of '.' and
+        Paths are '/' separated attribute names.  Path segments of '.' and
         '..' mean the same as they do in URLs.  A leading '/' (or a
         CompoundName beginning with an empty path segment), will be treated
         as an "absolute path" relative to the component's root component.
 
-        Paths beginning with anything other than '/', './', or '../' are
+        Paths beginning with anything other than '/' , './' , or '../' are
         acquired, which means that the first path segment will be looked
         up using 'acquireComponent()' before processing the rest of the path.
         (See 'acquireComponent()' for more details.)  If you do not want
