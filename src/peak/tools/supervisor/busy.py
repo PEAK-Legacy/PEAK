@@ -94,13 +94,14 @@ class BusyStarter(binding.Component):
 
     supervisor = binding.Obtain('..')
 
-    def _monitorUsage(self):
+    def monitorUsage(self):
 
         from time import time
         trace = self.log.trace
 
         while True:
             yield self.allBusy; busy = events.resume()
+
             if not busy:
                 continue    # loop until we actually *are* all busy
 
@@ -113,13 +114,12 @@ class BusyStarter(binding.Component):
                 trace("All children were busy for: %s seconds", duration)
 
     monitorUsage = binding.Make(
-        # XXX this should be replaced with 'events.threaded()' advice wrapper
-        lambda self: events.Thread(self._monitorUsage()),
-        uponAssembly = True
+        events.threaded(monitorUsage), uponAssembly = True
     )
 
     def _allBusy(self):
         return False not in self.children.values()  # not one is available
+
 
     def processStarted(self, proxy):
         proxy.addListener(self.statusChanged)

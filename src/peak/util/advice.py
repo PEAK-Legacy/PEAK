@@ -94,7 +94,7 @@ class advice(object):
         return getPositionalArgs(self._func)[self.extraArgs:]
 
     def getCallable(self):
-        return self._func
+        return self
 
     def __get__(self,ob,typ):
         if typ is None: typ = ob.__class__
@@ -102,7 +102,7 @@ class advice(object):
 
 
     def __call__(self,*__args,**__kw):
-        self._func(*__args,**__kw)
+        return self._func(*__args,**__kw)
 
 
     def __repr__(self):

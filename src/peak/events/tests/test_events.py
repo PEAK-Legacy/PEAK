@@ -613,9 +613,50 @@ class SchedulerTests(TestCase):
 
 
 
+class AdviceTests(TestCase):
+
+    def testAdvice(self):
+
+        class MyClass(binding.Component):
+
+            def aThread(self):
+                yield events.Condition(True); events.resume()
+
+            aThread = binding.Make( events.threaded(aThread) )
+
+            def threadedMethod(self):
+                yield events.Condition(True); events.resume()
+
+            threadedMethod = events.threaded(threadedMethod)
+
+        ob = MyClass()
+        self.failIf(adapt(ob.aThread, events.IThread,None) is None)
+        self.failIf(adapt(ob.threadedMethod(), events.IThread,None) is None)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 TestClasses = (
     BasicTests, ValueTests, ConditionTests, SemaphoreTests, AnyOfTests,
-    TestThreads, ScheduledThreadsTest, SchedulerTests
+    TestThreads, ScheduledThreadsTest, SchedulerTests, AdviceTests
 )
 
 def test_suite():

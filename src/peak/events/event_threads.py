@@ -5,9 +5,10 @@ from sys import exc_info, _getframe
 import traceback
 from sources import Condition, Value
 import time
+from peak.util.advice import advice
 
 __all__ = [
-    'resume', 'Scheduler', 'Thread', 'ThreadState',
+    'resume', 'threaded', 'Scheduler', 'Thread', 'ThreadState',
 ]
 
 
@@ -36,6 +37,46 @@ def resume():
 
     # No exception, try to pass event data back into the frame
     return state.lastEvent
+
+
+class threaded(advice):
+
+    """Wrap a generator function to return a 'Thread'
+
+    Usage::
+
+        def someMethod(self, whatever):
+            yield whatever; events.resume()
+            # ...
+
+        someMethod = events.threaded(someMethod)
+
+    When called, 'ob.someMethod(whatever)' will return an 'events.Thread' that
+    executes 'someMethod'.  Note that this may also be used in conjunction with
+    'binding.Make', e.g.::
+
+        def aThread(self):
+            yield self.something; events.resume()
+            # ...
+
+        aThread = binding.Make( events.threaded(aThread) )
+
+    In this case, 'ob.aThread' will be an 'events.Thread' that runs the
+    'aThread' method.  This is often convenient to use with 'uponAssembly=True',
+    so that the thread is started as soon as the component is assembled."""
+
+    def __call__(self,*__args,**__kw):
+        return Thread(self._func(*__args,**__kw))
+
+
+
+
+
+
+
+
+
+
 
 
 
