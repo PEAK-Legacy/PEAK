@@ -157,7 +157,18 @@ PEAK Release 0.5 alpha 1
    tutorial on using the component binding package.
 
 
+
+
+
+
+
  Third-Party Software Included with PEAK
+
+     All third-party software included with PEAK are understood by PEAK's
+     authors to be distributable under terms comparable to those PEAK is
+     offered under.  However, it is up to you to understand any obligations
+     those licenses may impose upon you.  For your reference, here are the
+     third-party packages and where to find their license terms:
 
      The 'kjbuckets' module is Copyright Aaron Watters and contributors;
      please see the 'src/kjbuckets/COPYRIGHT.txt' file for details of its
@@ -167,7 +178,28 @@ PEAK Release 0.5 alpha 1
      Copyright Zope Corporation and contributors; please see the 'LICENSE.txt'
      files in their directories for details of their licenses.
 
+     The 'fcgiapp' module is Copyright Digital Creations, LC (now Zope Corp.);
+     see the 'fcgiappmodule.c' for details of its license.  In the same
+     directory are distributed portions of the FastCGI Development Kit, which
+     is Copyright Open Market, Inc.  See the 'LICENSE.TERMS' file in that
+     directory for details of its license.
 
  Installation Instructions
 
     Please see the INSTALL.txt file.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

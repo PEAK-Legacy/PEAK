@@ -80,6 +80,23 @@ Installing PEAK
    Copyright Zope Corporation and contributors; please see the 'LICENSE.txt'
    files in their directories for details of their licenses.
 
+  The 'fcgiapp' Module
+
+   On platforms where 'os.name=="posix"' (most Unixes and Cygwin), PEAK also
+   installs the 'fcgiapp' module, which provides support for the FastCGI
+   protocol.  You may experience problems building this module on some
+   platforms; check the 'fcgiconfig.h' to see if you need to change anything
+   for your system.  Or, you can simply disable it, by editing 'setup.py'
+   and changing the 'include_fcgiapp' flag to 'False'.
+
+   The 'fcgiapp' module is Copyright Digital Creations, LC (now Zope Corp.);
+   see the 'fcgiappmodule.c' file for details of its license.  In the same
+   directory are distributed portions of the FastCGI Development Kit, which
+   is Copyright Open Market, Inc.  See the 'LICENSE.TERMS' file in that
+   directory for details of its license.
+
+
+
  TESTING YOUR INSTALLATION
 
   PEAK comes with a moderately-sized built-in test suite.  If you wish to
@@ -100,6 +117,30 @@ Installing PEAK
 
   And so on.  You can also use 'python setup.py -q test' to make the tests
   run more "quietly".
+
+
+
+
+ EMBEDDING PEAK IN AN APPLICATION
+
+  If you are embedding PEAK in an application that you are distributing,
+  and space is at a premium, there are some modules you may want to omit
+  from the installation.  For example, PEAK's test modules are probably
+  not useful in such an environment, and unless your application is a
+  CASE tool, you will probably not need to redistribute the UML and MOF
+  metamodels.  In such situations, you may want to install a copy of PEAK
+  that does not contain these modules.  You can disable installation of
+  either set of modules by editing 'setup.py', and changing the
+  'include_tests' and 'include_metamodels' flags, located near the top of
+  the script.
+
+
+
+
+
+
+
+
 
 
 

@@ -4,9 +4,9 @@
 
 execfile('src/setup/prologue.py')
 
-include_tests = True        # edit this to stop installation of test modules
+include_tests      = True   # edit this to stop installation of test modules
 include_metamodels = True   # edit this to stop installation of MOF, UML, etc.
-
+include_fcgiapp    = True   # edit this to stop installation of 'fcgiapp'
 
 # Metadata
 
@@ -128,6 +128,14 @@ if os.name=='posix':
     # install 'peak' script on Unix-like OS's (including cygwin)
     scripts = ['scripts/peak']
 
+    # install 'fcgiapp' module, too
+    if include_fcgiapp:
+        extensions += [
+            Extension("fcgiapp", [
+                "src/fcgiapp/fcgiappmodule.c", "src/fcgiapp/fcgiapp.c"
+            ])
+        ]
+
 else:
     # Nothing to see here, move along...
     scripts = []
@@ -140,25 +148,17 @@ setup(
     version=PACKAGE_VERSION,
 
     description="The Python Enterprise Application Kit",
-
     author="Phillip J. Eby",
     author_email="transwarp@eby-sarna.com",
-
     url="http://peak.telecommunity.com/",
-
     license="PSF or ZPL",
     platforms=['UNIX','Windows'],
 
-    packages    = packages,
     package_dir = {'':'src'},
-
+    packages    = packages,
     cmdclass = SETUP_COMMANDS,
-
     data_files = data_files,
     ext_modules = extensions,
     scripts = scripts,
 )
-
-
-
 
