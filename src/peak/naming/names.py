@@ -751,7 +751,7 @@ class CompositeName(AbstractName):
     def format(self):
         sep = self.separator
         enc = "%%%02X" % ord(sep)
-        n = [s.replace(sep,enc) for s in self]
+        n = [str(s).replace(sep,enc) for s in self]
 
         if not filter(None,n):
             n.append('')
