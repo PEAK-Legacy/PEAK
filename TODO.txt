@@ -1,5 +1,6 @@
 Open Issues/To-Do Items
 
+
  Targeted for 0.5 Alpha 1
 
     * Updated reference docstrings for 'peak.api', 'peak.binding',
@@ -8,7 +9,9 @@ Open Issues/To-Do Items
     * Additional content for the tutorial's chapter on binding
 
 
+
  Targeted for 0.5 Final Release (or sooner)
+
 
     General
 
@@ -16,14 +19,8 @@ Open Issues/To-Do Items
 
         * Up-to-date and complete Persistence package
 
+
     peak.storage
-
-        - SQL cursor(joinTxn=flag) shortcut for .joinTxn()
-
-        - SQL cursor error logging, close conn on error, and rewrap errors
-          w/SQL in error object
-
-        - SQL field type conversion (should txnTime standard change?)
 
         - LDAP field type conversion
 
@@ -35,15 +32,19 @@ Open Issues/To-Do Items
 
         - unit tests for more complex object scenarios: references, thunks..?
 
+        - SQL field type conversion for txnTime?
+
         - lock management interfaces/API
 
         - docstrings for reference
+
 
     peak.model
 
         - add support for lazy-loaded attributes
 
         - clean up TW docstrings & interfaces
+
 
     peak.running
 
@@ -61,19 +62,18 @@ Open Issues/To-Do Items
 
         - docstrings for reference
 
+
     peak.config
 
         - "Rule"-oriented configuration files (section specifies component
           rather than property name prefix).
+
 
     peak.util
 
         - docstrings for reference
 
         - more unit tests?
-
-
-
 
 
 

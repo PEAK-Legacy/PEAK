@@ -4,6 +4,7 @@ from interfaces import *
 from peak.util.Struct import makeStructType
 from peak.util.imports import importObject
 from connections import ManagedConnection, AbstractCursor
+import sys
 
 __all__ = [
     'SQLCursor', 'GenericSQL_URL', 'SQLConnection', 'SybaseConnection',
@@ -38,18 +39,17 @@ def NullConverter(descr,value):
 
 
 
-
 class SQLCursor(AbstractCursor):
 
     """Iterable cursor bridge/proxy"""
 
-    typeMap = binding.bindTo('../typeMap')
+    conn = binding.bindToParent()
+    typeMap = binding.bindTo('conn/typeMap')
 
     def _cursor(self,d,a):
         return self._conn.cursor()
 
     _cursor = binding.Once(_cursor)
-
 
     def close(self):
 
@@ -59,9 +59,14 @@ class SQLCursor(AbstractCursor):
 
         super(SQLCursor,self).close()
 
-            
+
     def __setattr__(self,attr,val):
-        if self._hasBinding(attr) or hasattr(self.__class__,attr):
+
+        descr = getattr(self.__class__,attr,None)
+
+        if hasattr(descr,'__set__'):
+            descr.__set__(self,val)
+        elif self._hasBinding(attr) or descr is not None:
             self._setBinding(attr,val)
         else:
             setattr(self._cursor,attr,val)
@@ -73,6 +78,42 @@ class SQLCursor(AbstractCursor):
 
     def nextset(self):
         return getattr(self._cursor, 'nextset', _nothing)()
+
+
+    def execute(self, *args):
+
+        try:
+
+            # XXX need some sort of flags for timing/logging here
+            # XXX perhaps best handled as cursor subclass(es) set on
+            # XXX the SQLConnection?
+
+            return self._cursor.execute(*args)
+
+        except self.conn.Exceptions:
+
+            __traceback_info__ = args
+
+            LOG_ERROR(
+                "Error executing SQL query", self, exc_info=True
+            )
+
+            self.conn.closeASAP()    # close connection after error
+            raise
+
+
+    def joinTxn(self,value):
+        if value:
+            self.getParentComponent().joinTxn()
+
+    joinTxn = property(fset=joinTxn, doc="Set to true to join transaction")
+
+
+
+
+
+
+
 
 
 
@@ -135,6 +176,8 @@ class SQLConnection(ManagedConnection):
 
     Error               = binding.bindTo("API/Error")
     Warning             = binding.bindTo("API/Warning")
+    
+    Exceptions          = binding.bindSequence("Error", "Warning")
 
     Date                = binding.bindTo("API/Date")
     Time                = binding.bindTo("API/Time")
@@ -158,8 +201,6 @@ class SQLConnection(ManagedConnection):
         return tm
 
     typeMap = binding.Once(typeMap)
-
-
 
 
 class SybaseConnection(SQLConnection):
@@ -247,6 +288,10 @@ class PGSQLConnection(SQLConnection):
 class GadflyConnection(SQLConnection):
 
     API = binding.bindTo("import:gadfly")
+
+    Error    = Exception    # Gadfly doesn't really do DBAPI...  Sigh.
+    Warning  = Warning
+
     supportedTypes = ()
 
     def _open(self):
@@ -267,6 +312,20 @@ class GadflyConnection(SQLConnection):
         g.close()
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 class GadflyURL(naming.ParsedURL):
 
     _supportedSchemes = ('gadfly',)
@@ -283,6 +342,29 @@ class GadflyURL(naming.ParsedURL):
             context.creationParent, context.creationName,
             address = self
         )
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 class GenericSQL_URL(naming.ParsedURL):
