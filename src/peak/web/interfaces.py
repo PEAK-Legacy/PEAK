@@ -368,39 +368,39 @@ class INamespaceHandler(Interface):
 
 
 class IConfigurableLocation(IWebTraversable,IPlace,IViewService):
+
     """Location that can be configured via a sitemap file"""
 
     def addContainer(container,permissionNeeded=None):
-        """Register 'container' for item lookups"""
+        """Register 'container' for item lookups
+
+        If 'permissionNeeded' is not None, then the container will not be
+        checked when the user does not have the appropriate permission.
+        Containers added later take precedence over containers added earlier,
+        so in the sequence::
+
+            loc.addContainer(x)
+            loc.addContainer(y)
+
+        items will be looked up in container 'y' before container 'x', so if
+        there is an item with the same name in both, the one from 'y' will be
+        used.
+
+        Note that this is the opposite order from the order of appearance in
+        a sitemap file!  This is because an included sitemap (using
+        <location extends="otherfile">) is processed before the including
+        sitemap's contents for the same location.  Thus, the sitemap parser
+        reverses the order of items in a given file, so that lookup order
+        matches the order in which items are read, but items in containers
+        defined by an included sitemap are looked up after those in the
+        containers defined by the including sitemap.
+        """
 
     def registerLocation(location_id,path):
         """Register 'path' (relative to location) as target of 'location_id'
 
         The registered location can then be accessed using the '++id++'
         namespace."""
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

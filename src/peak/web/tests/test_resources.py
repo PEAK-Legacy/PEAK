@@ -140,15 +140,14 @@ class LocationTests(TestCase):
         loc = web.Location(self.root)
         self.checkView(loc,None,loc)
 
-
-
-
-
-
-
-
-
-
+    def testContainerSequence(self):
+        c1 = {'foo':'baz'}; c2={'foo':'bar'}
+        self.assertEqual(self.ctx.traverseName('foo',None), None)
+        self.root.addContainer(c1)
+        self.assertEqual(self.ctx.traverseName('foo',None).current, 'baz')
+        self.root.addContainer(c2)
+        self.assertEqual(self.ctx.traverseName('foo',None).current, 'bar')
+        
 
 
 

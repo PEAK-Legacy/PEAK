@@ -323,7 +323,7 @@ class ParserTests(TestCase):
         loc = self.endElement()
         ctx = self.policy.newContext(start=loc).traverseName('__class__')
         self.assertEqual(ctx.current,web.Location)
-        
+
 
 
     def testLocationConflicts(self):
@@ -331,20 +331,35 @@ class ParserTests(TestCase):
         self.startElement('allow',['attributes','__class__'])
         self.assertRaises(SyntaxError, self.startElement,
             'view',['name','__class__','object','123'])
-        
 
-    # XXX Containers in extending are *after* those in extendee!
+    def testContainerSequence(self):
+        self.startElement('location',[])
+        self.startElement('container',['object','{"foo":"bar"}'])
+        self.endElement()
+        self.startElement('container',['object','{"foo":"baz"}'])
+        self.endElement()
+        loc = self.endElement()
+        self.assertEqual(self.traverse(loc,'foo').current, "bar")
 
-    # XXX Location should support direct permissions, and ignore redundant ones
+    def testContainerInheritance(self):
+        start, end = self.startElement, self.endElement
+        self.startElement('location', ['extends','data:,'+quote(
+                """<location><container object="{'foo':'baz'}"/></location>"""
+                ), 'id','root'
+            ]
+        )
+        self.startElement('container',['object','{"foo":"bar"}'])
+        self.endElement()
+        loc = self.endElement()
+        self.assertEqual(self.traverse(loc,'foo').current, "bar")
 
 
 class TestLocation(web.Location):
     pass
 
+
 def nullHandler(ctx, ob, namespace, name, qname, default=NOT_GIVEN):
     return ctx.childContext(qname,ob)
-
-
 
 
 

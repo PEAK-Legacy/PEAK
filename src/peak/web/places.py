@@ -240,7 +240,7 @@ class Location(Place,binding.Configurable):
 
     def addContainer(self,container,permissionNeeded=None):
         binding.suggestParentComponent(self,None,container)
-        self.containers.append((permissionNeeded,container))
+        self.containers.insert(0,(permissionNeeded,container))
 
 
 

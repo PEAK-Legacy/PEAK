@@ -5,6 +5,7 @@ from peak.util.imports import lazyModule
 from peak.util import SOX
 from peak.util.ConflictManager import ConflictManager
 
+
 def isRoot(data):
     return 'previous' not in data
 
@@ -19,6 +20,9 @@ def acquire(data,key,default=None):
 
 def finishComponent(parser,data):
     if 'sm.component' in data:
+        stack = data['sm_container_stack']
+        while stack:
+            stack.pop()()
         if not isRoot(data) and 'no_resolve' not in data:
             cm = data['sm_conflict_manager']
             for setting in cm.values(): setting()
@@ -32,6 +36,8 @@ def findComponentData(data):
     while 'sm.component' not in prev:
         prev = prev.get('previous')
     return prev
+
+
 
 def assertNotTop(parser,data):
     if isRoot(data['previous']):
@@ -59,9 +65,7 @@ def assertOutsideContent(parser,data):
         )
 
 def choose(parser, names, attrs):
-
     found = False
-
     for name in names:
         if name in attrs:
             if found:
@@ -71,14 +75,10 @@ def choose(parser, names, attrs):
     else:
         if found:
             return result
-
     parser.err(
         "Element must include *exactly* one of these attributes: "
         + ', '.join(names)
     )
-
-
-
 
 def addPermission(handler,permission):
     def guarded_handler(ctx, ob, namespace, name, qname, default=NOT_GIVEN):
@@ -273,7 +273,7 @@ def startLocation(parser,data):
     data.setdefault('sm_conflict_manager',ConflictManager())
     loc = makeLocation(parser,data,attrs,parent,name)
     data['sm.component'] = loc
-    
+    data['sm_container_stack'] = []
 
 def defineLocation(parser,data):
     data['finish'] = finishComponent
@@ -303,6 +303,7 @@ def defineContent(parser,data):
     assertOutsideContent(parser,data)
     data['start'] = doContent
 
+
 def doImport(parser,data):
     attrs = SOX.validatedAttributes(parser,data,('module',),('as',))
     module = attrs['module']
@@ -314,17 +315,23 @@ def defineImport(parser,data):
     data['start'] = doImport
     data['empty'] = True
 
+
 def doContainer(parser,data):
     attrs = SOX.validatedAttributes(parser,data,('object',),('permission',))
     prev = findComponentData(data)
     perm = acquirePermission(data,attrs)
-    prev['sm.component'].addContainer(evalObject(data,attrs['object']),perm)
+    container = evalObject(data,attrs['object'])
+    prev['sm_container_stack'].append(
+        lambda: prev['sm.component'].addContainer(container,perm)
+    )
+
 
 def defineContainer(parser,data):
     assertNotTop(parser,data)
     assertOutsideContent(parser,data)
     data['start'] = doContainer
     data['empty'] = True
+
 
 view_required = 'name',
 view_one_of   = 'resource','attribute','object', 'function', 'expr'
@@ -360,13 +367,6 @@ def defineView(parser,data):
 
 
 
-
-
-
-
-
-
-
 def doOffer(parser,data):
     attrs = SOX.validatedAttributes(parser,data,('path','as',))
     prev = findComponentData(data)
@@ -396,7 +396,7 @@ def setupDocument(parser,data):
     data['child'] = setRoot
     data['finish'] = finishComponent
     data['sm.component'] = data['parent']
-
+    data['sm_container_stack'] = []
 
 class SiteMap(binding.Singleton):
     protocols.advise(classProvides=[naming.IObjectFactory])
