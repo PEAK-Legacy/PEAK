@@ -4,14 +4,19 @@ import protocols
 from peak.api import PropertyName
 
 __all__ = [
-    'IWebInteraction', 'IWebLocation', 'IWebMethod',
+    'IWebInteraction', 'IWebLocation', 'IWebMethod', 'IInteractionPolicy',
     'LOCATION_PROTOCOL', 'BEHAVIOR_PROTOCOL', 'INTERACTION_CLASS',
+    'DEFAULT_METHOD', 'APPLICATION_LOG', 'AUTHENTICATION_SERVICE',
 ]
 
 
 LOCATION_PROTOCOL = PropertyName('peak.web.locationProtocol')
 BEHAVIOR_PROTOCOL = PropertyName('peak.web.behaviorProtocol')
 INTERACTION_CLASS = PropertyName('peak.web.interactionClass')
+
+DEFAULT_METHOD    = PropertyName('peak.web.defaultMethod')
+APPLICATION_LOG   = PropertyName('peak.web.appLog')
+AUTHENTICATION_SERVICE = PropertyName('peak.web.authenticationService')
 
 
 try:
@@ -27,11 +32,6 @@ else:
     zopePublicationInterfaces = (
         IPublication, IBrowserPublication, IXMLRPCPublication
     )
-
-
-
-
-
 
 
 
@@ -55,7 +55,29 @@ class IWebInteraction(IInteraction):
     locationProtocol = Attribute("""Protocol to adapt locations to""")
     behaviorProtocol = Attribute("""Protocol to adapt behaviors to""")
 
+    log = Attribute("""Default 'running.ILogger' for interactions""")   
+
     # XXX skin, ...?
+
+
+class IInteractionPolicy(Interface):
+
+    """Component holding cross-hit configuration"""
+
+    locationProtocol = Attribute("""Protocol to adapt locations to""")
+    behaviorProtocol = Attribute("""Protocol to adapt behaviors to""")
+
+    log = Attribute("""Default 'running.ILogger' for interactions""")
+
+    authSvc = Attribute("""Authentication service component""")
+
+    defaultMethod = Attribute("""Default method name (e.g. 'index_html')""")
+
+
+
+
+
+
 
 
 class IWebLocation(Interface):

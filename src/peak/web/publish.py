@@ -6,7 +6,8 @@ from peak.running.commands import EventDriven
 from zope.publisher import http, browser, xmlrpc, publish
 
 __all__ = [
-    'BaseInteraction',
+    'Interaction', 'NullAuthenticationService', 'InteractionPolicy',
+    'HTTPRequest', 'BrowserRequest', 'XMLRPCRequest', 'CGIPublisher',
 ]
 
 
@@ -38,29 +39,87 @@ __all__ = [
 
 
 
+class NullAuthenticationService(binding.Singleton):
 
-class BaseInteraction(security.Interaction):
+    def getUser(self, interaction):
+        return None
+
+
+class InteractionPolicy(binding.Component, protocols.StickyAdapter):
+
+    protocols.advise(
+        instancesProvide = [IInteractionPolicy],
+        asAdapterForProtocols = [binding.IComponent],
+        factoryMethod = 'fromComponent',       
+    )
+
+    def fromComponent(klass, ob, proto):
+        ip = klass(ob)
+        protocols.StickyAdapter.__init__(ip, ob, proto)
+        return ip
+
+    fromComponent = classmethod(fromComponent)
+
+    log              = binding.bindTo(APPLICATION_LOG)
+    locationProtocol = binding.bindTo(LOCATION_PROTOCOL)
+    behaviorProtocol = binding.bindTo(BEHAVIOR_PROTOCOL)
+    authSvc          = binding.bindTo(AUTHENTICATION_SERVICE)    
+    defaultMethod    = binding.bindTo(DEFAULT_METHOD)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class Interaction(security.Interaction):
 
     """Base publication policy/interaction implementation"""
 
-    app      = binding.bindTo('../app')
+    app      = binding.requireBinding("Application root to publish")
     request  = binding.requireBinding("Request object")
     response = binding.bindTo("request/response")
 
-    locationProtocol = binding.bindTo(LOCATION_PROTOCOL, default=IWebLocation)
-    behaviorProtocol = binding.bindTo(BEHAVIOR_PROTOCOL, default=IWebMethod)
+    policy   = binding.bindTo('app', adaptTo = IInteractionPolicy)
+    log      = binding.bindTo('policy/log')
+
+    root     = binding.Once(
+        lambda s,d,a: adapt(s.app, s.locationProtocol)
+    )   
+   
+    locationProtocol = binding.bindTo('policy/locationProtocol')
+    behaviorProtocol = binding.bindTo('policy/behaviorProtocol')
+
+    user = binding.Once(
+        lambda self,d,a: self.policy.authSvc.getUser(self)
+    )
+
 
     def beforeTraversal(self, request):
         """Begin transaction before traversal"""
         storage.beginTransaction(self.app)
 
+
     def getApplication(self,request):
-        app = adapt(self.app, self.locationProtocol)
-        binding.suggestParentComponent(None,None,app)
-        return app
+        return self.root
+
 
     def callTraversalHooks(self, request, ob):
         ob.preTraverse(self)
+
+
+
+
+
+
 
     def traverseName(self, request, ob, name, check_auth=1):
 
@@ -80,21 +139,33 @@ class BaseInteraction(security.Interaction):
             return self.notAllowed(ob, name)
         return nextOb
 
+
     def afterTraversal(self, request, ob):
         pass    # nothing to do after traversal yet
 
 
     def getDefaultTraversal(self, request, ob):
-        # XXX this probably needs to delegate to the location
-        return ob, ()
 
+        """Find default method if object isn't renderable"""
+
+        if adapt(ob.getObject(), self.behaviorProtocol, None) is None:
+            # Not renderable, try for default method
+            return ob, (self.policy.defaultMethod,)
+            
+        # object is renderable, no need for further traversal
+        return ob, ()
+            
 
     def callObject(self, request, ob):
         return adapt(ob.getObject(), self.behaviorProtocol).render(self)
 
 
+
+
     def afterCall(self, request):
+
         """Commit transaction after successful hit"""
+
         storage.commitTransaction(self.app)
         if request.method=="HEAD":
             # XXX this doesn't handle streaming; there really should be
@@ -104,21 +175,22 @@ class BaseInteraction(security.Interaction):
 
 
     def handleException(self, object, request, exc_info, retry_allowed=1):
+
         """Abort transaction and delegate error handling to response"""
+
+        # XXX this should actually adapt the error to an error protocol,
+        # XXX and then delegate its handling there.
+
         try:
             storage.abort(self.app)
-            # XXX we should log the error here...
+            self.log.exception("Error handling request")
             self.response.reset()
-            self.response.setCharset('UTF-8') # set an initial default
             self.response.setCharsetUsingRequest(self.request)
             self.response.handleException(exc_info)
         finally:
             # Don't allow exc_info to leak, even if the above resulted in
             # an error
             exc_info = None
-
-
-
 
 
     def notFound(self, ob, name):
@@ -129,37 +201,6 @@ class BaseInteraction(security.Interaction):
     def notAllowed(self, ob, name):
         from zope.publisher.interfaces import Unauthorized
         raise Unauthorized(name=name)   # XXX
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 class HTTPRequest(http.HTTPRequest, http.HTTPCharsets):
@@ -259,7 +300,7 @@ class CGIPublisher(binding.Component):
 
     app = binding.requireBinding("Application root to publish")
 
-    interactionClass=binding.bindTo(INTERACTION_CLASS,default=BaseInteraction)
+    interactionClass=binding.bindTo(INTERACTION_CLASS)
 
 
 
@@ -303,7 +344,7 @@ class CGIPublisher(binding.Component):
 
         request.setPublication(
             self.interactionClass(
-                self, None, request = request
+                self, None, app = self.app, request = request
             )
         )
         return self.publish(request) or 0
