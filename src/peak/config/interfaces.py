@@ -41,7 +41,7 @@ class ObjectOutOfScope(Exception):
 
 class IRule(Interface):
 
-    """Rule to compute a default property value"""
+    """Rule to compute a property value for a target object"""
 
     def __call__(propertyMap, propName, targetObject):
 
@@ -59,10 +59,10 @@ class IRule(Interface):
 
 class IDefault(Interface):
 
+    """Rule to compute a default property value, irrespective of target"""
+
     def __call__(propertyMap, propName):
         """Compute default for property 'propName' or return 'NOT_FOUND'"""
-
-
 
 
 
@@ -92,8 +92,8 @@ class IPropertyMap(Interface):
 
         Note also that 'propName' may be a "wildcard", of the form
         '"part.of.a.name.*"' or '"*"' by itself in the degenerate case.
-        Wildcard rules are checked in order of specificity, after
-        non-wildcard property names."""
+        Wildcard rules and defaults are checked in most-specific-first
+        order, after the non-wildcard name."""
 
 
     def setDefault(propName, defaultObj):
