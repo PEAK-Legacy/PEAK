@@ -164,9 +164,14 @@ class OpaqueURL(struct):
 
 class ParsedURL(OpaqueURL):
 
-    pattern = re.compile('')
-    
-    _supportedSchemes = ()
+    __implements__ = IAddress
+
+    def retrieve(self, refInfo, name, context, attrs=None):
+        pass
+
+
+    pattern = re.compile('')    
+
 
     def fromString(klass, name):
 
@@ -184,7 +189,22 @@ class ParsedURL(OpaqueURL):
         raise InvalidNameException(name)
 
     fromOther = classmethod(fromOther)
-    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    _supportedSchemes = ()
+
     def fromURL(klass, url):
 
         if url.scheme in klass._supportedSchemes:
@@ -201,6 +221,27 @@ class ParsedURL(OpaqueURL):
         raise InvalidNameException(url)
         
     fromURL = classmethod(fromURL)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 class Syntax(object):
