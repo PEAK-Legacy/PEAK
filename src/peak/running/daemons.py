@@ -286,7 +286,6 @@ class FileCleaner(AdaptiveTask):
 
 
 class URLChecker(AdaptiveTask):
-
     """Check if specified resource is up and running; try to restart if not"""
 
     url = binding.requireBinding("name (usually URL) of resource to check")
@@ -297,6 +296,7 @@ class URLChecker(AdaptiveTask):
     )
 
     def getWork(self):
+        self.log.info("%s: checking %s", self._name, self.url)
         try:
             rsrc = self.lookupComponent(self.url)
         except:
