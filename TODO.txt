@@ -8,11 +8,6 @@ Open Issues/To-Do Items
 
       - Create tutorial
 
-    * Fix issue w/reading XMI 1.1 files where metamodel has nested packages
-
-    * Generate UML 1.4 and 1.5 and CWM 1.0 and 1.1, and add them to the
-      'setup.py' package lists.
-
     * ZConfig Integration
 
       - A 'config.ZConfig' module that provides "PEAK-aware" versions of ZConfig
@@ -23,6 +18,7 @@ Open Issues/To-Do Items
       - Sample 'AdaptiveTask' classes that perform the same functions as those in
         the MetaDaemon package, with a ZConfig schema to run them in a daemon-like
 	application.
+
 
  Targeted for 0.5 Beta 1
 
@@ -38,6 +34,10 @@ Open Issues/To-Do Items
 
     * On-the-fly class combination (think "runtime module inheritance",
       without the modules) for DMs.
+
+
+
+
 
  Targeted for 0.5 Final Release (or sooner)
 
@@ -93,10 +93,10 @@ Open Issues/To-Do Items
         - more unit tests?
 
 
+ Targeted for version 0.6
 
-
-
-
+   * Generate UML 1.5 and CWM 1.0 and 1.1, and add them to the
+     'setup.py' package lists.
 
 
 

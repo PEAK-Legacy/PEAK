@@ -1,6 +1,6 @@
 # ------------------------------------------------------------------------------
-# Package: peak.metamodels.UML13.model.Foundation.Data_Types
-# File:    peak\metamodels\UML13\model\Foundation\Data_Types.py
+# Package: peak.metamodels.UML14.model.Data_Types
+# File:    peak\metamodels\UML14\model\Data_Types.py
 # ------------------------------------------------------------------------------
 
 from peak.util.imports import lazyModule as _lazy
@@ -49,7 +49,6 @@ class Expression(_model.Element):
     class language(_model.StructuralFeature):
         referencedType = 'Name'
         upperBound = 1
-        lowerBound = 1
         sortPosn = 0
 
     class body(_model.StructuralFeature):
@@ -59,15 +58,23 @@ class Expression(_model.Element):
         sortPosn = 1
 
 
-class ObjectSetExpression(Expression):
-    pass
-
-
-class TimeExpression(Expression):
-    pass
-
-
 class BooleanExpression(Expression):
+    pass
+
+
+class TypeExpression(Expression):
+    pass
+
+
+class MappingExpression(Expression):
+    pass
+
+
+class ProcedureExpression(Expression):
+    pass
+
+
+class ObjectSetExpression(Expression):
     pass
 
 
@@ -79,19 +86,11 @@ class IterationExpression(Expression):
     pass
 
 
-class TypeExpression(Expression):
+class TimeExpression(Expression):
     pass
 
 
 class ArgListsExpression(Expression):
-    pass
-
-
-class MappingExpression(Expression):
-    pass
-
-
-class ProcedureExpression(Expression):
     pass
 
 
@@ -105,10 +104,6 @@ class UnlimitedInteger(_model.Long):
 
 class String(_model.String):
     length = 0
-
-
-class Time(_model.Float):
-    pass
 
 
 class AggregationKind(_model.Enumeration):
@@ -133,15 +128,9 @@ class ChangeableKind(_model.Enumeration):
     ck_addOnly = _model.enum(u'addOnly')
 
 
-class MessageDirectionKind(_model.Enumeration):
-    mdk_activation = _model.enum(u'activation')
-    mdk_return = _model.enum(u'return')
-
-
 class OrderingKind(_model.Enumeration):
     ok_unordered = _model.enum(u'unordered')
     ok_ordered = _model.enum(u'ordered')
-    ok_sorted = _model.enum(u'sorted')
 
 
 class ParameterDirectionKind(_model.Enumeration):
@@ -149,17 +138,6 @@ class ParameterDirectionKind(_model.Enumeration):
     pdk_inout = _model.enum(u'inout')
     pdk_out = _model.enum(u'out')
     pdk_return = _model.enum(u'return')
-
-
-class PseudostateKind(_model.Enumeration):
-    pk_initial = _model.enum(u'initial')
-    pk_deepHistory = _model.enum(u'deepHistory')
-    pk_shallowHistory = _model.enum(u'shallowHistory')
-    pk_join = _model.enum(u'join')
-    pk_fork = _model.enum(u'fork')
-    pk_branch = _model.enum(u'branch')
-    pk_junction = _model.enum(u'junction')
-    pk_final = _model.enum(u'final')
 
 
 class ScopeKind(_model.Enumeration):
@@ -171,10 +149,7 @@ class VisibilityKind(_model.Enumeration):
     vk_public = _model.enum(u'public')
     vk_protected = _model.enum(u'protected')
     vk_private = _model.enum(u'private')
-
-
-class Mapping(_model.String):
-    length = 0
+    vk_package = _model.enum(u'package')
 
 
 class Name(_model.String):
@@ -183,6 +158,16 @@ class Name(_model.String):
 
 class LocationReference(_model.String):
     length = 0
+
+
+class PseudostateKind(_model.Enumeration):
+    pk_choice = _model.enum(u'choice')
+    pk_deepHistory = _model.enum(u'deepHistory')
+    pk_fork = _model.enum(u'fork')
+    pk_initial = _model.enum(u'initial')
+    pk_join = _model.enum(u'join')
+    pk_junction = _model.enum(u'junction')
+    pk_shallowHistory = _model.enum(u'shallowHistory')
 
 
 class Geometry(_model.String):

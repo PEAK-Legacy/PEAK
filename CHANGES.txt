@@ -2,6 +2,13 @@ Fixes and Enhancements since Version 0.5 alpha 1
 
  Changed, Enhanced, or Newly Deprecated Features
 
+ - Added the UML 1.4 metamodel, and thus the ability to load UML 1.4
+   models encoded in XMI 1.1.
+
+ - Added support in the mof2py code generator for "unprefixing" enumerated
+   values, so that UML and other metamodels' enumerations work correctly
+   when loading from XMI.
+
  - 'binding.Acquire()' now accepts a 'default' value argument, and
    'binding.New()' no longer accepts the 'bindToOwner' flag.
 
@@ -160,6 +167,13 @@ Fixes and Enhancements since Version 0.5 alpha 1
 
 
  Corrected Problems
+
+ - Fixed source distributions missing essential setup files
+
+ - Fixed a problem with assembly events, where a parent component that didn't
+   need assembly notification, wouldn't ever notify its children of assembly
+   if they requested the notification after the parent had already received
+   it.
 
  - Fixed 'naming.lookup()' and related APIs not setting the parent component
    of created objects without an explicitly supplied 'creationParent' keyword

@@ -86,6 +86,7 @@ class MOFGenerator(binding.Component):
     Package   = binding.bindTo("metamodel/Package")
     Import    = binding.bindTo("metamodel/Import")
     Class     = binding.bindTo("metamodel/Class")
+    Tag       = binding.bindTo("metamodel/Tag")
     DataType  = binding.bindTo("metamodel/DataType")
     Attribute = binding.bindTo("metamodel/Attribute")
     Reference = binding.bindTo("metamodel/Reference")
@@ -112,8 +113,7 @@ class MOFGenerator(binding.Component):
 
     sepLine = '# ' + '-'*78 + '\n'
 
-
-
+    enumerationUnprefix = binding.New(dict)
 
 
 
@@ -410,6 +410,12 @@ _config              = _lazy('peak.config.api')
 
     def writeNSContents(self, ns, contentMap):
 
+        for tag in self.findAndUpdate(ns, self.Tag, contentMap):
+            if tag.tagId=='org.omg.xmi.enumerationUnprefix':
+                for v in tag.values:
+                    for e in tag.elements:
+                        self.enumerationUnprefix[e] = v
+
         for imp in self.findAndUpdate(ns, self.Import, contentMap):
             self.writeImport(imp)
 
@@ -438,6 +444,9 @@ _config              = _lazy('peak.config.api')
             if ob.name in contentMap: continue
             contentMap[ob.name] = ob
             yield ob
+
+
+
 
 
     def writeImport(self, imp):
@@ -477,15 +486,6 @@ _config              = _lazy('peak.config.api')
         self.pop()
 
     writeClass = oncePerObject(writeClass)
-
-
-
-
-
-
-
-
-
 
 
 
@@ -558,18 +558,18 @@ _config              = _lazy('peak.config.api')
     def writeEnum(self,dtype,members):
 
         self.beginObject(dtype,'_model.Enumeration')
+        prefix = self.enumerationUnprefix.get(dtype,'')
 
         for m in members:
-            self.write('%s = _model.enum()\n' % m)
+            if prefix and m.startswith(prefix):
+                self.write('%s = _model.enum(%r)\n'%(m, str(m[len(prefix):])))
+            else:
+                self.write('%s = _model.enum()\n' % m)
 
         if members:
             self.write('\n')
 
         self.pop()
-
-
-
-
 
 
     def getRelativeName(self, element, package):
@@ -818,42 +818,42 @@ def genPkg(modelDescr, modelFile, pkgBase, srcDir, progress=lambda *x:None):
             )
         )
 
-if __name__=='__main__':
+def main(prefix=''):
 
     def progress(x): print x
 
     genPkg(
         'UML 1.3',
-        'peak/metamodels/UML_1.3_01-12-02.xml',
-        'peak.metamodels.UML13.model.', '', progress
+        prefix+'peak/metamodels/UML_1.3_01-12-02.xml',
+        'peak.metamodels.UML13.model.', prefix, progress
     )
 
     genPkg(
         'UML 1.4',
-        'peak/metamodels/UML_1.4_01-02-15.xml',
-        'peak.metamodels.UML14.model.', '', progress
+        prefix+'peak/metamodels/UML_1.4_01-02-15.xml',
+        'peak.metamodels.UML14.model.', prefix, progress
     )
 
     genPkg(
         'UML 1.5',
-        'peak/metamodels/UML_1.5_02-09-03.xml',
-        'peak.metamodels.UML15.model.', '', progress
+        prefix+'peak/metamodels/UML_1.5_02-09-03.xml',
+        'peak.metamodels.UML15.model.', prefix, progress
     )
 
     genPkg(
         'CWM 1.0',
-        'peak/metamodels/CWM_1.0_01-02-03.xml',
-        'peak.metamodels.CWM10.model.', '', progress
+        prefix+'peak/metamodels/CWM_1.0_01-02-03.xml',
+        'peak.metamodels.CWM10.model.', prefix, progress
     )
 
     genPkg(
         'CWM 1.1',
-        'peak/metamodels/CWM_1.1_02-05-01.xml',
-        'peak.metamodels.CWM11.model.', '', progress
+        prefix+'peak/metamodels/CWM_1.1_02-05-01.xml',
+        'peak.metamodels.CWM11.model.', prefix, progress
     )
 
-
-
+if __name__=='__main__':
+    main()
 
 
 

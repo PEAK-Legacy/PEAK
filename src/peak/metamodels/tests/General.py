@@ -124,13 +124,13 @@ class QueryTests(TestCase):
 LoadedUML = None
 
 class XMILoad(TestCase):
+    filename = 'MetaMeta.xml'
     def checkLoad(self):
         global LoadedUML
         self.m = m = LoadedUML = UML_DM(testRoot())
         m.roots = storage.xmi.fromFile(
-            config.fileNearModule(__name__,'MetaMeta.xml'), testRoot()
+            config.fileNearModule(__name__,self.filename), testRoot()
         )
-
 
 class XMITests(TestCase):
 
@@ -162,8 +162,12 @@ class XMITests(TestCase):
         sc = list(enum['superclasses*']['name']); sc.sort()
         assert sc==['AttributeKind','PackageElement'], sc
 
+class XMILoad2(XMILoad):
+    filename = 'MetaMeta14.xml'
+    
+
 TestClasses = (
-    UMLTest, QueryTests, XMILoad, XMITests
+    UMLTest, QueryTests, XMILoad, XMITests, XMILoad2, XMITests
 )
 
 

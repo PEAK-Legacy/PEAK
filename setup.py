@@ -63,8 +63,8 @@ if include_metamodels:
 
     packages += [
         'peak.metamodels',
-        'peak.metamodels.UML13',
-        'peak.metamodels.UML13.model',
+        'peak.metamodels.UML13', 'peak.metamodels.UML14',
+        'peak.metamodels.UML13.model', 'peak.metamodels.UML14.model',
         'peak.metamodels.UML13.model.Foundation',
         'peak.metamodels.UML13.model.Behavioral_Elements',
     ]
@@ -73,11 +73,11 @@ if include_metamodels:
 
         packages += [ 'peak.metamodels.tests' ]
 
-        data_files += [
-            ('peak/metamodels/tests',
-                ['src/peak/metamodels/tests/MetaMeta.xml']
-            ),
-        ]
+        data_files += findDataFiles('src/peak/metamodels/tests', 1, '*.xml')
+
+
+
+        
 
 
 try:
@@ -106,9 +106,9 @@ if not zope_installed:
             'persistence.tests', 'ZConfig.tests',
         ]
 
-        data_files += findDataFiles('src/ZConfig/tests', 1, '*.xml', '*.txt', '*.conf')
-
-
+        data_files += findDataFiles(
+            'src/ZConfig/tests', 1, '*.xml', '*.txt', '*.conf'
+        )
 
 
 
