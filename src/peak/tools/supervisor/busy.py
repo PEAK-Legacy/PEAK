@@ -90,7 +90,7 @@ class BusyStarter(binding.Component):
     fileno   = binding.Obtain('./stream/fileno')
     reactor  = binding.Obtain(running.IBasicReactor)
     log      = binding.Obtain('logger:supervisor.busy-stats')
-    allBusy  = binding.Make(lambda: events.Value(False))
+    allBusy  = binding.Make(lambda self: events.Value(self._allBusy()) )
 
     supervisor = binding.Obtain('..')
 
@@ -100,9 +100,11 @@ class BusyStarter(binding.Component):
         trace = self.log.trace
 
         while True:
+            yield self.allBusy; busy = events.resume()
+            if not busy:
+                continue    # loop until we actually *are* all busy
 
-            yield self.allBusy; events.resume()
-            start = time()
+            start = time()  # then begin timing it
 
             yield self.allBusy; events.resume()
             duration = time()-start
@@ -116,15 +118,13 @@ class BusyStarter(binding.Component):
         uponAssembly = True
     )
 
-    def _setBusy(self):
-        # not one is available
-        self.allBusy.set(False not in self.children.values())
-
+    def _allBusy(self):
+        return False not in self.children.values()  # not one is available
 
     def processStarted(self, proxy):
         proxy.addListener(self.statusChanged)
         self.children[proxy.pid] = proxy.isBusy
-        self._setBusy()
+        self.allBusy.set(self._allBusy())
 
 
     def statusChanged(self, proxy):
@@ -133,7 +133,7 @@ class BusyStarter(binding.Component):
                 del self.children[proxy.pid]
         else:
             self.children[proxy.pid] = proxy.isBusy
-        self._setBusy()
+        self.allBusy.set(self._allBusy())
 
 
     def doRead(self):
