@@ -885,20 +885,41 @@ default for src is '!.', the current input buffer"""
 
 
     class cmd_extract(ShellCommand):
-        """\\extract name -- extract DDL for named object"""
+        """\\extract [-n [-x ext]] name -- extract DDL for named object
+        
+-n\t\textract to a file with an automatically generated name
+-x ext\t\tadditional file extension for -n mode"""
 
-        args = ('', 1, 1)
+        args = ('nx:', 1, 1)
 
         def cmd(self, cmd, opts, args, stdout, stderr, **kw):
+            fnext = {
+                'table' :   'TBL',       'trigger' : 'TRG',
+                'view'  :   'VIEW',      'proc' : 'PRC',
+            }
+        
             xi = adapt(self.interactor.con, storage.ISQLDDLExtractor, None)
             if xi is None:
                 print >>stderr, "%s: database doesn't support extraction" % cmd
             else:
-                ddl = xi.getDDLForObject(args[0])
+                ot, ddl = xi.getDDLForObject(args[0])
                 if ddl is None:
                     print >>stderr, "%s: can't extract DDL for %s" % (cmd, args[0])
                 else:
-                    stdout.write(ddl)
+                    f = stdout
+                    n = None
+                    
+                    if opts.has_key('-n'):
+                        n = args[0] + '.' + fnext.get(ot, ot.upper()) + \
+                            opts.get('-x', '')
+                            
+                        f = open(n, 'w')
+
+                    f.write(ddl)
+                    
+                    if n is not None:
+                        f.close()
+                        
                 
     cmd_extract = binding.Make(cmd_extract)
 

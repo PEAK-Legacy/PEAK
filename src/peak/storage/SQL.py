@@ -461,7 +461,11 @@ class SybaseConnection(ValueBasedTypeConn):
             mode = None
         
         if kind in ('P', 'TR', 'V'):
-            kind = {'P':'PROCEDURE', 'TR':'TRIGGER', 'V':'VIEW'}[kind] 
+            kind, otype = {
+                'P' : ('PROCEDURE', 'proc'),
+                'TR': ('TRIGGER',   'trigger'),
+                'V' : ('VIEW',      'view')
+            }[kind] 
     
             d = []
 
@@ -500,7 +504,7 @@ class SybaseConnection(ValueBasedTypeConn):
                 d.append('SET ANSI_NULLS OFF\ngo\n')
                 d.append('SET QUOTED_IDENTIFIER OFF\ngo\n')
 
-            return ''.join(d)
+            return (otype, ''.join(d))
         
        
     protocols.advise(

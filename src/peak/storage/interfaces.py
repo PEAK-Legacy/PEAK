@@ -725,4 +725,5 @@ class ISQLObjectLister(Interface):
 
 class ISQLDDLExtractor(Interface):
     def getDDLForObject(name):
-        """Return string with DDL necessary to recreate named object"""
+        """Return a tuple of (object type, DDL) strings,
+        or None if the DDL for the object can't be extracted"""
