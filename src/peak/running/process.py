@@ -65,7 +65,7 @@ class ChildProcess(binding.Component):
     import os
 
     def waitForSignals(self):
-        while self.isOpen():
+        while self.isRunning() and self.isOpen():
             yield self.eventLoop.signals('SIGCLD','SIGCHLD'); events.resume()
             if not self.isOpen(): return
 
@@ -106,9 +106,9 @@ class ChildProcess(binding.Component):
         try:
             p, s = self.os.waitpid(self.pid, self.os.WNOHANG)
         except OSError,v:
-            if v==errno.ECHILD:
+            if v.args[0]==errno.ECHILD:
                 self._setStatus(None)
-            elif v==errno.EINTR:
+            elif v.args[0]==errno.EINTR:
                 self._checkStatus() # retry
             else:
                 self.log.exception("Unexpected error in waitpid()")
