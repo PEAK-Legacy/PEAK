@@ -2,21 +2,23 @@ from peak.api import *
 from interfaces import *
 from types import FunctionType, MethodType
 
-__all__ = ['SimpleLocation', 'ComponentAsLocation', 'ContainerAsLocation']
+__all__ = [
+    'SimpleTraversable', 'ComponentAsTraversable', 'ContainerAsTraversable'
+]
 
 
-class SimpleLocation(binding.Component):
+class SimpleTraversable(binding.Component):
 
-    """Basic location object; uses self as its subject and for security"""
+    """Basic traversable object; uses self as its subject and for security"""
 
     protocols.advise(
-        instancesProvide = [IWebLocation]
+        instancesProvide = [IWebTraversable]
     )
 
     def getObject(self):
         return self
 
-    def getSublocation(self, name, interaction):
+    def traverseTo(self, name, interaction):
 
         ob = self.getObject()
         loc = getattr(ob, name, NOT_FOUND)
@@ -26,7 +28,7 @@ class SimpleLocation(binding.Component):
             if not interaction.allows(ob, name):
                 return NOT_ALLOWED
 
-            loc = adapt(loc, interaction.locationProtocol)
+            loc = adapt(loc, interaction.pathProtocol)
 
         return loc
 
@@ -37,24 +39,22 @@ class SimpleLocation(binding.Component):
 
 
 
+class ComponentAsTraversable(SimpleTraversable):
 
-
-class ComponentAsLocation(SimpleLocation):
-
-    """Location adapter for simple objects; uses subject's security"""
+    """Traversal adapter for simple objects; uses subject's security"""
 
     protocols.advise(
-        instancesProvide = [IWebLocation],
-        factoryMethod = 'asLocationFor',
+        instancesProvide = [IWebTraversable],
+        factoryMethod = 'asTraversableFor',
         asAdapterForTypes = [object],
     )
 
     ob = None
 
-    def asLocationFor(klass, ob, proto):
+    def asTraversableFor(klass, ob, proto):
         return klass(ob = ob)
 
-    asLocationFor = classmethod(asLocationFor)
+    asTraversableFor = classmethod(asTraversableFor)
 
     def getObject(self):
         return self.ob
@@ -80,33 +80,33 @@ class ComponentAsLocation(SimpleLocation):
 
 
 
-class ContainerAsLocation(ComponentAsLocation):
+class ContainerAsTraversable(ComponentAsTraversable):
 
-    """Location adapter for container components"""
+    """Traversal adapter for container components"""
 
     protocols.advise(
-        instancesProvide = [IWebLocation],
-        factoryMethod = 'asLocationFor',
+        instancesProvide = [IWebTraversable],
+        factoryMethod = 'asTraversableFor',
         asAdapterForProtocols = [naming.IBasicContext, storage.IDataManager],
         asAdapterForTypes = [dict],
     )
 
-    def getSublocation(self, name, interaction):
+    def traverseTo(self, name, interaction):
 
         if name.startswith('@@'):
-            return super(ContainerAsLocation,self).getSublocation(
+            return super(ContainerAsTraversable,self).traverseTo(
                 name[2:], interaction
             )
 
         try:
             ob = self.ob[name]
         except KeyError:
-            return super(ContainerAsLocation,self).getSublocation(
+            return super(ContainerAsTraversable,self).traverseTo(
                 name,interaction
             )
 
         if interaction.allows(ob):
-            return adapt(ob, interaction.locationProtocol)
+            return adapt(ob, interaction.pathProtocol)
 
         return NOT_ALLOWED
 
@@ -121,12 +121,12 @@ class ContainerAsLocation(ComponentAsLocation):
 
 
 
-class CallableAsWebMethod(protocols.Adapter):
+class CallableAsWebPage(protocols.Adapter):
 
     """Make functions/methods callable"""
 
     protocols.advise(
-        instancesProvide = [IWebMethod],
+        instancesProvide = [IWebPage],
         asAdapterForTypes = [FunctionType, MethodType]
     )
 

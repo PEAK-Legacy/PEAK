@@ -5,8 +5,8 @@ from peak.api import PropertyName
 from peak.binding.interfaces import IComponent
 
 __all__ = [
-    'IWebInteraction', 'IWebLocation', 'IWebMethod', 'IInteractionPolicy',
-    'LOCATION_PROTOCOL', 'BEHAVIOR_PROTOCOL', 'INTERACTION_CLASS',
+    'IWebInteraction', 'IWebTraversable', 'IWebPage', 'IInteractionPolicy',
+    'PATH_PROTOCOL', 'PAGE_PROTOCOL', 'INTERACTION_CLASS',
     'DEFAULT_METHOD', 'APPLICATION_LOG', 'AUTHENTICATION_SERVICE',
     'ERROR_PROTOCOL', 'SKIN_SERVICE', 'IWebException', 'IDOMletState',
     'IDOMletNode',    'IDOMletNodeFactory',
@@ -14,9 +14,9 @@ __all__ = [
 ]
 
 
-LOCATION_PROTOCOL = PropertyName('peak.web.locationProtocol')
-BEHAVIOR_PROTOCOL = PropertyName('peak.web.behaviorProtocol')
-ERROR_PROTOCOL    = PropertyName('peak.web.errorProtocol')
+PATH_PROTOCOL  = PropertyName('peak.web.pathProtocol')
+PAGE_PROTOCOL  = PropertyName('peak.web.pageProtocol')
+ERROR_PROTOCOL = PropertyName('peak.web.errorProtocol')
 
 INTERACTION_CLASS = PropertyName('peak.web.interactionClass')
 DEFAULT_METHOD    = PropertyName('peak.web.defaultMethod')
@@ -52,9 +52,9 @@ class IWebInteraction(IInteraction):
 
     app = Attribute("""The underlying application object""")
 
-    errorProtocol    = Attribute("""Protocol to adapt exceptions to""")
-    locationProtocol = Attribute("""Protocol to adapt locations to""")
-    behaviorProtocol = Attribute("""Protocol to adapt behaviors to""")
+    errorProtocol = Attribute("""Protocol for exception handling""")
+    pathProtocol  = Attribute("""Protocol for traversing""")
+    pageProtocol  = Attribute("""Protocol for rendering pages""")
 
     log = Attribute("""Default 'running.ILogger' for interactions""")
 
@@ -65,9 +65,9 @@ class IInteractionPolicy(Interface):
 
     """Component holding cross-hit configuration"""
 
-    errorProtocol    = Attribute("""Protocol to adapt exceptions to""")
-    locationProtocol = Attribute("""Protocol to adapt locations to""")
-    behaviorProtocol = Attribute("""Protocol to adapt behaviors to""")
+    errorProtocol = Attribute("""Protocol for exception handling""")
+    pathProtocol  = Attribute("""Protocol for traversing""")
+    pageProtocol  = Attribute("""Protocol for rendering pages""")
 
     log = Attribute("""Default 'running.ILogger' for interactions""")
 
@@ -80,21 +80,21 @@ class IInteractionPolicy(Interface):
 
 
 
-class IWebLocation(Interface):
+class IWebTraversable(Interface):
 
-    """A component representing a URL location"""
+    """A component that supports path traversal"""
 
     def preTraverse(interaction):
         """Invoked before traverse by web requests"""
 
-    def getSublocation(name, interaction):
-        """Return named IWebLocation, or NOT_ALLOWED/NOT_FOUND"""
+    def traverseTo(name, interaction):
+        """Return named 'IWebTraversable', or 'NOT_ALLOWED'/'NOT_FOUND'"""
 
-    def getObject(interaction):
-        """Return the underlying object that is at this location"""
+    def getObject():
+        """Return the underlying object that would be traversed"""
 
 
-class IWebMethod(Interface):
+class IWebPage(Interface):
 
     """A component for rendering an HTTP response"""
 

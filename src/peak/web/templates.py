@@ -19,7 +19,7 @@ from __future__ import generators
 from peak.api import *
 from interfaces import *
 from xml.sax.saxutils import quoteattr, escape
-from publish import LocationPath
+from publish import TraversalPath
 
 __all__ = [
     'TEMPLATE_NS', 'DOMLETS_PROPERTY', 'DOMletParser', 'TemplateDocument'
@@ -80,12 +80,12 @@ class DOMletState(binding.Component):
 
 
 
-class DOMletAsMethod(binding.Component):
+class DOMletAsWebPage(binding.Component):
 
     """Render a template component"""
 
     protocols.advise(
-        instancesProvide = [IWebMethod],
+        instancesProvide = [IWebPage],
         asAdapterForProtocols = [IDOMletNode],
         factoryMethod = 'fromNode'
     )
@@ -98,8 +98,7 @@ class DOMletAsMethod(binding.Component):
     fromNode = classmethod(fromNode)
 
     def render(self, interaction):
-        myLocation = self.getParentComponent()
-        myOwner = myLocation.getParentComponent()
+        myOwner = self.getParentComponent()
         data = []
         self.templateNode.renderFor(
             myOwner,
@@ -422,7 +421,7 @@ class Element(binding.Component):
     attribItems    = binding.requireBinding("Attribute name,value pairs")
     nonEmpty       = False
     domletProperty = None
-    dataSpec       = binding.Constant('', adaptTo=LocationPath)
+    dataSpec       = binding.Constant('', adaptTo=TraversalPath)
     paramName      = None
 
     # IDOMletNode
@@ -534,7 +533,7 @@ class Element(binding.Component):
     # Override in subclasses
 
     def _wrapInteraction(self,interaction):
-        # XXX This should wrap the interaction in an IWebLocation simulator,
+        # XXX This should wrap the interaction in an IWebTraversable simulator,
         # XXX which should include access to this element's parameters as well
         # XXX as interaction variables.
         raise NotImplementedError
@@ -665,7 +664,7 @@ class List(ContentReplacer):
 
         i = infiniter(self.params['listItem'])
         interaction = state.interaction
-        locationProtocol = interaction.locationProtocol
+        pathProtocol = interaction.pathProtocol
         ct = 0
 
         if not isNull(data):
@@ -674,7 +673,7 @@ class List(ContentReplacer):
                 if not interaction.allows(item):
                     continue
 
-                loc = adapt(item, locationProtocol, None)
+                loc = adapt(item, pathProtocol, None)
                 if loc is None:
                     continue
 

@@ -8,7 +8,7 @@ from peak.running.commands import EventDriven
 __all__ = [
     'Interaction', 'NullAuthenticationService', 'InteractionPolicy',
     'CGIPublisher', 'DefaultExceptionHandler', 'NullSkinService',
-    'LocationPath'
+    'TraversalPath'
 ]
 
 
@@ -39,9 +39,9 @@ class DefaultExceptionHandler(binding.Singleton):
 
 
 
-class LocationPath(naming.CompoundName):
+class TraversalPath(naming.CompoundName):
 
-    """Name that knows how to do 'IWebLocation' traversal"""
+    """Name that knows how to do 'IWebTraversable' traversal"""
 
     syntax = naming.PathSyntax(
         direction=1,
@@ -70,7 +70,7 @@ class LocationPath(naming.CompoundName):
                 pass
 
             elif part:
-                newOb = ob.getSublocation(part, interaction)
+                newOb = ob.traverseTo(part, interaction)
                 if (newOb is NOT_FOUND or newOb is NOT_ALLOWED):
                     return newOb
                 binding.suggestParentComponent(ob,part,newOb)
@@ -107,13 +107,13 @@ class InteractionPolicy(binding.Component, protocols.StickyAdapter):
 
     fromComponent = classmethod(fromComponent)
 
-    log              = binding.bindTo(APPLICATION_LOG)
-    errorProtocol    = binding.bindTo(LOCATION_PROTOCOL)
-    locationProtocol = binding.bindTo(LOCATION_PROTOCOL)
-    behaviorProtocol = binding.bindTo(BEHAVIOR_PROTOCOL)
-    authSvc          = binding.bindTo(AUTHENTICATION_SERVICE)
-    skinSvc          = binding.bindTo(SKIN_SERVICE)
-    defaultMethod    = binding.bindTo(DEFAULT_METHOD)
+    log           = binding.bindTo(APPLICATION_LOG)
+    errorProtocol = binding.bindTo(ERROR_PROTOCOL)
+    pathProtocol  = binding.bindTo(PATH_PROTOCOL)
+    pageProtocol  = binding.bindTo(PAGE_PROTOCOL)
+    authSvc       = binding.bindTo(AUTHENTICATION_SERVICE)
+    skinSvc       = binding.bindTo(SKIN_SERVICE)
+    defaultMethod = binding.bindTo(DEFAULT_METHOD)
 
 
 
@@ -133,15 +133,15 @@ class Interaction(security.Interaction):
     log      = binding.bindTo('policy/log')
 
     def root(self,d,a):
-        root = adapt(self.app, self.locationProtocol)
+        root = adapt(self.app, self.pathProtocol)
         binding.suggestParentComponent(self.skin,None,root)
         return root
 
     root = binding.Once(root, suggestParent=False)
 
-    errorProtocol = binding.bindTo('policy/locationProtocol')
-    locationProtocol = binding.bindTo('policy/locationProtocol')
-    behaviorProtocol = binding.bindTo('policy/behaviorProtocol')
+    errorProtocol = binding.bindTo('policy/errorProtocol')
+    pathProtocol  = binding.bindTo('policy/pathProtocol')
+    pageProtocol  = binding.bindTo('policy/pageProtocol')
 
     user = binding.Once(
         lambda self,d,a: self.policy.authSvc.getUser(self)
@@ -164,7 +164,7 @@ class Interaction(security.Interaction):
 
     def traverseName(self, request, ob, name, check_auth=1):
 
-        nextOb = LocationPath([name]).traverse(ob,self)
+        nextOb = TraversalPath([name]).traverse(ob,self)
 
         if nextOb is NOT_FOUND:
             return self.notFound(ob, name)
@@ -183,7 +183,7 @@ class Interaction(security.Interaction):
 
         """Find default method if object isn't renderable"""
 
-        if adapt(ob.getObject(), self.behaviorProtocol, None) is None:
+        if adapt(ob.getObject(), self.pageProtocol, None) is None:
             # Not renderable, try for default method
             return ob, (self.policy.defaultMethod,)
 
@@ -192,9 +192,9 @@ class Interaction(security.Interaction):
 
 
     def callObject(self, request, ob):
-        method = adapt(ob.getObject(), self.behaviorProtocol)
-        binding.suggestParentComponent(ob,None,method)
-        return method.render(self)
+        page = adapt(ob.getObject(), self.pageProtocol)
+        binding.suggestParentComponent(ob.getParentComponent(),None,page)
+        return page.render(self)
 
 
 
@@ -250,7 +250,7 @@ class CGIPublisher(binding.Component):
 
     For basic use, this just needs an 'app' parameter, and it will publish
     that application using 'BaseInteraction' as its interaction class,
-    'IWebLocation' and 'IWebMethod' as its location and behavior protocols,
+    'IWebTraversable' and 'IWebPage' as its path and page protocols,
     and the default request classes supplied by 'zope.publisher'.
 
     Three HTTP variants are supported: "generic" HTTP, "browser" HTTP, and
