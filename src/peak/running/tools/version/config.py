@@ -7,7 +7,7 @@ from peak.running.commands import AbstractCommand
 import os.path
 safe_globals = {'__builtins__':{}}
 
-# TODO: partdefs, formats, EditableFile constructor, app, txns
+# TODO: partdefs, formats, app, txns
 
 class IPartDef(protocols.Interface):
 
@@ -267,8 +267,8 @@ class VersionConfig(AbstractCommand):
 
 
 
-
-
+def getFormats(section):
+    return section.formats
 
 
 
@@ -340,8 +340,13 @@ class Editor(binding.Component):
 
     """Thing that applies a set of edits to a set of files"""
 
-    files = binding.requireBinding('list of EditableFile instances to edit')
-    edits = binding.requireBinding('list of IEdit instances to apply')
+    filenames = binding.requireBinding('sequence of filenames to edit')
+
+    files = binding.Once(
+        lambda s,d,a: [EditableFile(s,f,filename=f) for f in s.filenames]
+    )
+
+    edits = edits2 = binding.requireBinding('list of IEdit instances to apply')
 
     def editVersion(self, old, new):
         for file in self.files:
@@ -358,11 +363,6 @@ class Editor(binding.Component):
 
             buffer.append(text[posn:])
             file.text = ''.join(buffer)
-
-
-
-
-
 
 
 
