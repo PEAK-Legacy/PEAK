@@ -92,7 +92,6 @@ class happy(Command):
 
     user_options = []
 
-
     def initialize_options(self):
         self.happy_options = None
         self.doc_output_path = None
@@ -107,7 +106,8 @@ class happy(Command):
             self.happy_options = [
                 '-t', 'PEAK Reference', '-d', self.doc_output_path,
                 '-i', 'examples', '-i', 'old', '-i', 'tests',
-                '-i', 'Interface', '-i', 'Persistence', '-i', 'kjbuckets', '.'
+                '-i', 'metamodels', '-i', 'Interface', '-i', 'Persistence',
+                '-i', 'kjbuckets', '.'
             ]
             if not self.verbose: self.happy_options.insert(0,'-q')
 
