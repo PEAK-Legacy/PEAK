@@ -58,26 +58,26 @@ exitlevel is nonzero if there were any problems.
         name = naming.toName(self.argv[1], FileURL.fromFilename)
         target = self.lookupComponent(name,adaptTo=naming.IStreamFactory)
 
-        return HTMLDocument(self,
-            text = target.open('b').read(),
-            output = self.lookupComponent(
-                self.outputURL,adaptTo=naming.IStreamFactory
-            ),
-            useAC = True,
+        dm = HTMLDocument(self,
+            text = target.open('b').read(), useAC = True,
         )
+
+        if self.outputURL:
+            dm.output = self.lookupComponent(
+                self.outputURL,adaptTo=naming.IStreamFactory
+            )
+        else:
+            dm.stream = self.stdout
+
+        return dm
 
     DM = binding.Make(DM)
 
     def outputURL(self):
         if len(self.argv)>2:
             return naming.toName(self.argv[2], FileURL.fromFilename)
-        else:
-            return 'fd.file:stdout'
 
     outputURL = binding.Make(outputURL)
-
-
-
 
 
     def _run(self):
@@ -88,7 +88,8 @@ exitlevel is nonzero if there were any problems.
 
         summary = dm.document.summary
         summary['Input file'] = self.argv[1]
-        summary['Output file'] = self.outputURL
+        if self.outputURL:
+            summary['Output file'] = self.outputURL
 
         testZone = config.ServiceArea(self)     # tests happen in here
         processor = testZone.lookupComponent(IDocumentProcessor)
@@ -101,7 +102,6 @@ exitlevel is nonzero if there were any problems.
 
         print >>self.stderr,score   # Output scores to stderr
         return (score.wrong or score.exceptions) and 1 or 0
-
 
 
 
