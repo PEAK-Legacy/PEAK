@@ -9,51 +9,51 @@ class VersionConfig(AbstractCommand):
 
     """A version configuration, comprising version schemes and modules"""
 
-    modules = binding.requireBinding('modules for versioning')
-    schemes = binding.requireBinding('list of version schemes used by modules')
+    modules = binding.Require('modules for versioning')
+    schemes = binding.Require('list of version schemes used by modules')
 
-    schemeMap = binding.Once(
-        lambda s,d,a: dict(
-            [(scheme.name.lower(), scheme) for scheme in s.schemes]
+    schemeMap = binding.Make(
+        lambda self: dict(
+            [(scheme.name.lower(), scheme) for scheme in self.schemes]
         )
     )
 
-    datafile = binding.Once(
-        lambda s,d,a: os.path.join(os.path.dirname(s.argv[0]),'version.dat')
+    datafile = binding.Make(
+        lambda self: os.path.join(os.path.dirname(self.argv[0]),'version.dat')
     )
 
-    versionStore = binding.Once(
-        lambda self,d,a: VersionStore(self, filename = self.datafile)
+    versionStore = binding.Make(
+        lambda self: VersionStore(self, filename = self.datafile)
     )
 
-    parsedArgs = binding.Once(
-        lambda self,d,a: getopt(
+    parsedArgs = binding.Make(
+        lambda self: getopt(
             self.argv[1:], 'nvhm:', ['dry-run', 'module=', 'verbose', 'help']
         )
     )
 
-    options = binding.Once(lambda s,d,a: dict(s.parsedArgs[0]))
-    args    = binding.Once(lambda s,d,a: s.parsedArgs[1])
+    options = binding.Make(lambda self: dict(self.parsedArgs[0]))
+    args    = binding.Make(lambda self: self.parsedArgs[1])
 
 
 
 
 
-    verbose = binding.Once(
-        lambda self,d,a: '-v' in self.options or '--verbose' in self.options
+    verbose = binding.Make(
+        lambda self: '-v' in self.options or '--verbose' in self.options
     )
 
-    dry_run = binding.Once(
-        lambda self,d,a:
+    dry_run = binding.Make(
+        lambda self:
             '-n' in self.options or '--dry-run' in self.options or self.help
     )
 
-    with_module = binding.Once(
-        lambda self,d,a: self.options.get('-m') or self.options.get('--module')
+    with_module = binding.Make(
+        lambda self: self.options.get('-m') or self.options.get('--module')
     )
 
-    help = binding.Once(
-        lambda self,d,a: '-h' in self.options or '--help' in self.options
+    help = binding.Make(
+        lambda self: '-h' in self.options or '--help' in self.options
     )
 
     commands = ('show', 'check', 'incr', 'set')
@@ -185,8 +185,8 @@ Options:
     -mMODULE, --module=MODULE   operate only on the module named MODULE
 """
 
-    usage= binding.Once(
-        lambda self,d,a: ("""
+    usage= binding.Make(
+        lambda self: ("""
 Usage: %s [options] command [arguments]
 """ % self.cmdName) + self.options_help + ("""
 Commands:
@@ -203,8 +203,8 @@ For more help on a specific command, try '%s --help commandname'
     )
 
 
-    show_usage = binding.Once(
-        lambda self,d,a: ("""
+    show_usage = binding.Make(
+        lambda self: ("""
 Usage: %s [options] show [format]
 """ % self.cmdName) + self.options_help +
 """    -v, --verbose               display module names as well as versions
@@ -222,16 +222,16 @@ versions will be displayed using that format.  Otherwise, module versions are
 displayed using the default format for the module's version scheme.
 """)
 
-    check_usage = binding.Once(
-        lambda self,d,a: ("""
+    check_usage = binding.Make(
+        lambda self: ("""
 Usage: %s [options] check
 """ % self.cmdName) + self.options_help + """
 Check all files containing version numbers, to verify that their contents are
 as expected, given the current version of the module(s) concerned.
 """)
 
-    incr_usage = binding.Once(
-        lambda self,d,a: ("""
+    incr_usage = binding.Make(
+        lambda self: ("""
 Usage: %s [options] incr PART
 """ % self.cmdName) + self.options_help + """
 Increment the version part named PART, and update all files with the new
@@ -244,15 +244,15 @@ version information.
 
 
 
-    set_usage =  binding.Once(
-        lambda self,d,a: ("""
+    set_usage =  binding.Make(
+        lambda self: ("""
 Usage: %s [options] set PART=VALUE [PART=VALUE...]
 """ % self.cmdName) + self.options_help + """
 Set each named version part to the corresponding value, and update all files
 with the new version information.
 """)
 
-    cmdName = binding.Once( lambda s,d,a: s.argv[0] )
+    cmdName = binding.Make( lambda self: self.argv[0] )
 
 
 

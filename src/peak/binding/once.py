@@ -583,8 +583,8 @@ class classAttr(object):
         class SomeClass(binding.Component):
 
             CLASS_NAME = binding.classAttr(
-                binding.Once(
-                    lambda s,d,a: s.__name__.upper()
+                binding.Make(
+                    lambda self: self.__name__.upper()
                 )
             )
 
@@ -654,13 +654,13 @@ class Activator(type):
 
 
 
-    def __all_descriptors__(klass,d,a):
+    def __all_descriptors__(klass):
         ad = {}
         map(ad.update, getInheritedRegistries(klass, '__all_descriptors__'))
         ad.update(klass.__class_descriptors__)
         return ad
 
-    __all_descriptors__ = Once(__all_descriptors__, suggestParent=False)
+    __all_descriptors__ = Make(__all_descriptors__, suggestParent=False)
 
 
 
@@ -747,13 +747,13 @@ class ActiveClass(Activator):
 
         return importString(parent),
 
-    __parent__ = Once(__parent__, suggestParent=False)
+    __parent__ = Make(__parent__, suggestParent=False)
 
 
     def __cname__(self,d,a):
         return self.__name__.split('.')[-1]
 
-    __cname__ = Once(__cname__, suggestParent=False)
+    __cname__ = Make(__cname__, suggestParent=False)
 
 
 

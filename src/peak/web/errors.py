@@ -26,7 +26,7 @@ class WebException(Exception):
         Exception.__init__(self, *args)
         self.context = context
 
-    def template(self,d,a):
+    def template(self):
         ctx = self.context
         interaction = ctx.interaction
         skin = interaction.skin
@@ -35,7 +35,7 @@ class WebException(Exception):
             t = skin.getResource('/peak.web/standard_error')
         return t
 
-    template = binding.Once(template)
+    template = binding.Make(template)
 
 
 

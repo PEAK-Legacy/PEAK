@@ -9,8 +9,8 @@ DATABASE = PropertyName('bulletins.db')
 
 class BulletinsForCategoryDM(storage.QueryDM):
 
-    db         = binding.bindTo(DATABASE)
-    BulletinDM = binding.bindTo(storage.DMFor(Bulletin))
+    db         = binding.Obtain(DATABASE)
+    BulletinDM = binding.Obtain(storage.DMFor(Bulletin))
 
     def _load(self, oid, ob):
 
@@ -41,7 +41,7 @@ class BulletinsForCategoryDM(storage.QueryDM):
 
 class UserDM(storage.EntityDM):
 
-    db           = binding.bindTo(DATABASE)
+    db           = binding.Obtain(DATABASE)
     defaultClass = User
 
     def _load(self, oid, ob):
@@ -81,10 +81,10 @@ class UserDM(storage.EntityDM):
 
 
 class BulletinDM(storage.EntityDM):
-    db           = binding.bindTo(DATABASE)
-    CategoryDM   = binding.bindTo(storage.DMFor(Category))
-    UserDM       = binding.bindTo(storage.DMFor(User))
-    forCategory  = binding.New(BulletinsForCategoryDM)
+    db           = binding.Obtain(DATABASE)
+    CategoryDM   = binding.Obtain(storage.DMFor(Category))
+    UserDM       = binding.Obtain(storage.DMFor(User))
+    forCategory  = binding.Make(BulletinsForCategoryDM)
     defaultClass = Bulletin
 
     def _load(self, oid, ob):
@@ -124,8 +124,8 @@ class BulletinDM(storage.EntityDM):
 class CategoryDM(storage.EntityDM):
 
     db = binding.bindTo(DATABASE)
-    BulletinDM = binding.bindTo(storage.DMFor(Bulletin))
-    bulletinsForCategory = binding.bindTo('BulletinDM/forCategory')
+    BulletinDM = binding.Obtain(storage.DMFor(Bulletin))
+    bulletinsForCategory = binding.Obtain('BulletinDM/forCategory')
 
     defaultClass = Category
 

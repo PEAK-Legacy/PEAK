@@ -9,7 +9,7 @@ __all__ = ['parseCmd', 'ShellCommand']
 def parseCmd(cmdline, defaults):
     """Parse a command line, and return a dictionary containing
     argv, stdin, stdout, stderr, and environ.
-    
+
     default for the last for are pulled from the same-named
     attributes of the object "defaults"
 
@@ -17,9 +17,9 @@ def parseCmd(cmdline, defaults):
 
     TODO: support VAR=value before command to change environment?
     """
-    
+
     r = {}
-    
+
     for a in ('stdin', 'stdout', 'stderr', 'environ'):
         r[a] = getattr(defaults, a)
 
@@ -43,7 +43,7 @@ def parseCmd(cmdline, defaults):
 
     if pipeto is not None:
         r['stdout'] = os.popen(pipeto, 'w')
-        
+
     r['argv'] = av
 
     return r
@@ -133,15 +133,15 @@ class ShellCommand(binding.Component):
     protocols.advise(
         instancesProvide = [running.IRerunnable]
     )
-    
-    interactor = binding.bindTo('..')
-    shell = binding.bindTo('interactor/shell')
-    
+
+    interactor = binding.Obtain('..')
+    shell = binding.Obtain('interactor/shell')
+
     def run(self, stdin, stdout, stderr, environ, argv):
         optpat, minarg, maxarg = getattr(self, 'args', ('', 0, 0))
 
         retval = None
-        
+
         try:
             opts, args = getopt(argv[1:], optpat)
             opts = dict(opts)

@@ -75,7 +75,7 @@ class MissingData(Exception):
     pass
 
 
-from peak.binding.once import Once
+from peak.binding.once import Make
 
 def uniquechars(s):
     return ''.join(dict([(c,c) for c in s]))
@@ -278,12 +278,12 @@ class Sequence(Rule):
         self.rules = syn
         return syn
 
-    def rules(self,d,a):
-        return self._computeRules()
-
-    rules = Once(rules)
+    rules = Make(lambda self: self._computeRules(), attrName='rules')
 
     openingChars = ''
+
+
+
 
 class Optional(Sequence):
 

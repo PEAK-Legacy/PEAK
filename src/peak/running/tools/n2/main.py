@@ -29,8 +29,8 @@ ls()\t\tshow contents of c
 -p\tuse python interactor even if there is a more specific interactor
 \t(implies -e)"""
 
-    idict = binding.Once(lambda self,d,a: __main__.__dict__)
-    width = binding.Constant(80)    # XXX screen width
+    idict = __main__.__dict__
+    width = 80    # XXX screen width
 
 
     def run(self):

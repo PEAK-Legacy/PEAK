@@ -13,9 +13,9 @@ class SkinTraverser(MultiTraverser):
     )
 
     # Our local path is effectively '/++resources++'
-    resourcePath = binding.bindTo(RESOURCE_PREFIX)
+    resourcePath = binding.Obtain(RESOURCE_PREFIX)
 
-    items = binding.bindTo('../layers')
+    items = binding.Obtain('../layers')
 
     _subTraverser = MultiTraverser
 
@@ -45,24 +45,24 @@ class Skin(Traversable):
         instancesProvide = [ISkin]
     )
 
-    traverser = binding.New(SkinTraverser)
-    cache     = binding.New(dict)
+    traverser = binding.Make(SkinTraverser)
+    cache     = binding.Make(dict)
 
-    root   = binding.requireBinding("Underlying traversal root")
-    policy = binding.requireBinding("Interaction Policy")
-    layers = binding.requireBinding(
+    root   = binding.Require("Underlying traversal root")
+    policy = binding.Require("Interaction Policy")
+    layers = binding.Require(
         "Sequence of resource managers", suggestParent=False
         # We don't suggest the parent, so that the layers will bind to our
         # traverser, instead of to us!
     )
 
-    def dummyInteraction(self,d,a):
+    def dummyInteraction(self):
         policy = self.policy
         return policy.interactionClass(
             policy, None, policy=policy, request=None, skin=self, user=None
         )
 
-    dummyInteraction = binding.Once(dummyInteraction)
+    dummyInteraction = binding.Make(dummyInteraction)
 
     def traverseTo(self, name, ctx):
 

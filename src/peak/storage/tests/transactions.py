@@ -208,10 +208,7 @@ class TxnTable(storage.TransactionComponent):
     stableState = ()
     colNames = ()
 
-    def table(self,d,a):
-        return Table( self.colNames, self.stableState )
-
-    table = binding.Once(table)
+    table = binding.Make(lambda self: Table(self.colNames, self.stableState))
 
     def dump(self):
         colNames = self.colNames
@@ -244,17 +241,20 @@ class TxnTable(storage.TransactionComponent):
 
 
 
+
+
+
 class Harness(binding.Component):
 
     class sampleTable(TxnTable):
         colNames = 'a', 'b'
 
-    sampleTable = binding.New(sampleTable)
+    sampleTable = binding.Make(sampleTable)
 
 
     class testDM(storage.EntityDM):
 
-        table = binding.bindTo('sampleTable')
+        table = binding.Obtain('sampleTable')
 
         class defaultClass(Persistent):
             pass
@@ -280,7 +280,7 @@ class Harness(binding.Component):
         def _defaultState(self,ob):
             return {}
 
-    testDM = binding.New(testDM)
+    testDM = binding.Make(testDM)
 
 
 

@@ -45,17 +45,17 @@ class TraversalContext(binding.Component):
         instancesProvide = [ITraversalContext]
     )
 
-    previous    = binding.bindTo('..')
-    interaction = binding.Acquire(IWebInteraction)
-    traversable = binding.requireBinding("Traversable being traversed")
+    previous    = binding.Obtain('..')
+    interaction = binding.Obtain(IWebInteraction, offerAs=[IWebInteraction])
+    traversable = binding.Require("Traversable being traversed")
 
-    subject = binding.Once(
-        lambda s,d,a: s.traversable.getObject(s.interaction),
+    subject = binding.Make(
+        lambda self: self.traversable.getObject(self.interaction),
         suggestParent=False
     )
 
-    renderable = binding.Once(
-        lambda s,d,a: adapt(s.subject, s.interaction.pageProtocol, None)
+    renderable = binding.Make(
+        lambda self: adapt(self.subject, self.interaction.pageProtocol, None)
     )
 
     def checkPreconditions(self):
@@ -68,7 +68,7 @@ class TraversalContext(binding.Component):
         return self.__class__.newCtx(self, name, traversable = ob)
 
     # newCtx = "this class"
-    newCtx = binding.classAttr(binding.bindTo('.'))
+    newCtx = binding.classAttr(binding.Obtain('.'))
 
 
 
@@ -121,19 +121,19 @@ class TraversalContext(binding.Component):
 
 
 
-    absoluteURL = binding.Once(
-        lambda self,d,a: self.traversable.getURL(self),
+    absoluteURL = binding.Make(
+        lambda self: self.traversable.getURL(self),
         doc = "Absolute URL of the current object"
     )
 
-    def traversedURL(self, d, a):
+    def traversedURL(self):
         """Parent context's absolute URL + current context's name"""
 
         base = self.getParentComponent().absoluteURL
         name = self.getComponentName()
         return posixpath.join(base, name)   # handles empty parts OK
 
-    traversedURL = binding.Once(traversedURL)
+    traversedURL = binding.Make(traversedURL)
 
 
 class Traversal(TraversalContext):
@@ -141,18 +141,18 @@ class Traversal(TraversalContext):
     """Root traversal context"""
 
     # We're the root, so our URL is that of the interaction
-    absoluteURL = binding.Once(
-        lambda s,d,a: s.interaction.getAbsoluteURL()
+    absoluteURL = binding.Make(
+        lambda self: self.interaction.getAbsoluteURL()
     )
 
     # We haven't gone anywhere yet, so traversed URL = absolute URL
-    traversedURL = binding.bindTo('absoluteURL')
+    traversedURL = binding.Obtain('absoluteURL')
 
     # And you can't go to '..' from here:
     previous = None
 
     # Traversal start point is always the skin
-    traversable = binding.bindTo('interaction/skin')
+    traversable = binding.Obtain('interaction/skin')
 
     # Subcontexts are non-root traversal context
     newCtx = binding.classAttr(TraversalContext)
@@ -289,7 +289,7 @@ class MultiTraverser(Traversable):
 
     """Aggregate traversal across a sequence of delegate traversables"""
 
-    items = binding.requireBinding("traversables to traversed")
+    items = binding.Require("traversables to traversed")
 
     def getObject(self, interaction):
         # Return the first item

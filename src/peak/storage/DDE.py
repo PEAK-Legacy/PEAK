@@ -129,16 +129,16 @@ class DDEConnection(storage.ManagedConnection):
         instancesProvide = [storage.IDDEConnection],
     )
 
-    serviceName = binding.bindTo("address/service")
-    topicName   = binding.bindTo("address/topic")
-    launchFile  = binding.bindTo("address/file", default=None)
+    serviceName = binding.Obtain("address/service")
+    topicName   = binding.Obtain("address/topic")
+    launchFile  = binding.Obtain("address/file", default=None)
 
-    retries  = binding.bindTo("address/retries", default=10)
-    sleepFor = binding.bindTo("address/sleep", default=1)
+    retries  = binding.Obtain("address/retries", default=10)
+    sleepFor = binding.Obtain("address/sleep", default=1)
 
-    logger = binding.bindTo('logging.logger:dde')
+    logger = binding.Obtain('logging.logger:dde')
 
-    def ddeServer(self,d,a):
+    def ddeServer(self):
         return ServerManager(
             str(binding.getComponentPath(self)),
             # weakref to the logger so that the ServerManager isn't part of
@@ -146,7 +146,7 @@ class DDEConnection(storage.ManagedConnection):
             logger=weakref.proxy(self.logger)
         )
 
-    ddeServer = binding.Once(ddeServer)
+    ddeServer = binding.Make(ddeServer)
 
     def __call__(self, requestStr):
         """Issue a DDE request (requestStr -> responseStr)"""

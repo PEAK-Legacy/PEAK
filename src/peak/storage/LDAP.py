@@ -48,7 +48,7 @@ class LDAPCursor(AbstractCursor):
     bulkRetrieve = False
     attrs        = None
 
-    disconnects = binding.bindTo(['import:ldap.SERVER_DOWN',])
+    disconnects = binding.Obtain(['import:ldap.SERVER_DOWN',])
 
     def close(self):
 

@@ -235,13 +235,13 @@ class EnumerationClass(PrimitiveTypeClass):
         sorted.sort()
         klass.__sorted = tuple(sorted)
 
-    __enumsByName = __enumsByValue = binding.New(dict)
+    __enumsByName = __enumsByValue = binding.Make(dict)
 
 
     # Enumeration classes are never abstract and must always be
     # instantiable
 
-    mdl_isAbstract = binding.Constant(False)
+    mdl_isAbstract = binding.Make(lambda: False)
 
 
     def __new__(meta, name, bases, cDict):
@@ -304,7 +304,7 @@ class EnumerationClass(PrimitiveTypeClass):
         klass.__enumsByValue[value] = inst
 
 
-    def mdl_typeCode(klass, d, a):
+    def mdl_typeCode(klass):
 
         from peak.model.datatypes import TCKind, TypeCode
 
@@ -313,7 +313,7 @@ class EnumerationClass(PrimitiveTypeClass):
             member_names = [e.name for e in klass]
         )
 
-    mdl_typeCode = binding.Once(mdl_typeCode)
+    mdl_typeCode = binding.Make(mdl_typeCode)
 
 
 

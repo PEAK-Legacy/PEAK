@@ -125,8 +125,8 @@ class TransactionState(binding.Component):
 
     """Helper object representing a single transaction's state"""
 
-    participants = binding.New(list)
-    info         = binding.New(dict)
+    participants = binding.Make(list)
+    info         = binding.Make(dict)
     timestamp    = None
     safeToJoin   = True
     cantCommit   = False
@@ -141,9 +141,9 @@ class TransactionService(binding.Component):
         instancesProvide=[ITransactionService]
     )
 
-    state          = binding.New(TransactionState)
-    errorHandler   = binding.New(BasicTxnErrorHandler)
-    logger         = binding.bindTo(PropertyName('peak.logs.transaction'))
+    state          = binding.Make(TransactionState)
+    errorHandler   = binding.Make(BasicTxnErrorHandler)
+    logger         = binding.Obtain(PropertyName('peak.logs.transaction'))
 
     def join(self, participant):
 
@@ -375,20 +375,20 @@ class TransactionComponent(binding.Component, AbstractParticipant):
 
     txnAttrs = 'joinedTxn', 'inTransaction'
 
-    def joinedTxn(self,d,a):
+    def joinedTxn(self,instDict,attrName):
 
         """Our TransactionService (auto-joined when attribute is accessed)"""
 
         ts = self.txnSvc
         ts.join(self)
         self.inTransaction = True
-        d[a] = ts
+        instDict[attrName] = ts
         self.onJoinTxn(ts)
         return ts
 
-    joinedTxn = binding.Once(joinedTxn)
+    joinedTxn = binding.Make(joinedTxn)
 
-    txnSvc = binding.Acquire(ITransactionService)
+    txnSvc = binding.Obtain(ITransactionService,offerAs=[ITransactionService])
 
     def onJoinTxn(self, txnService):
         pass

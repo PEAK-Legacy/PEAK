@@ -83,7 +83,7 @@ class ClusterTests(TestCase):
 class TestClock(binding.Component):
 
     now = 0
-    log = binding.requireBinding("function to call with event data")
+    log = binding.Require("function to call with event data")
 
     def time(self):
         return self.now
@@ -99,8 +99,8 @@ class TestClock(binding.Component):
 
 class ScheduleTestTask(AdaptiveTask):
 
-    job = binding.requireBinding("Simulated job, if any")
-    log = binding.requireBinding("function to call with event data")
+    job = binding.Require("Simulated job, if any")
+    log = binding.Require("function to call with event data")
 
     def getWork(self):
         self.log(("getting work", self.job))
@@ -123,30 +123,30 @@ class QuietTask(ScheduleTestTask):
 
 class TestApp(binding.Component):
 
-    def reactor(self,d,a):
+    def reactor(self):
         return UntwistedReactor( self,
             time = self.clock.time,
             sleep = self.clock.sleep,
             select=self.clock.select
         )
 
-    reactor = binding.Once(reactor, offerAs=[running.IBasicReactor])
+    reactor = binding.Make(reactor, offerAs=[running.IBasicReactor])
 
-    def mainLoop(self,d,a):
+    def mainLoop(self):
         return MainLoop(self, time = self.clock.time)
 
-    mainLoop = binding.Once(mainLoop, offerAs=[running.IMainLoop])
+    mainLoop = binding.Make(mainLoop, offerAs=[running.IMainLoop])
 
-    tq = binding.New(TaskQueue, offerAs=[running.ITaskQueue])
+    tq = binding.Make(TaskQueue, offerAs=[running.ITaskQueue])
 
-    log = binding.New(list)
+    log = binding.Make(list)
 
-    append = binding.bindTo('log/append')
+    append = binding.Obtain('log/append')
 
-    def clock(self,d,a):
+    def clock(self):
         return TestClock(log=self.append)
 
-    clock = binding.Once(clock)
+    clock = binding.Make(clock)
 
 
 ping = ('doing work','ping')

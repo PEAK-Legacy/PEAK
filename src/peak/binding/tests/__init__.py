@@ -6,7 +6,7 @@ from peak.tests import testRoot
 
 class baseWithClassAttr(binding.Component):
 
-    myName = binding.classAttr( binding.Once( lambda s,d,a: s.__name__ ) )
+    myName = binding.classAttr( binding.Make( lambda self: self.__name__ ) )
 
 class subclassWithClassAttr(baseWithClassAttr):
     pass
@@ -42,9 +42,9 @@ class ClassAttrTest(TestCase):
 class assemblyTracer(binding.Component):
     """Tracing for assembly events"""
 
-    log = binding.requireBinding("logging function")
-    activated = binding.requireBinding("list to append ids to")
-    id = binding.requireBinding("identity of this object")
+    log = binding.Require("logging function")
+    activated = binding.Require("list to append ids to")
+    id = binding.Require("identity of this object")
 
     def uponAssembly(self):
         if self.__objectsToBeAssembled__ is not None:
@@ -67,18 +67,18 @@ class counter(object):
         return self.v
 
 class Outermost(assemblyTracer):
-    foo = binding.requireBinding("A component goes here")
+    foo = binding.Require("A component goes here")
 
 class InnerMost(assemblyTracer):
-    thingy = binding.whenAssembled(lambda *x: None)
+    thingy = binding.Make(lambda: None, uponAssembly=True)
 
 class Middle(assemblyTracer):
 
-    def child(self,d,a):
+    def child(self):
         return InnerMost(self,
             id=self.id+1, log=self.log, activated=self.activated
         )
-    child = binding.whenAssembled(child)
+    child = binding.Make(child, uponAssembly=True)
 
 class AssemblyTests(TestCase):
 
@@ -166,41 +166,41 @@ testList = [1,2,'buckle your shoe']
 
 class DescriptorData(binding.Component):
 
-    thing1 = binding.Constant("this is my thing")
-    thing2 = binding.bindTo('thing1')
-    thing3 = binding.requireBinding('This is required')
-    thing4 = binding.bindTo(['thing1','thing2'])
+    thing1 = binding.Make(lambda: "this is my thing")
+    thing2 = binding.Obtain('thing1')
+    thing3 = binding.Require('This is required')
+    thing4 = binding.Obtain(['thing1','thing2'])
 
-    underflow = binding.bindTo('/'.join(['..']*50)) # 50 parents up
+    underflow = binding.Obtain('/'.join(['..']*50)) # 50 parents up
 
     class aService(binding.Component):
 
-        thing5 = binding.bindTo('..')
+        thing5 = binding.Obtain('..')
 
         class nestedService(binding.Component):
 
-            thing6 = binding.bindTo('../..')
+            thing6 = binding.Obtain('../..')
 
-            deep = binding.bindTo('deep')
+            deep = binding.Obtain('deep')
 
-            namedThing = binding.New(binding.Component)
+            namedThing = binding.Make(binding.Component)
 
-            acquired = binding.bindTo('thing1')
+            acquired = binding.Obtain('thing1')
 
-            getRoot = binding.bindTo('/')
+            getRoot = binding.Obtain('/')
 
-            getUp = binding.bindTo('..')
+            getUp = binding.Obtain('..')
 
-        nestedService = binding.New(nestedService)
+        nestedService = binding.Make(nestedService)
 
-    aService = binding.New(aService)
-    newDict  = binding.New(dict)
+    aService = binding.Make(aService)
+    newDict  = binding.Make(dict)
 
-    listCopy = binding.Copy(testList)
+    listCopy = binding.Make(lambda: testList[:])    # XXX
 
-    deep = binding.bindTo('aService/nestedService/thing6/thing1')
+    deep = binding.Obtain('aService/nestedService/thing6/thing1')
 
-    testImport = binding.bindTo('import:unittest:TestCase')
+    testImport = binding.Obtain('import:unittest:TestCase')
 
 
 class DescriptorTest(TestCase):

@@ -70,7 +70,7 @@ class FacadeDM(binding.Component):
 
     preloadState = __getitem__
 
-    cache = binding.New('peak.storage.caches:WeakCache')
+    cache = binding.Make('peak.storage.caches:WeakCache')
 
     def _retrieve(self, oid, state=None):
         """Look up 'oid' in underlying storage and return it, or 'None'"""
@@ -287,7 +287,7 @@ class QueryDM(TransactionComponent):
 
     # Private abstract methods/attrs
 
-    cache = binding.New('peak.storage.caches:WeakCache')
+    cache = binding.Make('peak.storage.caches:WeakCache')
 
     defaultClass = PersistentQuery
 
@@ -410,8 +410,8 @@ class EntityDM(QueryDM):
 
     # Set/state management
 
-    dirty = binding.New(dict)
-    saved = binding.New(dict)
+    dirty = binding.Make(dict)
+    saved = binding.Make(dict)
 
 
     def flush(self, ob=None):

@@ -330,9 +330,9 @@ class Namespace(ModelElement):
 
     mdl_isAbstract = True
 
-    _contentsIndex = binding.Once(
-        lambda s,d,a: dict([
-            (ob.name, ob) for ob in s.contents
+    _contentsIndex = binding.Make(
+        lambda self: dict([
+            (ob.name, ob) for ob in self.contents
         ])
     )
 
@@ -429,7 +429,7 @@ class GeneralizableElement(Namespace):
         defaultValue = False
 
 
-    def _MRO(self, d, a):
+    def _MRO(self):
 
         output=[self]
 
@@ -444,7 +444,7 @@ class GeneralizableElement(Namespace):
 
         return output
 
-    _MRO = binding.Once(_MRO)
+    _MRO = binding.Make(_MRO)
 
 
 
@@ -617,7 +617,7 @@ class Package(GeneralizableElement):
 
     _allowedContents = binding.classAttr(
 
-        binding.bindTo(
+        binding.Obtain(
             ['Package','Class','DataType','Association','Exception',
             'Constraint', 'Constant', 'Import', 'Tag',]
         )
@@ -667,7 +667,7 @@ class Association(Classifier):
 
 
     _allowedContents = binding.classAttr(
-        binding.bindTo(['AssociationEnd','Constraint','Tag'])
+        binding.Obtain(['AssociationEnd','Constraint','Tag'])
     )
 
 
@@ -698,7 +698,7 @@ class Association(Classifier):
 class DataType(Classifier):
 
     _allowedContents = binding.classAttr(
-        binding.bindTo(['Constraint','TypeAlias','Tag'])
+        binding.Obtain(['Constraint','TypeAlias','Tag'])
     )
 
 
@@ -725,7 +725,7 @@ class DataType(Classifier):
 class Class(Classifier):
 
     _allowedContents = binding.classAttr(
-        binding.bindTo(
+        binding.Obtain(
             ['Class', 'DataType', 'Attribute', 'Reference', 'Operation',
             'Exception','Constraint','Constant','Tag']
         )
@@ -794,7 +794,7 @@ class Operation(BehavioralFeature):
 
 
     _allowedContents = binding.classAttr(
-        binding.bindTo(['Parameter','Constraint','Tag'])
+        binding.Obtain(['Parameter','Constraint','Tag'])
     )
 
     def _visitDependencies(self,visitor):
@@ -810,7 +810,7 @@ class Operation(BehavioralFeature):
 class Exception(BehavioralFeature):
 
     _allowedContents = binding.classAttr(
-        binding.bindTo(['Parameter','Tag'])
+        binding.Obtain(['Parameter','Tag'])
     )
 
 

@@ -82,9 +82,9 @@ class GeneralizableElement:
 
 class Namespace:
 
-    _contentsIndex = binding.Once(
-        lambda s,d,a: dict([
-            (ob.name, ob) for ob in s.ownedElement
+    _contentsIndex = binding.Make(
+        lambda self: dict([
+            (ob.name, ob) for ob in self.ownedElement
         ])
     )
 

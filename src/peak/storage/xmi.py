@@ -615,21 +615,18 @@ class XMINode(object):
 
 class XMIDocument(binding.Component, XMINode):
 
-    index = binding.New(WeakValueDictionary)
-    attrs = binding.New(dict)
-    subNodes = allNodes = binding.New(list)
+    index = binding.Make(WeakValueDictionary)
+    attrs = binding.Make(dict)
+    subNodes = allNodes = binding.Make(list)
     _name = None
     parent = None
     ns2uri = {}
     uri2ns = kjGraph()
 
-    document = binding.bindTo('.')
+    document = binding.Obtain('.')
     nodeClass = XMINode
 
-    def version(self,d,a):
-        return self.attrs['xmi.version']
-
-    version = binding.Once(version)
+    version = binding.Make(lambda self: self.attrs['xmi.version'])
 
 
     def _newNode(self,name,atts):
@@ -654,7 +651,10 @@ class XMIDocument(binding.Component, XMINode):
 
 
 
-    def metamodel(self,d,a):
+
+
+
+    def metamodel(self):
         models = []
         for node in self.findNode('XMI.header').subNodes:
             if node._name == 'XMI.metamodel':
@@ -668,7 +668,7 @@ class XMIDocument(binding.Component, XMINode):
 
         raise ValueError("XMI file must have exactly one 'XMI.metamodel'")
 
-    metamodel = binding.Once(metamodel)
+    metamodel = binding.Make(metamodel)
 
 
 
@@ -699,9 +699,9 @@ class DM(storage.StorableDM):
 
     resetStatesAfterTxn = False
 
-    index     = binding.bindTo('document/index')
-    metamodel = binding.bindTo('document/metamodel')
-    document  = binding.requireBinding("XMIDocument with data to use")
+    index     = binding.Obtain('document/index')
+    metamodel = binding.Obtain('document/metamodel')
+    document  = binding.Require("XMIDocument with data to use")
 
     def _ghost(self, oid, state=None):
         if oid==():

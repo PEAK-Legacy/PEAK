@@ -2,7 +2,7 @@ from __future__ import generators
 
 from peak.api import *
 from peak.util.imports import importString, importObject
-from peak.binding.components import Component, New, Once, getParentComponent
+from peak.binding.components import Component, Make, getParentComponent
 
 from peak.util.EigenData import EigenCell
 from peak.util.FileParsing import AbstractConfigParser
@@ -164,8 +164,8 @@ class ProviderOf(object):
 
 class PropertyMap(Component):
 
-    rules = New(dict)
-    depth = New(dict)
+    rules = Make(dict)
+    depth = Make(dict)
 
     protocols.advise(
         instancesProvide=[IPropertyMap]
@@ -463,7 +463,7 @@ class ConfigurationRoot(Component):
         self.setupDefaults(pm)
         return pm
 
-    __instance_offers__ = Once(__instance_offers__,
+    __instance_offers__ = Make(__instance_offers__,
         offerAs=[IPropertyMap], uponAssembly = True
     )
 

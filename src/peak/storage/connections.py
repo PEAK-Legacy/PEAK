@@ -45,7 +45,7 @@ class AbstractCursor(binding.Component):
         instancesProvide = [ICursor]
     )
 
-    _conn = binding.bindTo('../connection')
+    _conn = binding.Obtain('../connection')
 
 
     def __init__(self,parentComponent,componentName=None,**kw):
@@ -128,7 +128,7 @@ class ManagedConnection(TransactionComponent):
         classProvides = [naming.IObjectFactory]
     )
 
-    connection = binding.Once(lambda s,d,a: s._open())
+    connection = binding.Make(lambda self: self._open())
     _closeASAP = False
 
     txnAttrs = TransactionComponent.txnAttrs + ('txnTime',)
@@ -165,11 +165,11 @@ class ManagedConnection(TransactionComponent):
     def _close(self):
         """Actions to take before 'del self.connection', if needed."""
 
-    __txnTimeConverter = binding.bindTo(
+    __txnTimeConverter = binding.Obtain(
         PropertyName('peak.storage.txnTimeType'), default=float
     )
 
-    def txnTime(self,d,a):
+    def txnTime(self):
         """Per-transaction timestamp, based on this connection's clock
 
             Note that this default should be overridden for subclasses that
@@ -183,7 +183,7 @@ class ManagedConnection(TransactionComponent):
         """
         return self.__txnTimeConverter( self.joinedTxn.getTimestamp() )
 
-    txnTime = binding.Once(txnTime)
+    txnTime = binding.Make(txnTime)
 
 
     def joinTxn(self):
@@ -203,7 +203,7 @@ class ManagedConnection(TransactionComponent):
             )
 
 
-    _cursors = binding.New(WeakValueDictionary)
+    _cursors = binding.Make(WeakValueDictionary)
 
 
     def registerCursor(self,cursor):
@@ -228,7 +228,7 @@ class ManagedConnection(TransactionComponent):
 
     cursorClass = AbstractCursor
 
-    address = binding.requireBinding(
+    address = binding.Require(
         "Address used to create the actual connection",
         suggestParent=False
     )

@@ -46,7 +46,7 @@ class Namespace(_Base):
     This class currently exists only to mix in an '_XMIMap' registry.  It
     may not exist for long; don't use it directly or rely on its presence."""
 
-    def _XMIMap(self,d,a):
+    def _XMIMap(self):
 
         xm = {}
 
@@ -65,7 +65,7 @@ class Namespace(_Base):
 
         return xm
 
-    _XMIMap = binding.classAttr(binding.Once(_XMIMap))
+    _XMIMap = binding.classAttr(binding.Make(_XMIMap))
 
 
 
@@ -90,26 +90,27 @@ class TypeClass(Namespace.__class__):
                 cdict[k]=classmethod(v)
         return super(TypeClass,meta).__new__(meta,name,bases,cdict)
 
-    def mdl_featuresDefined(self,d,a):
+    def mdl_featuresDefined(self,instDict,attrName):
 
         """Sorted tuple of feature objects defined/overridden by this class"""
 
-        mine = filter(None,[adapt(v,IFeature,None) for (k,v) in d.items()])
+        mine = [adapt(v,IFeature,None) for (k,v) in instDict.items()]
+        mine = filter(None,mine)
         mine.sort()
         return tuple(mine)
 
-    mdl_featuresDefined = binding.Once(mdl_featuresDefined)
+    mdl_featuresDefined = binding.Make(mdl_featuresDefined)
 
 
-    def mdl_featureNames(self,d,a):
+    def mdl_featureNames(self):
         """Names of all features, in monotonic order (see 'mdl_features')"""
         return tuple([f.attrName for f in self.mdl_features])
 
-    mdl_featureNames = binding.Once(mdl_featureNames)
+    mdl_featureNames = binding.Make(mdl_featureNames)
 
 
-    mdl_isAbstract = binding.Constant(
-        False, doc =
+    mdl_isAbstract = binding.Make(
+        lambda: False, doc =
         """Is this an abstract class?  Defaults to 'False'.
 
             To make a 'model.Type' subclass abstract, set this
@@ -120,8 +121,7 @@ class TypeClass(Namespace.__class__):
         """
     )
 
-
-    def mdl_features(self,d,a):
+    def mdl_features(self):
         """All feature objects of this type, in monotonic order
 
         The monotonic order of features is equivalent to the concatenation of
@@ -174,10 +174,10 @@ class TypeClass(Namespace.__class__):
 
         return tuple(out)
 
-    mdl_features = binding.Once(mdl_features)
+    mdl_features = binding.Make(mdl_features)
 
 
-    def mdl_sortedFeatures(self,d,a):
+    def mdl_sortedFeatures(self):
 
         """All feature objects of this type, in sorted order"""
 
@@ -185,11 +185,11 @@ class TypeClass(Namespace.__class__):
         fl.sort()
         return tuple(fl)
 
-    mdl_sortedFeatures = binding.Once(mdl_sortedFeatures)
+    mdl_sortedFeatures = binding.Make(mdl_sortedFeatures)
 
 
-    mdl_compositeFeatures = binding.Once(
-        lambda s,d,a: tuple([f for f in s.mdl_features if f.isComposite]),
+    mdl_compositeFeatures = binding.Make(
+        lambda self: tuple([f for f in self.mdl_features if f.isComposite]),
         doc="""Ordered subset of 'mdl_features' that are composite"""
     )
 
@@ -373,12 +373,12 @@ class Immutable(Type, HashAndCompare):
 
     mdl_isAbstract = True   # Immutable itself is abstract
 
-    def _hashAndCompare(s,d,a):
+    def _hashAndCompare(self):
         return tuple([
-            getattr(s,n,None) for n in s.__class__.mdl_featureNames
+            getattr(self,n,None) for n in self.__class__.mdl_featureNames
         ])
 
-    _hashAndCompare = binding.Once(_hashAndCompare)
+    _hashAndCompare = binding.Make(_hashAndCompare)
 
 
     def __setattr__(self,attr,value):
@@ -422,7 +422,7 @@ class PrimitiveTypeClass(TypeClass):
     # Primitive types are not instantiable; they stand in for
     # a type that isn't derived from model.Type
 
-    mdl_isAbstract = binding.Constant(True)
+    mdl_isAbstract = binding.Make(lambda: True)
 
 
 class PrimitiveType(Type):
@@ -455,7 +455,7 @@ class Struct(Immutable):
 
     protocols.advise(classProvides=[ITypeInfo, IStructType])
 
-    def mdl_typeCode(klass, d, a):
+    def mdl_typeCode(klass):
 
         """TypeCode for Struct classes is a 'tk_struct' w/appropriate fields"""
 
@@ -470,7 +470,7 @@ class Struct(Immutable):
 
         )
 
-    mdl_typeCode = binding.classAttr( binding.Once(mdl_typeCode) )
+    mdl_typeCode = binding.classAttr( binding.Make(mdl_typeCode) )
 
 
 

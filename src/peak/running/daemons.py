@@ -45,11 +45,11 @@ class TaskQueue(binding.Component):
         instancesProvide=[ITaskQueue]
     )
 
-    reactor     = binding.bindTo(IBasicReactor)
-    loop        = binding.bindTo(IMainLoop)
-    ping        = binding.bindTo('loop/activityOccurred')
+    reactor     = binding.Obtain(IBasicReactor)
+    loop        = binding.Obtain(IMainLoop)
+    ping        = binding.Obtain('loop/activityOccurred')
 
-    activeTasks = binding.New(list)
+    activeTasks = binding.Make(list)
     _scheduled  = False
     _disabled   = False
 
@@ -129,11 +129,11 @@ class AdaptiveTask(binding.Component):
         instancesProvide=[IAdaptiveTask]
     )
 
-    pollInterval = binding.bindTo('minimumIdle')
+    pollInterval = binding.Obtain('minimumIdle')
 
-    runEvery = binding.requireBinding("Number of seconds between invocations")
+    runEvery = binding.Require("Number of seconds between invocations")
 
-    minimumIdle    = binding.bindTo('runEvery')
+    minimumIdle    = binding.Obtain('runEvery')
     increaseIdleBy = 0
     multiplyIdleBy = 1
 
@@ -141,8 +141,8 @@ class AdaptiveTask(binding.Component):
 
     # Maximum idle defaults to increasing three times
 
-    maximumIdle = binding.Once(
-        lambda s,d,a: s.runEvery * s.multiplyIdleBy**3 + s.increaseIdleBy*3
+    maximumIdle = binding.Make(
+        lambda s: s.runEvery * s.multiplyIdleBy**3 + s.increaseIdleBy*3
     )
 
     __ranLastTime = True
@@ -153,9 +153,9 @@ class AdaptiveTask(binding.Component):
         return cmp(self.priority, other.priority)
 
 
-    __addToQueue = binding.whenAssembled(
-        lambda self,d,a:
-            self.lookupComponent(ITaskQueue).addTask(self),
+    __addToQueue = binding.Make(
+        lambda self:
+            self.lookupComponent(ITaskQueue).addTask(self), uponAssembly=True
     )
 
 
@@ -211,30 +211,30 @@ class AdaptiveTask(binding.Component):
         """Do the job; throw errors if unsuccessful"""
         return job
 
-    lockMe = binding.bindTo(
+    lockMe = binding.Obtain(
         'lock/attempt', doc=
         """Try to begin critical section for doing work, return true if successful"""
     )
 
-    unlockMe = binding.bindTo(
+    unlockMe = binding.Obtain(
         'lock/release', doc=
         """End critical section for doing work"""
     )
 
     _name = 'unnamed_task'    # Allow ZConfig to give us a '_name'
 
-    logName = binding.Once(
-        lambda s,d,a: "logging.logger:daemons."+s._name
+    logName = binding.Make(
+        lambda self: "logging.logger:daemons."+self._name
     )
 
-    log = binding.Once(
-        lambda s,d,a: s.lookupComponent(s.logName), adaptTo = ILogger
+    log = binding.Make(
+        lambda self: self.lookupComponent(self.logName), adaptTo = ILogger
     )
 
     lockName = None
 
-    lock = binding.Once(
-        lambda s,d,a:
+    lock = binding.Make(
+        lambda s:
             s.lockName and s.lookupComponent(s.lockName) or NullLockFile(),
         adaptTo = ILock
     )
@@ -252,15 +252,15 @@ class FileCleaner(AdaptiveTask):
 
     """Periodically remove stale files from a directory"""
 
-    directory  = binding.requireBinding("Directory name to search in")
-    matchFiles = binding.requireBinding("Python glob for files to check")
+    directory  = binding.Require("Directory name to search in")
+    matchFiles = binding.Require("Python glob for files to check")
 
-    olderThan  = binding.requireBinding(
+    olderThan  = binding.Require(
         "Age in seconds after which files are stale"
     )
 
-    pattern   = binding.Once(
-        lambda s,d,a: os.path.join(s.directory,s.matchFiles)
+    pattern   = binding.Make(
+        lambda self: os.path.join(self.directory,self.matchFiles)
     )
 
     def getWork(self):
@@ -288,11 +288,11 @@ class FileCleaner(AdaptiveTask):
 class URLChecker(AdaptiveTask):
     """Check if specified resource is up and running; try to restart if not"""
 
-    url = binding.requireBinding("name (usually URL) of resource to check")
-    restartURL = binding.requireBinding("command to execute to restart")
+    url = binding.Require("name (usually URL) of resource to check")
+    restartURL = binding.Require("command to execute to restart")
 
-    restarter = binding.Once(
-        lambda s,d,a: s.lookupComponent(s.restartURL)
+    restarter = binding.Make(
+        lambda self: self.lookupComponent(self.restartURL)
     )
 
     def getWork(self):

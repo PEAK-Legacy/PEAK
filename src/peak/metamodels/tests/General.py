@@ -15,12 +15,12 @@ class UML_DM(storage.xmi.DM):
 
     UML13 = UML13
 
-    Data_Types        = binding.bindTo('UML13/Foundation/Data_Types')
-    Multiplicity      = binding.bindTo('Data_Types/Multiplicity')
-    MultiplicityRange = binding.bindTo('Data_Types/MultiplicityRange')
+    Data_Types        = binding.Obtain('UML13/Foundation/Data_Types')
+    Multiplicity      = binding.Obtain('Data_Types/Multiplicity')
+    MultiplicityRange = binding.Obtain('Data_Types/MultiplicityRange')
 
-    Package           = binding.bindTo('UML13/Model_Management/Package')
-    Class             = binding.bindTo('UML13/Foundation/Core/Class')
+    Package           = binding.Obtain('UML13/Model_Management/Package')
+    Class             = binding.Obtain('UML13/Foundation/Core/Class')
 
 
 
@@ -164,7 +164,7 @@ class XMITests(TestCase):
 
 class XMILoad2(XMILoad):
     filename = 'MetaMeta14.xml'
-    
+
 
 TestClasses = (
     UMLTest, QueryTests, XMILoad, XMITests, XMILoad2, XMITests

@@ -45,7 +45,7 @@ class nisMapContext(naming.NameContext):
         instancesProvide = [naming.IReadContext]
     )
 
-    mapname = binding.Once(lambda s,d,a: str(s.nameInContext))
+    mapname = binding.Make(lambda self: str(self.nameInContext))
 
 
     def __iter__(self):

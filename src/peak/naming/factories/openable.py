@@ -30,8 +30,8 @@ class GenericPathURL(URL.Base):
     # Make syntax usable w/subclasses that redefine individual fields
 
     syntax = binding.classAttr(
-        binding.Once(
-            lambda s,d,a: URL.Sequence(
+        binding.Make(
+            lambda s: URL.Sequence(
                 '//',
                 ( (s.user, (':',s.password) ,'@'), s.hostname, (':',s.port)),
                 '/', s.path, ('?',s.query), ('#',s.fragment)
@@ -49,8 +49,8 @@ class FileURL(OpenableURL):
 
     # Make syntax usable w/subclasses that redefine individual fields
     syntax = binding.classAttr(
-        binding.Once(
-            lambda s,d,a: URL.Sequence(
+        binding.Make(
+            lambda s: URL.Sequence(
                 URL.Alternatives(
                     URL.Sequence('//', s.hostname, s.path),
                     s.path,
@@ -133,7 +133,7 @@ class URLStreamFactory(binding.Component):
         instancesProvide=[naming.IStreamFactory],
     )
 
-    target = binding.requireBinding("urllib2 URL or request")
+    target = binding.Require("urllib2 URL or request")
 
 
     def open(self,mode,seek=False,writable=False,autocommit=False):
@@ -212,7 +212,7 @@ class FileFactory(binding.Component):
         instancesProvide=[naming.IStreamFactory],
     )
 
-    filename = binding.requireBinding("Filename to open/modify")
+    filename = binding.Require("Filename to open/modify")
 
     def open(self,mode,seek=False,writable=False,autocommit=False):
         return self._open(mode, 'r'+(writable and '+' or ''), autocommit)

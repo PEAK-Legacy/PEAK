@@ -11,7 +11,7 @@ class TxnFile(TransactionComponent, FileFactory):
 
     isDeleted = False
     txnAttrs  = TransactionComponent.txnAttrs + ('isDeleted',)
-    tmpName   = binding.Once( lambda s,d,a: s.filename+'.$$$' )
+    tmpName   = binding.Make( lambda self: self.filename+'.$$$' )
 
 
     def _txnInProgress(self):
@@ -151,7 +151,7 @@ class EditableFile(TxnFile):
     fileType = 't'
     outStream = None
 
-    def __text(self,d,a):
+    def __text(self):
         if self.exists():
             stream = self.open(self.fileType)
             try:
@@ -160,7 +160,7 @@ class EditableFile(TxnFile):
                 stream.close()
         # else return None
 
-    __text = binding.Once(__text)
+    __text = binding.Make(__text)
 
     def __setText(self, text):
         text = str(text)

@@ -103,16 +103,16 @@ class UtilityData(binding.Component):
 
     class aService(binding.Component):
 
-        thing5 = binding.bindTo('..', offerAs=[IS1U, provides(A)])
+        thing5 = binding.Obtain('..', offerAs=[IS1U, provides(A)])
 
         class nestedService(binding.Component):
             pass
 
-        nestedService = binding.New(nestedService, offerAs=[IS2U, provides(B)])
+        nestedService = binding.Make(nestedService, offerAs=[IS2U, provides(B)])
 
-    aService = binding.New(aService)
+    aService = binding.Make(aService)
 
-    deep = binding.bindTo('aService/nestedService/thing6/thing1')
+    deep = binding.Obtain('aService/nestedService/thing6/thing1')
 
 
 class ISampleUtility1(Interface):

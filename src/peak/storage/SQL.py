@@ -43,14 +43,11 @@ class SQLCursor(AbstractCursor):
 
     """Iterable cursor bridge/proxy"""
 
-    conn = binding.bindTo('..')
-    typeMap = binding.bindTo('conn/typeMap')
+    conn = binding.Obtain('..')
+    typeMap = binding.Obtain('conn/typeMap')
     multiOK = False
 
-    def _cursor(self,d,a):
-        return self._conn.cursor()
-
-    _cursor = binding.Once(_cursor)
+    _cursor = binding.Make(lambda self: self._conn.cursor())
 
 
     def close(self):
@@ -80,6 +77,9 @@ class SQLCursor(AbstractCursor):
 
 
 
+
+
+
     def nextset(self):
         try:
             return getattr(self._cursor, 'nextset', _nothing)()
@@ -97,13 +97,13 @@ class SQLCursor(AbstractCursor):
     outsideTxn = property(_getOutsideTxn,_setOutsideTxn)
 
 
-    def setTxnState(self,d,a):
+    def setTxnState(self):
         if self.outsideTxn:
             return self.conn.assertUntransacted
         else:
             return self.conn.joinTxn
 
-    setTxnState = binding.Once(setTxnState)
+    setTxnState = binding.Make(setTxnState)
 
 
 
@@ -121,9 +121,9 @@ class SQLCursor(AbstractCursor):
 
 
 
-    logger = binding.bindTo(PropertyName('peak.logs.sql'))
+    logger = binding.Obtain(PropertyName('peak.logs.sql'))
 
-    __path = binding.Once(lambda s,d,a: binding.getComponentPath(s))
+    __path = binding.Make(lambda self: binding.getComponentPath(self))
 
     def execute(self, *args):
 
@@ -217,22 +217,22 @@ class SQLConnection(ManagedConnection):
         self.connection.rollback()
 
     cursorClass = SQLCursor
-    API = binding.requireBinding("DBAPI module for SQL connection")
+    API = binding.Require("DBAPI module for SQL connection")
 
-    Error               = binding.bindTo("API/Error")
-    Warning             = binding.bindTo("API/Warning")
-    Exceptions          = binding.bindTo(["Error", "Warning"])
-    NotSupportedError   = binding.bindTo("API/NotSupportedError")
-    Date                = binding.bindTo("API/Date")
-    Time                = binding.bindTo("API/Time")
-    Binary              = binding.bindTo("API/Binary")
-    Timestamp           = binding.bindTo("API/Timestamp")
-    DateFromTicks       = binding.bindTo("API/DateFromTicks")
-    TimeFromTicks       = binding.bindTo("API/TimeFromTicks")
-    TimestampFromTicks  = binding.bindTo("API/TimestampFromTicks")
+    Error               = \
+    Warning             = \
+    NotSupportedError   = \
+    Date                = \
+    Time                = \
+    Binary              = \
+    Timestamp           = \
+    DateFromTicks       = \
+    TimeFromTicks       = \
+    TimestampFromTicks  = binding.Delegate("API")
+    Exceptions          = binding.Obtain(["Error", "Warning"])
     supportedTypes      = 'STRING','BINARY','NUMBER','DATETIME','ROWID'
 
-    def typeMap(self, d, a):
+    def typeMap(self):
         tm = {}
         ps = PropertyName('peak.sql_types').of(self)
         api = self.API
@@ -242,11 +242,11 @@ class SQLConnection(ManagedConnection):
 
         return tm
 
-    typeMap = binding.Once(typeMap)
+    typeMap = binding.Make(typeMap)
 
 class ValueBasedTypeConn(SQLConnection):
 
-    def typeMap(self, d, a):
+    def typeMap(self):
 
         tm = {}
         ps = PropertyName('peak.sql_types').of(self)
@@ -269,7 +269,7 @@ class ValueBasedTypeConn(SQLConnection):
 
         return tm
 
-    typeMap = binding.Once(typeMap)
+    typeMap = binding.Make(typeMap)
 
 
 
@@ -287,11 +287,11 @@ class ValueBasedTypeConn(SQLConnection):
 
 class SybaseConnection(ValueBasedTypeConn):
 
-    API = binding.bindTo("import:Sybase")
-    hostname  = binding.bindTo(PropertyName('Sybase.client.hostname'), default=None)
-    appname   = binding.bindTo(PropertyName('Sybase.client.appname'),  default=None)
-    textlimit = binding.bindTo(PropertyName('Sybase.client.textlimit'),default=None)
-    textsize  = binding.bindTo(PropertyName('Sybase.client.textsize'), default=None)
+    API = binding.Obtain("import:Sybase")
+    hostname  = binding.Obtain(PropertyName('Sybase.client.hostname'), default=None)
+    appname   = binding.Obtain(PropertyName('Sybase.client.appname'),  default=None)
+    textlimit = binding.Obtain(PropertyName('Sybase.client.textlimit'),default=None)
+    textsize  = binding.Obtain(PropertyName('Sybase.client.textsize'), default=None)
 
     otmap = {
         'systable' : 'S',
@@ -331,7 +331,7 @@ class SybaseConnection(ValueBasedTypeConn):
         self.connection.begin()
 
 
-    def txnTime(self,d,a):
+    def txnTime(self):
 
         # First, ensure that we're in a transaction
         self.joinedTxn
@@ -340,7 +340,7 @@ class SybaseConnection(ValueBasedTypeConn):
         r = ~ self('SELECT getdate()')
         return r[0]
 
-    txnTime = binding.Once(txnTime)
+    txnTime = binding.Make(txnTime)
 
 
     def listObjects(self, full=False, obtypes=NOT_GIVEN):
@@ -369,7 +369,7 @@ class SybaseConnection(ValueBasedTypeConn):
 
 class PGSQLConnection(ValueBasedTypeConn):
 
-    API = binding.bindTo("import:pgdb")
+    API = binding.Obtain("import:pgdb")
 
     def _open(self):
 
@@ -380,12 +380,12 @@ class PGSQLConnection(ValueBasedTypeConn):
         )
 
 
-    def txnTime(self,d,a):
+    def txnTime(self):
         self.joinedTxn              # Ensure that we're in a transaction,
         r = ~ self('SELECT now()')  # retrieve the server's idea of the time
         return r[0]
 
-    txnTime = binding.Once(txnTime)
+    txnTime = binding.Make(txnTime)
 
     supportedTypes = (
         'BINARY','BOOL','DATETIME','FLOAT','INTEGER',
@@ -410,7 +410,7 @@ class PGSQLConnection(ValueBasedTypeConn):
 
 class SqliteConnection(ValueBasedTypeConn):
 
-    API = binding.bindTo("import:sqlite")
+    API = binding.Obtain("import:sqlite")
 
     supportedTypes = (
         'DATE', 'INT', 'NUMBER', 'ROWID', 'STRING', 'TIME', 'TIMESTAMP',
@@ -451,7 +451,7 @@ class SqliteConnection(ValueBasedTypeConn):
 
 class GadflyConnection(SQLConnection):
 
-    API = binding.bindTo("import:gadfly")
+    API = binding.Obtain("import:gadfly")
 
     Error    = Exception    # Gadfly doesn't really do DBAPI...  Sigh.
     Warning  = Warning
@@ -574,7 +574,7 @@ class OracleURL(naming.URL.Base):
 
 class CXOracleConnection(SQLConnection):
 
-    API = binding.bindTo("import:cx_Oracle")
+    API = binding.Obtain("import:cx_Oracle")
 
     def _open(self):
         a = self.address
@@ -582,12 +582,12 @@ class CXOracleConnection(SQLConnection):
         return self.API.connect(a.user, a.passwd, a.server)
 
 
-    def txnTime(self,d,a):
+    def txnTime(self):
         self.joinedTxn              # Ensure that we're in a transaction,
         r = ~ self('SELECT SYSDATE FROM DUAL')  # retrieve the server's idea of the time
         return r[0]
 
-    txnTime = binding.Once(txnTime)
+    txnTime = binding.Make(txnTime)
 
     supportedTypes = (
         'BINARY','CURSOR','DATETIME','FIXED_CHAR','LONG_BINARY',
@@ -619,7 +619,7 @@ class DCOracle2Connection(ValueBasedTypeConn):
         instancesProvide=[ISQLIntrospector]
     )
 
-    API = binding.bindTo("import:DCOracle2")
+    API = binding.Obtain("import:DCOracle2")
 
     def _open(self):
         a = self.address
@@ -627,12 +627,12 @@ class DCOracle2Connection(ValueBasedTypeConn):
             user=a.user, password=a.passwd, database=a.server,
         )
 
-    def txnTime(self,d,a):
+    def txnTime(self):
         self.joinedTxn              # Ensure that we're in a transaction,
         r = ~ self('SELECT SYSDATE FROM DUAL')  # retrieve the server's idea of the time
         return r[0]
 
-    txnTime = binding.Once(txnTime)
+    txnTime = binding.Make(txnTime)
 
     supportedTypes = (
         'BINARY','DATETIME','NUMBER','ROWID','STRING',

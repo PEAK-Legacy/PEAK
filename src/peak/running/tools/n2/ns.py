@@ -15,8 +15,8 @@ class NamingInteractor(binding.Component):
 
     """A shell-like interactor for namespaces"""
 
-    shell = binding.bindTo('..')
-    width = binding.bindTo('shell/width')
+    shell = binding.Obtain('..')
+    width = binding.Obtain('shell/width')
 
     def interact(self, object, shell):
         binding.suggestParentComponent(shell, None, object)
@@ -24,7 +24,7 @@ class NamingInteractor(binding.Component):
         self.run = 1
 
         pushRLHistory('.n2ns_history', self.complete, None, self.shell.environ)
-        
+
         while self.run:
             try:
                 cl = raw_input('[n2] ')
@@ -132,7 +132,7 @@ class NamingInteractor(binding.Component):
             else:
                 shell.do_cd(ob)
 
-    cmd_cd = binding.New(cmd_cd)
+    cmd_cd = binding.Make(cmd_cd)
 
 
     class ls_common(ShellCommand):
@@ -218,9 +218,9 @@ name\tlist object named, else current context"""
                 self, cmd, opts, args, stdout, stderr, **kw)
 
 
-    cmd_dir = binding.New(ls_common)
-    cmd_ls = binding.New(ls_common)
-    cmd_l = binding.New(cmd_l)
+    cmd_dir = binding.Make(ls_common)
+    cmd_ls = binding.Make(ls_common)
+    cmd_l = binding.Make(cmd_l)
 
 
     class cmd_pwd(ShellCommand):
@@ -229,7 +229,7 @@ name\tlist object named, else current context"""
         def cmd(self, **kw):
             print `self.shell.get_pwd()`
 
-    cmd_pwd = binding.New(cmd_pwd)
+    cmd_pwd = binding.Make(cmd_pwd)
 
 
     class cmd_python(ShellCommand):
@@ -238,8 +238,8 @@ name\tlist object named, else current context"""
         def cmd(self, **kw):
             self.shell.interact()
 
-    cmd_py = binding.New(cmd_python)
-    cmd_python = binding.New(cmd_python)
+    cmd_py = binding.Make(cmd_python)
+    cmd_python = binding.Make(cmd_python)
 
 
     class cmd_help(ShellCommand):
@@ -260,7 +260,7 @@ name\tlist object named, else current context"""
                     stdout, self.interactor.command_names(), sort=1)
 
 
-    cmd_help = binding.New(cmd_help)
+    cmd_help = binding.Make(cmd_help)
 
 
     class cmd_rm(ShellCommand):
@@ -280,7 +280,7 @@ name\tlist object named, else current context"""
             except exceptions.NameNotFound:
                 print >>stderr, '%s: %s: not found' % (cmd, args[0])
 
-    cmd_rm = binding.New(cmd_rm)
+    cmd_rm = binding.Make(cmd_rm)
 
 
     class cmd_bind(ShellCommand):
@@ -306,7 +306,7 @@ name\tlist object named, else current context"""
 
             c.bind(args[0], ob)
 
-    cmd_bind = binding.New(cmd_bind)
+    cmd_bind = binding.Make(cmd_bind)
 
 
     class cmd_ln(ShellCommand):
@@ -324,10 +324,10 @@ name\tlist object named, else current context"""
             if '-s' not in args:
                 print >>stderr, '%s: only symbolic links (LinkRefs) are supported' % (cmd, args[1])
                 return
-                
+
             c.bind(args[1], naming.LinkRef(args[2]))
 
-    cmd_ln = binding.New(cmd_ln)
+    cmd_ln = binding.Make(cmd_ln)
 
 
     class cmd_mv(ShellCommand):
@@ -344,7 +344,7 @@ name\tlist object named, else current context"""
 
             c.rename(args[0], args[1])
 
-    cmd_mv = binding.New(cmd_mv)
+    cmd_mv = binding.Make(cmd_mv)
 
 
     class cmd_quit(ShellCommand):
@@ -353,7 +353,7 @@ name\tlist object named, else current context"""
         def cmd(self, **kw):
             self.interactor.stop()
 
-    cmd_quit = binding.New(cmd_quit)
+    cmd_quit = binding.Make(cmd_quit)
 
 
     class cmd_ll(ShellCommand):
@@ -366,7 +366,7 @@ name\tlist object named, else current context"""
             r = c.lookupLink(args[0])
             print `r`
 
-    cmd_ll = binding.New(cmd_ll)
+    cmd_ll = binding.Make(cmd_ll)
 
 
     class cmd_commit(ShellCommand):
@@ -376,7 +376,7 @@ name\tlist object named, else current context"""
             storage.commit(self.shell)
             storage.begin(self.shell)
 
-    cmd_commit = binding.New(cmd_commit)
+    cmd_commit = binding.Make(cmd_commit)
 
 
     class cmd_abort(ShellCommand):
@@ -386,7 +386,7 @@ name\tlist object named, else current context"""
             storage.abort(self.shell)
             storage.begin(self.shell)
 
-    cmd_abort = binding.New(cmd_abort)
+    cmd_abort = binding.Make(cmd_abort)
 
 
     class cmd_mksub(ShellCommand):
@@ -403,9 +403,9 @@ name\tlist object named, else current context"""
 
             c.mksub(args[0])
 
-    cmd_md = binding.New(cmd_mksub)
-    cmd_mkdir = binding.New(cmd_mksub)
-    cmd_mksub = binding.New(cmd_mksub)
+    cmd_md = binding.Make(cmd_mksub)
+    cmd_mkdir = binding.Make(cmd_mksub)
+    cmd_mksub = binding.Make(cmd_mksub)
 
 
     class cmd_rmsub(ShellCommand):
@@ -422,9 +422,9 @@ name\tlist object named, else current context"""
 
             c.rmsub(args[0])
 
-    cmd_rd = binding.New(cmd_rmsub)
-    cmd_rmdir = binding.New(cmd_rmsub)
-    cmd_rmsub = binding.New(cmd_rmsub)
+    cmd_rd = binding.Make(cmd_rmsub)
+    cmd_rmdir = binding.Make(cmd_rmsub)
+    cmd_rmsub = binding.Make(cmd_rmsub)
 
 
     class cmd_show(ShellCommand):
@@ -445,7 +445,7 @@ name\tlist object named, else current context"""
                 self.shell.printColumns(
                     stdout, self.shell.listvars(), sort=1)
 
-    cmd_show = binding.New(cmd_show)
+    cmd_show = binding.Make(cmd_show)
 
 
     class cmd_unset(ShellCommand):
@@ -456,7 +456,7 @@ name\tlist object named, else current context"""
         def cmd(self, cmd, stderr, args, **kw):
             self.shell.unsetvar(args[0])
 
-    cmd_unset = binding.New(cmd_unset)
+    cmd_unset = binding.Make(cmd_unset)
 
 
     class cmd_set(ShellCommand):
@@ -485,7 +485,7 @@ An unspecified value sets varname to the current context."""
             except KeyError:
                 print >>stderr, '%s: %s may not be set' % (cmd, args[0])
 
-    cmd_set = binding.New(cmd_set)
+    cmd_set = binding.Make(cmd_set)
 
 
 

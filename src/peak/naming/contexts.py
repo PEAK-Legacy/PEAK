@@ -7,7 +7,7 @@ from names import *
 
 import spi
 
-from peak.binding.components import Component, Once, Acquire, requireBinding
+from peak.binding.components import Component, Make, Obtain, Require
 
 
 
@@ -47,16 +47,16 @@ class NameContext(Component):
     )
 
     parseURLs       = True
-    creationParent  = Acquire(CREATION_PARENT)
-    schemeParser    = Acquire(SCHEME_PARSER)
+    creationParent  = Obtain(CREATION_PARENT, offerAs=[CREATION_PARENT])
+    schemeParser    = Obtain(SCHEME_PARSER,   offerAs=[SCHEME_PARSER])
 
     compoundParser  = CompoundName
     compositeParser = CompositeName
 
-    namingAuthority = Once( lambda s,d,a: s.schemeParser() )
-    nameInContext   = Once( lambda s,d,a: s.compoundParser(()) )
+    namingAuthority = Make( lambda self: self.schemeParser() )
+    nameInContext   = Make( lambda self: self.compoundParser(()) )
 
-    serializationProtocol = requireBinding(
+    serializationProtocol = Require(
         "Protocol to adapt objects to before storing them"
     )
 

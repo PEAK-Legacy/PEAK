@@ -48,11 +48,11 @@ class AbstractCommand(binding.Component):
         classProvides    = [ICmdLineAppFactory]
     )
 
-    argv    = binding.bindTo('import:sys:argv')
-    stdin   = binding.bindTo('import:sys:stdin')
-    stdout  = binding.bindTo('import:sys:stdout')
-    stderr  = binding.bindTo('import:sys:stderr')
-    environ = binding.bindTo('import:os:environ')
+    argv    = binding.Obtain('import:sys:argv')
+    stdin   = binding.Obtain('import:sys:stdin')
+    stdout  = binding.Obtain('import:sys:stdout')
+    stderr  = binding.Obtain('import:sys:stderr')
+    environ = binding.Obtain('import:os:environ')
 
     def _run(self):
         """Override this in subclasses to implement desired behavior"""
@@ -69,7 +69,7 @@ define a usage message for their subclass.
         return 0
 
 
-    def isInteractive(self, d, a):
+    def isInteractive(self):
         """True if 'stdin' is a terminal"""
         try:
             isatty = self.stdin.isatty
@@ -78,7 +78,7 @@ define a usage message for their subclass.
         else:
             return isatty()
 
-    isInteractive = binding.Once(isInteractive)
+    isInteractive = binding.Make(isInteractive)
 
     def getSubcommand(self, executable, **kw):
 
@@ -189,12 +189,12 @@ class AbstractInterpreter(AbstractCommand):
         return super(AbstractInterpreter,self).getSubcommand(executable, **kw)
 
 
-    def commandName(self,d,a):
+    def commandName(self):
         """Basename of the file being interpreted"""
         from os.path import basename
         return basename(self.argv[1])
 
-    commandName = binding.Once(commandName)
+    commandName = binding.Make(commandName)
 
 
 
@@ -330,7 +330,7 @@ class CallableAsCommand(AbstractCommand):
 
     """Adapts callables to 'ICmdLineApp'"""
 
-    invoke = binding.requireBinding("Any callable")
+    invoke = binding.Require("Any callable")
 
     def _run(self):
 
@@ -353,7 +353,7 @@ class RerunnableAsCommand(AbstractCommand):
 
     """Adapts 'IRerunnable' to 'ICmdLineApp'"""
 
-    runnable = binding.requireBinding("An IRerunnable")
+    runnable = binding.Require("An IRerunnable")
 
     def _run(self):
         return self.runnable.run(
@@ -621,7 +621,7 @@ class Alias(binding.Component):
         instancesProvide = [ICmdLineAppFactory]
     )
 
-    command = binding.requireBinding("list of args to prepend")
+    command = binding.Require("list of args to prepend")
 
     def __call__(self, parentComponent=NOT_GIVEN, componentName=None, **kw):
 
@@ -658,20 +658,20 @@ class EventDriven(AbstractCommand):
 
     """Run an event-driven main loop after setup"""
 
-    stopAfter = binding.bindTo(
+    stopAfter = binding.Obtain(
         PropertyName('peak.running.stopAfter'),   default=0
     )
-    idleTimeout = binding.bindTo(
+    idleTimeout = binding.Obtain(
         PropertyName('peak.running.idleTimeout'), default=0
     )
-    runAtLeast = binding.bindTo(
+    runAtLeast = binding.Obtain(
         PropertyName('peak.running.runAtLeast'),  default=0
     )
 
-    mainLoop = binding.bindTo(IMainLoop)
+    mainLoop = binding.Obtain(IMainLoop)
 
     # Placeholder to allow adding components via ZConfig
-    components = binding.Constant(None)
+    components = binding.Make(lambda: None)
 
     def _run(self):
 
@@ -699,14 +699,14 @@ class FastCGIAcceptor(binding.Component):
 
     """Accept FastCGI connections"""
 
-    command  = binding.requireBinding("IRerunnableCGI command object")
+    command  = binding.Require("IRerunnableCGI command object")
 
-    mainLoop = binding.bindTo(IMainLoop)
-    ping     = binding.bindTo('mainLoop/activityOccurred')
+    mainLoop = binding.Obtain(IMainLoop)
+    ping     = binding.Obtain('mainLoop/activityOccurred')
 
-    fcgi     = binding.bindTo('import:fcgiapp')
-    accept   = binding.bindTo('fcgi/Accept')
-    finish   = binding.bindTo('fcgi/Finish')
+    fcgi     = binding.Obtain('import:fcgiapp')
+    accept   = binding.Obtain('fcgi/Accept')
+    finish   = binding.Obtain('fcgi/Finish')
 
 
     def fileno(self):
@@ -755,13 +755,13 @@ class CGICommand(EventDriven):
     be an 'IRerunnableCGI'.
     """
 
-    cgiCommand   = binding.requireBinding(
+    cgiCommand   = binding.Require(
         "IRerunnableCGI to invoke on each hit", adaptTo = IRerunnableCGI
     )
 
     forkAfterCGI = False
 
-    reactor      = binding.bindTo(IBasicReactor)
+    reactor      = binding.Obtain(IBasicReactor)
     newAcceptor  = FastCGIAcceptor
 
 
@@ -859,7 +859,7 @@ class CGICommand(EventDriven):
 
 
 
-    def __setupCGI(self, d, a):
+    def __setupCGI(self):
 
         if self.isFastCGI():
 
@@ -892,7 +892,7 @@ class CGICommand(EventDriven):
             self.reactor.callLater(0, tq.enable)
 
 
-    __setupCGI = binding.whenAssembled(__setupCGI)
+    __setupCGI = binding.Make(__setupCGI, uponAssembly=True)
 
 
 
@@ -904,7 +904,7 @@ class CGIInterpreter(CGICommand):
 
     """Run an application as a CGI, by adapting it to IRerunnableCGI"""
 
-    def cgiCommand(self, d, a):
+    def cgiCommand(self):
 
         if len(self.argv)<2:
             raise InvocationError("missing argument(s)")
@@ -932,7 +932,7 @@ class CGIInterpreter(CGICommand):
             "Can't convert", ob, "to CGI; found at", name
         )
 
-    cgiCommand = binding.Once(cgiCommand)
+    cgiCommand = binding.Make(cgiCommand)
 
 
 

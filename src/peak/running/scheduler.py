@@ -17,7 +17,7 @@ class DefaultSignalManager(binding.Component):
     # We hook up to the reactor as soon as possible (i.e. activate upon
     # assembly), to avoid having to do the lookup during signal handling.
 
-    reactor = binding.bindTo(IBasicReactor, activateUponAssembly=True)
+    reactor = binding.Obtain(IBasicReactor, activateUponAssembly=True)
 
     def SIGINT(self, num, frame):
         self.reactor.callLater(0, self.reactor.stop)
@@ -47,10 +47,10 @@ class MainLoop(binding.Component):
         instancesProvide=[IMainLoop]
     )
 
-    reactor       = binding.bindTo(IBasicReactor)
-    time          = binding.bindTo('import:time.time')
+    reactor       = binding.Obtain(IBasicReactor)
+    time          = binding.Obtain('import:time.time')
     lastActivity  = None
-    signalManager = binding.bindTo(PropertyName('peak.running.signalManager'))
+    signalManager = binding.Obtain(PropertyName('peak.running.signalManager'))
 
 
     def activityOccurred(self):
@@ -171,16 +171,16 @@ class UntwistedReactor(binding.Component):
     )
 
     running = False
-    writers = binding.New(list)
-    readers = binding.New(list)
-    laters  = binding.New(list)
-    time    = binding.bindTo('import:time.time')
-    sleep   = binding.bindTo('import:time.sleep')
-    select  = binding.bindTo('import:select.select')
-    _error  = binding.bindTo('import:select.error')
-    logger  = binding.bindTo('logging.logger:peak.reactor')
+    writers = binding.Make(list)
+    readers = binding.Make(list)
+    laters  = binding.Make(list)
+    time    = binding.Obtain('import:time.time')
+    sleep   = binding.Obtain('import:time.sleep')
+    select  = binding.Obtain('import:select.select')
+    _error  = binding.Obtain('import:select.error')
+    logger  = binding.Obtain('logging.logger:peak.reactor')
 
-    checkInterval = binding.bindTo(
+    checkInterval = binding.Obtain(
         PropertyName('peak.running.reactor.checkInterval')
     )
 

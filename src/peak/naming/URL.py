@@ -4,8 +4,8 @@ from types import StringTypes
 from urllib import unquote
 
 from peak.api import exceptions, NOT_GIVEN, adapt, protocols
-from peak.binding.once import classAttr, Once
-from peak.binding.components import bindTo
+from peak.binding.once import classAttr, Make
+from peak.binding.components import Obtain
 from peak.model.elements import Struct
 from peak.model.features import structField
 from peak.model.datatypes import String, Integer
@@ -86,7 +86,7 @@ class Field(structField):
     defaultValue = None
     unquote = True
 
-    def _syntax(feature,d,a):
+    def _syntax(feature):
 
         syntax = feature.syntax
 
@@ -113,7 +113,7 @@ class Field(structField):
 
         return Named( feature.attrName, syntax )
 
-    _syntax = classAttr(Once(_syntax))
+    _syntax = classAttr(Make(_syntax))
 
 
 
@@ -205,7 +205,7 @@ class Base(Struct):
 
     class scheme(RequiredField):
 
-        _defaultValue = classAttr(bindTo('defaultScheme'))
+        _defaultValue = classAttr(Obtain('defaultScheme'))
 
         def _onLink(feature,element,item,posn):
             # delegate scheme validation to element class
@@ -285,7 +285,7 @@ class Base(Struct):
 
 
 
-    def __split(self,d,a):
+    def __split(self):
 
         d = dict(self._hashAndCompare)
         na = self.nameAttr
@@ -302,7 +302,7 @@ class Base(Struct):
         auth = self.__class__(**d)
         return auth, nic
 
-    __split = Once(__split)
+    __split = Make(__split)
 
     def getAuthorityAndName(self):
         return self.__split
@@ -315,7 +315,7 @@ class Base(Struct):
             )
         )
 
-    def _hashAndCompare(self,d,a):
+    def _hashAndCompare(self):
         klass = self.__class__
         omitBody = len(klass.mdl_featureNames)!=2   # ('scheme','body')
         return tuple(
@@ -324,7 +324,7 @@ class Base(Struct):
             ]
         )
 
-    _hashAndCompare = Once(_hashAndCompare)
+    _hashAndCompare = Make(_hashAndCompare)
 
     def parse(klass,scheme,body):
         if klass.syntax is not None:
@@ -340,8 +340,8 @@ class Base(Struct):
         return self.body
 
     defaultScheme = classAttr(
-        Once(
-            lambda s,d,a: s.supportedSchemes and s.supportedSchemes[0]
+        Make(
+            lambda self: self.supportedSchemes and self.supportedSchemes[0]
                 or None
         )
     )

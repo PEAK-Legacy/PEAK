@@ -41,8 +41,8 @@ class BaseLoader(binding.Component, ZConfig.loader.BaseLoader):
 
 class SchemaLoader(BaseLoader, ZConfig.loader.SchemaLoader):
 
-    registry = binding.New(ZConfig.datatypes.Registry)
-    _cache   = binding.New(dict)
+    registry = binding.Make(ZConfig.datatypes.Registry)
+    _cache   = binding.Make(dict)
     __init__ = binding.Component.__init__.im_func
 
 class ConfigRunner(AbstractInterpreter,BaseLoader,ZConfig.loader.ConfigLoader):
@@ -60,7 +60,7 @@ to 'running.ICmdLineAppFactory'.  It will be run with the remaining
 command-line arguments.
 """
 
-    schema = binding.requireBinding("ZConfig schema to use")
+    schema = binding.Require("ZConfig schema to use")
 
     def interpret(self, filename):
         url = naming.toName(filename, FileURL.fromFilename)

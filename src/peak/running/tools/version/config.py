@@ -86,9 +86,9 @@ class Digit(binding.Component):
         instancesProvide = [IPartDef]
     )
 
-    name = binding.requireBinding("Name of the part")
+    name = binding.Require("Name of the part")
 
-    def independent(self,d,a):
+    def independent(self):
         for arg in self.args:
             if unquote(arg).lower()=='independent':
                 return True
@@ -98,7 +98,7 @@ class Digit(binding.Component):
                 )
         return False
 
-    independent = binding.Once(independent, suggestParent=False)
+    independent = binding.Make(independent, suggestParent=False)
 
     start = 0
     args = ()
@@ -123,12 +123,12 @@ class Count(Digit):
 
 class Choice(Digit):
 
-    choices = binding.Once(
-        lambda self,d,a: [unquote(arg) for arg in self.args]
+    choices = binding.Make(
+        lambda self: [unquote(arg) for arg in self.args]
     )
 
-    choiceMap = binding.Once(
-        lambda self,d,a: dict(
+    choiceMap = binding.Make(
+        lambda self: dict(
             zip([c.strip().lower() for c in self.choices],
                 range(len(self.choices))
             )
@@ -211,9 +211,9 @@ class StringFormat(binding.Component):
 
     args = ()
     cmd = ""
-    name = binding.requireBinding("Name of the format")
+    name = binding.Require("Name of the format")
 
-    def format(self,d,a):
+    def format(self):
         try:
             fmt, = self.args
         except ValueError:
@@ -224,7 +224,7 @@ class StringFormat(binding.Component):
         else:
             return unquote(fmt)
 
-    format = binding.Once(format)
+    format = binding.Make(format)
 
     def compute(self, version):
         return self.format % version
@@ -246,9 +246,9 @@ class StringFormat(binding.Component):
 
 class Remap(StringFormat):
 
-    scheme = binding.bindTo('..')
+    scheme = binding.Obtain('..')
 
-    def splitArgs(self,d,a):
+    def splitArgs(self):
         args = [unquote(arg) for arg in self.args]
         if not args:
             raise ValueError(
@@ -256,10 +256,10 @@ class Remap(StringFormat):
             )
         return args[0], args[1:]
 
-    splitArgs = binding.Once(splitArgs)
+    splitArgs = binding.Make(splitArgs)
 
-    what = binding.Once(lambda self,d,a: self.splitArgs[0])
-    fmts = binding.Once(lambda self,d,a: self.splitArgs[1])
+    what = binding.Make(lambda self: self.splitArgs[0])
+    fmts = binding.Make(lambda self: self.splitArgs[1])
 
     def compute(self, version):
         value = version[self.what]
@@ -287,7 +287,7 @@ class Remap(StringFormat):
 
 class Optional(Remap):
 
-    def splitFormats(self,d,a):
+    def splitFormats(self):
 
         fmts = self.fmts
 
@@ -297,10 +297,10 @@ class Optional(Remap):
         # Default formats are the value or an empty string
         return ('%%(%s)s' % self.what), ''
 
-    splitFormats = binding.Once(splitFormats)
+    splitFormats = binding.Make(splitFormats)
 
-    trueFormat = binding.Once(lambda self,d,a: self.splitFormats[0])
-    falseFormat = binding.Once(lambda self,d,a: self.splitFormats[1])
+    trueFormat = binding.Make(lambda self: self.splitFormats[0])
+    falseFormat = binding.Make(lambda self: self.splitFormats[1])
 
     def getFormat(self, value):
         if value:
@@ -328,7 +328,7 @@ class Optional(Remap):
 
 class DateFormat(Remap):
 
-    def format(self,d,a):
+    def format(self):
 
         try:
             fmt, = self.fmts
@@ -338,7 +338,7 @@ class DateFormat(Remap):
             )
         return fmt
 
-    format = binding.Once(format)
+    format = binding.Make(format)
 
     def compute(self,version):
         from datetime import datetime
@@ -377,13 +377,13 @@ class VersionStore(EditableFile, AbstractConfigParser):
             value,safe_globals,{}
         )
 
-    def parsedData(self,d,a):
+    def parsedData(self):
         self.data = {}
         if self.text:
             self.readString(self.text, self.filename)
         return self.data
 
-    parsedData = binding.Once(parsedData)
+    parsedData = binding.Make(parsedData)
 
     def getVersion(self,name):
         try:
@@ -410,16 +410,16 @@ class VersionStore(EditableFile, AbstractConfigParser):
 
 class Scheme(binding.Component):
 
-    name = binding.bindTo('_name')
+    name = binding.Obtain('_name')
     _name = None
 
-    parts = binding.Once(
-        lambda self,d,a: [self.makePart(txt) for txt in self.partDefs],
+    parts = binding.Make(
+        lambda self: [self.makePart(txt) for txt in self.partDefs],
         doc = "IPartDefs of the versioning scheme"
     )
 
-    formats = binding.Once(
-        lambda self,d,a: dict(
+    formats = binding.Make(
+        lambda self: dict(
             [(name,self.makeFormat(name,txt))
                 for (name,txt) in self.formatDefs.items()
             ]
@@ -427,13 +427,13 @@ class Scheme(binding.Component):
         doc = "dictionary of IFormat objects"
     )
 
-    partDefs = binding.requireBinding("list of part definition directives")
-    formatDefs = binding.requireBinding("dictionary of format directives")
+    partDefs = binding.Require("list of part definition directives")
+    formatDefs = binding.Require("dictionary of format directives")
 
     defaultFormat = None
 
-    partMap = binding.Once(
-        lambda self,d,a: dict([(part.name,part) for part in self.parts])
+    partMap = binding.Make(
+        lambda self: dict([(part.name,part) for part in self.parts])
     )
 
     def __getitem__(self,key):
@@ -533,8 +533,8 @@ class Scheme(binding.Component):
 
 class Version(binding.Component):
 
-    data = _cache = binding.New(dict)
-    scheme = binding.requireBinding("Versioning scheme")
+    data = _cache = binding.Make(dict)
+    scheme = binding.Require("Versioning scheme")
 
     def __getitem__(self, key):
         cache = self._cache
@@ -617,24 +617,24 @@ class Module(binding.Component):
 
     """A versionable entity, comprising files that need version strings"""
 
-    name = binding.requireBinding('name of this module')
-    editors = binding.requireBinding('list of Editors to use')
+    name = binding.Require('name of this module')
+    editors = binding.Require('list of Editors to use')
 
     schemeName = 'default'
-    schemeMap = binding.bindTo('../schemeMap')
-    versionStore = binding.bindTo('../versionStore')
+    schemeMap = binding.Obtain('../schemeMap')
+    versionStore = binding.Obtain('../versionStore')
 
-    def versionScheme(self,d,a):
+    def versionScheme(self):
         try:
             return self.schemeMap[self.schemeName.lower()]
         except KeyError:
             raise ValueError(
                 "Unrecognized version scheme '%r'" % self.schemeName
             )
-    versionScheme = binding.Once(versionScheme)
+    versionScheme = binding.Make(versionScheme)
 
-    currentVersion = binding.Once(
-        lambda self,d,a:
+    currentVersion = binding.Make(
+        lambda self:
             Version(
                 scheme = self.versionScheme,
                 data =   self.versionStore.getVersion(self.name)
@@ -668,13 +668,13 @@ class Editor(binding.Component):
 
     """Thing that applies a set of edits to a set of files"""
 
-    filenames = binding.requireBinding('sequence of filenames to edit')
+    filenames = binding.Require('sequence of filenames to edit')
 
-    files = binding.Once(
-        lambda s,d,a: [EditableFile(s,f,filename=f) for f in s.filenames]
+    files = binding.Make(
+        lambda self: [EditableFile(self,f,filename=f) for f in self.filenames]
     )
 
-    edits = edits2 = binding.requireBinding('list of IEdit instances to apply')
+    edits = edits2 = binding.Require('list of IEdit instances to apply')
 
     def editVersion(self, old, new):
         for file in self.files:
@@ -699,7 +699,7 @@ class Match(binding.Component):
 
     """Thing that finds/updates version strings"""
 
-    matchString = binding.requireBinding('string to match')
+    matchString = binding.Require('string to match')
     isOptional = False
 
     def editVersion(self, text, posn, old, new, write, filename):

@@ -47,7 +47,7 @@ class DOMletState(binding.Component):
         instancesProvide = [IDOMletState],
     )
 
-    write = binding.requireBinding("Unicode output stream write() method")
+    write = binding.Require("Unicode output stream write() method")
 
 
     def findState(self, iface):
@@ -90,7 +90,7 @@ class DOMletAsWebPage(binding.Component):
         factoryMethod = 'fromNode'
     )
 
-    templateNode = binding.requireBinding("""Node to render""")
+    templateNode = binding.Require("""Node to render""")
 
     def fromNode(klass, subject, protocol):
         return klass(templateNode = subject)
@@ -125,7 +125,7 @@ class DOMletParser(binding.Component):
 
     """Parser that assembles a Document"""
 
-    def parser(self,d,a):
+    def parser(self):
 
         from xml.parsers.expat import ParserCreate
         p = ParserCreate()
@@ -160,14 +160,14 @@ class DOMletParser(binding.Component):
         # .NotStandaloneHandler()
         return p
 
-    parser = binding.Once(parser)
+    parser = binding.Make(parser)
 
-    domlets = binding.New(list) # "nearest explicit DOMlet" stack
-    stack   = binding.New(list) # "DOMlet being assembled" stack
-    nsUri   = binding.New(dict) # URI stack for each NS prefix
+    domlets = binding.Make(list) # "nearest explicit DOMlet" stack
+    stack   = binding.Make(list) # "DOMlet being assembled" stack
+    nsUri   = binding.Make(dict) # URI stack for each NS prefix
 
-    myNs = binding.Once(        # prefixes that currently map to TEMPLATE_NS
-        lambda self,d,a: dict(
+    myNs = binding.Make(        # prefixes that currently map to TEMPLATE_NS
+        lambda self: dict(
             [(p,1) for (p,u) in self.nsUri.items() if u and u[-1]==TEMPLATE_NS]
         )
     )
@@ -203,7 +203,7 @@ class DOMletParser(binding.Component):
 
 
 
-    nsStack = binding.New(list)
+    nsStack = binding.Make(list)
 
     def pushNSinfo(self,attrs):
 
@@ -378,7 +378,7 @@ class Literal(binding.Component):
 
     xml = u''
 
-    staticText = binding.bindTo('xml')
+    staticText = binding.Obtain('xml')
 
     def renderFor(self, data, state):
         state.write(self.xml)
@@ -415,19 +415,19 @@ class Element(binding.Component):
         instancesProvide = [IDOMletElement],
     )
 
-    children       = binding.New(list)
-    params         = binding.New(dict)
+    children       = binding.Make(list)
+    params         = binding.Make(dict)
 
-    tagName        = binding.requireBinding("Tag name of element")
-    attribItems    = binding.requireBinding("Attribute name,value pairs")
+    tagName        = binding.Require("Tag name of element")
+    attribItems    = binding.Require("Attribute name,value pairs")
     nonEmpty       = False
     domletProperty = None
-    dataSpec       = binding.Constant('', adaptTo=TraversalPath)
+    dataSpec       = binding.Make(lambda: '', adaptTo=TraversalPath)
     paramName      = None
 
     # IDOMletNode
 
-    def staticText(self, d, a):
+    def staticText(self):
 
         """Note: replace w/staticText = None in dynamic element subclasses"""
 
@@ -443,13 +443,13 @@ class Element(binding.Component):
         else:
             return self._emptyTag
 
-    staticText = binding.Once(staticText, suggestParent=False)
+    staticText = binding.Make(staticText, suggestParent=False)
 
 
 
 
 
-    def optimizedChildren(self, d, a):
+    def optimizedChildren(self):
 
         """Child nodes with as many separate text nodes combined as possible"""
 
@@ -474,7 +474,7 @@ class Element(binding.Component):
         flush()
         return all
 
-    optimizedChildren = binding.Once(optimizedChildren)
+    optimizedChildren = binding.Make(optimizedChildren)
 
 
     def _traverse(self, data, state):
@@ -540,16 +540,16 @@ class Element(binding.Component):
         raise NotImplementedError
 
 
-    _emptyTag = binding.Once(
-        lambda self,d,a: self._openTag[:-1]+u' />'
+    _emptyTag = binding.Make(
+        lambda self: self._openTag[:-1]+u' />'
     )
 
-    _closeTag = binding.Once(
-        lambda self,d,a: u'</%s>' % self.tagName
+    _closeTag = binding.Make(
+        lambda self: u'</%s>' % self.tagName
     )
 
-    _openTag = binding.Once(
-        lambda self,d,a: u'<%s%s>' % ( self.tagName,
+    _openTag = binding.Make(
+        lambda self: u'<%s%s>' % ( self.tagName,
             unicodeJoin([
                 u' %s=%s' % (k,quoteattr(v)) for (k,v) in self.attribItems
             ])
@@ -618,8 +618,8 @@ class ContentReplacer(Element):
     """Abstract base for elements that replace their contents"""
 
     staticText = None
-    children   = optimizedChildren = binding.bindTo('contents')
-    contents   = binding.requireBinding("nodes to render in element body")
+    children   = optimizedChildren = binding.Obtain('contents')
+    contents   = binding.Require("nodes to render in element body")
 
     def addChild(self, node):
         pass    # ignore children, only parameters count with us

@@ -21,10 +21,10 @@ def InitialContext(parent, componentName=None, **options):
     PEAK component constructor.
 
     This function implements the 'binding.IComponentFactory' interface, and
-    thus can be used as a factory for a 'binding.New()' attribute.  That
+    thus can be used as a factory for a 'binding.Make()' attribute.  That
     is, you can do this::
 
-        myInitCtx = binding.New(naming.InitialContext)
+        myInitCtx = binding.Make(naming.InitialContext)
 
     in a class to create a 'myInitCtx' attribute.  This can be useful if
     you will be using naming functions a lot and would like to hang onto

@@ -6,22 +6,24 @@ from peak.tests import testRoot
 
 from peak.storage.LDAP import LDAPCursor, LDAPConnection
 
+
+def fooCvt(name,values):
+    if values: return values[0]
+
+def barCvt(name,values):
+    if values: return int(values[0])
+
+
 class TestCursor(LDAPCursor):
 
     msgid = 9999
 
-    def fooCvt(name,values):
-        if values: return values[0]
-
-    fooCvt = binding.Constant(
-        fooCvt, offerAs=['peak.ldap.field_converters.foo']
+    fooCvt = binding.Make(
+        lambda: fooCvt, offerAs=['peak.ldap.field_converters.foo']
     )
 
-    def barCvt(name,values):
-        if values: return int(values[0])
-
-    barCvt = binding.Constant(
-        barCvt, offerAs = ['peak.ldap.field_converters.bar']
+    barCvt = binding.Make(
+        lambda: barCvt, offerAs = ['peak.ldap.field_converters.bar']
     )
 
     class _conn(object):
@@ -33,8 +35,6 @@ class TestCursor(LDAPCursor):
             ]
 
         result = staticmethod(result)
-
-
 
 
 

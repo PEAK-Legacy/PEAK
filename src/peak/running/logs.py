@@ -6,7 +6,7 @@
       these at the moment)
 '''
 
-from peak.binding.components import Component, Once, New, requireBinding
+from peak.binding.components import Component, Make, Require
 from peak.naming import URL
 from peak.api import NOT_GIVEN, protocols, naming, config, NOT_FOUND
 from peak.naming.factories.openable import FileURL
@@ -167,10 +167,10 @@ class Event(Component):
     ident      = 'PEAK' # XXX use component names if avail?
     message    = ''
     priority   = TRACE
-    timestamp  = Once(lambda *x: time())
-    uuid       = New('peak.util.uuid:UUID')
+    timestamp  = Make(lambda: time())
+    uuid       = Make('peak.util.uuid:UUID')
     hostname   = _hostname
-    process_id = Once(lambda *x: os.getpid())
+    process_id = Make(lambda: os.getpid())
     exc_info   = ()
 
     def traceback(self,d,a):
@@ -178,7 +178,7 @@ class Event(Component):
             return ''.join(traceback.format_exception(*self.exc_info))
         return ''
 
-    traceback = Once(traceback)
+    traceback = Make(traceback)
 
     def __init__(self, message, parent=None, **info):
 
@@ -203,32 +203,32 @@ class Event(Component):
         return getattr(self,key)
 
 
-    def linePrefix(self,d,a):
+    def linePrefix(self):
         return  "%s %s %s[%d]: " % (
             strftime('%b %d %H:%M:%S', localtime(self.timestamp)),
             _hostname, self.ident, self.process_id
         )
 
-    linePrefix = Once(linePrefix)
+    linePrefix = Make(linePrefix)
 
 
-    def asString(self, d, a):
+    def asString(self):
 
         if self.exc_info:
             return '\n'.join(filter(None,[self.message,self.traceback]))
         else:
             return self.message
 
-    asString = Once(asString)
+    asString = Make(asString)
 
 
-    def prefixedString(self,d,a):
+    def prefixedString(self):
         return '%s%s\n' % (
             self.linePrefix,
             self.asString.rstrip().replace('\n', '\n'+self.linePrefix)
         )
 
-    prefixedString = Once(prefixedString)
+    prefixedString = Make(prefixedString)
 
 
     def __unicode__(self):
@@ -343,7 +343,7 @@ class AbstractLogger(Component):
         instancesProvide=[ILogger]
     )
 
-    level = requireBinding("Minimum priority for messages to be published")
+    level = Require("Minimum priority for messages to be published")
     EventClass = Event
 
 
@@ -410,7 +410,7 @@ class AbstractLogger(Component):
 
 class LogFile(AbstractLogger):
 
-    filename = requireBinding("name of file to write logs to")
+    filename = Require("name of file to write logs to")
     protocols.advise(classProvides=[IObjectFactory])
 
     def publish(self, event):
@@ -430,7 +430,7 @@ class LogFile(AbstractLogger):
 
 class LogStream(AbstractLogger):
 
-    stream = requireBinding("Writable stream to write messages to")
+    stream = Require("Writable stream to write messages to")
 
     def publish(self, event):
         if event.priority >= self.level:

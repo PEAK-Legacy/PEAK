@@ -3,29 +3,29 @@ from model import *
 
 class BulletinsApp(binding.Component):
 
-    dbURL = binding.bindTo(PropertyName('bulletins.databaseURL'))
-    dbDDL = binding.bindTo(PropertyName('bulletins.databaseDDL'))
+    dbURL = binding.Obtain(PropertyName('bulletins.databaseURL'))
+    dbDDL = binding.Obtain(PropertyName('bulletins.databaseDDL'))
 
-    db = binding.Once(
-        lambda self,d,a: self.lookupComponent(
+    db = binding.Make(
+        lambda self: self.lookupComponent(
             self.dbURL, adaptTo=storage.ISQLConnection
         ),
         offerAs = [PropertyName('bulletins.db')]
     )
 
-    log = binding.bindTo('logging.logger:bulletins.app')
+    log = binding.Obtain('logging.logger:bulletins.app')
 
-    Bulletins = binding.New(
+    Bulletins = binding.Make(
         'bulletins.storage:BulletinDM',
         offerAs=[storage.DMFor(Bulletin)]
     )
 
-    Categories = binding.New(
+    Categories = binding.Make(
         'bulletins.storage:CategoryDM',
         offerAs=[storage.DMFor(Category)]
     )
 
-    Users = binding.New(
+    Users = binding.Make(
         'bulletins.storage:UserDM',
         offerAs=[storage.DMFor(User)]
     )

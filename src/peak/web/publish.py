@@ -82,16 +82,16 @@ class TraversalPath(naming.CompoundName):
 
 class NullSkinService(binding.Component):
 
-    app = binding.bindTo('policy/app')
+    app = binding.Obtain('policy/app')
 
-    policy = binding.bindTo('..')
+    policy = binding.Obtain('..')
 
-    root = binding.Once(
-        lambda self, d, a: adapt(self.app, self.policy.pathProtocol)
+    root = binding.Make(
+        lambda self: adapt(self.app, self.policy.pathProtocol)
     )
 
-    defaultSkin = binding.Once(
-        lambda self, d, a:
+    defaultSkin = binding.Make(
+        lambda self:
             web.Skin(
                 self.app, root=self.root, policy=self.policy,
                 layers=[web.DefaultLayer()]
@@ -136,17 +136,17 @@ class InteractionPolicy(binding.Component, protocols.StickyAdapter):
 
     fromComponent = classmethod(fromComponent)
 
-    app           = binding.bindTo('./subject')
-    log           = binding.bindTo(APPLICATION_LOG)
-    errorProtocol = binding.bindTo(ERROR_PROTOCOL)
-    pathProtocol  = binding.bindTo(PATH_PROTOCOL)
-    pageProtocol  = binding.bindTo(PAGE_PROTOCOL)
-    authSvc       = binding.bindTo(AUTHENTICATION_SERVICE)
-    skinSvc       = binding.bindTo(SKIN_SERVICE)
-    defaultMethod = binding.bindTo(DEFAULT_METHOD)
+    app           = binding.Obtain('./subject')
+    log           = binding.Obtain(APPLICATION_LOG)
+    errorProtocol = binding.Obtain(ERROR_PROTOCOL)
+    pathProtocol  = binding.Obtain(PATH_PROTOCOL)
+    pageProtocol  = binding.Obtain(PAGE_PROTOCOL)
+    authSvc       = binding.Obtain(AUTHENTICATION_SERVICE)
+    skinSvc       = binding.Obtain(SKIN_SERVICE)
+    defaultMethod = binding.Obtain(DEFAULT_METHOD)
 
-    resourcePrefix   = binding.bindTo(RESOURCE_PREFIX)
-    interactionClass = binding.bindTo(INTERACTION_CLASS)
+    resourcePrefix   = binding.Obtain(RESOURCE_PREFIX)
+    interactionClass = binding.Obtain(INTERACTION_CLASS)
 
 
 
@@ -166,27 +166,27 @@ class Interaction(security.Interaction):
 
     """Base publication policy/interaction implementation"""
 
-    policy   = binding.requireBinding(
+    policy   = binding.Require(
         "IInteractionPolicy for application", adaptTo=IInteractionPolicy
     )
-    request  = binding.requireBinding("Request object")
+    request  = binding.Require("Request object")
 
-    response = binding.bindTo("request/response")
+    response = binding.Obtain("request/response")
 
-    app      = binding.bindTo('policy/app')
-    log      = binding.bindTo('policy/log')
+    app      = binding.Obtain('policy/app')
+    log      = binding.Obtain('policy/log')
 
-    errorProtocol  = binding.bindTo('policy/errorProtocol')
-    pathProtocol   = binding.bindTo('policy/pathProtocol')
-    pageProtocol   = binding.bindTo('policy/pageProtocol')
-    resourcePrefix = binding.bindTo('policy/resourcePrefix')
+    errorProtocol  = binding.Obtain('policy/errorProtocol')
+    pathProtocol   = binding.Obtain('policy/pathProtocol')
+    pageProtocol   = binding.Obtain('policy/pageProtocol')
+    resourcePrefix = binding.Obtain('policy/resourcePrefix')
 
-    user = binding.Once(
-        lambda self,d,a: self.policy.authSvc.getUser(self)
+    user = binding.Make(
+        lambda self: self.policy.authSvc.getUser(self)
     )
 
-    skin = binding.Once(
-        lambda self,d,a: self.policy.skinSvc.getSkin(self)
+    skin = binding.Make(
+        lambda self: self.policy.skinSvc.getSkin(self)
     )
 
     def beforeTraversal(self, request):
@@ -272,7 +272,7 @@ class Interaction(security.Interaction):
             exc_info = None
 
 
-    appURL = binding.Once(lambda s,d,a: s.request.getApplicationURL())
+    appURL = binding.Make(lambda self: self.request.getApplicationURL())
 
     def getAbsoluteURL(self, resource=None):
         base = self.appURL
@@ -289,9 +289,9 @@ class TestInteraction(Interaction):
 
     """Convenient interaction to use for tests, experiments, etc."""
 
-    policy = binding.bindTo('..', adaptTo=IInteractionPolicy)
+    policy = binding.Obtain('..', adaptTo=IInteractionPolicy)
 
-    request = binding.New('peak.web.requests:TestRequest')
+    request = binding.Make('peak.web.requests:TestRequest')
 
     appURL = 'http://127.0.0.1'    # prevent use of request unless necessary
 
@@ -384,20 +384,20 @@ class CGIPublisher(binding.Component):
     fromApp = classmethod(fromApp)
 
 
-    app              = binding.requireBinding("Application root to publish")
-    policy           = binding.bindTo('app', adaptTo = IInteractionPolicy)
-    interactionClass = binding.bindTo('policy/interactionClass')
+    app              = binding.Require("Application root to publish")
+    policy           = binding.Obtain('app', adaptTo = IInteractionPolicy)
+    interactionClass = binding.Obtain('policy/interactionClass')
 
 
     # items to (potentially) replace in subclasses
 
-    publish   = binding.bindTo('import:zope.publisher.publish:publish')
+    publish   = binding.Obtain('import:zope.publisher.publish:publish')
 
-    mkXMLRPC  = binding.bindTo(PropertyName('peak.web.XMLRPCRequest'))
-    mkBrowser = binding.bindTo(PropertyName('peak.web.BrowserRequest'))
-    mkHTTP    = binding.bindTo(PropertyName('peak.web.HTTPRequest'))
+    mkXMLRPC  = binding.Obtain(PropertyName('peak.web.XMLRPCRequest'))
+    mkBrowser = binding.Obtain(PropertyName('peak.web.BrowserRequest'))
+    mkHTTP    = binding.Obtain(PropertyName('peak.web.HTTPRequest'))
 
-    _browser_methods = binding.Copy( {'GET':1, 'POST':1, 'HEAD':1} )
+    _browser_methods = binding.Make(lambda: {'GET':1, 'POST':1, 'HEAD':1} )
 
 
 

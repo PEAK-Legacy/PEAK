@@ -82,30 +82,29 @@ class oncePerObject(advice):
 
 class MOFGenerator(binding.Component):
 
-    metamodel = binding.bindTo("import:peak.metamodels.MOF131:")
-    Package   = binding.bindTo("metamodel/Package")
-    Import    = binding.bindTo("metamodel/Import")
-    Class     = binding.bindTo("metamodel/Class")
-    Tag       = binding.bindTo("metamodel/Tag")
-    DataType  = binding.bindTo("metamodel/DataType")
-    Attribute = binding.bindTo("metamodel/Attribute")
-    Reference = binding.bindTo("metamodel/Reference")
-    Namespace = binding.bindTo("metamodel/Namespace")
+    metamodel = binding.Obtain("import:peak.metamodels.MOF131:")
+    Package   = \
+    Import    = \
+    Class     = \
+    Tag       = \
+    DataType  = \
+    Attribute = \
+    Reference = \
+    Namespace = \
+    NameNotFound = \
+    NameNotResolved = \
+    StructuralFeature = binding.Delegate("metamodel")
 
-    NameNotFound = binding.bindTo("metamodel/NameNotFound")
-    NameNotResolved = binding.bindTo("metamodel/NameNotResolved")
-    StructuralFeature = binding.bindTo("metamodel/StructuralFeature")
+    Composite = binding.Obtain("metamodel/AggregationKind/composite")
 
-    Composite = binding.bindTo("metamodel/AggregationKind/composite")
+    fileObject = binding.Make(StringIO)
 
-    fileObject = binding.New(StringIO)
+    stream = binding.Make(lambda self: IndentedStream(self.fileObject))
+    write  = binding.Obtain('stream/write')
+    push   = binding.Obtain('stream/push')
+    pop    = binding.Obtain('stream/pop')
 
-    stream = binding.Once(lambda self,d,a: IndentedStream(self.fileObject))
-    write  = binding.bindTo('stream/write')
-    push   = binding.bindTo('stream/push')
-    pop    = binding.bindTo('stream/pop')
-
-    objectsWritten = binding.New(dict)
+    objectsWritten = binding.Make(dict)
 
     pkgPrefix  = ''
     srcDir     = ''
@@ -113,7 +112,8 @@ class MOFGenerator(binding.Component):
 
     sepLine = '# ' + '-'*78 + '\n'
 
-    enumerationUnprefix = binding.New(dict)
+    enumerationUnprefix = binding.Make(dict)
+
 
 
 
@@ -285,7 +285,7 @@ class MOFGenerator(binding.Component):
 
 
 
-    pkgImportMap = binding.New(dict)
+    pkgImportMap = binding.Make(dict)
 
     def nameInPackage(self, element, package):
 

@@ -31,28 +31,23 @@ EXPORTED = object() # indicates variable is exported to a python variable
 
 class SQLInteractor(binding.Component):
 
-    editor = binding.bindTo(PropertyName('__main__.EDITOR'), default='vi')
+    editor = binding.Obtain(PropertyName('__main__.EDITOR'), default='vi')
 
-    shell = binding.bindTo('..')
-    con = binding.requireBinding('The SQL connection')
+    shell = binding.Obtain('..')
+    con = binding.Require('The SQL connection')
 
     state = ''
-    pushbuf = binding.New(list)
-    bufs = binding.New(dict)
+    pushbuf = binding.Make(list)
+    bufs = binding.Make(dict)
     buf = ''
     line = 1
     semi = -1
 
 
-    def vars(self, d, a):
-        return {
-            'prompt' : '$S$L> '
-        }
-
-    vars = binding.Once(vars)
+    vars = binding.Make(lambda: {'prompt':'$S$L> '})
 
 
-    def obnames(self, d, a):
+    def obnames(self):
         """Object names for completer"""
 
         si = adapt(self.con, storage.ISQLIntrospector, None)
@@ -63,7 +58,7 @@ class SQLInteractor(binding.Component):
 
         return []
 
-    obnames = binding.Once(obnames, suggestParent=False)
+    obnames = binding.Make(obnames, suggestParent=False)
 
 
     def prompt(self):
@@ -443,7 +438,7 @@ xacts\t\tnumber of times to repeat execution of the input. Only results
 
             self.interactor.resetBuf()
 
-    cmd_go = binding.New(cmd_go)
+    cmd_go = binding.Make(cmd_go)
 
 
 
@@ -461,8 +456,8 @@ rollback -- abort current transaction"""
 
             self.interactor.resetBuf()
 
-    cmd_rollback = binding.New(cmd_abort)
-    cmd_abort = binding.New(cmd_abort)
+    cmd_rollback = binding.Make(cmd_abort)
+    cmd_abort = binding.Make(cmd_abort)
 
 
 
@@ -482,7 +477,7 @@ rollback -- abort current transaction"""
 
                 self.interactor.resetBuf()
 
-    cmd_commit = binding.New(cmd_commit)
+    cmd_commit = binding.Make(cmd_commit)
 
 
 
@@ -494,7 +489,7 @@ rollback -- abort current transaction"""
         def cmd(self, cmd, **kw):
             self.interactor.resetBuf()
 
-    cmd_reset = binding.New(cmd_reset)
+    cmd_reset = binding.Make(cmd_reset)
 
 
 
@@ -507,8 +502,8 @@ rollback -- abort current transaction"""
         def cmd(self, cmd, **kw):
             self.interactor.quit = True
 
-    cmd_quit = binding.New(cmd_exit)
-    cmd_exit = binding.New(cmd_exit)
+    cmd_quit = binding.Make(cmd_exit)
+    cmd_exit = binding.Make(cmd_exit)
 
 
 
@@ -526,7 +521,7 @@ rollback -- abort current transaction"""
             else:
                 self.shell.interact()
 
-    cmd_python = binding.New(cmd_python)
+    cmd_python = binding.Make(cmd_python)
 
 
 
@@ -547,7 +542,7 @@ default for src is '!.', the current input buffer"""
             if args[0] == '!.':
                 return True
 
-    cmd_buf_copy = binding.New(cmd_buf_copy)
+    cmd_buf_copy = binding.Make(cmd_buf_copy)
 
 
 
@@ -561,7 +556,7 @@ default for src is '!.', the current input buffer"""
 
             return True
 
-    cmd_buf_get = binding.New(cmd_buf_get)
+    cmd_buf_get = binding.Make(cmd_buf_get)
 
 
 
@@ -583,7 +578,7 @@ default for src is '!.', the current input buffer"""
             if args[0] == '!.':
                 return True
 
-    cmd_buf_append = binding.New(cmd_buf_append)
+    cmd_buf_append = binding.Make(cmd_buf_append)
 
 
 
@@ -610,7 +605,7 @@ default for src is '!.', the current input buffer"""
             except:
                 sys.excepthook(*sys.exc_info()) # XXX
 
-    cmd_buf_save = binding.New(cmd_buf_save)
+    cmd_buf_save = binding.Make(cmd_buf_save)
 
 
 
@@ -643,7 +638,7 @@ default for src is '!.', the current input buffer"""
             if dest == '!.':
                 return True
 
-    cmd_buf_load = binding.New(cmd_buf_load)
+    cmd_buf_load = binding.Make(cmd_buf_load)
 
 
 
@@ -664,7 +659,7 @@ default for src is '!.', the current input buffer"""
 
             stdout.flush()
 
-    cmd_buf_show = binding.New(cmd_buf_show)
+    cmd_buf_show = binding.Make(cmd_buf_show)
 
 
 
@@ -694,7 +689,7 @@ default for src is '!.', the current input buffer"""
 
             return True
 
-    cmd_buf_edit = binding.New(cmd_buf_edit)
+    cmd_buf_edit = binding.Make(cmd_buf_edit)
 
 
 
@@ -720,7 +715,7 @@ default for src is '!.', the current input buffer"""
             except:
                 sys.excepthook(*sys.exc_info()) # XXX
 
-    cmd_source = binding.New(cmd_source)
+    cmd_source = binding.Make(cmd_source)
 
 
 
@@ -743,7 +738,7 @@ default for src is '!.', the current input buffer"""
                 self.shell.printColumns(
                     stdout, self.interactor.command_names(), sort=False)
 
-    cmd_help = binding.New(cmd_help)
+    cmd_help = binding.Make(cmd_help)
 
 
 
@@ -766,7 +761,7 @@ default for src is '!.', the current input buffer"""
 
             self.interactor.resetBuf()
 
-    cmd_reconnect = binding.New(cmd_reconnect)
+    cmd_reconnect = binding.Make(cmd_reconnect)
 
 
 
@@ -778,7 +773,7 @@ default for src is '!.', the current input buffer"""
         def cmd(self, cmd, **kw):
             self.interactor.redraw(self.shell.stdout)
 
-    cmd_redraw = binding.New(cmd_redraw)
+    cmd_redraw = binding.Make(cmd_redraw)
 
 
 
@@ -793,7 +788,7 @@ default for src is '!.', the current input buffer"""
                 stdout.write('\n')
             stdout.flush()
 
-    cmd_echo = binding.New(cmd_echo)
+    cmd_echo = binding.Make(cmd_echo)
 
 
 
@@ -811,7 +806,7 @@ default for src is '!.', the current input buffer"""
 
             time.sleep(s)
 
-    cmd_sleep = binding.New(cmd_sleep)
+    cmd_sleep = binding.Make(cmd_sleep)
 
 
 
@@ -836,7 +831,7 @@ default for src is '!.', the current input buffer"""
                 except KeyError:
                     print >>stderr, "%s: unable to set '%s'" % (cmd, args[0])
 
-    cmd_set = binding.New(cmd_set)
+    cmd_set = binding.Make(cmd_set)
 
 
 
@@ -848,7 +843,7 @@ default for src is '!.', the current input buffer"""
         def cmd(self, cmd, args, stderr, **kw):
             self.interactor.importVar(args[0])
 
-    cmd_import = binding.New(cmd_import)
+    cmd_import = binding.Make(cmd_import)
 
 
 
@@ -864,7 +859,7 @@ default for src is '!.', the current input buffer"""
                 print >>stderr, "%s: unable to export '%s'" % (cmd, args[0])
                 return
 
-    cmd_export = binding.New(cmd_export)
+    cmd_export = binding.Make(cmd_export)
 
 
 
@@ -892,7 +887,7 @@ default for src is '!.', the current input buffer"""
                     c = si.listObjects('-v' in opts)
                     self.interactor.showResults(c, shower, opts, stdout)
 
-    cmd_describe = binding.New(cmd_describe)
+    cmd_describe = binding.Make(cmd_describe)
 
 
 

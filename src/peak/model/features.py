@@ -89,7 +89,7 @@ class FeatureClass(HashAndCompare,MethodExporter):
             raise AttributeError("Unchangeable feature",self.attrName)
 
 
-    def typeObject(self,d,a):
+    def typeObject(self):
         """The actual type referred to by 'referencedType'
 
             Since a feature's 'referencedType' can be either a string or
@@ -103,14 +103,14 @@ class FeatureClass(HashAndCompare,MethodExporter):
             return binding.lookupComponent(self,rt)
         return rt
 
-    typeObject = binding.Once(typeObject)
-    fromString = binding.bindTo('typeObject/mdl_fromString')
-    toString   = binding.bindTo('typeObject/mdl_toString', default=str)
-    fromFields = binding.bindTo('typeObject/mdl_fromFields')
-    normalize  = binding.bindTo('typeObject/mdl_normalize', default=lambda x:x)
+    typeObject = binding.Make(typeObject)
+    fromString = binding.Obtain('typeObject/mdl_fromString')
+    toString   = binding.Obtain('typeObject/mdl_toString', default=str)
+    fromFields = binding.Obtain('typeObject/mdl_fromFields')
+    normalize  = binding.Obtain('typeObject/mdl_normalize', default=lambda x:x)
     sortPosn   = None
 
-    def _hashAndCompare(self,d,a):
+    def _hashAndCompare(self):
 
         """Features hash and compare based on position, name, and identity
 
@@ -119,58 +119,58 @@ class FeatureClass(HashAndCompare,MethodExporter):
 
         return self.sortPosn, self.__name__, id(self)
 
-    _hashAndCompare = binding.Once(_hashAndCompare)
+    _hashAndCompare = binding.Make(_hashAndCompare)
 
-    isMany     = binding.Once(lambda s,d,a: s.upperBound<>1)
-    isRequired = binding.Once(lambda s,d,a: s.lowerBound >0)
+    isMany     = binding.Make(lambda self: self.upperBound<>1)
+    isRequired = binding.Make(lambda self: self.lowerBound >0)
 
-    isChangeable = binding.Once(
-        lambda s,d,a: not s.isDerived,
+    isChangeable = binding.Make(
+        lambda self: not self.isDerived,
         doc = "Feature is changeable; defaults to 'True' if not 'isDerived'"
     )
 
-    implAttr   = binding.Once(
-        lambda s,d,a: (s.useSlot and '_f_'+s.attrName or s.attrName),
+    implAttr   = binding.Make(
+        lambda self: (self.useSlot and '_f_'+self.attrName or self.attrName),
         doc = "The underlying (private) attribute implementing this feature"
     )
 
-    def isReference(self,d,a):
+    def isReference(self):
         """Does the feature refer to a non-primitive/non-struct type?"""
         from datatypes import TCKind
         return self.typeKind==TCKind.tk_objref
 
-    isReference = binding.Once(isReference)
+    isReference = binding.Make(isReference)
 
-    def _defaultValue(self,d,a):
+    def _defaultValue(self):
         try:
             return self.defaultValue
         except AttributeError:
             return getattr(self.typeObject,'mdl_defaultValue',NOT_GIVEN)
 
-    _defaultValue = binding.Once(_defaultValue)
+    _defaultValue = binding.Make(_defaultValue)
 
-    _bindFuncs = binding.Once(
-        lambda s,d,a:
-            s.getParentComponent()._getBindingFuncs(s.implAttr,s.useSlot)
+    _bindFuncs = binding.Make(
+        lambda s: s.getParentComponent()._getBindingFuncs(s.implAttr,s.useSlot)
     )
 
-    _doGet = binding.Once(lambda s,d,a: s._bindFuncs[0])
-    _doSet = binding.Once(lambda s,d,a: s._bindFuncs[1])
-    _doDel = binding.Once(lambda s,d,a: s._bindFuncs[2])
+    _doGet = binding.Make(lambda self: self._bindFuncs[0])
+    _doSet = binding.Make(lambda self: self._bindFuncs[1])
+    _doDel = binding.Make(lambda self: self._bindFuncs[2])
 
-    singularName = binding.bindTo('./attrName')
+    singularName = binding.Obtain('./attrName')
 
 
 
-    def rawTypeCode(self,d,a):
+
+    def rawTypeCode(self):
         from datatypes import Any
         return getattr(self.typeObject,'mdl_typeCode',Any)
 
-    rawTypeCode = binding.Once(rawTypeCode)
-    typeKind    = binding.bindTo('typeCode/kind')
-    typeCode    = binding.Once(lambda s,d,a: s.rawTypeCode.unaliased() )
+    rawTypeCode = binding.Make(rawTypeCode)
+    typeKind    = binding.Obtain('typeCode/kind')
+    typeCode    = binding.Make(lambda self: self.rawTypeCode.unaliased() )
 
-    def _syntax(feature,d,a):
+    def _syntax(feature):
 
         syntax = feature.syntax
 
@@ -196,7 +196,7 @@ class FeatureClass(HashAndCompare,MethodExporter):
 
         return fmtparse.Named( feature.attrName, syntax )
 
-    _syntax = binding.Once(_syntax)
+    _syntax = binding.Make(_syntax)
 
     def __conform__(feature,protocol):
         if protocol is fmtparse.Rule:
@@ -671,7 +671,7 @@ class structField(StructuralFeature):
 
     upperBound = 1
 
-    isChangeable = binding.classAttr( binding.Constant(False) )
+    isChangeable = binding.classAttr( binding.Make(lambda: False) )
 
 
 

@@ -87,7 +87,7 @@ class GuardedClassAdapter(protocols.Adapter):
         asAdapterForTypes = [type, ClassType]
     )
 
-    def nameToPermissionsMap(self, d, a):
+    def nameToPermissionsMap(self):
         klass = self.subject
         if '_peak_nameToPermissions_map' in klass.__dict__:
             return klass._peak_nameToPermissions_map
@@ -115,7 +115,7 @@ class GuardedClassAdapter(protocols.Adapter):
 
         return m
 
-    nameToPermissionsMap = binding.Once(nameToPermissionsMap)
+    nameToPermissionsMap = binding.Make(nameToPermissionsMap)
 
     def getAttributePermission(self, name):
         """Return (abstract) permission needed to access 'name', or 'None'"""
@@ -252,7 +252,7 @@ class Interaction(binding.Component):
         instancesProvide = [IInteraction]
     )
 
-    user = binding.requireBinding(
+    user = binding.Require(
         "The principal responsible for this interaction"
     )
 
@@ -295,7 +295,7 @@ class PermissionType(binding.ActiveClass):
 
     abstractBase = None
 
-    __cache = binding.New(WeakKeyDictionary, attrName='_PermissionType__cache')
+    __cache = binding.Make(WeakKeyDictionary, attrName='_PermissionType__cache')
 
     def of(self,protectedObjectType):
         if self.abstractBase is not None:
@@ -337,10 +337,10 @@ class PermissionType(binding.ActiveClass):
         return (self.abstractBase or self).__denial
 
 
-    __denial = binding.Once(
-        lambda s,d,a: Denial(
+    __denial = binding.Make(
+        lambda self: Denial(
             # XXX I18N issues here...
-            s.__doc__ or ("You must have the %s permission." % s.__name__)
+            self.__doc__ or ("You must have the %s permission." % self.__name__)
         ), attrName = '_PermissionType__denial'
     )
 
@@ -408,7 +408,7 @@ class RuleSet(binding.Singleton):
 
 
 
-    def __methodNames(klass,d,a):
+    def __methodNames(klass):
 
         # XXX check completeness/correctness of coverage?
 
@@ -436,7 +436,7 @@ class RuleSet(binding.Singleton):
         methodNames.update(newMethods)
         return methodNames
 
-    __methodNames = binding.Once(__methodNames)
+    __methodNames = binding.Make(__methodNames)
 
 
 

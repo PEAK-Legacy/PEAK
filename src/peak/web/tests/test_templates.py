@@ -28,7 +28,7 @@ class TestApp(web.Traversable):
 
     bar = 1,2,3
 
-    show = binding.requireBinding(
+    show = binding.Require(
         "Template to dump this out with",
         permissionNeeded = security.Anybody
     )

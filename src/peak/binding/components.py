@@ -16,7 +16,7 @@ from peak.util.imports import importString
 
 
 __all__ = [
-    'Base', 'Component', 'whenAssembled', 'Obtain', 'Require',
+    'Base', 'Component', 'whenAssembled', 'Obtain', 'Require', 'Delegate',
     'bindTo', 'requireBinding', 'bindSequence', 'bindToParent', 'bindToSelf',
     'getRootComponent', 'getParentComponent', 'lookupComponent',
     'acquireComponent', 'notifyUponAssembly',
@@ -438,8 +438,8 @@ class Obtain(Attribute):
 
     def __init__(self,targetName,**kw):
         self.targetName = adapt(targetName, IComponentKey)
-        kw.setdefault('doc', ("binding.bindTo(%s)" % `self.targetName`))
-        super(bindTo,self).__init__(**kw)
+        kw.setdefault('doc', ("binding.Obtain(%s)" % `self.targetName`))
+        super(Obtain,self).__init__(**kw)
 
 
     def computeValue(self, obj, instanceDict, attrName):
@@ -451,7 +451,7 @@ bindTo = Obtain     # XXX DEPRECATED
 
 def bindSequence(*targetNames, **kw):
     """DEPRECATED: use binding.Obtain([key1,key2,...])"""
-    return bindTo(targetNames, **kw)
+    return Obtain(targetNames, **kw)
 
 
 class SequenceFinder(object):
@@ -475,7 +475,7 @@ class SequenceFinder(object):
 def whenAssembled(func, **kw):
     """DEPRECATED: use 'Make(func, uponAssembly=True)'"""
     kw['uponAssembly'] = True
-    return Once(func, **kw)
+    return Make(func, **kw)
 
 
 
@@ -542,7 +542,7 @@ def bindToSelf(**kw):
 def bindToProperty(propName, default=NOT_GIVEN, **kw):
     """DEPRECATED: use binding.Obtain(PropertyName(propName))"""
     kw['default'] = default
-    return binding.bindTo(PropertyName(propName), **kw)
+    return binding.Obtain(PropertyName(propName), **kw)
 
 
 class Require(Attribute):
@@ -554,7 +554,7 @@ class Require(Attribute):
     def __init__(self, description="", **kw):
         kw['description'] = description
         kw.setdefault('doc', "Required: %s" % description)
-        super(requireBinding,self).__init__(**kw)
+        super(Require,self).__init__(**kw)
 
 
     def computeValue(self, obj, instanceDict, attrName):
@@ -568,7 +568,7 @@ requireBinding = Require    # XXX DEPRECATED
 def bindToUtilities(iface, **kw):
     """DEPRECATED: bind list of all 'iface' utilities above the component"""
 
-    return Once(lambda s,d,a: list(config.findUtilities(s,iface)), **kw)
+    return Make(lambda self: list(config.findUtilities(self,iface)), **kw)
 
 
 
@@ -751,7 +751,7 @@ class Component(_Base):
 
         return parent
 
-    __parentComponent = Once(__parentComponent, suggestParent=False)
+    __parentComponent = Make(__parentComponent, suggestParent=False)
 
 
     def getParentComponent(self):
@@ -760,7 +760,7 @@ class Component(_Base):
     def getComponentName(self):
         return self.__componentName
 
-    __instance_offers__ = New(
+    __instance_offers__ = Make(
         'peak.config.config_components:PropertyMap', offerAs=[IPropertyMap]
     )
 
@@ -843,7 +843,7 @@ class Component(_Base):
             self.__objectsToBeAssembled__ = tba
             raise
 
-    __objectsToBeAssembled__ = New(list)
+    __objectsToBeAssembled__ = Make(list)
 
 
     def __attrsToBeAssembled__(klass,d,a):
@@ -856,7 +856,7 @@ class Component(_Base):
 
         return aa
 
-    __attrsToBeAssembled__ = classAttr(Once(__attrsToBeAssembled__))
+    __attrsToBeAssembled__ = classAttr(Make(__attrsToBeAssembled__))
 
 
     def __class_offers__(klass,d,a):
@@ -874,7 +874,7 @@ class Component(_Base):
         cp.lock()   # make it immutable
         return cp
 
-    __class_offers__ = classAttr(Once(__class_offers__))
+    __class_offers__ = classAttr(Make(__class_offers__))
 
 
 

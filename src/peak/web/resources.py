@@ -45,7 +45,7 @@ class Resource(Traversable):
         instancesProvide = [IResource]
     )
 
-    permissionNeeded = binding.requireBinding("Permission needed for access")
+    permissionNeeded = binding.Require("Permission needed for access")
 
     def preTraverse(self, ctx):
         perm = self.permissionNeeded
@@ -61,7 +61,7 @@ class Resource(Traversable):
         return ctx.interaction.getAbsoluteURL(self)
 
 
-    def _getResourcePath(self, d, a):
+    def _getResourcePath(self):
 
         name = self.getComponentName()
 
@@ -71,7 +71,7 @@ class Resource(Traversable):
 
         raise ValueError("Traversable was not assigned a name", self)
 
-    resourcePath = binding.Once(_getResourcePath)
+    resourcePath = binding.Make(_getResourcePath)
 
 
 
@@ -86,14 +86,14 @@ class FSResource(Resource):
         classProvides=[naming.IObjectFactory],
     )
 
-    filename = binding.requireBinding("OS-specific full filename")
+    filename = binding.Require("OS-specific full filename")
 
-    filenameAsProperty = binding.Once(
-        lambda self,d,a: filenameAsProperty(os.path.basename(self.filename))
+    filenameAsProperty = binding.Make(
+        lambda self: filenameAsProperty(os.path.basename(self.filename))
     )
 
-    permissionNeeded = binding.bindTo(PropertyName(RESOURCE_BASE+'permission'))
-    mime_type        = binding.bindTo(PropertyName(RESOURCE_BASE+'mime_type'))
+    permissionNeeded = binding.Obtain(PropertyName(RESOURCE_BASE+'permission'))
+    mime_type        = binding.Obtain(PropertyName(RESOURCE_BASE+'mime_type'))
 
     def getObjectInstance(klass, context, refInfo, name, attrs=None):
         url, = refInfo.addresses
@@ -125,7 +125,7 @@ class ResourceDirectory(FSResource):
 
     isRoot = False      # Are we the topmost FSResource here?
     includeURL = False  # Include our name in URL even if we're a root
-    cache = binding.New(dict)
+    cache = binding.Make(dict)
 
     def __onSetup(self,d,a):
 
@@ -142,10 +142,10 @@ class ResourceDirectory(FSResource):
             [os.path.join(self.filename, RESOURCE_CONFIG(self))]
         )
 
-    __onSetup = binding.whenAssembled(__onSetup)
+    __onSetup = binding.Make(__onSetup, uponAssembly=True)
 
 
-    def filenames(self,d,a):    # XXX need a way to invalidate this!
+    def filenames(self):    # XXX need a way to invalidate this!
         nms = {}
         for filename in os.listdir(self.filename):
             if filename in ('.','..'):
@@ -155,7 +155,7 @@ class ResourceDirectory(FSResource):
                 nms.setdefault('.'.join(parts[:i]),[]).append(filename)
         return nms
 
-    filenames = binding.Once(filenames)
+    filenames = binding.Make(filenames)
 
 
 
@@ -211,16 +211,16 @@ class ResourceDirectory(FSResource):
         return obj
 
 
-    def resourcePath(self,d,a):
+    def resourcePath(self):
 
         if self.isRoot and not self.includeURL:
             # Our name doesn't count in the URL
             return self.getParentComponent().resourcePath
 
         # use original definition
-        return self._getResourcePath(d,a)
+        return self._getResourcePath()
 
-    resourcePath = binding.Once(resourcePath)
+    resourcePath = binding.Make(resourcePath)
 
 
 
@@ -300,11 +300,11 @@ def bindResource(path, pkg=None, **kw):
         # /package/whatever
         path = TraversalPath('/'+pkg) + path
 
-    def getResource(self, d, a):
+    def getResource(self):
         return ResourceProxy(path, RESOURCE_PREFIX(self)+'/'+str(path))
 
     kw.setdefault('suggestParent',False)
-    return binding.Once(getResource, **kw)
+    return binding.Make(getResource, **kw)
 
 
 
@@ -327,7 +327,7 @@ def bindResource(path, pkg=None, **kw):
 
 
 class DefaultLayer(Traversable):
-    cache = fileCache = binding.New(dict)
+    cache = fileCache = binding.Make(dict)
 
     def traverseTo(self, name, ctx):
         if name in self.cache:
@@ -365,7 +365,7 @@ class DefaultLayer(Traversable):
         return d
 
     # Our name doesn't count in the URL
-    resourcePath = binding.bindTo('../resourcePath')
+    resourcePath = binding.Obtain('../resourcePath')
 
 class TemplateResource(FSResource):
 
@@ -376,7 +376,7 @@ class TemplateResource(FSResource):
         ctx.interaction.notFound(self, self.getComponentName())
 
 
-    def theTemplate(self,d,a):
+    def theTemplate(self):
 
         """Load and parse the template on demand"""
 
@@ -389,7 +389,7 @@ class TemplateResource(FSResource):
             stream.close()
         return doc
 
-    theTemplate = binding.Once(theTemplate)
+    theTemplate = binding.Make(theTemplate)
 
 
     def getObject(self, interaction):

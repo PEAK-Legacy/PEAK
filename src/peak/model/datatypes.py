@@ -114,10 +114,10 @@ class String(PrimitiveType):
 
     mdl_typeKind = TCKind.tk_string
 
-    def mdl_typeCode(klass,d,a):
+    def mdl_typeCode(klass):
         return TypeCode(kind = klass.mdl_typeKind, length=klass.length)
 
-    mdl_typeCode = binding.classAttr( binding.Once(mdl_typeCode) )
+    mdl_typeCode = binding.classAttr( binding.Make(mdl_typeCode) )
 
 
 
@@ -152,13 +152,13 @@ class Fixed(Float):
     fixed_digits = 1
     fixed_scale  = 0
 
-    def mdl_typeCode(klass,d,a):
+    def mdl_typeCode(klass):
         return TypeCode(kind = TCKind.Fixed,
             fixed_digits = klass.fixed_digits,
             fixed_scale  = klass.fixed_scale
         )
 
-    mdl_typeCode = binding.classAttr( binding.Once(mdl_typeCode) )
+    mdl_typeCode = binding.classAttr( binding.Make(mdl_typeCode) )
 
 
 

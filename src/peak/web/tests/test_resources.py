@@ -9,7 +9,7 @@ class ResourceApp1(TestApp):
     # This makes all 'peak.*' package resources available for testing;
     # Ordinarily, you'd do this via a config file, but this is quick and easy
 
-    __makePkgAvailable = binding.Constant(True,
+    __makePkgAvailable = binding.Make(lambda: True,
         offerAs = ['peak.web.resource_packages.peak.*']
     )
 

@@ -298,7 +298,7 @@ class IManagedConnection(IComponent,ITransactionParticipant):
         """The actual underlying (LDAP, SQL, etc.) connection object
 
         This attribute is primarily for use by subclasses of ManagedConnection.
-        It is a 'binding.Once()' link to the '_open()' method (see
+        It is a 'binding.Make()' link to the '_open()' method (see
         IManagedConnImpl interface for details)."""
     )
 
@@ -502,11 +502,11 @@ class ISQLIntrospector(Interface):
             with full=True, includes all available information, otherwise
             only includes the information likely to be most elevant to the
             user.
-            
+
             The returned cursor shall have a column 'obname' first, with
             the object name, and a column 'obtype' second, with one of
             the following values standardized:
-            
+
                 table, systable, view, proc, index, synonym
 
             if obtypes is given, it shall be a sequence of the above types,
