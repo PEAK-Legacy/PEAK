@@ -14,10 +14,16 @@ HAPPYDOC_IGNORE = [
 
 
 scripts = ['scripts/peak']
-
 packages = find_packages('src')
 
 extensions = [
+    Extension("peak.util.pyexpat", [
+        "src/peak/util/pyexpat.c",
+        "src/expat/xmlparse.c", "src/expat/xmltok.c", #"src/expat/xmltok_ns.c",
+        "src/expat/xmlrole.c",], #"src/expat/xmltok_impl.c"],
+        include_dirs=["src/expat"],
+        define_macros=[('XML_STATIC',1),('HAVE_MEMMOVE',1)]   # XXX
+    ),
     Extension("kjbuckets", ["src/kjbuckets/kjbucketsmodule.c"]),
     Extension(
         "peak.binding._once", [
@@ -32,12 +38,6 @@ extensions = [
     ),
     Extension('_csv', ['src/_csv.c']),
 ]
-
-
-
-
-
-
 
 try:
     # Check if Zope X3 is installed; we use zope.component
@@ -114,12 +114,12 @@ features = {
             Extension("peak.util._uuidgen", ["src/peak/util/_uuidgen.c"]),
         ]
     ),
+    'pyexpat-plus': Feature(
+        "Backport pyexpat features from Python 2.4",
+        standard=sys.version_info < (2,4), optional = False,
+        remove = ["peak.util.pyexpat"]
+    ),
 }
-
-
-
-
-
 
 ALL_EXTS = [
     '*.ini', '*.html', '*.conf', '*.xml', '*.pwt', '*.dtd', '*.txt',

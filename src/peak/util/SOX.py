@@ -461,6 +461,8 @@ class NegotiatingParser:
 
     """
 
+    _parser = _url = None
+
     def __init__(self):
         self.element_map = {}
         self.attribute_map = {}
@@ -488,10 +490,8 @@ class NegotiatingParser:
             return '',name
 
 
-
-
     def startElement(self,name,attrs):
-
+        if self.stack[-1].get('empty'): self.err("Child elements not allowed")
         a = []; append = a.append; negattrs=[]
         attrs.reverse(); pop = attrs.pop
         data = {'name':name, 'attributes':a, 'previous':self.stack[-1]}
@@ -550,7 +550,6 @@ class NegotiatingParser:
             if 'lookups' in data:
                 self.lookup_element, self.lookup_attribute = data['lookups']
 
-
     def resetCaches(self):
         data = self.stack[-1]
         if 'caches' not in data:
@@ -559,18 +558,19 @@ class NegotiatingParser:
 
         self.attribute_map, self.element_map = {}, {}
 
-
-
-
-
-
-
-
-
-
-
-
-
+    def err(self,msg,kind=SyntaxError):
+        """Generate an error with current parse location"""
+        exc = kind()
+        exc.msg = msg
+        exc.filename = self._url
+        if self._parser:
+            exc.text = self._parser.GetInputContext()
+            exc.lineno = self._parser.CurrentLineNumber
+            exc.offset = self._parser.CurrentColumnNumber
+        else:
+            exc.lineno = exc.offset = exc.text = None
+        exc.args = msg, (exc.filename,exc.lineno,exc.offset,exc.text)
+        raise exc
 
     def setLookups(self,element=None,attribute=None):
         self.resetCaches()
@@ -614,7 +614,7 @@ class NegotiatingParser:
 
 
     def makeParser(self):
-        from xml.parsers.expat import ParserCreate
+        from pyexpat import ParserCreate
         p = ParserCreate()
         p.ordered_attributes = True
         p.returns_unicode = True
@@ -627,30 +627,30 @@ class NegotiatingParser:
         return p
 
 
-    def _beforeParsing(self,root=None):
+    def _beforeParsing(self,root=None,url=None):
         root = root or {}
         self.stack.append(root)
-        return self.makeParser()
+        p = self.makeParser()
+        self._parser = p; self._url = url
+        return p
 
     def _afterParsing(self):
         data = self.stack.pop()
         finish = data.get('finish')
-        if finish:
-            return finish(self,data)
-        
+        try:
+            if finish:
+                return finish(self,data)
+        finally:
+            del self._parser, self._url
 
-    def parseString(self,text,root=None):
-        self._beforeParsing(root).Parse(text,True)
+    def parseString(self,text,root=None,url=None):
+        self._beforeParsing(root,url).Parse(text,True)
         return self._afterParsing()        
         
 
-    def parseStream(self,stream,root=None):
-        self._beforeParsing(root).ParseFile(stream)
+    def parseStream(self,stream,root=None,url=None):
+        self._beforeParsing(root,url).ParseFile(stream)
         return self._afterParsing()        
-
-
-
-
 
 
 
@@ -665,7 +665,7 @@ class ExpatBuilder:
         self.nsInfo  = {}   # URI stack for each NS prefix
 
     def makeParser(self):
-        from xml.parsers.expat import ParserCreate
+        from pyexpat import ParserCreate
         p = ParserCreate()
         p.ordered_attributes = True
         p.returns_unicode = True

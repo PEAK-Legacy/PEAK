@@ -96,6 +96,15 @@ PEAK Release 0.5 alpha 4
      backward compatibility in Python 2.2.  See the Python license for license
      details.
 
+     The included 'pyexpat' module comes from Python 2.4, and is included for
+     backward compatibility in Python 2.2 and 2.3.  See the Python license for
+     license details.
+
+     The 'expat' XML parser is Copyright (c) 1998, 1999, 2000 Thai Open Source
+     Software Center Ltd and Clark Cooper, and Copyright (c) 2001, 2002, 2003
+     Expat maintainers.  See the 'COPYING' file in 'src/expat' for details of
+     its license.
+
      The 'datetime', 'persistence' and 'ZConfig' packages are Copyright Zope
      Corporation and contributors; please see the 'LICENSE.txt' files in their
      directories for details of their licenses.
@@ -109,15 +118,6 @@ PEAK Release 0.5 alpha 4
  Installation Instructions
 
     Please see the INSTALL.txt file.
-
-
-
-
-
-
-
-
-
 
 
 

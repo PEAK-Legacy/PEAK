@@ -387,17 +387,17 @@ class NegotiationTests(TestCase):
         self.n.endElement('bar')
 
 
-
-
-
+    def testEmptyTag(self):
+        def set_empty(neg,data):
+            data['empty'] = True
+        self.n.element_map['foo'] = set_empty
+        self.n.startElement('foo',[])
+        self.assertRaises(SyntaxError,self.n.startElement,'bar',[])
+        self.n.endElement('foo')
+        self.n.startElement('bar',[])
         
 
-
-
-
-
-
-
+        
 
 
 

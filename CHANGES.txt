@@ -1,5 +1,9 @@
 Fixes and Enhancements since Version 0.5 alpha 3
 
+ - In order to support obtaining the line and column locations of problems in
+   XML files, we are now using Python 2.4's version of the 'pyexpat' module,
+   built as 'peak.util.pyexpat'.
+
  - There's a new class, 'config.IniLoader', that can be used to lazily load
    .ini files as configuration.  'IniLoader' instances have an 'iniFiles'
    attribute that lists the configuration sources (filenames/URLs/factories)
