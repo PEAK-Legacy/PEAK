@@ -11,8 +11,6 @@ Open Issues/To-Do Items
 
        - Ensure default __repr__'s for all bindings are acceptable
 
-       - Update tutorial for current kwargs
-
        - Investigate whether suggestParentComponent() should be suppressed when
          the value is computed by the binding, or if perhaps 'suggestParent'
          should be set to 'False' by default for some kinds of bindings.
@@ -33,6 +31,8 @@ Open Issues/To-Do Items
          a later release)
 
        - try/catch DOMlet (and related error rendering interface/framework)
+
+
 
 
 
@@ -67,8 +67,8 @@ Open Issues/To-Do Items
     * "Pre-forking event driven services":http://www.eby-sarna.com/pipermail/transwarp/2003-August/000697.html
 
     * Have a way to easily in-line custom component usage (e.g. automatically
-      create a subclass component with specified 'bindTo' bindings to get its
-      configuration).
+      create a subclass component with specified 'Obtain' or 'Make' bindings to
+      get its configuration).
 
     * Implement "contextual protocols" (c.f. "object teams") and "parameterized
       protocols" (E.g. 'ListOf(IFoo)', 'MappingOf(keys=IBar,values=IBaz)')

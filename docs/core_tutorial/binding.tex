@@ -336,7 +336,7 @@ that keeps track of its passengers.
 \begin{verbatim%
 }>>> from peak.api import binding
 >>> class Car:
-        passengers = binding.New(dict, attrName='passengers')
+        passengers = binding.Make(dict, attrName='passengers')
 
 >>> aCar=Car()
 >>> print aCar.passengers
@@ -345,14 +345,13 @@ that keeps track of its passengers.
 
 Let's go through this sample line by line.  In the first line we import the
 \module{peak.binding} API.  Then, we create a simple class, with one attribute,
-\member{passengers}.  We define the attribute using the \function{binding.New}
-function, which creates an attribute binding from a type and an optional
-attribute name.
+\member{passengers}.  We define the attribute using the \function{binding.Make}
+function, which creates an attribute binding from a type or function, and an
+optional attribute name.
 
 Instances of class \class{Car} will each get their own \member{passengers}
-attribute, which contains a new (hence the name, \function{binding.New})
-dictionary.  If you're new to Python, you might wonder why we don't place a
-dictionary directly in the class, like this:
+attribute: a dictionary.  Now, if you're new to Python, you might wonder why we
+don't place a dictionary directly in the class, like this:
 
 \begin{verbatim%
 }class Car:
@@ -363,6 +362,7 @@ The problem is that attributes defined in a Python class body are shared, so
 every car will end up with the same passenger dictionary.  Experienced Python
 programmers solve this problem by placing code in their \method{__init__}
 method to initialize the structure, like so:
+
 
 
 
@@ -412,8 +412,8 @@ If you're familiar with the Eiffel programming language, you'll notice that
 PEAK attribute bindings are quite similar to Eiffel's \strong{once functions},
 except that they're for instances rather than for classes.  A ``once function"
 is computed at most once, the first time its value is referenced.  In PEAK,
-virtually all attribute bindings are based on \class{binding.Once}, a class
-that handles most of the mechanics needed to make these ``once attributes" work.
+attribute bindings compute their value once, and then cache the result, until
+or unless the attribute is deleted.
 
 \subsubsection{Deriving from \class{binding.Component}}
 
@@ -421,21 +421,21 @@ As we've already seen, attribute bindings can be made to work with
 ``old-style" or ``classic" Python classes.  There are some drawbacks to that,
 however.  Most visibly, it's necessary to specify an attribute binding's
 name in its definition, as we saw in our example, i.e.
-\samp{passengers = binding.New(dict, attrName='passengers')}.
+\samp{passengers = binding.Make(dict, attrName='passengers')}.
 
 However, if we derive our class from \class{binding.Component}, we no longer
 have to do this:
 
 \begin{verbatim%
 }>>> class Car(binding.Component):
-        passengers = binding.New(dict)
+        passengers = binding.Make(dict)
 
 >>> aCar=Car()
 >>> print aCar.passengers
 {}
 \end{verbatim}
 
-Now, it's sufficient to use \samp{binding.New(dict)} to define the attribute.
+Now, it's sufficient to use \samp{binding.Make(dict)} to define the attribute.
 What would happen if we did this \emph{without} \class{binding.Component}?
 
 
@@ -451,20 +451,20 @@ What would happen if we did this \emph{without} \class{binding.Component}?
 
 \begin{verbatim%
 }>>> class Car(object):     # new-style class error messages are more helpful
-        passengers = binding.New(dict)
+        passengers = binding.Make(dict)
 
 >>> aCar=Car()
 >>> print aCar.passengers
 Traceback (most recent call last):
   File "<pyshell#13>", line 1, in ?
     print aCar.passengers
-  File "C:\cygwin\home\pje\PEAK\src/peak/binding/_once.pyx", line 119, in __get__
-    raise
-  File "C:\cygwin\home\pje\PEAK\src/peak/binding/_once.pyx", line 104, in __get__
+  File "C:\cygwin\home\pje\PEAK\src\peak\binding\once.py", line 420, in __get__
+    return self._installedDescr(ob.__class__).__get__(ob,typ)
+  File "C:\cygwin\home\pje\PEAK\src\peak\binding\once.py", line 449, in _installedDescr
     self.usageError()
-  File "C:\cygwin\home\pje\PEAK\src\peak\binding\once.py", line 177, in usageError
+  File "C:\cygwin\home\pje\PEAK\src/peak/binding/_once.pyx", line 125, in _once.BaseDescriptor.usageError
     raise TypeError(
-TypeError: Once binding: mkNew was used in a type which does not support active
+TypeError: Binding was used in a type which does not support active
 bindings, but a valid attribute name was not supplied
 \end{verbatim}
 
@@ -490,20 +490,20 @@ binding.Component} already.
 
 
 
-\subsubsection{\class{binding.Once} - The Basis for all Bindings}
+\subsubsection{\class{binding.Attribute} - The Basis for all Bindings}
 
-All PEAK bindings are created using the class \class{binding.Once}, or a
+All PEAK bindings are created using the class \class{binding.Attribute}, or a
 subclass thereof.  It provides the basic machinery needed to lazily compute an
 attribute "on-the-fly".  Here's a simple example of its use:
 
 \begin{verbatim%
 }class Car(binding.Component):
 
-    def height(self,instDict,attrName):
+    def height(self):
         baseHeight = self.roof.top - self.chassis.bottom
         return self.wheels.radius + baseHeight
 
-    height = binding.Once(height)
+    height = binding.Make(height)
 \end{verbatim}
 
 In this example, we want to compute the car's height based on various other
@@ -521,27 +521,27 @@ Note, by the way, that there's no need for this function passed to
 names.  If we continued the class above as follows:
 
 \begin{verbatim%
-}    verticalCenter = binding.Once(lambda s,d,a: s.height/2)
+}    verticalCenter = binding.Once(lambda self: self.height/2)
 \end{verbatim}
 
 This would be a perfectly valid way to express the idea that the car's vertical
 center is half of its height.  It's also true that we could say:
 
 \begin{verbatim%
-}    passengers = binding.Once(lambda s,d,a: {})
+}    passengers = binding.Once(lambda: {})
 \end{verbatim}
 
-as another way of saying \samp{binding.New(dict)}.  However, the
-\function{binding.New} function is more compact, and clearer as to intention.
-Of course, \function{binding.New} is actually implemented by creating a
-function and wrapping it in a \class{binding.Once} instance, in just the same
-way as we might do it ``by hand".
+as another way of saying \samp{binding.Make(dict)}.  However, using
+\samp{binding.Make(dict)} is more compact, and clearer as to intention.
 
-By the way, although we've been only showing uses of \class{binding.Once} with
-one argument (the function to be called), \class{binding.Once} does actually
+By the way, although we've been only showing uses of \class{binding.Make} with
+one argument (the function to be called), \class{binding.Make} does actually
 take other arguments, such as a default attribute name, an ``offer as"
 specification (more on this later) and a docstring.  Check out the PEAK
 API Reference or the source code for more details.
+
+
+
 
 
 
@@ -647,12 +647,53 @@ attribute.  This is useful for documenting your class so that tools like
 \citetitle{pydoc} and the Python \function{help} function will display the
 docstring for the attribute as part of the class' documentation.
 
-\item[\var{activateUponAssembly}] \hfill \\
-\var{activateUponAssembly} is a flag that indicates whether the attribute should
+\item[\var{uponAssembly}] \hfill \\
+\var{uponAssembly} is a flag that indicates whether the attribute should
 be computed when the object's \method{uponAssembly} method is called.  We
 haven't covered ``assembly events" yet, so don't worry about this one for now.
 
+
+
+\item[\var{adaptTo}] \hfill \\
+\var{adaptTo} is an interface that the attribute's computed value should be
+adapted to, before it is cached or set.  Since the adapt
+operation is done whenever the attribute is set, this effectively gives you
+built-in type checking and conversion for attributes.
+
+\item[\var{suggestParent}] \hfill \\
+\var{suggestParent} is a flag that indicates whether the referenced object
+should be informed that it is being attached to the referencing object,
+whenever the attribute is cached or set.  This allows components to
+automatically discover their parent component and component name, if they do
+not already know their parent.  By default, this flag is a true value, since
+most of the time you will want it to apply.  However, if you know that the
+value of the attribute will never be a component, or that it will be a
+component that should not treat your object as its parent, you can set this
+flag to a false value.
+
+\item[\var{noCache}] \hfill \\
+\var{noCache} is a flag that indicates the attribute's computed value should
+not be cached.  Note that this only stops the computed value from being
+stored: if you set the attribute, the value you set will be cached and reused
+until/unless the attribute is deleted.  Set this flag to a true value if you
+do not want the computed value cached.  (The default value is false.)
+(Note that if this flag is set, the \var{suggestParent} and \var{adaptTo}
+keywords will only affect setting the attribute, not computing it, since the
+value is not cached.)
+
+\item[\var{permissionNeeded}] \hfill \\
+\var{permissionNeeded} is either a \class{peak.security.IAbstractPermission},
+or \samp{None}.  This is a convenience feature for use with the
+\module{peak.security} package, so we won't deal further with it here.
+
 \end{description}
+
+
+
+
+
+
+
 
 \subsubsection{Basic Binding Classes/Functions}
 
@@ -660,75 +701,34 @@ The following functions and classes can be used as-is to create attribute
 bindings, or you can subclass the classes to create custom binding types
 of your own:
 
-\begin{funcdesc}{Once}{func, attrName=None, offerAs=(), doc=None, activateUponAssembly=False}
+\begin{funcdesc}{Make}{recipe, **keywords}
 The most basic of all binding types, the \class{binding.Once} class requires
 only a callable object such as a function or lambda.  If you don't supply an
 \var{attrName}, the \samp{__name__} attribute of the \var{func} parameter is
 used, if available.  Similarly, if you don't supply a \var{doc}, the
 \samp{__doc__} attribute of the \var{func} parameter is used, if available.
-\end{funcdesc}
 
-\begin{funcdesc}{New}{obtype, attrName=None, offerAs=(), doc=None,
-activateUponAssembly=False}
-As we've already seen, the \function{binding.New} function just needs a class or
-type object as its \var{obtype} parameter, and it creates a new instance of that
-type.
+As we've already seen, the \function{binding.Make} function just needs a class
+or type object as its \var{obtype} parameter, and it creates a new instance of
+that type.
 
-\function{binding.New} will also accept a string for its \var{obtype} parameter,
-in which case it will interpret the string as an \strong{import specification},
-using the \function{peak.util.imports.importString} function to load it.  We'll
-talk more about import specifications in the chapter on the
+\function{binding.Make} will also accept a string for its \var{recipe}
+parameter, in which case it will interpret the string as an \strong{import
+specification}, using the \function{peak.util.imports.importString} function to
+load it.  We'll talk more about import specifications in the chapter on the
 \module{peak.config} package.
 \end{funcdesc}
 
-\begin{funcdesc}{Copy}{obj, attrName=None, offerAs=(), doc=None, activateUponAssembly=False}
-The \function{binding.Copy} function does just what it says.  When accessed, it
-will create a copy of its \var{obj} parameter, using the \function{copy}
-function from the Python standard library's \module{copy} module.
-\end{funcdesc}
-
-
-
-
-
-
-
-
-
-\begin{funcdesc}{bindToSelf}{attrName=None, offerAs=(), doc=None}
-This one is pretty self-explanatory, no pun intended.  This class supplies
-the owning object itself as an instance attribute.  What good is that?  Well,
-it's handy for objects that provide default support for various interfaces
-in the absence of an object to delegate the implementation to.  The object
-can refer to \samp{self.delegateForInterfaceX.someMethod()}, and have the
-\samp{delegateForInterfaceX} attribute be a \class{binding.bindToSelf}
-instance by default.
-\end{funcdesc}
-
-\begin{funcdesc}{requireBinding}{description="", attrName=None, offerAs=(),
-doc=None}
-The \function{binding.requireBinding} class is the odd one out in this group.
+\begin{funcdesc}{Require}{description, **keywords}
+The \function{binding.Require} class is the odd one out in this group.
 It doesn't compute a value at all!  Instead, it raises an error when the
 attribute is accessed.  This is so that you can easily define an attribute that
 you expect a subclass or instance to provide, and thus get a clearer error
 message if the expected attribute is never defined.
 \end{funcdesc}
 
-
+XXX Need Obtain and Delegate here as well.
 \newpage
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -755,7 +755,7 @@ important.  Let's look at an example:
             print "I'm moving at %d mph" % self.getParentComponent().speed
 
 >>> class Car(binding.Component):
-        wheel = binding.New(Wheel)
+        wheel = binding.Make(Wheel)
         speed = 50
 
 
@@ -767,7 +767,7 @@ I'm moving at 50 mph
 The \class{binding.Component} class defines two methods for dealing with parent
 components: \function{getParentComponent} and \function{setParentComponent}.
 \function{setParentComponent} is automatically called for you when you
-create an instance via \function{binding.New}, which is why our \class{Wheel}
+create an instance via \function{binding.Make}, which is why our \class{Wheel}
 instance above was able to access its parent component with \function{%
 getParentComponent}.  Let's look at a slightly different version of that
 example:
@@ -781,10 +781,10 @@ example:
 }>>> class Wheel(binding.Component):
         def spin(self):
             print "I'm moving at %d mph" % self.speed
-        speed = binding.bindTo('../speed')
+        speed = binding.Obtain('../speed')
 
 >>> class Car(binding.Component):
-        wheel = binding.New(Wheel)
+        wheel = binding.Make(Wheel)
         speed = 50
 
 >>> c = Car()
@@ -831,7 +831,7 @@ continuing the previous example above:
 <__main__.Car object at 0x00F7BCB0>
 
 >>> class Transport(Car):
-        cargo = binding.New(Car)
+        cargo = binding.Make(Car)
 
 >>> t=Transport()
 >>> print t
@@ -1006,22 +1006,22 @@ The \class{binding.IComponentFactory} interface is a good example of this.
 constructors work - at least if they're to be supported by \module{%
 peak.binding}!
 
-You may recall that we said earlier that component constructors accept their
-parent component as the first argument.  But we didn't say what other
-arguments they took, or how it was that many objects in our examples wound up
-with parents even though we never supplied any arguments to their constructors.
-Well, we're about to see how that works.
+%XXX This needs serious re-working...
+%You may recall that we said earlier that component constructors accept their
+%parent component as the first argument.  But we didn't say what other
+%arguments they took, or how it was that many objects in our examples wound up
+%with parents even though we never supplied any arguments to their constructors.
+%Well, we're about to see how that works.
 
-When a \function{binding.New} binding is activated, it checks to see if
-its \var{obtype} parameter provides \class{IComponentFactory}.  If so,
-it knows that the constructor accepts the appropriate parameters, and supplies
-them when constructing the new instance.  If the \var{obtype} parameter
-doesn't provide \class{IComponentFactory}, it's simply called without any
-parameters.
+%When a \function{binding.Make} binding is activated, it checks to see if
+%its \var{obtype} parameter provides \class{IComponentFactory}.  If so,
+%it knows that the constructor accepts the appropriate parameters, and supplies
+%them when constructing the new instance.  If the \var{obtype} parameter
+%doesn't provide \class{IComponentFactory}, it's simply called without any
+%parameters.
 
 Let's take a look at the \class{binding.IComponentFactory} interface in more
 detail.
-
 
 \begin{verbatim%
 }class IComponentFactory(Interface):
