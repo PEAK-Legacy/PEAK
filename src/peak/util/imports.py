@@ -132,7 +132,7 @@ def lazyModule(modname, relativePath=None):
             if '.' in modname:
                 # ensure parent is in sys.modules and parent.modname=self
                 splitpos = modname.rindex('.')
-                mod = importString(modname[:splitpos]+':')
+                mod = importString(modname[:splitpos])
                 setattr(mod,modname[splitpos+1:],self)
                 
             oldGA = LazyModule.__getattribute__
