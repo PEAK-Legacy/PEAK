@@ -24,13 +24,11 @@
 """        
 
 from peak.api import *
-from peak.util.SOX import Node, Document, load
-from kjbuckets import kjGraph
-import peak.model.api
+from peak.util import SOX
+from Persistence.PersistentList import PersistentList
+from weakref import WeakValueDictionary
 
-__bases__ = peak.model.api,
-
-
+__bases__ = model,
 
 
 
@@ -39,100 +37,118 @@ __bases__ = peak.model.api,
 
 
 
-class XMINode(Node):
 
-    _acquiredAttrs = 'factory','target'
 
-    def _finish(self):
-        idref=getattr(self,'xmi.idref',None)
-        if idref: return self.factory.get(idref)
-    
+class XMINode(object):
 
-class XMIJunk(XMINode):
+    indexAttrs = 'xmi.uuid', 'xmi.id'
+
+    __slots__ = [
+        '_name','subNodes','allNodes','attrs','index','document',
+        '__weakref__','parent','isExtension',
+    ]
+
+
+    def __init__(self,name='',atts={}):
+        self._name = name
+        self.attrs = dict(atts.items())
+        self.subNodes = []
+        self.allNodes = []
+        self.isExtension = (self._name=='XMI.extension')
+
+    def _acquireFrom(self, parent):
+        self.index = parent.index
+        self.document = parent.document
+        self.parent = parent
+        
+
+    def _addNode(self,name,node):
+        self.allNodes.append(node)
+        self.subNodes.append(node)
 
     def _newNode(self,name,atts):
-        if name=='XMI.content':
-            return XMIElement(name,atts)
-        else:
-            return XMIJunk(name,atts)
-            
+        return self.__class__(name,atts)
+        
+    def _addText(self,text):
+        self.allNodes.append(text)
+
     def _finish(self):
+        atts = self.attrs
+        for a in self.indexAttrs:
+            if atts.has_key(a):
+                self.index[(a,atts[a])] = self
         return self
 
 
-class XMIDocument(Document):
+    def getId(self):
+        atts = self.attrs
+        for a in self.indexAttrs:
+            if atts.has_key(a):
+                return (a,atts[a])
+        Id = None,id(self)
+        self.index[Id] = self
+        return Id
+
+    def getListId(self):
+        Id = id(self),
+        self.index[Id] = self
+        return Id
+        
+    def getRef(self):
+        atts = self.attrs
+        if 'xmi.uuidref' in atts:
+            return 'xmi.uuid', atts['xmi.uuidref']
+        if 'xmi.idref' in atts:
+            return 'xmi.id',  atts['xmi.idref']
+        #XXX need to check href for XMI 1.1
+        return self.getId()
+    
+    def getValue(self):
+        atts = self.attrs
+        if 'xmi.value' in atts:
+            return atts['xmi.value']
+        # XXX check for subnodes
+        return ''.join(self.allNodes)
+
+    def findNode(self,name):
+        if self._name==name:
+            return self
+        for node in self.subNodes:
+            f = node.findNode(name)
+            if f is not None:
+                return f
+
+
+
+
+class XMIDocument(binding.AutoCreated, XMINode):
+
+    index = binding.New(WeakValueDictionary)
+    attrs = binding.New(dict)
+    subNodes = allNodes = binding.New(list)
+    _name = None
+    parent = None
+    
+    document = binding.bindToSelf()
+
+
+    def version(self,d,a):
+        return self.attrs['xmi.version']
+
+    version = binding.Once(version)
+
 
     def _newNode(self,name,atts):
-        return XMIJunk(name,atts)
-
-    def _finish(self):
-        return self._findFirst('XMI.content')[0]._subNodes
-
-
-
-
-
-
-
-
-
-
-
-
-
-class XMIElement(XMINode):
-
-    def _newNode(self,name,atts):
-
-        if atts.has_key('xmi.id'):
-
-            key = atts['xmi.id']
-            element = self.factory.newItem(name,key)         # creating new Element
-            
-            if element is None:
-                return XMINode(name,atts)    # ignore unknown types
-                
-            return XMIElement(name,atts,target=element)
-
-        elif atts.has_key('xmi.idref'):
-        
-            key = atts['xmi.idref']
-            
-            if not self.factory.has_key(key):
-                self.factory.addForwardReference(key,self.target)
-                
-            return XMINode(name,atts)
-
-
-        # Otherwise, it's a feature
-        
-        newTarget = self.factory.getSubtarget(self.target,name)
-        
-        if newTarget is not None:
-            return XMIElement(name,atts,target=newTarget)
-        else:
-            return XMINode(name,atts)    # ignore unknown features
+        return XMINode(name,atts)
 
 
     def _finish(self):
-        return self.target._fromXMI(self)
 
+        self.index[()] = root = self.findNode('XMI.content')
 
-
-
-
-class FeatureTarget:
-
-    def __init__(self, element, featureName):
-        self.element = element
-        self.feature = getattr(self.element.__class__,featureName)
-        #self._XMIMap = self.feature._XMIMap
-
-    def addItem(self, obj):
-        self.feature.add(self.element,obj)
-
-    def _fromXMI(self, node):
-        return self.feature._fromXMI(self.element, node)
+        for sub in root.subNodes:
+            sub.parent = None
+        return self
 
 
 
@@ -146,62 +162,87 @@ class FeatureTarget:
 
 
 
+class XMI_DM(storage.EntityDM):
+
+    resetStatesAfterTxn = False
+
+    index = binding.bindTo('document/index')
+
+    metamodel = binding.requireBinding("Metamodel with _XMIMap")
+
+    document = binding.requireBinding("XMIDocument with data to use")
 
 
+    def ghost(self, oid, state=None):
+        if len(oid)<2:
+            return PersistentList()
+        klass = self.getClass(self.index[oid]._name)
+        return klass()
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-class XMIFactory:
-
-    def __init__(self,rootService):
-        self.rootService = rootService
-        self.contents = {}
-        self.forwards = kjGraph()
+    def getClass(self,name):
+        return getattr(self.metamodel,self.metamodel._XMIMap[name]) # XXX
         
-    def __getitem__(self,key):      return self.contents[key]
-    def get(self,key,default=None): return self.contents.get(key,default)
-    def has_key(self,key):          return self.contents.has_key(key)
 
-    def addForwardReference(self,key,target):
-        self.forwards.add(key,target)
-
-    def newItem(self,typeName,key):
-
-        typeName = getattr(self.rootService,'_XMIMap',{}).get(typeName)
-        if not typeName: return None
+    def getFeature(self,klass,name):
+        return getattr(klass,klass._XMIMap.get(name,''),None)  # XXX
         
-        element = self.rootService.newElement(typeName)
-        self.contents[key]=element
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    def load(self, oid, ob):
         
-        # Fix up any outstanding forward references
-        forwards = self.forwards
-        if forwards.has_key(key):
-            for obj in forwards.neighbors(key):
-                obj.addItem(element)
-            del forwards[key]
+        target = self.index[oid]
 
-        return element
+        if len(oid)<2:
+            return { 'data':
+                [self[node.getRef()]
+                    for node in target.subNodes if not node.isExtension
+                ]
+            }
+        
+        d = {}; klass = ob.__class__
+        
+        for node in target.subNodes:
 
-    def getSubtarget(self,target,name):
-        featureName = getattr(target,'_XMIMap',{}).get(name)  
-        if not featureName: return None
+            if node.isExtension:
+                continue
 
-        if isinstance(target,FeatureTarget):
-            return getattr(target,featureName)
-        else:
-            return FeatureTarget(target,featureName)
+            f = self.getFeature(klass, node._name)
+            if f is None:
+                continue
 
+            if model.IValue.isImplementedBy(f):
+                d[f.attrName] = node.getValue()
+            else:
+                d[f.attrName] = self[node.getListId()]
+
+        coll = target.parent
+        if coll is None: return d
+        owner = coll.parent
+        if owner is None: return d
+        owner = self[owner.getRef()]
+        f = self.getFeature(owner.__class__, coll._name)
+        other = f.referencedEnd
+
+        if other:
+            d['__xmi_parent_attr__'] = pa = getattr(klass,other).attrName
+            d[pa] = [owner]
+
+        return d
 
 class XMIMapMaker_Meta(type):
 
@@ -225,59 +266,18 @@ class XMIMapMaker:
     __metaclass__ = XMIMapMaker_Meta
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-class StructuralFeature:
-
-    def _fromXMI(feature,element,node):
-    
-        v = getattr(node,'xmi.value',None)
-        if v is not None:
-            feature.set(element, v)
-        elif node._subNodes:
-            feature.set(element, node._subNodes[0])
-        elif node._allNodes:
-            feature.set(element, ''.join(node._allNodes))
-        else:
-            return node
-
-
 class Classifier(XMIMapMaker):
-
-    def _fromXMI(self,node):
-        return self
+    pass
 
 
 
-class Reference:
-    def _fromXMI(feature,element,node):
-        for n in node._subNodes:
-            feature.set(element,n)
 
 
-class Collection:
-    def _fromXMI(feature,element,node):
-        add = feature.add
-        val = feature.get(element)
-        for node in node._subNodes:
-            if node not in val: add(element,node)
+
+
+
+
+
 
 
 
@@ -287,19 +287,13 @@ class Collection:
 
 class App(XMIMapMaker):
 
-    def _fromXMI(self,node):
-        return node
+    class __DM(XMI_DM):
+        metamodel = binding.bindToParent()
+        document  = XMIDocument
 
-
-    def _XMIroot(self,*args,**kw):
-        document = apply(XMIDocument,args,kw)
-        document.factory = XMIFactory(self)
-        document.target = self
-        return document
-
-
-    def importFromXMI(self,filename_or_stream):
-        return load(filename_or_stream, self._XMIroot())
+    def importFromXMI(self,filename_or_stream):   
+        SOX.load(filename_or_stream, self.__DM.document)
+        return self.__DM[()]
 
 
 config.setupModule()
