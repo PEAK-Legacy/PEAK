@@ -8,7 +8,7 @@ from peak.storage.interfaces import ISQLConnection
 __all__ = [
     'titleAsPropertyName', 'titleAsMethodName', 'DocumentProcessor',
     'AbstractProcessor', 'MethodChecker', 'ModelChecker', 'SQLChecker',
-    'RecordChecker', 'ActionChecker', 'Summary'
+    'RecordChecker', 'ActionChecker', 'Summary', 'RollbackProcessor',
 ]
 
 
@@ -65,19 +65,26 @@ class DocumentProcessor(binding.Component):
     )
 
     def processDocument(self,document):
-        self.processTables( iter(document.tables) )
-
+        self.setUp()
+        try:
+            self.processTables( iter(document.tables) )
+        finally:
+            self.tearDown()
+            
     def processTables(self,tables):
         for table in tables:
             self.processTable(table, tables)
+
+
+
+
+
 
     def processTable(self,table, tables):
         """Delegate to 'ITableProcessor' specified by table's first cell"""
         self.getProcessor(
             table.rows[0].cells[0].text
         ).processTable(table,tables)
-
-
 
 
     def getProcessor(self,text):
@@ -89,29 +96,22 @@ class DocumentProcessor(binding.Component):
         return processor
 
 
+    def setUp(self):
+        pass
+
+    def tearDown(self):
+        pass
 
 
+class RollbackProcessor(DocumentProcessor):
 
+    """Process document as a transaction, rolling it back at the end"""
 
+    def setUp(self):
+        storage.beginTransaction(self)
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    def tearDown(self):
+        storage.abortTransaction(self)
 
 
 
