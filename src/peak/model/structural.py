@@ -17,7 +17,7 @@ from method_exporter import MethodExporter
 
 
 __all__ = [
-    'Package', 'Model', 'FeatureMC',
+    'Immutable', 'Namespace', 'Package', 'Model', 'FeatureMC',
     'StructuralFeature', 'Field', 'Collection', 'Reference', 'Sequence',
     'Classifier','PrimitiveType','Enumeration','DataType',
     'DerivedAssociation',
@@ -39,33 +39,33 @@ __all__ = [
 
 
 
-def _XMIMap(self,d,a):
+class Namespace(binding.Base):
 
-    xm = {}
+    def _XMIMap(self,d,a):
 
-    for m in binding.getInheritedRegistries(self,'_XMIMap'):
-        xm.update(m)
+        xm = {}
 
-    for k,v in self.__class_descriptors__.iteritems():
+        for m in binding.getInheritedRegistries(self,'_XMIMap'):
+            xm.update(m)
+
+        for k,v in self.__class_descriptors__.iteritems():
         
-        for n in getattr(v,'_XMINames',()):
+            for n in getattr(v,'_XMINames',()):
 
-            xm[n] = k
+                xm[n] = k
 
-            while '.' in n:
-                n = n.split('.',1)[1]
-                xm[n]=k
+                while '.' in n:
+                    n = n.split('.',1)[1]
+                    xm[n]=k
 
-    return xm
+        return xm
 
-_XMIMap = binding.Once(_XMIMap)
+    _XMIMap = binding.classAttr(binding.Once(_XMIMap))
 
 
-class Package(binding.Base):
+class Package(Namespace):
 
     """Package of Element Classes"""
-
-    _XMIMap = binding.classAttr(_XMIMap)
 
 
 class Model(Package):
@@ -166,15 +166,19 @@ class StructuralFeature(object):
 
     __metaclass__ = FeatureMC
 
-    isDerived     = 0
-    isRequired    = 0
+    isDerived     = False
+    isRequired    = False
+
+    isOrdered     = False
+    isChangeable  = True    # default is to be changeable
+
     lowerBound    = 0
     upperBound    = None    # None means unbounded upper end
 
-    isOrdered     = 0
-    isChangeable  = 1       # default is to be changeable
+    isMany     = binding.classAttr(binding.Once(lambda s,d,a: s.upperBound<>1))
+    isRequired = binding.classAttr(binding.Once(lambda s,d,a: s.lowerBound >0))
 
-    referencedEnd = None    # and without an 'other end'
+    referencedEnd  = None    # and without an 'other end'
     referencedType = None
     defaultValue   = None
 
@@ -195,10 +199,6 @@ class StructuralFeature(object):
         element._delBinding(feature.attrName)
 
     config.setupObject(delete, verb='delattr')
-
-
-
-
 
 
 
@@ -449,12 +449,13 @@ class Sequence(Collection):
 
 
 
-class Classifier(binding.Base):
+class Classifier(Namespace):
 
     """Basis for all flavors"""
 
-    _XMIMap = binding.classAttr(_XMIMap)
-    
+
+class Immutable(Classifier):
+
     def setParentComponent(self, parentComponent, componentName=None):
         if parentComponent is not None or componentName is not None:
             raise TypeError("Data values are not components")
@@ -472,7 +473,7 @@ class Classifier(binding.Base):
         raise TypeError("Immutable object", self)
 
 
-class PrimitiveType(Classifier):
+class PrimitiveType(Immutable):
 
     """A primitive type (e.g. Boolean, String, etc.)"""
 
@@ -489,8 +490,7 @@ class PrimitiveType(Classifier):
 
 
 
-
-class Enumeration(Classifier):
+class Enumeration(Immutable):
 
     """An enumeration type"""
 
@@ -531,7 +531,7 @@ class Enumeration(Classifier):
 
 
 
-class DataType(Classifier):
+class DataType(Immutable):
 
     """A complex datatype"""
 
