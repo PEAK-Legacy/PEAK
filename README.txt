@@ -31,7 +31,7 @@ PEAK Release 0.5 alpha 1
     from TransWarp, and repackages them as an enterprise software toolkit.
     Where TransWarp emphasized techniques like generative programming and 
     aspect-oriented programming, PEAK emphasizes enterprise applications,
-    and hides the computer scienece stuff "under the hood", so you can focus
+    and hides the computer science stuff "under the hood", so you can focus
     on building your application.
 
     PEAK tools can be used with other "Python Enterprise" frameworks such as
