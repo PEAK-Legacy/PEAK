@@ -3,8 +3,8 @@
 from peak.api import *
 
 from interfaces import *
-from structural import PrimitiveTypeClass, PrimitiveType, HashAndCompare
-
+from structural import PrimitiveTypeClass, PrimitiveType
+from peak.util.hashcmp import HashAndCompare
 
 __all__ = [
     'enum', 'enumDict', 'enums', 'Enumeration'
