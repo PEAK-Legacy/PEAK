@@ -122,7 +122,7 @@ class ChildProcess(binding.Component):
 
 
     def close(self):
-        self.signalManager.removeHandler(self)
+        self._delBinding('waitForSignals')
 
 
     def sendSignal(self, signal):
