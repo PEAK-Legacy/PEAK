@@ -1,5 +1,14 @@
 Fixes and Enhancements since Version 0.5 alpha 1
 
+ - Added 'binding.metamethod()' wrapper for metaclass methods that might
+   not be accessible from their instances if the instances (classes) also
+   defined the method for *their* instances.  You must now use this wrapper
+   on any such metaclass-defined methods, as PEAK no longer works around
+   this via the 'x.__class__.foo(x,...)' trick that was used previously.
+   In particular, if you have metaclass definitions of 'getParentComponent',
+   '_getConfigData', 'getComponentName', or 'notifyUponAssembly', you need
+   to wrap them with 'binding.metamethod' now.
+
  - Fixed 'mof2py' generator script not working
 
  - Fixed model.Element not getting parent component set when passed as a

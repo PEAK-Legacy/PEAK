@@ -6,12 +6,16 @@ from peak.util.EigenData import EigenRegistry
 from peak.util.imports import importObject, importString
 from interfaces import IComponentFactory
 from _once import *
+from types import FunctionType
 
 __all__ = [
     'Once', 'New', 'Copy', 'Activator', 'ActiveClass', 'ActiveClasses',
-    'getInheritedRegistries', 'classAttr', 'Singleton',
+    'getInheritedRegistries', 'classAttr', 'Singleton', 'metamethod',
 ]
 
+def metamethod(func):
+    """Wrapper for metaclass method that might be confused w/instance method"""
+    return property(lambda ob: func.__get__(ob))
 
 def getInheritedRegistries(klass, registryName):
 
@@ -32,10 +36,6 @@ def getInheritedRegistries(klass, registryName):
             reg = getattr(b,registryName,NOT_FOUND)
             if reg is not NOT_FOUND:
                 yield reg
-
-
-
-
 
 
 
@@ -251,7 +251,6 @@ class Activator(type):
     __name__ = 'Activator'    # trick to make instances' __name__ writable
 
     __class_descriptors__ = {}
-
     __all_descriptors__ = {}
 
     def __new__(meta, name, bases, cdict):
@@ -285,11 +284,12 @@ class Activator(type):
         klass.__name__ = name
 
 
+
         d = klass.__class_descriptors__ = {}
 
         for k in class_descr:
             v = cdict[k]
-            d[k] = v.__class__.activate(v,klass,k)
+            d[k] = v.activate(klass,k)
 
         ad = {}
         map(ad.update, getInheritedRegistries(klass, '__all_descriptors__'))
@@ -346,11 +346,25 @@ class ActiveClass(Activator):
     def getParentComponent(self):
         return self.__parent__[0]
 
+    getParentComponent = metamethod(getParentComponent)
+
+
     def getComponentName(self):
         return self.__cname__
 
+    getComponentName = metamethod(getComponentName)
+
+
     def _getConfigData(self, forObj, configKey):
         return NOT_FOUND
+
+    _getConfigData = metamethod(_getConfigData)
+
+
+
+
+
+
 
 
     def __parent__(self,d,a):
@@ -385,20 +399,6 @@ def supertype(supertype,subtype):
             return mro.next()
     else:
         raise TypeError("Not sub/supertypes:", supertype, subtype)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

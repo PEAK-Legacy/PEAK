@@ -90,7 +90,7 @@ def getParentComponent(component):
     """Return parent of 'component', or 'None' if root or non-component"""
 
     try:
-        gpc = component.__class__.getParentComponent
+        gpc = component.getParentComponent
 
     except AttributeError:
 
@@ -99,7 +99,7 @@ def getParentComponent(component):
             if m: return importString(m)
 
     else:
-        return gpc(component)
+        return gpc()
 
 
 def getComponentName(component):
@@ -107,7 +107,7 @@ def getComponentName(component):
     """Return name of 'component', or 'None' if root or non-component"""
 
     try:
-        gcn = component.__class__.getComponentName
+        gcn = component.getComponentName
 
     except AttributeError:
 
@@ -115,7 +115,7 @@ def getComponentName(component):
             return component.__name__.split('.')[-1]
 
     else:
-        return gcn(component)
+        return gcn()
 
 
 
@@ -141,7 +141,7 @@ def notifyUponAssembly(parent,child):
     """Call 'child.uponAssembly()' as soon as 'parent' knows all its parents"""
 
     try:
-        nua = parent.__class__.notifyUponAssembly
+        nua = parent.notifyUponAssembly
 
     except AttributeError:
 
@@ -153,7 +153,7 @@ def notifyUponAssembly(parent,child):
             notifyUponAssembly(parent,child)
 
     else:
-        nua(parent,child)
+        nua(child)
 
 
 
