@@ -454,6 +454,8 @@ class Field(StructuralFeature):
     __class_implements__ = IValue    
     upperBound = 1
 
+    def _getList(feature, element):
+        return [feature.get(element)]
 
 class Collection(StructuralFeature):
 
