@@ -2,8 +2,6 @@ Open Issues/To-Do Items
 
  Short Term Project Support
 
-    * Add "performance monitoring" subsystem to 'peak.running'
-
     * Add support for finding/registering plugins to 'peak.config'
 
       - Refactor IConfigKey to support explicit "namespace" concept
@@ -36,6 +34,8 @@ Open Issues/To-Do Items
     * peak.storage
 
       - 'storage.dbType()'
+
+
 
 
 

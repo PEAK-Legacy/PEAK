@@ -4,6 +4,7 @@ from peak.tests import testRoot
 from peak.running.tests import TestClock
 from peak.running import timers
 
+
 class TestApp(binding.Component):
 
     log = binding.Require("function to call with event data")
@@ -19,14 +20,13 @@ class TestApp(binding.Component):
         offerAs=['peak.running.timers.cpu']
     )
 
-    timerSvc = binding.Make('peak.running.timers:TimerService')
+    timerSvc = binding.Make(
+        'peak.running.timers:TimerService', offerAs=[timers.ITimerService]
+    )
+
+    parseURL = naming.parseURL
 
 
-def iif(cond,t,f):
-    if cond:
-        return t
-    else:
-        return f
 
 
 
@@ -46,9 +46,11 @@ class ServiceTests(TestCase):
         self.expectedLog = []
         self.app = TestApp(testRoot(), log = [].append)
         self.getTimer = self.app.timerSvc.getTimer
+        self.addListener = self.app.timerSvc.addListener
 
     def tearDown(self):
         self.assertEqual(self.log, self.expectedLog)
+
 
     def testBasicGets(self):
 
@@ -69,10 +71,49 @@ class ServiceTests(TestCase):
         # different timers for different names
         self.failIf(timer1 is timer2)
 
-        # invalid name error for invalid name
-        self.assertRaises(exceptions.InvalidName, self.getTimer, 'foo bar')
-        self.assertRaises(exceptions.InvalidName, self.getTimer, 'foo?')
-        self.assertRaises(exceptions.InvalidName, self.getTimer, 'foo.*')
+
+
+
+
+
+
+
+
+
+    def testInvalidTimerNames(self):
+
+        # verify that we get invalid name errors for invalid names, anywhere
+
+        invalid = exceptions.InvalidName
+        self.assertRaises(invalid, self.getTimer, 'foo bar')
+        self.assertRaises(invalid, self.getTimer, 'foo?')
+        self.assertRaises(invalid, self.getTimer, 'foo.*')
+
+        l = lambda *args: None
+        self.assertRaises(invalid, self.addListener,'foo bar',l)
+        self.assertRaises(invalid, self.addListener,'foo?', l)
+
+        self.assertRaises(invalid, self.app.parseURL, 'timer:foo.*')
+        self.assertRaises(invalid, self.app.parseURL, 'timer:foo bar')
+        self.assertRaises(invalid, self.app.parseURL, 'timer:foo?')
+        self.assertRaises(invalid, self.app.parseURL, 'timer:')
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -89,7 +130,7 @@ class ServiceTests(TestCase):
         # * resume() events get an intermediate snapshot of accumulated time
         # * resumed timers have correct time (for 1 resumption)
         # * notifications occur outside the measured time period
-        # * listeners are called in the order they're added (BAD!)
+        # * listeners are called in the order they're added (XXX bad?)
         # * time measurements are correct, and only given by stop/resume calls
 
         cases = [
@@ -162,7 +203,13 @@ class ServiceTests(TestCase):
 
 
 
-    def testTimerStateMachine(self):
+    def listener(self,service,key,event,info,elapsed=None,processor=None):
+        self.log.append((event,info,elapsed,processor))
+
+    def expect(self,event,info,elapsed=None,processor=None):
+        self.expectedLog.append((event,info,elapsed,processor))
+
+    def verifyTimerStateMachine(self, timer):
 
         # Verify that only allowed invocation sequences are:
         #   reset* -> start/resume -> addInfo* -> stop -> ...
@@ -175,14 +222,7 @@ class ServiceTests(TestCase):
         # event mask receives all events, and that reset and resume work
         # correctly w/respect to timing and information recorded.
 
-        def listener(service,key,event,info,elapsed=None,processor=None):
-            self.log.append((event,info,elapsed,processor))
-
-        def expect(event,info,elapsed=None,processor=None):
-            self.expectedLog.append((event,info,elapsed,processor))
-
-        timer = self.getTimer('state.test')
-        timer.addListener(listener,None)
+        expect = self.expect
 
         self.assertRaises(timers.TimerStateError, timer.stop)
         self.assertRaises(timers.TimerStateError, timer.addInfo)
@@ -202,6 +242,7 @@ class ServiceTests(TestCase):
 
         self.assertRaises(timers.TimerStateError, timer.stop)
         self.assertRaises(timers.TimerStateError, timer.addInfo)
+
 
         timer.reset()
         expect('reset',{})
@@ -244,43 +285,84 @@ class ServiceTests(TestCase):
 
 
 
+    def testDirectListener(self):
+        # Verify that state machine is correct with a direct listener
+        timer = self.getTimer('test.state-machine')
+        timer.addListener(self.listener,None)
+        self.verifyTimerStateMachine(timer)
+
+
+    def testPlainIndirectPreListener(self):
+        # Verify that state machine is correct with an indirect,
+        # non-wildcard listener, added before the timer is created
+        testName = 'test.indirect.plain.pre'
+        self.addListener(testName,self.listener,None)
+        self.verifyTimerStateMachine( self.getTimer(testName) )
+
+
+    def testPlainIndirectPostListener(self):
+        # Verify that state machine is correct with an indirect,
+        # non-wildcard listener, added after the timer is created
+        testName = 'test.indirect.plain.post'
+        timer = self.getTimer(testName)
+        self.addListener(testName,self.listener,None)
+        self.verifyTimerStateMachine(timer)
+
+
+    def testWildcardIndirectPreListener(self):
+        # Verify that state machine is correct with an indirect
+        # wildcard listener, added before the timers are created
+        pre = 'test.indirect.wildcard.pre.'
+        self.addListener(pre+'*',self.listener,None)
+        for suffix in 'one','two','three':
+            self.verifyTimerStateMachine( self.getTimer(pre+suffix) )
+
+    def testWildcardIndirectPostListener(self):
+        # Verify that state machine is correct with an indirect
+        # wildcard listener, added after the timers are created
+        pre = 'test.indirect.wildcard.post.'
+        timers = [self.getTimer(pre+suffix) for suffix in 'one','two','three']
+        self.addListener(pre+'*',self.listener,None)
+        map(self.verifyTimerStateMachine, timers )
+
+
     def testValidEventNames(self):
 
-        timer = self.getTimer('names.test')
+        # Verify that ITimer.eventNames are accepted by all
+        # listener-registration methods, and that invalid
+        # event names are rejected
 
-        for goodName in 'start stop resume reset addInfo'.split():
-            timer.addListener(lambda *args: None, [goodName])
+        l = lambda *args: None
+
+        testName = 'test.event-names'
+
+        timer = self.getTimer(testName)
+
+        for goodName in timers.ITimer.eventNames:
+            timer.addListener(l, [goodName])
+            self.addListener(testName, l, [goodName])
+            self.addListener('test.*', l, [goodName])
 
         for badName in 'foo bar baz'.split():
             self.assertRaises(
                 exceptions.InvalidName,
-                timer.addListener, lambda *args: None, [badName]
+                timer.addListener, l, [badName]
+            )
+            self.assertRaises(
+                exceptions.InvalidName,
+                self.addListener, testName, l, [badName]
+            )
+            self.assertRaises(
+                exceptions.InvalidName,
+                self.addListener, 'test.*', l, [badName]
             )
 
 
-    #def testIndirectListeners(self):
-        # Verify registration (normal & wildcard) before getTimer
-        # Verify registration (normal & wildcard) after getTimer
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    def testLookupByName(self):
+        # verify that 'timer:' URLs map to the same timer service
+        for name in 'nametest.1', 'nametest.two', 'nametest.iii':
+            timer = self.app.lookupComponent('timer:'+name)
+            self.failUnless(timer is self.getTimer(name))
 
 
 
