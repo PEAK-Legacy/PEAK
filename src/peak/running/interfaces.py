@@ -611,7 +611,7 @@ class IProcessProxy(Interface):
         """Is the process running? (not isFinished and not isStopped)"""
     )
 
-
+    def close(): """Stop monitoring this process"""
 
     exitStatus = Attribute(
         """Returncode of the process, if finished (WEXITSTATUS)"""

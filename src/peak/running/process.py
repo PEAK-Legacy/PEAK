@@ -113,8 +113,8 @@ class ChildProcess(binding.Component):
     def addListener(self,func):
         self.listeners.append(func)
 
-
-
+    def close(self):
+        self.signalManager.removeHandler(self)
 
 
 
@@ -183,7 +183,7 @@ class ChildProcess(binding.Component):
             self.exitedBecause is not None or self.exitStatus is not None
         )
         if self.isFinished:
-            self.signalManager.removeHandler(self)
+            self.close()
 
         self.isRunning = not self.isFinished and not self.isStopped
 
