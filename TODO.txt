@@ -18,24 +18,31 @@ Open Issues/To-Do Items
       * Update tutorial documentation
 
 
+ Ideas for 0.3 Release
+
+    Dispatching
+
+      * Virtual features to implement retrieving the other end of a
+        relationship from another Specialist.
+
+    SEF
+
+      * Persistent SEF module, with Base.__getstate__ supporting omission
+        of Once attributes, and DynamicBinding setting _p_changed on
+        instantiation.
+
+      * A way to generate Z3 Interfaces from Feature-based specifications?
 
 
+    Database
+
+      * Rack-like object to do persistent storage of Elements?
 
 
+    General
 
-
-
-
-
-
-
-
-
-
-
-
-
-
+      * Profiling and performance tuning of module inheritance and other
+        core features of API and SEF.
 
 
 
@@ -51,22 +58,15 @@ Open Issues/To-Do Items
       it can be used to resolve __metaclass__ conflicts during the first
       pass of importing a module (prior to running 'setupModule()')
 
-    * Test "advice" functionality, add more docs.
-
-
-  Database
-
-    * Create configurable caching mixins/plugins for time/size-limited
-      caching within Specialists
-
-    * Create virtual sequence classes to implement association collections
-
 
   Documentation/Tests/General
 
     * Create tutorials/examples based on actual uses
 
     * Include dependencies in packaging?  Need to ask copyright owners first.
+
+
+
 
 
 
