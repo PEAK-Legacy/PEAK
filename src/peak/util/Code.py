@@ -178,25 +178,25 @@ class Code(object):
         return codeIndex(self)
 
 
+    def append(self, op, arg=None):
+    
+        if isinstance(op,StringType): op = opcode[op]
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+        append = self.co_code.append
+        
+        if arg is not None:
+        
+            if (arg & 0xFFFF0000) not in (0xFFFF0000, 0):
+                append(EXTENDED_ARG)
+                append(arg>>16 & 255)
+                append(arg>>24 & 255)
+                
+            append(op)
+            append(arg & 255)
+            append(arg>>8 & 255)
+            
+        else:
+            append(op)
 
 
 
@@ -253,7 +253,7 @@ class codeIter(object):
     def __init__(self, codeObject, startAt=0, findOps=None):
         self.code = codeObject
         self.codeArray = codeObject.co_code
-        self.end = startAt
+        self.end = self.start = startAt
         self.setMask(findOps)
 
     def setMask(self,opList):
@@ -332,6 +332,7 @@ class codeIter(object):
     
         ca=self.codeArray
         start = self.start
+
         if arg is not None:
             bytes = [op, arg & 0xFF, (arg & 0xFF00)>>8]
             bl=3
@@ -361,7 +362,6 @@ class codeIter(object):
                 raise ValueError
 
             ca[self.start]=op
-
 
 
 
@@ -568,5 +568,4 @@ if __name__ == '__main__':
     foo = "it worked!"
     
     bar(); baz()
-
 
