@@ -41,6 +41,8 @@ def supertype(supertype,subtype):
 
 class Descriptor(BaseDescriptor):
 
+    permissionsNeeded = None    # IGuardedDescriptor; declared in peak.security
+
     def __init__(self,**kw):
 
         klass = self.__class__
@@ -72,8 +74,6 @@ def getInheritedRegistries(klass, registryName):
             reg = getattr(b,registryName,NOT_FOUND)
             if reg is not NOT_FOUND:
                 yield reg
-
-
 
 
 
@@ -250,12 +250,12 @@ class Attribute(Descriptor):
 
     protocols.advise(
         instancesProvide = [IActiveDescriptor]
-    )
+    )   # also IGuardedDescriptor; declared in peak.security
 
     offerAs = ()
     activateUponAssembly = False
     doc = None
-    adaptTo = None
+    adaptTo = permissionsNeeded = None
     suggestParent = True
 
     def activateInClass(self,klass,attrName):
@@ -268,6 +268,7 @@ class Attribute(Descriptor):
             computeValue = self.computeValue,
             ofClass      = self.ofClass,
             onSet        = self.onSet,
+            permissionsNeeded = self.permissionsNeeded
         )
 
 
@@ -283,7 +284,6 @@ class Attribute(Descriptor):
         if self.suggestParent:
             suggestParentComponent(obj, attrName, value)
         return value
-
 
     # The following methods only get called when an instance of this class is
     # used as a descriptor in a classic class or other class that doesn't

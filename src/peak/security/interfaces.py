@@ -1,10 +1,12 @@
-from peak.api import NOT_GIVEN
+from peak.api import NOT_GIVEN, protocols
 from protocols import Interface, Attribute
+from peak.util.imports import whenImported
+from types import FunctionType
 
 __all__ = [
     'IAuthorizedPrincipal', 'IInteraction', 'IAccessAttempt',
     'IAbstractPermission', 'IAbstractPermission', 'IPermissionChecker',
-    'IGuardedObject',
+    'IGuardedObject', 'IGuardedClass', 'IGuardedDescriptor',
 ]
 
 class IAccessAttempt(Interface):
@@ -27,8 +29,6 @@ class IAccessAttempt(Interface):
         user=NOT_GIVEN
     ):
         """Return true if 'user' has 'permisisonsNeeded' for 'subject'"""
-
-
 
 
 
@@ -106,12 +106,94 @@ class IAbstractPermission(IConcretePermission):
         """Return a subclass IConcretePermission for 'protectedObjectType'"""
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 class IGuardedObject(Interface):
 
     """Object that knows permissions needed to access subobjects by name"""
 
     def getPermissionsForName(name):
         """Return (abstract) permission types needed to access 'name'"""
+
+
+class IGuardedClass(Interface):
+
+    """Class that can accept permission declarations for its attributes"""
+
+    def declarePermissions(objectPerms=None, **namePerms):
+        """Declare permissions for named attributes"""
+
+    def getAttributePermissions(name):
+        """Return (abstract) permission types needed to access 'name'"""
+
+
+class IGuardedDescriptor(Interface):
+
+    """Descriptor that knows the permissions required to access it"""
+
+    permissionsNeeded = Attribute(
+        "Sequence of abstract permissions needed, or 'None' to keep default"
+    )
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+whenImported(
+    'peak.binding.once',
+    lambda once:
+        protocols.declareAdapter(
+            protocols.NO_ADAPTER_NEEDED,
+            provides = [IGuardedDescriptor],
+            forTypes = [once.Descriptor, once.Attribute]
+        )
+)
+
+protocols.declareAdapter(
+    # Functions can be guarded descriptors if they define 'permissionsNeeded'
+    lambda o,p: (getattr(o,'permissionsNeeded',None) is not None) and o or None,
+    provides = [IGuardedDescriptor],
+    forTypes = [FunctionType]
+)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

@@ -5,6 +5,7 @@ from interfaces import *
 
 from weakref import WeakKeyDictionary
 from protocols.advice import getFrameInfo, addClassAdvisor
+from types import ClassType
 
 __all__ = [
     'AccessAttempt', 'PermissionType', 'Permission', 'RuleSet',
@@ -12,73 +13,113 @@ __all__ = [
 ]
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-class NamePermissionsAdapter(object):
-    __slots__ = 'perms'
-
-    protocols.advise(
-        instancesProvide = [IGuardedObject]
-    )
-
-    def __init__(self,ob,proto):
-        self.perms = ob.__class__._peak_nameToPermissions_map
-
-    def getPermissionsForName(self,name):
-        return self.perms.get(name,())
-
-
 def allow(basePerms=None, **namesToPermLists):
 
     """Use in the body of a class to declare permissions for attributes"""
 
     def callback(klass):
-        if '_peak_nameToPermissions_map' not in klass.__dict__:
-            m = klass._peak_nameToPermissions_map = {}
-            map(m.update,
-                binding.getInheritedRegistries(
-                    klass,'_peak_nameToPermissions_map'
-                )
-            )
-        else:
-            # XXX check accidental overrides??
-            m = klass._peak_nameToPermissions_map
+        gc = adapt(klass,IGuardedClass)
+        gc.declarePermissions(basePerms,**namesToPermLists)
+        return klass
 
-        m.update(namesToPermLists)
-        if basePerms is not None:
-            m[None] = basePerms
+    addClassAdvisor(callback)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class GuardedClassAdapter(protocols.Adapter):
+
+    protocols.advise(
+        instancesProvide = [IGuardedClass],
+        asAdapterForTypes = [type, ClassType]
+    )
+
+    def nameToPermissionsMap(self, d, a):
+
+        klass = self.subject
+        if '_peak_nameToPermissions_map' in klass.__dict__:
+            return klass._peak_nameToPermissions_map
+
+        m = klass._peak_nameToPermissions_map = {}
+        map(m.update,
+            binding.getInheritedRegistries(
+                klass,'_peak_nameToPermissions_map'
+            )
+        )
+        for k,v in klass.__dict__.items():
+            v = adapt(v,IGuardedDescriptor,None)
+            if v is not None and v.permissionsNeeded is not None:
+                m[k] = v.permissionsNeeded
+
+        return m
+
+    nameToPermissionsMap = binding.Once(nameToPermissionsMap)
+
+    def getAttributePermissions(self, name):
+        """Return (abstract) permission types needed to access 'name'"""
+        return self.nameToPermissionsMap.get(name,())
+
+
+
+
+
+
+
+
+
+
+    def declarePermissions(self, objectPerms=None, **namePerms):
+
+        klass = self.subject
+
+        if hasattr(klass,'__subclasses__') and klass.__subclasses__():
+            raise TypeError(
+                "Can't change permissions on a class with subclasses", klass
+            )
+
+        m = self.nameToPermissionsMap
+
+        m.update(namePerms)
+        if objectPerms is not None:
+            m[None] = objectPerms
+
         protocols.declareAdapter(
             NamePermissionsAdapter, provides = [IGuardedObject],
             forTypes = [klass],
         )
-        return klass
 
-    addClassAdvisor(callback)
+
+class NamePermissionsAdapter(object):
+
+    __slots__ = 'getPermissionsForName'
+
+    protocols.advise(
+        instancesProvide = [IGuardedObject],
+        asAdapterForTypes = [binding.Component]
+    )
+
+    def __init__(self,ob,proto):
+        self.getPermissionsForName = adapt(
+            ob.__class__,IGuardedClass
+        ).getAttributePermissions
+
+
+
+
+
+
 
 class AccessAttempt(object):
 
@@ -193,7 +234,7 @@ class Interaction(binding.Component):
             elif name is None:
                 # Access w/out a name is okay for unprotected objects
                 # because none of their named attributes will be accessible!
-                return True     
+                return True
             else:
                 permissionsNeeded = ()
         for permType in permissionsNeeded:

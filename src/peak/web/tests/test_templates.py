@@ -22,16 +22,16 @@ class TestApp(web.Traversable):
     security.allow(
         foo = [security.Anybody],
         bar = [security.Anybody],
-        show = [security.Anybody],
     )
 
     foo = "The title"
 
     bar = 1,2,3
 
-    show = binding.requireBinding("Template to dump this out with")
-
-
+    show = binding.requireBinding(
+        "Template to dump this out with",
+        permissionsNeeded = [security.Anybody]
+    )
 
 
 
