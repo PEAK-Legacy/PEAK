@@ -8,37 +8,6 @@ from peak.running.process import AbstractProcessTemplate
 from busy import BusyProxy, BusyStarter
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 class FCGITemplateCommand(AbstractInterpreter):
 
     """Command to process a socket URL + a FastCGI command to run on it"""
@@ -46,21 +15,11 @@ class FCGITemplateCommand(AbstractInterpreter):
     def interpret(self, filename):
 
         stdin = self.lookupComponent(filename, adaptTo=IListeningSocket)
-        parent = self.getCommandParent()
 
         return FastCGITemplate(
             stdin=stdin,
-            command = self.getSubcommand(
-                Bootstrap,
-                parentComponent=parent,
-                componentName  =self.commandName,
-                stdin = stdin
-            )
+            command = self.getSubcommand(Bootstrap,stdin = stdin)
         )
-
-
-
-
 
 
 

@@ -2,6 +2,10 @@ Fixes and Enhancements since Version 0.5 alpha 2
 
  Changed, Enhanced, or Newly Deprecated Features
 
+ - Added properties to the command-line applications framework, allowing
+   non-command objects access to 'stdin', 'stdout', 'argv' etc. from their
+   context.
+
  - Added '[Named Services]' section parser to 'peak.ini'.  This new section
    type functions similarly to '[Component Factories]', except that
    the keys are property names rather than references to interfaces or other

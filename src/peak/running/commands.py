@@ -122,7 +122,6 @@ protocols.declareAdapter(
 
 
 class AbstractCommand(binding.Component):
-
     """Simple, commandline-driven process"""
 
     protocols.advise(
@@ -130,11 +129,12 @@ class AbstractCommand(binding.Component):
         classProvides    = [ICmdLineAppFactory]
     )
 
-    argv    = binding.Obtain('import:sys:argv')
-    stdin   = binding.Obtain('import:sys:stdin')
-    stdout  = binding.Obtain('import:sys:stdout')
-    stderr  = binding.Obtain('import:sys:stderr')
-    environ = binding.Obtain('import:os:environ')
+    argv    = binding.Obtain(ARGV,    offerAs=[ARGV])
+    stdin   = binding.Obtain(STDIN,   offerAs=[STDIN])
+    stdout  = binding.Obtain(STDOUT,  offerAs=[STDOUT])
+    stderr  = binding.Obtain(STDERR,  offerAs=[STDERR])
+    environ = binding.Obtain(ENVIRON, offerAs=[ENVIRON])
+    commandName = None
 
     def _run(self):
         """Override this in subclasses to implement desired behavior"""
@@ -195,11 +195,11 @@ define a usage message for their subclass.
         else:
             raise   # XXX is this really appropriate?
 
-
     def getCommandParent(self):
         """Get or create a component to be used as the subcommand's parent"""
         # Default is to use the interpreter as the parent
         return self
+
 
 
 
@@ -248,6 +248,10 @@ class AbstractInterpreter(AbstractCommand):
 
     """Creates and runs a subcommand by interpreting 'argv[1]'"""
 
+    subCmdArgs = binding.Make(
+        lambda self: self.argv[1:], offerAs=[ARGV]
+    )
+
     def _run(self):
         """Interpret argv[1] and run it as a subcommand"""
 
@@ -266,7 +270,7 @@ class AbstractInterpreter(AbstractCommand):
         """Same as for AbstractCommand, but with shifted 'argv'"""
 
         if 'argv' not in kw:
-            kw['argv'] = self.argv[1:]
+            kw['argv'] = self.subCmdArgs
 
         return super(AbstractInterpreter,self).getSubcommand(executable, **kw)
 
@@ -277,10 +281,6 @@ class AbstractInterpreter(AbstractCommand):
         return basename(self.argv[1])
 
     commandName = binding.Make(commandName)
-
-
-
-
 
 
 
@@ -356,9 +356,9 @@ class IniInterpreter(AbstractInterpreter):
             )
 
         # Now create and return the subcommand
-        return self.getSubcommand(executable,
-            parentComponent=cfg, componentName = self.commandName
-        )
+        return self.getSubcommand(executable,parentComponent=cfg)
+
+
 
 
 
@@ -804,7 +804,7 @@ class FastCGIAcceptor(binding.Component):
 
             try:
                 self.command.runCGI(i,o,e,dict(env))
-    
+
             finally:
                 self.finish()
                 self.ping()
@@ -928,16 +928,16 @@ to invoke it.
 
         if factory is ob:   # XXX ???
             ob = factory(self, 'cgi')
-            ob.argv = self.argv[1:]
 
         cgi = adapt(ob, IRerunnableCGI, None)
 
         if cgi is not None:
-            return self.getSubcommand(self.cgiWrapper, cgiCommand = cgi)
+            return self.cgiWrapper(self, cgiCommand = cgi, argv=self.argv[:1])
 
         raise InvocationError(
             "Can't convert", ob, "to CGI; found at", name
         )
+
 
 
 

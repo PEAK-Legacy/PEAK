@@ -5,9 +5,16 @@ import sys, os
 
 CLUSTER = PropertyName('peak.running.cluster')
 
+ARGV    = PropertyName('peak.running.argv')
+STDIN   = PropertyName('peak.running.stdin')
+STDOUT  = PropertyName('peak.running.stdout')
+STDERR  = PropertyName('peak.running.stderr')
+ENVIRON = PropertyName('peak.running.environ')
+
+
 __all__ = [
 
-    'CLUSTER',
+    'CLUSTER', 'ARGV', 'STDIN', 'STDOUT', 'STDERR', 'ENVIRON',
 
     'IExecutable', 'ICmdLineAppFactory', 'ICmdLineApp', 'IRerunnable',
 
@@ -20,13 +27,6 @@ __all__ = [
     'ISignalManager', 'IProcessProxy', 'IMainCmdFactory', 'IProcessTemplate',
 
 ]
-
-
-
-
-
-
-
 
 
 
