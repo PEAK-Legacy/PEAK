@@ -1,17 +1,17 @@
 from __future__ import generators
 
-"""Name and Syntax Objects"""
+"""Name, Syntax, and Reference Objects"""
 
 import re
 from interfaces import *
 from types import StringTypes
-from peak.util.Struct import struct
+from peak.util.Struct import struct, structType
 from peak import exceptions
 
 __all__ = [
     'Name', 'toName', 'CompositeName', 'CompoundName', 'OpaqueURL',
     'Syntax', 'UnspecifiedSyntax', 'NNS_NAME', 'ParsedURL', 'URLMatch',
-    'PropertyName',
+    'PropertyName', 'LinkRef', 'NNS_Reference'
 ]
 
 
@@ -121,10 +121,52 @@ class Name(tuple):
 
 
 
+class URLMeta(structType):
+
+    classmethods = structType.classmethods + (
+        'fromURL', 'supportsScheme'
+    )
+
+    def __new__(meta, name, bases, classDict):
+
+        if 'pattern' in classDict:
+            pattern = classDict['pattern']
+            if isinstance(pattern,str):
+                classDict['pattern']=re.compile(pattern)
+
+        return super(URLMeta,meta).__new__(meta, name, bases, classDict)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 URLMatch = re.compile('([-+.a-z0-9]+):',re.I).match
 
-
 class OpaqueURL(struct):
+
+    __metaclass__ = URLMeta
 
     __implements__ = IName
 
@@ -147,8 +189,6 @@ class OpaqueURL(struct):
         raise exceptions.InvalidName(name)
         
 
-    fromString = classmethod(fromString)
-
     def __str__(self):
         return '%s:%s' % (self.scheme, self.body)
 
@@ -158,8 +198,9 @@ class OpaqueURL(struct):
     def supportsScheme(klass, scheme):
         return scheme in klass._supportedSchemes or not klass._supportedSchemes
 
-    supportsScheme = classmethod(supportsScheme)
+
     
+
 
 
 class ParsedURL(OpaqueURL):
@@ -169,8 +210,7 @@ class ParsedURL(OpaqueURL):
     def retrieve(self, refInfo, name, context, attrs=None):
         pass
 
-
-    pattern = re.compile('')    
+    pattern = ''
 
 
     def fromString(klass, name):
@@ -179,28 +219,12 @@ class ParsedURL(OpaqueURL):
         if m: return klass.fromURL(OpaqueURL(name))
         raise exceptions.InvalidName(name)
 
-    fromString = classmethod(fromString)
-
 
     def fromOther(klass, url):
         if IName.isImplementedBy(url) and url.isURL:
             return klass.fromURL(url)
             
         raise exceptions.InvalidName(name)
-
-    fromOther = classmethod(fromOther)
-
-
-
-
-
-
-
-
-
-
-
-
 
 
     def fromURL(klass, url):
@@ -218,30 +242,6 @@ class ParsedURL(OpaqueURL):
                 
         raise exceptions.InvalidName(url)
         
-    fromURL = classmethod(fromURL)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 class Syntax(object):
@@ -665,3 +665,30 @@ class PropertyName(str):
             p=p+'.'
 
         return p
+
+
+class LinkRef(object):
+
+    """Symbolic link"""
+
+    __slots__ = 'linkName'
+    
+    def __init__(self, linkName):
+        self.linkName = linkName
+
+    def __repr__(self):
+        return "LinkRef(%s)" % `self.linkName`
+
+
+class NNS_Reference(object):
+
+    """Next Naming System reference"""
+
+    __slots__ = 'relativeTo'
+    
+    def __init__(self, relativeTo):
+        self.relativeTo = relativeTo
+
+    def __repr__(self):
+        return "NNS_Reference(%s)" % `self.relativeTo`
+

@@ -33,4 +33,4 @@ class uuidURL(ParsedURL):
 
         return klass.extractFromMapping(locals())
 
-    fromURL = classmethod(fromURL)
+

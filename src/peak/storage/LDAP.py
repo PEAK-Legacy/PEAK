@@ -1,17 +1,169 @@
-from peak.naming.api import *
+from __future__ import generators
+from peak.api import *
+from connections import ManagedConnection, AbstractCursor
 from urllib import quote, unquote
-from peak.api import exceptions
+
+
+__all__ = [
+    'LDAPConnection', 'LDAPCursor', 'ldapURL'
+]
+
 
 try:
     import ldap
     from ldap import SCOPE_BASE, SCOPE_ONELEVEL, SCOPE_SUBTREE
+
 except:
     ldap = None
     SCOPE_BASE, SCOPE_ONELEVEL, SCOPE_SUBTREE = range(3)
 
 
 
-class ldapURL(ParsedURL):
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class LDAPCursor(AbstractCursor):
+
+    """LDAP pseudo-cursor"""
+
+    timeout      = -1
+    msgid        = None
+    bulkRetrieve = False
+
+    disconnects = binding.bindSequence('import:ldap.SERVER_DOWN',)
+
+    def close(self):
+
+        if self.msgid is not None:
+            self._conn.abandon(self.msgid)
+            self.msgid = None
+
+        super(LDAPCursor,self).close()
+
+
+    def execute(self,dn,scope,filter='objectclass=*',attrs=None,dnonly=0):
+
+        try:
+            self.msgid = self._conn.search(dn,scope,filter,attrs,dnonly)
+
+        except self.disconnects:
+            self.errorDisconnect()
+
+
+    def errorDisconnect(self):
+        self.close()
+        self.getParentComponent().close()
+        raise
+    
+
+    def nextset(self):
+        """LDAP doesn't do multi-sets"""
+        return False
+
+
+
+
+    def __iter__(self, onlyOneSet=True):
+
+        msgid, timeout = self.msgid, self.timeout
+
+        if msgid is None:
+            raise ValueError("No operation in progress")
+
+        getall = self.bulkRetrieve and 1 or 0
+        fetch = self._conn.result
+
+        ldapEntry = makeStructType('ldapEntry',
+            [], __implements__ = IRow, __module__ = __name__,
+        )
+
+        newEntry = ldapEntry.fromMapping; restype = None
+
+        while restype != 'RES_SEARCH_RESULT':
+
+            try:
+                restype, data = fetch(msgid, getall, timeout)
+
+            except self.disconnects:
+                self.errorDisconnect()
+
+            if restype is None:               
+                yield None  # for timeout errors
+
+            for dn,m in data:
+
+                m['dn']=dn
+
+                try:
+                    yield newEntry(m)                
+
+                except ValueError:
+                    map(ldapEntry.addField, m.keys())
+                    yield newEntry(m)        
+
+        # Mark us as done with this query
+        self.msgid = None
+
+class LDAPConnection(ManagedConnection):
+
+    cursorClass = LDAPCursor
+
+    def _open(self):
+        address = self.address   
+        return ldap.open(address.host, address.port)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class ldapURL(naming.ParsedURL):
+
     """RF2255 LDAP URLs, with the following changes:
     
     1) Additionally supports ldaps and ldapi (TLS and Unix Domain variants).
@@ -48,11 +200,14 @@ class ldapURL(ParsedURL):
     """
     
     _supportedSchemes = ('ldap', 'ldaps', 'ldapi')
-    
+
+
+
     __fields__ = 'scheme', 'body', 'host', 'port', 'basedn', 'attrs', \
                 'scope', 'filter', 'extensions', 'critical'
     
     def fromURL(klass, url):
+
         bindinfo = None
         host = basedn = ''
         port = 389
@@ -63,7 +218,7 @@ class ldapURL(ParsedURL):
         hostport = url.body
         if hostport[:2] == '//':
             hostport = hostport[2:]
-	else:
+        else:
             raise exceptions.InvalidName(url)
 
         if '/' in hostport:
@@ -134,4 +289,12 @@ class ldapURL(ParsedURL):
         
         return klass.extractFromMapping(locals())
 
-    fromURL = classmethod(fromURL)
+
+    def retrieve(self, refInfo, name, context, attrs=None):
+
+        return LDAPConnection(
+            context.creationParent,
+            address = self
+        )
+
+

@@ -428,3 +428,56 @@ else:
         # Waaaaaaa!, as Jim F. would say...
         __all__.remove('LockFile')
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+from peak.naming.names import ParsedURL
+
+class lockfileURL(ParsedURL):
+
+    _supportedSchemes = (
+        'lockfile', 'shlockfile', 'flockfile', 'winflockfile',
+        'nulllockfile'
+    )
+
+    __fields__     = 'scheme', 'body'
+
+    def retrieve(self, refInfo, name, context, attrs=None):
+        
+        if self.scheme == 'lockfile':
+            return LockFile(self.body)
+
+        elif self.scheme == 'nulllockfile':
+            return NullLockFile()
+
+        elif self.scheme == 'shlockfile':
+            return SHLockFile(self.body)
+
+        elif self.scheme == 'flockfile':
+            return FLockFile(self.body)
+
+        elif self.scheme == 'winflockfile':
+            return WinFLockFile(self.body)
+    
+    def fromArgs(klass, scheme, body):
+        return tuple.__new__(klass, (scheme, body))
+
+

@@ -1,7 +1,7 @@
 from __future__ import generators
 
 from peak.api import *
-from peak.binding.imports import importString, importObject
+from peak.util.imports import importString, importObject
 from peak.binding.components import Component, New, Base, Provider, Once
 
 from peak.util.EigenData import EigenCell, AlreadyRead

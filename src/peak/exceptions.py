@@ -106,5 +106,14 @@ class BrokenTransaction(Exception):
        (E.g. by throwing an exception during the commit phase)"""
 
 
+class TooManyResults(Exception):
+    """Too many results were returned from a query
+
+    (Either only one row was expected and there were multiple rows, or
+    only one set of rows was expected and there were multiple sets."""
+
+
+class TooFewResults(Exception):
+    """Exactly one row was expected, but no rows were returned."""
 
 

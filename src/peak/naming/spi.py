@@ -13,10 +13,13 @@
 """
 
 from peak.api import config
-from peak.binding.imports import importObject
+from peak.util.imports import importObject
 
 from interfaces import *
 from properties import *
+
+from names import NNS_Reference
+
 
 
 __all__ = [
@@ -24,11 +27,8 @@ __all__ = [
 ]
 
 __implements__ = (
-    IURLContextFactory, IInitialContextFactory
+    IURLContextFactory, IInitialContextFactory, IObjectFactory
 )
-
-
-
 
 
 
@@ -101,6 +101,19 @@ def getURLContext(scheme, context, iface=IBasicContext):
             return GenericURLContext(context, schemeParser=factory)
 
     return None
+
+
+
+def getObjectInstance(refInfo, name, context, attrs=None):
+
+    """Default rules for loading objects from state"""
+
+    if IAddress.isImplementedBy(refInfo):
+        return refInfo.retrieve(refInfo, name, context, attrs)
+
+    elif isinstance(refInfo, NNS_Reference):
+        # default is to treat the object as its own NNS
+        return refInfo.relativeTo
 
 
 

@@ -87,7 +87,7 @@ Installing PEAK
 
    python setup.py test
 
-  This will run about 27 tests on various parts of PEAK.  If you have
+  This will run 40+ tests on various parts of PEAK.  If you have
   installed everything correctly, 100% of the tests should succeed.  If
   you're missing any needed parts, you will probably be unable to run the
   tests at all.
@@ -104,7 +104,7 @@ Installing PEAK
 
   By default, 'python setup.py test' only runs 'peak.api.tests', which cover
   the basic, currently supported functionality of PEAK.  If you specify
-  the 'peak.tests' module (as in the second example above), the full 67-test
-  suite will be run.  These tests will take longer to run, as they perform
+  the 'peak.tests' module (as in the second example above), the full suite of
+  80+ tests will be run.  These tests will take longer to run, as they perform
   some rather complex XMI and UUID tests.
 

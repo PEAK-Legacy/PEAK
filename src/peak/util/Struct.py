@@ -2,15 +2,60 @@
 
 from types import StringTypes
 
+__all__ = [
+    'structType', 'struct', 'makeStructType'
+]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 class structType(type):
 
     """Sets up __fieldmap__ and field properties"""
 
+    classmethods = (
+        'fromArgs', 'fromOther', 'fromString',
+        'fromMapping', 'extractFromMapping',
+    )
+    
     def __new__(klass, name, bases, cdict):
 
         cdict = cdict.copy()
         cdict['__slots__']=[]
+
+        for cm in klass.classmethods:
+            if cm in cdict:
+                cdict[cm] = classmethod(cdict[cm])
 
         return super(structType,klass).__new__(klass, name, bases, cdict)
 
@@ -33,10 +78,6 @@ class structType(type):
                 continue
                 
             setattr(klass, fieldName, makeFieldProperty(fieldName, fieldNum))
-
-
-
-
 
 
     def addField(klass, fieldName):
@@ -147,11 +188,11 @@ class struct(tuple):
         return klass.fromArgs(*__args, **__kw)
 
 
+    def fromString(klass, arg):
 
+        """Override this classmethod to enable parsing from a string"""
 
-
-
-
+        raise NotImplementedError
 
 
 
@@ -186,7 +227,7 @@ class struct(tuple):
             
         return tuple.__new__(klass, __args)
 
-    fromArgs = classmethod(fromArgs)        
+
 
 
 
@@ -217,32 +258,6 @@ class struct(tuple):
         """
         return klass.fromArgs(arg)
 
-    fromOther = classmethod(fromOther)
-    
-
-    def fromString(klass, arg):
-        """Override this classmethod to enable parsing from a string"""
-        raise NotImplementedError
-
-    fromString = classmethod(fromString)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
     def fromMapping(klass, arg):
     
@@ -269,20 +284,10 @@ class struct(tuple):
 
         return klass.fromArgs(*tuple(map(arg.get, klass.__fields__)))
 
-    fromMapping = classmethod(fromMapping)
-
 
     def extractFromMapping(klass, arg):
         """Fast extraction from a mapping; ignores undefined fields"""    
         return klass.fromArgs(*tuple(map(arg.get, klass.__fields__)))
-
-    extractFromMapping = classmethod(extractFromMapping)
-
-
-
-
-
-
 
 
     def __getitem__(self, key):
@@ -308,6 +313,7 @@ class struct(tuple):
         except (KeyError,IndexError):
             return default
 
+
     def copy(self):         return dict(self.items())
     def keys(self):         return list(self.__fields__[:len(self)])
     def iterkeys(self):     return iter(self.__fields__[:len(self)])
@@ -315,7 +321,11 @@ class struct(tuple):
     def iteritems(self):    return iter(self.items())
     def values(self):       return list(self)
     def itervalues(self):   return iter(self)
-    
+
+
+
+
+
     __safe_for_unpickling__ = True
 
     def __reduce__(self):   return self.__class__, (tuple(self),)
@@ -326,6 +336,8 @@ class struct(tuple):
     
     has_key = __contains__
 
+
+
 def makeFieldProperty(fieldName, fieldNum):
 
     def get(self):
@@ -335,6 +347,7 @@ def makeFieldProperty(fieldName, fieldNum):
             return None
 
     return property(get)
+
 
 def makeStructType(name, fields, baseType=struct, **kw):
     kw['__fields__'] = fields

@@ -39,7 +39,7 @@ __all__ = [
 
 
 
-from peak.binding.imports import lazyImport
+from peak.util.imports import lazyImport
 
 binding = lazyImport('peak.binding.api')
 naming  = lazyImport('peak.naming.api')

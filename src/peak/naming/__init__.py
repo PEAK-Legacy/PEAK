@@ -7,10 +7,6 @@
 
     To Do (no particular ordering)
 
-        * ParsedURL needs to be able to parse bodies alone, and a way to init
-          from kwargs instead of a string.  Also need a metaclass to re.compile
-          the 'pattern' attrib so subclassers don't need to import re.
-
         * create FederationContext, set up to handle '+:' URL scheme, whose
           operations simply do a series of lookup/lookup_nns operations on the
           composite name path in order to implement all the "standard" operations
@@ -23,6 +19,4 @@
 
         * Detailed interface and subclassing docs
 """
-
-
 

@@ -1,17 +1,15 @@
 from __future__ import generators
-from peak.api import binding
+from peak.api import *
 from transactions import TransactionComponent
 from interfaces import *
 from weakref import WeakValueDictionary
-from peak.util.Struct import makeStructType, makeFieldProperty
+
 
 __all__ = [
-    'ManagedConnection', 'DBCursor', 'LDAPCursor',
+    'ManagedConnection', 'AbstractCursor',
 ]
 
 
-def _nothing():
-    pass
 
 
 
@@ -39,14 +37,14 @@ def _nothing():
 
 
 
-class DBCursor(binding.Component):
 
-    """Iterable cursor bridge/proxy"""
+
+class AbstractCursor(binding.Component):
 
     __implements__ = ICursor
     
-    tooMany = AssertionError
-    tooFew  = EOFError
+    _conn = binding.bindTo('../connection')
+
 
     def __init__(self,parent,**kw):
 
@@ -58,67 +56,28 @@ class DBCursor(binding.Component):
         parent.registerCursor(self)
 
 
-    def _cursor(self,d,a):
-        return self._conn.cursor()
-
-    _cursor = binding.Once(_cursor)
-    _conn   = binding.bindTo('../connection')
-
     def close(self):
-        if self.hasBinding('_cursor'):
-            self._cursor.close()
-            del self._cursor
+
         if self.hasBinding('_conn'):
             del self._conn
-            
-    def __setattr__(self,attr,val):
-        if self.hasBinding(attr) or hasattr(self.__class__,attr):
-            self.__dict__[attr]=val
-        else:
-            setattr(self._cursor,attr,val)
 
-    def __getattr__(self,attr):
-        return getattr(self._cursor,attr)
+
+    def execute(self, *args, **kw):
+        raise NotImplementedError
+
 
     def __iter__(self, onlyOneSet=True):
+        raise NotImplementedError
 
-        fetch = self._cursor.fetchmany
-        rows = fetch()
 
-        if rows:
+    def nextset(self):
+        raise NotImplementedError
 
-            # we don't want to mess with souped-up row types
-            # so require an exact match to 'tuple' type
 
-            row = rows[0]
 
-            if type(row) is tuple:  
 
-                rowStruct = makeStructType('rowStruct',
-                    [d[0] for d in self._cursor.description],
-                    __implements__ = IRow, __module__ = __name__,
-                )
 
-                mkTuple = tuple.__new__
 
-                while rows:
-
-                    for row in rows:
-                        yield mkTuple(rowStruct,row)
-
-                    rows = fetch()
-
-            else:
-
-                while rows:
-
-                    for row in rows:
-                        yield row
-
-                    rows = fetch()
-
-        if onlyOneSet and self.nextset():
-            raise self.tooMany
 
 
     def allSets(self):
@@ -131,28 +90,28 @@ class DBCursor(binding.Component):
             yield list(oneSet(False))
 
 
-    def nextset(self):
-        return getattr(self._cursor, 'nextset', _nothing)()
-
-
     def justOne(self):
 
         i = iter(self)
 
         try:
             row = i.next()
+
         except StopIteration:
-            raise self.tooFew
+            raise exceptions.TooFewResults
 
         try:
             next = i.next()
         except StopIteration:
             return row
 
-        raise self.tooMany
+        raise exceptions.TooManyResults
 
 
     __invert__ = justOne
+
+
+
 
 
 
@@ -267,115 +226,7 @@ class ManagedConnection(TransactionComponent):
         return cursor
 
 
-    cursorClass = DBCursor
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-class LDAPCursor(DBCursor):
-
-    """LDAP pseudo-cursor"""
-
-    _cursor = None
-
-    timeout      = -1
-    msgid        = None
-    bulkRetrieve = False
-
-    disconnects = binding.bindSequence('import:ldap.SERVER_DOWN',)
-
-    def close(self):
-
-        if self.msgid is not None:
-            self._conn.abandon(self.msgid)
-            self.msgid = None
-
-        super(LDAPCursor,self).close()
-
-
-    def execute(self,dn,scope,filter='objectclass=*',attrs=None,dnonly=0):
-
-        try:
-            self.msgid = self._conn.search(dn,scope,filter,attrs,dnonly)
-
-        except self.disconnects:
-            self.errorDisconnect()
-
-
-    def errorDisconnect(self):
-        self.close()
-        self.getParentComponent().close()
-        raise
-    
-
-    def nextset(self):
-        """LDAP doesn't do multi-sets"""
-        return False
-
-
-    def __iter__(self):
-
-        msgid, timeout = self.msgid, self.timeout
-
-        if msgid is None:
-            raise ValueError("No operation in progress")
-
-        getall = self.bulkRetrieve and 1 or 0
-        fetch = self._conn.result
-
-        ldapEntry = makeStructType('ldapEntry',
-            [], __implements__ = IRow, __module__ = __name__,
-        )
-
-        newEntry = ldapEntry.fromMapping; restype = None
-
-        while restype != 'RES_SEARCH_RESULT':
-
-            try:
-                restype, data = fetch(msgid, getall, timeout)
-
-            except self.disconnects:
-                self.errorDisconnect()
-
-            if restype is None:               
-                yield None  # for timeout errors
-
-            for dn,m in data:
-
-                m['dn']=dn
-
-                try:
-                    yield newEntry(m)                
-
-                except ValueError:
-                    map(ldapEntry.addField, m.keys())
-                    yield newEntry(m)        
-
-        # Mark us as done with this query
-        self.msgid = None
-
-
-
-
-
-
-
-
-
-
+    cursorClass = AbstractCursor
 
 
 

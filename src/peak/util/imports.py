@@ -1,21 +1,21 @@
 """Tools for doing dynamic imports"""
 
+__all__ = [
+    'importString', 'importObject', 'importSequence', 'importSuite',
+]
+
+
 from types import StringTypes
 
+def importSuite(specs, globalDict=None):
 
+    """Create a test suite from import specs"""
 
+    from unittest import TestSuite
 
-
-
-
-
-
-
-
-
-
-
-
+    return TestSuite(
+        [t() for t in importSequence(specs,globalDict)]
+    )
 
 
 

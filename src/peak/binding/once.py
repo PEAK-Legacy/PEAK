@@ -3,7 +3,7 @@
 from meta import ActiveDescriptor
 from peak.api import NOT_FOUND
 from peak.util.EigenData import EigenRegistry
-from imports import importObject
+from peak.util.imports import importObject
 
 __all__ = ['Once', 'New', 'Copy', 'OnceClass']
 

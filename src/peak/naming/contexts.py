@@ -3,8 +3,7 @@
 from interfaces import *
 from names import *
 from properties import *
-from references import *
-from peak.binding.imports import importObject
+from peak.util.imports import importObject
 
 from peak.binding.components import Component, bindToProperty, Once, \
     bindToUtilities
@@ -17,6 +16,7 @@ import spi
 _marker = object()
 
 __all__ = ['AbstractContext', 'BasicInitialContext', 'GenericURLContext']
+
 
 
 
