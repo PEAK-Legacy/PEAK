@@ -3,6 +3,7 @@ from interfaces import *
 import os
 from weakref import WeakValueDictionary, ref
 from commands import EventDriven
+from peak.net.interfaces import IListeningSocket
 
 try:
     import signal
@@ -28,7 +29,6 @@ else:
     )
 
     signal = signal.signal
-
 
 
 
@@ -569,6 +569,47 @@ class AbstractProcessTemplate(binding.Component):
 
 
 
+
+
+
+class FastCGITemplate(AbstractProcessTemplate):
+
+    """Process template for FastCGI subprocess w/busy monitoring"""
+
+    protocols.advise(
+        instancesProvide=[IRerunnableCGI]
+    )
+
+    proxyClass = BusyProxy
+    readPipes  = ('busyStream',)
+
+    socketURL = binding.Require("URL of TCP or Unix socket to listen on")
+
+    command   = binding.Require(
+        "IRerunnableCGI command to run in subprocess", adaptTo=IRerunnableCGI,
+        uponAssembly=True   # force creation to occur in parent process
+    )
+
+    stdin = binding.Make(
+        lambda self: self.lookupComponent(self.socketURL),
+        adaptTo = IListeningSocket
+    )
+
+    def runCGI(self, *args):
+        self.busyStream.write('+')      # start being busy
+        try:
+            self.command.runCGI(*args)
+        finally:
+            self.busyStream.write('-')  # finish being busy
+
+
+    def _redirect(self):
+        self.os.dup2(self.stdin.fileno(),0)
+
+
+    def makeStub(self):
+        from peak.running.commands import CGICommand
+        return CGICommand(self, cgiCommand=self, stdin=self.stdin)
 
 
 
