@@ -19,7 +19,7 @@ except:
     SCOPE_BASE, SCOPE_ONELEVEL, SCOPE_SUBTREE = range(3)
 
 
-
+scope_map = {'one': SCOPE_ONELEVEL, 'sub': SCOPE_SUBTREE, '': SCOPE_BASE}
 
 
 
@@ -203,23 +203,25 @@ class ldapURL(naming.ParsedURL):
 
 
 
-    __fields__ = 'scheme', 'body', 'host', 'port', 'basedn', 'attrs', \
-                'scope', 'filter', 'extensions', 'critical'
-    
-    def fromURL(klass, url):
+    def __init__(self, url=None, scheme=None, body=None,
+                 host='', port=389, basedn='', attrs=(), 
+                 scope=SCOPE_BASE, filter=None, extensions=None,
+    ):
+        extensions = extensions or {}
+        self.setup(locals())
+
+
+    def parse(self, scheme, body):
 
         _bindinfo = None
-        #host = basedn = ''
-        #port = 389
-        _extensions = {}
+        extensions = self.extensions
         
-        scheme, body = url.scheme, url.body
-        
-        _hostport = url.body
+        _hostport = body
+
         if _hostport[:2] == '//':
             _hostport = _hostport[2:]
         else:
-            raise exceptions.InvalidName(url)
+            raise exceptions.InvalidName(self.url)
 
         if '/' in _hostport:
             _hostport, _rest = hostport.split('/', 1)
@@ -227,6 +229,7 @@ class ldapURL(naming.ParsedURL):
             _rest = ''
 
         if _hostport:
+
             if '@' in _hostport:
                 _bindinfo, _hostport = _hostport.split('@', 1)
 
@@ -235,22 +238,29 @@ class ldapURL(naming.ParsedURL):
                 try:
                     port = int(port)
                 except:
-                    raise exceptions.InvalidName(url)
+                    raise exceptions.InvalidName(self.url)
             else:
                 host = unquote(_hostport)
 
+
+
         if _bindinfo:
+
             if ':' in _bindinfo:
                 _bindinfo, _bindpw = map(unquote, _bindinfo.split(':', 1))
-                _extensions['x-bindpw'] = (1, _bindpw)
+                extensions['x-bindpw'] = (1, _bindpw)
+
             else:
                 _bindinfo = unquote(_bindinfo)
-            _extensions['bindname'] = (1, _bindinfo)
+
+            extensions['bindname'] = (1, _bindinfo)
         
         if _rest:
+
             if '?' in _rest:
                 basedn, _rest = rest.split('?', 1)
                 basedn = unquote(basedn)
+
             else:
                 basedn = unquote(_rest)
                 rest = ''
@@ -260,38 +270,39 @@ class ldapURL(naming.ParsedURL):
         if _rest[0]:
             attrs = tuple(map(unquote, _rest[0].split(',')))
             
-        scope = unquote(_rest[1]).lower()
-        if scope == 'one':
-            scope = SCOPE_ONELEVEL
-        elif scope == 'sub':
-            scope = SCOPE_SUBTREE
-        else:
-            del scope
+        scope = scope_map.get(unquote(_rest[1]).lower())
+
+        if scope is None:
+            raise exceptions.InvalidName(self.url)
 
         if _rest[2]:
             filter = unquote(_rest[2])
 
+
+
+
+
+
+
+
         if _rest[3]:
+
             _exts = map(unquote, _rest[3].split(','))
+
             for _e in _exts:
+
                 _crit = 0
+
                 if _e[0] == '!':
                     _crit = 1; _e = e[1:]
+
                 _k, _v = _e.split('=', 1)
-                _extensions[_k.lower()] = (_crit, _v)
+                extensions[_k.lower()] = (_crit, _v)
 
-        _critical = _a = []; _a = _a.append
-        for _k, (_crit, _v) in _extensions.items():
-            if _crit:
-                _a(_k)
-
-        if _critical:
-            critical = tuple(_critical)
+        critical = [_k for (_k, (_crit, _v)) in extensions.items() if _crit]
+        critical = tuple(critical)
         
-        if _extensions:
-            extensions = _extensions
-            
-        return klass.extractFromMapping(locals())
+        return locals()
 
 
     def retrieve(self, refInfo, name, context, attrs=None):

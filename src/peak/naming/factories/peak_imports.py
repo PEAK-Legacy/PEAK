@@ -5,16 +5,11 @@ from peak.util.imports import importString
 from types import StringTypes
 
 
-class importURL(OpaqueURL):
-
-    __implements__ = IAddress
+class importURL(ParsedURL):
 
     _supportedSchemes = 'import',
 
     def retrieve(self, refInfo, name, context, attrs=None):
         return importString(self.body)
-
-    def fromURL(klass, name):
-        return klass.fromArgs(name.scheme, name.body)
 
 

@@ -136,12 +136,12 @@ setup(
         'peak.config', 'peak.storage',
 
         'peak.binding.tests', 'peak.config.tests', 'peak.storage.tests',
-        'peak.metamodels.tests', 'peak.util.tests', 'peak.tests',
+        'peak.metamodels.tests', 'peak.util.tests', 'peak.naming.tests',
+        'peak.tests',
 
         'Interface', 'Interface.tests',
         'Interface.Common', 'Interface.Common.tests',
         'Interface.Registry', 'Interface.Registry.tests',
-
         'Persistence',
     ],
     package_dir = {'':'src'},

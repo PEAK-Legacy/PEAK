@@ -178,20 +178,11 @@ class GenericSQL_URL(naming.ParsedURL):
     (/(?P<db>.+))?
     """
 
-    __fields__ = tuple('user passwd server db scheme body'.split())
-
-    
-    def fromArgs(klass,
+    def __init__(self, url=None,
                  user=None, passwd=None, server=None, db=None,
                  scheme=None, body=None
         ):
-
-        # XXX we should really url-unquote the fields first...
-
-        return tuple.__new__(
-            klass,
-            map(locals().get, klass.__fields__)
-        )
+        self.setup(locals())
 
 
     def retrieve(self, refInfo, name, context, attrs=None):

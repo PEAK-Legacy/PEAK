@@ -10,7 +10,7 @@ from peak import exceptions
 from peak.api import NOT_GIVEN
 
 __all__ = [
-    'Name', 'toName', 'CompositeName', 'CompoundName', 'OpaqueURL',
+    'Name', 'toName', 'CompositeName', 'CompoundName',
     'Syntax', 'UnspecifiedSyntax', 'NNS_NAME', 'ParsedURL', 'URLMatch',
     'PropertyName', 'LinkRef', 'NNS_Reference'
 ]
@@ -121,11 +121,9 @@ class Name(tuple):
 
 
 
-class URLMeta(structType):
+URLMatch = re.compile('([-+.a-z0-9]+):',re.I).match
 
-    classmethods = structType.classmethods + (
-        'fromURL', 'supportsScheme'
-    )
+class URLMeta(type):
 
     def __init__(klass, name, bases, classDict):
 
@@ -139,141 +137,108 @@ class URLMeta(structType):
         return super(URLMeta,klass).__init__(name, bases, classDict)
 
 
+class ParsedURL(object):
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-URLMatch = re.compile('([-+.a-z0-9]+):',re.I).match
-
-class OpaqueURL(struct):
-
-    __metaclass__ = URLMeta
-
-    __implements__ = IName
-
-    __fields__ = 'scheme', 'body'
-
-    formatString = "%(scheme)s:%(body)s"
-
-    _supportedSchemes = ()
+    __metaclass__  = URLMeta
+    __implements__ = IAddress
 
     isComposite = 0
     isCompound  = 0
     isURL       = 1
 
-    def fromString(klass, name):
+    _defaultScheme = None
+    _supportedSchemes = ()
+    
+    pattern = ''
 
-        m = URLMatch(name)
 
-        if m:
-            scheme, body = m.group(1), name[m.end():]            
-            return tuple.__new__(klass,(scheme, body))
+
+
+
+
+
+
+
+
+
+
+    def __init__(self, url=None):
+        self.setup(locals())
+    
+
+    def parse(self, scheme, body):
+
+        if self.pattern:
+            m = self.pattern.match(body)
+
+            if m:
+                d=m.groupdict(NOT_GIVEN)
+                d['scheme'] = scheme
+                d['body']   = body
+                for k,v in d.items():
+                    if v is NOT_GIVEN:
+                        del d[k]
+                return d
+
+            else:
+                raise exceptions.InvalidName(':'.join([scheme,body]))
             
-        raise exceptions.InvalidName(name)
-        
+        return locals()
+
+
+    def retrieve(self, refInfo, name, context, attrs=None):
+        pass
+
 
     def __str__(self):
-        return self.formatString % self
+        return ":".join([self.scheme,self.body])
 
     def __repr__(self):
         return "%s(%r)" % (self.__class__.__name__, str(self))
 
     def supportsScheme(klass, scheme):
         return scheme in klass._supportedSchemes or not klass._supportedSchemes
-
-
-    
-
-class ParsedURL(OpaqueURL):
-
-    __implements__ = IAddress
-
-    def retrieve(self, refInfo, name, context, attrs=None):
-        pass
-
-    pattern = ''
-
-    _defaultScheme = None
-
-    def fromString(klass, name):
-
-        m = URLMatch(name)
-
-        if m:
-            return klass.fromURL(OpaqueURL(name))
-
-        if klass._defaultScheme:
-            name = '%s:%s' % (klass._defaultScheme, name)
-            return klass.fromURL(OpaqueURL(name))
-
-        raise exceptions.InvalidName(name)
-
-
-    def fromOther(klass, url):
-        if IName.isImplementedBy(url) and url.isURL:
-            return klass.fromURL(url)
-            
-        raise exceptions.InvalidName(name)
-
-
-
-
-
-
-
-
-
-
-
-    def fromURL(klass, url):
-
-        if klass.supportsScheme(url.scheme):
-
-            m = klass.pattern.match(url.body)
-
-            if m:
-                d=m.groupdict()
-                d['scheme'] = url.scheme
-                d['body']   = url.body
-                
-                return klass.fromMapping(d)
-                
-        raise exceptions.InvalidName(url)
         
+    supportsScheme = classmethod(supportsScheme)
 
 
 
+    def setup(self, initargs):
+
+        def update(d):
+            for k in d.keys():
+                if k.startswith('_') or k=='self':
+                    del d[k]
+
+            self.__dict__.update(d)
 
 
+        update(initargs)
+        url = initargs.get('url')
+
+        if url is not None:
+        
+            if isinstance(url,str):
+
+                m = URLMatch(url)
+
+                if m:
+                    scheme, body = m.group(1), url[m.end():]
+                else:
+                    scheme = initargs.get('scheme') or self._defaultScheme
+                    body = url
+            else:
+                scheme, body = url.scheme, url.body
+                
+            if not self.supportsScheme(scheme):
+                raise exceptions.InvalidName(
+                    url, "Unsupported scheme"
+                )
+
+            initargs.update(self.parse(scheme, body))
 
 
-
-
-
-
-
-
-
-
+        update(initargs)
 
 
 
@@ -588,7 +553,7 @@ def toName(aName, nameClass=CompoundName, acceptURL=1):
     if isinstance(aName,StringTypes):
     
         if acceptURL and URLMatch(aName):
-            return OpaqueURL.fromString(aName)
+            return ParsedURL(aName)
 
         return nameClass(aName)
 

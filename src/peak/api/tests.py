@@ -4,6 +4,7 @@
 """
 
 allSuites = [
+    'peak.naming.tests:test_suite',
     'peak.binding.tests:test_suite',
     'peak.config.tests:test_suite',
     'peak.storage.tests:test_suite',

@@ -458,8 +458,6 @@ class lockfileURL(ParsedURL):
         'nulllockfile'
     )
 
-    __fields__     = 'scheme', 'body'
-
     def retrieve(self, refInfo, name, context, attrs=None):
         
         if self.scheme == 'lockfile':
@@ -477,7 +475,5 @@ class lockfileURL(ParsedURL):
         elif self.scheme == 'winflockfile':
             return WinFLockFile(self.body)
     
-    def fromArgs(klass, scheme, body):
-        return tuple.__new__(klass, (scheme, body))
 
 
