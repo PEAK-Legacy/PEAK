@@ -457,8 +457,11 @@ class Element(DataType, Persistent):
     __metaclass__  = ElementMeta
 
     def _setBinding(self,attr,value):
-        self._p_changed = True
-        self.__dict__[attr]=value
+        d = self.__dict__
+        
+        if d.get(attr) is not value or not isinstance(value,Persistent):
+            self._p_changed = True
+            d[attr]=value
 
     def _getBinding(self,attr,default=None):
 
@@ -486,9 +489,6 @@ class Element(DataType, Persistent):
 
     def getComponentName(self):
         return self._p_oid
-
-
-
 
 class PersistentQuery(Persistent):
 
