@@ -1,0 +1,65 @@
+<?xml encoding="US-ASCII"?>
+
+<!--
+
+MetaModel eXchange DTD - A simple format for describing MOF and XMI-compatible
+metamodels, such as the UML metamodel.
+
+Designed for compatibility with the DTD used by the NovoSoft UML library for
+describing the UML metamodel.
+
+
+TODO: further document DTD and its mapping to the MOF
+-->
+
+
+<!ELEMENT metamodel (package)>
+
+<!ELEMENT package (package|association|element|datatype|enumeration|primitive)*>
+<!ATTLIST package name CDATA #REQUIRED>
+
+<!ELEMENT element (superclass|attribute)*>
+
+<!ATTLIST element
+  abstract (true|false) #REQUIRED
+  name ID #REQUIRED>
+
+
+<!ELEMENT datatype (superclass|attribute)*>
+<!ATTLIST datatype name ID #REQUIRED>
+
+<!ELEMENT superclass EMPTY>
+<!ATTLIST superclass type IDREF #REQUIRED>
+
+<!ELEMENT attribute EMPTY>
+<!ATTLIST attribute 
+  type IDREF #REQUIRED
+  name CDATA #REQUIRED
+  kind (ref|bag|list) #IMPLIED
+  required (false|true) #IMPLIED>
+
+
+<!ELEMENT enumeration (literal)*>
+<!ATTLIST enumeration name ID #REQUIRED>
+
+<!ELEMENT literal EMPTY>
+<!ATTLIST literal name CDATA #REQUIRED>
+
+
+<!ELEMENT primitive EMPTY>
+<!ATTLIST primitive name ID #REQUIRED>
+
+<!ELEMENT association (role,role)>
+<!ELEMENT role EMPTY>
+
+<!ATTLIST role 
+  type IDREF #REQUIRED
+  name CDATA #REQUIRED
+  xmi.name CDATA #IMPLIED
+  composite (false|true) #REQUIRED
+  kind (ref|bag|list) #REQUIRED
+  navigable (false|true) #REQUIRED
+  required (false|true) #IMPLIED>
+
+
+

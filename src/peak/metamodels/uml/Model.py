@@ -22,7 +22,7 @@ DIR = dirname(__file__)
 mmx     = join(DIR,'metamodel.xml')
 cache   = mmx+'.pickle'
 
-import MMX
+from TW.MOF import MMX
 MetaModel = MMX.load(mmx,cache,UMLPlurals,name='UML_MetaModel')
 
 

@@ -1,0 +1,217 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE MMX PUBLIC "MMX" "MMX.dtd">
+<metamodel>
+<package name="root">
+<package name="Model">
+<element name="ModelElement" abstract="true">
+<!--
+ModelElement:
+
+Operations:
+
+   verify(DepthKind depth): VerifyResultKind,ConstraintViolations
+
+   isFrozen(): boolean
+
+   setName(string newName)
+
+   findRequiredElements(DependencyKinds kinds, boolean recursive): ModelElements
+
+   isVisible(ModelElement otherElement): boolean
+
+   isRequiredBecause(ModelElement otherElement): boolean, DependencyKind
+
+   removeElement()
+
+   copyElement(Namespace container)
+-->
+<attribute type="string" name="name"/>
+<attribute type="string" name="annotation"/>
+<attribute type="string" name="qualifiedName"/>
+</element>
+
+<element name="Namespace" abstract="true">
+<superclass type="ModelElement"/>
+</element>
+
+<element name="GeneralizableElement" abstract="true">
+<superclass type="Namespace"/>
+<attribute type="VisibilityKind" name="visibility"/>
+<attribute type="boolean" name="isAbstract"/>
+<attribute type="boolean" name="isRoot"/>
+<attribute type="boolean" name="isLeaf"/>
+</element>
+
+<element name="Feature" abstract="true">
+<superclass type="ModelElement"/>
+<attribute type="VisibilityKind" name="visibility"/>
+<attribute type="ScopeKind" name="scope"/>
+</element>
+
+<element name="BehavioralFeature" abstract="true">
+<superclass type="Feature"/>
+<superclass type="Namespace"/>
+</element>
+<element name="StructuralFeature" abstract="true">
+<superclass type="Feature"/>
+<superclass type="TypedElement"/>
+<attribute type="MultiplicityType" name="multiplicity"/>
+<attribute type="boolean" name="isChangeable"/>
+</element>
+<element name="TypedElement" abstract="true">
+<superclass type="ModelElement"/>
+</element>
+<element name="Classifier" abstract="true">
+<superclass type="GeneralizableElement"/>
+</element>
+<element name="Import" abstract="false">
+<superclass type="ModelElement"/>
+<attribute type="VisibilityKind" name="visibility"/>
+</element>
+<element name="Package" abstract="false">
+<superclass type="GeneralizableElement"/>
+</element>
+<element name="Association" abstract="false">
+<superclass type="Classifier"/>
+<attribute type="boolean" name="isDerived"/>
+</element>
+<element name="DataType" abstract="false">
+<superclass type="Classifier"/>
+</element>
+<element name="Class" abstract="false">
+<superclass type="Classifier"/>
+<attribute type="boolean" name="isSingleton"/>
+</element>
+<element name="Constraint" abstract="false">
+<superclass type="ModelElement"/>
+<attribute type="string" name="expression"/>
+<attribute type="string" name="language"/>
+<attribute type="EvaluationKind" name="evaluationPolicy"/>
+</element>
+<element name="Tag" abstract="false">
+<superclass type="ModelElement"/>
+<attribute type="string" name="tagId"/>
+<attribute type="string" name="values"/>
+</element>
+<element name="Operation" abstract="false">
+<superclass type="BehavioralFeature"/>
+<attribute type="boolean" name="isQuery"/>
+</element>
+<element name="Exception" abstract="false">
+<superclass type="BehavioralFeature"/>
+</element>
+<element name="Attribute" abstract="false">
+<superclass type="StructuralFeature"/>
+<attribute type="boolean" name="isDerived"/>
+</element>
+<element name="Reference" abstract="false">
+<superclass type="StructuralFeature"/>
+</element>
+<element name="AssociationEnd" abstract="false">
+<superclass type="TypedElement"/>
+<attribute type="MultiplicityType" name="multiplicity"/>
+<attribute type="AggregationKind" name="aggregation"/>
+<attribute type="boolean" name="isNavigable"/>
+<attribute type="boolean" name="isChangeable"/>
+<attribute type="AssociationEnd" name="otherEnd"/>
+</element>
+<element name="Constant" abstract="false">
+<superclass type="TypedElement"/>
+<attribute type="string" name="value"/>
+</element>
+<element name="TypeAlias" abstract="false">
+<superclass type="TypedElement"/>
+<attribute type="MultiplicityType" name="multiplicity"/>
+</element>
+<element name="Parameter" abstract="false">
+<superclass type="TypedElement"/>
+<attribute type="DirectionKind" name="direction"/>
+<attribute type="MultiplicityType" name="multiplicity"/>
+</element>
+<primitive name="string"/>
+<primitive name="long"/>
+<primitive name="boolean"/>
+<primitive name="DependencyKind"/>
+<datatype name="MultiplicityType">
+<attribute type="long" name="lower"/>
+<attribute type="long" name="upper"/>
+<attribute type="boolean" name="isOrdered"/>
+<attribute type="boolean" name="isUnique"/>
+</datatype>
+<enumeration name="VisibilityKind">
+<literal name="public_vis"/>
+<literal name="protected_vis"/>
+<literal name="private_vis"/>
+</enumeration>
+<enumeration name="DepthKind">
+<literal name="shallow"/>
+<literal name="deep"/>
+</enumeration>
+<enumeration name="DirectionKind">
+<literal name="in_dir"/>
+<literal name="out_dir"/>
+<literal name="inout_dir"/>
+<literal name="return_dir"/>
+</enumeration>
+<enumeration name="ScopeKind">
+<literal name="instance_level"/>
+<literal name="classifier_level"/>
+</enumeration>
+<enumeration name="AggregationKind">
+<literal name="none"/>
+<literal name="shared"/>
+<literal name="composite"/>
+</enumeration>
+<enumeration name="EvaluationKind">
+<literal name="immediate"/>
+<literal name="deferred"/>
+</enumeration>
+
+<association>
+<role type="Namespace" navigable="true" name="container" kind="ref" composite="true"/>
+<role type="ModelElement" navigable="true" name="containedElement" kind="list" composite="false"/>
+</association>
+
+<association>
+<role type="GeneralizableElement" navigable="true" name="supertype" kind="list" composite="false"/>
+<role type="GeneralizableElement" navigable="true" name="subtype" kind="bag" composite="false"/>
+</association>
+<association>
+<role type="Reference" navigable="true" name="referent" kind="ref" composite="false"/>
+<role type="AssociationEnd" navigable="true" name="referencedEnd" kind="ref" composite="false"/>
+</association>
+<association>
+<role type="Reference" navigable="true" name="referrer" kind="ref" composite="false"/>
+<role type="AssociationEnd" navigable="true" name="exposedEnd" kind="ref" composite="false"/>
+</association>
+<association>
+<role type="Classifier" navigable="true" name="type" kind="ref" composite="false"/>
+<role type="TypedElement" navigable="true" name="typedElement" kind="bag" composite="false"/>
+</association>
+<association>
+<role type="Operation" navigable="true" name="operation" kind="bag" composite="false"/>
+<role type="Exception" navigable="true" name="except" kind="list" composite="false"/>
+</association>
+<association>
+<role type="Import" navigable="true" name="importer" kind="bag" composite="false"/>
+<role type="Namespace" navigable="true" name="imported" kind="ref" composite="false"/>
+</association>
+
+<association>
+<role type="ModelElement" navigable="true" name="constrainedElement" kind="bag" composite="false"/>
+<role type="Constraint" navigable="true" name="constraint" kind="bag" composite="false"/>
+</association>
+
+<association>
+<role type="ModelElement" navigable="true" name="dependent" kind="bag" composite="false"/>
+<role type="ModelElement" navigable="true" name="provider" kind="bag" composite="false"/>
+</association>
+
+<association>
+<role type="ModelElement" navigable="true" name="modelElement" kind="bag" composite="false"/>
+<role type="Tag" navigable="true" name="tag" kind="list" composite="false"/>
+</association>
+
+</package>
+</package>
+</metamodel>
