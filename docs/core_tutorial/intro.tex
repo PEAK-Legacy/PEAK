@@ -39,7 +39,7 @@ this new, best-of-breed framework.
 
 
 
-\section{What PEAK is for: Enterprise Applications} 
+\subsection{What PEAK is for: Enterprise Applications} 
 
 Enterprise applications are complex, reflecting the complexity of the
 environments they exist in and support. The ``enterprise" is often a
@@ -80,7 +80,7 @@ reusable, extensible, and configurable, ``right out of the box".
 
 
 
-\section{What PEAK is part of: Python Enterprise} 
+\subsection{What PEAK is part of: Python Enterprise} 
 
 The value proposition of J2EE is that you can have industry standards,
 whose implementations are supplied by competing vendors, to address
@@ -124,7 +124,7 @@ and Python Enterprise worlds is outside the scope of this tutorial, but
 may be addressed later in a separate white paper.) 
 
 
-\section{What PEAK is made of: Application Kit} 
+\subsection{What PEAK is made of: Application Kit} 
 
 So what are these PEAK technologies? PEAK is an application kit, and
 applications are made from components.  PEAK provides you with a
@@ -202,4 +202,127 @@ with the interpreter prompt, \samp{>>>}.
 in \strong{boldface text}.
 
 \end{itemize}
+
+\section{Getting Started with PEAK}
+
+\subsection{Package Layout and API Conventions}
+
+PEAK is installed as a set of Python packages, such as \module{peak.binding},
+\module{peak.naming}, and so on, within the top-level \module{peak} package
+space.  To help distinguish between the ``public" and ``private" portions of
+the code, each subpackage includes an \module{api} module or subpackage, which
+exports all of the commonly-used classes, functions, and constants that form
+that package's public API.
+
+The top-level package also includes an API subpackage, \module{peak.api}, which
+contains each of the other subpackages' API modules, named for the subpackage.
+In other words, the following two lines produce similar results:
+
+\begin{verbatim}
+from peak.api import binding
+
+from peak.binding import api as binding
+\end{verbatim}
+
+For convenience, you can also use \samp{from peak.api import *} to import all
+the API subpackages.  Whichever approach you use to import the APIs you need,
+you can access any \module{peak.binding} API class such as \class{Once}
+by simply referring to \class{binding.Once}.  In this tutorial and all PEAK
+documentation and code examples, we'll refer to APIs following this same
+convention: major subpackage followed by a dot and the class or function name.
+
+\begin{notice}
+Experienced Python programmers may wonder whether using
+\samp{from peak.api import *} will cause all of PEAK to be imported.  In
+fact, it won't, because the \module{peak.api} subpackage uses a 
+``lazy import" mechanism.  Individual API subpackages like \module{peak.binding}
+won't be imported until they're actually used by your code, to prevent wasteful
+up-front loading of all the modules and classes.  See the source for
+\module{peak.api.__init__} and the \class{lazyModule} function in
+\module{peak.binding.imports}, if you'd like to know more about how it works.
+\end{notice} 
+
+
+
+\subsubsection{Interfaces and Exceptions}
+
+XXX peak.exceptions, where ``interfaces" modules are, ...?
+
+\subsubsection{PEAK Subpackages and Modules}
+
+\begin{description}
+
+\item[binding] \hfill \\ 
+The \module{peak.api} package supplies commonly used classes, functions,
+modules, and singletons needed by PEAK applications and the PEAK framework
+itself.
+
+\item[binding] \hfill \\ 
+The \module{peak.binding} package defines base classes for application
+components, and for the attribute bindings used to connect components
+together.  These base classes are used throughout PEAK to implement all
+sorts of components.
+
+\item[config] \hfill \\ 
+The \module{peak.config} package provides a framework for ``placeful" and
+``lazily immutable" lookups of configuration data, and provides a set of 
+default ``root" components that live ``above" the normal component 
+hierarchy, providing a place for global or ``placeless" configuration data
+to live.  Configuration data can be arbitrary objects or values, and can
+be looked up by either a property name, or by an interface that the desired
+object supports (similar to the Zope 3 concept of \strong{utilities}).
+
+\item[exceptions] \hfill \\ 
+The \module{peak.exceptions} module contains the definitions of all exception
+classes used by PEAK, except for those defined by modules in the
+\module{peak.util} package.
+
+\item[model] \hfill \\ 
+The \module{peak.model} package provides a framework for creating persistent,
+application domain class families.  It provides abstractions such as
+"Structural Features" that can define fields and associations based on
+metadata, and automatically generate methods for those features based on code
+templates.  The resulting persistent classes can be saved or loaded by
+subclassing \class{DataManager} classes from the \module{peak.storage} package.
+
+\item[naming] \hfill \\ 
+The \module{peak.naming} package provides services comparable to those of
+Java's JNDI system, only easier to use and extend.  Naming services are
+a standardized interface for looking up or recording the location of objects,
+whether they're database connections, printers, web services, or even 
+something as simple as log files.
+
+\item[running] \hfill \\ 
+The \module{peak.running} package provides runtime environment tools for
+logging, locking, process control, etc.
+
+\item[storage] \hfill \\ 
+The \module{peak.storage} package provides services and components for
+handling transactions, database connections, and persistence.
+
+\item[util] \hfill \\ 
+The \module{peak.util} package is a collection of generally useful modules
+that don't rely on anything else in PEAK, and thus could be used
+independently of PEAK.  Includes modules for dealing with Python bytecode,
+XML handling, simple table-like data structures, UUID/GUID handling, and more.
+
+\end{description}
+
+XXX peak.metamodels, peak.tests, test subpackages
+
+
+\subsection{Installing PEAK}
+
+
+
+
+
+
+
+
+
+
+
+
+
 
