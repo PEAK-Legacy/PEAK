@@ -260,8 +260,11 @@ class Activator(type):
         class_descr = []; addCD = class_descr.append
 
         for k, v in cdict.items():
-            if isinstance(v,classAttr):         addCA(k)
-            elif isinstance(v,ActiveClasses):   addCD(k)
+            if isinstance(v,ActiveClasses):
+                if isinstance(v,classAttr):
+                    addCA(k)
+                else:
+                    addCD(k)
 
         if class_attrs:
 
@@ -280,9 +283,6 @@ class Activator(type):
 
         klass = supertype(Activator,meta).__new__(meta, name, bases, cdict)
         klass.__name__ = name
-
-
-
 
 
         d = klass.__class_descriptors__ = {}
@@ -373,7 +373,7 @@ class ActiveClass(Activator):
     __cname__ = Once(__cname__)
 
 
-ActiveClasses = (Once, ActiveClass)
+ActiveClasses = (Once, ActiveClass, classAttr)
 
 
 def supertype(supertype,subtype):
