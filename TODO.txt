@@ -2,18 +2,14 @@ Open Issues/To-Do Items
 
  Targeted for 0.5 Alpha 3
 
-    * Refactor binding and naming frameworks to
-
-      - make indirection convenient (e.g. bind to looking up something from
-        another binding)
-
     * peak.binding
+
+       - make indirection convenient (e.g. bind to looking up something from
+         another binding)
 
        - Cleanup/document attribute binding interface
 
-       - Attribute -> AttribDef
-
-       - binding.AttribDef has an adequate docstring
+       - binding.Attribute needs an adequate docstring
 
        - Ensure default __repr__'s for all bindings are acceptable
 
@@ -22,6 +18,7 @@ Open Issues/To-Do Items
        - Investigate whether suggestParentComponent() should be suppressed when
          the value is computed by the binding, or if perhaps 'suggestParent'
          should be set to 'False' by default for some kinds of bindings.
+
 
     * peak.web (some of this may get bumped to alpha 4)
 
@@ -38,6 +35,9 @@ Open Issues/To-Do Items
          a later release)
 
        - try/catch DOMlet (and related error rendering interface/framework)
+
+
+
 
  Targeted for 0.5 Alpha 4
 
