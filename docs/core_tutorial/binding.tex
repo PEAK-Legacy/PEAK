@@ -493,7 +493,7 @@ component base, without a lot of the extra features found in its subclasses.
 \subsubsection{\class{binding.Once} - The Basis for all Bindings}
 
 All PEAK bindings are created using the class \class{binding.Once}, or a
-subclass thereof.  It provides the basic machinery needed to compute an
+subclass thereof.  It provides the basic machinery needed to lazily compute an
 attribute "on-the-fly".  Here's a simple example of its use:
 
 \begin{verbatim%
@@ -819,7 +819,6 @@ about the possibilities here.
 
 
 \subsection{Inspecting Component Hierarchies}
-
 The \module{peak.binding} package supplies several useful functions for
 examining relationships between components.  Let's run through a few examples,
 continuing the previous example above:
@@ -865,21 +864,198 @@ getRootComponent}, \function{binding.lookupComponent}, \function{binding.%
 getComponentName}, and \function{binding.getComponentPath} do pretty much as
 you would expect from their names.  (One thing we didn't show, however, was
 that \function{binding.getComponentPath}  doesn't actually return a string,
-but a \class{ComponentName} instance that just looks like a string when
+but a \class{binding.ComponentName} instance that just looks like a string when
 printed.  More about this later.)
 
 \subsubsection{How Hierarchies Are Assembled}
 
-XXX how do things know their parents?  Do you have to use binding.Base? (no)
-Examples with non-Base objects.  IBindingAPI, IBindingSPI, and IBindingFactory
-interfaces.
+Perhaps you've been wondering how the objects know what objects are their
+parents.  In the process of answering that question, we'll pass through
+lots of interesting or important points along the way.
+
+The short answer to how an object knows what its parent is, is that you
+tell it.  The constructor for \class{binding.Base} takes as its very first
+argument, the object which should be its parent.
+
+In our examples above, however, we never passed a parent into a constructor.
+We created the \class{Car} instance and \class{Transport} instance without
+supplying a parent component.  So those instances were created without a
+parent, which is why when we inspect them, they show up as parentless or
+\strong{root components}.
+
+In PEAK, a root component is any object without a parent.  Only objects whose
+classes provide a \function{getParentComponent} method can have parents, and
+even then they are only considered to have a parent if that method returns 
+something other than \samp{None}.  Classes without such a method, such as
+Python built-in types, are always root components.  For example:
+
+\begin{verbatim%
+}>>> print binding.getParentComponent(123456)
+123456
+>>> print binding.getRootComponent([1,2,3])
+[1, 2, 3]
+>>> print binding.getComponentPath("a string")
+/
+>>> print binding.lookupComponent("upper", "another string")
+<built-in method upper of str object at 0x00F26100>
+\end{verbatim}
+
+As you can see, the inspection functions provided by \module{peak.binding}
+will work with just about any kind of object, and will provide results
+consistent with the interpretation that objects without a \function{%
+getParentComponent} method are root components.
+
+Notice also that an object doesn't have to be based on \class{binding.Base}
+to work in a component hierarchy; all it needs is a \function{%
+getParentComponent} method defined in its class.  For example:
+
+\begin{verbatim%
+}>>> class myGUIControl:
+	def getParentComponent(self):
+		return self.parentWindow
+
+	
+>>> aControl = myGUIControl()
+>>> aControl.parentWindow = "just a demo"
+>>> print binding.getParentComponent(aControl)
+just a demo
+\end{verbatim}
+
+This, by the way, is one of the reasons why it's better to use \module{%
+peak.binding} functions to inspect components instead of calling their
+\function{getParentComponent} or other methods directly.  \function{binding.%
+getParentComponent} has code to handle the case where an object has no
+\function{getParentComponent} method.  Similarly, other inspection functions
+gracefully handle the absence of appropriate support by the object:
+
+\begin{verbatim%
+}>>> print binding.getComponentName(aControl)
+None
+>>> print binding.getComponentPath(aControl)
+/*
+\end{verbatim}
+
+Notice that since we didn't provide any special support in our example GUI
+control class for component names, the \module{peak.binding} system considers
+it not to have a name.  And unknown names show up as \samp{'*'} in component
+path segments.
+
+
+Of course, if we wanted to support our hypothetical GUI controls having
+component names, we would need only to add a \function{getComponentName}
+method to its class.
+
+But how do we know what methods to add, and what values they should accept
+or return?  The \module{peak.binding} framework defines an \strong{interface},
+\class{binding.IBindingSPI}, that defines what methods are used by the binding
+framework.  SPI stands for \strong{Service Provider Interface}, which is kind
+of like the opposite of an API.  APIs are provided \emph{by} frameworks to
+applications, while SPIs define what a framework expects an application or
+plug-in to provide \emph{to} the framework.  Anyway, the \class{binding.%
+IBindingSPI} interface looks basically like this:
+
+\begin{verbatim%
+}class IBindingSPI(config.IConfigSource):
+
+    """Minimum requirements to join a component hierarchy"""
+
+    def getParentComponent():
+        """Return the parent component of this object, or 'None'"""
+
+    def getComponentName():
+        """Return this component's name relative to its parent, or 'None'"""
+\end{verbatim}
+
+By convention, interface names in Python are usually begun with a captial
+``I", to help distinguish them from regular classes.  Also by convention,
+methods are described from the \emph{caller's} perspective, so \samp{self}
+arguments are not included in method definitions.
+
+So, the \class{binding.IBindingSPI} interface tells us that to implement the
+Binding SPI, we need a \function{getParentComponent} method and a \function{%
+getComponentName} method, neither of which takes any parameters, and whose
+return values are as documented.
+
+
+
+
+
+
+
+This interface also inherits from \class{config.IConfigSource}, which defines
+some additional methods which a Binding SPI component should implement.  We'll
+look at those in the coming chapter on the configuration system.  Notice
+that this does \emph{not} mean a component has to inherit from \class{%
+IConfigSource}!  It simply means that a class which promises to implement the
+\class{binding.IBindingSPI} interface is also promising to implement the
+\class{config.IConfigSource} interface as well.
+
+Did our example \class{myGUIControl} class promise to implement \class{%
+binding.IBindingSPI}?  No.  It doesn't have an \samp{__implements__} attribute
+or inherit one, so it's not promising to implement the full \class{IBindingSPI}
+interface.  This is acceptable because \module{peak.binding} verifies the
+presence of needed methods automatically, and it isn't required that a
+component implement all of the \class{IBindingSPI} methods.  Many other
+interfaces however, \emph{must} be promised by a class in order for the
+functionality to work.
+
+The \class{binding.IBindingFactory} interface is a good example of this.
+\class{IBindingFactory} is the interface which defines how component 
+constructors work - at least if they're to be supported by \module{%
+peak.binding}!
+
+You may recall that we said earlier that component constructors accept their
+parent component as the first argument.  But we didn't say what other
+arguments they took, or how it was that the objects in our examples wound up
+with parents when we never supplied any arguments to any constructors.  Well,
+we're about to see how that works.
+
+When a \function{binding.New} binding is activated, it checks to see if
+its \var{obtype} parameter implements \class{IBindingFactory}.  If so,
+it knows that the constructor accepts the appropriate parameters, and supplies
+them when constructing the new instance.  If the \var{obtype} parameter
+doesn't implement \class{IBindingFactory}, it's simply called without any
+parameters.  (If you should need to, you can always override this behavior
+of \function{binding.New} using the \var{bindToOwner} flag.)
+
+Let's take a look at the \class{binding.IBindingFactory} interface in more
+detail.
+
+
+
+\begin{verbatim%
+}class IBindingFactory(Interface):
+
+    """Class interface for creating bindable components"""
+
+    def __call__(parentComponent=None, componentName=None, **attrVals):
+        """Create a new component
+
+        The default constructor signature of a binding component is
+        to receive an optional parent to be bound to, an optional name
+        relative to the parent, and keyword arguments which will be
+        placed in the new object's dictionary, to override the specified
+        bindings."""
+\end{verbatim}
+
+Notice that this interface describes a \function{__call__} method.  This
+doesn't mean that you'll need a \function{__call__} method on your object
+instances or in your class.  It simply means that an object which implements
+the interface should be callable.  Because \class{IBindingFactory} is an
+interface for functions or classes, the \function{__call__} method simply
+documents what behavior the function or class constructor should have.
+
+XXX show how to implement in a class, __init__, __class_implements__, etc.
+
+XXX IBindingAPI interface;  setParentComponent
 
 \subsubsection{Names and Paths}
+
+XXX lookupComponent
 
 \subsection{Hierarchy-Building Tools}
 
 XXX Base, Component, bindToParent, ...
-
 
 
 \section{Connecting Components by Name or Interface}
