@@ -1,15 +1,49 @@
-from peak.api import binding
+from peak.api import binding, model
 from interfaces import *
 from transactions import TransactionComponent
 
-__all__ = ['EntityDM']
+__all__ = ['QueryDM', 'EntityDM']
 
 
-class EntityDM(TransactionComponent):
 
-    __implements__ = IDataManager
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class QueryDM(TransactionComponent):
 
     resetStatesAfterTxn = True
+
+    __implements__ = IDataManager
 
     def __getitem__(self, oid, state=None):
 
@@ -37,6 +71,100 @@ class EntityDM(TransactionComponent):
         return ob
 
     preloadState = __getitem__
+
+
+
+
+
+
+
+
+
+    # Private abstract methods/attrs
+
+    from caches import WeakCache as cache
+
+    defaultClass = model.PersistentQuery
+
+    def ghost(self, oid, state=None):
+
+        klass = self.defaultClass
+
+        if klass is None:
+            raise NotImplementedError
+
+        return klass()
+
+
+    def load(self, oid, ob):
+        raise NotImplementedError
+
+
+    # Persistence.IPersistentDataManager methods
+
+    def setstate(self, ob):
+
+        if self.resetStatesAfterTxn:
+            # must always be used in a txn
+            self.txnSvc
+
+        oid = ob._p_oid
+        assert oid is not None
+        ob.__setstate__(self.load(oid,ob))
+
+
+    def mtime(self, ob):
+        pass    # return None
+
+    def register(self, ob):
+        raise TypeError("Attempt to modify query result", ob)
+
+
+
+    # ITransactionParticipant methods
+
+    def finishTransaction(self, txnService, committed):
+
+        if self.resetStatesAfterTxn:
+
+            for ob in self.cache.values():
+                ob._p_deactivate()
+
+        super(QueryDM,self).finishTransaction(txnService,committed)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class EntityDM(QueryDM):
+
+    __implements__ = IWritableDM
 
 
     def oidFor(self, ob):
@@ -72,6 +200,7 @@ class EntityDM(TransactionComponent):
 
         self.register(ob)
         return ob
+
 
 
     # Set/state management
@@ -115,29 +244,9 @@ class EntityDM(TransactionComponent):
 
 
 
-
-
-
-
-
-
     # Private abstract methods/attrs
 
-    from caches import WeakCache as cache
-
     defaultClass = None
-
-    def ghost(self, oid, state=None):
-
-        klass = self.defaultClass
-
-        if klass is None:
-            raise NotImplementedError
-
-        return klass()
-
-    def load(self, oid, ob):
-        raise NotImplementedError
 
     def save(self, ob):
         raise NotImplementedError
@@ -153,27 +262,7 @@ class EntityDM(TransactionComponent):
 
 
 
-
-
-
-
-
-
-
-
-
     # Persistence.IPersistentDataManager methods
-
-    def setstate(self, ob):
-
-        if self.resetStatesAfterTxn:
-            # must always be used in a txn
-            self.txnSvc
-
-        oid = ob._p_oid
-        assert oid is not None
-        ob.__setstate__(self.load(oid,ob))
-
 
     def register(self, ob):
     
@@ -195,16 +284,9 @@ class EntityDM(TransactionComponent):
         return self.txnSvc
 
 
-    def mtime(self, ob):
-        pass    # return None
-
-
-
-
-
 
     # ITransactionParticipant methods
-    
+
     def readyToVote(self, txnService):
         if self.dirty:
             self.flush()
@@ -232,19 +314,13 @@ class EntityDM(TransactionComponent):
 
             set.clear()
 
-    def finishTransaction(self, txnService, committed):
-
-        if self.resetStatesAfterTxn:
-
-            for ob in self.cache.values():
-                ob._p_deactivate()
-
-        super(EntityDM,self).finishTransaction(txnService,committed)
 
 
 
 
 
+
+    
 
 
 

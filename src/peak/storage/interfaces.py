@@ -6,8 +6,8 @@ from Interface.Attribute import Attribute
 __all__ = [
     'ITransactionService', 'ITransactionParticipant', 'ICache',
     'ITransactionErrorHandler', 'ICursor', 'IRow',
-    'IDataManager', 'I_DM_Implementation', 'IManagedConnection',
-    'IManagedConnImpl',
+    'IDataManager', 'IDataManager_SPI', 'IWritableDM', 'IWritableDM_SPI',
+    'IManagedConnection', 'IManagedConn_SPI',
 ]
 
 class ITransactionService(Interface):
@@ -207,7 +207,6 @@ class ITransactionErrorHandler(Interface):
 
 from Persistence.IPersistentDataManager import IPersistentDataManager
 
-
 class IDataManager(ITransactionParticipant, IPersistentDataManager):
 
     """Data manager for persistent objects or queries"""
@@ -221,7 +220,12 @@ class IDataManager(ITransactionParticipant, IPersistentDataManager):
         
     def preloadState(oid, state):
         """Pre-load 'state' for object designated by 'oid' and return it"""
-        
+
+
+class IWritableDM(IDataManager):
+
+    """Data manager that possibly supports adding/modifying objects"""
+
     def oidFor(ob):
         """Return an 'oid' suitable for retrieving 'ob' from this DM"""
         
@@ -240,13 +244,9 @@ class IDataManager(ITransactionParticipant, IPersistentDataManager):
 
 
 
+class IDataManager_SPI(Interface):
 
-
-
-
-class I_DM_Implementation(Interface):
-
-    """Methods/attrs that must/may be redefined in an EntityDM subclass"""
+    """Methods/attrs that must/may be redefined in a QueryDM subclass"""
     
     cache = Attribute("a cache for ghosts and loaded objects")
 
@@ -263,6 +263,11 @@ class I_DM_Implementation(Interface):
     def load(oid, ob):
         """Load & return the state for 'oid', suitable for '__setstate__()'"""
 
+
+class IWritableDM_SPI(IDataManager_SPI):
+
+    """Additional methods needed for writing objects in an EntityDM"""
+
     def save(ob):
         """Save 'ob' to underlying storage"""
 
@@ -274,11 +279,6 @@ class I_DM_Implementation(Interface):
 
     def thunk(ob):
         """Hook for implementing cross-database "thunk" references"""
-
-
-
-
-
 
 
 
@@ -367,7 +367,7 @@ class IManagedConnection(ITransactionParticipant):
 
 
 
-class IManagedConnImpl(Interface):
+class IManagedConn_SPI(Interface):
 
     """Methods that must/may be defined in a ManagedConnection subclass"""
 

@@ -1,6 +1,5 @@
 Open Issues/To-Do Items
 
-
  Targeted for 0.5 Alpha 1
 
     * Finish tutorial chapter 2
@@ -11,17 +10,13 @@ Open Issues/To-Do Items
 
  Targeted for 0.5 Final Release (or sooner)
 
-
     General
 
         * Tutorial complete through chapter 4
 
-
     peak.storage
 
         - "facade" DM base class(es)
-
-        - "query" DM base class(es)
 
         - unit tests for more complex object scenarios: references, thunks..?
 
@@ -34,8 +29,6 @@ Open Issues/To-Do Items
         - docstrings for reference
 
     peak.model
-
-        - add support for lazy-loaded attributes
 
         - clean up TW docstrings & interfaces
 
@@ -78,6 +71,13 @@ Open Issues/To-Do Items
         - docstrings for reference
 
         - more unit tests?
+
+
+
+
+
+
+
 
 
  Future Releases

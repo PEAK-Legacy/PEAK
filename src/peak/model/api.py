@@ -13,13 +13,13 @@ __all__ = [
     'App','Service', 'MethodExporter', 'FeatureMC',
     'StructuralFeature', 'Field', 'Collection', 'Reference', 'Sequence',
     'Classifier','PrimitiveType','Enumeration','DataType','Element',
+    'LazyLoader', 'PersistentQuery',
 ]
 
 
 # We export the interfaces too, so people don't have to dig for them...
 
 __all__ += allInterfaces
-
 
 
 
@@ -460,6 +460,17 @@ class Element(DataType, Persistent):
         self._p_changed = True
         self.__dict__[attr]=value
 
+    def _getBinding(self,attr,default=None):
+
+        ob = self.__dict__.get(attr,default)
+
+        if isinstance(ob,LazyLoader):
+            del self.__dict__[attr]
+            ob.load(self,attr)
+            return self._getBinding(attr,default)
+
+        return ob
+
     def _delBinding(self,attr):
         if attr in self.__dict__:
             self._p_changed = True
@@ -475,6 +486,68 @@ class Element(DataType, Persistent):
 
     def getComponentName(self):
         return self._p_oid
+
+
+
+
+class PersistentQuery(Persistent):
+
+    """An immutable PersistentList for query results"""
+
+    def __repr__(self): return repr(self.data)
+    def __lt__(self, other): return self.data <  self.__cast(other)
+    def __le__(self, other): return self.data <= self.__cast(other)
+    def __eq__(self, other): return self.data == self.__cast(other)
+    def __ne__(self, other): return self.data != self.__cast(other)
+    def __gt__(self, other): return self.data >  self.__cast(other)
+    def __ge__(self, other): return self.data >= self.__cast(other)
+    def __cmp__(self, other): return cmp(self.data, self.__cast(other))
+    def __cast(self, other):
+        if isinstance(other, PersistentQuery): return other.data
+        else: return other
+
+    def __contains__(self, item): return item in self.data
+    def __len__(self): return len(self.data)
+    def __getitem__(self, i): return self.data[i]
+
+    def __getslice__(self, i, j):
+        i = max(i, 0); j = max(j, 0)
+        return self.__class__(self.data[i:j])
+
+    def __add__(self, other):
+        return self.data + list(other)
+
+    def __radd__(self, other):
+        return list(other) + self.data
+           
+    def __mul__(self, n):
+        return self.data*n
+
+    __rmul__ = __mul__
+
+    def count(self, item): return self.data.count(item)
+    def index(self, item): return self.data.index(item)
+
+
+
+
+class LazyLoader(object):
+
+    """Abstract base for lazy loaders of persistent features"""
+
+    def load(self, ob, attrName):
+        """Load 'ob' at least with 'attrName'
+
+        Note that a lazy loader is allowed to load all the attributes it
+        knows how to, as long as it only overwrites *itself* in the object's
+        dictionary.  That is, if an attribute to be read has already been
+        written to, it should not reload that attribute.
+
+        This method is not required to return a value, and it can ignore
+        the 'attrName' parameter as long as it is certain that the 'attrName'
+        attribute will be loaded.
+        """
+        raise NotImplementedError
 
 
 config.setupModule()
