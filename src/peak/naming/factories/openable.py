@@ -13,7 +13,7 @@ class FileURL(naming.ParsedURL):
 
     # XXX needs parser for //user:auth@host:port/path?query#frag
     # XXX could then be shared with URLs for http, ftp, https...
-    # XXX Probably path portion needs to be manipulable as 
+    # XXX Probably path portion needs to be manipulable as
 
     def retrieve(self, refInfo, name, context, attrs=None):
         return FileFactory(filename = urlToLocalFile(self))
@@ -22,11 +22,11 @@ class FileURL(naming.ParsedURL):
 def urlToLocalFile(url):
 
     path = url.body
-    
+
     if path.startswith('//'):
         # XXX need to translate '/' into local 'os.sep'?
-        return path[2:].split('/',1)[1:]
-        
+        return path[2:].split('/',1)[1]
+
     return path
 
 
@@ -56,9 +56,6 @@ class URLStreamFactory(binding.Base):
         if writable:
             raise TypeError("URL not writable", self.target)
 
-        if not autocommit:
-            raise TypeError("URL requires autocommit", self.target)
-
         if mode<>'b':
             raise TypeError("URL requires binary read mode", self.target)
 
@@ -78,6 +75,9 @@ class URLStreamFactory(binding.Base):
 
     def delete(self, autocommit=False):
         raise TypeError("Can't delete URL", self.target)
+
+
+
 
 
     def exists(self):
@@ -150,14 +150,15 @@ class FileFactory(binding.Base):
         if mode not in ('t','b','U'):
             raise TypeError("Invalid open mode:", mode)
 
-        if not ac:
-            raise TypeError("Files require autocommit")
+        if not ac and flags<>'r':
+            raise TypeError("Files require autocommit for write operations ")
 
         return open(self.filename, flags+mode)
 
 
     # XXX def delete(self,autocommit=False):
     # XXX def move(self, other, overwrite=True, autocommit=False):
-        
+
+
 
 
