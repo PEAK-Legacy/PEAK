@@ -31,23 +31,23 @@ def parseCmd(ctx, cmdline, defaults):
     try:
         for a in l:
             if a.startswith('>>'):
-                factory = config.IStreamSource(a[2:]).getFactory(ctx)
+                factory = config.getStreamFactory(ctx,a[2:])
                 r['stdout'] = f = factory.update('t', append=True, autocommit=True)
                 r['close'][f] = 1
             elif a.startswith('>'):
-                factory = config.IStreamSource(a[1:]).getFactory(ctx)
+                factory = config.getStreamFactory(ctx,a[1:])
                 r['stdout'] = f = factory.create('t', autocommit=True)
                 r['close'][f] = 1
             elif a.startswith('2>>'):
-                factory = config.IStreamSource(a[3:]).getFactory(ctx)
+                factory = config.getStreamFactory(ctx,a[3:])
                 r['stderr'] = f = factory.update('t', append=True, autocommit=True)
                 r['close'][f] = 1
             elif a.startswith('2>'):
-                factory = config.IStreamSource(a[2:]).getFactory(ctx)
+                factory = config.getStreamFactory(ctx,a[2:])
                 r['stderr'] = f = factory.create('t', autocommit=True)
                 r['close'][f] = 1
             elif a.startswith('<'):
-                factory = config.IStreamSource(a[1:]).getFactory(ctx)
+                factory = config.getStreamFactory(ctx,a[1:])
                 r['stdin'] = f = factory.open('t', autocommit=True)
                 r['close'][f] = 1
             else:

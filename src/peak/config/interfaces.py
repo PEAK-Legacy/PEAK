@@ -3,7 +3,7 @@ from protocols import Interface, Attribute
 
 __all__ = [
     'IConfigKey', 'IConfigurable', 'IConfigSource', 'IConfigurationRoot',
-    'ISmartProperty', 'IRule', 'ISettingLoader', 'IStreamSource',
+    'ISmartProperty', 'IRule', 'ISettingLoader',
     'IIniParser', 'ISettingParser', 'NullConfigRoot', 'IConfigMap',
     'IServiceArea',
 ]
@@ -268,11 +268,11 @@ class ISmartProperty(Interface):
         if any."""
 
 
-class IStreamSource(Interface):
-    """A way to load configuration from a file, URL, or other stream"""
 
-    def getFactory(context):
-        """Return a 'naming.IStreamFactory', using 'context' for any lookups"""
+
+
+
+
 
 
 

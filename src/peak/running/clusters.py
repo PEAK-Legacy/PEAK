@@ -178,7 +178,7 @@ def loadCluster(configMap, filename=None, prefix='peak.running.cluster.*',
 
     stream = None
     if filename is not None:
-        factory = config.IStreamSource(filename).getFactory(configMap)
+        factory = config.getStreamFactory(configMap,filename)
         if factory.exists():
             stream = factory.open('t')
 

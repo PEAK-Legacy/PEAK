@@ -4,7 +4,7 @@ from peak.util.imports import importString, importObject, whenImported
 from peak.binding.components import Component, Make, getParentComponent
 from peak.binding.components import iterParents,Configurable,Require,Delegate
 from peak.binding.interfaces import IAttachable, IRecipe
-from peak.naming.interfaces import IStreamFactory
+from peak.naming.interfaces import IStreamFactory, IAddress
 from peak.util.EigenData import EigenCell,AlreadyRead
 from peak.util.FileParsing import AbstractConfigParser
 from registries import FactoryFor
@@ -16,7 +16,7 @@ __all__ = [
     'ConfigMap', 'LazyRule', 'fileNearModule', 'packageFile', 'IniLoader',
     'Value', 'iterKeys', 'Namespace', 'iterValues',
     'CreateViaFactory', 'parentsProviding', 'parentProviding', 'lookup',
-    'ServiceArea', 'XMLKey', 'processXML', 'XMLParser',
+    'ServiceArea', 'XMLKey', 'processXML', 'XMLParser', 'getStreamFactory'
 ]
 
 
@@ -255,17 +255,17 @@ class XMLParser(Component):
 
 
     def parse(self,source):
-        """Parse an 'IStreamSource' using the configured parser
+        """Parse a stream source using the configured parser
 
-        'source' should be a 'config.IStreamSource' containing the XML to be
-        parsed.  Note that this method will only return a value if a 'finish'
-        function is defined for the top-level document.  The 'finish' function
-        can be set as a 'peak.config.xml_functions' property, passed in via a
-        keyword argument to the constructor, or it can be set by a 'start'
-        function.
+        'source' should be a stream source (see 'config.getStreamFactory()')
+        for the XML to be parsed.  Note that this method will only return a
+        value if a 'finish' function is defined for the top-level document.
+        The 'finish' function can be set as a 'peak.config.xml_functions'
+        property, passed in via a keyword argument to the constructor, or it
+        can be set by a 'start' function.
         """
         
-        factory = IStreamSource(source).getFactory(self)
+        factory = getStreamFactory(self,source)
         stream = factory.open('t')
         try:
             return self.makeParser().parseStream(
@@ -296,33 +296,74 @@ def processXML(context,source,**kw):
     return XMLParser(context,**kw).parse(source)
 
 
-class StreamSource(protocols.Adapter):
+[dispatch.on('source')]
+def getStreamFactory(context,source):
+    """Return a 'naming.IStreamFactory' for 'source'
 
-    protocols.advise(
-        instancesProvide=[IStreamSource],
-        asAdapterForTypes=[str,unicode]
-    )
+    Usage::
 
-    def getFactory(self, context):
-        from peak.naming.factories.openable import FileFactory,FileURL
-        try:
-            url = FileURL.fromFilename(self.subject)
-        except exceptions.InvalidName:
-            url = naming.toName(self.subject, FileURL.fromFilename)
-        if isinstance(url,FileURL):
-            return FileFactory(filename=url.getFilename())
-        return naming.lookup(context,url)
+        factory = config.getStreamFactory(context,source)
+
+    If 'source' is a 'naming.IStreamFactory', it is simply returned.
+    If it is a string or Unicode object, it will be interpreted as
+    either a filename or URL.  If it is a URL, it will be looked up
+    in 'context'.  If it is a filename, a file-based stream factory will
+    be returned.  (This is so that the configuration system can use filenames
+    without the naming system configuration being bootstrapped yet.)
+
+    This is a generic function, and you may define additional cases for it
+    using its 'when()' method; e.g.::
+
+        [config.getStreamFactory.when(MyType)]
+        def getStreamFactory(context,source):
+            '''Return a stream factory for 'source' (a 'MyType' instance)'''
+    """
 
 
-class FactorySource(protocols.Adapter):
 
-    protocols.advise(
-        instancesProvide=[IStreamSource],
-        asAdapterForProtocols=[IStreamFactory]
-    )
 
-    def getFactory(self, context):
-        return self.subject
+
+
+
+
+[getStreamFactory.when(IStreamFactory)]
+def getStreamFactory_alreadyFactory(context,source):
+    return source
+
+
+[getStreamFactory.when([str,unicode])]
+def getStreamFactory_fromString(context,source):
+    from peak.naming.factories.openable import FileFactory,FileURL
+    try:
+        url = FileURL.fromFilename(source)
+    except exceptions.InvalidName:
+        url = naming.toName(source, FileURL.fromFilename)
+    if isinstance(url,FileURL):
+        return FileFactory(filename=url.getFilename())
+    return IStreamFactory(naming.lookup(context,url))
+
+
+[getStreamFactory.when(IAddress)]
+def getStreamFactory_fromAddress(context,source):
+    return IStreamFactory(naming.lookup(context,source))
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

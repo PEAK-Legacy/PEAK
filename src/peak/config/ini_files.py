@@ -51,7 +51,7 @@ protocols.adviseObject(loadMapping, provides=[ISettingLoader])
 
 def loadConfigFile(pMap, filename, prefix='*', includedFrom=None):
     if filename:
-        factory = IStreamSource(filename).getFactory(pMap)
+        factory = config.getStreamFactory(pMap,filename)
         if factory.exists():
             stream = factory.open('t')
             try:

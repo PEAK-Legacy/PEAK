@@ -14,7 +14,7 @@ class BaseLoader(ZConfig.loader.BaseLoader, binding.Component):
     def openResource(self, url):
         url = str(url)
         try:
-            factory = config.IStreamSource(url).getFactory(self)
+            factory = config.getStreamFactory(self,url)
             file = factory.open('t')
         except (IOError, OSError), e:
             # Python 2.1 raises a different error from Python 2.2+,
@@ -34,7 +34,7 @@ class BaseLoader(ZConfig.loader.BaseLoader, binding.Component):
 
     def getObjectInstance(self, context, refInfo, name, attrs=None):
         url, = refInfo.addresses
-        ob = config.IStreamSource(url).getFactory(self)
+        ob = config.getStreamFactory(self,url)
         return self.loadFile(ob.open('t'), str(url))
 
 
@@ -96,7 +96,7 @@ command-line arguments.
 """
 
     def interpret(self, filename):
-        factory = config.IStreamSource(filename).getFactory(self)
+        factory = config.getStreamFactory(self,filename)
         ob, handler = self.loadFile(factory.open('t'), factory.address)
         binding.suggestParentComponent(self.getCommandParent(),None,ob)
         return self.getSubcommand(ob)
