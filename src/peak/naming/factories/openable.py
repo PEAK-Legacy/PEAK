@@ -214,7 +214,7 @@ class URLStreamFactory(binding.Component):
         instancesProvide=[naming.IStreamFactory]
     )
 
-    target = binding.requireBinding("urllib2 URL or request", "target")
+    target = binding.requireBinding("urllib2 URL or request")
 
 
     def open(self,mode,seek=False,writable=False,autocommit=False):
@@ -293,7 +293,7 @@ class FileFactory(binding.Component):
         instancesProvide=[naming.IStreamFactory]
     )
 
-    filename = binding.requireBinding("Filename to open/modify", "filename")
+    filename = binding.requireBinding("Filename to open/modify")
 
 
     def open(self,mode,seek=False,writable=False,autocommit=False):
