@@ -317,7 +317,7 @@ class cursorToHTML(AbstractCursorFormatter):
         return v
 
     def htmlquote(self,v):
-        v = v.replace('&','&amp;').replace('"','&quot')
+        v = v.replace('&','&amp;').replace('"','&quot;')
         return v.replace('<','&lt;').replace('>','&gt;')
 
 
