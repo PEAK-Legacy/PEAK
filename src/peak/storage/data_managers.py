@@ -232,11 +232,11 @@ class QueryDM(TransactionComponent):
             else:
                 ob.__setstate__(state)
 
-            self.cache[oid] = ob
-
+        self.cache[oid] = ob
         return ob
 
     preloadState = __getitem__
+
 
 
 
@@ -291,11 +291,11 @@ class QueryDM(TransactionComponent):
 
         if self.resetStatesAfterTxn:
 
-            for ob in self.cache.values():
-                ob._p_deactivate()
+            for oid, ob in self.cache.items():
+                if isinstance(ob,Persistent):
+                    ob._p_deactivate()
 
         super(QueryDM,self).finishTransaction(txnService,committed)
-
 
 
 

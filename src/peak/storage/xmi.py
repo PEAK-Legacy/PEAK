@@ -464,7 +464,7 @@ class XMI_DM(storage.EntityDM):
         klass = self.getClass(target._name)
         if issubclass(klass,Persistent):
             return klass()
-        ob = klass()
+        ob = self.cache[oid] = klass()
         ob.__dict__.update(target.stateForClass(ob.__class__, self))
         return ob
 
