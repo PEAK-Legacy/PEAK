@@ -56,29 +56,6 @@ class ITransactionService(Interface):
         they unsubscribe, or until the transaction object is
         de-allocated!"""
         
-    def unsubscribe(participant):
-        """Remove 'participant' from the set of objects that will
-        receive transaction messages.  It can only be called when a
-        transaction is not in progress, or in response to
-        begin/commit/abort_txn() messages received by the
-        unsubscribing participant.  Otherwise, TransactionInProgress
-        will be raised."""
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
     # Getting/setting information about a transaction
 
@@ -102,6 +79,7 @@ class ITransactionService(Interface):
         """Return a copy of the transaction's metadata dictionary"""
         
 
+
     # "Sub-transaction" support
     
     def savepoint():
@@ -111,14 +89,6 @@ class ITransactionService(Interface):
         data to be written out.  But it can also be used in conjunction
         with 'rollback()' to provide a 'nested transactions',
         if all participants support reverting to savepoints."""
-
-
-
-
-
-
-
-
 
 
 class ISavepoint(Interface):
@@ -143,21 +113,10 @@ class ISavepoint(Interface):
 
 try:
     from Transaction.IRollback import IRollback as ISavepoint
+
 except ImportError:
     # No ZODB transactions?  just use our own Savepoint interface
     pass
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

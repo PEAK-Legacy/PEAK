@@ -19,23 +19,23 @@ class TransactionService(binding.AutoCreated):
     participants = binding.New(list)
     info         = binding.New(dict)
     timestamp    = None
-
+    safeToJoin   = True
 
     def subscribe(self, participant):
 
-        # XXX need state check for not past "ready" stage
+        if self.safeToJoin:
+            if participant not in self.participants:
+                self.participants.append(participant)
 
-        if participant not in self.participants:
-            self.participants.append(participant)
-
-
-    def unsubscribe(self, participant):
-
-        if self.isActive():
+        else:
             raise TransactionInProgress
 
-        if participant in self.participants:
-            self.participants.remove(participant)
+
+
+
+
+
+
 
 
 
@@ -68,15 +68,15 @@ class TransactionService(binding.AutoCreated):
         if unready:
             raise NotReadyError(unready)
 
-        spl = [p.getSavepoint(self) for p in self.participants]
+        self.safeToJoin = False
+
+        try:
+            spl = [p.getSavepoint(self) for p in self.participants]
+        finally:
+            self.safeToJoin = True
         
         return MultiSavepoint(spl)
         
-
-
-
-
-
 
 
 
@@ -103,10 +103,23 @@ class TransactionService(binding.AutoCreated):
         if unready:
             raise NotReadyError(unready)
 
+
+        self.safeToJoin = False
+        
         for p in self.participants:
             p.voteForCommit(self)
 
         return True
+
+
+
+
+
+
+
+
+
+
 
     def begin(self, **info):
 
@@ -147,7 +160,12 @@ class TransactionService(binding.AutoCreated):
             self._cleanup()
 
 
+
+
     def _abort(self):
+
+        self.safeToJoin = False
+
         for p in self.participants:
             p.abortTransaction(self)
 
@@ -178,29 +196,11 @@ class TransactionService(binding.AutoCreated):
             for p in self.participants:
                 p.finishTransaction(self)
         finally:
-            del self.info, self.timestamp
+            del self.info, self.timestamp, self.participants, self.safeToJoin
 
 
     def isActive(self):
         return self.timestamp is not None
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 class AbstractParticipant(object):
