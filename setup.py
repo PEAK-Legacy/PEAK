@@ -2,7 +2,7 @@
 """Distutils setup file"""
 
 import sys, os
-from setuptools import setup, Extension, Feature, findPackages
+from setuptools import setup, Extension, Feature, find_packages
 
 # Metadata
 PACKAGE_NAME = "PEAK"
@@ -15,7 +15,7 @@ HAPPYDOC_IGNORE = [
 
 scripts = ['scripts/peak']
 
-packages = findPackages('src')
+packages = find_packages('src')
 
 extensions = [
     Extension("kjbuckets", ["src/kjbuckets/kjbucketsmodule.c"]),
