@@ -8,7 +8,7 @@ from peak.util.Import import interpretSpec, importString
 __implements__ = IObjectFactory, IStateFactory, IURLContextFactory
 
 schemes = {
-    # XXX
+    'smtp'  :   'smtp:smtpContext',
 }
 
 
@@ -40,7 +40,7 @@ def getURLContext(scheme, context, environment, iface=IBasicContext):
 
 
 addrTypes = {
-    # XXX
+    'smtp'  :   'smtp:smtpFactory',
 }
 
 
