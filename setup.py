@@ -150,7 +150,7 @@ setup(
 
     cmdclass = {
         'install_data': install_data, 'sdist': sdist, 'happy': happy,
-        'test': test,
+        'test': test, 'sdist_nodoc': old_sdist,
     },
     
     data_files = [
