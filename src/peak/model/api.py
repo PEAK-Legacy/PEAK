@@ -215,15 +215,15 @@ class Specialist(Service):
 
     isAbstract     = 0
 
-    elementClass   = requireBinding(
+    elementClass   = binding.requireBinding(
         "Class for elements managed by this specialist"
     )
 
-    keyGenerator   = requireBinding("Object with a 'next()' method")
+    keyGenerator   = binding.requireBinding("Object with a 'next()' method")
 
-    recordManager  = requireBinding("RecordManager to get records from")
-    requiredType   = requireBinding("RecordType name that records must have")
-    keyField       = requireBinding("Name of record key field")
+    recordManager  = binding.requireBinding("RecordManager to get records from")
+    requiredType   = binding.requireBinding("RecordType name that records must have")
+    keyField       = binding.requireBinding("Name of record key field")
     keyConstants   = ()         # key/value pairs to be passed to recordType
 
     subtypeSpecialists = ()     # specialists to check for subtypes

@@ -134,7 +134,7 @@ setup(
     
     packages=[
         'peak', 'peak.api', 'peak.binding', 'peak.model', 'peak.metamodels',
-        'peak.metamodels.MOF', 'peak.metamodels.UML', 'peak.metamodels.XMI',
+        'peak.metamodels.mof', 'peak.metamodels.uml', 'peak.metamodels.xmi',
         'peak.util',
 
         'peak.api.tests', 'peak.binding.tests',

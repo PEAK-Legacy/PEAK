@@ -1,25 +1,22 @@
 """Domain logic and convenience features for manipulating UML Models
 
     This module adds a couple of domain logic features to the 'UMLClass'
-    class family defined by 'TW.UML.MetaModel'.  Specifically, it adds
-    some computed features, such as the notion of a "qualified name" of
-    a UML model element, and the "superclasses" and "subclasses" of UML
+    class family defined by 'peak.metamodels.uml.MetaModel'.  Specifically,
+    it adds some computed features, such as the notion of a "qualified name"
+    of a UML model element, and the "superclasses" and "subclasses" of UML
     generalizable elements.
 
-    It also redefines 'SEF' to be 'TW.SEF.SimpleModel', which adds
-    querying and XMI reading aspects to the basic in-memory SEF
-    structural model.
+    It also redefines 'model' to be 'peak.metamodels.SimpleModel', which adds
+    querying and XMI reading aspects to the basic in-memory structural model.
 """
 
-from TW.API import *
-import TW.UML.MetaModel
-import TW.SEF.SimpleModel as SEF
+from peak.api import *
+import peak.metamodels.uml.MetaModel
+import peak.metamodels.SimpleModel as model
 from types import StringType, FunctionType
-from TW.SEF.Queries import NodeList, ComputedFeature
+from peak.metamodels.querying import NodeList, ComputedFeature
 
-__bases__ = TW.UML.MetaModel,
-
-
+__bases__ = peak.metamodels.uml.MetaModel,
 
 
 
@@ -39,7 +36,10 @@ __bases__ = TW.UML.MetaModel,
 
 
 
-class UMLClass(SEF.App):
+
+
+
+class UMLClass(model.App):
 
     class ModelElement:
     
@@ -84,9 +84,10 @@ setupModule()
 
 '''
 # Old stuff -- hanging onto it until we have a standard way to generate
-# TW.UML.MetaModel directly from the formal XMI specification of UML
+# peak.metamodels.uml.MetaModel directly from the formal XMI
+# specification of UML
 
-from TW.Utils.Pluralizer import Pluralizer
+from peak.util.Pluralizer import Pluralizer
 
 UMLPlurals = Pluralizer(
     stimulus='stimuli',
@@ -104,9 +105,8 @@ DIR = dirname(__file__)
 mmx     = join(DIR,'metamodel.xml')
 cache   = mmx+'.pickle'
 
-from TW.MOF import MMX
+from peak.metamodels.mof import MMX
 MetaModel = MMX.load(mmx,cache,UMLPlurals,name='UML_MetaModel')
-
 
 
 

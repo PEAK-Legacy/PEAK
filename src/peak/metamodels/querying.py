@@ -315,5 +315,5 @@ class Between(Predicate):
     #def _compiledForm(self):
     #    return Query.Range(self.lo,self.hi)
 
-from TW.API import setupModule
+from peak.api import setupModule
 setupModule()

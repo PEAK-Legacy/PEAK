@@ -5,13 +5,13 @@ those tests.
 """
 
 allSuites = [
-    'TW.SEF.tests.General:test_suite',
+    'peak.metamodels.tests.General:test_suite',
 ]
 
 def test_suite():
 
     from unittest import TestSuite
-    from TW.Utils.Import import importString
+    from peak.util.Import import importString
 
     return TestSuite(
         [importString(t)() for t in allSuites]

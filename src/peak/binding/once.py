@@ -1,41 +1,41 @@
-"""Miscellaneous API functions, classes, etc."""
+"""'Once' objects and classes"""
 
-from Meta import ActiveDescriptor
+from meta import ActiveDescriptor
 
-__all__ = ['Once', 'OnceClass', 'Items']
+__all__ = ['Once', 'OnceClass']
 
 
-def Items(mapping=None, **kwargs):
 
-    """Convert 'mapping' and/or 'kwargs' into a list of '(key,val)' items
 
-        Key/value item lists are often easier or more efficient to manipulate
-        than mapping objects, so TransWarp API's tend to use such lists as
-        a preferred parameter format.  Sometimes, however, the syntactic sugar
-        of keyword items, possibly in combination with an existing mapping
-        object, is desired.  In those cases, the 'Items()' function can be
-        used .
 
-        'Items()' takes an optional mapping and optional keyword arguments, and
-        returns a key/value pair list that contains the items from both the
-        mapping and keyword arguments, with the keyword arguments taking
-        precedence over (i.e. being later in the list than) the mapping items.
-    """
 
-    if mapping:
 
-        i = mapping.items()
 
-        if kwargs:
-            i.extend(kwargs.items())
 
-        return i
 
-    elif kwargs:
-        return kwargs.items()
 
-    else:
-        return []
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -62,14 +62,14 @@ class Once(ActiveDescriptor):
         to the '__name__' of the supplied callable.  (So in the usage
         example above, it could have been omitted.)
 
-        'Once' is a 'Meta.ActiveDescriptor', so if you place an instance of it
-        in a class which supports descriptor naming (i.e., has a metaclass
-        derived from 'Meta.ActiveDescriptors'), it will automatically know the
-        correct attribute name to use in the instance dictionary, even if it
-        is different than the supplied name or name of the supplied callable.
-        However, if you place a 'Once' instance in a class which does *not*
-        support descriptor naming, and you did not supply a valid name,
-        attribute access will fail with a 'TypeError'.
+        'Once' is a 'binding.meta.ActiveDescriptor', so if you place an
+        instance of it in a class which supports descriptor naming (i.e.,
+        has a metaclass derived from 'binding.meta.ActiveDescriptors'), it will
+        automatically know the correct attribute name to use in the instance
+        dictionary, even if it is different than the supplied name or name of
+        the supplied callable.  However, if you place a 'Once' instance in a
+        class which does *not* support descriptor naming, and you did not
+        supply a valid name, attribute access will fail with a 'TypeError'.
     """
 
     attrName = None

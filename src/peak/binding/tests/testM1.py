@@ -1,4 +1,4 @@
-from TW.API import * 
+from peak.api import * 
 
 # This is a regression test for a certain weird simulator behavior...
 # Leave the next two lines in!

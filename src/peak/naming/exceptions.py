@@ -41,7 +41,7 @@ __all__ = [
 
 class NamingException(Exception):
 
-    """Base class for all TW.Naming exceptions
+    """Base class for all peak.naming exceptions
 
         Supports the following constructor keyword arguments, which then
         become attributes of the exception object:

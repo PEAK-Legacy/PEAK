@@ -1,4 +1,4 @@
-from TW.API import *
+from peak.api import *
 
 class Referenced:
     M2 = 'M2'
@@ -44,4 +44,4 @@ aGlobal1 = 'M2'
 def aFunc2(aParam):
     return 'after(%s)' % __proceed__('before(%s)' % aParam)
 
-adviseModule('TW.API.tests.testM1a')
+adviseModule('peak.api.tests.testM1a')

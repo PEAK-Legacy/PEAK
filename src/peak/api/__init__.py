@@ -1,4 +1,4 @@
-"""The TransWarp Software Automation API
+"""The PEAK API
 
  Component Construction and Specification (aka the "kernel API")
 
@@ -20,14 +20,14 @@
     
     **To Be Continued**
 
- The TW.API Package
+ The peak.api Package
     
     The API package exports all the relevant contents from its contained
-    modules.  Normal usage is just 'from TW.API import *', but of course you
-    can always do 'import TW.API' or 'from TW import API as foo', if you
-    prefer.  All of the TW.API modules define '__all__' lists to limit their
-    exports.  Please see individual modules for more detailed documentation and
-    usage info.
+    modules.  Normal usage is just 'from peak.api import *', but of course you
+    can always do 'import peak.api' or 'from peak import api as foo', if you
+    prefer.  All of the 'peak.api' modules define '__all__' lists to limit
+    their exports.  Please see individual modules for more detailed
+    documentation and usage info.
 """
 
 
@@ -49,27 +49,27 @@ __all__ = ['NOT_GIVEN', 'NOT_FOUND']
 
 # Import module inheritance support first, because almost everything uses it
 
-from Modules import *
-from Modules import __all__ as ModulesAll
+from modules import *
+from modules import __all__ as ModulesAll
 
 __all__.extend(ModulesAll)
 
 
-# Core metaclasses and misc. API's come next; many things use them...
+# Misc. API's come next; many things use them...
 
-import Meta
-__all__.append('Meta')
-
-from Misc import *
-from Misc import __all__ as MiscAll
+from misc import *
+from misc import __all__ as MiscAll
 __all__.extend(MiscAll)
 
 
 # Last, but very far from least, Service-Element-Feature support.
 
-from TW.Utils.Import import lazyImport
+from peak.util.Import import lazyImport
 
-SEF = lazyImport('TW.SEF.Basic')
-__all__.append('SEF')
+model = lazyImport('peak.model.basic')
+__all__.append('model')
+
+binding = lazyImport('peak.binding')
+__all__.append('binding')
 
 del lazyImport

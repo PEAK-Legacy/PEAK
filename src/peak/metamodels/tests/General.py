@@ -1,14 +1,14 @@
 """Integration/acceptance tests for SEF.SimpleModel, etc."""
 
 from unittest import TestCase, makeSuite, TestSuite
-from TW.SEF.Queries import ANY, Equals
-from TW.API import *
+from peak.metamodels.querying import ANY, Equals
+from peak.api import *
 
 class UMLTest(TestCase):
 
     def setUp(self):
         global UMLClass
-        from TW.UML.Model import UMLClass
+        from peak.metamodels.uml.Model import UMLClass
         self.m = m = UMLClass()
         self.pkg = m.newElement('Package')
 
@@ -95,7 +95,7 @@ class XMITests(TestCase):
 
     def setUp(self):
         m = LoadedUML
-        from TW.SEF.Queries import NodeList
+        from peak.metamodels.querying import NodeList
         self.roots = NodeList(m.roots)
         self.root = self.roots[0]
         mm = self.mm = self.root.ownedElements.Where(ANY('name',Equals('Meta-MetaModel')))
@@ -121,7 +121,9 @@ class XMITests(TestCase):
         sc = enum.Get('superclasses*').Get('name'); sc.sort()
         assert sc==['AttributeKind','PackageElement'], sc
 
-from TW.SEF.Basic import FeatureMC
+# XXX the below should move to peak.model.tests
+
+from peak.model.basic import FeatureMC
 
 class featureBase(object):
 
@@ -160,9 +162,7 @@ class featureBase(object):
         return feature.getMethod(self,'get')() * 2
 
 
-
-
-class X(SEF.Element):
+class X(model.Element):
 
     class zebra(featureBase):
         singular = 0
@@ -244,31 +244,31 @@ class checkExport(TestCase):
 
 
 
-class anElement1(SEF.Element):
+class anElement1(model.Element):
 
-    class field1(SEF.Field):
+    class field1(model.Field):
         defaultValue = 1
 
-    class simpleSeq(SEF.Sequence):
+    class simpleSeq(model.Sequence):
         pass
 
-    class fwdRef(SEF.Reference):
+    class fwdRef(model.Reference):
         referencedEnd = 'backColl'
 
-    class simpleRef(SEF.Reference):
+    class simpleRef(model.Reference):
         pass
 
-    class fwdColl(SEF.Collection):
+    class fwdColl(model.Collection):
         referencedEnd = 'backRef'
         upperBound = 3
 
 
-class anElement2(SEF.Element):
+class anElement2(model.Element):
 
-    class backColl(SEF.Collection):
+    class backColl(model.Collection):
         referencedEnd = 'fwdRef'
 
-    class backRef(SEF.Reference):
+    class backRef(model.Reference):
         referencedEnd = 'fwdColl'
 
 

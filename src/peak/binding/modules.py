@@ -4,7 +4,7 @@
     modules, by defining a module-level '__bases__' attribute which lists
     the modules you wish to inherit from.  For example::
 
-        from TW.API import *
+        from peak.api import *
 
         import BaseModule1, BaseModule2
 
@@ -72,7 +72,7 @@
         will automatically generate the necessary metaclasses for you, so long
         as you use TransWarp's alternate API for specifying metaclasses.
         Please see the documentation of the 'makeClass' function in the
-        'TW.Utils.Meta' module for more information about how this works.
+        'peak.util.Meta' module for more information about how this works.
 
         Please note that metaclasses are not combined *across* modules, unless
         they are specified with same-named 'class' statements in both modules.
@@ -258,7 +258,7 @@ def setupModule():
     frame = sys._getframe(1)
     dict = frame.f_globals
 
-    if dict.has_key('__TW_Simulator__'):
+    if dict.has_key('__PEAK_Simulator__'):
         return
 
     code = frame.f_code
@@ -290,7 +290,7 @@ def adviseModule(moduleName):
     """"Advise" a module - like a runtime patch
 
         Usage::
-            from TW.API import *
+            from peak.api import *
 
             ...
 
@@ -316,7 +316,7 @@ def adviseModule(moduleName):
     frame = sys._getframe(1)
     dict = frame.f_globals
 
-    if dict.has_key('__TW_Simulator__'):
+    if dict.has_key('__PEAK_Simulator__'):
         return
 
     if dict.has_key('__bases__'):
@@ -340,15 +340,15 @@ def adviseModule(moduleName):
 
 
 
-from TW.Utils.Code import *
+from peak.util.Code import *
 
-from TW.Utils.Code import BUILD_CLASS, STORE_NAME, MAKE_CLOSURE, \
+from peak.util.Code import BUILD_CLASS, STORE_NAME, MAKE_CLOSURE, \
     MAKE_FUNCTION, LOAD_CONST, STORE_GLOBAL, CALL_FUNCTION, IMPORT_STAR, \
     IMPORT_NAME, JUMP_ABSOLUTE, POP_TOP, ROT_FOUR, LOAD_ATTR, LOAD_GLOBAL, \
     LOAD_CONST, ROT_TWO, LOAD_LOCALS, STORE_SLICE, DELETE_SLICE, STORE_ATTR, \
     STORE_SUBSCR, DELETE_SUBSCR, DELETE_ATTR, DELETE_NAME, DELETE_GLOBAL
 
-from TW.Utils.Meta import makeClass
+from peak.util.Meta import makeClass
 from sys import _getframe
 from warnings import warn, warn_explicit
 
@@ -385,11 +385,11 @@ class Simulator:
         d = self.dict
         
         try:
-            d['__TW_Simulator__'] = self
+            d['__PEAK_Simulator__'] = self
             exec code in d
 
         finally:
-            del d['__TW_Simulator__']
+            del d['__PEAK_Simulator__']
             self.locked.update(self.defined)
             self.defined.clear()
             self.setKind.clear()
@@ -622,7 +622,7 @@ def prepForSimulation(code, path='', depth=0):
     name_index = code.name_index
     const_index = code.const_index
 
-    Simulator = name_index('__TW_Simulator__')
+    Simulator = name_index('__PEAK_Simulator__')
     DefFunc   = name_index('DEFINE_FUNCTION')
     DefClass  = name_index('DEFINE_CLASS')
     Assign    = name_index('ASSIGN_VAR')
@@ -672,7 +672,7 @@ def prepForSimulation(code, path='', depth=0):
         # rewrite the IMPORT_NAME
         emit(IMPORT_NAME, operand[i-1])
 
-        # Call __TW_Simulator__.IMPORT_STAR(module, locals, prefix)
+        # Call __PEAK_Simulator__.IMPORT_STAR(module, locals, prefix)
         emit(LOAD_GLOBAL, Simulator)
         emit(LOAD_ATTR, ImpStar)
         emit(ROT_TWO)

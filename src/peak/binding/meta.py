@@ -2,7 +2,7 @@
 
 __all__ = [
     'AssertInterfaces', 'ActiveDescriptors', 'ActiveDescriptor',
-    'Singleton',
+    'Singleton', 'MethodExporter'
 ]
 
 from kjbuckets import *
@@ -276,7 +276,7 @@ class MethodExporter(ActiveDescriptor, type):
             subclass changes the 'single' attribute to a different string.
             This lets you have subclasses change the name of what kind of
             objects are in a collection, and have the exported method names
-            change accordingly.  (Notice also that you can use the TW.API
+            change accordingly.  (Notice also that you can use the peak.api
             'Items()' function to create a 'newVerbs' list; you don't have to
             do it by hand.)
 
@@ -390,8 +390,8 @@ class MethodExporter(ActiveDescriptor, type):
 
             The SEF framework adds '__get__', '__set__', and '__delete__'
             methods to a subclass of MethodExporter, which lets you create
-            features that are properties; look at the TW.SEF.Basic.FeatureMC
-            class for more details.
+            features that are properties; look at the
+            peak.model.basic.FeatureMC class for more details.
 
         Implementation Notes
         
@@ -438,7 +438,7 @@ class MethodExporter(ActiveDescriptor, type):
                 (self.attrName, klass, attrName, self.attrName)
             )
 
-        from TW.Utils.Method import MethodWrapper
+        from peak.util.Method import MethodWrapper
 
         for verb,methodName in self.methodNames.items():
 
