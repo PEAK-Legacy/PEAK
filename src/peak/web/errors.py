@@ -39,17 +39,6 @@ class WebException(Exception):
 
 
 
-    def renderingContext(self):
-
-        # Create a traversal context that replaces the last traversed location
-        # with this exception instance.
-
-        ctx = self.context
-        parent = ctx.getParentComponent()
-        name   = ctx.getComponentName()
-        newCtx = parent.subcontext(name, self)
-        return newCtx
-
     def handleException(self, interaction, thrower, exc_info, retry_allowed=1):
 
         try:
@@ -67,7 +56,7 @@ class WebException(Exception):
 
             self.exc_info = exc_info
 
-            ctx = self.renderingContext()
+            ctx = self.context.substituteContext(self)
             result = ctx.contextFor('template').render()
 
             if result is not response:
@@ -79,48 +68,15 @@ class WebException(Exception):
             ctx = exc_info = self.exc_info = None
 
 
-
 class NotFound(WebException):
-
     httpStatus = '404'  # Not Found
 
 
 class NotAllowed(WebException):
-
     httpStatus = '403'  # Forbidden
 
 
 class UnsupportedMethod(WebException):
-
     httpStatus = '405'  # Method Not Allowed
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 

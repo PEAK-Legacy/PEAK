@@ -70,13 +70,13 @@ class TraversalContext(binding.Component):
     # newCtx = "this class"
     newCtx = binding.classAttr(binding.Obtain('.'))
 
-
-
-
-
-
-
-
+    def substituteContext(self, ob):
+        """Clone this context, but using 'ob' as the subject"""
+        ob = adapt(ob, self.interaction.pathProtocol)
+        return self.__class__(
+            self.getParentComponent(),self.getComponentName(),
+            traversable=ob, interaction=self.interaction,
+        )
 
 
 

@@ -157,8 +157,8 @@ class ITraversalContext(Interface):
     def subcontext(name, ob):
         """Create a new subcontext named 'name', for 'ob'"""
 
-
-
+    def substituteContext(ob):
+        """Clone this context, but using 'ob' as the subject"""
 
 
 

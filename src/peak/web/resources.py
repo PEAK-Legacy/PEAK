@@ -6,7 +6,7 @@ from templates import DOMletAsWebPage, TemplateDocument
 from peak.naming.factories.openable import FileURL
 from peak.util.imports import importString
 import os.path, posixpath, sys
-from errors import UnsupportedMethod, NotFound
+from errors import UnsupportedMethod, NotFound, NotAllowed
 
 __all__ = [
     'Resource', 'FSResource', 'ResourceDirectory', 'FileResource',
@@ -50,7 +50,7 @@ class Resource(Traversable):
     def preTraverse(self, ctx):
         perm = self.permissionNeeded
         if not ctx.interaction.allows(self, permissionNeeded = perm):
-            ctx.interaction.notAllowed(self, self.getComponentName())
+            raise NotAllowed(ctx)
 
     def traverseTo(self, name, ctx):
         raise NotFound(ctx)
@@ -373,7 +373,7 @@ class TemplateResource(FSResource):
 
     def preTraverse(self, ctx):
         # Templates may not be accessed directly via URL!
-        ctx.interaction.notFound(self, self.getComponentName())
+        raise NotFound(ctx)
 
 
     def theTemplate(self):
