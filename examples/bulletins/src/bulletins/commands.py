@@ -72,6 +72,82 @@ class AddUser(BulletinsApp, AbstractCommand):
             return self.invocationError(msg)
 
 
+
+
+
+
+
+
+
+
+class AddCategory(BulletinsApp, AbstractCommand):
+
+    usage = """Usage: bulletins addcat category [title]"""
+
+    def run(self):
+        try:
+            if len(self.argv)<2:
+                raise InvocationError("missing argument(s)")
+
+            storage.beginTransaction(self)
+
+            cat = self.Categories.newItem()
+            cat.pathName = self.argv[1]
+            cat.title = ' '.join(self.argv[2:]) or cat.pathName
+
+            storage.commitTransaction(self)
+
+        except SystemExit, v:
+            return v.args[0]
+
+        except InvocationError, msg:
+            return self.invocationError(msg)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+            
+class Post(BulletinsApp, AbstractCommand):
+
+    usage = """Usage: bulletins post userid category <posting.txt"""
+
+    def run(self):
+        try:
+            if len(self.argv)<>3:
+                raise InvocationError("missing or extra argument(s)")
+
+            userId, categoryId = self.argv[1:]
+            text = self.stdin.read()
+
+            storage.beginTransaction(self)
+            
+            user = self.Users[userId]
+            category = self.Categories[categoryId]
+            category.post(user, text)
+
+            storage.commitTransaction(self)
+
+        except SystemExit, v:
+            return v.args[0]
+
+        except InvocationError, msg:
+            return self.invocationError(msg)
+        
+
 class PurgeDB(BulletinsApp, AbstractCommand):
 
     def run(self):
