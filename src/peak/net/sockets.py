@@ -28,7 +28,10 @@ class socketURL(naming.URL.Base):
 
     
 class tcpudpURL(socketURL):
-    supportedSchemes = 'tcp', 'udp'
+    supportedSchemes = {
+        'tcp' : socket.SOCK_STREAM,
+        'udp' : socket.SOCK_DGRAM
+    }
     
     class host(naming.URL.RequiredField): pass
 
@@ -38,14 +41,9 @@ class tcpudpURL(socketURL):
         ('//',), host, (':', port), ('/',)
     )
 
-    schemes = {
-        'tcp' : socket.SOCK_STREAM,
-        'udp' : socket.SOCK_DGRAM
-    }
-        
     def connect_addrs(self):
         return socket.getaddrinfo(self.host, self.port,
-            0, self.schemes[self.scheme])
+            0, self.supportedSchemes[self.scheme])
 
     def listen_addrs(self):
         host = self.host
@@ -53,7 +51,7 @@ class tcpudpURL(socketURL):
             host = None
 
         return socket.getaddrinfo(host, self.port,
-            0, self.schemes[self.scheme], 0, socket.AI_PASSIVE)
+            0, self.supportedSchemes[self.scheme], 0, socket.AI_PASSIVE)
         
     protocols.advise(
         instancesProvide = [IClientSocketAddr, IListenSocketAddr]
@@ -62,20 +60,18 @@ class tcpudpURL(socketURL):
 
 
 class unixURL(socketURL):
-    supportedSchemes = 'unix', 'unix.dg'
+    supportedSchemes = {
+        'unix' : socket.SOCK_STREAM,
+        'unix.dg' : socket.SOCK_DGRAM
+    }
     
     class path(naming.URL.RequiredField): pass
 
     syntax = naming.URL.Sequence(path)
 
-    schemes = {
-        'unix' : socket.SOCK_STREAM,
-        'unix.dg' : socket.SOCK_DGRAM
-    }
-    
     def connect_addrs(self):
         return [
-            (socket.AF_UNIX, self.schemes[self.scheme], 0, None, self.path)
+            (socket.AF_UNIX, self.supportedSchemes[self.scheme], 0, None, self.path)
         ]
 
     listen_addrs = connect_addrs
