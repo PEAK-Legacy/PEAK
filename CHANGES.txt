@@ -207,6 +207,8 @@ Fixes and Enhancements since Version 0.5 alpha 2
 
  Corrected Problems
 
+  - SQL connections didn't close their cursors before aborting a transaction
+
   - The logging system would raise an error if a log message with no arguments
     contained a '%' sign.
 

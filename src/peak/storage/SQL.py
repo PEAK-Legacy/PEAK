@@ -213,10 +213,10 @@ class SQLConnection(ManagedConnection):
         self.connection.commit()
 
     def abortTransaction(self, txnService):
+        self.closeCursors()
         self.connection.rollback()
 
     cursorClass = SQLCursor
-
     API = binding.requireBinding("DBAPI module for SQL connection")
 
     Error               = binding.bindTo("API/Error")
