@@ -5,6 +5,7 @@ from peak.binding.interfaces import IComponent
 from peak.api import NOT_GIVEN
 
 __all__ = [
+    'IDelta', 'IHistory', 'IUndoManager',
     'ITransactionService', 'ITransactionParticipant', 'ICache',
     'ITransactionErrorHandler', 'ICursor', 'IRow',
     'IDataManager', 'IDataManager_SPI', 'IWritableDM', 'IWritableDM_SPI',
@@ -22,6 +23,128 @@ __all__ = [
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class IDelta(Interface):
+
+    """A change that can be undone or redone"""
+
+    undoable = Attribute("""True if this action can potentially be undone""")
+
+    key = Attribute(
+       """A unique key identifying the subject of this delta, or None"""
+    )
+
+    def undo():
+       """Undo the behavior"""
+
+    def redo():
+       """Reapply the behavior"""
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class IHistory(IDelta):
+
+    """A history of changes that will be undone/redone as a group"""
+
+    def __contains__(key):
+        """Does this history have a delta keyed as 'key'?"""
+
+    def __iter__():
+        """Yield the deltas that comprise the group"""
+
+    active = Attribute(
+        """True until 'finish()' or 'undo()' is called on this group"""
+    )
+
+    def add(delta):
+       """Add IDelta delta to the history
+
+       Raise an error if history is no longer active.  If 'delta' is
+       an 'IHistory', recursively invoke 'add()' on all of its
+       contents, except those whose keys are already present in this
+       history.
+       """
+
+    def finish():
+        """Stop allowing deltas to be added (also called by 'undo()')"""
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class IUndoManager(Interface):
+
+    """Perform undo/redo of recorded actions"""
+
+    def record(delta):
+        """Record delta as part of the current history (see 'IHistory.add()')"""
+
+    def checkpoint():
+        """Finish current history and add to undo stack
+        (also, clear redo stack, and if current history isn't undoable, clear
+        the undo stack too.)"""
+               
+    def revert():
+        """Roll back current history to last checkpoint or undo/redo"""
+
+    def undoLast():
+        """Undo the last history added to the undo stack
+        (while moving it to the redo stack)"""
+
+    def redoNext():
+        """Pop a history from the redo stack and redo it
+        (while moving it to the undo stack)"""
+
+    # XXX canUndo(), canRedo(), clear()?
 
 
 
@@ -370,16 +493,16 @@ class IManagedConnection(IComponent,ITransactionParticipant):
     def __call__(*args, **kw):
         """Return a (possibly initialized) ICursor
 
-            Creates a new ICursor instance initialized with the passed
-            keyword arguments.  If positional arguments are supplied,
-            they are passed to the new cursor's 'execute()' method before
-            it is returned.
+        Creates a new ICursor instance initialized with the passed
+        keyword arguments.  If positional arguments are supplied,
+        they are passed to the new cursor's 'execute()' method before
+        it is returned.
 
-            This method is the primary way of interacting with a connection;
-            either you'll pass positional arguments and receive an
-            initialized and iterable cursor, or you'll call with no arguments
-            or keywords only to receive a cursor that you can use to perform
-            more "low-level" interactions with the database.
+        This method is the primary way of interacting with a connection;
+        either you'll pass positional arguments and receive an
+        initialized and iterable cursor, or you'll call with no arguments
+        or keywords only to receive a cursor that you can use to perform
+        more "low-level" interactions with the database.
         """
 
 
@@ -463,33 +586,26 @@ class IManagedConn_SPI(Interface):
     def _open():
         """Return new "real" connection to be saved as 'self.connection'
 
-            This method will be called whenever a new connection needs to
-            be opened.  It should return an opened connection of the
-            appropriate type, using whatever configuration data is
-            available.  The result will be saved as 'self.connection' for
-            use by other methods.  (Note: your subclass code shouldn't call
-            'self._open()', since it'll be called automatically if it's
-            needed, when you attempt to use 'self.connection'.
+        This method will be called whenever a new connection needs to
+        be opened.  It should return an opened connection of the
+        appropriate type, using whatever configuration data is
+        available.  The result will be saved as 'self.connection' for
+        use by other methods.  (Note: your subclass code shouldn't call
+        'self._open()', since it'll be called automatically if it's
+        needed, when you attempt to use 'self.connection'.
 
-            Overriding this method is required.
+        Overriding this method is required.
         """
 
     def _close(self):
         """Actions to take before 'del self.connection', if needed.
 
-            This method is automatically called when 'self.connection'
-            exists and needs to be closed.  If your subclass needs to
-            do anything special at this time (e.g. calling a close
-            method on 'self.connection', you can override this method
-            to do so.
+        This method is automatically called when 'self.connection'
+        exists and needs to be closed.  If your subclass needs to
+        do anything special at this time (e.g. calling a close
+        method on 'self.connection', you can override this method
+        to do so.
         """
-
-
-
-
-
-
-
 
 
 
@@ -504,18 +620,18 @@ class ICache(Interface):
     def get(key, default=None):
         """Retrieve object denoted by 'key', or 'default' if not found
 
-            Note that cache implementations do not have to guarantee that
-            'get()' will return items placed in the cache, or indeed
-            ever return anything other than 'default'.  For example, the
-            'NoCache' type always returns 'default'.
+        Note that cache implementations do not have to guarantee that
+        'get()' will return items placed in the cache, or indeed
+        ever return anything other than 'default'.  For example, the
+        'NoCache' type always returns 'default'.
         """
 
     def __setitem__(key,value):
         """Save 'value' in the cache under 'key'
 
-            Note that no particular lifetime for 'value' remaining in the
-            cache is required.  For example, the 'NoCache' type implements
-            this method as a no-op.
+        Note that no particular lifetime for 'value' remaining in the
+        cache is required.  For example, the 'NoCache' type implements
+        this method as a no-op.
         """
 
     def clear():
@@ -546,13 +662,13 @@ class ICursor(Interface):
 
         """Execute a command
 
-            Note that the types and semantics of this method's arguments
-            are database-specific.  DBAPI cursors expect an SQL 'command'
-            and an optional 'params' object, while LDAP cursors expect
-            the arguments for an LDAP 'search' operation.
+        Note that the types and semantics of this method's arguments
+        are database-specific.  DBAPI cursors expect an SQL 'command'
+        and an optional 'params' object, while LDAP cursors expect
+        the arguments for an LDAP 'search' operation.
 
-            Following 'execute()', a cursor should be ready for iteration
-            over its result rows.
+        Following 'execute()', a cursor should be ready for iteration
+        over its result rows.
         """
 
     def __iter__():
@@ -577,6 +693,8 @@ class ICursor(Interface):
         """render cursor to stream"""
 
 
+
+
 class IRow(Interface):
     """Row that smells like a tuple, dict, or instance attr"""
 
@@ -589,25 +707,19 @@ class ISQLObjectLister(Interface):
     def listObjects(full=False, obtypes=NOT_GIVEN):
         """Returns an active cursor with information on objects in the DB
 
-            with full=True, includes all available information, otherwise
-            only includes the information likely to be most elevant to the
-            user.
+        with full=True, includes all available information, otherwise
+        only includes the information likely to be most elevant to the
+        user.
 
-            The returned cursor shall have a column 'obname' first, with
-            the object name, and a column 'obtype' second, with one of
-            the following values standardized:
+        The returned cursor shall have a column 'obname' first, with
+        the object name, and a column 'obtype' second, with one of
+        the following values standardized:
 
-                table, systable, view, proc, index, synonym
+            table, systable, view, proc, index, synonym
 
-            if obtypes is given, it shall be a sequence of the above types,
-            and rows shall only be returned for the given types.
+        if obtypes is given, it shall be a sequence of the above types,
+        and rows shall only be returned for the given types.
         """
-
-
-
-
-
-
 
 
 
