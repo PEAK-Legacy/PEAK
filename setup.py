@@ -47,8 +47,8 @@ data_files = [
     ('ZConfig/doc', ['src/ZConfig/doc/schema.dtd']),
 ] + findDataFiles('src/peak/running', 1, '*.xml', '*.ini')
 
-
 if include_tests:
+
     packages += [
         'peak.tests', 'peak.binding.tests', 'peak.config.tests',
         'peak.model.tests', 'peak.naming.tests', 'peak.running.tests',
@@ -59,7 +59,9 @@ if include_tests:
     data_files += [
         ('peak/running/tests', ['src/peak/running/tests/test_cluster.txt']),
         ('peak/config/tests',  ['src/peak/config/tests/test_links.ini']),
-    ] + findDataFiles('src/peak/web/tests', 1, '*.pwt')
+    ] + findDataFiles('src/peak/web/tests', 1, '*.pwt') + findDataFiles(
+                      'src/peak/ddt/tests', 1, '*.html'
+    )
 
 
 if include_metamodels:
@@ -73,9 +75,7 @@ if include_metamodels:
     ]
 
     if include_tests:
-
         packages += [ 'peak.metamodels.tests' ]
-
         data_files += findDataFiles(
             'src/peak/metamodels/tests', 1, '*.xml', '*.asdl'
         )
