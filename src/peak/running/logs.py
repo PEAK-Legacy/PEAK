@@ -39,6 +39,12 @@ syslog_scale = (
 )
 
 
+priorities = {}
+for k, v in globals().items():
+    if k.startswith('PRI_'):
+        priorities[k] = v
+
+
 from Interface import Interface
 
 class ILogSink(Interface):
@@ -90,7 +96,7 @@ class Event(Component):
 
     __implements__ = ILogEvent
 
-    ident      = 'PEAK' # XXX
+    ident      = 'PEAK' # XXX use component names if avail?
     message    = ''
     priority   = PRI_TRACE
     timestamp  = Once(lambda *x: time())
@@ -183,11 +189,11 @@ class logfileURL(naming.ParsedURL):
 
             _qs = dict([x.split('=', 1) for x in _qs.split('&')])
             
-        level = _qs.get('level', 'PRI_NOTICE').upper()
+        level = _qs.get('level', 'PRI_TRACE').upper()
         if not level.startswith('PRI_') and not level.startswith('LOG_'):
             level = 'PRI_' + level
 
-        level = globals()[level] # XXX
+        level = priorities[level] # XXX handle KeyError somehow?
         
         return locals()
 
@@ -220,25 +226,32 @@ class Logfile(LogSink):
     def __init__(self, filename, level):
         self.filename, self.level = filename, level
         
-    def fp(self, *x):
-        return open(self.filename, "a")
+        return 
 
-    fp = binding.Once(fp)
-    
     def sink(self, event):
         if event.priority >= self.level:
-            self.fp.write(event.asString)
-            self.fp.flush()
+            fp = open(self.filename, "a")
+            fp.write(event.asString)
+            fp.close()
 
         return True
         
 
 '''TODO:
 
-    * Flesh out ILogSink, ILogEvent, and docs here and in peak.api
+    * Flesh out ILogSink (__call__), ILogEvent, and docs here and in peak.api
     
     * Dump formatted kwargs as part of the standard log format
 
+      issues: currently, we don't know which items in our dict were kwargs.
+      record a list of which were passed? Also, some we wouldn't want to
+      include even if they were passed explicity (for example, priority,
+      which is passed explicitly by the LOG_XXX functions. 
+      
     * SysLog and LogTee objects/URLs (low priority; we don't seem to use
       these at the moment)
+      
+    * Syslog (and others) may want the second part of asString without the
+      leading stuff -- maybe refactor into another routine that returns
+      just the second part
 '''
