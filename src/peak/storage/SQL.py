@@ -257,12 +257,39 @@ class SybaseConnection(SQLConnection):
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 class PGSQLConnection(SQLConnection):
 
     API = binding.bindTo("import:pgdb")
 
     def _open(self):
-
         a = self.address
 
         return self.API.connect(
@@ -271,18 +298,32 @@ class PGSQLConnection(SQLConnection):
             
 
     def txnTime(self,d,a):
-        # First, ensure that we're in a transaction
-        self.txnSvc
-
-        # Then retrieve the server's idea of the current time
-        r = ~ self('SELECT now()')
+        self.txnSvc                 # Ensure that we're in a transaction,
+        r = ~ self('SELECT now()')  # retrieve the server's idea of the time
         return r[0]
 
     txnTime = binding.Once(txnTime)
 
+    supportedTypes = SQLConnection.supportedTypes + (
+        'FLOAT','LONG','BOOL','MONEY',
+    )
 
+    def typeMap(self, d, a):
 
+        tm = {}
+        ps = PropertyName('peak.sql_types').of(self)
+        api = self.API
 
+        for k in self.supportedTypes:
+            t = getattr(api,k)
+            c = ps.get(k,NullConverter)
+            for v in k.values:
+                # We support either '.int4' or '.INTEGER' style properties
+                tm[v] = importObject(ps.get(v,c))
+
+        return tm
+
+    typeMap = binding.Once(typeMap)
 
 
 class GadflyConnection(SQLConnection):
