@@ -2,6 +2,12 @@ Fixes and Enhancements since Version 0.5 alpha 2
 
  Changed, Enhanced, or Newly Deprecated Features
 
+ - Added new 'Alias' command in 'peak.running.commands'.  An 'Alias' instance
+   can be used as a 'peak.running.shortcut' property that expands to another
+   command with arbitrary arguments inserted before the original command's
+   arguments.  Thus, one might alias 'mycommand' to 'runIni somefile --option',
+   similar to command aliases in many shells.
+   
  - 'naming.IName' is now derived from 'binding.IComponentKey', so names and
    addresses must now support the 'findComponent()' method.  All PEAK name and
    address types provide support for this.

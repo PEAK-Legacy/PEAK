@@ -11,7 +11,7 @@ __all__ = [
     'AbstractCommand', 'AbstractInterpreter', 'IniInterpreter', 'EventDriven',
     'ZConfigInterpreter', 'Bootstrap', 'rerunnableAsFactory',
     'callableAsFactory', 'appAsFactory', 'InvocationError', 'CGICommand',
-    'CGIInterpreter', 'FastCGIAcceptor',
+    'CGIInterpreter', 'FastCGIAcceptor', 'Alias'
 ]
 
 
@@ -598,6 +598,47 @@ list of available shortcut names, see '%s'""" % config.fileNearModule(
         usage += " and '%s'" % os.environ['PEAK_CONFIG']
 
     usage += ".\n"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class Alias(binding.Component):
+
+    """A factory for executables that aliases some other command"""
+
+    protocols.advise(
+        instancesProvide = [ICmdLineAppFactory]
+    )
+
+    command = binding.requireBinding("list of args to prepend")
+
+    def __call__(self, parentComponent=NOT_GIVEN, componentName=None, **kw):
+
+        argv = list(kw.setdefault('argv',sys.argv)[:])
+        argv[1:1] = list(self.command[:])   # insert alias
+        kw['argv'] = argv
+
+        return Bootstrap(parentComponent, componentName, **kw)
+
+
+
+
+
+
+
+
+
 
 
 
