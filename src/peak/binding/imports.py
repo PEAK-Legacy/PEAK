@@ -131,7 +131,7 @@ def interpretSpec(spec, globalDict=None):
     if isinstance(spec,StringTypes):
         return importString(spec, globalDict)
 
-    return thing
+    return spec
 
 
 def interpretSequence(specs, globalDict=None):
