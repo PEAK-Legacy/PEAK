@@ -494,9 +494,9 @@ class EventDriven(AbstractCommand):
 
     """Run an event-driven main loop after setup"""
 
-    stopAfter = 0
-    idleTimeout = 0
-    runAtLeast = 0
+    stopAfter   = binding.bindToProperty('peak.running.stopAfter',   0)
+    idleTimeout = binding.bindToProperty('peak.running.idleTimeout', 0)
+    runAtLeast  = binding.bindToProperty('peak.running.runAtLeast',  0)
 
     handlers = binding.New(list)
 
