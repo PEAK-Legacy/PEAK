@@ -72,7 +72,7 @@ class PublishedDirectory(IndexedDirectory):
     )
 
     filename = binding.Make(
-        lambda self: self.lookupComponent(running.ARGV)[1]
+        lambda self: self.lookupComponent(commands.ARGV)[1]
     )
 
     resourcePath = ''

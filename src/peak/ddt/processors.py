@@ -65,11 +65,11 @@ class DocumentProcessor(binding.Component):
     )
 
     def processDocument(self,document):
-        self.setUp()
+        self.setUp(document)
         try:
             self.processTables( iter(document.tables) )
         finally:
-            self.tearDown()
+            self.tearDown(document)
             
     def processTables(self,tables):
         for table in tables:
@@ -96,10 +96,11 @@ class DocumentProcessor(binding.Component):
         return processor
 
 
-    def setUp(self):
-        pass
+    def setUp(self,document):
+        from datetime import datetime
+        document.summary['Run at'] = datetime.now()
 
-    def tearDown(self):
+    def tearDown(self,document):
         pass
 
 
@@ -107,14 +108,13 @@ class RollbackProcessor(DocumentProcessor):
 
     """Process document as a transaction, rolling it back at the end"""
 
-    def setUp(self):
+    def setUp(self,document):
+        super(RollbackProcessor,self).setUp(document)
         storage.beginTransaction(self)
 
-    def tearDown(self):
+    def tearDown(self,document):
         storage.abortTransaction(self)
-
-
-
+        super(RollbackProcessor,self).tearDown(document)
 
 
 
@@ -825,10 +825,11 @@ class Summary(AbstractProcessor):
     key = "Counts"
 
     def processTable(self,table,tables):
-
+        from datetime import datetime
         document = table.document
         summary = document.summary
         summary[self.key] = table.document.score
+        summary['Run for'] = datetime.now() - summary['Run at']
         items = summary.items(); items.sort()
 
         for k,v in items:
@@ -851,7 +852,6 @@ class Summary(AbstractProcessor):
 
         # Put the score back to what it was
         cell.document.score = before
-
 
 
 

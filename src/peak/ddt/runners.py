@@ -51,7 +51,7 @@ the specified base URL.
         instancesProvide=[running.IRerunnableCGI]
     )
 
-    argv    = binding.Require("Command line arguments")
+    argv    = binding.Obtain(commands.ARGV)
     baseURL = binding.Make(lambda self: self.argv[1])
 
     def runCGI(self,stdin,stdout,stderr,environ):
