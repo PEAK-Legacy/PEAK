@@ -396,7 +396,8 @@ class SybaseConnection(ValueBasedTypeConn):
             for (k, v) in self.otmap.items()
         ])
 
-        return self('''select name as obname, obtype = CASE %s ELSE type END, crdate%s
+        return self('''select name as obname,
+            obtype = rtrim(CASE %s ELSE type END), crdate%s
             from sysobjects%s ORDER BY name''' % (typecase, addsel, addwhere), outsideTxn=None)
 
 
