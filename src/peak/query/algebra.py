@@ -127,12 +127,12 @@ class Table:
     def getCondition(self):
         return self.condition
 
-
-
-
-
-
-
+    def getReferencedRVs(self):
+        all = kjSet([self])
+        for rv in self.getInnerRVs()+self.getOuterRVs():
+            if not all.has_key(rv):
+                all += kjSet(rv.getReferencedRVs())
+        return all.items()
 
 
 
@@ -165,25 +165,43 @@ class Table:
 class BasicJoin(Table, HashAndCompare):
 
     def __init__(self,condition,relvars,outers=(),columns=()):
-        myrels = []; outers=list(outers)
+        myrels = []
+        outers=list(outers)
+        relUsage = {}
 
         for rv in relvars:
             myrels.extend(rv.getInnerRVs())
             outers.extend(rv.getOuterRVs())
             condition = condition & rv.getCondition()
 
-        myrels.sort()
+        for rv in myrels+outers:
+            for r in rv.getReferencedRVs():
+                relUsage[r] = relUsage.setdefault(r,0)+1
+
         if len(myrels)<1:
             raise TypeError("BasicJoin requires at least 1 relvar(s)")
 
-        self.relvars = tuple(myrels)
+        for k,v in relUsage.items():
+            if v>1:
+                raise ValueError("Relvar used more than once",k)
+
+        myrels.sort()
         outers.sort()
+        self.relvars = tuple(myrels)
         self.outers = tuple(outers)
         self.condition = condition
         self.columns = kjGraph(columns)
+
         self._hashAndCompare = (
-            self.__class__.__name__, condition, self.relvars, self.outers, self.columns
+            self.__class__.__name__, condition,
+            self.relvars, self.outers, self.columns
         )
+
+
+
+
+
+
 
     def __repr__(self):
         parms=(
@@ -192,8 +210,10 @@ class BasicJoin(Table, HashAndCompare):
         )
         return '%s%r' % (self._hashAndCompare[0], parms)
 
+
     def getInnerRVs(self):
         return self.relvars
+
 
     def getDB(self):
         db = self.relvars[0].getDB()
@@ -201,6 +221,27 @@ class BasicJoin(Table, HashAndCompare):
             if rv.getDB() is not db:
                 return None
         return db
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 class _compound(_expr,HashAndCompare):

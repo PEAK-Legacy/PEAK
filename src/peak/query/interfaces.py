@@ -121,6 +121,9 @@ class IRelationVariable(Interface):
         """Return any select() or join condition applying to this RV"""
 
 
+    def getReferencedRVs():
+        """Return sequence of all RVs used in this RV (eg: joins,subqueries)"""
+
     def __cmp__(other):
         """Relation variables must be comparable to each other"""
 

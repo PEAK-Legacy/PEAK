@@ -162,22 +162,13 @@ class SimplificationAndEquality(TestCase):
         )
 
 
-    def testJoinPreservation(self):
-
-        x,y,z = self.condX, self.condY, self.condZ
-        A,B,C,D = self.rvA, self.rvB, self.rvC, self.rvD
-
-        self.assertNotEquals(A(join=[A],where=x), A(join=[A,A],where=x))
-        self.assertNotEquals(A(outer=[A],where=x), A(outer=[A,A],where=x))
-
-
     def testOuterJoinInequalities(self):
 
         x,y,z = self.condX, self.condY, self.condZ
         A,B,C,D = self.rvA, self.rvB, self.rvC, self.rvD
 
         self.assertNotEqual( A(outer=[B],where=x), B(outer=[A],where=x) )
-        self.assertNotEqual( A(outer=[A],where=x), A(outer=[B],where=x) )
+        self.assertNotEqual( A(outer=[C],where=x), A(outer=[B],where=x) )
         self.assertNotEqual( A(outer=[B],where=x), A(join=[B],where=x) )
 
         self.assertEqual(
@@ -194,6 +185,15 @@ class SimplificationAndEquality(TestCase):
             A(outer=[C],where=y)(join=[B],where=x),
             A(join=[B],where=x)(outer=[C],where=y)
         )
+
+
+
+
+
+
+
+
+
 
 
 
@@ -299,18 +299,18 @@ class SimplificationAndEquality(TestCase):
             B.attributes()
         )
 
+        # columns in A(outer=[B],where=x)(keep=B.attributes()) == B.attributes()
+        AB = A(outer=[B],where=x)
+        self.assertEqual(
+            AB(keep=self.B_Columns).attributes(),
+            B.attributes()
+        )
+
         # A.proj(a)(join=[B.proj(b)],where=x) == A(join=[B],where=x).proj(a+b)
         self.assertEqual(
             A(join=[B],where=x)(keep=self.A_Columns[:2]+self.B_Columns[:2]),
             A(keep=self.A_Columns[:2])(join=[B(keep=self.B_Columns[:2])],where=x)
         )
-
-
-
-
-
-
-
 
 
 
@@ -346,13 +346,54 @@ class SimplificationAndEquality(TestCase):
                 )
             )
 
-        abcd = A(join=[B,C,D],where=x)
-        ABCD = abcd(rename=[(n,n.upper()) for n in abcd.attributes().keys()])
+        for abcd in [ A(join=[B,C,D],where=x), A(outer=[B,C,D],where=x) ]:
 
-        self.assertEqual(
-            kjSet([n.upper() for n in abcd.attributes().keys()]),
-            kjSet(ABCD.attributes())
-        )
+            ABCD = abcd(
+                rename=[(n,n.upper()) for n in abcd.attributes().keys()]
+            )
+
+            self.assertEqual(
+                kjSet([n.upper() for n in abcd.attributes().keys()]),
+                kjSet(ABCD.attributes())
+            )
+
+
+
+
+
+
+
+
+
+
+
+    def testReferences(self):
+        x,y,z = self.condX, self.condY, self.condZ
+        A,B,C,D = self.rvA, self.rvB, self.rvC, self.rvD
+
+        self.assertEqual(A.getReferencedRVs(),[A])
+        tmp = A(outer=[B,C,D],where=x)
+        self.assertEqual(kjSet(tmp.getReferencedRVs()),kjSet([A,B,C,D,tmp]))
+
+
+    def testRVReuseNotAllowed(self):
+
+        # The same RV may not appear more than once in a single expression
+
+        x,y,z = self.condX, self.condY, self.condZ
+        A,B,C,D = self.rvA, self.rvB, self.rvC, self.rvD
+
+        self.assertRaises(ValueError, B, join=[A,A])
+        self.assertRaises(ValueError, B, outer=[A,A])
+        self.assertRaises(ValueError, B(join=[C]), join=[C(join=[D])])
+
+
+
+
+
+
+
+
 
 
 
