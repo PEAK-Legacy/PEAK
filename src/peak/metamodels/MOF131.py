@@ -4,7 +4,7 @@ from peak.api import *
 from kjbuckets import *
 
 from peak.model.datatypes import Name, String, Boolean, Integer, \
-    UnlimitedInteger, UNBOUNDED
+    UnlimitedInteger, UNBOUNDED, TypeCode
 
 __all__ = [
     'Name', 'String', 'Boolean', 'Integer', 'UnlimitedInteger', 'UNBOUNDED',
@@ -621,7 +621,7 @@ class MOFModel(model.Model):
 
 
         class typeCode(model.Field):
-            referencedType = 'TypeDescriptor' # XXX
+            referencedType = TypeCode
 
         class supertypes(model.Sequence):
             upperBound = 0  # no supertypes allowed

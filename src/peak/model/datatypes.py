@@ -127,6 +127,8 @@ class _tcField(structField):
 
     allowedKinds = ()
 
+    sortPosn = 1    # all fields must sort *after* 'kind'
+
     def _onLink(feature,element,item,posn):
         if element.kind not in feature.allowedKinds:
             raise TypeError(
@@ -160,15 +162,13 @@ class _tcField(structField):
 
 
 
-
-
 class TypeCode(DataType):
 
     # XXX name, id ???
 
     class kind(structField):
         referencedType = TCKind
-
+        sortPosn = 0
 
     class length(_tcField):     # xmi.tcLength
 
@@ -219,14 +219,18 @@ class TypeCode(DataType):
         pass
 
 
-    mdl_typeCode = binding.classAttr(
-        binding.Once(
-            lambda s,d,a: TypeCode(kind=TCKind.tk_TypeCode)
-        )
-    )
 
 
 
-class Any(PrimitiveType):
-    mdl_typeCode = TypeCode(kind = TCKind.tk_any)
+TypeCode.mdl_typeCode = TypeCode(kind=TCKind.tk_TypeCode)
+
+Integer.mdl_typeCode  = TypeCode(kind=TCKind.tk_longlong)
+
+Boolean.mdl_typeCode  = TypeCode(kind=TCKind.tk_boolean)
+
+String.mdl_typeCode   = TypeCode(kind=TCKind.tk_string)
+
+Name.mdl_typeCode     = TypeCode(kind=TCKind.tk_alias,
+                                 content_type=String.mdl_typeCode)
+
 
