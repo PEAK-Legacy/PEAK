@@ -221,12 +221,12 @@ class UntwistedReactor(binding.Component):
                 )
 
         if delay is None:
-            delay = self.laters and self.laters[0].time - self.time() or 0
+            delay = self.laters and self.laters[0].time - self.time() or 3600
+
+            if not self.running:
+                delay = 0
 
         delay = max(delay, 0)
-
-        if not self.running:
-            delay = 0
 
         if self.readers or self.writers:
 
