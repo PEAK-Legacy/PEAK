@@ -270,19 +270,38 @@ class EigenRegistry(EigenDict):
 
     def _register(self,iface,item,primary_iface):
 
-        self._setCell(iface).set(item)
-        self.provided[iface]=primary_iface
+        old = self.provided.get(base)
 
-        for base in iface.__bases__:
+        # We want to keep more-general registrants
+        if old is None or old.extends(primary_iface):
         
-            if base is Interface:
-                continue
+            self._setCell(iface).set(item)
+            self.provided[iface]=primary_iface
 
-            old = self.provided.get(base,primary_iface):
+            for base in iface.__bases__:        
+                if base is not Interface:
+                    self._register(base,item,primary_iface)
 
-            if not old.extends(primary_iface):
-                # We want to keep most-specific registrants
-                self._register(base,item,primary_iface)
+
+
+
+    def update(self, other):
+
+        """Conservatively merge in another EigenRegistry"""
+
+        if not isinstance(other,EigenRegistry):
+            raise TypeError("Not an EigenRegistry", other)
+
+        iProvide = self.provided
+        get = iProvide.get
+        sc = self._setCell
+        
+        for iface, newP in other.provided.items():
+            old = get(iface)
+            if old is None or old.extends(newP):
+                sc(iface).set(other[iface])
+                iProvide[iface] = newP
+
 
 
 # CollapsedCell is an empty (but read and locked) EigenCell
