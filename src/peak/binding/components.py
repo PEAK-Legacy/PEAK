@@ -408,7 +408,7 @@ def Acquire(key,doc=None):
 
 
 
-def bindToParent(level=1,provides=None,doc=None):
+def bindToParent(level=1, name=None, provides=None, doc=None):
 
     """Look up and cache a reference to the nth-level parent component
 
@@ -431,10 +431,10 @@ def bindToParent(level=1,provides=None,doc=None):
 
         return obj
 
-    return Once(computeValue, provides=provides, doc=doc)
+    return Once(computeValue, name=name, provides=provides, doc=doc)
 
 
-def bindToSelf(provides=None, doc=None):
+def bindToSelf(name=None, provides=None, doc=None):
 
     """Cached reference to the 'self' object
 
@@ -444,7 +444,7 @@ def bindToSelf(provides=None, doc=None):
     can refer to 'self.delegateForInterfaceX.someMethod()', and have
     'delegateForInterfaceX' be a 'bindToSelf()' by default."""
 
-    return bindToParent(0,provides,doc)
+    return bindToParent(0,name,provides,doc)
 
 
 
