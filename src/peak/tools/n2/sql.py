@@ -413,8 +413,7 @@ rollback -- abort current transaction"""
             else:
                 storage.abortTransaction(self)
                 storage.beginTransaction(self)
-                self.joinedTxn  # ensure we're in the current PEAK transaction
-
+                self.interactor.joinedTxn
                 self.interactor.resetBuf()
 
     cmd_rollback = binding.Make(cmd_abort)
@@ -437,8 +436,7 @@ rollback -- abort current transaction"""
             else:
                 storage.commitTransaction(self)
                 storage.beginTransaction(self)
-                self.joinedTxn  # ensure we're in the current PEAK transaction
-
+                self.interactor.joinedTxn
                 self.interactor.resetBuf()
 
     cmd_commit = binding.Make(cmd_commit)
@@ -739,8 +737,7 @@ default for src is '!.', the current input buffer"""
 
             self.interactor.con.connection
             storage.beginTransaction(self)
-            self.joinedTxn      # ensure we're in the current PEAK transaction
-
+            self.interactor.joinedTxn
             self.interactor.resetBuf()
 
     cmd_reconnect = binding.Make(cmd_reconnect)
