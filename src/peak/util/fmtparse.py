@@ -232,10 +232,10 @@ class Sequence(Rule):
     def withTerminators(self, terminators, memo):
         key = id(self), terminators
         if key in memo:
-            return memo[id(self),terminators]
+            return memo[key][0]
 
         r = self.__class__(*self.initArgs, **{'closingChars':terminators})
-        memo[key] = r
+        memo[key] = r, self
         r._computeRules(memo)
         return r
 
@@ -257,7 +257,7 @@ class Sequence(Rule):
         self.__dict__.setdefault('rules',syn)
 
         if not memo:
-            memo = { (id(self),closeAll): self }
+            memo = { (id(self),closeAll): (self, self) }
 
         if obs:
             self.openingChars = obs[-1].getOpening('',memo)
@@ -266,10 +266,10 @@ class Sequence(Rule):
             terms = uniquechars(closeAll+closeCtx)
             key = id(ob), terms
             if key in memo:
-                ob = memo[key]
+                ob = memo[key][0]
             else:
-                ob = memo[key] = ob.withTerminators(terms, memo)
-
+                ob = ob.withTerminators(terms, memo)
+                memo[key] = ob, self
             closeCtx = ob.getOpening(closeCtx,memo)
             syn.append(ob)
 
@@ -426,7 +426,7 @@ class Repeat(Sequence):
 
         key = id(self), terminators
         if key in memo:
-            return memo[key]
+            return memo[key][0]
 
         kw = self.__dict__.copy()
         if 'rules' in kw:
@@ -437,7 +437,7 @@ class Repeat(Sequence):
         del kw['initArgs']
 
         r = self.__class__(*self.initArgs, **kw)
-        memo[key] = r
+        memo[key] = r, self
         r._computeRules(memo)
         return r
 
