@@ -15,6 +15,19 @@ For our examples, we'll need to use the PEAK API and the ``options`` module::
     >>> from peak.running import options
 
 
+TODO:
+
+* Test ``Add`` and ``Append`` operations
+* Track option use counts, and fail if repeated when not ``repeatable`` 
+* Help should be sorted by ``sortKey``
+* Set program name, usage message, description, version
+* Integrate with ``commands`` framework
+* Option groups; sort groups by ``sortKey``
+* Help formatter column setting, style setting
+* Allow use of interspersed args+options
+* Allow multi-valued args (``nargs>1``)?
+
+
 -------------
 Framework API
 -------------
@@ -121,8 +134,6 @@ most likely be used with the same attribute, e.g.::
 For the above class, ``-q`` will set ``verbose`` to ``False``, and ``-v`` will
 set it to ``True``.
 
-TODO: parsing examples
-
 
 Option Handlers
 ===============
@@ -151,40 +162,130 @@ By default, options defined in a base class are inherited by subclasses::
 
     >>> class Foo:
     ...     binding.metadata(verbose = [opt_v, opt_q])
-    >>> options.option_names(Foo())
-    ['--quiet', '--verbose', '-q', '-v']
+    ...     verbose = False
+
+    >>> print options.get_help(Foo())
+    options:
+      -q, --quiet    Be quiet
+      -v, --verbose  Be verbose
 
     >>> class Bar(Foo):
     ...     [options.option_handler('-z',type=int,help="Zapify!")]
     ...     def zapify(self, parser, optname, optval, remaining_args):
-    ...         """Do something here"""
-    >>> options.option_names(Bar())
-    ['--quiet', '--verbose', '-q', '-v', '-z']
+    ...         print "Zap!", optval
+
+    >>> print options.get_help(Bar())
+    options:
+      -q, --quiet    Be quiet
+      -v, --verbose  Be verbose
+      -z INT         Zapify!
 
 But, you can selectively reject inheritance of individual options, by passing
 their option name(s) to ``options.reject_inheritance()``::
 
     >>> class Baz(Foo):
     ...     options.reject_inheritance('--quiet','-v')
-    >>> options.option_names(Baz())
-    ['--verbose', '-q']
+
+    >>> print options.get_help(Baz())
+    options:
+      -q         Be quiet
+      --verbose  Be verbose
 
 Or, you can reject all inherited options and start from scratch, by calling
 ``options.reject_inheritance()`` with no arguments::
 
     >>> class Spam(Foo):
     ...     options.reject_inheritance()
-    >>> options.option_names(Spam())
-    []
+
+    >>> print options.get_help(Spam())
+    <BLANKLINE>
 
 
 
 Parsing
 =======
 
+Let's go ahead and parse some arguments, using ``options.parse(ob, argv)``,
+which takes the target object and a list of input arguments.  The return
+value is a list of non-option arguments, and the target object's attributes
+are modified (or handler methods called) according to the input arguments::
+
+    >>> foo = Foo(); options.parse(foo, [])
+    []
+    >>> foo.verbose
+    0
+    >>> foo = Foo(); options.parse(foo, ['-v', 'q'])
+    ['q']
+    >>> foo.verbose
+    1
+    >>> foo = Foo(); options.parse(foo, ['-v', '-q'])
+    []
+    >>> foo.verbose
+    0
+
+    >>> bar = Bar(); options.parse(bar, ['-z','20', '-v', 'xyz'])
+    Zap! 20
+    ['xyz']
+    >>> bar.verbose
+    1
+    
+    >>> foo = Foo()
+    >>> options.parse(foo, ['--help'])
+    Traceback (most recent call last):
+    ...
+    InvocationError: ... no such option: --help
+
+TODO: more parsing examples, e.g. showing repeat
+
+Help
+====
+
+Oops, looks like we need to add some sort of help facility.  By default, PEAK
+doesn't include a ``--help`` option in the options for an arbitrary class, so
+you have to create your own (unless you're using a ``commands`` framework
+base class)::
+
+    >>> class Test(Bar):
+    ...     [options.option_handler('--help',value=None,help="Show help")]
+    ...     def show_help(self, parser, optname, optval, remaining_args):
+    ...         print parser.format_help().strip()
+    >>> test = Test()
+    >>> args = options.parse(test, ['--help'])
+    options:
+      -q, --quiet    Be quiet
+      -v, --verbose  Be verbose
+      --help         Show help
+      -z INT         Zapify!
+
+(Of course, for command objects, the help should actually be sent to the
+command's standard out or standard error, rather than to ``sys.stdout`` as in
+this example.  Also, it's probably better to set a help flag and process it
+after the other options.)
+
+
 
 Parser Options
 ==============
+
+
+
+API Functions
+=============
+
+
+``options.get_help(ob)``
+------------------------
+
+
+``options.makeParser(ob)``
+--------------------------
+
+
+``options.parse(ob, args)``
+---------------------------
+
+
+
 
 
 
@@ -238,6 +339,67 @@ conditions, an error will occur::
     Traceback (most recent call last):
     ...
     TypeError: 'metavar' is meaningless for options without a type
+
+
+The ``makeOption()`` Method
+---------------------------
+
+``AbstractOption`` instances should also be able to create ``optparse`` option
+objects for themselves, via their ``makeOption(attrname)`` method.  The
+method should return an ``optparse`` option instance configured with a callback
+set to the option's ``callback`` method, an appropriate number of arguments
+(``nargs``), and callback arguments containing the attribute name (so the
+callback will know what attribute it's supposed to affect).  In addition, the
+created option's ``help`` and ``metavar`` should be the same as those on the
+original option::
+
+    >>> xopt = opt_x.makeOption('foo')
+    >>> xopt.action
+    'callback'
+    >>> xopt.nargs
+    0
+    >>> xopt.callback == opt_x.callback
+    1
+    >>> xopt.callback_args
+    ('foo',)
+    >>> xopt.metavar is None
+    1
+    >>> xopt.help is opt_x.help
+    1
+
+    >>> popt = opt_p.makeOption('bar')
+    >>> popt.nargs
+    1
+    >>> popt.callback == opt_p.callback
+    1
+    >>> popt.callback_args
+    ('bar',)
+    >>> popt.metavar
+    'PORT'
+
+In addition, the ``makeOption()`` method accepts an optional ``optmap``
+parameter, that maps from option names to option objects.  If this map is
+supplied, the created option will only include option names that are present
+as keys in ``optmap``, and whose value in ``optmap`` is the original option
+object.  For example::
+
+    >>> print opt_f.makeOption('baz')
+    -f/--file
+    >>> print opt_f.makeOption('baz', {'-f':opt_f})
+    -f
+    >>> print opt_f.makeOption('baz', {'--file':opt_f})
+    --file
+    >>> print opt_f.makeOption('baz', {'--file':opt_f, '-f':opt_f})
+    -f/--file
+
+Note, however, that this isn't a search through the ``optmap``, it's just a
+check for the option names the option already has::
+
+    >>> print opt_f.makeOption('baz', {'--foo':opt_f})
+    Traceback (most recent call last):
+    ...
+    TypeError: at least one option string must be supplied
+
 
 
 ``options.OptionRegistry``
