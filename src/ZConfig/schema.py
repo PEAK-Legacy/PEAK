@@ -456,20 +456,63 @@ class SchemaParser(BaseParser):
     _handled_tags = BaseParser._handled_tags + ("schema",)
     _top_level = "schema"
 
+    def __init__(self, registry, loader, url, subschema=None):
+        BaseParser.__init__(self, registry, loader, url)
+        self._subschema = subschema
+
     def start_schema(self, attrs):
         self.push_prefix(attrs)
         handler = self.get_handler(attrs)
         keytype, valuetype, datatype = self.get_sect_typeinfo(attrs)
-        self._schema = info.SchemaType(keytype, valuetype, datatype,
-                                       handler, self._url, self._registry)
+
+        if self._subschema is None:
+            # We're not being inherited, so we need to create the schema
+            self._schema = info.SchemaType(keytype, valuetype, datatype,
+                                           handler, self._url, self._registry)
+        else:
+            # Load into the inheriting ("subclass") schema
+            self._schema = self._subschema
+
         self._localtypes = self._schema._types
         self._stack = [self._schema]
+
+        if attrs.has_key("extends"):
+            sources = attrs["extends"].split()
+            sources.reverse()
+            for src in sources:
+                src = url.urljoin(self._url, src)
+                src, fragment = url.urldefrag(src)
+                if fragment:
+                    self.error("schema extends many not include"
+                               " a fragment identifier")
+                self.extendSchema(src)
+
+        # If we have explicit type info, force the schema to use it
+        if attrs.has_key("keytype"):
+            self._schema.keytype = keytype
+        if attrs.has_key("valuetype"):
+            self._schema.valuetype = valuetype
+        if attrs.has_key("datatype"):
+            self._schema.datatype = datatype
+
+
+    def extendSchema(self,src):
+        parser = SchemaParser(
+            self._registry, self._loader, src, self._schema
+        )
+        parser._components = self._components
+        r = self._loader.openResource(src)
+        try:
+            xml.sax.parse(r.file, parser)
+        finally:
+            r.close()
 
     def end_schema(self):
         del self._stack[-1]
         assert not self._stack
         self.pop_prefix()
         assert not self._prefixes
+
 
 
 
