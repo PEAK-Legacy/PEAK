@@ -432,7 +432,7 @@ class FileResource(FSResource):
         size = os.stat(self.filename).st_size
         response.setHeader('Content-Type', self.mime_type)
         response.setHeader('Content-Length', str(size))
-
+        response.setStatus('200')
         if interaction.request.method == 'GET':
             write = response.write
             size = self.blocksize
