@@ -11,13 +11,13 @@ Open Issues/To-Do Items
 
  Targeted for 0.5 Final Release (or sooner)
 
+
     General
 
         * Tutorial complete through chapter 4
 
-    peak.storage
 
-        - LDAP field type conversion
+    peak.storage
 
         - "facade" DM base class(es)
 

@@ -57,8 +57,10 @@ class structType(type):
             if cm in cdict:
                 cdict[cm] = classmethod(cdict[cm])
 
-        return super(structType,meta).__new__(meta, name, bases, cdict)
+        if '__fields__' in cdict:
+            cdict['__fields__'] = list(cdict['__fields__'])
 
+        return super(structType,meta).__new__(meta, name, bases, cdict)
 
     def __init__(klass, name, bases, cdict):
 
@@ -71,14 +73,12 @@ class structType(type):
         if baseMap==fieldMap: return
 
         for fieldName, fieldNum in fzip:
-
             if fieldName in cdict or baseMap.get(fieldName)==fieldNum:
                 # don't override any explicitly supplied properties
                 # or inherited ones based on the same field number
                 continue
                 
             setattr(klass, fieldName, makeFieldProperty(fieldName, fieldNum))
-
 
     def addField(klass, fieldName):
 

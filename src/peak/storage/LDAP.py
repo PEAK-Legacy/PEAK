@@ -4,11 +4,13 @@ from connections import ManagedConnection, AbstractCursor
 from urllib import quote, unquote
 from interfaces import *
 from peak.util.Struct import makeStructType
+from peak.util.imports import importObject
 
 __all__ = [
-    'LDAPConnection', 'LDAPCursor', 'ldapURL'
+    'LDAPConnection', 'LDAPCursor', 'ldapURL', 'SCHEMA_PREFIX'
 ]
 
+SCHEMA_PREFIX = PropertyName('peak.ldap.field_converters.*')
 
 try:
     import ldap
@@ -22,10 +24,8 @@ except:
 scope_map = {'one': SCOPE_ONELEVEL, 'sub': SCOPE_SUBTREE, '': SCOPE_BASE}
 
 
-
-
-
-
+def NullConverter(descr,value):
+    return value
 
 
 
@@ -46,6 +46,7 @@ class LDAPCursor(AbstractCursor):
     timeout      = -1
     msgid        = None
     bulkRetrieve = False
+    attrs        = None
 
     disconnects = binding.bindSequence('import:ldap.SERVER_DOWN',)
 
@@ -59,25 +60,24 @@ class LDAPCursor(AbstractCursor):
 
 
     def execute(self,dn,scope,filter='objectclass=*',attrs=None,dnonly=0):
-
         try:
             self.msgid = self._conn.search(dn,scope,filter,attrs,dnonly)
+            if attrs:
+                if 'dn' not in attrs:
+                    attrs = ('dn',)+tuple(attrs)
+                self.attrs = attrs
 
         except self.disconnects:
             self.errorDisconnect()
-
 
     def errorDisconnect(self):
         self.close()
         self.getParentComponent().close()
         raise
     
-
     def nextset(self):
         """LDAP doesn't do multi-sets"""
         return False
-
-
 
 
     def __iter__(self, onlyOneSet=True):
@@ -90,11 +90,38 @@ class LDAPCursor(AbstractCursor):
         getall = self.bulkRetrieve and 1 or 0
         fetch = self._conn.result
 
+        attrs  = self.attrs or ()
+        schema = SCHEMA_PREFIX.of(self)
+
+        def getConverter(field):
+            return importObject(schema.get(field,NullConverter), globals())
+
+        conv = [(getConverter(f), f) for f in attrs]
+
         ldapEntry = makeStructType('ldapEntry',
-            [], __implements__ = IRow, __module__ = __name__,
+            attrs, __implements__ = IRow, __module__ = __name__,
         )
 
-        newEntry = ldapEntry.fromMapping; restype = None
+        mkTuple  = tuple.__new__
+        fieldMap = ldapEntry.__fieldmap__
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        restype = None
 
         while restype != 'RES_SEARCH_RESULT':
 
@@ -111,15 +138,29 @@ class LDAPCursor(AbstractCursor):
 
                 m['dn']=dn
 
-                try:
-                    yield newEntry(m)                
+                fm=fieldMap.copy()
+                fm.update(m)
 
-                except ValueError:
-                    map(ldapEntry.addField, m.keys())
-                    yield newEntry(m)        
+                if len(fm)>len(fieldMap):
+                    for k in m.keys():
+                        if k not in fieldMap:
+                            ldapEntry.addField(k)
+                            conv.append( (getConverter(k),k) )
+                
+                yield mkTuple(ldapEntry,
+                    [ c(f,m.get(f)) for (c,f) in conv ]
+                )
+
 
         # Mark us as done with this query
         self.msgid = None
+
+
+
+
+
+
+
 
 class LDAPConnection(ManagedConnection):
 
