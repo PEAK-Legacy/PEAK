@@ -4,8 +4,6 @@ Open Issues/To-Do Items
 
     - Make all API signatures start with context component
 
-    - Review binding tutorial and correct any errors relative to current APIs
-
     - Add 'fcgiapp' module sources to distribution; update README/INSTALL to credit
       DC and OpenMarket and reference their licenses.
 
@@ -37,6 +35,8 @@ Targeted for 0.5 Alpha 2
        add 'logging' distro to 'peak.util' for 2.2 backward compatibility,
        and possibly adjust cluster stuff to work off ZConfig primary and
        generate clustertools file(s).
+
+
 
 
  Targeted for 0.5 Beta 1

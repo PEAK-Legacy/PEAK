@@ -133,14 +133,14 @@ actually a ``real" disk file.
 A specific set of services that a component provides is called an
 \strong{interface}.  Interfaces can denote a component's requirements, as well
 as the guarantees that it provides when those requirements are met.  In PEAK,
-interfaces are defined and declared using the Zope \module{Interface} package
+interfaces are defined and declared using the \module{zope.interface} package
 (bundled with PEAK for your convenience).   This means that components you
-create with PEAK's component architecture should also work in Zope 3's
+create with PEAK's component architecture should also work in Zope X3's
 component architecture.  (Which is important if you plan to build Zope
-3-based applications and web services with PEAK.)
+X3-based applications and web services with PEAK.)
 
 Interfaces in PEAK are used primarily as documentation and as a way of finding
-compatible components and services.  When used with the Zope 3 component
+compatible components and services.  When used with the Zope X3 component
 architecture, interfaces can also be used to register adapters (which convert
 a component from one interface to another), declare web views of application
 components, and even define security restrictions based on interfaces.
@@ -151,8 +151,8 @@ components, and even define security restrictions based on interfaces.
 \item \citetitle{A Quick Introduction to Python Interfaces} at
 \url{http://www.zope.org/Wikis/Interfaces/InterfaceUserDocumentation}.
 
-\item And, if you're interested in developing Zope 3 applications and want to
-learn more about what you can do with interfaces in the Zope 3 component
+\item And, if you're interested in developing Zope X3 applications and want to
+learn more about what you can do with interfaces in the XZope 3 component
 architecture, see \citetitle{Programming with the Zope 3 Component
 Architecture} at \url{http://dev.zope.org/Wikis/DevSite/Projects/ComponentArchitecture/Zope3PythonProgrammerTutorialChapter1/
 }.
@@ -257,8 +257,8 @@ connection object in an application could be a service component, and so could
 a top-level window in a GUI application.  J2EE ``session beans" and
 ``message-driven beans" are also good examples of service components.  (Note:
 don't confuse this general concept of services with the Zope 3 concept of a
-``Service"; the latter is an example of the former, but not the other way
-around.)
+``Service"; the latter is an example of the former, but not necessarily the
+other way around.)
 
 \item[Elements] \hfill \\
 Elements are typically ``problem-domain" objects or their proxies in
@@ -318,7 +318,7 @@ allow mapping Element properties to input fields in a window.
 While PEAK does or will provide many Element and Feature base classes you can
 use to build your applications, these facilities are outside the scope of
 this tutorial, which focuses primarily on assembling an application's Service
-components.  However, many of the techniques you'll learn here will be as
+components.  However, some of the techniques you'll learn here will be as
 applicable to Element and Feature objects as they are to Service components.
 
 So, let's get started on actually \emph{using} PEAK to build some
@@ -335,7 +335,7 @@ that keeps track of its passengers.
 
 \begin{verbatim%
 }>>> from peak.api import binding
->>> class Car(object):
+>>> class Car:
         passengers = binding.New(dict, name='passengers')
 
 >>> aCar=Car()
@@ -450,21 +450,23 @@ What would happen if we did this \emph{without} \class{binding.Component}?
 
 
 \begin{verbatim%
-}>>> class Car(object):
+}>>> class Car(object):     # new-style class error messages are more helpful
         passengers = binding.New(dict)
 
 >>> aCar=Car()
 >>> print aCar.passengers
 Traceback (most recent call last):
-  File "<pyshell#15>", line 1, in ?
+  File "<pyshell#13>", line 1, in ?
     print aCar.passengers
-  File "C:\PYTHON22\Lib\site-packages\peak\binding\once.py", line 137, in __get__
+  File "C:\cygwin\home\pje\PEAK\src/peak/binding/_once.pyx", line 119, in __get__
+    raise
+  File "C:\cygwin\home\pje\PEAK\src/peak/binding/_once.pyx", line 104, in __get__
     self.usageError()
-  File "C:\PYTHON22\Lib\site-packages\peak\binding\once.py", line 151, in usageError
+  File "C:\cygwin\home\pje\PEAK\src\peak\binding\once.py", line 177, in usageError
     raise TypeError(
-TypeError: <peak.binding.once.Once object at 0x01491EE0> was used in a type which
-    does not support active bindings, but a valid attribute name was not
-    supplied
+TypeError: <peak.binding.once.Once object at 0x01301B60> was used in a type
+    which does not support active bindings, but a valid attribute name was
+    not supplied
 \end{verbatim}
 
 Ouch!  It doesn't work, because PEAK can't tell what name the attribute
@@ -482,8 +484,6 @@ PEAK framework classes for ``service" components derive from \class{%
 binding.Component} alredy.
 
 \newpage
-
-
 
 
 
@@ -514,6 +514,7 @@ time, you'll only care about the first argument, which is the object for which
 the attribute is being computed.  It's rare that you'll need the instance
 dictionary or the attribute name, but if you need them, they're there.
 Normally, you'll just return the value you want the attribute to end up with.
+%XXX add reasons why you might want to use them
 
 Note, by the way, that there's no need for this function passed to
 \class{binding.Once} to be a method, or for the parameters to have specific
@@ -530,12 +531,11 @@ center is half of its height.  It's also true that we could say:
 }    passengers = binding.Once(lambda s,d,a: {})
 \end{verbatim}
 
-
 as another way of saying \samp{binding.New(dict)}.  However, the
 \function{binding.New} function is more compact, and clearer as to intention.
-Of course, its implementation consists of creating a function and returning a
-\class{binding.Once} instance wrapped around that function, just the same as
-we could do ``by hand".
+Of course, \function{binding.New} is actually implemented by creating a
+function and wrapping it in a \class{binding.Once} instance, in just the same
+way as we might do it ``by hand".
 
 By the way, although we've been only showing uses of \class{binding.Once} with
 one argument (the function to be called), \class{binding.Once} does actually
@@ -622,7 +622,7 @@ binding types.
 
 \subsubsection{API Conventions}
 
-There are three standard parameters that almost all attribute binding
+There are four standard parameters that almost all attribute binding
 constructors accept.  They always use the same parameter names, so you can
 supply them as keyword arguments.
 
@@ -647,12 +647,12 @@ attribute.  This is useful for documenting your class so that tools like
 \citetitle{pydoc} and the Python \function{help} function will display the
 docstring for the attribute as part of the class' documentation.
 
+\item[\var{activateUponAssembly}] \hfill \\
+\var{activateUponAssembly} is a flag that indicates whether the attribute should
+be computed when the object's \method{uponAssembly} method is called.  We
+haven't covered ``assembly events" yet, so don't worry about this one for now.
+
 \end{description}
-
-
-
-
-
 
 \subsubsection{Basic Binding Classes/Functions}
 
@@ -660,7 +660,7 @@ The following functions and classes can be used as-is to create attribute
 bindings, or you can subclass the classes to create custom binding types
 of your own:
 
-\begin{funcdesc}{Once}{func, name=None, provides=None, doc=None}
+\begin{funcdesc}{Once}{func, name=None, provides=None, doc=None, activateUponAssembly=False}
 The most basic of all binding types, the \class{binding.Once} class requires
 only a callable object such as a function or lambda.  If you don't supply a
 \var{name}, the \samp{__name__} attribute of the \var{func} parameter is used,
@@ -669,7 +669,7 @@ attribute of the \var{func} parameter is used, if available.
 \end{funcdesc}
 
 \begin{funcdesc}{New}{obtype, bindToOwner=None, name=None, provides=None,
-doc=None}
+doc=None, activateUponAssembly=False}
 As we've already seen, the \function{binding.New} function just needs a class or
 type object as its \var{obtype} parameter, and it creates a new instance of that
 type.  The optional \var{bindToOwner} flag, if specified, tells
@@ -687,7 +687,7 @@ talk more about import specifications in the chapter on the
 \module{peak.config} package.
 \end{funcdesc}
 
-\begin{funcdesc}{Copy}{obj, name=None, provides=None, doc=None}
+\begin{funcdesc}{Copy}{obj, name=None, provides=None, doc=None, activateUponAssembly=False}
 The \function{binding.Copy} function does just what it says.  When accessed, it
 will create a copy of its \var{obj} parameter, using the \function{copy}
 function from the Python standard library's \module{copy} module.
@@ -887,7 +887,7 @@ In PEAK, a root component is any object without a parent.  Only objects whose
 classes provide a \function{getParentComponent} method can have parents, and
 even then they are only considered to have a parent if that method returns
 something other than \samp{None}.  Classes without such a method, such as
-Python built-in types, are always root components.  For example:
+Python built-in types, are almost always root components.  For example:
 
 \begin{verbatim%
 }>>> print binding.getParentComponent(123456)
@@ -939,7 +939,7 @@ control class for component names, the \module{peak.binding} system considers
 it not to have a name.  And unknown names show up as \samp{'*'} in component
 path segments.
 
-
+% XXX module hierarchy lookups
 
 Of course, if we wanted to support our hypothetical GUI controls having
 component names, we would need only to add a \function{getComponentName}
@@ -961,7 +961,7 @@ calls on objects that it expects to be nodes in a component tree.  The
 
     def getComponentName():
         """Return this component's name relative to its parent, or 'None'"""
-        
+
     def notifyUponAssembly(child):
         """Call 'child.uponAssembly()' when component knows its root"""
 
@@ -972,10 +972,10 @@ By convention, interface names in Python are usually begun with a captial
 methods are described from the \emph{caller's} perspective, so \samp{self}
 arguments are not included in method definitions.
 
-So, the \class{binding.IBindingSPI} interface tells us that to implement the
-Binding SPI, we need a \function{getParentComponent} method and a \function{%
-getComponentName} method, neither of which takes any parameters, and whose
-return values are as documented.
+So, the \class{binding.IBindingNode} interface tells us that to implement the
+Binding Node interface, we need a \function{getParentComponent} method and a 
+\function{getComponentName} method, neither of which takes any parameters, and
+whose return values are as documented.
 
 
 
@@ -996,8 +996,8 @@ or inherit one, so it's not promising to implement the full \class{IBindingNode}
 interface.  This is acceptable because \module{peak.binding} verifies the
 presence of needed methods automatically, and it isn't required that a
 component implement all of the \class{IBindingNode} methods.  Many other
-interfaces however, \emph{must} be promised by a class in order for the
-functionality to work.
+interfaces however, \emph{must} be explicitly promised by a class in order
+for the functionality to work.
 
 The \class{binding.IComponentFactory} interface is a good example of this.
 \class{IComponentFactory} is the interface which defines how component
@@ -1006,9 +1006,9 @@ peak.binding}!
 
 You may recall that we said earlier that component constructors accept their
 parent component as the first argument.  But we didn't say what other
-arguments they took, or how it was that the objects in our examples wound up
-with parents when we never supplied any arguments to any constructors.  Well,
-we're about to see how that works.
+arguments they took, or how it was that many objects in our examples wound up
+with parents even though we never supplied any arguments to their constructors.
+Well, we're about to see how that works.
 
 When a \function{binding.New} binding is activated, it checks to see if
 its \var{obtype} parameter implements \class{IComponentFactory}.  If so,
