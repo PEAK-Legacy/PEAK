@@ -402,10 +402,10 @@ class FileResource(FSResource):
                     yield data
             stream.close()
 
-        return '200 OK', [
-            ('Content-Type', self.mime_type),
-            ('Content-Length', str(size))
-        ],  dump_data()
+        headers = [('Content-Length', str(size))]
+        if self.mime_type:
+            headers.append(('Content-Type', self.mime_type))
+        return '200 OK', headers,  dump_data()
 
 
 class ImageResource(FileResource):
