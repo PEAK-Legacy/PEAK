@@ -34,8 +34,8 @@ Fixes and Enhancements since Version 0.5 alpha 1
    but we recommend you switch to 'adapt()', which will work with both PEAK
    and Zope interfaces.
 
- - Replaced all use of 'zope.interface' with 'peak.interface' because
-   the new 'peak.interface':
+ - Replaced all use of 'zope.interface' with 'protocols' package because
+   the 'protocols' package:
 
    * is considerably smaller and simpler than 'zope.interface'
 
@@ -59,7 +59,8 @@ Fixes and Enhancements since Version 0.5 alpha 1
    * can interoperate with other interface packages, including Zope's, but
      does not require them
 
-   * works with module inheritance (for everything but moduleProvides())
+   * works with module inheritance (for everything but moduleProvides(), and
+     we should get to that by 0.5a2)
 
    * lets you use Interfaces as abstract base classes (i.e., you can
      inherit from an interface and turn it into an implementation, and

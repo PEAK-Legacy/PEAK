@@ -24,7 +24,7 @@ HAPPYDOC_IGNORE = [
 packages = [
     'peak', 'peak.api', 'peak.binding', 'peak.config', 'peak.model',
     'peak.naming', 'peak.naming.factories', 'peak.running',
-    'peak.storage', 'peak.util',
+    'peak.storage', 'peak.util', 'protocols',
 ]
 
 extensions = [

@@ -13,7 +13,7 @@
 
 from weakref import WeakValueDictionary
 from types import ClassType
-from advice import minimalBases
+from protocols.advice import minimalBases
 
 __all__ = ['makeClass']
 

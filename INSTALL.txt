@@ -52,7 +52,8 @@ Installing PEAK
  TESTING YOUR INSTALLATION
 
   PEAK comes with a moderately-sized built-in test suite.  If you wish to
-  run it after installation, you can do so like this::
+  run it after installation, and you are installing from source, you can do
+  so like this::
 
    python setup.py test
 
@@ -70,14 +71,13 @@ Installing PEAK
   And so on.  You can also use 'python setup.py -q test' to make the tests
   run more "quietly".
 
+  If you've installed using the Windows binary installer, you can run the
+  tests like this::
 
+    python C:\Python22\Lib\unittests.py peak.tests.test_suite
 
-
-
-
-
-
-
+  (Substitute the location of 'unittests.py' on your machine; it'll be in
+  the 'Lib' subdirectory of your python installation.)
 
 
  THIRD PARTY SOFTWARE INCLUDED WITH PEAK
@@ -93,7 +93,7 @@ Installing PEAK
    the 'src/kjbuckets/COPYRIGHT.txt' file for details of its license.
 
 
-  The Zope 3 'persistence', and 'ZConfig' Packages
+  The Zope 3 'persistence' and 'ZConfig' Packages
 
    PEAK includes a copy of the following packages from the Zope X3 Milestone 2
    release, and will install them unless Zope X3 is available on 'sys.path'
@@ -116,7 +116,7 @@ Installing PEAK
    will not install any of the Zope packages listed above, in order to avoid
    overwriting newer versions from your Zope installation.
 
-   The 'persistence', and 'ZConfig' packages are Copyright Zope Corporation
+   The 'persistence' and 'ZConfig' packages are Copyright Zope Corporation
    and contributors; please see the 'LICENSE.txt' files in their directories
    for details of their licenses.
 

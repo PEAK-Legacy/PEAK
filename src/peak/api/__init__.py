@@ -27,21 +27,21 @@
 """
 
 from __future__ import generators
+import protocols
+from protocols import adapt
 
 __all__ = [
     'NOT_GIVEN', 'NOT_FOUND', 'Items', 'PropertyName',
     'binding', 'naming', 'model', 'config', 'running', 'logs', 'storage',
     'exceptions', 'implements', 'classProvides', 'directlyProvides',
-    'moduleProvides', 'adapt',
+    'moduleProvides', 'adapt', 'protocols',
 ]
 
 
 
-
-
 # Convenience features
-from peak.interface import *
 from peak.util.imports import lazyModule
+
 binding     = lazyModule('peak.binding.api')
 config      = lazyModule('peak.config.api')
 exceptions  = lazyModule('peak.exceptions')
