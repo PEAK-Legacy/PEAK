@@ -32,6 +32,7 @@ extensions = [
     Extension("peak.util.buffer_gap", ["src/peak/util/buffer_gap.pyx"]),
     Extension("peak.util._Code", ["src/peak/util/_Code.pyx"]),
     Extension("protocols._speedups", ["src/protocols/_speedups.pyx"]),
+    Extension("dispatch._speedups", ["src/dispatch/_speedups.pyx"]),
     Extension(
         "peak.persistence._persistence", ["src/peak/persistence/persistence.c"]
     ),
