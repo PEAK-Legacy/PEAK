@@ -605,11 +605,11 @@ class Base(object):
     lookupComponent = _lookupComponent
 
 
+    def fromZConfig(klass, section):
+        """Classmethod: Create an instance from a ZConfig 'section'"""
+        return klass(**section.__dict__)
 
-
-
-
-
+    fromZConfig = classmethod(fromZConfig)
 
 
 
