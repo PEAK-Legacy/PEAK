@@ -924,7 +924,41 @@ class PrimitiveType(Classifier):
     __metaclass__ = PrimitiveTypeClass
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 class DataType(Immutable):
 
     """An immutable data structure type"""
+
+    def mdl_typeCode(klass, d, a):
+
+        """TypeCode for DataTypes is a 'struct' w/appropriate fields"""
+
+        from peak.model.datatypes import TCKind, TypeCode
+
+        return TypeCode(
+            kind = TCKind.tk_struct,
+            member_names = klass.mdl_featureNames,
+            member_types = [
+                f.typeObject.mdl_typeCode for f in klass.mdl_features
+            ]
+            
+        )
+
+    mdl_typeCode = binding.classAttr( binding.Once(mdl_typeCode) )
 

@@ -39,22 +39,22 @@ ALL_DEP = 'all'
 
 
 
-class MultiplicityType(model.Immutable):
+class MultiplicityType(model.DataType):
 
-    class lower(model.Field):
-        fieldOrder = 1
+    class lower(model.structField):
+        sortPosn = 1
         referencedType = Integer
 
-    class upper(model.Field):
-        fieldOrder = 2
+    class upper(model.structField):
+        sortPosn = 2
         referencedType = UnlimitedInteger
 
-    class isOrdered(model.Field):
-        fieldOrder = 3
+    class isOrdered(model.structField):
+        sortPosn = 3
         referencedType = Boolean
 
-    class isUnique(model.Field):
-        fieldOrder = 4
+    class isUnique(model.structField):
+        sortPosn = 4
         referencedType = Boolean
 
 
@@ -106,18 +106,18 @@ class VerifyResultKind(model.Enumeration):
     published = model.enum()
 
 
-class ViolationType(model.Immutable):
+class ViolationType(model.DataType):
 
-    class errorKind(model.Field):
+    class errorKind(model.structField):
         referencedType = String
 
-    class elementInError(model.Reference):
+    class elementInError(model.structField):
         referencedType = 'MOFModel/ModelElement'
 
-    class valuesInError(model.Field):
-        pass    # XXX
+    class valuesInError(model.structField):
+        referencedType = model.PrimitiveType    # XXX !
 
-    class errorDescription(model.Field):
+    class errorDescription(model.structField):
         referencedType = String
 
 
@@ -175,16 +175,15 @@ class MOFModel(model.Model):
             referencedType = AnnotationType
 
         class qualifiedName(model.DerivedAssociation):
-        
-            def get(feature, element):
+
+            upperBound = 1  # singular
+
+            def _getList(feature, element):
                 names = [element.name]
                 while element.container is not None:
                     element = element.container
                     names.insert(0,element.name)
-                return names
-
-            def _getList(feature, element):
-                return [feature.get(element)]
+                return [names]
 
         class container(model.Reference):
             referencedType = 'Namespace'
@@ -197,6 +196,7 @@ class MOFModel(model.Model):
         class constraints(model.Collection):
             referencedType = 'Constraint'
             referencedEnd  = 'constrainedElements'
+
 
 
 

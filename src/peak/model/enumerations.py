@@ -304,16 +304,16 @@ class EnumerationClass(PrimitiveTypeClass):
         klass.__enumsByValue[value] = inst
 
 
+    def mdl_typeCode(klass, d, a):
 
+        from peak.model.datatypes import TCKind, TypeCode
 
+        return TypeCode(
+            kind = TCKind.tk_enum,
+            member_names = [e.name for e in klass]
+        )
 
-
-
-
-
-
-
-
+    mdl_typeCode = binding.Once(mdl_typeCode)
 
 
 

@@ -1,9 +1,9 @@
-from structural import PrimitiveType, DataType, structField
-from enumerations import Enumeration, enum
+from structural import *
+from enumerations import *
 
 __all__ = [
     'Integer','UnlimitedInteger','UNBOUNDED','Boolean','String','Name',
-    'TCKind',
+    'TCKind', 'TypeCode',
 ]
 
 
@@ -136,6 +136,7 @@ class _tcField(structField):
                 (feature.attrName, element.kind)
             )
 
+    
 
 
 
@@ -161,14 +162,14 @@ class _tcField(structField):
 
 
 
-
-class TypeCode(DataType):
+class TypeCode(Immutable):
 
     # XXX name, id ???
 
     class kind(structField):
         referencedType = TCKind
         sortPosn = 0
+        allowedKinds = TCKind
 
     class length(_tcField):     # xmi.tcLength
 
@@ -202,7 +203,6 @@ class TypeCode(DataType):
         upperBound = None   # sequence
         referencedType = 'TypeCode'
 
-
     class discriminator_type(_tcField):
         allowedKinds = TCKind.tk_union,
         referencedType = 'TypeCode'
@@ -219,18 +219,28 @@ class TypeCode(DataType):
         pass
 
 
+    def __repr__(self):
 
+        kind = self.kind
+        info = [
+            '%s=%r' % (f.attrName,f.get(self))
+            for f in self.__class__.mdl_features
+                if kind in f.allowedKinds and hasattr(self,f.attrName)
+        ]
 
+        return 'TypeCode(%s)' % (', '.join(info))
 
-TypeCode.mdl_typeCode = TypeCode(kind=TCKind.tk_TypeCode)
+            
+# Bootstrap basic types
 
-Integer.mdl_typeCode  = TypeCode(kind=TCKind.tk_longlong)
+TypeCode.mdl_typeCode       = TypeCode(kind=TCKind.tk_TypeCode)
+Classifier.mdl_typeCode     = TypeCode(kind=TCKind.tk_objref)
+PrimitiveType.mdl_typeCode  = TypeCode(kind=TCKind.tk_any)  # XXX ???
 
-Boolean.mdl_typeCode  = TypeCode(kind=TCKind.tk_boolean)
-
-String.mdl_typeCode   = TypeCode(kind=TCKind.tk_string, length=0)
-
-Name.mdl_typeCode     = TypeCode(kind=TCKind.tk_alias,
+Integer.mdl_typeCode        = TypeCode(kind=TCKind.tk_long)
+Boolean.mdl_typeCode        = TypeCode(kind=TCKind.tk_boolean)
+String.mdl_typeCode         = TypeCode(kind=TCKind.tk_string, length=0)
+Name.mdl_typeCode           = TypeCode(kind=TCKind.tk_alias,
                                  content_type=String.mdl_typeCode)
 
 
