@@ -16,7 +16,7 @@ Open Issues/To-Do Items
 
     peak.storage
 
-        - URLs and drivers for gadfly, Sybase, and postgres
+        - URL+driver for postgres
 
         - LDAP schema properties, SQL type mapping utilities
 
@@ -48,11 +48,7 @@ Open Issues/To-Do Items
 
     peak.naming
 
-        - clarify requirements re: initial context, and add SPI functions
-          to initctx, so that that can be the right way to get such APIs
-          (e.g. getURLContext()).
-
-        - review context interfaces and URL hooks/hacks
+        - review URL hooks/hacks
 
         - docstrings for reference
 

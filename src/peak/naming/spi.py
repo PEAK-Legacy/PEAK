@@ -104,7 +104,7 @@ def getURLContext(scheme, context=None, iface=IBasicContext):
 
 
 
-def getObjectInstance(refInfo, name, context, attrs=None):
+def getObjectInstance(refInfo, name, context=None, attrs=None):
 
     """Default rules for loading objects from state"""
 

@@ -3,9 +3,6 @@
 from unittest import TestCase, makeSuite, TestSuite
 from peak.api import *
 
-
-parse = naming.InitialContext(objectFactories=[]).lookup
-
 validNames = {
 
     'smtp://foo':
@@ -31,6 +28,9 @@ validNames = {
     'sybase://user:p%40ss@server':
         Items(server='server', db=None, user='user', passwd='p@ss'),
 
+    'gadfly://drinkers@c:\\temp':
+        Items(db='drinkers', dir=r'c:\temp'),
+        
     'import:bada.bing':
         Items(body='bada.bing'),
         
@@ -38,6 +38,8 @@ validNames = {
         Items(body='c:\\spam.lock'),
 }
 
+
+parse = naming.InitialContext(objectFactories=[]).lookup
 
 class NameParseTest(TestCase):
 

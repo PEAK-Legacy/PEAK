@@ -211,7 +211,7 @@ class ManagedConnection(TransactionComponent):
 
 
     def closeCursors(self):
-        if self.hasBinding('_cursors'):
+        if self._hasBinding('_cursors'):
             for c in self._cursors.values():
                 c.close()
 

@@ -5,13 +5,13 @@ from peak.util.Struct import makeStructType
 from connections import ManagedConnection, AbstractCursor
 
 __all__ = [
-    'SQLCursor', 'GenericSQL_URL', 'SQLConnection', 'SybaseConnection'
+    'SQLCursor', 'GenericSQL_URL', 'SQLConnection', 'SybaseConnection',
+    'GadflyURL', 'GadflyConnection',
 ]
 
 
 def _nothing():
     pass
-
 
 
 
@@ -162,6 +162,47 @@ class SybaseConnection(SQLConnection):
 
 
 
+class GadflyConnection(SQLConnection):
+
+    def _open(self):
+        a = self.address
+        from gadfly import gadfly
+        return gadfly(a.db, a.dir)
+
+    def createDB(self):
+
+        """Close, clear, and re-create the database"""
+
+        self.close()
+        a = self.address
+
+        from gadfly import gadfly
+        g = gadfly()
+        g.startup(self.address.db, self.address.dir)
+        g.commit()
+        g.close()
+
+
+class GadflyURL(naming.ParsedURL):
+
+    _supportedSchemes = ('gadfly',)
+    
+    _defaultScheme = 'gadfly'
+
+    pattern = "(//)?(?P<db>[^@]+)@(?P<dir>.+)"
+
+    def __init__(self, url=None, db=None, dir=None):
+        self.setup(locals())
+    
+    def retrieve(self, refInfo, name, context, attrs=None):
+
+        return GadflyConnection(
+            context.creationParent,
+            address = self
+        )
+
+
+
 class GenericSQL_URL(naming.ParsedURL):
 
     _supportedSchemes = ('sybase',)
@@ -180,7 +221,6 @@ class GenericSQL_URL(naming.ParsedURL):
 
     def __init__(self, url=None,
                  user=None, passwd=None, server=None, db=None,
-                 scheme=None, body=None
         ):
         self.setup(locals())
 
