@@ -162,29 +162,29 @@ class Place(Traversable):
 
 
 
-class TypeAsViewTarget(protocols.Adapter):
+[dispatch.on('target')]
+def registerWithProtocol(target,protocol,adapter):
+    """Register 'target' as a source of 'protocol', via 'adapter'"""
+    
 
-    protocols.advise(
-        instancesProvide = [IViewTarget],
-        asAdapterForTypes=[type,ClassType]
-    )
-
-    def registerWithProtocol(self,protocol,adapter):
-        protocols.declareAdapter(
-            adapter,[protocol],forTypes=[self.subject]
-        )
+[registerWithProtocol.when([type,ClassType])]
+def registerTypeWithProtocol(target,protocol,adapter):
+    protocols.declareAdapter(adapter,[protocol],forTypes=[target])
 
 
-class ProtocolAsViewTarget(protocols.Adapter):
-    protocols.advise(
-        instancesProvide = [IViewTarget],
-        asAdapterForProtocols=[protocols.IOpenProtocol]
-    )
+[registerWithProtocol.when([protocols.IOpenProtocol])]
+def registerProtocolWithProtocol(target,protocol,adapter):
+    protocols.declareAdapter(adapter,[protocol],forProtocols=[target])
 
-    def registerWithProtocol(self,protocol,adapter):
-        protocols.declareAdapter(
-            adapter,[protocol],forProtocols=[self.subject]
-        )
+
+
+
+
+
+
+
+
+
 
 
 
@@ -249,8 +249,8 @@ class Location(Place,binding.Configurable):
             self.local_views[name] = handler
         else:
             self.have_views = True
-            IViewTarget(target).registerWithProtocol(
-                self.registrationProtocol(name), lambda ob:(ob,handler)
+            registerWithProtocol(
+                target, self.registrationProtocol(name), lambda ob:(ob,handler)
             )
 
 

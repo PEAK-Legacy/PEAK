@@ -10,7 +10,7 @@ __all__ = [
     'IDOMletState', 'IHTTPHandler', 'IHTTPApplication', 'INamespaceHandler',
     'IDOMletNode',    'IDOMletNodeFactory', 'IPlace', 'ITraversalContext',
     'IDOMletElement', 'IDOMletElementFactory', 'ISkin', 'IPolicyInfo',
-    'IViewTarget', 'IConfigurableLocation', 'IViewService',
+    'IConfigurableLocation', 'IViewService',
     'VIEW_NAMES', 'TEMPLATE_SCHEMA', 'SITEMAP_SCHEMA', 'LOCATION_ID',
     'IDOMletRenderable',
 ]
@@ -64,7 +64,7 @@ class IViewService(Interface):
     def registerView(target,name,handler):
         """Register 'handler' to implement view 'name' for 'target'
 
-        'target' must be an 'IViewTarget' or 'None', and 'handler' must be an
+        'target' must be a type, protocol, or 'None', and 'handler' must be an
         'INamespaceHandler'.  If 'target' is 'None', then the view is intended
         to apply to the view service itself, rather than to a content type.
         """
@@ -326,27 +326,6 @@ class ISkin(IResourceService):
 
 
 
-class IViewTarget(Interface):
-    """Thing that can be adapted "from", like a class, protocol, or instance"""
-
-    def registerWithProtocol(protocol,adapter):
-        """Register the given adapter "from" this source "to" the protocol
-
-        For example, an 'IViewTarget' adapter for a class would do something
-        like::
-
-            protocols.declareAdapter(
-                adapter,[protocol],forTypes=[self.subject]
-            )
-
-        while an 'IViewTarget' adapter for a protocol would use::
-
-            protocols.declareAdapter(
-                adapter,[protocol],forProtocols=[self.subject]
-            )
-        """
-
-
 class INamespaceHandler(Interface):
     """A function returning a new context for a given context/ns/name"""
 
@@ -365,6 +344,27 @@ class INamespaceHandler(Interface):
         raising 'NotFound' when the target cannot be located.  Note: the
         handler must *not* wrap 'default' in a traversal context: checking
         for the returned default is the caller's responsibility."""
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 class IConfigurableLocation(IWebTraversable,IPlace,IViewService):
