@@ -1,12 +1,12 @@
 from __future__ import generators
 
-from peak.binding.components import Component, getRootComponent, New, \
-    AutoCreated
+from peak.binding.components import Component, New, AutoCreated
 
 from peak.api import NOT_FOUND, NOT_GIVEN
 from peak.util.EigenData import EigenCell, AlreadyRead
-from interfaces import *
 
+from interfaces import *
+from Interface import Interface
 
 __all__ = [
     'GlobalConfig', 'LocalConfig', 'PropertyMap', 'LoadingRule',
@@ -41,63 +41,62 @@ _emptyRuleCell.exists()
 
 class PropertyMap(AutoCreated):
 
-    values   = New(dict)
-    rules    = New(dict)
-    defaults = New(dict)
-    used     = New(dict)
-
+    rules     = New(dict)
+    provided  = New(dict)   
     _provides = IPropertyMap
 
 
     def setRule(self, propName, ruleFactory):
-
         ruleObj = ruleFactory(self, propName)
-
-        if propName in self.values or propName in self.used:
-            raise AlreadyRead, propName
-
-        _setCellInDict(self.rules, propName, ruleObj)
-
+        _setCellInDict(self.rules, Property(propName), ruleObj)
 
     def setDefault(self, propName, defaultRule):
+        _setCellInDict(self.rules, Property(propName+'?'), defaultRule)
 
-        _setCellInDict(self.defaults, propName, defaultRule)
+    def setValue(self, propName, value):
+        _setCellInDict(self.rules, Property(propName), lambda *args: value)
 
+    def registerProvider(self, ifaces, provider):
 
-    def setPropertyFor(self, obj, propName, value):
+        """Register 'item' under 'implements' (an Interface or nested tuple)"""
 
-        if obj is not None and obj is not self.getParentComponent():
-            raise ObjectOutOfScope(
-                "PropertyMap only sets properties for its parent"
-            )
+        if isinstance(ifaces,tuple):
+            for iface in ifaces:
+                self.registerProvider(iface,provider)
+        else:
+            self._register(ifaces,provider,ifaces)
 
-        if propName in self.used:
-            raise AlreadyRead, propName
+    def _register(self, iface, item, primary_iface):
 
-        _setCellInDict(self.values, propName, value)
+        old = self.provided.get(iface)
 
-
-
-
-
-    def getPropertyFor(self, obj, propName):
-
-        # First we try values
-        cell = self.values.get(propName)
-
-        if cell is not None:
-            return cell.get()
-            
-        # Initialize loop invariants
+        # We want to keep more-general registrants
+        if old is None or old.extends(primary_iface):
         
+            _setCellInDict(self.rules, iface, item)
+            self.provided[iface]=primary_iface
+
+            for base in iface.getBases():
+                if base is not Interface:
+                    self._register(base,item,primary_iface)
+
+    def getValueFor(self, configKey, forObj=None):
+
         rules      = self.rules
-        xRules     = []
-        rulesUsed  = False
         value      = NOT_FOUND
 
-        # Check regular & wildcard rules
-        
-        for name in propName.matchPatterns():
+        if not rules:
+            return value
+
+        xRules     = []
+
+        if isinstance(configKey,Property):
+            lookups = configKey.matchPatterns()
+        else:
+            lookups = configKey,
+
+
+        for name in lookups:
 
             rule = rules.get(name)
 
@@ -106,20 +105,10 @@ class PropertyMap(AutoCreated):
 
             elif rule is not _emptyRuleCell:
 
-                value = rule.get()(propName, obj)
-
-                if value is NOT_GIVEN:
-                    value = NOT_FOUND
-                    continue
-                    
-                rulesUsed = True    # we depended on the rule's return value
+                value = rule.get()(self, configKey, forObj)
 
                 if value is not NOT_FOUND:
                     break
-
-
-
-
 
         # ensure that unspecified rules stay that way, if they
         # haven't been replaced in the meanwhile by a higher-level
@@ -127,38 +116,8 @@ class PropertyMap(AutoCreated):
 
         for name in xRules:
             rules.setdefault(name,_emptyRuleCell)
-
-
-        if value is NOT_FOUND:
-
-            # Rules didn't work, or else they loaded something
-            # let's try values again, then defaults...
-
-            cell = self.values.get(propName)
-
-            if cell is not None:
-                return cell.get()
-
-            default = self.defaults.setdefault(propName, _emptyRuleCell)
-            value = default.get()(self, propName)
-
-
-        # prevent setting a value for this property in future
-        self.used.setdefault(propName,1)    
-
-        
-        if rulesUsed:
-            return value
-
-        # If no non-null rules were used, then the value we found is
-        # independent of the target object: we can cache it in the values map!
-
-        cell = self.values[propName] = EigenCell()
-        cell.set(value)
-
-        return cell.get()
-
-
+       
+        return value
 
 
 
@@ -178,7 +137,7 @@ class LoadingRule(object):
         if prefix and not prefix.endswith('.'):
             prefix+='.'
         
-        def compute(propName,targetObj):
+        def compute(propertyMap, propName, targetObj):
 
             if compute.loadNeeded:
 
@@ -189,7 +148,7 @@ class LoadingRule(object):
                     compute.loadNeeded = True
                     raise
 
-            return NOT_GIVEN
+            return NOT_FOUND
 
         compute.loadNeeded = True
         return compute
@@ -199,57 +158,33 @@ def loadEnviron(factory, pMap, prefix, name):
     from os import environ
 
     for k,v in environ.items():
-        pMap.setPropertyFor(None, prefix+k, v)
+        pMap.setValue(prefix+k, v)
 
-    return NOT_GIVEN
+    return NOT_FOUND
 
 class GlobalConfig(Component):
 
-    propertyMap = PropertyMap
-
     def __init__(self):
-        self.propertyMap.setRule('environ.*', LoadingRule(loadEnviron))
+        self.setup()
 
-
-    def _getUtility(self, iface, forObj):
-
-        # use the global configuration registry, but wrap anything found
-        # around forObj's local config, so that it has access to the local
-        # configuration, and will be specific to that configuration root.
-
-        provider = self.__instance_provides__.get(iface, NOT_FOUND)
-
-        if provider is not NOT_FOUND:
-
-            if forObj is self:
-                raise TypeError(
-                    "Global config can't provide utilities for itself"
-                )
-
-            from api_impl import getLocal
-            localCfg = getLocal(getRootComponent(forObj))
-            return provider(localCfg, forObj)
-
-        return super(GlobalConfig,self)._getUtility(iface, forObj)
-
+    def setup(self):
+        self.__instance_provides__.setRule(
+            'environ.*', LoadingRule(loadEnviron)
+        )
 
     def setParentComponent(self,parent):
         raise TypeError("Global config can't have a parent")
 
 
 
-
-
-
-
-
-
 class LocalConfig(Component):
-
-    propertyMap = PropertyMap
 
     def __init__(self,parent):
         self.setParentComponent(parent)
+        self.setup()
+
+    def setup(self):
+        pass
 
     def setParentComponent(self,parent):
 
@@ -257,4 +192,5 @@ class LocalConfig(Component):
             "LocalConfig parent must be GlobalConfig"
 
         super(LocalConfig,self).setParentComponent(parent)
+
 

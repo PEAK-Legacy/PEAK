@@ -48,6 +48,8 @@ def getLocal(forRoot=None):
 
     """Return a local configuration object for 'forRoot'"""
 
+    forRoot = binding.getRootComponent(forRoot)
+
     if forRoot is not None and _localCfgs.has_key(forRoot):
         return _localCfgs[forRoot]
         
@@ -78,8 +80,6 @@ def newDefaultConfig():
 
 
 
-
-
 def getProperty(obj, propName, default=NOT_GIVEN):
 
     """Find property 'propName' for 'obj'
@@ -95,31 +95,31 @@ def getProperty(obj, propName, default=NOT_GIVEN):
     if not isinstance(propName,Property):
         propName = Property(propName)
 
-    if propName.isWildcard():
+    if not propName.isPlain():
         raise exceptions.InvalidName(
-            "getProperty() can't use wildcard properties", propName
+            "getProperty() can't use wildcard/default properties", propName
         )
 
-    for c in binding.iterParents(obj):
+    prop = binding.findUtility(obj, propName, NOT_FOUND)
 
-        prop = c._getUtility(propName, obj)
+    if prop is not NOT_FOUND:
+        return prop
 
-        if prop is not NOT_FOUND:
-            return prop
+    if default is NOT_GIVEN:
+        raise exceptions.PropertyNotFound(propName, obj)
 
-        pm = c._getUtility(IPropertyMap, obj)
+    return default
 
-        if pm is not NOT_FOUND:
 
-            prop = pm.getPropertyFor(obj,propName)
 
-            if prop is not NOT_FOUND:        
-                return prop
-    else:
-        if default is NOT_GIVEN:
-            raise exceptions.PropertyNotFound(propName, obj)
 
-        return default
+
+
+
+
+
+
+
 
 def registerGlobalProvider(ifaces, provider):
     getGlobal().registerProvider(ifaces, provider)
@@ -128,7 +128,7 @@ def registerGlobalProvider(ifaces, provider):
 def setGlobalProperty(propName, value):
 
     pm = binding.findUtility(getGlobal(), IPropertyMap)
-    pm.setPropertyFor(getGlobal(), propName, value)
+    pm.setValue(propName, value)
 
 
 def setGlobalRule(propName, ruleFactory):
@@ -169,7 +169,7 @@ def registerLocalProvider(forRoot, ifaces, provider):
 def setPropertyFor(obj, propName, value):
 
     pm = binding.findUtility(obj, IPropertyMap)
-    pm.setPropertyFor(obj, propName, value)
+    pm.setValue(propName, value)
 
 
 def setRuleFor(obj, propName, ruleFactory):

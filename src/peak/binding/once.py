@@ -3,6 +3,7 @@
 from meta import ActiveDescriptor
 from peak.api import NOT_FOUND
 from peak.util.EigenData import EigenRegistry
+from imports import importObject
 
 __all__ = ['Once', 'New', 'Copy', 'OnceClass']
 
@@ -30,7 +31,7 @@ def New(obtype, name=None, provides=None, doc=None):
     such as when you're not deriving from a standard PEAK base class.)
     """
 
-    return Once( (lambda s,d,a: obtype()), name, provides, doc)
+    return Once( (lambda s,d,a: importObject(obtype)()), name, provides, doc)
 
 
 

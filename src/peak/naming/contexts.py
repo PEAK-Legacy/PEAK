@@ -4,7 +4,7 @@ from interfaces import *
 from names import *
 from references import *
 from peak.binding.imports import importObject
-from peak.binding.components import Component, bindTo, getRootComponent, Once
+from peak.binding.components import Component, bindTo, Once
 from peak import exceptions
 
 import spi
@@ -417,9 +417,9 @@ class BasicInitialContext(AbstractContext):
         Note that you should normally supply 'creationParent=someObj' as a
         keyword option to 'naming.InitialContext()' to explicitly set the
         creation parent.  But if you don't, the default creation parent is
-        'config.getLocal(binding.getRootComponent(theNewInitialContext))'."""
+        'config.getLocal(theNewInitialContext)'."""
 
         from peak.config.api import getLocal
-        return getLocal(getRootComponent(self))
+        return getLocal(self)
 
     creationParent = Once(creationParent)

@@ -10,10 +10,10 @@ from weakref import WeakValueDictionary
 from peak.naming.names import toName, Syntax, CompoundName
 from peak.util.EigenData import EigenRegistry, EigenCell
 
-from Interface import Interface
 from peak.api import config, NOT_FOUND, NOT_GIVEN, exceptions
 
-from peak.config.interfaces import IConfigKey
+from peak.config.interfaces import IConfigKey, IPropertyMap
+
 
 __all__ = [
     'Base', 'Component','AutoCreated','Provider','CachingProvider',
@@ -24,7 +24,7 @@ __all__ = [
 ]
 
 
-InterfaceClass = Interface.__class__
+
 
 
 
@@ -40,12 +40,15 @@ InterfaceClass = Interface.__class__
 
 
 def Provider(callable):
-    return lambda foundIn, forObj: callable(forObj)
+    return lambda foundIn, configKey, forObj: callable(forObj)
 
 
 def CachingProvider(callable, weak=False):
 
-    def provider(foundIn, forObj):
+    def provider(foundIn, configKey, forObj):
+
+        # get the owner of the property map
+        foundIn = foundIn.getParentComponent()
 
         fid = id(foundIn)
         utility = provider.cache.get(fid)
@@ -61,9 +64,6 @@ def CachingProvider(callable, weak=False):
         provider.cache = {}
 
     return provider
-
-
-
 
 
 
@@ -184,7 +184,7 @@ def findUtilities(component, iface):
 
     for component in iterParents(component):
 
-        utility = component._getUtility(iface, forObj)
+        utility = component._getConfigData(iface, forObj)
 
         if utility is not NOT_FOUND:
             yield utility
@@ -482,11 +482,11 @@ def bindToProperty(propName, default=NOT_GIVEN, provides=None, doc=None):
         will result in a 'config.PropertyNotFound' exception.
     """
 
+    propName = config.Property(propName)
+
     return Once(lambda s,d,a: config.getProperty(s,propName,default),
         provides=provides, doc=doc
     )
-
-
 
 
 
@@ -512,7 +512,7 @@ class Base(object):
         return self.__parentCell.get()
 
 
-    def _getUtility(self, iface, forObj):
+    def _getConfigData(self, configKey, forObj):
         return NOT_FOUND
 
 
@@ -540,32 +540,32 @@ class Component(Base):
 
     _componentName = Once(_componentName)
 
-    __instance_provides__ = New(EigenRegistry)
+    def __instance_provides__(self,d,a):
+        from peak.config.config_components import PropertyMap
+        return PropertyMap(self)
+
+    __instance_provides__ = Once(__instance_provides__, provides=IPropertyMap)
 
     __class_provides__ = EigenRegistry()
     
 
-    def _getUtility(self, iface, forObj):
+    def _getConfigData(self, configKey, forObj):
     
-        provider = self.__instance_provides__.get(iface,NOT_FOUND)
+        value = self.__instance_provides__.getValueFor(configKey, forObj)
             
-        if provider is not NOT_FOUND:
-            return provider(self,forObj)
+        if value is not NOT_FOUND:
+            return value
 
-        attr = self.__class_provides__.get(iface,NOT_FOUND)
+        attr = self.__class_provides__.get(configKey)
 
-        if attr is not NOT_FOUND:
+        if attr:
             return getattr(self, attr, NOT_FOUND)
 
         return NOT_FOUND
 
 
     def registerProvider(self, ifaces, provider):
-        self.__instance_provides__.register(ifaces, provider)
-
-
-
-
+        self.__instance_provides__.registerProvider(ifaces, provider)
 
 
 
