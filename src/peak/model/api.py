@@ -5,6 +5,10 @@ from peak.model.interfaces import *
 from peak.model.interfaces import __all__ as allInterfaces
 
 from Persistence import Persistent
+from Persistence.cPersistence import GHOST
+
+from UserList import UserList
+from peak.util.ListProxy import ListProxy
 
 from peak.model.method_exporter import MethodExporter
 
@@ -13,17 +17,13 @@ __all__ = [
     'App','Service', 'MethodExporter', 'FeatureMC',
     'StructuralFeature', 'Field', 'Collection', 'Reference', 'Sequence',
     'Classifier','PrimitiveType','Enumeration','DataType','Element',
-    'LazyLoader', 'PersistentQuery',
+    'LazyLoader', 'PersistentQuery', 'QueryLink',
 ]
 
 
 # We export the interfaces too, so people don't have to dig for them...
 
 __all__ += allInterfaces
-
-
-
-
 
 
 
@@ -490,43 +490,125 @@ class Element(DataType, Persistent):
     def getComponentName(self):
         return self._p_oid
 
-class PersistentQuery(Persistent):
+class PersistentQuery(Persistent,ListProxy):
 
-    """An immutable PersistentList for query results"""
+    """An immutable, persistent ListProxy for query results"""
 
-    def __repr__(self): return repr(self.data)
-    def __lt__(self, other): return self.data <  self.__cast(other)
-    def __le__(self, other): return self.data <= self.__cast(other)
-    def __eq__(self, other): return self.data == self.__cast(other)
-    def __ne__(self, other): return self.data != self.__cast(other)
-    def __gt__(self, other): return self.data >  self.__cast(other)
-    def __ge__(self, other): return self.data >= self.__cast(other)
-    def __cmp__(self, other): return cmp(self.data, self.__cast(other))
-    def __cast(self, other):
-        if isinstance(other, PersistentQuery): return other.data
-        else: return other
+    __slots__ = 'data', '__weakref__'
 
-    def __contains__(self, item): return item in self.data
-    def __len__(self): return len(self.data)
-    def __getitem__(self, i): return self.data[i]
+    def __getstate__(self):
+        return self.data
 
-    def __getslice__(self, i, j):
-        i = max(i, 0); j = max(j, 0)
-        return self.__class__(self.data[i:j])
+    def __setstate__(self,state):
+        self.data = list(state)
 
-    def __add__(self, other):
-        return self.data + list(other)
 
-    def __radd__(self, other):
-        return list(other) + self.data
-           
-    def __mul__(self, n):
-        return self.data*n
 
-    __rmul__ = __mul__
 
-    def count(self, item): return self.data.count(item)
-    def index(self, item): return self.data.index(item)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class QueryLink(ListProxy):
+
+    """PersistentQuery proxy for use in Collection, Sequence, or Reference"""
+
+    __cacheData = None
+    __localData = None
+
+    def __init__(self, query):
+        self.__query = query
+
+
+    def data(self):
+        # Discard cached form of query data when underlying query reloaded
+        if self.__cacheData is not self.__query.data:
+            self.__cacheData = self.__query.data
+            self.__localData = self.__cacheData[:]
+            
+        return self.__localData
+
+    data = property(data)
+
+
+    def __isActive(self):
+        return self.__query._p_state <> GHOST
+
+
+    def __setitem__(self, i, item):
+        if self.__isActive():
+            self.data[i]=item
+
+    def __delitem__(self, i):
+        if self.__isActive():
+            del self.data[i]
+
+
+    def __setslice__(self, i, j, other):
+        if self.__isActive():
+            i = max(i, 0); j = max(j, 0)
+            self.data[i:j] = self._cast(other)
+
+
+    def __delslice__(self, i, j):
+        if self.__isActive():
+            i = max(i, 0); j = max(j, 0)
+            del self.data[i:j]
+    
+
+    def __iadd__(self, other):  # XXX
+        if self.__isActive():
+            self.data += self._cast(other)
+        return self
+
+
+    def __imul__(self, n):      # XXX
+        if self.__isActive():
+            self.data *= n
+        return self
+
+
+    def append(self, item):
+        if self.__isActive():
+            self.data.append(item)
+
+
+    def insert(self, i, item):
+        if self.__isActive():
+            self.data.insert(i, item)
+
+
+    def remove(self, item):
+        if self.__isActive():
+            self.data.remove(item)
+
+
+    def extend(self, other):
+        if self.__isActive():
+            self.data.extend(self._cast(other))
+
 
 
 

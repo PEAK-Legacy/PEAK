@@ -82,10 +82,10 @@
 """        
 from peak.api import *
 from peak.util import SOX
-from Persistence.PersistentList import PersistentList
 from weakref import WeakValueDictionary
 
 __bases__ = model,
+
 
 
 
@@ -257,7 +257,7 @@ class XMI_DM(storage.EntityDM):
 
     def ghost(self, oid, state=None):
         if len(oid)<2:
-            return PersistentList()
+            return model.PersistentQuery()
         klass = self.getClass(self.index[oid]._name)
         return klass()
 
@@ -290,11 +290,11 @@ class XMI_DM(storage.EntityDM):
         target = self.index[oid]
 
         if len(oid)<2:
-            return { 'data':
-                [self[node.getRef()]
+            return [
+                self[node.getRef()]
                     for node in target.subNodes if not node.isExtension
-                ]
-            }
+            ]
+            
         
         d = {}; klass = ob.__class__
         
