@@ -3,7 +3,7 @@ from peak.api import PropertyName
 from peak.binding.interfaces import IComponentFactory, IComponent
 import sys, os
 
-CLUSTER = PropertyName('peak.running.cluster').of(None)
+CLUSTER = PropertyName('peak.running.cluster')
 
 __all__ = [
 
