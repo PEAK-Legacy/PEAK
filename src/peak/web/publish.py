@@ -3,11 +3,11 @@
 from peak.api import *
 from interfaces import *
 from peak.running.commands import EventDriven
+from zope.publisher import http, browser, xmlrpc, publish
 
 __all__ = [
     'BaseInteraction',
 ]
-
 
 
 
@@ -162,6 +162,47 @@ class BaseInteraction(security.Interaction):
 
 
 
+class HTTPRequest(http.HTTPRequest, http.HTTPCharsets):
+
+    """HTTPRequest with a built-in charset handler"""
+
+    __slots__ = ()
+    request = property(lambda self: self)
+
+
+class BrowserRequest(
+    browser.BrowserRequest, browser.BrowserLanguages, http.HTTPCharsets
+):
+
+    """BrowserRequest w/built-in charset and language handlers"""
+
+    __slots__ = ()
+    request = property(lambda self: self)
+
+
+class XMLRPCRequest(xmlrpc.XMLRPCRequest, http.HTTPCharsets):
+
+    """XMLRPCRequest w/built-in charset handler"""
+
+    __slots__ = ()
+    request = property(lambda self: self)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 class CGIPublisher(binding.Component):
 
     """Use 'zope.publisher' to run an application as CGI/FastCGI
@@ -224,13 +265,13 @@ class CGIPublisher(binding.Component):
 
     # items to (potentially) replace in subclasses
 
-    publish   = binding.bindTo("import:zope.publisher.publish:publish")
-    mkXMLRPC  = binding.bindTo("import:zope.publisher.xmlrpc:XMLRPCRequest")
-    mkBrowser = binding.bindTo("import:zope.publisher.browser:BrowserRequest")
-    mkHTTP    = binding.bindTo("import:zope.publisher.http:HTTPRequest")
+    publish   = publish.publish
+
+    mkXMLRPC  = XMLRPCRequest   # XXX should these be a property+default?
+    mkBrowser = BrowserRequest
+    mkHTTP    = HTTPRequest
 
     _browser_methods = binding.Copy( {'GET':1, 'POST':1, 'HEAD':1} )
-
 
 
 
