@@ -704,25 +704,28 @@ class Component(_Base):
 
 
     def __init__(self, parentComponent=None, componentName=None, **kw):
-
-        if parentComponent is not None or componentName is not None:
-            self.setParentComponent(parentComponent,componentName)
-
+        # Set up keywords first, so state is sensible
         if kw:
-
             klass = self.__class__
+            suggest = []; add = suggest.append; sPC = suggestParentComponent
 
-            for k,v in kw.iteritems():
-
+            for kv in kw.iteritems():
+                k,v = kv
                 if hasattr(klass,k):
-                    suggestParentComponent(self,k,v)
-                    setattr(self,k,v)
-
+                    add(kv); setattr(self,k,v)
                 else:
                     raise TypeError(
                         "%s constructor has no keyword argument %s" %
                         (klass, k)
                     )
+
+            # Suggest parents only after our attrs are stable
+            for k,v in suggest:
+                sPC(self,k,v)
+
+        # set our parent component and possibly invoke assembly events
+        if parentComponent is not None or componentName is not None:
+            self.setParentComponent(parentComponent,componentName)
 
     lookupComponent = _lookupComponent
 
@@ -733,16 +736,12 @@ class Component(_Base):
 
     fromZConfig = classmethod(fromZConfig)
 
-
-
-
     def setParentComponent(self, parentComponent, componentName=None,
         suggest=False):
 
         if suggest:
             # Change the parent only if it's not set
             pc = self.__parentCell.get(lambda: parentComponent)
-
             if pc is not parentComponent:
                 # don't change the name unless the parent change worked
                 return
@@ -752,12 +751,14 @@ class Component(_Base):
             self.__parentCell.unset()
 
         else:
-            # We have a non-None parent: set it, lock it, and handle assembly
             self.__parentCell.set(parentComponent)
-            self.getParentComponent()
 
         # If change of parent succeeded, set the name
         self.__componentName = componentName
+
+        if parentComponent is not None:
+            # We have a non-None parent: lock and handle assembly
+            self.getParentComponent()
 
 
     __parentCell    = New(EigenCell)
@@ -775,7 +776,6 @@ class Component(_Base):
         return parent
 
     __parent = Once(__parent)
-
 
     def getParentComponent(self):
         return self.__parent

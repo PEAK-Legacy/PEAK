@@ -42,9 +42,11 @@ class ClassAttrTest(TestCase):
 class assemblyTracer(binding.Component):
     """Tracing for assembly events"""
 
-    log = binding.requireBinding("list to append events to")
+    log = binding.requireBinding("logging function")
     activated = binding.requireBinding("list to append ids to")
     id = binding.requireBinding("identity of this object")
+
+    thingy = binding.Once(lambda *x: None, activateUponAssembly = True)
 
     def uponAssembly(self):
         if self.__objectsToBeAssembled__ is not None:
@@ -52,7 +54,7 @@ class assemblyTracer(binding.Component):
         self.log(('entering',self.id,self.__objectsToBeAssembled__))
         super(assemblyTracer,self).uponAssembly()
         self.log(('exiting',self.id))
-        
+
     def notifyUponAssembly(self,child):
         self.log(('requesting notify for',child,'by',self))
         super(assemblyTracer,self).notifyUponAssembly(child)
@@ -64,54 +66,93 @@ class counter(object):
         return self.v
 
 class Outermost(assemblyTracer):
-    counter = binding.New(counter)
-    id = binding.Once(
-        lambda self,d,a: self.counter.next(),
-        activateUponAssembly=True
-    )
-
+    foo = None
+    
 class InnerMost(assemblyTracer):
-    counter = binding.bindTo('counter')
-    log = binding.bindTo('log')
-    activated = binding.bindTo('activated')
-    id = binding.Once(
-        lambda self,d,a: self.counter.next(),
-        activateUponAssembly=True
-    )
+    pass
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+class AssemblyTests(TestCase):
 
-class BaseAssemblyTest(TestCase):
-
-    expectedSize = 0
+    verbose = False
 
     def setUp(self):
         self.log = []
         self.activated = []
-        self.makeObjects()
+        self.append = self.log.append
 
-    def checkOnceAndOnlyOnce(self):
+    def assertCompleteness(self,obCount):
         a = self.activated[:]
         a.sort()
-        assert a == range(1,self.expectedSize+1), a
+        assert a == range(1,obCount+1), a
 
     def tearDown(self):
-        #print "Event log for", self
-        #from pprint import pprint
-        #pprint(self.log)
-        return None
+        if self.verbose:
+            print "Event log for %s:" % (self,)
+            print
+            from pprint import pprint
+            pprint(self.log)
+            print
 
-class SimpleAssembly1(BaseAssemblyTest):
-
-    expectedSize = 2
-
-    def makeObjects(self):
-        log = self.log.append
-        log("Create outermost")
-        root = Outermost(log=self.log.append, activated=self.activated, id = 1)
-        log("Create innermost")
-        root.foo = InnerMost(root, id=2)
-        log("done innermost")
+    def checkConnectBefore(self):
+        # Create parent, then child, then activate parent
+        log = self.append
+        root = Outermost(log=log, activated=self.activated, id = 1)
+        root.foo = InnerMost(root, id=2, log=log, activated=self.activated)
         root.getParentComponent()
+        self.assertCompleteness(2)
+
+    def checkInit(self):
+        # Create parent, activate, then attach child
+        log = self.append
+        root = Outermost(log=log, activated=self.activated, id=1)
+        root.getParentComponent()
+        root.foo = InnerMost(root, id=2, log=log, activated=self.activated)
+        self.assertCompleteness(2)
+
+
+
+
+    def checkKW(self):
+        # create child, then parent, then activate
+        log = self.append
+        root = Outermost(
+            log=log, activated=self.activated, id=1,
+            foo = InnerMost(id=2, log=log, activated=self.activated)
+        )
+        root.getParentComponent()
+        self.assertCompleteness(2)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -327,7 +368,7 @@ class DescriptorTest(TestCase):
 
 
 TestClasses = (
-    SimpleAssembly1, ClassAttrTest, DescriptorTest,
+    AssemblyTests, ClassAttrTest, DescriptorTest,
 )
 
 
