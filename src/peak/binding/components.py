@@ -7,7 +7,7 @@ from once import *
 from interfaces import *
 from weakref import WeakValueDictionary
 
-from peak.naming.names import toName, Syntax, CompoundName
+from peak.naming.names import toName, Syntax, Name
 from peak.util.EigenData import EigenRegistry, EigenCell
 from peak.config.interfaces import IConfigKey, IPropertyMap
 
@@ -18,25 +18,66 @@ __all__ = [
     'getRootComponent', 'getParentComponent', 'lookupComponent',
     'acquireComponent', 'globalLookup', 'findUtility', 'findUtilities',
     'bindToUtilities', 'bindToProperty', 'iterParents', 'Constant',
-    'getComponentName', 'getComponentPath', 'Acquire',
+    'getComponentName', 'getComponentPath', 'Acquire', 'ComponentName',
 ]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 def getComponentPath(component, relativeTo=None):
 
+    """Get 'ComponentName' that would traverse from 'relativeTo' to 'component'
+
+    If 'relativeTo' is 'None' or not supplied, the path returned is relative
+    to the root component of 'component'.  Note that if supplied, 'relativeTo'
+    must be an ancestor (parent, parent's parent, etc.) of 'component'."""
+
     path = []; root=None
+
     if relativeTo is None:
         root = getRootComponent(component)
 
     for c in iterParents(component):
+
         if c is root:
             path.append(''); break
+
         elif c is relativeTo:
             break
+
         path.append(getComponentName(c) or '*')
 
     path.reverse()
     return ComponentName(path)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 def Provider(callable):
@@ -94,7 +135,7 @@ def getParentComponent(component):
 
 def getComponentName(component):
 
-    """Return parent of 'component', or 'None' if root or non-component"""
+    """Return name of 'component', or 'None' if root or non-component"""
 
     try:
         gcn = component.getComponentName
@@ -164,6 +205,9 @@ def acquireComponent(name, component=None, targetName=None):
 
 def iterParents(component=None):
 
+    """Return iterator for all parents of 'component', including config roots
+    """
+
     last = component
         
     for part in "..":
@@ -179,6 +223,8 @@ def iterParents(component=None):
 
 
 def findUtilities(iface, component=None):
+
+    """Return iterator over all utilities providing 'iface' for 'component'"""
 
     forObj = component
 
@@ -198,12 +244,9 @@ def findUtilities(iface, component=None):
 
 
 
-
-
-
-
-
 def findUtility(iface, component=None, default=NOT_GIVEN):
+
+    """Return first utility supporting 'iface' for 'component', or 'default'"""
 
     for u in findUtilities(iface, component):
         return u
@@ -215,14 +258,91 @@ def findUtility(iface, component=None, default=NOT_GIVEN):
 
 
 
-ComponentNameSyntax = Syntax(
-    direction = 1,
-    separator = '/',
-)
 
 
-def ComponentName(nameStr):
-    return CompoundName(nameStr, ComponentNameSyntax)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class ComponentName(Name):
+
+    """Path between components
+
+    Component Path Syntax
+
+        Paths are '"/"' separated attribute names.  Path segments of '"."' and
+        '".."' mean the same as they do in URLs.  A leading '"/"' (or a
+        compound name beginning with an empty path segment), will be treated
+        as an "absolute path" relative to the component's root component.
+
+        Paths beginning with anything other than '"/"', '"./"', or '"../"' are
+        acquired, which means that the first path segment will be looked
+        up using 'acquireComponent()' before processing the rest of the path.
+        (See 'acquireComponent()' for more details.)  If you do not want
+        a name to be acquired, simply prefix it with './' so it is relative
+        to the starting object.
+
+        All path segments after the first are interpreted as attribute names
+        to be looked up, beginning at the component referenced by the first
+        path segment.  '.' and '..' are interpreted the same as for the first
+        path segment.
+    """
+
+    isCompound = 1
+
+    syntax = Syntax(
+        direction = 1,
+        separator = '/',
+    )
+
+
+
+
+
+
+
+
+
+
+
+def lookupComponent(name, component=None):
+
+    """Lookup 'name' relative to 'component'
+
+    'name' can be any name acceptable to the 'peak.naming' package, or an
+    Interface object.  Strings and compound names will be interpreted
+    as paths relative to the starting component.  An empty name will return
+    the starting component.  Interfaces and Properties will be looked up using
+    'findUtility(name, component)'.  All other kinds of names, including URL
+    strings and 'CompositeName' instances, will be looked up using
+    'binding.globalLookup()'.
+    
+    Regardless of how the lookup is processed, an 'exceptions.NameNotFound'
+    error will be raised if the name cannot be found."""
+
+    return _lookupComponent(component, name)
+
 
 
 _getFirstPathComponent = dict( (
@@ -241,44 +361,6 @@ _getNextPathComponent = dict( (
 
 
 
-
-
-
-def lookupComponent(name, component=None):
-
-    """Lookup 'name' relative to 'component'
-
-    'name' can be any name acceptable to the 'peak.naming' package, or an
-    Interface object.  Strings and 'CompoundName' names will be interpreted
-    as paths relative to the starting component.  An empty name will return
-    the starting component.  Interfaces and Properties will be looked up using
-    'findUtility(name, component)'.  All other kinds of names, including URL
-    strings and 'CompositeName' instances, will be looked up using
-    'binding.globalLookup()'.
-    
-    Regardless of how the lookup is processed, an 'exceptions.NameNotFound'
-    error will be raised if the name cannot be found.
-
-    Component Path Syntax
-
-        Paths are '"/"' separated attribute names.  Path segments of '"."' and
-        '".."' mean the same as they do in URLs.  A leading '"/"' (or a
-        CompoundName beginning with an empty path segment), will be treated
-        as an "absolute path" relative to the component's root component.
-
-        Paths beginning with anything other than '"/"', '"./"', or '"../"' are
-        acquired, which means that the first path segment will be looked
-        up using 'acquireComponent()' before processing the rest of the path.
-        (See 'acquireComponent()' for more details.)  If you do not want
-        a name to be acquired, simply prefix it with './' so it is relative
-        to the starting object.
-
-        All path segments after the first are interpreted as attribute names
-        to be looked up, beginning at the component referenced by the first
-        path segment.  '.' and '..' are interpreted the same as for the first
-        path segment."""
-
-    return _lookupComponent(component, name)
 
 
 
