@@ -50,7 +50,7 @@ class WSGIServer(commands.EventDriven, WSGIServer):
     RequestHandlerClass = Handler
 
     socketURL = binding.Obtain(
-        PropertyName('peak.tools.server.url'), default='tcp://localhost:8000'
+        PropertyName('peak.tools.server.url'), default='tcp://localhost:0'
     )
 
     socket = binding.Obtain(
