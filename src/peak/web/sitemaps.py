@@ -121,6 +121,47 @@ def resourceView(path):
 
 
 
+def registerView(name,handler,data,attrs):
+    perm = acquirePermission(data,attrs)
+    helper = acquireHelper(data,attrs)
+    loc = acquire(data,'sm.component')
+    typ = acquire(data,'sm.content_type')
+
+    if helper is not None:
+        handler = addHelper(handler,helper)
+
+    if perm is not security.Anybody:
+        handler = addPermission(handler,perm)
+
+    #if typ is None:
+    #    pass # XXX register direct w/location?
+    loc.registerView(typ,name,handler)
+
+
+def doAllow(parser,data):
+    attrs = SOX.validatedAttributes(
+        parser,data,('attributes',),('permission','helper')
+    )        
+
+    for attr in attrs['attributes'].split(','):
+        registerView(attr,attributeView(attr.strip()),data,attrs)
+
+
+def defineAllow(parser,data):
+    assertNotTop(parser,data)    #assertInsideContent(parser,data)?
+    data['start'] = doAllow
+    data['empty'] = True
+
+
+
+
+
+
+
+
+
+
+
 locRequired = ()
 locOptional = 'name','class','id','permission', 'extends', #config
 
@@ -250,11 +291,6 @@ view_optional = view_one_of + ('permission','helper')
 
 def doView(parser,data):
     attrs = SOX.validatedAttributes(parser,data,view_required,view_optional)
-    perm = acquirePermission(data,attrs)
-    helper = acquireHelper(data,attrs)
-
-    loc = acquire(data,'sm.component')
-    typ = acquire(data,'sm.content_type')
 
     mode,expr = choose(parser,view_one_of,attrs)
     if mode=='object':
@@ -270,20 +306,8 @@ def doView(parser,data):
     elif mode=='resource':
         handler = resourceView(expr)
 
-    if helper is not None:
-        handler = addHelper(handler,helper)
-
-    if perm is not security.Anybody:
-        handler = addPermission(handler,perm)
-        
-    #if typ is None:
-    #    pass # XXX register direct w/location?
-    loc.registerView(typ,attrs['name'],handler)
+    registerView(attrs['name'],handler,data,attrs)
     
-
-
-
-
 
 def defineView(parser,data):
     assertNotTop(parser,data)
@@ -291,10 +315,20 @@ def defineView(parser,data):
     data['empty'] = True
 
 
+
+
+
+
+
+
+
+
+
+
+
 def doOffer(parser,data):
     attrs = SOX.validatedAttributes(parser,data,('path','as',))
     prev = findComponentData(data)
-    perm = acquirePermission(data,attrs)
     prev['sm.component'].registerLocation(attrs['as'],attrs['path'])
 
 def defineOffer(parser,data):
@@ -322,6 +356,13 @@ def setupDocument(parser,data):
     data['child'] = setRoot
     data['finish'] = finishComponent
     data['sm.component'] = data['parent']
+
+
+
+
+
+
+
 
 
 

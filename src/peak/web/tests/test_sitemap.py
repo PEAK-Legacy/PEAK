@@ -258,7 +258,22 @@ class ParserTests(TestCase):
         )
         self.failUnless(self.traverse(loc,'++id++root').current is loc)
         self.failUnless(self.traverse(loc,'++id++nested.root').current is loc)
+
+
+    def testAllow(self):
+        end=self.endElement
+        self.startElement('location', [])
+        self.startElement('content', ['type','object'])
+        self.startElement('allow',['attributes','__class__,__doc__']); end()
+        end(); loc=end()
+        ctx = self.policy.newContext(start=loc).childContext('test',123)
+        self.assertEqual(ctx.traverseName("__doc__",None), None)
+        self.assertEqual(ctx.traverseName("__class__",None), None)
+        ctx = loc.beforeHTTP(ctx)
+        self.assertEqual(ctx.traverseName("__doc__").current,(123).__doc__)
+        self.assertEqual(ctx.traverseName("__class__").current,(123).__class__)
         
+
     # content [location]
 
     # location[configure]
@@ -267,11 +282,8 @@ class ParserTests(TestCase):
 
     # XXX Containers in extending are *after* those in extendee!
 
-    # allow(attributes+interfaces)[permission]
-
     # XXX Location should support direct permissions, and ignore redundant ones
 
-    # view[id?]
 
 class TestLocation(web.Location):
     pass
@@ -280,24 +292,12 @@ def nullHandler(ctx, ob, namespace, name, qname, default=NOT_GIVEN):
     return ctx.childContext(qname,ob)
 
 
-
-
-
-
-
 TestClasses = (
     ParserTests,
 )
 
 def test_suite():
     return TestSuite([makeSuite(t,'test') for t in TestClasses])
-
-
-
-
-
-
-
 
 
 
