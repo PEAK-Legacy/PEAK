@@ -1,5 +1,10 @@
 Fixes and Enhancements since Version 0.5 alpha 3
 
+ - Added an optional 'base' argument to 'naming.parseURL()', to allow parsing
+   URLs relative to a base URL.  For a URL scheme to support this, it must
+   implement the new 'naming.IBaseURL' interface.  See the
+   'peak.naming.factories.openable' module for example implementations.
+
  - Added a 'data:' URL scheme, implementing RFC 2397 (although it's not as
    strict in its parsing of the content type and parameters as the RFC calls
    for).  This is a semi-convenient way to provide configuration data in-line,

@@ -1,14 +1,22 @@
 from peak.api import *
-import sys, os, os.path
+import sys, os, os.path, posixpath
 URL = naming.URL    # XXX can't import an un-loaded lazy module from its parent
 
+
 class GenericPathURL(URL.Base):
+
+    protocols.advise(
+        instancesProvide=[naming.IBaseURL]
+    )
 
     nameAttr = 'path'
     supportedSchemes = 'http','https','ftp','file',
 
-    class user(URL.Field): pass
-    class passwd(URL.Field): pass
+    class user(URL.Field):
+        pass
+
+    class passwd(URL.Field):
+        pass
 
     class host(URL.Field):
         defaultValue = None
@@ -17,15 +25,19 @@ class GenericPathURL(URL.Base):
             defaultValue = None
         )
 
-    class port(URL.IntField): pass
+    class port(URL.IntField):
+        pass
 
     class path(URL.NameField):
         referencedType = naming.CompositeName
         canBeEmpty = True
 
-    class query(URL.Field): pass
+    class query(URL.Field):
+        pass
 
-    class fragment(URL.Field): pass
+    class fragment(URL.Field):
+        pass
+
 
     # Make syntax usable w/subclasses that redefine individual fields
 
@@ -39,8 +51,34 @@ class GenericPathURL(URL.Base):
         )
     )
 
+    def joinURL(self,relativeURL):
+        from urlparse import urljoin
+        return self.mdl_fromString(urljoin(str(self),relativeURL))
+
+
 class OpenableURL(GenericPathURL):
     defaultFactory = 'peak.naming.factories.openable.URLStreamFactory'
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 class FileURL(OpenableURL):
 
@@ -80,45 +118,48 @@ class FileURL(OpenableURL):
     fromFilename = classmethod(fromFilename)
 
 
+
+
+
 class PkgFileURL(URL.Base):
 
     protocols.advise(
         classProvides=[naming.IObjectFactory],
+        instancesProvide=[naming.IBaseURL],
     )
 
-    nameAttr = 'body'
+    nameAttr = 'path'
     supportedSchemes = 'pkgfile',
     defaultFactory = 'peak.naming.factories.openable.PkgFileURL'
 
-    class body(URL.NameField):
+
+    class module(URL.Field):
+        pass
+
+    class path(URL.NameField):
         referencedType = naming.CompositeName
-        canBeEmpty = True
+        canBeEmpty = False
+
+    syntax = URL.Sequence(module, '/', path)
+
+    def joinURL(self,relativeURL):
+        path = posixpath.normpath(
+            posixpath.join(str(self.path[:-1]),relativeURL)
+        )
+        if path.startswith('/') or path.startswith('../'):
+            raise exceptions.InvalidName(
+                "Invalid relative URL for pkgfile: URL",
+                    resolvedName=self, remainingName=relativeURL
+            )
+        return self.__class__(self.scheme, module=self.module,
+            path=path
+        )
 
     def getObjectInstance(klass, context, refInfo, name, attrs=None):
         url, = refInfo.addresses
-        try:
-            module,path = str(url.body).split('/',1)
-        except ValueError:
-            raise exceptions.InvalidName(
-                "Missing package name in %s" % url
-            )
-        return config.packageFile(module,path)
+        return config.packageFile(url.module,str(url.path))
 
     getObjectInstance = classmethod(getObjectInstance)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 class DataURL(URL.Base):

@@ -82,7 +82,6 @@ validNames = {
 
     'sybase:foo:bar@baz/spam':
         Items(server='baz', db='spam', user='foo', passwd='bar'),
-
     'sybase://user:p%40ss@server':
         Items(server='server', db=None, user='user', passwd='p@ss'),
 
@@ -108,7 +107,8 @@ validNames = {
         Items(scheme='file', host='localhost',
                 path=('','D|','autoexec.old'), query=None,),
 
-    'pkgfile:peak/peak.ini': Items(scheme='pkgfile',body=('peak','peak.ini')),
+    'pkgfile:peak/peak.ini': Items(scheme='pkgfile',module='peak',
+        path=('peak.ini',)),
     'cxoracle:u:p@s': Items(user='u',passwd='p',server='s'),
     'dcoracle2://usr@srv/': Items(user='usr',server='srv'),
     'tcp://localhost:http': Items(host='localhost',port='http'),
@@ -162,8 +162,8 @@ validNames = {
 
 
 
-def parse(url):
-    return naming.parseURL(testRoot(),url)
+def parse(url,base=None):
+    return naming.parseURL(testRoot(),url,base)
 
 
 canonical = {
@@ -244,6 +244,22 @@ class NameParseTest(TestCase):
 
 
 
+relatives = [
+    ('file:/x/y/z', 'a', 'file:/x/y/a'),
+    ('https://foo.bar/baz/spam', '../wiz', 'https://foo.bar/wiz'),
+    ('https://foo.bar/baz/spam', '/wiz', 'https://foo.bar/wiz'),
+    ('https://foo.bar/baz/spam', '//wiz/', 'https://wiz/'),
+    ('pkgfile:foo.bar/spam', 'foo', 'pkgfile:foo.bar/foo'),
+    ('pkgfile:foo.bar/spam/', 'foo', 'pkgfile:foo.bar/spam/foo'),   # XXX
+    ('pkgfile:foo.bar/spam', 'file:/x/y/z', 'file:/x/y/z'),
+]
+
+relative_errors = [
+    ('pkgfile:foo.bar/spam', '../foo', ),
+    ('pkgfile:foo.bar/spam', '/foo', ),
+    ('pkgfile:foo.bar/spam', '//foo', ),
+]
+
 class OpenableTests(TestCase):
 
     def testDataURL(self):
@@ -258,30 +274,14 @@ class OpenableTests(TestCase):
             +quote('abcdefg'.encode('base64')))
         assert factory.open('b').read() == "abcdefg"
 
+    def testRelativeURLs(self):
+        for base,rel,url in relatives:
+            self.assertEqual(str(parse(rel,base)), url)
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    def testRelativeErrors(self):
+        for base, rel in relative_errors:
+            self.assertRaises(exceptions.InvalidName,
+                parse, rel, base)
 
 
 

@@ -54,21 +54,57 @@ def lookup(parent, name, default=NOT_GIVEN, **options):
 
 del NOT_GIVEN   # don't pollute the namespace
 
-def parseURL(parent, name):
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+def parseURL(parent, name, base=None):
 
     """Return a parsed URL for 'name', based on schemes available to 'parent'
 
     If a parser for the URL scheme isn't available, or 'name' is not a
     valid URL, 'exceptions.InvalidName' will be raised.  Note that 'name'
     must include a URL scheme, (e.g. '"ldap:"'), or it will be considered
-    invalid.
+    invalid, unless a valid 'base' URL is supplied.
+
+    If a 'base' is supplied, and 'name' does not include a scheme, this
+    routine attempts to join 'name' to the 'base' URL, assuming that the
+    parser for the 'base' URL supports this.
     """
 
     url = toName(name)
 
     if url.nameKind != URL_KIND:
+        if base is not None:
+            base = parseURL(parent,base)
+            base_url = IBaseURL(base,None)
+            if base_url is not None:
+                return base_url.joinURL(str(name))
+
         from peak.exceptions import InvalidName
-        raise InvalidName("Not a URL", name)
+        raise InvalidName("Not a URL", name, base)
 
     scheme, body = url.scheme, url.body
 
@@ -79,4 +115,17 @@ def parseURL(parent, name):
         raise InvalidName("Unknown scheme", scheme)
 
     return ctx.schemeParser(scheme, body)
+
+
+
+
+
+
+
+
+
+
+
+
+
 

@@ -10,7 +10,7 @@ __all__ = [
     'IURLContextFactory', 'IAddressFactory', 'IObjectFactory', 'IState',
     'IBasicContext', 'IReadContext', 'IWriteContext', 'IReferenceable',
     'COMPOUND_KIND', 'COMPOSITE_KIND', 'URL_KIND', 'IState', 'IReference',
-    'IStreamFactory',
+    'IStreamFactory', 'IBaseURL',
 
     'CREATION_PARENT', 'SCHEMES_PREFIX', 'FACTORY_PREFIX',
     'INIT_CTX_FACTORY', 'SCHEME_PARSER',
@@ -27,11 +27,11 @@ SCHEMES_PREFIX   = PropertyName('peak.naming.schemes')
 FACTORY_PREFIX   = PropertyName('peak.naming.factories')
 
 
+class IBaseURL(Interface):
+    """URL that can be used as a base for an RFC 1808-style relative URL"""
 
-
-
-
-
+    def joinURL(relativeURL):
+        """Join RFC 1808 'relativeURL' to this URL, returning new URL object"""
 
 
 
