@@ -13,7 +13,7 @@ from Interface import Interface
 from Interface.Attribute import Attribute
 
 __all__ = [
-    'ISEF','IService','ISpecialist','IElement','IFeature','IQuerying',
+    'ISEF','IService','IElement','IFeature','IQuerying',
     'IClassifier','IDataType','IPrimitiveType', 'IEnumeration',
     'IValue','ICollection','IReference','ISequence',
 ]
@@ -116,47 +116,6 @@ class IQuerying(Interface):
             IQuerying interface by (effectively) mapping its 'Get()' and
             'Where()' methods over its contents.
         """
-
-
-
-
-
-class ISpecialist(IService):
-
-    """A service responsible for a (possibly abstract) datatype
-
-       TODO:
-       
-        Over time, this interface should evolve to include metadata about the
-        type...  marshalling support...  ???
-        
-    """
-    
-    def newItem(key=None):
-        """Create a new Element of the type managed by the service"""
-        
-    def getItem(key, default=None):
-        """Retrieve an existing Element; return 'default' if not found"""
-
-    def __getitem__(key):
-        """Retrieve an existing element; raise KeyError if not found"""
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

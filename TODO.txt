@@ -1,6 +1,6 @@
 Open Issues/To-Do Items
 
- Targeted for 0.2 Final Release
+ Targeted for 0.5 Final Release
 
     General
 
@@ -12,41 +12,6 @@ Open Issues/To-Do Items
         consistency, queueing behavior, and typemap management.
 
       * Update Interfaces to reflect current API, and document internals
-
- Ideas for 0.3 Release
-
-    Dispatching
-
-      * Virtual features to implement retrieving the other end of a
-        relationship from another Specialist, and to handle rebinding to
-        records after record invalidation.
-
-    SEF
-
-      * Move binding tools to a seperate module (e.g. 'TW.CIS' for "Component
-        Integration Services").
-
-      * Persistent SEF module, with Base.__getstate__ supporting omission
-        of Once attributes, and DynamicBinding setting _p_changed on
-        instantiation.
-
-      * A way to generate Z3 Interfaces from Feature-based specifications?
-
-    Database
-
-      * Rack-like object to do persistent storage of Elements?
-
-      * Support for field transformations and default values at RecordType
-        level, e.g marshalling and type conversion.  This would be
-        especially useful for LDAP.
-
-      * Support for sending and receiving remote cache invalidation
-        messages between RecordManagers.
-
-    General
-
-      * Profiling and performance tuning of module inheritance and other
-        core features of API and SEF.
 
 
 
@@ -67,20 +32,14 @@ Open Issues/To-Do Items
 
     * Create tutorials/examples based on actual uses
 
-    * Include dependencies in packaging?  Need to ask copyright owners first.
+
+  Messaging/ObjectSpaces
+
+    * Support for sending and receiving remote cache invalidation
+      messages between RecordManagers.
 
 
-
-
-
-
-
-
-
-
-
-
-  SEF
+  peak.model
 
     * Review other-end-notification protocols in the light of managed storage
       models (e.g. database Records using virtual sequence objects as fields)
@@ -89,17 +48,17 @@ Open Issues/To-Do Items
 
     * More S-E-F metadata: features, subclasses, svc.<->class, nested services
 
+    * Persistent SEF module, with Base.__getstate__ supporting omission
+      of Once attributes, and DynamicBinding setting _p_changed on
+      instantiation.
+
+    * A way to generate Z3 Interfaces from Feature-based specifications?
+
     * Implement WarpCORE-oriented structural model, w/Querying support
 
-    InMemory
+    * "Indexed" version of in-memory model?
 
-      * "Indexed" version
-
-      * "WeakRefs" version (no acquisition, use w/Python 2.1 weakrefs)
-
-      * "Circular" version (suitable for use w/2.1 GC or Jython)
-
-      * "Persistent" StructuralModel (indexes w/BTrees?  Catalog?)
+    * "Persistent" StructuralModel (indexes w/BTrees?  Catalog?)
 
     Queries
 
@@ -121,7 +80,7 @@ Open Issues/To-Do Items
          have their meaning assigned by the StructuralModel implementation?
 
 
-  UML
+  peak.metamodels.uml
 
     * Need to write an MMX or XMI -> Python generator, and hook it back up into
       the UML package, since we're right now relying on a module generated
@@ -148,7 +107,6 @@ Open Issues/To-Do Items
 
     * Simple Zope product demo (upload XMI, then browse the model via the web)
 
-    * Reporting mixins?  Graphviz visualization?
 
 
 
@@ -162,11 +120,12 @@ Open Issues/To-Do Items
 
 
 
-  XMI
+
+  peak.metamodels.xmi
 
     * Re-org to self-contain all XMI stuff inside an _XMI sub-component/service
 
-    * Refactoring to pure S-E-F model
+    * Refactoring to pure S-E-F model using Persistence
 
     * Document version of standard used
 
