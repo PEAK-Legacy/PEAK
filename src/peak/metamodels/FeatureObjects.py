@@ -10,11 +10,11 @@
 from peak.api import *
 from peak.model.interfaces import *
 
-from Interface.Standard import Class as IClass
-
 import peak.model.api
 
 __bases__ = peak.model.api,
+
+
 
 
 
@@ -82,7 +82,6 @@ class StructuralFeature(binding.AutoCreated):
 
 class Field(StructuralFeature):
 
-    __class_implements__ = IClass
     __implements__ = IValue
     
     upperBound = 1
@@ -121,9 +120,9 @@ class Field(StructuralFeature):
 
 
 
+
 class Collection(StructuralFeature):
 
-    __class_implements__ = IClass
     __implements__ = ICollection
 
 
@@ -160,6 +159,7 @@ class Collection(StructuralFeature):
             self._notifyLink(newItem)
         else:
             raise ValueError    # XXX
+
 
 
     def __call__(self):
@@ -246,7 +246,6 @@ class Collection(StructuralFeature):
 
 class Reference(Collection):
 
-    __class_implements__ = IClass
     __implements__ = IReference
 
     upperBound = 1
@@ -285,9 +284,9 @@ class Reference(Collection):
 
 
 
+
 class Sequence(Collection):
 
-    __class_implements__ = IClass
     __implements__ = ISequence
 
     isOrdered = 1

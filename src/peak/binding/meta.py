@@ -115,10 +115,10 @@ class AssertInterfaces(type):
                 or '__implements__' if retrieved from the instance."""
                 
             if ob is None:
-                from Interface.Standard import Class
-                return getattr(typ,'__class_implements__',Class)
+                return getattr(typ,'__class_implements__',None)
 
             return self.implements
+
 
 
 class MethodExporter(ActiveDescriptor, type):
