@@ -61,7 +61,7 @@ class DocumentProcessor(binding.Component):
     )
 
     processors = binding.Make(
-        config.Namespace('peak.ddt.processors')
+        config.Namespace('peak.ddt.processors',cache=False)
     )
 
     def processDocument(self,document):
@@ -762,7 +762,7 @@ class ActionChecker(ModelChecker):
 
     # our class is the class of whatever our instance is, at any point in time
     targetClass = binding.Obtain('targetInstance/__class__', noCache=True)
-    fixtures = binding.Make( config.Namespace('peak.ddt.models') )
+    fixtures = binding.Make( config.Namespace('peak.ddt.models',cache=False) )
 
     def processRows(self,rows):
         """Just process rows; no column headings are required or wanted."""

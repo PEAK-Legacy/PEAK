@@ -87,7 +87,7 @@ class ITraversalContext(IInteraction):
     Note: this inherits from 'security.IInteraction', so it also supports
     the 'user' attribute, 'allows()' method, and so on.
     """
-    
+
     name     = Attribute("""Name of 'current'""")
     current  = Attribute("""Current object location""")
     environ  = Attribute("""WSGI (PEP 333) 'environ' mapping""")
@@ -143,7 +143,7 @@ class ITraversalContext(IInteraction):
 
     def clone(**kw):
         """Create a duplicate context, using supplied keyword arguments
-        
+
         Acceptable keyword arguments include: 'name', 'current', 'environ',
         'policy', 'skin', 'rootURL', 'interaction', 'previous', and
         'clone_from'.  Most of these just set the corresponding attribute
@@ -172,18 +172,18 @@ class ITraversalContext(IInteraction):
         'security.IInteraction'.  There is no return value.
         """
 
+    def findLocation(locationID,default=NOT_GIVEN):
+        """Return a context for specified location, or 'default'
 
+        'locationID' should be a property name.  It will be looked up in the
+        context's target object's 'peak.web.locations' property namespace, and
+        in the target object of each parent traversal context until the named
+        location is found.
 
-
-
-
-
-
-
-
-
-
-
+        If the named location is not found, return 'default'.  If 'default'
+        is 'NOT_GIVEN', raise 'NotFound'.  Note: this method must *not* wrap
+        'default' in a traversal context: checking for the returned default is
+        the caller's responsibility."""
 
 
 

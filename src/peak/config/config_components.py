@@ -559,12 +559,18 @@ class Namespace(object):
     names beginning with an '_', and traversing to the name 'get' will give you
     the namespace's 'get' method, not the 'get' property in the namespace.  To
     obtain the 'get' property, or properties beginning with '_', you must use
-    the mapping style of access, as shown above."""
+    the mapping style of access, as shown above.
 
-    def __init__(self, prefix, target=NOT_GIVEN, cacheAttrs=True):
+    NOTE: By default, 'Namespace' instances cache every key that's looked up in
+    them.  If you are holding a reference to a namespace, and you expect an
+    unbounded number of potential lookups, do not want references held to the
+    results, or are looking up dynamically changing or dynamically created
+    properties, you should disable caching via the 'cache=False' keyword arg."""
+
+    def __init__(self, prefix, target=NOT_GIVEN, cache=True):
         self._prefix = PropertyName(prefix).asPrefix()
         self._target = target
-        self._cache = cacheAttrs
+        self._cache = cache; self._data = {}
 
     def __call__(self, suffix):
         """Return a sub-namespace for 'suffix'"""
@@ -576,7 +582,7 @@ class Namespace(object):
         if not attr.startswith('_'):
             ob = self.get(attr, NOT_FOUND)
             if ob is not NOT_FOUND:
-                if self._cache:
+                if self._cache and not hasattr(self.__class__,attr):
                     setattr(self,attr,ob)   # Cache for future use
                 return ob
         raise AttributeError,attr
@@ -592,25 +598,23 @@ class Namespace(object):
 
     def get(self,key,default=None):
         """Return property 'key' within this namespace, or 'default'"""
+
         if self._target is not NOT_GIVEN:
-            return lookup(
+            if key in self._data:                
+                return self._data[key]
+
+            result = lookup(
                 self._target,PropertyName.fromString(self._prefix+key),default
             )
+            if self._cache and result is not default:
+                self._data[key] = result
+            return result
+
         return default
 
 
     def __repr__(self):
         return "config.Namespace(%r,%r)" % (self._prefix,self._target)
-
-
-
-
-
-
-
-
-
-
 
 
     def keys(self):
@@ -634,10 +638,6 @@ class Namespace(object):
                     yielded[key]=1
 
         return items
-
-
-
-
 
 
 

@@ -235,9 +235,9 @@ class PropertyName(str):
         return lookup(forObj, self, default)
 
 
-    def of(self, forObj):
+    def of(self, forObj, cache=True):
         from peak.config.config_components import Namespace
-        return Namespace(self, forObj)
+        return Namespace(self, forObj, cache=cache)
 
 
     def __repr__(self):
