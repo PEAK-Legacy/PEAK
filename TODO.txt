@@ -47,11 +47,7 @@ Open Issues/To-Do Items
 
     * peak.running.logs
 
-      - Add 'DefaultLoggingService', service-based system
-
       - Separate formatters from publishers
-
-      - Loggers should know their names and pass that info to event constructor
 
     * peak.config
 
@@ -68,6 +64,10 @@ Open Issues/To-Do Items
          a later release)
 
        - try/catch DOMlet (and related error rendering interface/framework)
+
+
+
+
 
 
 

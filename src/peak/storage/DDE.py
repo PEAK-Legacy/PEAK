@@ -12,7 +12,7 @@ class ServerManager(object):
 
     """This ensures that 'Shutdown()' gets called when the server is GC'd"""
 
-    def __init__(self,name,logger=logs.AbstractLogger(level=logs.EMERG)):
+    def __init__(self,name,logger=logs.AbstractLogger(levelName='EMERG')):
         import win32ui, dde
         server = self.server = dde.CreateServer()
         self.name = name

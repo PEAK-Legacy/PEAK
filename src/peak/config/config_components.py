@@ -517,19 +517,19 @@ class Namespace(object):
     def __repr__(self):
         return "config.Namespace(%r,%r)" % (self._prefix,self._target)
 
-
-
-
-
-
-
-
-
-
-
-
-
-
+    def keys(self):
+        items = []
+        if self._target is not NOT_GIVEN:
+            prel = len(self._prefix)
+            append = items.append
+            yielded = {}
+            for key in iterKeys(self._target,self._prefix+'*'):
+                key = key[prel:]
+                if key.endswith('?'):
+                    key = key[:-1]
+                if key not in yielded:
+                    append(key); yielded[key]=1
+        return items
 
 class __NamespaceExtensions(protocols.Adapter):
 

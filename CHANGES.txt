@@ -2,6 +2,49 @@ Fixes and Enhancements since Version 0.5 alpha 2
 
  Changed, Enhanced, or Newly Deprecated Features
 
+ - 'config.Namespace()' objects now have a 'keys()' method that can be used
+   when the namespace is bound to a context component.  It returns a list of
+   strings that may be used as keys for that namespace.  Example usage::
+
+    >>> from peak.api import *
+    >>> r=config.makeRoot()
+    >>> ns=config.Namespace('peak.naming.schemes',r)
+    >>> ns.keys()
+    ['https', 'smtp', 'logfile', 'psycopg', 'pkgfile', 'unix.dg', 'win32.dde',
+    'sybase', 'timer', 'lockfile', 'pgsql', 'fd.socket', 'uuid', 'tcp', 'file',
+    'gadfly', 'http', 'logger', 'icb', 'cxoracle', 'udp', 'winflockfile',
+    'import', 'logging.logger', 'nulllockfile', 'nis', 'shlockfile',
+    'zconfig.schema', 'flockfile', 'shellcmd', 'dcoracle2', 'config', 'ftp',
+    'unix', 'ldap', 'sqlite', 'mockdb']
+    >>> ns['ldap']
+    'peak.storage.LDAP:ldapURL'
+
+ - Log events don't use a positional 'message' argument any more, and
+   loggers aren't responsible for interpolating message arguments any more.
+   The new signature is 'Event(parent, msg=msg, args=args, ...)'.  Loggers
+   also now tell events what logger name they are, via the 'ident' keyword.
+
+ - The logging system now uses a property namespace, 'peak.logging.levels', to
+   obtain log level names and values.  The various 'logs.LEVEL' constants are
+   now DEPRECATED.  Please use the 'getLevelFor()' method of the nearest
+   'logs.ILoggingService' instead.  Also note that URL schemes such as
+   'logfile:' no longer convert their level names to numbers, since the
+   level names are only meaningful in the context of a logging service.
+
+ - Support for integration with the Python 2.3/PEP 282 logging module has been
+   scaled back.  There are too many globalisms and dependencies there.  When we
+   add plugin-based log configuration, it should be possible to use the logging
+   package's handlers and formatters with the PEAK logging services.  At that
+   point, you'll be able to replace 'logging.getLogger' and
+   'logging.getLevelName' with the corresponding methods of a PEAK logging
+   service, if you need to force non-PEAK packages to use PEAK's logging.
+
+ - Logs are now accessed via a 'logs.ILoggingService' instance.  The 'logger:'
+   URL scheme automatically accesses the nearest such service.  For backward
+   compatibility, the old 'peak.logs' namespace is still used to supply the
+   actual loggers.  This will be gradually replaced with a plugin-based
+   mechanism.
+
  - Added 'binding.PluginKeys' and 'binding.PluginsFor'.  These are component
    keys that can be used to 'Obtain' plugins registered within a property
    namespace.  'PluginKeys' obtains a list of the plugins' configuration keys,

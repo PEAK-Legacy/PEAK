@@ -47,17 +47,18 @@ class PropertyTest(TestCase):
         app.registerProvider(name,config.Value(1))
         assert config.lookup(app,name)==1
 
-
     def checkEnviron(self):
         from os import environ
-
         # retry multiple times to verify re-get is safe...
         app = testRoot()
-        ps = config.PropertySet(app,'environ.*')
+        ps = config.Namespace('environ', app)
 
         for r in range(3):
             for k,v in environ.items():
-                assert ps[k] is v
+                self.assertEqual(ps[k],v)
+            ek = environ.keys(); ek.sort()
+            pk = ps.keys(); pk.sort()
+            self.assertEqual(ek,pk)     # verify namespace keys
 
     def checkSmartProps(self):
 
@@ -78,7 +79,6 @@ class PropertyTest(TestCase):
 
         assert config.lookup(obj,'foo.bar.spam') is testRoot
         assert config.lookup(obj,'foo.bar.baz') is testRoot
-
 
 class A:
     pass

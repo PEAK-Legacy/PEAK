@@ -98,7 +98,7 @@ validNames = {
         Items(scheme='config', body=(('environ','TMP'),'') ),
 
     'logfile:/foo/bar?level=WARNING':
-        Items(scheme='logfile', path=('','foo','bar'), level=30),
+        Items(scheme='logfile', path=('','foo','bar'), level='WARNING'),
 
     'win32.dde:foo::bar;file=c:\\baz;retries=24;sleep=42':
         Items(scheme='win32.dde', service='foo', topic='bar', file='c:\\baz',
