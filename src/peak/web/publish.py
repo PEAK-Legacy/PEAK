@@ -3,12 +3,12 @@
 from peak.api import *
 from interfaces import *
 from peak.running.commands import EventDriven
-from zope.publisher import http, browser, xmlrpc, publish
+
 
 __all__ = [
     'Interaction', 'NullAuthenticationService', 'InteractionPolicy',
-    'HTTPRequest', 'BrowserRequest', 'XMLRPCRequest', 'CGIPublisher',
-    'DefaultExceptionHandler', 'NullSkinService',
+    'CGIPublisher', 'DefaultExceptionHandler', 'NullSkinService',
+    'LocationPath'
 ]
 
 
@@ -34,6 +34,47 @@ class DefaultExceptionHandler(binding.Singleton):
 
 
 
+
+
+
+
+
+class LocationPath(naming.CompoundName):
+
+    """Name that knows how to do 'IWebLocation' traversal"""
+
+    syntax = naming.PathSyntax(
+        direction=1,
+        separator='/'
+    )
+
+    def traverse(self, ob, interaction, getRoot = lambda o,i: o):
+
+        path = iter(self)
+        part = path.next()
+
+        if not part:
+            ob = getRoot(ob, interaction)
+        else:
+            # reset to beginning
+            path = iter(self)
+
+        for part in path:
+
+            if part == '..':
+                parent = binding.getParentComponent(ob)
+                if parent is not None and parent is not interaction.skin:
+                    ob = parent
+
+            elif part=='.':
+                pass
+
+            elif part:
+                ob = ob.getSublocation(part, interaction)
+                if (ob is NOT_FOUND or ob is NOT_ALLOWED):
+                    break
+
+        return ob
 
 
 
@@ -123,20 +164,14 @@ class Interaction(security.Interaction):
 
     def traverseName(self, request, ob, name, check_auth=1):
 
-        if not name or name=='.':
-            return ob
+        nextOb = LocationPath([name]).traverse(ob,self)
 
-        if name=='..':
-            parent = binding.getParentComponent(ob)
-            if parent is not None and ob is not self.skin:
-                return parent
-            return ob
-
-        nextOb = ob.getSublocation(name, self)
         if nextOb is NOT_FOUND:
             return self.notFound(ob, name)
+
         if nextOb is NOT_ALLOWED:
             return self.notAllowed(ob, name)
+
         return nextOb
 
 
@@ -158,6 +193,12 @@ class Interaction(security.Interaction):
 
     def callObject(self, request, ob):
         return adapt(ob.getObject(), self.behaviorProtocol).render(self)
+
+
+
+
+
+
 
 
 
@@ -203,47 +244,6 @@ class Interaction(security.Interaction):
 
 
 
-class HTTPRequest(http.HTTPRequest, http.HTTPCharsets):
-
-    """HTTPRequest with a built-in charset handler"""
-
-    __slots__ = ()
-    request = property(lambda self: self)
-
-
-class BrowserRequest(
-    browser.BrowserRequest, browser.BrowserLanguages, http.HTTPCharsets
-):
-
-    """BrowserRequest w/built-in charset and language handlers"""
-
-    __slots__ = ()
-    request = property(lambda self: self)
-
-
-class XMLRPCRequest(xmlrpc.XMLRPCRequest, http.HTTPCharsets):
-
-    """XMLRPCRequest w/built-in charset handler"""
-
-    __slots__ = ()
-    request = property(lambda self: self)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 class CGIPublisher(binding.Component):
 
     """Use 'zope.publisher' to run an application as CGI/FastCGI
@@ -262,19 +262,20 @@ class CGIPublisher(binding.Component):
 
     You can override specific request types as follows::
 
-        HTTP Variant    KW for Request Class
-        ------------    --------------------
-        "Generic"       mkHTTP
-        "XML-RPC"       mkXMLRPC
-        "Browser"       mkBrowser
+        HTTP Variant    KW for Request Class    Property Name
+        ------------    --------------------    -----------------------
+        "Generic"       mkHTTP                  peak.web.HTTPRequest
+        "XML-RPC"       mkXMLRPC                peak.web.XMLRPCRequest
+        "Browser"       mkBrowser               peak.web.BrowserRequest
 
     So, for example, to change the XML-RPC request class, you might do this::
 
         myPublisher = CGIPublisher( mkXMLRPC = MyXMLRPCRequestClass )
 
     In practice, you're more likely to want to change the interaction class,
-    since the default request classes provided by 'zope.publisher' are likely
-    to suffice for most applications.
+    since the default request classes are likely to suffice for most
+    applications.  (It's also easier to change the properties in an application
+    .ini file than to supply the classes as keyword arguments.)
 
     'CGIPublisher' is primarily intended as a base adapter class for creating
     web applications.  To use it, you can simply subclass it, replacing the
@@ -284,11 +285,16 @@ class CGIPublisher(binding.Component):
 
 
 
-
     protocols.advise(
         instancesProvide=[running.IRerunnableCGI],
     )
 
+
+    # The fromApp method is registered as an adapter factory for
+    # arbitrary components to IRerunnableCGI, in peak.running.interfaces.
+    # If we registered it here, it wouldn't be usable unless peak.web
+    # was already imported, which leads to bootstrap problems, at least
+    # with very trivial web apps (like examples/trivial_web).
 
     def fromApp(klass, app, protocol):
         return klass(app, app=app)
@@ -298,24 +304,18 @@ class CGIPublisher(binding.Component):
 
     app = binding.requireBinding("Application root to publish")
 
-    interactionClass=binding.bindTo(INTERACTION_CLASS)
-
+    interactionClass = binding.bindTo(INTERACTION_CLASS)
 
 
     # items to (potentially) replace in subclasses
 
-    publish   = staticmethod(publish.publish)
+    publish   = binding.bindTo('import:zope.publisher.publish:publish')
 
-    mkXMLRPC  = XMLRPCRequest   # XXX should these be a property+default?
-    mkBrowser = BrowserRequest
-    mkHTTP    = HTTPRequest
+    mkXMLRPC  = binding.bindTo(PropertyName('peak.web.XMLRPCRequest'))
+    mkBrowser = binding.bindTo(PropertyName('peak.web.BrowserRequest'))
+    mkHTTP    = binding.bindTo(PropertyName('peak.web.HTTPRequest'))
 
     _browser_methods = binding.Copy( {'GET':1, 'POST':1, 'HEAD':1} )
-
-
-
-
-
 
 
 

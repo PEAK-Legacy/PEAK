@@ -39,7 +39,50 @@ def crossesBoundaries(name):
 
 
 
+class NameClass(type):
+
+    """Support for name subclasses to adapt from strings"""
+
+    def __adapt__(klass, ob):
+        if isinstance(ob,StringTypes):
+            return klass.mdl_fromString(ob)
+
+    __adapt__ = protocols.metamethod(__adapt__)
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 class AbstractName(tuple):
+
+    __metaclass__ = NameClass
 
     protocols.advise(
         instancesProvide = [IPath]
@@ -76,8 +119,6 @@ class AbstractName(tuple):
         return self.__class__(
             super(AbstractName,self).__getslice__(*args)
         )
-
-
 
 
     # syntax-based methods

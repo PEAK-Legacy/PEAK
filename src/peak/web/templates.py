@@ -1,12 +1,42 @@
+from __future__ import generators
 from peak.api import *
 from interfaces import *
 from xml.sax.saxutils import quoteattr
+from publish import LocationPath
 
 __all__ = [
-    'TemplateLiteral', 'TemplateElement',
+    # really only the parser, bindings, etc. should be public
 ]
 
+
 unicodeJoin = u''.join
+
+def infiniter(sequence):
+    while 1:
+        for item in sequence:
+            yield item
+
+def isNull(ob):
+    return ob is NOT_FOUND or ob is NOT_ALLOWED
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 class TemplateAsMethod(binding.Component):
@@ -32,6 +62,17 @@ class TemplateAsMethod(binding.Component):
             interaction, data.append, self.getParentComponent(), interaction
         )
         return unicodeJoin(data)
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -90,18 +131,19 @@ class TemplateElement(binding.Component):
     children   = binding.New(list)
     paterns    = binding.New(list)
     patternMap = binding.New(dict)
-    isDynamic  = False   # Set in subclasses to force dynamic rendering
 
     tagName      = binding.requireBinding("Tag name of element")
     attribItems  = binding.requireBinding("Attribute name,value pairs")
     nonEmpty     = False
     viewProperty = None
-    modelPath    = None
+    modelPath    = binding.Constant(None, adaptTo=LocationPath)
     patternName  = None
 
     # ITemplateNode
 
     def staticText(self, d, a):
+
+        """Note: replace w/staticText = None in dynamic element subclasses"""
 
         texts = [child.staticText for child in self.optimizedChildren]
 
@@ -116,7 +158,6 @@ class TemplateElement(binding.Component):
             return self._emptyTag
 
     staticText = binding.Once(staticText, suggestParent=False)
-
 
 
 
@@ -149,14 +190,14 @@ class TemplateElement(binding.Component):
     optimizedChildren = binding.Once(optimizedChildren)
 
 
+    def _getSubModel(self, interaction, currentModel):
 
-
-
-
-
-
-
-
+        if isNull(currentModel):
+            return currentModel
+            
+        return self.modelPath.traverse(
+            currentModel, interaction, lambda o,i: self._wrapInteraction(i)
+        )
 
 
 
@@ -244,43 +285,84 @@ class TemplateElement(binding.Component):
 
 
 
-    def _getSubModel(self, interaction, currentModel):
+class TemplateReplacement(TemplateElement):
 
-        path = iter(self.modelPath)
-        part = path.next()
+    """Abstract base for elements that replace their contents"""
 
-        if not part:
-            currentModel = self._wrapInteraction(interaction)
-        else:
-            # reset to beginning
-            path = iter(self.modelPath)
+    staticText = None
+    children   = optimizedChildren = binding.bindTo('contents')
+    contents   = binding.requireBinding("nodes to render in element body")
 
-        for part in path:
-            if part == '..':
-                currentModel = binding.getParentComponent(currentModel)
-            elif part=='.':
-                pass
-            else:
-                currentModel = currentModel.getSublocation(
-                    part, interaction
+    def addChild(self, node):
+        pass    # ignore children, only patterns count with us
+
+
+class TemplateText(TemplateReplacement):
+
+    """Replace element contents w/model"""
+
+    def renderTo(self, interaction, writeFunc, currentModel, executionContext):
+
+        if self.modelPath:
+            currentModel = self._getSubModel(interaction, currentModel)
+
+        writeFunc(self._openTag)
+
+        if not isNull(currentModel):
+            writeFunc(unicode(currentModel.getObject()))
+
+        writeFunc(self._closeTag)
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+class TemplateList(TemplateReplacement):
+
+    def renderTo(self, interaction, writeFunc, currentModel, executionContext):
+
+        if self.modelPath:
+            currentModel = self._getSubModel(interaction, currentModel)
+
+        writeFunc(self._openTag)
+
+        i = infiniter(self.patternMap['listItem'])
+        locationProtocol = interaction.locationProtocol
+        ct = 0
+
+        if not isNull(currentModel):
+
+            for item in currentModel.getObject():
+                if not interaction.allows(item):
+                    continue
+
+                loc = adapt(item, locationProtocol, None)
+                if loc is None:
+                    continue
+    
+                # XXX this should probably use an iteration location, or maybe
+                # XXX put some properties in execution context for loop vars?
+    
+                i.next().renderTo(
+                    interaction, writeFunc, loc, executionContext
                 )
-            if (currentModel is None or currentModel is NOT_FOUND
-                or currentModel is NOT_ALLOWED
-            ):  break
+                ct += 1
 
-        return currentModel
+        if not ct:
+            # Handle list being empty
+            for child in self.patternMap.get('emptyList',()):
+                child.renderTo(
+                    interaction, writeFunc, currentModel, executionContext
+                )
 
-
-
-
-
-
-
-
-
-
-
-
-
-
+        writeFunc(self._closeTag)
 
