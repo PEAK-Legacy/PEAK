@@ -5,10 +5,10 @@ from peak.api import *
 from kjbuckets import *
 from peak.util.imports import importObject
 from peak.model.datatypes import Name, String, Boolean, Integer, \
-    UnlimitedInteger, UNBOUNDED, TypeCode
+    UnlimitedInteger, TypeCode
 
 __all__ = [
-    'Name', 'String', 'Boolean', 'Integer', 'UnlimitedInteger', 'UNBOUNDED',
+    'Name', 'String', 'Boolean', 'Integer', 'UnlimitedInteger',
     'AnnotationType', 'DependencyKind', 'FormatType', 'CONTAINER_DEP',
     'CONTENTS_DEP', 'SIGNATURE_DEP', 'CONSTRAINED_ELEMENTS_DEP',
     'SPECIALIZATION_DEP', 'IMPORT_DEP', 'TYPE_DEFINITION_DEP',

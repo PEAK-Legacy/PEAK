@@ -2,42 +2,12 @@ from structural import *
 from enumerations import *
 
 __all__ = [
-    'Integer','UnlimitedInteger','UNBOUNDED','Boolean','String','Name',
-    'TCKind', 'TypeCode',
+    'TCKind', 'TypeCode', 'Short', 'Long', 'UShort', 'ULong', 'Float', 'Double',
+    'Integer','UnlimitedInteger','Boolean','String','Name', 'WString', 'Char'
+    'WChar', 'LongLong', 'ULongLong', 'LongDouble', 'PrimitiveTC', 'SimpleTC',
+    'Fixed','basicTypes',
 ]
 
-
-UNBOUNDED = -1
-
-
-class UnlimitedInteger(PrimitiveType):
-
-    def fromString(klass, value):
-        if value=='*': return UNBOUNDED
-        return int(value)
-
-    fromString = classmethod(fromString)
-
-
-class Integer(PrimitiveType):
-    fromString = int
-
-
-class Boolean(Enumeration):
-    true = enum(True)
-    false = enum(False)
-
-
-class String(PrimitiveType):
-
-    def fromString(klass,value):
-        return value
-
-    fromString = classmethod(fromString)
-
-
-class Name(String):
-    pass
 
 class PrimitiveTC(Enumeration):
 
@@ -49,7 +19,6 @@ class PrimitiveTC(Enumeration):
     tk_ulong = enum()
     tk_float = enum()
     tk_double = enum()
-
     tk_boolean = enum()
     tk_char = enum()
     tk_wchar = enum()
@@ -59,7 +28,7 @@ class PrimitiveTC(Enumeration):
     tk_ulonglong = enum()
     tk_longdouble = enum()
 
-    
+
 class SimpleTC(PrimitiveTC):
 
     """Simple (i.e. atomic/unparameterized) CORBA typecode kinds"""
@@ -70,16 +39,6 @@ class SimpleTC(PrimitiveTC):
     tk_null = enum()
     tk_void = enum()
     
-
-
-
-
-
-
-
-
-
-
 class TCKind(SimpleTC):
 
     """The full set of CORBA TypeCode kinds"""
@@ -121,6 +80,103 @@ class TCKind(SimpleTC):
 
 
 
+class Integer(PrimitiveType):
+    fromString = int
+
+class Short(Integer):
+    pass
+
+class Long(Integer):
+    pass
+
+class UShort(Integer):
+    pass
+
+class ULong(Integer):
+    pass
+
+class Float(PrimitiveType):
+    fromString = float
+
+class Double(PrimitiveType):
+    pass
+
+
+class String(PrimitiveType):
+
+    length = 0
+
+    def fromString(klass,value):
+        return value
+
+    fromString = classmethod(fromString)
+
+    mdl_typeKind = TCKind.tk_string
+
+    def mdl_typeCode(klass,d,a):
+        return TypeCode(kind = klass.mdl_typeKind, length=klass.length)
+
+    mdl_typeCode = binding.classAttr( binding.Once(mdl_typeCode) )
+
+
+
+
+class WString(String):
+    mdl_typeKind = TCKind.tk_wstring
+
+class Char(String):
+    mdl_typeKind = TCKind.tk_char
+    length = 1
+    
+class WChar(WString):
+    mdl_typeKind = TCKind.tk_wchar
+    length = 1
+
+
+class LongLong(Integer):
+    pass
+
+class ULongLong(Integer):
+    pass
+
+class LongDouble(Float):
+    pass
+
+class Boolean(Enumeration):
+    true = enum(True)
+    false = enum(False)
+
+
+class Fixed(Float):
+
+    fixed_digits = 1
+    fixed_scale  = 0
+
+    def mdl_typeCode(klass,d,a):
+        return TypeCode(kind = TCKind.Fixed,
+            fixed_digits = klass.fixed_digits,
+            fixed_scale  = klass.fixed_scale
+        )
+
+    mdl_typeCode = binding.classAttr( binding.Once(mdl_typeCode) )
+
+
+
+class UnlimitedInteger(Integer):
+
+    UNBOUNDED = -1
+
+    def fromString(klass, value):
+        if value=='*': return klass.UNBOUNDED
+        return int(value)
+
+    fromString = classmethod(fromString)
+
+
+class Name(String):
+    pass
+
+
 class _tcField(structField):
 
     """TypeCode field that only allows itself to be set when relevant"""
@@ -137,21 +193,6 @@ class _tcField(structField):
             )
 
     
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -230,17 +271,75 @@ class TypeCode(Immutable):
 
         return 'TypeCode(%s)' % (', '.join(info))
 
-            
+
+    def unaliased(self):
+        if self.kind == TCKind.tk_alias:
+            return self.content_type.unaliased()
+        return self
+
+
+
+
+
+
+
+
+
+basicTypes = {
+
+    TCKind.tk_short: Short,
+    TCKind.tk_long : Long,
+    TCKind.tk_ushort: UShort,
+    TCKind.tk_ulong: ULong,
+    TCKind.tk_float: Float,
+    TCKind.tk_double: Double,
+
+    TCKind.tk_boolean: Boolean,
+    TCKind.tk_char: Char,
+    TCKind.tk_wchar: WChar,
+
+    # TCKind.tk_octet: Octet,
+
+    TCKind.tk_longlong: LongLong,
+    TCKind.tk_ulonglong: ULongLong,
+    TCKind.tk_longdouble: LongDouble,
+
+    TCKind.tk_any: PrimitiveType,   # XXX ???
+    TCKind.tk_TypeCode: TypeCode,
+
+    # TCKind.tk_Principal: Principal,
+    # TCKind.tk_null: Null,
+    # TCKind.tk_void: Void,
+
+    TCKind.tk_objref: Classifier,
+
+    TCKind.tk_string: String,
+    TCKind.tk_wstring: WString,
+
+    TCKind.tk_fixed: Fixed,
+}
+
+
+
+
+
+
+
+
 # Bootstrap basic types
 
-TypeCode.mdl_typeCode       = TypeCode(kind=TCKind.tk_TypeCode)
-Classifier.mdl_typeCode     = TypeCode(kind=TCKind.tk_objref)
-PrimitiveType.mdl_typeCode  = TypeCode(kind=TCKind.tk_any)  # XXX ???
+for kind, klass in basicTypes.items():
 
-Integer.mdl_typeCode        = TypeCode(kind=TCKind.tk_long)
-Boolean.mdl_typeCode        = TypeCode(kind=TCKind.tk_boolean)
-String.mdl_typeCode         = TypeCode(kind=TCKind.tk_string, length=0)
-Name.mdl_typeCode           = TypeCode(kind=TCKind.tk_alias,
-                                 content_type=String.mdl_typeCode)
+    if kind in TypeCode.length.allowedKinds:
+        klass.mdl_typeCode = TypeCode(kind=kind,length=klass.length)
 
+    elif kind in TypeCode.fixed_digits.allowedKinds:
+        klass.mdl_typeCode = TypeCode(
+            kind = kind,
+            fixed_digits = klass.fixed_digits,
+            fixed_scale  = klass.fixed_scale,
+        )
+
+    else:
+        klass.mdl_typeCode = TypeCode(kind=kind)
 

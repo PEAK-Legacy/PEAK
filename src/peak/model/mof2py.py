@@ -1,42 +1,54 @@
 """Python code generation from MOF model
 
-    This is just a rough draft that's still missing a few important things:
+    This is still a little rough and the code it generates has not yet been
+    tested.  In order to do that, we need to have a mechanism for indexing
+    the created model, such that it can be used as a metamodel for
+    'peak.storage.xmi'.
 
-    * Full type support: we need 'peak.model.datatypes' to offer reusable
-      base types for CORBA primitive types, otherwise we can't generate
-      types like 'Boolean', 'String', and so on.
+    Open issues:
 
-    * A suitable mechanism for indexing the created model, such that it can
-      be used as a metamodel for 'peak.storage.xmi'.
+    - There are a few unsupported features which will cause generated code
+      not to work or not match the semantics of the supplied model:
 
-    Other issues:
+        * We don't support actual "pure structure" types; specifically we
+          don't generate correct code for the structure fields.
 
-    - Name conflicts w/Python built-ins?
+        * Package inheritance is not supported
 
-    Cosmetics
+        * Constants, TypeAliases, Constraints, Operations, Exceptions,
+          Parameters, Associations, AssociationEnds and Tags do not have any
+          code generated for them.
+
+        * If a model name conflicts with Python keywords, built-ins, or a
+          private/system ('__') name, the generated model may fail with no
+          warning from the generator.
 
     - Docstring formatting is a bit "off"; notably, we're not wrapping
       paragraphs, and something seems wrong with linespacing, at least
-      in my tests with the CWM metamodel.
+      in my tests with the CWM metamodel.  This may be purely specific
+      to CWM.  At least 'happydoc' seems to make some sense out of the
+      docstrings it sees (non-nested classes only, alas).     
 """
+
+
+
+
+
+
+
+
+
 
 from __future__ import generators
 
 from peak.api import *
-from peak.model.datatypes import TCKind, UNBOUNDED
+from peak.model.datatypes import TCKind, UnlimitedInteger, basicTypes
 from peak.util.IndentedStream import IndentedStream
 from cStringIO import StringIO
 from peak.util.advice import advice
 
 from os.path import dirname,exists
 from os import makedirs
-
-
-
-
-
-
-
 
 
 class oncePerObject(advice):
@@ -49,18 +61,6 @@ class oncePerObject(advice):
         __args[0].objectsWritten[__args[1]]=True
 
         return self._func(*__args,**__kw)
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -136,7 +136,7 @@ class MOFGenerator(binding.Component):
         
         doc = doc.replace('"""','\\"\"\\"')     # """ -> \"\"\"
 
-        self.write('"""%s"""\n\n' % doc)
+        self.write('\n"""%s"""\n\n' % doc)
 
 
     def writeClassHeader(self, element, baseNames=[]):
@@ -146,7 +146,7 @@ class MOFGenerator(binding.Component):
         else:
             bases = ''
             
-        self.write('class %s%s:\n\n' % (element.name,bases))
+        self.write('\nclass %s%s:\n' % (element.name,bases))
         self.push(1)
 
         if element.annotation:
@@ -169,7 +169,7 @@ class MOFGenerator(binding.Component):
 
         if hasattr(element,'supertypes'):
 
-            baseNames = [relName(m,ns) for m in element.supertypes]    # XXX
+            baseNames = [relName(m,ns) for m in element.supertypes]
 
             if not baseNames:
                 baseNames.append(metatype)
@@ -337,6 +337,9 @@ class MOFGenerator(binding.Component):
                         for p in package.supertypes]
                 )
             )
+        if package.annotation:
+            self.write(self.sepLine)
+            self.writeDocString(package.annotation)
         self.write(self.sepLine)
         self.write("""
 from peak.util.imports import lazyModule as __lazy
@@ -352,7 +355,6 @@ __datatypes          = __lazy('peak.model.datatypes')
         self.write(self.sepLine)
         self.write('\n__config.setupModule()\n\n\n')
 
-
     def exposeImportDeps(self, package, target=None):
 
         if target is None: target = package
@@ -364,8 +366,6 @@ __datatypes          = __lazy('peak.model.datatypes')
                 if k.container is not package:
                     nip(k.container, package)
             eid(klass)
-
-
 
     def writePackage(self, package):
 
@@ -459,14 +459,19 @@ __datatypes          = __lazy('peak.model.datatypes')
 
         self.beginObject(klass, '__model.Element')
 
+        if not klass.annotation:
+            self.write('\n')
+
         if klass.isAbstract:
-            self.write('mdl_isAbstract = True\n\n')
+            self.write('mdl_isAbstract = True\n')
             
         contentMap = {}
         self.writeNSContents(klass, contentMap)
 
         if not contentMap and not klass.isAbstract:
-            self.write('pass\n\n\n')
+            self.write('pass\n\n')
+        else:
+            self.write('\n')
 
         self.pop()
 
@@ -485,14 +490,9 @@ __datatypes          = __lazy('peak.model.datatypes')
 
 
 
-
-
-
-
-
     def writeDataType(self,dtype):
 
-        tc = dtype.typeCode
+        tc = dtype.typeCode.unaliased()
 
         if tc.kind == TCKind.tk_enum:
             self.writeEnum(dtype, tc.member_names)
@@ -501,14 +501,34 @@ __datatypes          = __lazy('peak.model.datatypes')
             self.writeStruct(dtype, zip(tc.member_names,tc.member_types))
             
         else:
-            self.beginObject(dtype,'__model.PrimitiveType')
-            self.write("pass   # XXX Don't know how to handle %s!!!\n\n"
-                % tc.kind
-            )
+
+            base = basicTypes.get(tc.kind)
+
+            if base is None:
+                self.beginObject(dtype,'__model.PrimitiveType')
+                self.write("pass   # XXX Don't know how to handle %s!!!\n\n"
+                    % tc.kind
+                )
+
+            else:
+
+                self.beginObject(dtype,'__datatypes.'+base.__name__)
+
+                if hasattr(tc,'length'):
+                    self.write('length = %d\n\n' % tc.length)
+
+                elif hasattr(tc,'fixed_digits'):
+                    self.write('fixed_digits = %d\n' % tc.fixed_digits)
+                    self.write('fixed_scale  = %d\n\n' % tc.fixed_scale)
+                else:
+                    self.write('pass\n\n')
+
             self.pop()
 
-
     writeDataType = oncePerObject(writeDataType)
+
+
+
 
 
     def writeStruct(self,dtype,memberInfo):
@@ -522,13 +542,6 @@ __datatypes          = __lazy('peak.model.datatypes')
             
         self.push(1)
         self.pop()
-
-
-
-
-
-
-
 
 
     def writeStructMember(self,mname,mtype,posn):
@@ -555,6 +568,10 @@ __datatypes          = __lazy('peak.model.datatypes')
         self.pop()
 
 
+
+
+
+
     def getRelativeName(self, element, package):
 
         if element.container is package:
@@ -564,6 +581,30 @@ __datatypes          = __lazy('peak.model.datatypes')
             self.nameInPackage(element.container,package),
             element.name
         )
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -598,13 +639,13 @@ __datatypes          = __lazy('peak.model.datatypes')
 
         m = feature.multiplicity 
 
-        if m.upper<>UNBOUNDED:
+        if m.upper <> UnlimitedInteger.UNBOUNDED:
             self.write('upperBound = %r\n' % m.upper)
 
-        if m.lower<>0:
+        if m.lower <> 0:
             self.write('lowerBound = %r\n' % m.lower)
 
-        self.write('sortPosn = %r\n\n' % posn)
+        self.write('sortPosn = %r\n' % posn)
         self.pop()
 
 
