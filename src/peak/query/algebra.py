@@ -143,6 +143,25 @@ class Table:
     def simpleSQL(self):
         return "SELECT * FROM %s" % self.name
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 class Column:
 
     protocols.advise(
@@ -161,6 +180,28 @@ class Column:
 
     def simpleSQL(self):
         return self.table.name+'.'+self.name
+
+    def eq(self,dv):
+        return Cmp(self,'=',dv)
+
+    def ne(self,dv):
+        return Cmp(self,'<>',dv)
+
+    def lt(self,dv):
+        return Cmp(self,'<',dv)
+
+    def ge(self,dv):
+        return Cmp(self,'>=',dv)
+
+    def gt(self,dv):
+        return Cmp(self,'>',dv)
+
+    def le(self,dv):
+        return Cmp(self,'<=',dv)
+
+
+
+
 
 class BasicJoin(Table, HashAndCompare):
 

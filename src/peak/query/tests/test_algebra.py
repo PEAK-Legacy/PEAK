@@ -4,7 +4,7 @@ from unittest import TestCase, makeSuite, TestSuite
 from peak.api import *
 from peak.tests import testRoot
 from peak.query.api import *
-from peak.query.algebra import BasicJoin, Not, And, Or, Table, PhysicalDB, Cmp
+from peak.query.algebra import BasicJoin, Not, And, Or, Table, PhysicalDB
 from kjbuckets import kjSet
 
 class SimplificationAndEquality(TestCase):
@@ -44,9 +44,9 @@ class SimplificationAndEquality(TestCase):
         self.rvB = B = Table('B',self.B_Columns)
         self.rvC = C = Table('C',self.C_Columns)
         self.rvD = D = Table('D',self.D_Columns)
-        self.condX = Cmp(A['aa'],'=',B['b1'])
-        self.condY = Cmp(B['b1'],'=',C['CC'])
-        self.condZ = Cmp(C['CC'],'=',D['d'])
+        self.condX = A['aa'].eq(B['b1'])
+        self.condY = B['b1'].eq(C['CC'])
+        self.condZ = C['CC'].eq(D['d'])
 
     def testBooleanCommutativity(self):
         x,y,z = self.condX, self.condY, self.condZ
@@ -134,7 +134,7 @@ class SimplificationAndEquality(TestCase):
     def testSelectionAssociativity(self):
 
         A,B,C,D = self.rvA, self.rvB, self.rvC, self.rvD
-        x,y,z = self.condX, Cmp(A['ab'],'=',27), Cmp(A['ac'],'=',42)
+        x,y,z = self.condX, A['ab'].eq(27), A['ac'].eq(42)
 
         self.assertEquals(
             A(join=[B],where=x)(where=y),
@@ -266,18 +266,18 @@ class SimplificationAndEquality(TestCase):
 
     def testComparison(self):
         A,B,C,D = self.rvA, self.rvB, self.rvC, self.rvD
-        x = Cmp(A['aa'],'=',B['b1'])
+        x = A['aa'].eq(B['b1'])
         A(join=[B],where=x)
-        self.assertEqual(x, Cmp(A['aa'],'=',B['b1']))
-        self.assertEqual(~x, Cmp(A['aa'],'<>',B['b1']))
-        self.assertEqual(x, ~Cmp(A['aa'],'<>',B['b1']))
-        self.assertEqual(Cmp(A['aa'],'<',B['b1']), ~Cmp(A['aa'],'>=',B['b1']))
-        self.assertEqual(~Cmp(A['aa'],'<',B['b1']), Cmp(A['aa'],'>=',B['b1']))
-        self.assertEqual(Cmp(A['aa'],'>',B['b1']), ~Cmp(A['aa'],'<=',B['b1']))
-        self.assertEqual(~Cmp(A['aa'],'>',B['b1']), Cmp(A['aa'],'<=',B['b1']))
+        self.assertEqual(x, A['aa'].eq(B['b1']))
+        self.assertEqual(~x, A['aa'].ne(B['b1']))
+        self.assertEqual(x, ~A['aa'].ne(B['b1']))
+        self.assertEqual(A['aa'].lt(B['b1']), ~A['aa'].ge(B['b1']))
+        self.assertEqual(~A['aa'].lt(B['b1']), A['aa'].ge(B['b1']))
+        self.assertEqual(A['aa'].gt(B['b1']), ~A['aa'].le(B['b1']))
+        self.assertEqual(~A['aa'].gt(B['b1']), A['aa'].le(B['b1']))
 
-        self.assertNotEqual(Cmp(A['aa'],'<',B['b1']),Cmp(A['aa'],'>',B['b1']))
-        self.assertNotEqual(Cmp(A['aa'],'<=',B['b1']),Cmp(A['aa'],'=',B['b1']))
+        self.assertNotEqual(A['aa'].lt(B['b1']),A['aa'].gt(B['b1']))
+        self.assertNotEqual(A['aa'].le(B['b1']),A['aa'].eq(B['b1']))
 
 
 
@@ -391,7 +391,7 @@ class DatabaseTests(TestCase):
         Branch = db['Branch']
         Employee = db['Employee']
 
-        x = Cmp(Branch['branchnr'],'=',Employee['branchnr'])
+        x = Branch['branchnr'].eq(Employee['branchnr'])
         A = Table('X',('foo','bar'))
 
         self.assertEqual(
@@ -460,7 +460,7 @@ class DatabaseTests(TestCase):
 
         EmployeesByBranch = Branch(
             join=[Employee],
-            where=Cmp(Branch['branchnr'],'=',Employee['branchnr'])
+            where=Branch['branchnr'].eq(Employee['branchnr'])
         )
 
         self.assertEqual(
@@ -470,7 +470,7 @@ class DatabaseTests(TestCase):
         )
 
         self.assertEqual(
-            Branch(where=Cmp(Branch['branchnr'],'=',42)).simpleSQL(),
+            Branch(where=Branch['branchnr'].eq(42)).simpleSQL(),
             "SELECT * FROM Branch WHERE Branch.branchnr=42"
         )
 
