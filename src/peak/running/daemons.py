@@ -138,7 +138,7 @@ class AbstractDaemon(AutoCreated):
         lock = self.lock
 
         if lock:
-            return self.lock.attempt()
+            return lock.attempt()
 
         return True
 
