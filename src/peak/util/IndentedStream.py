@@ -127,7 +127,7 @@ class IndentedStream:
         
         if '\n' in data:
 
-            lines = split(data,'\n')
+            lines = data.split('\n')
             write = self.stream.write
             indent = self._indent
         
