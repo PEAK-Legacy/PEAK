@@ -4,7 +4,7 @@ from unittest import TestCase, makeSuite, TestSuite
 from peak.api import *
 from peak.tests import testRoot
 from peak.query.api import *
-from peak.query.algebra import BasicJoin, Not, And, Or, Table, PhysicalDB
+from peak.query.algebra import BasicJoin, Not, And, Or, Table, PhysicalDB, Cmp
 from kjbuckets import kjSet
 
 class SimplificationAndEquality(TestCase):
@@ -40,13 +40,13 @@ class SimplificationAndEquality(TestCase):
 
 
     def setUp(self):
-        self.condX = adapt('x',IBooleanExpression)
-        self.condY = adapt('y',IBooleanExpression)
-        self.condZ = adapt('z',IBooleanExpression)
-        self.rvA = Table('A',self.A_Columns)
-        self.rvB = Table('B',self.B_Columns)
-        self.rvC = Table('C',self.C_Columns)
-        self.rvD = Table('D',self.D_Columns)
+        self.rvA = A = Table('A',self.A_Columns)
+        self.rvB = B = Table('B',self.B_Columns)
+        self.rvC = C = Table('C',self.C_Columns)
+        self.rvD = D = Table('D',self.D_Columns)
+        self.condX = Cmp(A['aa'],'=',B['b1'])
+        self.condY = Cmp(B['b1'],'=',C['CC'])
+        self.condZ = Cmp(C['CC'],'=',D['d'])
 
     def testBooleanCommutativity(self):
         x,y,z = self.condX, self.condY, self.condZ
@@ -101,8 +101,8 @@ class SimplificationAndEquality(TestCase):
         A,B,C,D = self.rvA, self.rvB, self.rvC, self.rvD
 
         self.assertEqual(A(join=[B],where=x), B(join=[A],where=x))
-        self.assertEqual(A(join=[B,C],where=x), B(join=[A,C],where=x))
-        self.assertEqual(A(join=[B,C],where=x), C(join=[B,A],where=x))
+        self.assertEqual(A(join=[B,C],where=x&y), B(join=[A,C],where=x&y))
+        self.assertEqual(A(join=[B,C],where=x&y), C(join=[B,A],where=x&y))
 
 
     def testJoinAssociativity(self):
@@ -133,8 +133,8 @@ class SimplificationAndEquality(TestCase):
 
     def testSelectionAssociativity(self):
 
-        x,y,z = self.condX, self.condY, self.condZ
         A,B,C,D = self.rvA, self.rvB, self.rvC, self.rvD
+        x,y,z = self.condX, Cmp(A['ab'],'=',27), Cmp(A['ac'],'=',42)
 
         self.assertEquals(
             A(join=[B],where=x)(where=y),
@@ -262,8 +262,8 @@ class SimplificationAndEquality(TestCase):
             )
         )
 
-        Branch = db.table('Branch')
-        Employee = db.table('Employee')
+        Branch = db['Branch']
+        Employee = db['Employee']
 
         x,y,z = self.condX, self.condY, self.condZ
 
@@ -288,14 +288,14 @@ class SimplificationAndEquality(TestCase):
         for tbl in 'Branch','Employee','Speaks','Drives','Car','LangUse':
 
             # table objects must be unique
-            self.failUnless(db.table(tbl) is not db.table(tbl))
+            self.failUnless(db[tbl] is not db[tbl])
 
             # column objects must be unique
             self.assertNotEqual(
-                db.table(tbl).attributes(), db.table(tbl).attributes()
+                db[tbl].attributes(), db[tbl].attributes()
             )
 
-            tbl = db.table(tbl)
+            tbl = db[tbl]
 
             # table's db should be db
             self.failUnless(tbl.getDB() is db)
@@ -346,20 +346,20 @@ class SimplificationAndEquality(TestCase):
         self.assertRaises(ValueError, B(join=[C]), join=[C(join=[D])])
 
 
+    def testComparison(self):
+        A,B,C,D = self.rvA, self.rvB, self.rvC, self.rvD
+        x = Cmp(A['aa'],'=',B['b1'])
+        A(join=[B],where=x)
+        self.assertEqual(x, Cmp(A['aa'],'=',B['b1']))
+        self.assertEqual(~x, Cmp(A['aa'],'<>',B['b1']))
+        self.assertEqual(x, ~Cmp(A['aa'],'<>',B['b1']))
+        self.assertEqual(Cmp(A['aa'],'<',B['b1']), ~Cmp(A['aa'],'>=',B['b1']))
+        self.assertEqual(~Cmp(A['aa'],'<',B['b1']), Cmp(A['aa'],'>=',B['b1']))
+        self.assertEqual(Cmp(A['aa'],'>',B['b1']), ~Cmp(A['aa'],'<=',B['b1']))
+        self.assertEqual(~Cmp(A['aa'],'>',B['b1']), Cmp(A['aa'],'<=',B['b1']))
 
-
-
-
-
-
-
-
-
-
-
-
-
-
+        self.assertNotEqual(Cmp(A['aa'],'<',B['b1']),Cmp(A['aa'],'>',B['b1']))
+        self.assertNotEqual(Cmp(A['aa'],'<=',B['b1']),Cmp(A['aa'],'=',B['b1']))
 
 
 

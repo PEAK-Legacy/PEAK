@@ -71,7 +71,7 @@ class PhysicalDB(binding.Component):
         lambda self: dict(self.tables)
     )
 
-    def table(self,name):
+    def __getitem__(self,name):
         return Table(name,self.tableMap[name],self)
 
 
@@ -326,6 +326,30 @@ class Not(_compound):
 
 
 
+class Cmp(_expr, HashAndCompare):
+
+    invOps = {'=':'<>', '<':'>=', '>':'<='}
+    invOps = kjGraph(invOps.items())
+    invOps = invOps + ~invOps
+
+    def __init__(self,arg1,op,arg2):
+        self.arg1 = arg1
+        self.op = op
+        self.arg2 = arg2
+        self._hashAndCompare = op,arg1,arg2
+
+    def __invert__(self):
+        try:
+            revOp = self.invOps[self.op]
+        except KeyError:
+            return Not(self)
+        else:
+            return self.__class__(self.arg1,revOp,self.arg2)
+
+    def __repr__(self):
+        return 'Cmp%r' % (self.arg1,self.op,self.arg2)
+
+
 class ExpressionWrapper(protocols.Adapter, _expr, HashAndCompare):
 
     protocols.advise(
@@ -338,30 +362,6 @@ class ExpressionWrapper(protocols.Adapter, _expr, HashAndCompare):
 
     def __repr__(self):
         return `self.subject`
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
