@@ -9,7 +9,7 @@ from _once import *
 
 __all__ = [
     'Once', 'New', 'Copy', 'Activator', 'ActiveClass', 'ActiveClasses',
-    'getInheritedRegistries', 'classAttr',
+    'getInheritedRegistries', 'classAttr', 'Singleton',
 ]
 
 
@@ -385,3 +385,66 @@ def supertype(supertype,subtype):
             return mro.next()
     else:
         raise TypeError("Not sub/supertypes:", supertype, subtype)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+_ignoreNames = {'__name__':1, '__new__':1, '__module__':1, '__return__':1}
+
+class SingletonClass(Activator):
+
+    def __new__(meta, name, bases, cdict):
+        for k in cdict.keys():
+            if k not in _ignoreNames:
+                cdict[k] = classAttr(cdict[k])
+
+        return supertype(SingletonClass,meta).__new__(meta,name,bases,cdict)
+
+
+class Singleton(object):
+
+    """Class whose instances are itself, with all attributes at class level
+
+    Subclass 'binding.Singleton' to create true (per-interpreter) singleton
+    objects.  Any attribute bindings defined will apply to the class itself,
+    rather than to its instances.  Any attempt to create an instance of a
+    singleton class will simply return the class itself.  The 'self' of all
+    methods will also be the class.
+
+    This actually works by redefining all the singleton class' attributes
+    as 'binding.classAttr()' objects, causing them to be placed in a new
+    metaclass created specifically for the singleton class.  So, if you would
+    otherwise find yourself using 'classmethod' or 'binding.classAttr()' on
+    all the contents of a class, just subclass 'binding.Singleton' instead.
+
+    Note that if you define special methods like '__new__()' or '__init__()',
+    these will also be promoted to the metaclass.  This means, for example,
+    that if you define an '__init__' method, it will be called with the
+    singleton class object (or a subclass) when the class is created."""
+    
+    __metaclass__ = SingletonClass
+
+    def __new__(klass):
+        return klass
+
+del _ignoreNames['__new__']     # we want this to be promoted, for subclasses
+
