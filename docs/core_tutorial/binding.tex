@@ -367,17 +367,17 @@ up-front loading of all the modules and classes.  See the source for
 
 
 
+\subsubsection{Interfaces and Exceptions}
+
 XXX peak.exceptions, where ``interfaces" modules are, ...?
 
-XXX installing?
+\subsubsection{PEAK Subpackages and Modules}
+
+XXX binding, config, exceptions, model, naming, running, storage, util
+
+\subsection{Installing PEAK}
 
 \newpage
-
-
-
-
-
-
 
 
 
@@ -555,9 +555,10 @@ has without help from either you or the base class.  (Actually, it's the
 metaclass, not the base class, but that's not important right now).  There
 are some circumstances where PEAK will try to guess the attribute name for you,
 such as when you use a class or a  function to define an attribute binding, but
-for the most part you must either have a base class that supports
-\class{binding.ActiveDescriptors} (such as \class{binding.Base}), or supply
-the attribute name yourself when defining the binding..
+for the most part you must either have a base class (such as 
+\class{binding.Base}) whose metaclass derives from
+\class{binding.ActiveDescriptors}, or else you must supply the attribute name
+yourself when defining the binding.
 
 So, if you plan to use attribute bindings in your program, it's probably best
 to subclass \class{binding.Base}; it'll save you a lot of typing!
@@ -567,7 +568,6 @@ derive from \class{binding.Base}, though, like \class{binding.Component} and
 \class{binding.AutoCreated}.  You'll use these latter two a lot when defining
 Service components.  \class{binding.Base} is designed to be a minimalist
 component base, without a lot of the extra features found in its subclasses.
-
 
 
 
@@ -662,9 +662,9 @@ zero times, or many times, if we set or delete the attribute the binding
 defines.
 
 You may have wondered, ``how does a binding know whether it's been computed or
-not?"  It knows because there is an entry in the object's dictionary for the
-value.  (Notice, by the way, that this means objects without dictionaries can't
-get much use out of bindings.)
+not?"  It knows because there is an entry in the object's dictionary for that
+attribute name.  (Notice, by the way, that this means objects without
+dictionaries can't get much use out of bindings.)
 
 But what if there's something already in the dictionary?  Or what if you remove
 the value from the dictionary?  Well, it's pretty much as you'd expect.  If you
@@ -679,18 +679,18 @@ PEAK also makes use of the ability to override a binding by manually setting
 a value for an attribute.  For example, most PEAK component classes'
 \method{__init__} methods accept keyword arguments which can override attributes
 which would otherwise be determined by bindings.  This is especially useful in
-conjunction with the \class{binding.requireBinding} binding class, which simply
-raises an error when you try to access its attribute.  It's a handy way of
-specifying that a component must have the attribute, but that a subclass or
+conjunction with the \class{binding.requireBinding} class, which simply
+raises an error when you try to access the attribute.  It's a handy way of
+specifying that a component must have the attribute, and that a subclass or
 instance must supply the value.
 
 By the way, it's important to note that bindings do \emph{not} participate in
-persistence, as they directly alter the associated object's dictionary.  You
-should carefully consider the use of attribute bindings in persistent objects,
-as to how they will interact with your persistence machinery (e.g. whether they
-should be saved or not) and whether you will want to write them in such a way
-as to consider the object ``changed" when an attribute is computed.
-
+persistence, as they diectly alter the associated object's dictionary, bypassing
+the normal ``set attribute" machinery.  You should carefully consider the use of
+attribute bindings in persistent objects, as to how they will interact with your
+persistence machinery (e.g. whether they should be saved or not) and whether you
+will want to code them in such a way as to consider the object ``changed" when
+an attribute is computed.
 
 
 
