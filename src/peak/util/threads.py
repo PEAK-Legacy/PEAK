@@ -12,8 +12,9 @@
 """
 
 __all__ = [
-    'allocate_lock', 'get_ident', 'DummyLock'
+    'allocate_lock', 'get_ident', 'DummyLock', 'RLock', 'ResourceManager',
     'allowThreading', 'disableThreading', 'requireThreading',
+    'HAVE_THREADS', 'globalRM',
 ]
 
 try:
@@ -33,7 +34,6 @@ if HAVE_THREADS:
     from thread import get_ident
 else:
     def get_ident(): return 1
-
 
 
 
@@ -68,18 +68,18 @@ def requireThreading():
     self.allowThreading()
 
 
+def allocate_lock():
+
+    """Returns either a real or dummy thread lock, depending on availability"""
+
+    if USE_THREADS:
+        return thread.allocate_lock()
+
+    else:
+        return DummyLock()
 
 
 
-
-
-
-
-
-
-
-
-    
 class DummyLock(object):
 
     """Dummy lock type used when threads are inactive or unavailable"""
@@ -121,18 +121,127 @@ class DummyLock(object):
         return self._lockCount and True or False
 
 
-def allocate_lock():
+class RLock(object):
 
-    """Returns either a real or dummy thread lock, depending on availability"""
+    """Re-entrant lock; can be locked multiple times by same thread"""
 
-    if USE_THREADS:
-        return thread.allocate_lock()
+    __slots__ = 'lock','owner','count'
+    
+    def __init__(self):
+        self.lock  = allocate_lock()
+        self.owner = 0
+        self.count = 0
 
-    else:
-        return DummyLock()
+    def attempt(self):
+        """Nonblocking, nestable attempt to acquire; returns success flag"""
+        return self._doAcquire(False)
+
+    def obtain(self):
+        """Blocking, nestable wait to acquire; success unless error"""
+        return self._doAcquire(True)
+
+    def release(self):
+        """Release one level of lock nesting; must be 'locked()' when called"""
+
+        me = get_ident()
+
+        if self.owner <> me:
+            raise RuntimeError, "release() of un-acquire()d lock"
+
+        count = self.count = self.count - 1
+
+        if count==0:
+            self.owner = 0
+            self.lock.release()
+
+    def locked(self):
+        """Is this lock owned by the current thread?"""
+        return self.owner==get_ident() and self.count>0
 
 
 
+
+
+    def _doAcquire(self, blocking):
+
+        me = get_ident()
+
+        if self.owner == me:
+            self.count += 1
+            return True
+
+        if blocking:
+            self.lock.acquire(); rc = True
+        else:
+            rc = self.lock.acquire(blocking)
+            
+        if rc:
+            self.owner = me
+            self.count = 1
+
+        return rc
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class ResourceManager(object):
+
+    """Hold/manage thread locks for arbitrary resource keys"""
+
+    __slots__ = 'locks', 'lock'
+
+    def __init__(self):
+        self.locks = {}
+        self.lock  = allocate_lock()
+
+    def attempt(self, key):
+        """Nonblocking, nestable attempt to acquire; returns success flag"""
+        return self[key].attempt()
+
+    def obtain(self, key):
+        """Blocking, nestable wait to acquire; success unless error"""
+        return self[key].obtain()
+
+    def release(self, key):
+        """Release one level of locking; key must be 'locked()' when called"""
+        return self[key].release()
+
+    def locked(self, key):
+        """Is this key owned by the current thread?"""
+        return self[key].locked()
+
+    def __getitem__(self, key):   
+        self.lock.acquire()
+        try:
+            try:
+                return self.locks[key]
+            except KeyError:
+                rlock = self.locks[key] = RLock()
+                return rlock
+        finally:
+            self.lock.release()
+
+
+globalRM = ResourceManager()
 
 
     
