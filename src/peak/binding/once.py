@@ -3,7 +3,8 @@
 from __future__ import generators
 from peak.api import NOT_FOUND, protocols, adapt
 from peak.util.imports import importObject, importString
-from interfaces import IAttachable, IActiveDescriptor
+from peak.util.signature import ISignature, getPositionalArgs
+from interfaces import IAttachable, IActiveDescriptor, IRecipe
 from _once import *
 from protocols import IOpenProvider, IOpenImplementor, NO_ADAPTER_NEEDED
 from protocols.advice import metamethod, getMRO
@@ -11,7 +12,7 @@ from warnings import warn
 from types import ClassType
 
 __all__ = [
-    'Once', 'New', 'Copy', 'Activator', 'ActiveClass',
+    'Make', 'Once', 'New', 'Copy', 'Activator', 'ActiveClass',
     'getInheritedRegistries', 'classAttr', 'Singleton', 'metamethod',
     'Attribute', 'ComponentSetupWarning', 'suggestParentComponent'
 ]
@@ -38,12 +39,109 @@ def supertype(supertype,subtype):
 
     raise TypeError("Not sub/supertypes:", supertype, subtype)
 
-
 class Descriptor(BaseDescriptor):
+
+    """Attribute Descriptor with lazy initialization and caching
+
+    A 'Descriptor' (or subclass) instance is a Python attribute descriptor,
+    similar to the ones created using the Python 'property' built-in type.
+    However, where 'property' instances invoke a function on every access to
+    the attribute, 'binding.Descriptor' instances only call their
+    'computeValue()' method once, caching the result in the containing object's
+    dictionary.  Thereafter, the value from the dictionary is used instead of
+    re-computing it each time.  If the attribute is deleted (e.g. via
+    'del anObj.anAttr') or the value is cleared from the dictionary, the
+    'computeValue()' method will be called again, the next time that the
+    attribute is retrieved.
+
+    Because the instance dictionary is used to store the attribute value, a
+    'Descriptor' needs to know its name.  Unfortunately, Python does not
+    provide a way for descriptors to know what name they are given in a
+    class, so you must explicitly provide an 'attrName' value, either as a
+    constructor keyword argument, or by defining it in a subclass.  Many
+    'Descriptor' subclasses have the ability to guess or detect what
+    'attrName' should be used, but you must still explicitly provide it if they
+    are unable to do so automatically.  Failure to supply a correct 'attrName'
+    will result in a 'TypeError' when the attribute is used.
+
+    'Descriptor' instances have the following attributes which may be set by
+    keyword arguments to the class' constructor:
+
+
+        'attrName' -- sets the name which the descriptor will use to get/set
+        its value in the instance dictionary.  Ordinarily this should be the
+        same as the name given to the descriptor in its containing class, but
+        you may occasionally wish it to be something else.
+
+
+        'computeValue(obj, instDict, attrName)' -- a function that will be
+        called whenever the attribute is accessed and no value for the
+        attribute is present in the object's instance dictionary.  The function
+        will be passed three arguments: the object that owns the attribute, the
+        object's instance dictionary, and the descriptor's 'attrName'.
+
+        The value returned will be treated as the attribute's value.  It will
+        also be cached in the object's instance dictionary to avoid repeat
+        calls, unless the descriptor's 'noCache' attribute is 'True'.
+
+        Note that the default implementation of 'computeValue()' simply raises
+        an 'AttributeError'.  Also note that the call signature of
+        'computeValue()' is the same as that of 'binding.IRecipe'.  That is,
+        any object that provides 'IRecipe' may be used as a 'computeValue'
+        attribute.  'Descriptor' does not perform any adaptation, however, so
+        if your desired object must be adapted to 'IRecipe', you should do so
+        before assigning it to the 'computeValue' attribute.
+
+
+        'noCache' -- if set to 'True', the descriptor will not cache its
+        'computeValue()' results in the owning object's instance dictionary.
+        This makes the descriptor's behavior more similar to the Python
+        'property' type.  But, 'computeValue()' will not be called when the
+        attribute is currently set (i.e., a value is in the object's instance
+        dictionary under 'attrName'), so the behavior is still quite different
+        from the 'property' type.
+
+
+        'onSet(obj, attrName, value)' -- a function that will be called
+        whenever the attribute is set, or when the result of 'computeValue()'
+        is to be cached.  The function will be passed three arguments: the
+        object that owns the attribute, the descriptor's 'attrName', and the
+        'value' that is to be set.  The function may return the passed-in
+        value, or change it by returning a different value.  To prevent the
+        value from being set, the function should raise an exception.  If you
+        do not set this attribute, its default implementation simply returns
+        the value unmodified.
+
+
+        'ofClass(attrName, klass)' -- a function that will be called whenever
+        the descriptor is retrieved from its class.  The default implementation
+        simply returns the descriptor.
+
+
+        'permissionNeeded' -- a 'peak.security.IAbstractPermission', or 'None'.
+        This is a convenience feature for use with the 'peak.security' package.
+
+    You can override the methods described above in subclasses.  Keep in mind,
+    however, that you will then need to add a 'self' parameter in addition to
+    the ones described above.  The 'self' argument will refer to the
+    'Descriptor' instance.
+
+    The 'Descriptor' class is rarely used directly; normally you will use one
+    of its subclasses, which have many additional features for more convenient
+    use.  However, many of those subclasses themselves use 'Descriptor'
+    instances as part of their definition.  That's why this exists as a
+    separate base class: to make it possible to use descriptors to make
+    descriptor classes."""
 
     permissionNeeded = None    # IGuardedDescriptor; declared in peak.security
 
     def __init__(self,**kw):
+
+        """Create a descriptor from keyword arguments
+
+        You may pass any keyword arguments, as long as they represent existing
+        attributes defined by the 'Descriptor' class (or subclass, if
+        this constructor is used by the subclass)."""
 
         klass = self.__class__
 
@@ -53,7 +151,16 @@ class Descriptor(BaseDescriptor):
             else:
                 raise TypeError("%r has no keyword argument %r" % (klass,k))
 
+# XXX Set up noCache to set the 'isVolatile' attribute inherited from
+# BaseDescriptor.  This should be changed by changing BaseDescriptor to define
+# noCache instead of isVolatile, but doing it this way ensures backward
+# compatibility.  In alpha 4, this kludge should be removed.
 
+Descriptor.noCache = Descriptor(
+    attrName = 'noCache',
+    onSet = lambda o,a,v: setattr(o,'isVolatile',v and 1 or 0) or v,
+    computeValue = lambda o,d,a: False
+)
 
 def getInheritedRegistries(klass, registryName):
 
@@ -76,10 +183,6 @@ def getInheritedRegistries(klass, registryName):
                 yield reg
 
 
-
-
-
-
 def suggestParentComponent(parent,name,child):
 
     """Suggest to 'child' that it has 'parent' and 'name'
@@ -100,28 +203,7 @@ def suggestParentComponent(parent,name,child):
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-class SequenceAsAttachable(protocols.Adapter):
+class _SequenceAsAttachable(protocols.Adapter):
 
     """Set parent component for all members of a list/tuple"""
 
@@ -162,86 +244,14 @@ class SequenceAsAttachable(protocols.Adapter):
 
 
 
-def New(obtype, **kw):
-
-    """One-time binding of a new instance of 'obtype'
-
-    Usage::
-
-        class someClass(binding.Component):
-
-            myDictAttr = binding.New(dict)
-
-            myListAttr = binding.New(list)
-
-    The 'myDictAttr' and 'myListAttr' will become empty instance
-    attributes on their first access attempt from an instance of
-    'someClass'.
-
-    This is basically syntactic sugar for 'Once' to create an empty
-    instance of a type.  The same rules apply as for 'Once' about
-    whether the 'name' parameter is required.  (That is, you need it if you're
-    using this in a class whose metaclass doesn't support active descriptors,
-    such as when you're not deriving from a standard PEAK base class.)
-    """
-
-    kw.setdefault('doc', 'New %s' % obtype)
-    return Once( lambda s,d,a: importObject(obtype)(), **kw)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 def Copy(obj, **kw):
 
-    """One-time binding of a copy of 'obj'
-
-    Usage::
-
-        class someClass(binding.Component):
-
-            myDictAttr = binding.Copy( {'foo': 2} )
-
-            myListAttr = binding.Copy( [1,2,'buckle your shoe'] )
-
-    The 'myDictAttr' and 'myListAttr' will become per-instance copies of the
-    supplied initial values on the first attempt to access them from an
-    instance of 'someClass'.
-
-    This is basically syntactic sugar for 'Once' to create copies using
-    the Python 'copy.copy()' function.  The same rules apply as for
-    'Once' about whether the 'name' parameter is required.  (That is, you need
-    it if you're using this in a class whose metaclass doesn't support
-    active descriptors, such as when you're not deriving from a standard PEAK
-    base class.)
-    """
-
+    """DEPRECATED: Use 'Make(lambda: copy(obj))' or 'Make(lambda: expr)'"""
 
     from copy import copy
-    return Once(
-        (lambda s,d,a: copy(obj)), **kw
+    return Make(
+        lambda s,d,a: copy(obj), **kw
     )
-
-
-
-
-
-
-
-
-
-
 
 
 class AttributeClass(type):
@@ -275,17 +285,72 @@ class AttributeClass(type):
 
 
 
-
-
-
-
-
-
-
-
-
-
 class Attribute(Descriptor):
+    """Descriptor for Component Attribute Bindings
+
+    'Attribute' is a 'Descriptor' with additional features to make component
+    interconnection easier.  Specifically, 'Attribute' adds the ability to
+    automatically adapt computed or assigned values to a specific interface,
+    and the ability to automatically "suggest" to an assigned value that the
+    containing object should become its parent component.  In addition,
+    'Attribute' has various metadata attributes that can be read by a
+    containing class, to enable various features such as "offering" the
+    attribute as a supplier of a particular interface or configuration key.
+
+    In addition, if an 'Attribute' is placed in a 'binding.Component' subclass
+    (or any class whose metaclass derives from 'binding.Activator'), it will
+    automatically discover its 'attrName' from the class, so that you don't
+    have to explicitly supply it.
+
+    'Attribute' is primarily an abstract base class; you will ordinarily use
+    'Make', 'Obtain', 'Require', or 'Delegate' instead.  However, all of those
+    subclasses accept the same keyword arguments, and have the same basic
+    lazy initialization and caching behavior.  They differ only in *how* they
+    compute the attribute value, and in their constructors' positional arguments.
+
+    In addition to the attributes defined by the 'Descriptor' base class,
+    'Attribute' instances also have the following attributes, which may be
+    overridden in subclasses, or by supplying constructor keyword arguments:
+
+        'offerAs' -- A sequence of configuration keys under which the attribute
+        should be registered.  This tells the containing 'Component' class
+        to offer the attribute's value to child components when they look up
+        any of the specified configuration keys.  Values in the supplied
+        sequence will be adapted to the 'config.IConfigKey' interface.  Default
+        value: an empty list.  (Note that this attribute has no effect unless
+        the 'Attribute' is placed in a 'binding.Component' subclass.)
+
+        'uponAssembly' -- A flag indicating whether the attribute should be
+        initialized as soon as its containing component is part of a complete
+        component hierarchy.  Default value: False.  (Note that this attribute
+        has no effect unless the 'Attribute' is placed in a 'binding.Component'
+        subclass.)
+
+        'doc' -- A docstring, used to give an appropriate representation of the
+        attribute when it's rendered by 'pydoc' or the Python 'help()'
+        function.
+
+        'adaptTo' -- the interface that values of this attribute should be
+        adapted to, or 'None'.  If not 'None', then whenever the attribute is
+        set (or its 'computeValue()' result is cached), the value will be
+        adapted to this interface before being stored.  If adaptation fails,
+        a 'NotImplementedError' will be raised.  (Note that this behavior is
+        implemented by 'Attribute.onSet()'; if you override the default
+        'onSet()', this adaptation will not take place unless your replacement
+        does it.)
+
+        'suggestParent' -- should assigned values be informed that they are
+        being attached to the containing component?  This value defaults to
+        'True', so you should set it to 'False' if you do not want the
+        attachment to happen.  If 'True', then whenever the attribute is set
+        (or its 'computeValue()' result is cached), 'suggestParentComponent()'
+        will be called to let the value know that the containing component may
+        be the value's parent component, and what attribute name it is being
+        referenced by.  Note that this call happens *after* the value is first
+        adapted to the 'adaptTo' interface, if applicable, and is also
+        performed by 'Attribute.onSet()', so the same warning about overriding
+        'onSet()' applies here.
+    """
 
     __metaclass__ = AttributeClass
 
@@ -293,15 +358,26 @@ class Attribute(Descriptor):
         instancesProvide = [IActiveDescriptor]
     )   # also IGuardedDescriptor; declared in peak.security
 
+    # XXX Set up 'activateUponAssembly' to set the 'uponAssembly' attribute
+    # XXX This is for backward compatibility only, and should go away in a4
+
+    activateUponAssembly = Descriptor(
+        attrName = 'activateUponAssembly',
+        onSet = lambda o,a,v: setattr(o,'uponAssembly',v and 1 or 0) or v,
+        computeValue = lambda o,d,a: False
+    )
+
     offerAs = ()
-    activateUponAssembly = False
+    uponAssembly = False
     doc = None
-    adaptTo = permissionNeeded = None
+    adaptTo = None
     suggestParent = True
+
 
     def activateInClass(self,klass,attrName):
         setattr(klass, attrName, self._copyWithName(attrName))
         return self
+
 
     def _copyWithName(self, attrName):
         return Descriptor(
@@ -309,6 +385,7 @@ class Attribute(Descriptor):
             computeValue = self.computeValue,
             ofClass      = self.ofClass,
             onSet        = self.onSet,
+            noCache      = self.noCache,
             permissionNeeded = self.permissionNeeded
         )
 
@@ -325,6 +402,11 @@ class Attribute(Descriptor):
         if self.suggestParent:
             suggestParentComponent(obj, attrName, value)
         return value
+
+
+
+
+
 
     # The following methods only get called when an instance of this class is
     # used as a descriptor in a classic class or other class that doesn't
@@ -367,45 +449,127 @@ class Attribute(Descriptor):
         self.usageError()
 
 
-class Once(Attribute):
-    """One-time Properties
+class _MultiRecipe(protocols.Adapter):
 
-        Usage ('Once(callable)')::
+    """ADAPTER: Sequence(IRecipe) --> IRecipe"""
 
-            class someClass(object):
+    protocols.advise(
+        instancesProvide = [IRecipe],
+        asAdapterForProtocols = [protocols.sequenceOf(IRecipe)]
+    )
 
-                def anAttr(self, __dict__, attrName):
-                    return self.foo * self.bar
+    def __call__(self, component, instDict, attrName):
+        return tuple([ob(component,instDict,attrName) for ob in self.subject])
 
-                anAttr = Once(anAttr, attrName='anAttr')
 
-        When 'anInstanceOfSomeClass.anAttr' is accessed for the first time,
-        the 'anAttr' function will be called, and saved in the instance
-        dictionary.  Subsequent access to the attribute will return the
-        cached value.  Deleting the attribute will cause it to be computed
-        again on the next access.
+class _TypeAsRecipe(protocols.Adapter):
 
-        The 'attrName' argument is optional.  If not supplied, it will default
-        to the '__name__' of the supplied callable.  (So in the usage
-        example above, it could have been omitted.)
+    """ADAPTER: type | class --> IRecipe"""
 
-        'Once' is an "active descriptor", so if you place an
-        instance of it in a class which supports descriptor naming (i.e.,
-        has a metaclass derived from 'binding.Activator'), it will
-        automatically know the correct attribute name to use in the instance
-        dictionary, even if it is different than the supplied name or name of
-        the supplied callable.  However, if you place a 'Once' instance in a
-        class which does *not* support descriptor naming, and you did not
-        supply a valid name, attribute access will fail with a 'TypeError'."""
+    protocols.advise(
+        instancesProvide = [IRecipe],
+        asAdapterForTypes = [type, ClassType]
+    )
 
-    def __init__(self, computeValue, **kw):
-        self.computeValue = computeValue
-        kw.setdefault('attrName',getattr(computeValue, '__name__', None))
-        kw.setdefault('doc',
-            getattr(computeValue,'__doc__',None) or kw['attrName']
+    def __call__(self, component, instDict, attrName):
+        return self.subject()
+
+
+def _callableAsRecipe(func, protocol):
+    args, func = func.getPositionalArgs(), func.getCallable()
+    if len(args)==3:
+        return func
+    elif len(args)==1:
+        return lambda s,d,a: func(s)
+    elif not args:
+        return lambda s,d,a: func()
+
+protocols.declareAdapter(
+    _callableAsRecipe,
+    provides = [IRecipe],
+    forProtocols = [ISignature]
+)
+
+class _StringAsRecipe(protocols.Adapter):
+
+    """ADAPTER: string (import spec) --> IRecipe"""
+
+    protocols.advise(
+        instancesProvide = [IRecipe],
+        asAdapterForTypes = [str]
+    )
+
+    def __call__(self, component, instDict, attrName):
+        return adapt(importString(self.subject), IRecipe)(
+            component, instDict, attrName
         )
-        super(Once,self).__init__(**kw)
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class Make(Attribute):
+
+    """'Make(recipe)' - Construct a value and cache it
+
+    Usage examples::
+
+        class MyComponent(binding.Component):
+
+            # this makes a new dictionary in each MyComponent instance
+            aDict = binding.Make(dict)
+
+            # this makes an instance of 'thing.Thing' in each MyComponent
+            aThing = binding.Make("things.Thing")
+
+            # 1-argument functions are called with the MyComponent instance
+            someAttr = binding.Make(lamdba self: self.otherAttr * 2)
+
+            # Types and no-argument functions are just called
+            otherAttr = binding.Make(lambda: 42)
+
+    'Make' accepts a 'binding.IRecipe' (or object that's adaptable to one), and
+    uses it to compute the attribute's value.  See the docs for 'Descriptor'
+    and 'Attribute' for the remaining semantics of this attribute type.
+
+    XXX need more docs for adaptations to 'IRecipe'
+    """
+
+    def __init__(self, recipe, **kw):
+        kw.setdefault('attrName',
+            getattr(recipe, '__name__', None)
+        )
+        kw.setdefault('doc',
+            getattr(recipe,'__doc__',None) or kw['attrName']
+        )
+        self.computeValue = adapt(recipe, IRecipe)
+        super(Make,self).__init__(**kw)
+
+
+Once = New = Make   # XXX DEPRECATED, backward compatibility
 
 
 class classAttr(object):

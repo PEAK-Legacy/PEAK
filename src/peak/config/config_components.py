@@ -464,7 +464,7 @@ class ConfigurationRoot(Component):
         return pm
 
     __instance_offers__ = Once(__instance_offers__,
-        offerAs=[IPropertyMap], activateUponAssembly = True
+        offerAs=[IPropertyMap], uponAssembly = True
     )
 
     iniFiles = ( ('peak','peak.ini'), )

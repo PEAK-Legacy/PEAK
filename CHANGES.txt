@@ -2,6 +2,52 @@ Fixes and Enhancements since Version 0.5 alpha 2
 
  Changed, Enhanced, or Newly Deprecated Features
 
+ - Added 'binding.Require', 'binding.Obtain', 'binding.Make', and
+   'binding.Delegate'.  *ALL* other binding types are now DEPRECATED, and will
+   go away before 0.5 beta is released:
+
+   'requireBinding("info")' -- use 'Require("info")'
+
+   'delegateTo("attr")' -- use 'Delegate("attr")'
+
+   'New(type)' -- use 'Make(type)'
+
+   'New("module.type")' -- use 'Make("module.type")'
+
+   'bindTo(key)' -- use 'Obtain(key)'
+
+   'Constant(value)' -- use 'Make(lambda: value)'
+
+   'Acquire(key)' -- use 'Obtain(key, offerAs=[key])'
+
+   'Copy(value)' -- use 'Make(lambda: <expr to copy value>)'
+
+   'whenAssembled(func)' -- use 'Make(func, uponAssembly=True)'
+
+   'bindSequence(key1,key2,...)' -- use 'Obtain([key1,key,...])'
+
+   'bindToProperty(x,y)' -- use 'Obtain(PropertyName(x),default=y)'
+
+   'bindToParent()' -- use 'Obtain("..")'
+
+   'bindToSelf()'  -- use 'Obtain(".")'
+
+   'bindToUtilities()' -- no replacement; let me know if you're using this.
+
+   Note that 'Make' and 'Obtain' also support sequences of recipes and keys,
+   and in those cases will produce a sequence of the results from those recipes
+   or keys.  Also, 'Make' will accept no-argument and one-argument callables,
+   where 'Once' always required three-argument functions.  This should make it
+   a lot easier to write short binding functions.
+
+   Also, note that the 'activateUponAssembly' keyword is now 'uponAssembly',
+   and 'isVolatile' is now 'noCache'.  (The old names will work as keyword
+   arguments until the alpha 4 development cycle begins.)  The
+   'binding.IActiveDescriptor' interface also changed as a result of this.
+   Last, but not least, a 'binding.IRecipe' interface was added, to support the
+   new 'binding.Make' type.
+
+
  - Added a 'lockName' attribute to 'runnning.AdaptiveTask', and a 'LockURL'
    setting to its ZConfig schema.  This allows a lockfile URL to be specified
    for adaptive tasks that need exclusive access to some resource while
@@ -53,19 +99,6 @@ Fixes and Enhancements since Version 0.5 alpha 2
    arguments to 'IComponentKey', to speed lookups at runtime, and to ensure
    that errors due to an unusable parameter type occur at class creation time
    instead of waiting until lookup time.
-
- - The following 'binding' forms are now DEPRECATED, and will go away before
-   0.5 beta is released:
-
-   'bindSequence(key1,key2,...)' -- use 'bindTo([key1,key,...])'
-
-   'bindToProperty(x,y)' -- use 'bindTo(PropertyName(x),default=y)'
-
-   'bindToParent()' -- use 'bindTo("..")'
-
-   'bindToSelf()'  -- use 'bindTo(".")'
-
-   'bindToUtilities()' -- no replacement; let me know if you're using this.
 
  - There's a new 'peak.storage.files' module, with handy classes like
    'EditableFile'.  'EditableFile' is a class that lets you edit the contents

@@ -5,7 +5,7 @@ from peak.config.interfaces import IConfigurable, IConfigSource
 from peak.api import NOT_GIVEN
 
 __all__ = [
-    'IComponentFactory', 'IBindingNode', 'IComponent',
+    'IComponentFactory', 'IBindingNode', 'IComponent', 'IRecipe',
     'IBindableAttrs', 'IComponentKey', 'IAttachable', 'IActiveDescriptor'
 ]
 
@@ -24,14 +24,14 @@ class IComponentKey(Interface):
         a value."""
 
 
+class IRecipe(Interface):
 
+    """3-argument callable that returns a value"""
 
+    def __call__(obj, instDict, attrName):
+        """Return a value for the attribute 'attrName' of 'obj'
 
-
-
-
-
-
+        'instDict' is the instance dictionary ('__dict__') of 'obj'."""
 
 
 
@@ -142,7 +142,7 @@ class IActiveDescriptor(Interface):
         """Sequence of config keys that this attribute binding offers"""
     )
 
-    activateUponAssembly = Attribute(
+    uponAssembly = Attribute(
         """Activate this attribute binding when object knows all its parents"""
     )
 

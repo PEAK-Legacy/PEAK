@@ -16,7 +16,7 @@ from peak.util.imports import importString
 
 
 __all__ = [
-    'Base', 'Component', 'whenAssembled',
+    'Base', 'Component', 'whenAssembled', 'Obtain', 'Require',
     'bindTo', 'requireBinding', 'bindSequence', 'bindToParent', 'bindToSelf',
     'getRootComponent', 'getParentComponent', 'lookupComponent',
     'acquireComponent', 'notifyUponAssembly',
@@ -81,8 +81,8 @@ def getComponentPath(component, relativeTo=None):
 
 
 def Constant(value, **kw):
-    """Supply a constant as a property or utility"""
-    return Once(lambda s,d,a: value, **kw)
+    """DEPRECATED: Use 'Make(lambda: value)' instead"""
+    return Make(lambda: value, **kw)
 
 
 class ModuleAsNode(object):
@@ -408,18 +408,29 @@ class ConfigFinder(object):
 
 
 
-class bindTo(Attribute):
+class Obtain(Attribute):
 
-    """Automatically look up and cache a relevant component
+    """'Obtain(componentKey,[default=value])' - finds/caches a needed component
 
-        Usage::
+    Usage examples::
 
-            class someClass(binding.Component):
+        class someClass(binding.Component):
 
-                thingINeed = binding.bindTo("path/to/service")
+            thingINeed = binding.Obtain("path/to/service")
+            otherThing = binding.Obtain(IOtherThing)
+            aProperty  = binding.Obtain(PropertyName('some.prop'), default=42)
 
-        'someClass' can then refer to 'self.thingINeed' instead of
-        calling 'self.lookupComponent("path/to/service")' repeatedly.
+    'someClass' instances can then refer to their attributes, such as
+    'self.thingINeed', instead of repeatedly calling
+    'self.lookupComponent(someKey)'.
+
+    The initial argument to the 'Obtain' constructor must be adaptable to
+    'binding.IComponentKey'.  If a 'default' keyword argument is supplied,
+    it will be used as the default in case the specified component key is not
+    found.
+
+    XXX need to document IComponentKey translations somewhere... probably
+        w/IComponentKey
     """
 
     default = NOT_GIVEN
@@ -435,22 +446,11 @@ class bindTo(Attribute):
         return self.targetName.findComponent(obj, self.default)
 
 
-
-
-
-
-
-
-
-
-
-
-
-
+bindTo = Obtain     # XXX DEPRECATED
 
 
 def bindSequence(*targetNames, **kw):
-    """DEPRECATED: use binding.bindTo([key1,key2,...])"""
+    """DEPRECATED: use binding.Obtain([key1,key2,...])"""
     return bindTo(targetNames, **kw)
 
 
@@ -473,8 +473,8 @@ class SequenceFinder(object):
 
 
 def whenAssembled(func, **kw):
-    """'Once' function with 'activateUponAssembly' flag set"""
-    kw['activateUponAssembly'] = True
+    """DEPRECATED: use 'Make(func, uponAssembly=True)'"""
+    kw['uponAssembly'] = True
     return Once(func, **kw)
 
 
@@ -490,62 +490,62 @@ def whenAssembled(func, **kw):
 
 
 
-def delegateTo(delegateAttr, **kw):
+def Delegate(delegateAttr, **kw):
     """Delegate attribute to the same attribute of another object
 
     Usage::
 
         class PasswordFile(binding.Component):
-            shadow = binding.bindTo('config:etc.shadow/')
-            checkPwd = changePwd = binding.delegateTo('shadow')
+            shadow = binding.Obtain('config:etc.shadow/')
+            checkPwd = changePwd = binding.Delegate('shadow')
 
     The above is equivalent to this longer version::
 
         class PasswordFile(binding.Component):
-            shadow = binding.bindTo('config:etc.shadow/')
-            checkPwd = binding.bindTo('shadow/checkPwd')
-            changePwd = binding.bindTo('shadow/changePwd')
+            shadow = binding.Obtain('config:etc.shadow/')
+            checkPwd = binding.Obtain('shadow/checkPwd')
+            changePwd = binding.Obtain('shadow/changePwd')
 
-    Because 'delegateTo' uses the attribute name being looked up, you do not
+    Because 'Delegate' uses the attribute name being looked up, you do not
     need to create a separate binding for each attribute that is delegated,
-    as you do when using 'bindTo()'."""
+    as you do when using 'Obtain()'."""
 
-    return Once(
+    return Make(
         lambda s,d,a: getattr(getattr(s,delegateAttr),a), **kw
     )
 
+delegateTo = Delegate   # XXX DEPRECATED; backward compat.
+
 
 def Acquire(key, **kw):
-    """Provide a utility or property, but look it up if not supplied
-
-    'key' must be a configuration key (e.g. an Interface or a PropertyName).
-    If the attribute defined by this binding is not set, it will be looked up
-    by finding the appropriate utility or property.  The attribute will also
-    be registered as a source of that utility or property for child components.
-    This allows you to easily override the configuration of the utility or
-    property within a particular component subtree, simply by setting the
-    attribute (e.g. via a constructor keyword)."""
-
+    """DEPRECATED: use Obtain(key, offerAs=[key])"""
     key = adapt(key,IConfigKey)
     kw['offerAs'] = [key]   # XXX should check that kwarg wasn't supplied
-    return bindTo(key,**kw)
+    return Obtain(key,**kw)
+
+
+
+
+
+
+
 
 
 def bindToParent(level=1, **kw):
-    """DEPRECATED: use binding.bindTo('..')"""
-    return bindTo('/'.join(['..']*level), **kw)
+    """DEPRECATED: use binding.Obtain('..')"""
+    return Obtain('/'.join(['..']*level), **kw)
 
 def bindToSelf(**kw):
-    """DEPRECATED: use binding.bindTo('.')"""
-    return binding.bindTo('.', **kw)
+    """DEPRECATED: use binding.Obtain('.')"""
+    return Obtain('.', **kw)
 
 def bindToProperty(propName, default=NOT_GIVEN, **kw):
-    """DEPRECATED: use binding.bindTo(PropertyName(propName))"""
+    """DEPRECATED: use binding.Obtain(PropertyName(propName))"""
     kw['default'] = default
     return binding.bindTo(PropertyName(propName), **kw)
 
 
-class requireBinding(Attribute):
+class Require(Attribute):
 
     """Placeholder for a binding that should be (re)defined by a subclass"""
 
@@ -562,13 +562,13 @@ class requireBinding(Attribute):
             % (obj.__class__.__name__, attrName, self.description)
         )
 
+requireBinding = Require    # XXX DEPRECATED
+
 
 def bindToUtilities(iface, **kw):
     """DEPRECATED: bind list of all 'iface' utilities above the component"""
 
     return Once(lambda s,d,a: list(config.findUtilities(s,iface)), **kw)
-
-
 
 
 
@@ -851,7 +851,7 @@ class Component(_Base):
         map(aa.update, getInheritedRegistries(klass, '__attrsToBeAssembled__'))
 
         for attrName, descr in klass.__class_descriptors__.items():
-            notify = getattr(descr,'activateUponAssembly',False)
+            notify = getattr(descr,'uponAssembly',False)
             if notify: aa[attrName] = True
 
         return aa
