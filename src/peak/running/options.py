@@ -93,26 +93,26 @@ class AbstractOption:
             type=(self.type is not NOT_GIVEN and "string" or None),*options
         )
 
-    def convert(self,value):
+    def convert(self,option,value):
         if self.value is NOT_GIVEN:
-            return self.type(value)
+            try:
+                return self.type(value)
+            except ValueError:
+                from commands import InvocationError
+                raise InvocationError(
+                    "%s: %r is not a valid %s" % (option,value,self.metavar)
+                )
         else:
             return self.value
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
+    def check_repeat(self,option,parser):
+        if not self.repeatable:
+            parser.use_counts.setdefault(self,0)
+            parser.use_counts[self]+=1
+            if parser.use_counts[self]>1:
+                from commands import InvocationError
+                raise InvocationError("%s can only be used once" % option)
 
 
 
@@ -127,14 +127,16 @@ class Set(AbstractOption):
     repeatable = False
 
     def callback(self, option, opt, value, parser, attrname):
-        setattr(parser.values, attrname, self.convert(value))
+        self.check_repeat(option,parser)
+        setattr(parser.values, attrname, self.convert(option,value))
 
 
 class Add(AbstractOption):
     """Add the argument value or a constant to the attribute"""
 
     def callback(self, option, opt, value, parser, attrname):
-        value = getattr(parser.values, attrname) + self.convert(value)
+        self.check_repeat(option,parser)
+        value = getattr(parser.values, attrname) + self.convert(option,value)
         setattr(parser.values, attrname, value)
 
 
@@ -142,33 +144,32 @@ class Append(AbstractOption):
     """Append the argument value or a constant to the attribute"""
 
     def callback(self, option, opt, value, parser, attrname):
-        getattr(parser.values, attrname, value).append(self.convert(value))
+        self.check_repeat(option,parser)
+        getattr(parser.values, attrname, value).append(
+            self.convert(option,value)
+        )
 
 
 class Handler(AbstractOption):
     """Invoke a handler method when the option appears on the command line"""
 
     def callback(self, option, opt, value, parser, attrname):
+        self.check_repeat(option,parser)
         self.function(
-            parser.values, parser, opt, self.convert(value), parser.rargs
+            parser.values,parser,opt,self.convert(option,value),parser.rargs
         )
-
-
-
-
-
-
 
 
 
 
 def parse(ob,args):
     parser = make_parser(ob)
+    parser.use_counts = {}
     opts, args = parser.parse_args(args, ob)
     return args
 
 
-def exit_parser(status=0, msg=None):   
+def exit_parser(status=0, msg=None):
     if msg:
         from commands import InvocationError
         raise InvocationError(msg.strip())
@@ -186,18 +187,20 @@ def make_parser(ob):
     optinfo = OptionRegistry[ob,].items()
     optmap = dict([(k,opt)for k,(a,opt) in optinfo if opt is not None])
     optsused = {}
+    optlist = []
     for optname,(attrname,option) in optinfo:
         if option in optsused or option is None:
             continue
-        parser.add_option( option.makeOption(attrname,optmap) )
+        popt = option.makeOption(attrname,optmap)
+        optlist.append( (option.sortKey, str(popt), popt) )
         optsused[option] = True
-
+    optlist.sort()
+    for k1,k2,popt in optlist:
+        parser.add_option(popt)
     return parser
 
 def get_help(ob):
     return make_parser(ob).format_help().strip()
-
-
 
 
 

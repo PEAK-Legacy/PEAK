@@ -17,12 +17,10 @@ For our examples, we'll need to use the PEAK API and the ``options`` module::
 
 TODO:
 
-* Test ``Add`` and ``Append`` operations
-* Track option use counts, and fail if repeated when not ``repeatable`` 
-* Help should be sorted by ``sortKey``
+* Test ``Add`` operations
 * Set program name, usage message, description, version
-* Integrate with ``commands`` framework
 * Option groups; sort groups by ``sortKey``
+* Integrate with ``commands`` framework
 * Help formatter column setting, style setting
 * Allow use of interspersed args+options
 * Allow multi-valued args (``nargs>1``)?
@@ -60,7 +58,7 @@ Let's take a look at some usage examples::
     >>> opt_q = options.Set('-q', '--quiet', value=False, help="Be quiet")
     >>> opt_f = options.Set('-f', '--file', type=str, metavar="FILENAME")
     >>> opt_p = options.Set('-p', type=int, metavar="PORT", help="Set port")
-    >>> opt_L = options.Append('-L', type=str, metavar="LIBPATH")
+    >>> opt_L = options.Append('-L', type=str, metavar="LIBPATH", sortKey=99)
     >>> opt_d = options.Add('-d', type=int, help="Add debug flag")
 
 All of these option constructors take the same arguments: one or more option
@@ -71,7 +69,9 @@ names, followed by some combination of these keyword arguments:
     If supplied, this means that the option takes an argument, and the value
     to be set, added, or appended to the attribute will be computed by calling
     ``supplied_type(argument_string)`` when the option appears in a command
-    line.
+    line.  If the callable raises a ``ValueError``, the error will be converted
+    to an ``InvocationError`` saying that the value isn't valid.  All other
+    errors propagate to the caller.
 
 ``value``
     If supplied, this means that the option does not take an argument, and the
@@ -170,15 +170,22 @@ By default, options defined in a base class are inherited by subclasses::
       -v, --verbose  Be verbose
 
     >>> class Bar(Foo):
-    ...     [options.option_handler('-z',type=int,help="Zapify!")]
+    ...     binding.metadata(libs = opt_L)
+    ...
+    ...     [options.option_handler(
+    ...         '-z', type=int, help="Zapify!", repeatable=False)
+    ...     ]
     ...     def zapify(self, parser, optname, optval, remaining_args):
     ...         print "Zap!", optval
 
-    >>> print options.get_help(Bar())
+    >>> print options.get_help(Bar())   # doctest: +NORMALIZE_WHITESPACE
     options:
       -q, --quiet    Be quiet
       -v, --verbose  Be verbose
       -z INT         Zapify!
+      -L LIBPATH
+
+    # -L is last because its sortKey is 99
 
 But, you can selectively reject inheritance of individual options, by passing
 their option name(s) to ``options.reject_inheritance()``::
@@ -188,8 +195,8 @@ their option name(s) to ``options.reject_inheritance()``::
 
     >>> print options.get_help(Baz())
     options:
-      -q         Be quiet
       --verbose  Be verbose
+      -q         Be quiet
 
 Or, you can reject all inherited options and start from scratch, by calling
 ``options.reject_inheritance()`` with no arguments::
@@ -208,32 +215,73 @@ Parsing
 Let's go ahead and parse some arguments, using ``options.parse(ob, argv)``,
 which takes the target object and a list of input arguments.  The return
 value is a list of non-option arguments, and the target object's attributes
-are modified (or handler methods called) according to the input arguments::
+are modified (or handler methods called) according to the input arguments.
+
+
+No options or arguments::
 
     >>> foo = Foo(); options.parse(foo, [])
     []
     >>> foo.verbose
     0
+
+An option and an argument::
+
     >>> foo = Foo(); options.parse(foo, ['-v', 'q'])
     ['q']
     >>> foo.verbose
     1
+
+Two options::
+
     >>> foo = Foo(); options.parse(foo, ['-v', '-q'])
     []
     >>> foo.verbose
     0
+
+Repeating unrepeatable options::
+
+    >>> foo = Foo(); options.parse(foo, ['-v', '-q', '-v'])
+    Traceback (most recent call last):
+    ...
+    InvocationError: -v/--verbose can only be used once
+
+    >>> bar = Bar(); options.parse(bar, ['-z','20', '-z', '99'])
+    Traceback (most recent call last):
+    ...
+    InvocationError: -z can only be used once
+
+Using an invalid value for the given type converter::
+
+    >>> bar = Bar(); options.parse(bar, ['-z','foobly'])
+    Traceback (most recent call last):
+    ...
+    InvocationError: -z: 'foobly' is not a valid INT
+
+Option handler called in the middle of parsing::
 
     >>> bar = Bar(); options.parse(bar, ['-z','20', '-v', 'xyz'])
     Zap! 20
     ['xyz']
     >>> bar.verbose
     1
-    
+
+``Append`` option with multiple values, specified in different ways::
+
+    >>> bar = Bar(); bar.libs = []
+    >>> options.parse(bar, ['-Labc','-L', 'xyz', '123'])
+    ['123']
+    >>> bar.libs
+    ['abc', 'xyz']
+
+Unrecognized option::
+
     >>> foo = Foo()
     >>> options.parse(foo, ['--help'])
     Traceback (most recent call last):
     ...
     InvocationError: ... no such option: --help
+
 
 TODO: more parsing examples, e.g. showing repeat
 
@@ -246,15 +294,16 @@ you have to create your own (unless you're using a ``commands`` framework
 base class)::
 
     >>> class Test(Bar):
+    ...     options.reject_inheritance('-L')
     ...     [options.option_handler('--help',value=None,help="Show help")]
     ...     def show_help(self, parser, optname, optval, remaining_args):
     ...         print parser.format_help().strip()
     >>> test = Test()
     >>> args = options.parse(test, ['--help'])
     options:
+      --help         Show help
       -q, --quiet    Be quiet
       -v, --verbose  Be verbose
-      --help         Show help
       -z INT         Zapify!
 
 (Of course, for command objects, the help should actually be sent to the
