@@ -264,7 +264,7 @@ class SQLInteractor(binding.Component):
 
         while c.nextset():
             print >>stdout
-            nr = shower(r, opts, stdout)
+            nr = shower(c, opts, stdout)
             if not opts.has_key('-f'):
                 print >>stdout, "(%d rows)" % nr
 
@@ -286,7 +286,8 @@ class SQLInteractor(binding.Component):
         nr = 0
         for r in c._cursor.description:
             w = r[2]
-            if w <= 0: w = 20 # XXX
+            if not w or w <= 0: w = r[3]
+            if not w or w <= 0: w = 20 # XXX
 
             t.append(self.toStr(r[0], w)); d.append('-' * w); l.append(w)
 
