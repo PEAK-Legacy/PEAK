@@ -85,6 +85,42 @@ def Constant(provides, value, doc=None):
     return Once(lambda s,d,a: value, provides=provides, doc=doc)
 
 
+class ModuleAsNode(object):
+
+    protocols.advise(
+        instancesProvide=[IBindingNode],
+        asAdapterForTypes=[ModuleType],
+    )
+
+    def __init__(self,ob,protocol):
+        self.module = ob
+
+    def getParentComponent(self):
+        m = '.'.join(self.module.__name__.split('.')[:-1])
+        if m: return importString(m)
+        return None
+
+    def getComponentName(self):
+        return self.module.__name__.split('.')[-1]
+
+
+    # XXX it's not clear if we really need the below, since
+    # XXX they are not currently used with an adaptation
+
+    def _getConfigData(self, forObj, configKey):
+        return NOT_FOUND
+
+    def notifyUponAssembly(self,child):
+        child.uponAssembly()
+
+
+
+
+
+
+
+
+
 def getParentComponent(component):
 
     """Return parent of 'component', or 'None' if root or non-component"""
@@ -94,9 +130,10 @@ def getParentComponent(component):
 
     except AttributeError:
 
-        if isinstance(component,ModuleType):
-            m = '.'.join(component.__name__.split('.')[:-1])
-            if m: return importString(m)
+        component = adapt(component,IBindingNode,None)
+
+        if component is not None:
+            return component.getParentComponent()
 
     else:
         return gpc()
@@ -111,11 +148,15 @@ def getComponentName(component):
 
     except AttributeError:
 
-        if isinstance(component,ModuleType):
-            return component.__name__.split('.')[-1]
+        component = adapt(component,IBindingNode,None)
+
+        if component is not None:
+            return component.getComponentName()
 
     else:
         return gcn()
+
+
 
 
 
