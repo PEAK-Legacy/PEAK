@@ -6,7 +6,7 @@ from peak.api import NOT_FOUND
 __all__ = ['Once', 'New', 'Copy', 'OnceClass']
 
 
-def New(obtype, name=None, provides=None):
+def New(obtype, name=None, provides=None, doc=None):
 
     """One-time binding of a new instance of 'obtype'
 
@@ -29,7 +29,7 @@ def New(obtype, name=None, provides=None):
     such as when you're not deriving from a standard PEAK base class.)
     """
 
-    return Once( (lambda s,d,a: obtype()), name, provides)
+    return Once( (lambda s,d,a: obtype()), name, provides, doc)
 
 
 
@@ -39,7 +39,7 @@ def New(obtype, name=None, provides=None):
 
 
 
-def Copy(obj, name=None, provides=None):
+def Copy(obj, name=None, provides=None, doc=None):
 
     """One-time binding of a copy of 'obj'
 
@@ -65,7 +65,7 @@ def Copy(obj, name=None, provides=None):
     
 
     from copy import copy
-    return Once( (lambda s,d,a: copy(obj)), name, provides)
+    return Once( (lambda s,d,a: copy(obj)), name, provides, doc)
 
 
 
@@ -116,10 +116,10 @@ class Once(ActiveDescriptor):
     attrName = None
     provides = None
     
-    def __init__(self, func, name=None, provides=None):
+    def __init__(self, func, name=None, provides=None, doc=None):
         self.computeValue = func
-        self.attrName = name or getattr(func,'__name__',None)
-        self._provides = provides
+        self.attrName = self.__name__ = name or getattr(func,'__name__',None)
+        self._provides = provides; self.__doc__ = doc or getattr(func,'__doc__','')
 
     def __get__(self, obj, typ=None):
     

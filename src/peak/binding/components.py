@@ -343,11 +343,11 @@ class bindTo(Once):
     singleValue = True
 
 
-    def __init__(self,targetName,provides=None):
+    def __init__(self,targetName,provides=None,doc=None):
 
         self.targetNames = (targetName,)
         self._provides=provides
-
+        self.__doc__ = doc or ("binding.bindTo(%r)" % targetName)
 
     def computeValue(self, obj, instanceDict, attrName):
 
@@ -389,6 +389,7 @@ class bindSequence(bindTo):
     def __init__(self, *targetNames, **kw):
         self.targetNames = targetNames
         self._provides = kw.get('provides')
+        self.__doc__ = kw.get('doc',("binding.bindSequence%s" % `targetNames`))
 
 
 
@@ -407,8 +408,7 @@ class bindSequence(bindTo):
 
 
 
-
-def bindToParent(level=1,provides=None):
+def bindToParent(level=1,provides=None,doc=None):
 
     """Look up and cache a reference to the nth-level parent component
 
@@ -431,10 +431,10 @@ def bindToParent(level=1,provides=None):
 
         return obj
 
-    return Once(computeValue, provides=provides)
+    return Once(computeValue, provides=provides, doc=doc)
 
 
-def bindToSelf(provides=None):
+def bindToSelf(provides=None, doc=None):
 
     """Cached reference to the 'self' object
 
@@ -444,7 +444,7 @@ def bindToSelf(provides=None):
     can refer to 'self.delegateForInterfaceX.someMethod()', and have
     'delegateForInterfaceX' be a 'bindToSelf()' by default."""
 
-    return bindToParent(0,provides)
+    return bindToParent(0,provides,doc)
 
 
 
@@ -453,10 +453,11 @@ class requireBinding(Once):
 
     """Placeholder for a binding that should be (re)defined by a subclass"""
 
-    def __init__(self,description="",provides=None):
+    def __init__(self,description="",provides=None,doc=None):
         self.description = description
         self._provides = provides
-    
+        self.__doc__ = doc or ("binding.requireBinding: %s" % description)
+
     def computeValue(self, obj, instanceDict, attrName):
     
         raise NameError("Class %s must define %s; %s"
@@ -464,11 +465,10 @@ class requireBinding(Once):
         )
 
 
-def bindToUtilities(iface):
-    return Once(lambda s,d,a: [u for u in findUtilities(s,iface,s)])
-
-
-
+def bindToUtilities(iface, provides=None, doc=None):
+    return Once(lambda s,d,a: [u for u in findUtilities(s,iface,s)],
+        provides=provides, doc=doc
+    )
 
 
 
