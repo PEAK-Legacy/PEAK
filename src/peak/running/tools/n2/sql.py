@@ -75,7 +75,7 @@ class SQLInteractor(binding.Component):
         
         cmd = cmd.lower()
         if cmd[0] == '\\' or cmd in (
-            'go','commit','abort','rollback','reset','quit','help'
+            'go','commit','abort','rollback','help'
         ):
             if cmd[0] == '\\':
                 cmd = cmd[1:]
@@ -194,17 +194,24 @@ class SQLInteractor(binding.Component):
 
             
     def command_names(self):
-        return [k[4:].replace('_','-')
-            for k in dir(self) if k.startswith('cmd_')]
+        l = [k for k in dir(self) if k.startswith('cmd_')]
+        l2 = [k[4:].replace('_','-') for k in l
+            if getattr(getattr(self, k), 'noBackslash', False)]
+        l = ['\\'+k[4:].replace('_','-') for k in l]
+        l.sort(); l2.sort()
+
+        return l2 + l
 
 
 
     class cmd_go(ShellCommand):
-        """go [-d delim] [-f format] [-h] -- submit current input
+        """go [-d delim] [-m style] [-h] -- submit current input
 -d delim\tuse specified delimiter
--f format\tuse specified format (one of: horiz, vert, plain, python)
+-m style\tuse specified format (one of: horiz, vert, plain, python)
 -h\t\tsuppress header"""
 
+        noBackslash = True
+        
         args = ('d:f:h', 0, 0)
         
         def cmd(self, cmd, opts, stdout, **kw):
@@ -235,6 +242,8 @@ class SQLInteractor(binding.Component):
         """abort -- abort current transaction
 rollback -- abort current transaction"""
 
+        noBackslash = True
+
         args = ('', 0, 0)
         
         def cmd(self, cmd, **kw):
@@ -250,6 +259,8 @@ rollback -- abort current transaction"""
    
     class cmd_commit(ShellCommand):
         """commit -- commit current transaction"""
+
+        noBackslash = True
 
         args = ('', 0, 0)
         
@@ -278,15 +289,17 @@ rollback -- abort current transaction"""
 
 
 
-    class cmd_quit(ShellCommand):
-        """quit -- quit SQL interactor"""
+    class cmd_exit(ShellCommand):
+        """exit -- exit SQL interactor
+quit -- exit SQL interactor"""
             
         args = ('', 0, 0)
         
         def cmd(self, cmd, **kw):
             self.interactor.quit = True
 
-    cmd_quit = binding.New(cmd_quit)
+    cmd_quit = binding.New(cmd_exit)
+    cmd_exit = binding.New(cmd_exit)
 
 
 
@@ -427,6 +440,8 @@ rollback -- abort current transaction"""
     class cmd_help(ShellCommand):
         """help [cmd] -- help on commands"""
 
+        noBackslash = True
+
         args = ('', 0, 1)
 
         def cmd(self, stdout, stderr, args, **kw):
@@ -437,9 +452,9 @@ rollback -- abort current transaction"""
                 else:
                     print c.__doc__
             else:
-                print >>stdout, 'Available commands:\t(note, many require "\\" prefix)\n'
+                print >>stdout, 'Available commands:\n'
                 self.shell.printColumns(
-                    stdout, self.interactor.command_names(), sort=1)
+                    stdout, self.interactor.command_names(), sort=False)
 
     cmd_help = binding.New(cmd_help)
 
