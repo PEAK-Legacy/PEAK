@@ -469,7 +469,7 @@ def bindToUtilities(iface, provides=None, doc=None):
 
     """Binding to a list of all 'iface' utilities above the component"""
 
-    return Once(lambda s,d,a: [u for u in findUtilities(iface,s)],
+    return Once(lambda s,d,a: list(findUtilities(iface,s)),
         provides=provides, doc=doc
     )
 
