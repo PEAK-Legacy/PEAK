@@ -942,7 +942,7 @@ running non-PEAK WSGI applications.
 
 
 class CGIInterpreter(Bootstrap):
-    """Run an application as a CGI, by adapting it to IRerunnableCGI"""
+    """Run an application as a CGI, by adapting it to IWSGIApplication"""
 
     cgiWrapper = CGICommand
 
@@ -950,7 +950,7 @@ class CGIInterpreter(Bootstrap):
 Usage: peak CGI NAME_OR_URL arguments...
 
 Run NAME_OR_URL as a CGI application, by adapting it to the
-'running.IRerunnableCGI' interface, and then using a 'commands.CGICommand'
+'running.IWSGIApplication' interface, and then using a 'commands.CGICommand'
 to invoke it.
 """
 

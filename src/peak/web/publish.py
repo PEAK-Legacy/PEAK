@@ -262,7 +262,7 @@ class CGIPublisher(binding.Component):
     )
 
     # The fromApp method is registered as an adapter factory for
-    # arbitrary components to IRerunnableCGI, in peak.running.interfaces.
+    # arbitrary components to IWSGIApplication, in peak.running.interfaces.
     # If we registered it here, it wouldn't be usable unless peak.web
     # was already imported, which leads to bootstrap problems, at least
     # with very trivial web apps (like examples/trivial_web).
