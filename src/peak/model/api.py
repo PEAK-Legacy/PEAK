@@ -23,7 +23,7 @@ from UserList import UserList
 from peak.model.method_exporter import MethodExporter
 
 __all__ = [
-    'Model', 'MethodExporter', 'FeatureMC',
+    'Package', 'Model', 'MethodExporter', 'FeatureMC',
     'StructuralFeature', 'Field', 'Collection', 'Reference', 'Sequence',
     'Classifier','PrimitiveType','Enumeration','DataType','Element',
 ]
@@ -39,14 +39,14 @@ __all__ += allInterfaces
 
 
 
-class Model(binding.Base):
+class Package(binding.Base):
+    """Package of Element Classes"""
 
-    """Application class"""
 
-    def newElement(self,elementType,*args,**kw):
-        # XXX won't do dotted names
-        element = apply(getattr(self,elementType),args,kw)
-        return element
+class Model(Package):
+    """Model or Metamodel containing Packages or Element classes"""
+
+
 
 
 

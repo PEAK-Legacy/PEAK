@@ -10,7 +10,7 @@ class UMLTest(TestCase):
         global UMLClass
         from peak.metamodels.uml.Model import UMLClass
         self.m = m = UMLClass()
-        self.pkg = m.newElement('Package')
+        self.pkg = m.Package()
 
     def checkNameSet(self):
         pkg=self.pkg
@@ -19,7 +19,7 @@ class UMLTest(TestCase):
         
     def checkAdd(self):
         pkg = self.pkg
-        Class = self.m.newElement('Class')
+        Class = self.m.Class()
         assert not pkg.ownedElements
         pkg.addOwnedElements(Class)
         v = pkg.ownedElements
@@ -43,9 +43,9 @@ class QueryTests(TestCase):
 
     def setUp(self):
         self.m = m = UMLClass()
-        self.pkg = pkg = m.newElement('Package')
+        self.pkg = pkg = m.Package()
         pkg.name = 'SomePackage'
-        self.klass = klass = self.m.newElement('Class')
+        self.klass = klass = self.m.Class()
         klass.name = 'FooClass'
         pkg.addOwnedElements(klass)
         
