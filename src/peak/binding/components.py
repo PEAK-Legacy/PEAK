@@ -2,8 +2,9 @@
 
 from __future__ import generators
 from once import Once, New, OnceClass
-import meta
+from interfaces import *
 
+import meta
 
 from weakref import WeakValueDictionary
 
@@ -22,7 +23,6 @@ __all__ = [
     'acquireComponent', 'globalLookup', 'findUtility', 'findUtilities',
     'bindToUtilities', 'bindToProperty', 'iterParents',
 ]
-
 
 
 
@@ -244,7 +244,7 @@ _getNextPathComponent = dict( (
 
 
 
-def lookupComponent(component, name):
+def lookupComponent(name, component=None):
 
     """Lookup 'name' relative to 'component'
 
@@ -278,31 +278,33 @@ def lookupComponent(component, name):
         path segment.  '.' and '..' are interpreted the same as for the first
         path segment."""
 
+    return _lookupComponent(component, name)
+
+
+
+
+
+
+def _lookupComponent(component, name):
+
     if IConfigKey.isImplementedBy(name):
         return findUtility(name, component)
         
     parsedName = toName(name, ComponentName, 1)
 
-
-
-    # URL's and composite names must be handled globally
-
     if not parsedName.isCompound:
+        # URL's and composite names must be handled globally
         return globalLookup(name, component)
 
-    if not parsedName:
-        # empty name refers to self
+    if not parsedName:  # empty name refers to self
         return component
 
     parts = iter(parsedName)
-
-    attr = parts.next() # first part
+    attr = parts.next()                 # first part
     pc = _getFirstPathComponent(attr)
 
-    if pc:
-        ob = pc(component)
-    else:
-        ob = acquireComponent(attr,component)
+    if pc:  ob = pc(component)
+    else:   ob = acquireComponent(attr,component)
 
     resolved = []
     append = resolved.append
@@ -310,10 +312,8 @@ def lookupComponent(component, name):
     try:
         for attr in parts:
             pc = _getNextPathComponent(attr)
-            if pc:
-                ob = pc(ob)
-            else:
-                ob = getattr(ob,attr)
+            if pc:  ob = pc(ob)
+            else:   ob = getattr(ob,attr)
             append(attr)
 
     except AttributeError:
@@ -493,17 +493,19 @@ def bindToProperty(propName, default=NOT_GIVEN, provides=None, doc=None):
 class Meta(meta.AssertInterfaces, meta.ActiveDescriptors):
     pass
 
-
 class Base(object):
-
     """Thing that can be composed into a component tree, w/binding & lookups"""
 
+    __implements__ = IBindingAPI
     __metaclass__  = Meta
 
-    # use the global lookupComponent + getParentComponent functions as methods
-    
-    lookupComponent = lookupComponent
+    def __init__(self, parent=None, **kw):
+        if kw:
+            self.__dict__.update(kw)
+        if parent is not None:
+            self.setParentComponent(parent)
 
+    lookupComponent = _lookupComponent
 
     def setParentComponent(self,parent):
         self.__parentCell.set(parent)
@@ -515,7 +517,6 @@ class Base(object):
     def _getConfigData(self, configKey, forObj):
         return NOT_FOUND
 
-
     def __parentCell(s,d,a):
         cell = EigenCell()
         cell.set(None)
@@ -523,7 +524,6 @@ class Base(object):
         return cell
 
     __parentCell = Once(__parentCell)
-
 
     def hasBinding(self,attr):
         return attr in self.__dict__
@@ -587,12 +587,5 @@ class AutoCreated(Component):
     """
 
     __metaclass__ = AutoCreatable
-
-    def __init__(self, parent=None):
-
-        super(AutoCreated,self).__init__()
-
-        if parent is not None:
-            self.setParentComponent(parent)
 
 

@@ -58,19 +58,19 @@ class AbstractContext(Component):
     stateFactories = bindToProperty(STATE_FACTORIES,provides=STATE_FACTORIES)
 
 
-    def __init__(self, parent=None, **kw):
-        if kw:
-            self.__dict__.update(kw)
-        if parent is not None:
-            self.setParentComponent(parent)
-
-
     def close(self):
         pass
 
-
     def __del__(self):
         self.close()
+
+
+
+
+
+
+
+
 
 
 

@@ -12,16 +12,13 @@ class CacheBase(binding.AutoCreated):
 
     __implements__  = ICache
     
-    def __init__(self, parent=None):
-        super(CacheBase,self).__init__(parent)
-
 
 class WeakCache(CacheBase, WeakValueDictionary):
 
     """Keeps items in cache as long as they are in use elsewhere"""
 
-    def __init__(self, parent=None):
-        super(WeakCache,self).__init__(parent)
+    def __init__(self, *args, **kw):
+        super(WeakCache,self).__init__(*args, **kw)
         WeakValueDictionary.__init__(self)
 
 
@@ -31,6 +28,9 @@ class PermanentCache(CacheBase, dict):
     
     def __new__(klass, parent=None):
         return super(PermanentCache,klass).__new__(klass)
+
+
+
 
 
 
