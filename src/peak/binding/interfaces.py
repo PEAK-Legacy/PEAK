@@ -2,14 +2,15 @@
 
 from peak.interface import Interface, Attribute
 from peak.config.interfaces import IConfigurable, IConfigSource
+from peak.api import NOT_GIVEN
 
 __all__ = [
-    'IBindingFactory', 'IBindingSPI', 'IComponent',
-    'IBindingAttrs',
+    'IComponentFactory', 'IBindingNode', 'IComponent',
+    'IBindableAttrs',
 ]
 
 
-class IBindingFactory(Interface):
+class IComponentFactory(Interface):
 
     """Class interface for creating bindable components"""
 
@@ -23,7 +24,7 @@ class IBindingFactory(Interface):
         bindings."""
 
 
-class IBindingSPI(IConfigSource):
+class IBindingNode(IConfigSource):
 
     """Minimum requirements to join a component hierarchy"""
 
@@ -33,17 +34,16 @@ class IBindingSPI(IConfigSource):
     def getComponentName():
         """Return this component's name relative to its parent, or 'None'"""
 
+    def notifyUponAssembly(child):
+        """Call 'child.uponAssembly()' when component knows its root"""
 
 
 
-
-
-
-class IBindingAttrs(Interface):
+class IBindableAttrs(Interface):
 
     """Support for manipulating bindable attributes
 
-    peak.model's 'StructuralFeature' classes rely on this interface."""
+    (peak.model's 'StructuralFeature' classes rely on this interface.)"""
 
     def _getBindingFuncs(attrName, useSlot=False):
         """XXX"""
@@ -61,12 +61,31 @@ class IBindingAttrs(Interface):
         """Ensure that no binding for 'attr' is active"""
 
 
-class IComponent(IBindingSPI, IBindingAttrs, IConfigurable):
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class IComponent(IBindingNode, IBindableAttrs, IConfigurable):
 
     """API supplied by binding.Component and its subclasses"""
 
-    def lookupComponent(name):
-        """Look up a name in context - see 'binding.lookupComponent()'"""
+    def lookupComponent(name, default=NOT_GIVEN, creationName=None):
+        """Look up 'name' in context - see 'binding.lookupComponent()'"""
 
 
     def setParentComponent(parentComponent,componentName=None,suggest=False):
@@ -79,4 +98,26 @@ class IComponent(IBindingSPI, IBindingAttrs, IConfigurable):
 
         The component's 'componentName' will only be set if the parent is
         successfully set."""
+
+
+    def uponAssembly():
+        """Notify the component that its parents and root are known+fixed"""
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 

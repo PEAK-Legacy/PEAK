@@ -4,7 +4,7 @@ from __future__ import generators
 from peak.api import NOT_FOUND
 from peak.util.EigenData import EigenRegistry
 from peak.util.imports import importObject, importString
-from interfaces import IBindingFactory, IBindingSPI
+from interfaces import IComponentFactory
 from _once import *
 
 __all__ = [
@@ -66,7 +66,7 @@ def New(obtype, bindToOwner=None, name=None, provides=None, doc=None):
         factory = importObject(obtype)
 
         if bindToOwner or (
-            bindToOwner is None and IBindingFactory.isImplementedBy(factory)
+            bindToOwner is None and IComponentFactory.isImplementedBy(factory)
         ):
             return factory(s,a)
         else:

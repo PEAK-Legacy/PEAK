@@ -18,7 +18,7 @@ def InitialContext(parent, componentName=None, **options):
     to set up the context's name and attributes, just as with a normal
     PEAK component constructor.
 
-    This function implements the 'binding.IBindingFactory' interface, and
+    This function implements the 'binding.IComponentFactory' interface, and
     thus can be used as a factory for a 'binding.New()' attribute.  That
     is, you can do this::
 
@@ -32,10 +32,10 @@ def InitialContext(parent, componentName=None, **options):
     return spi.getInitialContext(parent, componentName, **options)
 
 
-from peak.binding.interfaces import IBindingFactory
-InitialContext.__implements__ = IBindingFactory
+from peak.binding.interfaces import IComponentFactory
+InitialContext.__implements__ = IComponentFactory
 
-del IBindingFactory
+del IComponentFactory
 
 
 

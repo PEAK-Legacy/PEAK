@@ -1,6 +1,6 @@
 from peak.interface import Interface, Attribute
 from peak.api import PropertyName
-from peak.binding.interfaces import IBindingFactory, IComponent
+from peak.binding.interfaces import IComponentFactory, IComponent
 import sys, os
 
 CLUSTER = PropertyName('peak.running.cluster').of(None)
@@ -52,7 +52,7 @@ class IExecutable(Interface):
 
     * 'IRerunnable' - supports I/O redirection, environment override,
       command line arguments, and returned exit level
-      
+
     * 'ICmdLineApp' - redirection and overrides are attempted via 'sys' and
       'os' but not guaranteed to work; 'run()' return value is used as
       exit level.
@@ -80,7 +80,7 @@ class IExecutable(Interface):
 
 
 
-class ICmdLineAppFactory(IBindingFactory, IExecutable):
+class ICmdLineAppFactory(IComponentFactory, IExecutable):
 
     """Class interface for creating ICmdLineApp components
 
@@ -378,7 +378,6 @@ class ITwistedReactor(IBasicReactor):
     The purpose of this interface in PEAK is to let a component ask for
     a Twisted reactor if it really needs one.
     """
-
 
 
 

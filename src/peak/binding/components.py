@@ -5,7 +5,7 @@ from peak.api import *
 
 from once import *
 from interfaces import *
-from weakref import WeakValueDictionary
+from weakref import WeakValueDictionary, ref
 from types import ModuleType
 from peak.naming.names import toName, AbstractName, COMPOUND_KIND
 from peak.naming.syntax import PathSyntax
@@ -23,7 +23,7 @@ __all__ = [
     'Base', 'Component', 'ComponentSetupWarning',
     'bindTo', 'requireBinding', 'bindSequence', 'bindToParent', 'bindToSelf',
     'getRootComponent', 'getParentComponent', 'lookupComponent',
-    'acquireComponent', 'suggestParentComponent',
+    'acquireComponent', 'suggestParentComponent', 'notifyUponAssembly',
     'bindToUtilities', 'bindToProperty', 'Constant', 'delegateTo',
     'getComponentName', 'getComponentPath', 'Acquire', 'ComponentName',
 ]
@@ -136,24 +136,24 @@ def getRootComponent(component):
 
 
 
+def notifyUponAssembly(parent,child):
 
+    """Call 'child.uponAssembly()' as soon as 'parent' knows all its parents"""
 
+    try:
+        nua = parent.__class__.notifyUponAssembly
 
+    except AttributeError:
 
+        parent = getParentComponent(parent)
 
+        if parent is None:
+            child.uponAssembly()
+        else:
+            notifyUponAssembly(parent,child)
 
-
-
-
-
-
-
-
-
-
-
-
-
+    else:
+        nua(parent,child)
 
 
 
@@ -618,7 +618,7 @@ class _Base(object):
     """Basic attribute management and "active class" support"""
 
     __metaclass__  = ActiveClass
-    __implements__ = IBindingAttrs
+    __implements__ = IBindableAttrs
 
     def _setBinding(self, attr, value, useSlot=False):
 
@@ -699,7 +699,7 @@ class Component(_Base):
 
     """Thing that can be composed into a component tree, w/binding & lookups"""
 
-    __class_implements__ = IBindingFactory
+    __class_implements__ = IComponentFactory
     __implements__       = IComponent
 
 
@@ -752,35 +752,37 @@ class Component(_Base):
             self.__parentCell.unset()
 
         else:
-            # We have a non-None parent, set it and lock it
+            # We have a non-None parent: set it, lock it, and handle assembly
             self.__parentCell.set(parentComponent)
-            self.__parentCell.get()
+            self.getParentComponent()
 
         # If change of parent succeeded, set the name
         self.__componentName = componentName
 
 
-    __parentCell    = binding.New(EigenCell)
+    __parentCell    = New(EigenCell)
     __componentName = None
-
 
     def getParentComponent(self):
         cell = self.__parentCell
+        parent = cell.get(lambda: None)   # default to None if not set
+        if parent is None:
+            self.uponAssembly()
+        else:
+            if (self.__class__.__needsAssembly__ 
+                or self._getBinding('__objectsToBeAssembled__')):
+                notifyUponAssembly(parent,self)
+
         self.getParentComponent = cell.get
-        return cell.get(lambda: None)   # default to None if not set
+        return parent
 
-
+        
     def getComponentName(self):
         return self.__componentName
-
-
-
-
 
     __instance_provides__ = New(
         'peak.config.config_components:PropertyMap', provides=IPropertyMap
     )
-
 
     def _getConfigData(self, configKey, forObj):
 
@@ -804,18 +806,57 @@ class Component(_Base):
         self.__instance_provides__.registerProvider(configKeys, provider)
 
 
+    __objectsToBeAssembled__ = New(list)
+
+    def __attrsToBeAssembled__(klass,d,a):
+        aa = {}
+        map(aa.update, getInheritedRegistries(klass, '__attrsToBeAssembled__'))
+
+        for attrName, descr in klass.__class_descriptors__.items():
+            notify = getattr(descr,'notifyUponAssembly',False)
+            if notify: aa[attrName] = True
+
+        return aa
+
+    __attrsToBeAssembled__ = classAttr(Once(__attrsToBeAssembled__))
+
+    __needsAssembly__ = classAttr(
+        Once(
+            lambda klass,d,a: 
+                len(klass.__attrsToBeAssembled__)
+                or klass.notifyUponAssembly.im_func
+                    is not Component.notifyUponAssembly.im_func
+        )
+    )
+    
+
+    def notifyUponAssembly(self,child):
+
+        tba = self.__objectsToBeAssembled__
+
+        if tba is None:
+            child.uponAssembly()    # assembly has already occurred
+        else:
+            tba.append(ref(child))  # save weak reference to child for callback
 
 
+    def uponAssembly(self):
 
+        tba = self.__objectsToBeAssembled__
 
+        if tba is None:
+            return
 
+        while tba:
+            ob = tba[-1]()
+            if ob is not None:
+                ob.uponAssembly()
+                tba.pop()
 
+        for attr in self.__class__.__attrsToBeAssembled__:
+            getattr(self,attr)
 
-
-
-
-
-
+        self.__objectsToBeAssembled__ = None
 
 
     def __class_provides__(klass,d,a):
@@ -833,10 +874,10 @@ class Component(_Base):
     __class_provides__ = classAttr(Once(__class_provides__))
 
 
+
+
+
 Base = Component    # XXX backward compatibility; deprecated
-
-
-
 
 
 

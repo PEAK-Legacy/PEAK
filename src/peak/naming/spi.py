@@ -1,6 +1,6 @@
 """Service Provider Interface
 
-    Core functions for implementing naming services.  These are 
+    Core functions for implementing naming services.  These are
     Pythonic equivalents to some of the static methods provided by
     'NamingManager' and 'DirectoryManager' in the JNDI 'javax.naming.spi'
     package.  For Python, it makes more sense to have these as
@@ -19,7 +19,7 @@ from peak.util.imports import importObject
 from interfaces import *
 from names import NNS_Reference
 
-from peak.binding.interfaces import IBindingFactory
+from peak.binding.interfaces import IComponentFactory
 
 __all__ = [
     'getInitialContext', 'getURLContext',
@@ -53,17 +53,17 @@ def getInitialContext(parentComponent, componentName=None, **options):
     Keyword options and the component name desired for the initial context
     are passed through to the actual factory, along with the parent component
     and component name.
-    
-    As with all 'IBindingFactory' providers, if no 'parentComponent' is
+
+    As with all 'IComponentFactory' providers, if no 'parentComponent' is
     supplied, the new initial context will be a root component, and acquire
-    its configuration options from a default local configuration object.    
+    its configuration options from a default local configuration object.
     """
 
     factory = importObject( INIT_CTX_FACTORY(parentComponent) )
     return factory(parentComponent, componentName, **options)
 
 
-getInitialContext.__implements__ = IBindingFactory
+getInitialContext.__implements__ = IComponentFactory
 
 
 
@@ -102,7 +102,7 @@ def getURLContext(scheme, iface, parent=None, componentName=None, **options):
           (e.g. 'naming.IBasicContext'), in which case an instance will be
           constructed and returned, using 'parent' as its parent component,
           and 'componentName' as its name.  (Note that the class must also
-          implement the 'binding.IBindingFactory' constructor signature for
+          implement the 'binding.IComponentFactory' constructor signature for
           this to work.)
 
         * Be a class whose instances implement 'naming.IAddress', in which case
@@ -194,14 +194,6 @@ def getObjectInstance(refInfo, name, context=None, attrs=None):
     elif isinstance(refInfo, NNS_Reference):
         # default is to treat the object as its own NNS
         return refInfo.relativeTo
-
-
-
-
-
-
-
-
 
 
 
