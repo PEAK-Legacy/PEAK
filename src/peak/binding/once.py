@@ -41,32 +41,32 @@ def supertype(supertype,subtype):
 
 class Descriptor(BaseDescriptor):
 
-    """Attribute Descriptor with lazy initialization and caching
+    """Attribute descriptor with lazy initialization and caching
 
     A 'Descriptor' (or subclass) instance is a Python attribute descriptor,
     similar to the ones created using the Python 'property' built-in type.
     However, where 'property' instances invoke a function on every access to
     the attribute, 'binding.Descriptor' instances only call their
     'computeValue()' method once, caching the result in the containing object's
-    dictionary.  Thereafter, the value from the dictionary is used instead of
-    re-computing it each time.  If the attribute is deleted (e.g. via
+    dictionary.  Thereafter, the value in the dictionary is reused, instead of
+    calling the function each time.  If the attribute is deleted (e.g. via
     'del anObj.anAttr') or the value is cleared from the dictionary, the
     'computeValue()' method will be called again, the next time that the
     attribute is retrieved.
 
     Because the instance dictionary is used to store the attribute value, a
-    'Descriptor' needs to know its name.  Unfortunately, Python does not
-    provide a way for descriptors to know what name they are given in a
-    class, so you must explicitly provide an 'attrName' value, either as a
-    constructor keyword argument, or by defining it in a subclass.  Many
-    'Descriptor' subclasses have the ability to guess or detect what
-    'attrName' should be used, but you must still explicitly provide it if they
-    are unable to do so automatically.  Failure to supply a correct 'attrName'
-    will result in a 'TypeError' when the attribute is used.
+    'Descriptor' needs to know its name, so that it knows what key to store its
+    value under.  Unfortunately, Python does not provide a way for descriptors
+    to know what name(s) they are accessible under in a class, so you must
+    explicitly provide an 'attrName' value, either as a constructor keyword
+    argument, or by defining it in a subclass.  Many 'Descriptor' subclasses
+    have the ability to guess or detect what 'attrName' should be used, but you
+    must still explicitly provide it if they are unable to do so automatically.
+    Failure to supply a correct 'attrName' will result in a 'TypeError' when
+    the attribute is used.
 
     'Descriptor' instances have the following attributes which may be set by
     keyword arguments to the class' constructor:
-
 
         'attrName' -- sets the name which the descriptor will use to get/set
         its value in the instance dictionary.  Ordinarily this should be the
@@ -80,17 +80,17 @@ class Descriptor(BaseDescriptor):
         will be passed three arguments: the object that owns the attribute, the
         object's instance dictionary, and the descriptor's 'attrName'.
 
-        The value returned will be treated as the attribute's value.  It will
-        also be cached in the object's instance dictionary to avoid repeat
-        calls, unless the descriptor's 'noCache' attribute is 'True'.
+         The value returned will be treated as the attribute's value.  It will
+         also be cached in the object's instance dictionary to avoid repeat
+         calls, unless the descriptor's 'noCache' attribute is 'True'.
 
-        Note that the default implementation of 'computeValue()' simply raises
-        an 'AttributeError'.  Also note that the call signature of
-        'computeValue()' is the same as that of 'binding.IRecipe'.  That is,
-        any object that provides 'IRecipe' may be used as a 'computeValue'
-        attribute.  'Descriptor' does not perform any adaptation, however, so
-        if your desired object must be adapted to 'IRecipe', you should do so
-        before assigning it to the 'computeValue' attribute.
+         Note that the default implementation of 'computeValue()' simply raises
+         an 'AttributeError'.  Also note that the call signature of
+         'computeValue()' is the same as that of 'binding.IRecipe'.  That is,
+         any object that provides 'IRecipe' may be used as a 'computeValue'
+         attribute.  'Descriptor' does not perform any adaptation, however, so
+         if your desired object must be adapted to 'IRecipe', you should do so
+         before assigning it to the 'computeValue' attribute.
 
 
         'noCache' -- if set to 'True', the descriptor will not cache its
@@ -130,8 +130,8 @@ class Descriptor(BaseDescriptor):
     of its subclasses, which have many additional features for more convenient
     use.  However, many of those subclasses themselves use 'Descriptor'
     instances as part of their definition.  That's why this exists as a
-    separate base class: to make it possible to use descriptors to make
-    descriptor classes."""
+    separate base class: to make it possible to use descriptors as part of the
+    definition of descriptor classes."""
 
     permissionNeeded = None    # IGuardedDescriptor; declared in peak.security
 

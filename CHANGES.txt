@@ -55,11 +55,11 @@ Fixes and Enhancements since Version 0.5 alpha 2
 
  - A list or tuple of 'IComponentKey' instances is now treated as a single
    component key, that returns a tuple of the values returned by each
-   constituent component key.  This means that 'binding.bindTo()' and
+   constituent component key.  This means that 'binding.Obtain()' and
    'lookupComponent()' can now accept a list or tuple of component keys.  This
    makes 'bindSequence()' obsolete, so 'bindSequence()' is now DEPRECATED.
    'binding.bindSequence(key1,key2,...)' can now be replaced with
-   'binding.bindTo([key1,key,...])', and will produce the same results.
+   'binding.Obtain([key1,key,...])', and will produce the same results.
 
  - 'naming.IBasicContext.lookup()' and 'naming.lookup()' now accept a 'default'
    argument, similar to that used by 'lookupComponent()' and most other
@@ -95,10 +95,10 @@ Fixes and Enhancements since Version 0.5 alpha 2
    'findComponent()', to better distinguish it from 'lookup()' in
    'naming.IBasicContext', which does something very different.
 
- - 'binding.bindTo()' and 'binding.bindSequence()' now pre-adapt their
-   arguments to 'IComponentKey', to speed lookups at runtime, and to ensure
-   that errors due to an unusable parameter type occur at class creation time
-   instead of waiting until lookup time.
+ - 'binding.Obtain()' (formerly 'binding.bindTo()' and 'binding.bindSequence()')
+   now pre-adapt their arguments to 'IComponentKey', to speed lookups at
+   runtime, and to ensure that errors due to an unusable parameter type occur
+   at class creation time instead of waiting until lookup time.
 
  - There's a new 'peak.storage.files' module, with handy classes like
    'EditableFile'.  'EditableFile' is a class that lets you edit the contents
