@@ -511,10 +511,10 @@ Now let's take a look at how to integrate options with command objects from
 options::
 
     >>> class MyCommand(commands.AbstractCommand):
-    ...     binding.metadata(
-    ...         bang=[opt_explode, opt_v, opt_q]
+    ...     bang = binding.Make(
+    ...         lambda: NOT_GIVEN,
+    ...         [opt_explode, opt_v, opt_q]    # bind options to this attribute
     ...     )
-    ...     bang = NOT_GIVEN
 
 And let's see what its help output now looks like::
 
