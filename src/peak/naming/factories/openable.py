@@ -329,10 +329,10 @@ class ConstantStream(object):
 class ImportLoaderFactory(ConstantStream):
     """Stream factory for data loaded by a PEP 302 import loader"""
 
-    def __init__(self,loader,moduleName,path):
+    def __init__(self,loader,moduleName,path,fullpath):
         self.address = str(PkgFileURL("pkgfile","%s/%s" % (moduleName,path)))
         self.loader = loader
-        self.path = path
+        self.path = fullpath
     
     def open(self,mode,seek=False,writable=False,autocommit=False):
 

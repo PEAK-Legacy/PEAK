@@ -11,6 +11,7 @@ from registries import FactoryFor
 from interfaces import *
 from protocols.advice import getMRO, determineMetaclass
 from peak.model.enumerations import enum, Enumeration
+import os.path
 
 __all__ = [
     'ConfigMap', 'LazyRule', 'fileNearModule', 'packageFile', 'IniLoader',
@@ -38,24 +39,23 @@ def fileNearModule(moduleName,filename):
 
 
 
-
 def packageFile(moduleName,filename):
 
     """Return 'naming.IStreamFactory' for 'filename' in 'moduleName' package"""
 
     module = importString(moduleName)
 
+    path = os.path.join(
+        os.path.dirname(getattr(module,'__file__','')), *filename.split('/')
+    )
+
     if hasattr(module,'__loader__') and hasattr(module.__loader__,'get_data'):
         from peak.naming.factories.openable import ImportLoaderFactory
-        return ImportLoaderFactory(module.__loader__,moduleName,filename)
+        return ImportLoaderFactory(module.__loader__,moduleName,filename,path)
 
     from peak.naming.factories.openable import FileFactory
-    import os.path
-    return FileFactory(
-        filename=os.path.join(
-            os.path.dirname(module.__file__), *filename.split('/')
-        )
-    )
+    return FileFactory(filename = path)
+
 
 
 

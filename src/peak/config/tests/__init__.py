@@ -6,6 +6,7 @@ from protocols import Interface
 from peak.config.interfaces import *
 from peak.tests import testRoot
 from peak.config.registries import ImmutableConfig
+from os.path import dirname, join
 
 
 def makeAUtility(context=None):
@@ -26,9 +27,8 @@ class TestRule(object):
 
 
 class DummyLoader:
-    def get_data(self, path):        
+    def get_data(self, path):
         return "loaded: "+path
-
 
 
 
@@ -58,9 +58,9 @@ class LoaderTest(TestCase):
                 testRoot().lookupComponent(address)
             ]:
                 self.assertEqual(pkgfile.address, address)
-                self.assertEqual(pkgfile.open('t').read(), "loaded: "+path)
-
-
+                self.assertEqual(pkgfile.open('t').read(),
+                    "loaded: "+join(dirname(__file__),*path.split('/'))
+                )
 
 
 

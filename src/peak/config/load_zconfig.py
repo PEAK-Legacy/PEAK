@@ -48,6 +48,10 @@ class SchemaLoader(BaseLoader, ZConfig.loader.SchemaLoader):
         result = super(SchemaLoader,self).loadResource(resource)
         return ConfigLoader(self.getParentComponent(), schema=result)
 
+    def schemaComponentSource(self, package, file):
+        # allow loading from .zip et al
+        return "pkgfile:%s/%s" % (package, file or "component.xml")
+
 
 class ConfigLoader(BaseLoader,ZConfig.loader.ConfigLoader):
 
@@ -68,10 +72,6 @@ class ConfigLoader(BaseLoader,ZConfig.loader.ConfigLoader):
             sm.handlers, self.schema
         )
         return result
-
-
-
-
 
 
 
