@@ -228,7 +228,7 @@ class AdaptiveTask(binding.Component):
     )
 
     log = binding.Make(
-        lambda self: self.lookupComponent(self.logName), adaptTo = ILogger
+        lambda self: self.lookupComponent(self.logName), adaptTo = logs.ILogger
     )
 
     lockName = None

@@ -2,6 +2,19 @@ Fixes and Enhancements since Version 0.5 alpha 2
 
  Changed, Enhanced, or Newly Deprecated Features
 
+ - Logging-related interfaces have been moved into the 'peak.running.logs'
+   module.  So, what used to be 'running.ILogger' is now 'logs.ILogger'.
+
+ - Log events now use a standard component construction signature, and the
+   class used for event objects is now configurable as the factory for
+   'logs.ILogEvent'.  (See "Component Factories" in 'peak.ini'.)
+
+ - By popular demand, 'logs.ILogger' (and its default implementation) now
+   includes 'trace()', 'notice()', 'alert()' and 'emergency()' methods that use
+   the corresponding 'syslog' priority levels.  'logs.IBasicLogger' has been
+   added, to reflect the narrower interface provided by PEP 282, and there is
+   an adapter that can extend PEP 282 loggers with the other methods.
+
  - The 'logging.logger:' URL scheme has been simplified to 'logger:'.  Please
    convert your scripts and configuration files, as the longer form will go
    away in the alpha 4 development cycle.

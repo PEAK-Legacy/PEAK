@@ -6,12 +6,11 @@
       these at the moment)
 '''
 
-from peak.binding.components import Component, Make, Require
+from peak.binding.components import Component, Make, Require, Obtain, Delegate
 from peak.naming import URL
 from peak.api import NOT_GIVEN, protocols, naming, config, NOT_FOUND
 from peak.naming.factories.openable import FileURL
 from peak.naming.interfaces import IObjectFactory
-from interfaces import ILogger
 
 from time import time, localtime, strftime
 import sys, os, traceback
@@ -25,7 +24,131 @@ __all__ = [
     'getLevelName', 'getLevelFor', 'addLevelName', 'Event', 'logfileURL',
     'AbstractLogger', 'LogFile', 'LogStream', 'peakLoggerURL',
     'peakLoggerContext',
+    'IBasicLogger', 'ILogger', 'ILogEvent', 'ILoggingService',
 ]
+
+
+
+
+
+
+
+
+
+
+
+
+
+class IBasicLogger(protocols.Interface):
+
+    """A PEP 282 "logger" object, minus configuration methods
+
+    All methods that take 'msg' and positional arguments 'args' will
+     interpolate 'args' into 'msg', so the format is a little like a
+    'printf' in C.  For example, in this code:
+
+        aLogger.debug("color=%s; number=%d", "blue", 42)
+
+    the log message will be rendered as '"color=blue; number=42"'.  Loggers
+    should not interpolate the message until they have verified that the
+    message will not be trivially suppressed.  (For example, if the logger
+    is not accepting messages of the designated priority level.)  This avoids
+    needless string processing in code that does a lot of logging calls that
+    are mostly suppressed.  (E.g. debug logging.)
+
+    Methods that take a '**kwargs' keywords argument only accept an 'exc_info'
+    flag as a keyword argument.  If 'exc_info' is a true value, exception data
+    from 'sys.exc_info()' is added to the log message.
+    """
+
+    def isEnabledFor(lvl):
+        """Return true if logger will accept messages of level 'lvl'"""
+
+    def getEffectiveLevel():
+        """Get minimum priority level required for messages to be accepted"""
+
+    def debug(msg, *args, **kwargs):
+        """Log 'msg' w/level DEBUG"""
+
+    def info(msg, *args, **kwargs):
+        """Log 'msg' w/level INFO"""
+
+    def warning(msg, *args, **kwargs):
+        """Log 'msg' w/level WARNING"""
+
+    def error(msg, *args, **kwargs):
+        """Log 'msg' w/level ERROR"""
+
+
+    def critical(msg, *args, **kwargs):
+        """Log 'msg' w/level CRITICAL"""
+
+    def exception(msg, *args):
+        """Log 'msg' w/level ERROR, add exception info"""
+
+    def log(lvl, msg, *args, **kwargs):
+        """Log 'msg' w/level 'lvl'"""
+
+
+class ILogger(IBasicLogger):
+
+    """A PEAK logger, with additional (syslog-compatible) level methods"""
+
+    def trace(msg, *args, **kwargs):
+        """Log 'msg' w/level TRACE"""
+
+    def notice(msg, *args, **kwargs):
+        """Log 'msg' w/level NOTICE"""
+
+    def alert(msg, *args, **kwargs):
+        """Log 'msg' w/level ALERT"""
+
+    def emergency(msg, *args, **kwargs):
+        """Log 'msg' w/level EMERG"""
+
+
+class ILogEvent(protocols.Interface):
+    """Temporary marker to allow configurable event classes
+
+    This interface will be fleshed out more later, as the log system
+    syncs up more with the capabilities and interfaces of the Python
+    2.3 logging package.
+    """
+
+
+
+
+
+
+
+class ILoggingService(protocols.Interface):
+
+    """A service that supplies loggers"""
+
+    def getLogger(name=''):
+        """Get an ILogger for 'name'"""
+
+    def getLevelName(lvl, default=NOT_GIVEN):
+
+        """Get a name for 'lvl', or return 'default'
+
+        If 'default' is not given, return '"Level %s" % lvl', for
+        symmetry with the 'logging' package."""
+
+    def getLevelFor(ob, default=NOT_GIVEN):
+
+        """Get a level integer for 'ob', or return 'default'
+
+        If 'ob' is in fact a number (i.e. adding 0 to it works), return as-is.
+        If 'ob' is a string representation of an integer, return numeric value,
+        so that functions which want to accept either numbers or level names
+        can do so by calling this converter.
+
+        If no conversion can be found, and no default is specified, raise
+        LookupError."""
+
+
+
 
 
 
@@ -132,6 +255,11 @@ if logging:
     logging.addLevelName(60, 'ALERT')
     logging.addLevelName(70, 'EMERG')
 
+    # And make it so PEP 282 loggers can be adapted to ILogger
+    protocols.declareImplementation(
+        logging.getLogger().__class__,
+        instancesProvide = [IBasicLogger]
+    )
 
 nms  = 'TRACE ALL DEBUG INFO NOTICE WARNING ERROR CRITICAL ALERT EMERG'.split()
 lvls =      0,  0,   10,  20,    25,     30,   40,      50,   60,   70
@@ -142,11 +270,6 @@ nameToLevel = dict(zip(nms,lvls))
 globals().update(nameToLevel)
 
 __all__.extend(nms)
-
-
-
-
-
 
 
 
@@ -180,9 +303,9 @@ class Event(Component):
 
     traceback = Make(traceback)
 
-    def __init__(self, message, parent=None, **info):
+    def __init__(self, parent, message, **info):
 
-        super(Event,self).__init__(parent,**info)
+        super(Event,self).__init__(parent,message,**info)
         self.message = message
 
         if not isinstance(self.exc_info, tuple):
@@ -327,14 +450,12 @@ class peakLoggerContext(naming.AddressContext):
 
 
 def _levelledMessage(lvl,exc_info=()):
-
     def msg(self, msg, *args, **kwargs):
         if self.level <= lvl:
             if args:
                 msg = msg % args
-            self.publish(self.EventClass(msg , self, priority=lvl, **kwargs))
+            self.publish(self.EventClass(self, msg, priority=lvl, **kwargs))
     return msg
-
 
 
 class AbstractLogger(Component):
@@ -344,8 +465,7 @@ class AbstractLogger(Component):
     )
 
     level = Require("Minimum priority for messages to be published")
-    EventClass = Event
-
+    EventClass = Obtain(config.FactoryFor(ILogEvent))
 
     def isEnabledFor(self,lvl):
         return self.level >= lvl
@@ -353,17 +473,28 @@ class AbstractLogger(Component):
     def getEffectiveLevel(self):
         return self.level
 
+    trace     = _levelledMessage(TRACE)
     debug     = _levelledMessage(DEBUG)
     info      = _levelledMessage(INFO)
+    notice    = _levelledMessage(NOTICE)
     warning   = _levelledMessage(WARNING)
     error     = _levelledMessage(ERROR)
     critical  = _levelledMessage(CRITICAL)
+    alert     = _levelledMessage(ALERT)
+    emergency = _levelledMessage(EMERG)
+
+
+
+
+
+
+
 
     def exception(self, msg, *args, **kwargs):
         if self.level <= ERROR:
             self.publish(
                 self.EventClass(
-                    (msg % args), self, priority=ERROR, exc_info=True, **kwargs
+                    self, (msg % args), priority=ERROR, exc_info=True, **kwargs
                 )
             )
 
@@ -372,7 +503,7 @@ class AbstractLogger(Component):
             if args:
                 msg = msg % args
             self.publish(
-                self.EventClass(msg, self, priority=lvl, **kwargs)
+                self.EventClass(self, msg, priority=lvl, **kwargs)
             )
 
     def publish(self, event):
@@ -391,6 +522,39 @@ class AbstractLogger(Component):
 
         self.sink(e)
 
+
+
+
+
+
+
+
+
+
+class BasicLoggerAsLogger(protocols.Adapter):
+
+    """Augment a PEP 282-style "logger" to have full PEAK methods"""
+
+    protocols.advise(
+        instancesProvide=[ILogger],
+        asAdapterForTypes=[IBasicLogger]
+    )
+
+    isEnabledFor = getEffectiveLevel = debug = info = warning = error \
+        = critical = exception = log = \
+            Delegate('subject')
+
+    def trace(self, *args, **kwargs):
+        self.log(TRACE, *args, **kwargs)
+
+    def notice(self, *args, **kwargs):
+        self.log(NOTICE, *args, **kwargs)
+
+    def alert(self, *args, **kwargs):
+        self.log(ALERT, *args, **kwargs)
+
+    def emergency(self, *args, **kwargs):
+        self.log(EMERG, *args, **kwargs)
 
 
 

@@ -1,24 +1,61 @@
 Open Issues/To-Do Items
 
+ Short Term Project Support
+
+    * Add "performance monitoring" subsystem to 'peak.running'
+
+    * Add support for finding/registering plugins to 'peak.config'
+
+      - Add "Import On Demand" section type for .ini files
+
+      - Refactor IConfigKey to support explicit "namespace" concept
+
+      - Refactor IPropertyMap -> IConfigMap, add iterability/search
+
+        - Add inverted indexes for namespace lookups/search
+
+        - Add 'IIterableConfigSource' (?) subclass, use for search funcs.
+
+        - Lock namespaces that have been iterated over
+
+      - Change existing configuration keys not to use tuples as surrogate keys
+
+      - Add 'config.PluginsFor' key that finds plugins
+
+        - May need 'suggestParentComponent()' to support dictionaries so plugin
+          dictionaries will work correctly
+
+        - Should it implement the "smart property" interface?
+
+      - Things to look at during refactorings:
+
+        - Better consolidation of config/component key and recipe interfaces?
+
+        - Rule chaining
+
+        - Use objects for section parsing instead of functions?
+
+    * peak.storage
+
+      - 'storage.dbType()'
+
  Targeted for 0.5 Alpha 3
 
     * peak.binding
 
-       - Cleanup/document attribute binding interface
-
-       - Investigate whether suggestParentComponent() should be suppressed when
-         the value is computed by the binding, or if perhaps 'suggestParent'
-         should be set to 'False' by default for some kinds of bindings.
+      - Cleanup/document attribute binding interface
 
     * peak.running.logs
 
+      - Add 'DefaultLoggingService', service-based system
+
       - Separate formatters from publishers
 
-      - Configurable EventClass
+      - Loggers should know their names and pass that info to event constructor
 
-      - Loggers know their names and pass that info to event constructor
+    * peak.config
 
-      - Events should use standard IComponentFactory constructor interface
+      - 'ZConfigSchemaService' and 'zconfig:schema@streamURL' scheme
 
     * peak.web (some of this may get bumped to alpha 4)
 
@@ -37,6 +74,10 @@ Open Issues/To-Do Items
          a later release)
 
        - try/catch DOMlet (and related error rendering interface/framework)
+
+
+
+
 
 
  Targeted for 0.5 Alpha 4

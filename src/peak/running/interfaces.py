@@ -1,5 +1,5 @@
 from protocols import Interface, Attribute, declareAdapter
-from peak.api import PropertyName
+from peak.api import PropertyName, NOT_GIVEN
 from peak.binding.interfaces import IComponentFactory, IComponent
 import sys, os
 
@@ -15,7 +15,7 @@ __all__ = [
 
     'IAdaptiveTask', 'IAdaptiveTaskSPI', 'ILock',
 
-    'IBasicReactor', 'ITwistedReactor', 'ILogger', 'ICheckableResource',
+    'IBasicReactor', 'ITwistedReactor', 'ICheckableResource',
 
     'ISignalManager', 'IProcessProxy', 'IMainCmdFactory', 'IProcessTemplate',
 
@@ -419,115 +419,6 @@ class ITwistedReactor(IBasicReactor):
     The purpose of this interface in PEAK is to let a component ask for
     a Twisted reactor if it really needs one.
     """
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-class ILogger(Interface):
-
-    """A PEP 282 "logger" object, minus configuration methods
-
-    All methods that take 'msg' and positional arguments 'args' will
-     interpolate 'args' into 'msg', so the format is a little like a
-    'printf' in C.  For example, in this code:
-
-        aLogger.debug("color=%s; number=%d", "blue", 42)
-
-    the log message will be rendered as '"color=blue; number=42"'.  Loggers
-    should not interpolate the message until they have verified that the
-    message will not be trivially suppressed.  (For example, if the logger
-    is not accepting messages of the designated priority level.)  This avoids
-    needless string processing in code that does a lot of logging calls that
-    are mostly suppressed.  (E.g. debug logging.)
-
-    Methods that take a '**kwargs' keywords argument only accept an 'exc_info'
-    flag as a keyword argument.  If 'exc_info' is a true value, exception data
-    from 'sys.exc_info()' is added to the log message.
-    """
-
-    def isEnabledFor(lvl):
-        """Return true if logger will accept messages of level 'lvl'"""
-
-    def getEffectiveLevel():
-        """Get minimum priority level required for messages to be accepted"""
-
-    def debug(msg, *args, **kwargs):
-        """Log 'msg' w/level DEBUG"""
-
-    def info(msg, *args, **kwargs):
-        """Log 'msg' w/level INFO"""
-
-    def warning(msg, *args, **kwargs):
-        """Log 'msg' w/level WARNING"""
-
-    def error(msg, *args, **kwargs):
-        """Log 'msg' w/level ERROR"""
-
-
-    def critical(msg, *args, **kwargs):
-        """Log 'msg' w/level CRITICAL"""
-
-    def exception(msg, *args):
-        """Log 'msg' w/level ERROR, add exception info"""
-
-    def log(lvl, msg, *args, **kwargs):
-        """Log 'msg' w/level 'lvl'"""
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

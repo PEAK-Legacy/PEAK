@@ -44,7 +44,7 @@ class IPolicyInfo(Interface):
     """Standard attributes for interaction policy info"""
 
     app = Attribute("""The underlying application object""")
-    log = Attribute("""Default 'running.ILogger' for interactions""")
+    log = Attribute("""Default 'logs.ILogger' for interactions""")
 
     resourcePrefix = Attribute("""Name that starts path to resources""")
     errorProtocol  = Attribute("""Protocol for exception handling""")
