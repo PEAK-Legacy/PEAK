@@ -244,11 +244,11 @@ class ZConfigInterpreter(AbstractInterpreter):
 
 
 
-class _caller(AbstractCommand):
+class CallableAsCommand(AbstractCommand):
 
     """Adapts callables to 'ICmdLineApp'"""
 
-    callable = binding.requireBinding("Any callable")
+    invoke = binding.requireBinding("Any callable")
 
     def run(self):
 
@@ -261,7 +261,7 @@ class _caller(AbstractCommand):
 
             os.environ = self.environ
             try:
-                return self.callable()
+                return self.invoke()
             except SystemExit, v:
                 return v.args[0]
 
@@ -270,7 +270,7 @@ class _caller(AbstractCommand):
             sys.stdin, sys.stdout, sys.stderr, os.environ, sys.argv = old
 
 
-class _runner(AbstractCommand):
+class RerunnableAsCommand(AbstractCommand):
 
     """Adapts 'IRerunnable' to 'ICmdLineApp'"""
 
@@ -293,8 +293,8 @@ def callableAsFactory(ob,proto=None):
         raise NotImplementedError("Object must be callable",ob)
 
     def factory(**kw):
-        kw.setdefault('callable',ob)
-        return _caller(**kw)
+        kw.setdefault('invoke',ob)
+        return CallableAsCommand(**kw)
 
     protocols.adviseObject(factory, provides=[ICmdLineAppFactory])
     return factory
@@ -304,8 +304,8 @@ def appAsFactory(app,proto=None):
     """Convert an 'ICmdLineApp' to an 'ICmdLineAppFactory'"""
 
     def factory(**kw):
-        kw.setdefault('callable',app.run)
-        return _caller(**kw)
+        kw.setdefault('invoke',app.run)
+        return CallableAsCommand(**kw)
 
     protocols.adviseObject(factory, provides=[ICmdLineAppFactory])
     return factory
@@ -316,7 +316,7 @@ def rerunnableAsFactory(runnable,proto=None):
 
     def factory(**kw):
         kw.setdefault('runnable',runnable)
-        return _runner(**kw)
+        return RerunnableAsCommand(**kw)
 
     protocols.adviseObject(factory, provides=[ICmdLineAppFactory])
     return factory
@@ -343,6 +343,47 @@ protocols.declareAdapter(
     provides=[ICmdLineAppFactory],
     forProtocols=[IRerunnable]
 )
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class TestRunner(CallableAsCommand):
+
+    defaultTest = 'peak.tests.test_suite'
+    testModule  = None
+
+    def invoke(self):
+
+        from unittest import main
+
+        main(
+            module = self.testModule,
+            argv = self.argv,
+            defaultTest = self.defaultTest
+        )
+
+        return 0
+
 
 
 

@@ -41,43 +41,43 @@ Installing PEAK
 
  SCRIPTS
 
-  On operating systems where 'os.name == "posix"', PEAK installs a Python
-  script named 'peak'.  'peak' is an application bootstrap script that
-  can invoke any object that is referenceable via the PEAK naming system.
-  Run the 'peak' script for usage info, or see the 'Bootstrap' class in
-  'peak.running.commands' for more on how to make objects bootable via 'peak'.
+  PEAK installs a Python script named 'peak'.  'peak' is an application
+  bootstrap script that can invoke any object that is referenceable via
+  the PEAK naming system.  Run the 'peak' script for usage info, or see
+  the 'Bootstrap' class in 'peak.running.commands' for more on how to make
+  objects bootable via 'peak'.
 
+  Note that on Windows, you cannot invoke the 'peak' script directly.  Instead
+  you must run it like this::
+
+    python C:\Python22\Scripts\peak
+
+  followed by the appropriate arguments.  You should of course substitute the
+  correct path to your Python installation's "scripts" directory.
 
 
  TESTING YOUR INSTALLATION
 
   PEAK comes with a moderately-sized built-in test suite.  If you wish to
-  run it after installation, and you are installing from source, you can do
-  so like this::
+  run it after installation, you can do so like this::
 
-   python setup.py test
+    peak test
 
   This will run over 120 tests on various parts of PEAK.  If you have
   installed everything correctly, 100% of the tests should succeed.  If
   anything is broken, you will probably be unable to run the tests at all.
 
   If you'd like to run only a portion of the test suite, you can supply
-  the '--test-module' or '-m' option to the test command as follows::
+  a specific test suite on the command line as follows::
 
-    python setup.py test --test-module=peak.util.tests
+    peak test peak.util.tests.test_suite
 
-    python setup.py test -m peak.tests
-
-  And so on.  You can also use 'python setup.py -q test' to make the tests
-  run more "quietly".
+  For more options, run 'peak test --help'.
 
   If you've installed using the Windows binary installer, you can run the
   tests like this::
 
-    python C:\Python22\Lib\unittests.py peak.tests.test_suite
-
-  (Substitute the location of 'unittests.py' on your machine; it'll be in
-  the 'Lib' subdirectory of your python installation.)
+    python C:\Python22\Scripts\peak test
 
 
  THIRD PARTY SOFTWARE INCLUDED WITH PEAK

@@ -9,7 +9,6 @@ include_metamodels = True   # edit this to stop installation of MOF, UML, etc.
 include_fcgiapp    = True   # edit this to stop installation of 'fcgiapp'
 
 # Metadata
-
 PACKAGE_NAME = "PEAK"
 PACKAGE_VERSION = "0.5a1"
 
@@ -20,6 +19,7 @@ HAPPYDOC_IGNORE = [
 
 
 # Base packages for installation
+scripts = ['scripts/peak']
 
 packages = [
     'peak', 'peak.api', 'peak.binding', 'peak.config', 'peak.model',
@@ -125,10 +125,7 @@ import os
 
 if os.name=='posix':
 
-    # install 'peak' script on Unix-like OS's (including cygwin)
-    scripts = ['scripts/peak']
-
-    # install 'fcgiapp' module, too
+    # install 'fcgiapp' module on posix systems
     if include_fcgiapp:
         extensions += [
             Extension("fcgiapp", [
@@ -136,9 +133,6 @@ if os.name=='posix':
             ])
         ]
 
-else:
-    # Nothing to see here, move along...
-    scripts = []
 
 
 execfile('src/setup/common.py')
@@ -161,4 +155,10 @@ setup(
     ext_modules = extensions,
     scripts = scripts,
 )
+
+
+
+
+
+
 
