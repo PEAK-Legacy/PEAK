@@ -142,7 +142,7 @@ class IConfigKey(Interface):
 from Interface.Implements import implements
 from peak.naming.names import PropertyName
 
-implements(Interface, IConfigKey)
+implements(Interface.__class__, IConfigKey)
 implements(PropertyName, IConfigKey)
 
 
