@@ -123,9 +123,11 @@ class LocationTests(TestCase):
 
     def checkView(self,loc,tgt,src):
         bar_handler = lambda ctx,o,ns,nm,qn,d: ctx.childContext(qn,"baz")
-        loc.registerView(tgt,'bar',bar_handler)
-        loc.addContainer({'foo':src})
-        ctx = web.TraversalPath('foo/@@bar').traverse(
+        subLoc = web.Location(loc)
+        loc.addContainer({'spam':subLoc})
+        subLoc.registerView(tgt,'bar',bar_handler)
+        subLoc.addContainer({'foo':src})
+        ctx = web.TraversalPath('spam/foo/@@bar').traverse(
             self.ctx.clone(current=loc)
         )
         self.assertEqual(ctx.current,'baz')
@@ -138,7 +140,13 @@ class LocationTests(TestCase):
 
     def testLocationView(self):
         loc = web.Location(self.root)
-        self.checkView(loc,None,loc)
+        bar_handler = lambda ctx,o,ns,nm,qn,d: ctx.childContext(qn,"baz")
+        loc.registerView(None,'bar',bar_handler)
+        loc.addContainer({'foo':loc})
+        ctx = web.TraversalPath('foo/@@bar').traverse(
+            self.ctx.clone(current=loc)
+        )
+        self.assertEqual(ctx.current,'baz')
 
     def testContainerSequence(self):
         c1 = {'foo':'baz'}; c2={'foo':'bar'}
@@ -147,14 +155,6 @@ class LocationTests(TestCase):
         self.assertEqual(self.ctx.traverseName('foo',None).current, 'baz')
         self.root.addContainer(c2)
         self.assertEqual(self.ctx.traverseName('foo',None).current, 'bar')
-        
-
-
-
-
-
-
-
 
 
 

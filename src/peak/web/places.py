@@ -221,7 +221,7 @@ class Location(Place,binding.Configurable):
             if perm is not None:
                 if not ctx.allows(cont,permissionNeeded=perm):
                     continue
-            context = ctx.clone(current=cont)
+            context = ctx.clone(current=cont,viewHandler=self.viewHandler)
             result = context.traverseName(name,NOT_FOUND)
             if result is not NOT_FOUND:
                 context = context.parentContext()
