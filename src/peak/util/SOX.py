@@ -626,12 +626,14 @@ class NegotiatingParser:
         p.CharacterDataHandler = self.text
         return p
 
-
     def _beforeParsing(self,root=None,url=None):
         root = root or {}
         self.stack.append(root)
         p = self.makeParser()
         self._parser = p; self._url = url
+        start = root.get('start')
+        if start:
+            start(self,root)
         return p
 
     def _afterParsing(self):
@@ -646,12 +648,10 @@ class NegotiatingParser:
     def parseString(self,text,root=None,url=None):
         self._beforeParsing(root,url).Parse(text,True)
         return self._afterParsing()        
-        
 
     def parseStream(self,stream,root=None,url=None):
         self._beforeParsing(root,url).ParseFile(stream)
         return self._afterParsing()        
-
 
 
 class ExpatBuilder:

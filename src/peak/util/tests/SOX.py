@@ -335,16 +335,19 @@ class NegotiationTests(TestCase):
     def testParses(self):
         for mode in True,False:
             self.setUp()    # ensure clean slate between parses           
-            result = self.parse('<nothing/>', {'finish':lambda *args:27}, mode)
+            result = self.parse('<nothing/>', {
+                'start':lambda *args:self.log.append("started"),
+                'finish':lambda *args:27
+            }, mode)
             self.assertEqual(result,27)
-            self.check_log([True])
+            self.check_log(["started",True])
     
             self.parse(
                 '<!--x--><nothing/>',
                 {'literal':self.log.append, 'child':self.log.append},
                 mode
             )
-            self.check_log([True,'<!--x-->',True,99])
+            self.check_log(["started",True,'<!--x-->',True,99])
 
 
     def testNSLookups(self):
@@ -361,9 +364,6 @@ class NegotiationTests(TestCase):
         self.check_log([('foobly','b'),('do','c'),(None,'c:d')])
 
         
-
-
-
 
 
 
