@@ -11,7 +11,9 @@ class nisURL(naming.URL.Base):
 
 class nisURLContext(naming.NameContext):
 
-    implements(naming.IReadContext)
+    protocols.advise(
+        instancesProvide=[naming.IReadContext]
+    )
 
     schemeParser = nisURL
 
@@ -37,11 +39,11 @@ class nisURLContext(naming.NameContext):
 
 
 
-
-
 class nisMapContext(naming.NameContext):
 
-    implements(naming.IReadContext)
+    protocols.advise(
+        instancesProvide = [naming.IReadContext]
+    )
 
     mapname = binding.Once(lambda s,d,a: str(s.nameInContext))
 
@@ -58,8 +60,6 @@ class nisMapContext(naming.NameContext):
 
         except nis.error:
             return NOT_FOUND
-
-
 
 
 

@@ -177,7 +177,9 @@ class CGIPublisher(binding.Component):
     use it to create a 'CGICommand' that behaves the way you want.  See
     'CGICommand' on how to set up and run a CGI publishing application."""
 
-    implements(IRerunnable)
+    protocols.advise(
+        instancesProvide=[IRerunnable]
+    )
 
     app       = binding.requireBinding("Application root to publish")
     publish   = binding.bindTo("import:zope.publisher.publish:publish")
@@ -191,8 +193,6 @@ class CGIPublisher(binding.Component):
     httpPubClass    = HTTPPublication
 
     _browser_methods = binding.Copy( {'GET':1, 'POST':1, 'HEAD':1} )
-
-
 
 
 
