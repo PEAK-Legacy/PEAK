@@ -252,9 +252,9 @@ class SQLConnection(ManagedConnection):
         lambda self: PropertyName(self.DRIVER+'.serializable')
     )
 
-    twoPhase     = binding.Obtain(naming.Indirect('twoPhaseProp'))
+    twoPhase = binding.Obtain(naming.Indirect('twoPhaseProp'),default=False)
 
-    serializable = binding.Obtain(naming.Indirect('serialProp'))
+    serializable = binding.Obtain(naming.Indirect('serialProp'),default=False)
 
 
     def voteForCommit(self, txnService):
@@ -713,7 +713,7 @@ class OracleBase(SQLConnection):
             self._begin()
 
         if self.serializable:
-            self('SET TRANSACTION ISOLATION SERIALIZABLE')
+            self('SET TRANSACTION ISOLATION LEVEL SERIALIZABLE')
 
 
     def commitTransaction(self, txnService):
@@ -722,7 +722,7 @@ class OracleBase(SQLConnection):
         except self.Error,v:
             # Oracle raises this error on a two-phase commit if no rows were
             # actually changed in the DB.
-            if self._errCode(v)<>'ORA-24576':
+            if self._errCode(v)<>'ORA-24756':
                 raise
 
 
@@ -740,7 +740,7 @@ class OracleBase(SQLConnection):
         self.connection.prepare()
 
 
-    def _readOnly():
+    def _readOnly(self):
         self('SET TRANSACTION READ ONLY', outsideTxn=True)
 
 
@@ -794,7 +794,7 @@ class CXOracleConnection(OracleBase):
     )
 
     def _begin(self):
-        self.connection.begin(0,self.txnId,self.txnBranch)
+        self.connection.begin(0,str(self.txnId),self.txnBranch)
 
     def _doCommit(self):
         self.connection.commit()
@@ -833,7 +833,7 @@ class DCOracle2Connection(OracleBase):
     supportedTypes = ('BINARY','DATETIME','NUMBER','ROWID','STRING')
 
     def _begin(self):
-        self.connection.setTransactionXID((0,self.txnId,self.txnBranch))
+        self.connection.setTransactionXID((0,str(self.txnId),self.txnBranch))
 
     def _doCommit(self):
         self.connection.commit(not not self.twoPhase)
