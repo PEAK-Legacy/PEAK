@@ -67,7 +67,7 @@ class ChildProcess(binding.Component):
     def waitForSignals(self):
         while self.isOpen():
             yield self.eventLoop.signals('SIGCLD','SIGCHLD'); events.resume()
-            if self._closed: return
+            if not self.isOpen(): return
 
             # ensure that we are outside the signal handler before we 'wait()'
             yield self.eventLoop.sleep(); events.resume()
