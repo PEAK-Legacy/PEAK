@@ -1,3 +1,5 @@
-global-include *.pyx *.c *.h *.ini *.txt *.xml *.html *.TERMS *.tex
+global-include *.pyx *.c *.h *.ini *.txt *.xml *.html *.TERMS *.tex *.pdf *.css
 recursive-include docs *.*
 recursive-include src/setup *.py
+global-exclude *.l2h *.toc *.ind *.how *.syn
+
