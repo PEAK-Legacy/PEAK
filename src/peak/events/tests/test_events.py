@@ -859,6 +859,129 @@ class SubscriptionTests(TestCase):
 
 
 
+class LogicTests(TestCase):
+
+    """Verify that boolean expressions are equal to their simpler forms
+
+    We want the following transformations to occur wherever possible:
+
+        * NOT(OR(x,y)) -> AND(NOT(x),NOT(y))
+
+        * AND(x,AND(y,z)) -> AND(x,y,z)
+
+        * OR(x,OR(y,z)) -> OR(x,y,z)
+
+        * NOT(NOT(x)) -> x
+
+    The test cases in this class will verify that expressions are as simple
+    as possible, but no simpler.  :)
+    """
+
+    def setUp(self):
+        self.condX = events.Condition()
+        self.condY = events.Condition()
+        self.condZ = events.Condition()
+
+    def testBooleanCommutativity(self):
+        x,y,z = self.condX, self.condY, self.condZ
+        self.assertEqual( (x & y & z), (z & y & x) )
+        self.assertNotEqual( (x & y & z), (x & y) )
+        self.assertEqual( (x|y|z), (z|y|x) )
+        self.assertNotEqual( (x|y|z), (x|y) )
+
+    def testBooleanEqualities(self):
+        x,y,z = self.condX, self.condY, self.condZ
+        if x is not events.Null and y is not events.Null:
+            self.assertNotEqual( (x&y), (x|y) )
+        self.assertEqual(x,x)
+        self.assertNotEqual(x,y)
+        self.assertEqual( (x|x), x )
+        self.assertEqual( (x&x), x )
+        self.assertEqual( (x&y)&(x&y&z), (x&y&z) )
+
+
+    def testBooleanAssociativity(self):
+        x,y,z = self.condX, self.condY, self.condZ
+        self.assertEqual( (x&(y&z)), ((x&y)&z) )
+        self.assertEqual( (x|(y|z)), ((x|y)|z) )
+        if x is not events.Null and y is not events.Null:
+            self.assertNotEqual( (x|(y&z)), (x&y)|z )
+            self.assertNotEqual( (x&(y|z)), ((x|y)&z) )
+
+
+    def testNegation(self):
+        x,y,z = self.condX, self.condY, self.condZ
+
+        self.assertEqual( x, ~~x)
+        self.assertEqual( ~x, ~x)
+        self.assertEqual( ~x, ~~~x)
+        if x is not events.Null and y is not events.Null:
+            self.assertNotEqual( x, ~x)
+            self.assertNotEqual( ~(x&y), (x&y) )
+            self.assertNotEqual( ~(x&y), (x|y) )
+        self.assertEqual( ~(x&y), (~x|~y) )
+        self.assertEqual( ~~(x&y), (x&y) )
+        self.assertEqual(~((x|y)&z), (~(x|y)|~z) )
+        self.assertEqual((~(x&y)&~z), ~((x&y)|z) )
+
+
+class NullTests1(LogicTests):
+
+    """Test logic w/nulls in 1st position"""
+
+    def setUp(self):
+        LogicTests.setUp(self)
+        self.condX = events.Null
+
+class NullTests2(LogicTests):
+
+    """Test logic w/nulls in 2nd position"""
+
+    def setUp(self):
+        LogicTests.setUp(self)
+        self.condY = events.Null
+
+class SemanticsTests(TestCase):
+
+    def testValuesAndConditions(self):
+        v1 = events.Value(False)
+        v2 = events.Condition(True)
+        self.failIf( (v2 & v1.isTrue)() )
+        self.failUnless( (v2|v1.isTrue)() )
+        self.failIf(v1())
+        self.failUnless((~v1.isTrue)())
+        self.failUnless(v2())
+        self.failIf((~v2)())
+        self.failIf( (~(v2|v1))())
+        self.failIf(v2.value.isFalse())
+
+    def testRaceCondition(self):
+        # ensure that derived values don't race with queriers
+
+        def sink(src,evt):
+            self.assertEqual( derived(), base()*2 )
+
+        base = events.Value(1)
+        base.addCallback(sink)  # subscribe this first
+        derived = events.DerivedValue(lambda:base()*2, base)
+        self.assertEqual( derived(), base()*2 )
+        base.set(2)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 class AdviceTests(TestCase):
 
     def testAdvice(self):
@@ -890,21 +1013,11 @@ class AdviceTests(TestCase):
 
 
 
-
-
-
-
-
-
-
-
-
-
 TestClasses = (
     BasicTests, ValueTests, ConditionTests, SemaphoreTests, AnyOfTests,
     TestThreads, ScheduledThreadsTest, SchedulerTests, AdviceTests,
     DerivedValueTests, DerivedConditionTests, BroadcastTests,
-    SubscriptionTests,
+    SubscriptionTests, LogicTests, NullTests1, NullTests2, SemanticsTests
 )
 
 def test_suite():
@@ -913,8 +1026,6 @@ def test_suite():
         s.append(makeSuite(t,'test'))
 
     return TestSuite(s)
-
-
 
 
 

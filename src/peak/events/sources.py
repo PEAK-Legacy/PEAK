@@ -6,7 +6,7 @@ from types import MethodType
 __all__ = [
     'AnyOf', 'Distributor', 'Value', 'Condition', 'Semaphore',
     'DerivedValue', 'DerivedCondition', 'Observable', 'Readable', 'Writable',
-    'AbstractConditional', 'Broadcaster', 'subscribe',
+    'AbstractConditional', 'Broadcaster', 'subscribe', 'Null',
 ]
 
 
@@ -36,6 +36,47 @@ __all__ = [
 
 
 
+
+
+
+class NullClass(object):
+
+    """Null condition: never fires, never has a value other than None"""
+
+    __slots__ = ()
+
+    protocols.advise( instancesProvide = [IConditional,IValue] )
+
+    value = property(lambda self: self)
+
+    def __call__(self): pass
+
+    def __repr__(self): return 'events.Null'
+
+    def conjuncts(self): return ()
+
+    def disjuncts(self): return ()
+
+    def __invert__(self):
+        return self
+
+    def __and__(self,other):
+        return other
+
+    def __or__(self,other):
+        return other
+
+    def addCallback(self,cb):
+        pass    # we'll never fire, and so can't call back
+
+    def nextAction(self, thread=None, state=None):
+        pass    # always suspend
+
+Null = NullClass()
+def noNew(*args): raise TypeError("Only one Null instance allowed")
+
+NullClass.__new__ = noNew
+del NullClass
 
 
 
@@ -302,6 +343,7 @@ class Readable(Observable):
         return self._value
 
 
+
 class Writable(Readable):
 
     """Base class for an 'IWritableSource' -- adds a 'set()' method"""
@@ -325,12 +367,11 @@ class Writable(Readable):
 
 
 
-
 class AbstractConditional(Observable):
 
     """Base class for an 'IConditional': fires if and only if value is true"""
 
-    __slots__ = ()
+    __slots__ = 'cmpval'
 
     def addCallback(self, func):
         """Add callback, but fire it immediately if value is currently true"""
@@ -350,6 +391,47 @@ class AbstractConditional(Observable):
 
         if thread is not None:
             self.addCallback(thread.step)
+
+    def __invert__(self):
+        return Not(self)
+
+    def __or__(self,other):
+        if self is other or other is Null:
+            return self
+        return Union(self,other)
+
+    def __and__(self,other):
+        if self is other or other is Null:
+            return self
+        return Intersect(self,other)
+
+
+
+
+    def __cmp__(self,other):
+        return cmp(self.cmpval,other)
+
+    def __hash__(self):
+        return hash(self.cmpval)
+
+    def disjuncts(self):
+        return [self]
+
+    def conjuncts(self):
+        return [self]
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -383,6 +465,7 @@ class ReadableAsCondition(AbstractConditional):
         self.value = subject
         super(ReadableAsCondition,self).__init__()
         subscribe(subject, self._set)
+        self.cmpval = self.__class__, subject
 
     def __call__(self):
         return self.value()
@@ -403,7 +486,6 @@ class WritableAsCondition(ReadableAsCondition):
 
     def set(self,value,force=False):
         self.value.set(value,force)
-
 
 
 
@@ -443,9 +525,9 @@ class Value(Writable):
         self._value = value
         super(Value,self).__init__()
 
+    isTrue = property(lambda self: adapt(self,IConditional))
 
-
-
+    isFalse = property(lambda self: ~adapt(self,IConditional))
 
 
 
@@ -473,22 +555,22 @@ class DerivedValue(Readable):
         subscribe(AnyOf(*[adapt(v,IValue) for v in values]),self._set) #
 
     def __call__(self):
-        """Get current or cached value of 'formula()'"""
-        try:
-            return self._value
-        except AttributeError:
-            value = self._value = self._formula()
-            return value
+        """Get current value of 'formula()'"""
+        return self._formula()
 
     def _set(self,source,event):
-        if self._callbacks:
-            value = self._formula()
-            if not hasattr(self,'_value') or self._value<>value:
-                self._value = value
-                self._fire(value)
-        else:
-            # just change
-            del self._value
+        value = self._formula()
+        if not hasattr(self,'_value') or self._value<>value:
+            self._value = value
+            self._fire(value)
+
+    # XXX is there any way to cache?
+
+
+
+
+
+
 
 class Condition(WritableAsCondition):
 
@@ -563,6 +645,88 @@ class DerivedCondition(ReadableAsCondition):
 
 
 
+
+
+
+
+
+
+
+
+
+class Not(DerivedCondition):
+
+    __slots__ = 'baseCondition'
+
+    def __init__(self,baseCondition):
+        baseCondition = adapt(baseCondition,IConditional)
+        self.baseCondition = baseCondition
+        super(Not,self).__init__(
+            lambda: not baseCondition.value(), baseCondition,
+        )
+        self.cmpval = self.__class__,baseCondition
+
+    def __invert__(self):
+        return self.baseCondition
+
+
+class _compound(DerivedCondition):
+
+    __slots__ = 'operands'
+
+    def __init__(self,*args):
+
+        operands = {}
+
+        for op in args:
+            for item in self._getPromotable(op):
+                operands[item]=1
+
+        operands = list(operands)
+        operands.sort()
+        self.operands = tuple(operands)
+
+        if len(operands)<2:
+            raise TypeError,"Compounds require more than one operand"
+
+        super(_compound,self).__init__(self.formula, *self.operands)
+        self.cmpval = self.__class__, self.operands
+
+
+
+
+class Union(_compound):
+
+    __slots__ = ()
+
+    def disjuncts(self):
+        return self.operands
+
+    def _getPromotable(self,op):
+        return adapt(op,IConditional).disjuncts()
+
+    def formula(self):
+        return [b for b in self.operands if b.value()]
+
+    def __invert__(self):
+        return Intersect(*[~op for op in self.operands])
+
+
+class Intersect(_compound):
+
+    __slots__ = ()
+
+    def conjuncts(self):
+        return self.operands
+
+    def _getPromotable(self,op):
+        return adapt(op,IConditional).conjuncts()
+
+    def formula(self):
+        return not [b for b in self.operands if not b.value()]
+
+    def __invert__(self):
+        return Union(*[~op for op in self.operands])
 
 
 

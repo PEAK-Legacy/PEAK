@@ -149,17 +149,17 @@ class IWritableSource(IReadableSource):
 class IValue(IReadableSource):
     """A readable event source that fires when changed"""
 
+    isTrue = protocols.Attribute(
+        """'IConditional' indicating truth of value"""
+    )
+
+    isFalse = protocols.Attribute(
+        """'IConditional' indicating untruth of value"""
+    )
+
 
 class IWritableValue(IWritableSource,IValue):
     """A writable event source that fires when changed"""
-
-
-
-
-
-
-
-
 
 
 class IConditional(IReadableSource):
@@ -177,6 +177,38 @@ class IConditional(IReadableSource):
         when true, but values fire when changed.
         """
     )
+
+    def conjuncts():
+        """Return the sequence of conjuncts of this condition
+
+        For an "and" operation, this should return the and-ed conditions.
+        For most other operations, this should return a one-element sequence
+        containing the condition object itself."""
+
+    def disjuncts():
+        """Return the sequence of disjuncts of this condition
+
+        For an "or" operation, this should return the or-ed conditions.
+        For most other operations, this should return a one-element sequence
+        containing the condition object itself."""
+
+    def __invert__():
+        """Return the inverse ("not") of this condition"""
+
+    def __and__(cond):
+        """Return the conjunction ("and") of this condition with 'cond'"""
+
+    def __or__(expr):
+        """Return the disjunction ("or") of this expression with 'expr'"""
+
+
+
+    def __cmp__(other):
+        """Conditionals must be comparable to each other"""
+
+    def __hash__(other):
+        """Conditionals must be hashable"""
+
 
 protocols.declareAdapter(
     lambda o,p: o.value, provides=[IValue], forProtocols=[IConditional]
@@ -197,6 +229,15 @@ class ISemaphore(IWritableSource,IConditional):
 
     def take():
         """Decrease the number of runnable threads by 1"""
+
+
+
+
+
+
+
+
+
 
 
 

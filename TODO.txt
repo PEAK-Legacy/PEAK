@@ -9,12 +9,12 @@ Open Issues/To-Do Items
 
       - Add tests for Twisted support
 
-      - Implement boolean operations on conditions (i.e. &, |, ~), and
-        isTrue/isFalse properties on values.
-
     * peak.ddt
 
       - Row and Action processors, better heading->property name translation
+
+
+
 
 
 
