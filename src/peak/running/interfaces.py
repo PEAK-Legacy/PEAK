@@ -1,4 +1,4 @@
-from protocols import Interface, Attribute
+from protocols import Interface, Attribute, declareAdapter
 from peak.api import PropertyName
 from peak.binding.interfaces import IComponentFactory, IComponent
 import sys, os
@@ -140,6 +140,28 @@ class IRerunnableCGI(Interface):
         """Perform function and return exit code"""
 
 
+def CGIFromComponent(ob,proto):
+    """Turn PEAK components into publishable web apps"""
+    from peak.web.publish import CGIPublisher
+    return CGIPublisher.fromApp(ob,proto)
+
+declareAdapter(CGIFromComponent,
+    provides=[IRerunnableCGI], forProtocols=[IComponent]
+)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 class IPeriodicTask(Interface):
 
     """Thing that does work periodically"""
@@ -159,6 +181,25 @@ class IPeriodicTask(Interface):
 
     def __cmp__(other):
         """Compare to another daemon on the basis of priority"""
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

@@ -1,7 +1,5 @@
 from peak.api import *
 
-import peak.web.publish     # XXX ugly hack!
-
 class WebApp(binding.Component):
 
     security.allow(

@@ -91,10 +91,13 @@ class Interaction(security.Interaction):
     policy   = binding.bindTo('app', adaptTo = IInteractionPolicy)
     log      = binding.bindTo('policy/log')
 
-    root     = binding.Once(
-        lambda s,d,a: adapt(s.app, s.locationProtocol)
-    )   
-   
+    def root(self,d,a):
+        root = adapt(s.app, s.locationProtocol)
+        binding.suggestParentComponent(None,None,root)
+        return root
+        
+    root = binding.Once(root, suggestParent=False)
+    
     locationProtocol = binding.bindTo('policy/locationProtocol')
     behaviorProtocol = binding.bindTo('policy/behaviorProtocol')
 
@@ -114,9 +117,6 @@ class Interaction(security.Interaction):
 
     def callTraversalHooks(self, request, ob):
         ob.preTraverse(self)
-
-
-
 
 
 
@@ -287,8 +287,6 @@ class CGIPublisher(binding.Component):
 
     protocols.advise(
         instancesProvide=[running.IRerunnableCGI],
-        asAdapterForTypes=[binding.Component],
-        factoryMethod = 'fromApp',
     )
 
 
@@ -313,6 +311,8 @@ class CGIPublisher(binding.Component):
     mkHTTP    = HTTPRequest
 
     _browser_methods = binding.Copy( {'GET':1, 'POST':1, 'HEAD':1} )
+
+
 
 
 
