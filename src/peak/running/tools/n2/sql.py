@@ -25,6 +25,8 @@ class SQLInteractor(binding.Component):
     def interact(self, object, shell):
         binding.suggestParentComponent(shell, None, object)
 
+        self.con.connection # ensure it's opened immediately
+
         self.quit = False
         
         while not self.quit:
@@ -212,9 +214,11 @@ class SQLInteractor(binding.Component):
                 return
 
             try:
+                c.joinTxn()
                 c = self.interactor.con(i)
             except:
-                sys.excepthook(*sys.exc_info()) # XXX
+                # currently the error is logged
+                #sys.excepthook(*sys.exc_info()) # XXX
                 self.interactor.resetBuf()
                 return
 
@@ -438,6 +442,23 @@ rollback -- abort current transaction"""
                     stdout, self.interactor.command_names(), sort=1)
 
     cmd_help = binding.New(cmd_help)
+
+
+
+    class cmd_reconnect(ShellCommand):
+        """reconnect -- abort current transaction and reconnect to database"""
+
+        args = ('', 0, 0)
+        
+        def cmd(self, cmd, **kw):
+            self.interactor.con.closeASAP()
+            storage.abortTransaction(self)
+            self.interactor.con.connection
+            storage.beginTransaction(self)
+            
+            self.interactor.resetBuf()
+
+    cmd_reconnect = binding.New(cmd_reconnect)
 
 
 
