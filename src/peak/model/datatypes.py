@@ -4,7 +4,7 @@ from peak.api import binding
 
 __all__ = [
     'TCKind', 'TypeCode', 'Short', 'Long', 'UShort', 'ULong', 'Float', 'Double',
-    'Integer','UnlimitedInteger','Boolean','String','Name', 'WString', 'Char'
+    'Integer','UnlimitedInteger','Boolean','String','Name', 'WString', 'Char',
     'WChar', 'LongLong', 'ULongLong', 'LongDouble', 'PrimitiveTC', 'SimpleTC',
     'Fixed','basicTypes',
 ]
