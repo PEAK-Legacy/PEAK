@@ -218,6 +218,10 @@ class IRack(ITransactionParticipant, IPersistentDataManager):
 
     """Data manager for persistent objects or queries"""
 
+    resetStatesAfterTxn = Attribute(
+        """Set to false to disable auto-deactivation of objects from cache"""
+    )
+
     def __getitem__(oid):
         """Retrieve the persistent object designated by 'oid'"""
         
@@ -232,10 +236,6 @@ class IRack(ITransactionParticipant, IPersistentDataManager):
 
     def flush(ob=None):
         """Sync stored state to in-memory state of 'ob' or all objects"""
-
-
-
-
 
 
 

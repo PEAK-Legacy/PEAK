@@ -10,6 +10,8 @@ class AbstractRack(TransactionComponent):
 
     __implements__ = IRack
 
+    resetStatesAfterTxn = True
+
     def __getitem__(self, oid, state=None):
 
         ob = self.cache.get(oid,self)
@@ -25,8 +27,6 @@ class AbstractRack(TransactionComponent):
         return ob
 
     preloadState = __getitem__
-
-
 
 
 
@@ -123,7 +123,7 @@ class AbstractRack(TransactionComponent):
 
     # Private abstract methods/attrs
 
-    cache = binding.requireBinding("a cache for ghosts and loaded objects")
+    from caches import WeakCache as cache
 
     defaultClass = None
 
@@ -232,11 +232,14 @@ class AbstractRack(TransactionComponent):
 
             set.clear()
 
+    def finishTransaction(self, txnService):
 
+        if self.resetStatesAfterTxn:
 
+            for ob in self.cache.values():
+                ob._p_deactivate()
 
-
-
+        super(AbstractRack,self).finishTransaction(txnService)
 
 
 
