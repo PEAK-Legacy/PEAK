@@ -40,6 +40,9 @@ class NamingInteractor(binding.Component):
                     cmdinfo['environ'], cmdinfo['argv']
                 )
 
+            # let files get closed, etc
+            del cmdinfo
+
 
     def stop(self):
         self.run = 0
