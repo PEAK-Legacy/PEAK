@@ -14,7 +14,7 @@
  of these properties in your application and they haven't been set up.
  In the abscence of a cluster definition file, PEAK will behave as if
  the local hostname was listed in the cluster file (as a member of
- _orphans/_all).
+ '_orphans' or '_all').
 
  Then environment variable 'CLUSTER' (or, in PEAK's case, the property
  'peak.running.cluster._filename', if it exists, else 'environ.CLUSTER')
@@ -144,14 +144,24 @@ def parseCluster(prefix, fn):
         return props
        
     for l in open(fn, 'r'):
+
         l = l.strip()
+
+        if not l or l.startswith('#'):
+            continue
+
         lumpline = l.startswith('LUMP:')
+        
         if lumpline or l.startswith('GROUP:'):
             lump = lumpline
             group = ()
             gname = l.split(':', 1)[1] 
             props[prefix + gname] = group
             groups.append(gname)
+
+
+
+            
         else:
             if lump:
                 na = props.get(prefix + l, ())
