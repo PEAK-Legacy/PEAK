@@ -123,10 +123,6 @@ Open Issues/To-Do Items
 
   peak.model
 
-    * Marshalling interface in Services; implementations for Enumeration, etc.
-
-    * More S-E-F metadata: features, subclasses, svc.<->class, nested services
-
     * A way to generate Z3 Interfaces from Feature-based specifications?
 
     * Implement WarpCORE-oriented structural model, w/Querying support
@@ -152,6 +148,10 @@ Open Issues/To-Do Items
        * How much of framework needs extensibility?  Should the predicate
          classes be placed in the StructuralModel's namespace so that predicates
          have their meaning assigned by the StructuralModel implementation?
+
+
+
+
 
 
 
@@ -189,40 +189,5 @@ Open Issues/To-Do Items
 
     * Simple Zope product demo (upload XMI, then browse the model via the web)
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  peak.metamodels.xmi
-
-    * Re-org to self-contain all XMI stuff inside an _XMI sub-component/service
-
-    * Document version of standard used
-
-    * Metamodel identity/version checking
-
-    * XMI.Writing
-
-    * Strict parsing and/or diagnostics on files that don't match the metamodel?
-
-    * UUID/GUID support
-
-    * Support for advanced references, external references?
-
-    * XML Namespaces (do any current XMI tools need this?  Which spec version
-      requires this?)
-
-    * DOM StructuralModel (so files can be edited without affecting vendor XMI
-      extensions)
 
  
