@@ -1,4 +1,5 @@
 from peak.api import *
+from model import *
 
 class BulletinsApp(binding.Component):
 
@@ -14,10 +15,19 @@ class BulletinsApp(binding.Component):
 
     log = binding.bindTo('logging.logger:bulletins.app')
 
-    Bulletins  = binding.New('bulletins.storage:BulletinDM')
-    Categories = binding.New('bulletins.storage:CategoryDM')
-    Users      = binding.New('bulletins.storage:UserDM')
-
-    BulletinsForCategory = binding.New(
-        'bulletins.storage:BulletinsForCategoryDM'
+    Bulletins = binding.New(
+        'bulletins.storage:BulletinDM',
+        offerAs=[storage.DMFor(Bulletin)]
     )
+
+    Categories = binding.New(
+        'bulletins.storage:CategoryDM',
+        offerAs=[storage.DMFor(Category)]
+    )
+
+    Users = binding.New(
+        'bulletins.storage:UserDM',
+        offerAs=[storage.DMFor(User)]
+    )
+
+

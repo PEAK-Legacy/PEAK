@@ -5,11 +5,12 @@ __all__ = [
     'BulletinsForCategoryDM', 'CategoryDM', 'UserDM', 'BulletinDM',
 ]
 
+DATABASE = PropertyName('bulletins.db')
 
 class BulletinsForCategoryDM(storage.QueryDM):
 
-    db         = binding.bindTo(PropertyName('bulletins.db'))
-    BulletinDM = binding.bindTo('../Bulletins')  # XXX
+    db         = binding.bindTo(DATABASE)
+    BulletinDM = binding.bindTo(storage.DMFor(Bulletin))
 
     def _load(self, oid, ob):
 
@@ -38,10 +39,9 @@ class BulletinsForCategoryDM(storage.QueryDM):
 
 
 
-
 class UserDM(storage.EntityDM):
 
-    db           = binding.bindTo(PropertyName('bulletins.db'))
+    db           = binding.bindTo(DATABASE)
     defaultClass = User
 
     def _load(self, oid, ob):
@@ -81,10 +81,10 @@ class UserDM(storage.EntityDM):
 
 
 class BulletinDM(storage.EntityDM):
-
-    db           = binding.bindTo(PropertyName('bulletins.db'))
-    CategoryDM   = binding.bindTo('../Categories')    # XXX
-    UserDM       = binding.bindTo('../Users')         # XXX
+    db           = binding.bindTo(DATABASE)
+    CategoryDM   = binding.bindTo(storage.DMFor(Category))
+    UserDM       = binding.bindTo(storage.DMFor(User))
+    forCategory  = binding.New(BulletinsForCategoryDM)
     defaultClass = Bulletin
 
     def _load(self, oid, ob):
@@ -113,7 +113,7 @@ class BulletinDM(storage.EntityDM):
              ob.postedBy.loginId, str(ob.postedOn), ob.editedBy.loginId,
              str(ob.editedOn), ob.hidden)
         )
-        
+
     def _new(self,ob):
         ct, = ~self.db('SELECT MAX(id) FROM bulletins')
         ct = int(ct or 0) + 1
@@ -123,10 +123,10 @@ class BulletinDM(storage.EntityDM):
 
 class CategoryDM(storage.EntityDM):
 
-    db = binding.bindTo(PropertyName('bulletins.db'))
-    BulletinDM = binding.bindTo('../Bulletins')  # XXX
-    bulletinsForCategory = binding.bindTo('../BulletinsForCategory')
-    
+    db = binding.bindTo(DATABASE)
+    BulletinDM = binding.bindTo(storage.DMFor(Bulletin))
+    bulletinsForCategory = binding.bindTo('BulletinDM/forCategory')
+
     defaultClass = Category
 
     def _load(self, oid, ob):
@@ -141,10 +141,10 @@ class CategoryDM(storage.EntityDM):
                 sortPosn = row.sortPosn,
                 bulletins = storage.QueryLink(
                     self.bulletinsForCategory[row.pathName]
-                ),                    
+                ),
                 sortBulletinsBy = SortBy[row.sortBulletinsBy],
                 postingTemplate = row.postingTemplate,
-                editingTemplate = row.editingTemplate,              
+                editingTemplate = row.editingTemplate,
             )
         )
 
@@ -166,5 +166,40 @@ class CategoryDM(storage.EntityDM):
         return [self.preloadState(row.pathName, self.stateFromRow(row))
             for row in self.db("select * from categories")
         ]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 

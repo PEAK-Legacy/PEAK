@@ -154,7 +154,7 @@ class Category(model.Element):
         if timestamp is None:
             timestamp = datetime.now()
 
-        bulletin = self.getParentComponent().BulletinDM.newItem()  # XXX
+        bulletin = config.findUtility(self,storage.DMFor(Bulletin)).newItem()
         bulletin.postedBy = bulletin.editedBy = user
         bulletin.postedOn = bulletin.editedOn = timestamp
         bulletin.category = self
