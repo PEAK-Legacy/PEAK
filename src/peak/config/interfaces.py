@@ -55,6 +55,31 @@ class IConfigSource(Interface):
         implementation for many purposes."""
 
 
+    def _configKeysMatching(configKey):
+        """Iterable over defined keys that match 'configKey'
+
+        A key 'k' in the map is considered to "match" 'configKey' if any of
+        'k.parentKeys()' are listed as keys in 'configKey.registrationKeys()'.
+        You must not change the configuration map while iterating over the
+        keys.  Also, keep in mind that only explicitly-registered keys are
+        returned; for instance, load-on-demand rules will only show up as
+        wildcard keys.
+
+        Implementations may yield keys in any order, but must not yield the
+        same key more than once."""
+
+
+
+
+
+
+
+
+
+
+
+
+
 class IConfigurable(IConfigSource):
 
     """Object which can be configured with rules for configuration keys"""
@@ -75,6 +100,22 @@ class IConfigurable(IConfigSource):
         will also be registered for any keys implied by the supplied key,
         unless a provider was previously registered under the implied key.
         """
+
+
+IConfigMap = IConfigurable
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -147,7 +188,7 @@ class IIniParser(Interface):
 
 
     prefix = Attribute("""Prefix that should be added to all property names""")
-    pMap   = Attribute("""'IConfigMap' that the parser is loading""")
+    pMap   = Attribute("""'IConfigurable' that the parser is loading""")
 
     globalDict = Attribute("""Globals dictionary used for eval()ing rules""")
 
@@ -189,7 +230,7 @@ class IRule(Interface):
 
         """Retrieve 'configKey' for 'targetObject' or return 'NOT_FOUND'
 
-        The rule object is allowed to call any 'IConfigMap' methods on the
+        The rule object is allowed to call any 'IConfigurable' methods on the
         'propertyMap' that is requesting computation of this rule.
 
         What an IRule must *not* do, however, is return different results over
@@ -272,47 +313,6 @@ class ISettingLoader(Interface):
         'config.loadConfigFile()' loader, and the value passed is a
         'ConfigReader' instance.
         """
-
-
-
-
-
-
-
-
-
-
-
-
-
-class IConfigMap(IConfigurable):
-
-    """Configurable component that allows iteration over keys"""
-
-    def _configKeysMatching(configKey):
-        """Iterable over defined keys that match 'configKey'
-
-        A key 'k' in the map is considered to "match" 'configKey' if any of
-        'k.parentKeys()' are listed as keys in 'configKey.registrationKeys()'.
-        You must not change the configuration map while iterating over the
-        keys.  Also, keep in mind that only explicitly-registered keys are
-        returned; for instance, load-on-demand rules will only show up as
-        wildcard keys.
-
-        Implementations may yield keys in any order, but must not yield the
-        same key more than once."""
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

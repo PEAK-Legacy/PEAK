@@ -121,7 +121,7 @@ class FSResource(Resource):
 
 
 
-class ResourceDirectory(FSResource):
+class ResourceDirectory(FSResource, binding.Configurable):
 
     isRoot = False      # Are we the topmost FSResource here?
 

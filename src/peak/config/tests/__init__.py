@@ -63,7 +63,7 @@ class PropertyTest(TestCase):
     def checkSmartProps(self):
 
         app = testRoot()
-        obj = binding.Component(app)
+        obj = binding.Configurable(app)
 
         config.loadConfigFile(obj,
             config.fileNearModule(__name__,'test_links.ini')
@@ -100,7 +100,7 @@ def provides(*classes):
 
 class UtilityData(binding.Component):
 
-    class aService(binding.Component):
+    class aService(binding.Configurable):
 
         thing5 = binding.Obtain('..', offerAs=[IS1U, provides(A)])
 
@@ -351,7 +351,6 @@ class ZConfigTests(TestCase):
             'ref:zconfig.schema@pkgfile:peak.running/EventDriven.xml'
         )
         self.failUnless(isinstance(ob,ConfigLoader))
-
 
 
 

@@ -7,7 +7,7 @@ from peak.running.clusters import loadCluster
 from peak.running.daemons import AdaptiveTask, TaskQueue
 from peak.running.scheduler import UntwistedReactor, MainLoop
 
-test = binding.Component()
+test = binding.Configurable()
 
 loadCluster(test.__instance_offers__,
     config.fileNearModule(__name__,'test_cluster.txt')

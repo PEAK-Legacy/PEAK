@@ -43,8 +43,8 @@ class ServiceAreaTests(TestCase):
 
     def setUp(self):
         self.S = config.ServiceArea(testRoot())
-        self.A = binding.Component(self.S,'A')
-        self.B = binding.Component(self.S,'B')
+        self.A = binding.Configurable(self.S,'A')
+        self.B = binding.Configurable(self.S,'B')
 
     def configure(self,component,text):
         config.ConfigReader(component).readString(text)
@@ -119,6 +119,47 @@ class ServiceAreaTests(TestCase):
 
 
 
+
+
+class RegisteredProtocolTests(TestCase):
+
+    def setUp(self):
+        self.S = config.ServiceArea(testRoot())
+        self.A = binding.Configurable(self.S,'A')
+        self.B = binding.Configurable(self.S,'B')
+
+    def testAPI(self):
+        p1 = config.registeredProtocol(self.S,'some.protocol')
+        p2 = config.registeredProtocol(self.A,'some.protocol')
+        p3 = config.registeredProtocol(self.B,'some.protocol')
+
+        for p in p1,p2,p3:
+            self.failUnless(isinstance(p,protocols.Protocol))
+
+        for p in p2,p3:
+            self.failUnless(isinstance(p,protocols.Variation))
+            self.failUnless(p.baseProtocol is p1)
+
+        self.failIf(p1 is p2)
+        self.failIf(p1 is p3)
+        for p, c in (p1,self.S), (p2,self.A), (p3,self.B):
+            self.failUnless(p is config.registeredProtocol(c,'some.protocol'))
+
+    def testTooLate(self):
+        p1 = config.registeredProtocol(self.S,'some')
+        p2 = config.lookup(self.A,'some')
+        self.assertRaises(AlreadyRead, config.registeredProtocol, 
+            self.A, 'some'
+        )
+
+    def testBase(self):
+        p1 = config.registeredProtocol(self.S,'some.protocol',I1)
+        p2 = config.registeredProtocol(self.A,'some.protocol',I2)
+        p3 = config.registeredProtocol(self.B,'some.protocol',I3)
+        for p in p1,p2,p3:
+            self.failUnless(isinstance(p,protocols.Variation))           
+            self.failUnless(p is p1 or p.baseProtocol is p1)
+            self.failUnless(p is not p1 or p.baseProtocol is I1)
 
 
 class BasicKeyTests(TestCase):
@@ -384,13 +425,13 @@ class SimpleMapViaPlugin(KeysViaPlugin, SimpleMapTest): pass
 
 class ComponentMapDirect(SimpleMapTest):
     def setUp(self):
-        self.map = binding.Component()
+        self.map = binding.Configurable()
 
 class ComponentMapViaAPI(KeysViaAPI, ComponentMapDirect): pass
 class ComponentMapViaPlugin(KeysViaPlugin, ComponentMapDirect): pass
 
 
-class Case1(binding.Component):
+class Case1(binding.Configurable):
 
     spam_qux = binding.Require(
         "testing", offerAs=['spam.baz.qux','foo.bar.click']
@@ -411,12 +452,12 @@ class ComponentWithBindingViaPlugin(KeysViaPlugin, ComponentWithBinding): pass
 class ParentComponent(ComponentWithBindingViaPlugin):
 
     def setUp(self):
-        self.map = self.mapType(binding.Component())
+        self.map = self.mapType(binding.Configurable())
 
 class ChildComponent(ComponentWithBindingViaPlugin):
 
     def setUp(self):
-        self.map = binding.Component(self.mapType())
+        self.map = binding.Configurable(self.mapType())
 
 
 class Case2(Case1):
@@ -456,7 +497,7 @@ TestClasses = (
     ComponentWithBindingViaPlugin,
     ParentComponent, ChildComponent, InheritedComponent, InheritedComponentAPI,
     InheritedParent, InheritedChild,
-    ServiceAreaTests,
+    ServiceAreaTests, RegisteredProtocolTests,
 )
 
 

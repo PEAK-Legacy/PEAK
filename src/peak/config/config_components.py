@@ -2,7 +2,8 @@ from __future__ import generators
 
 from peak.api import *
 from peak.util.imports import importString, importObject, whenImported
-from peak.binding.components import Component, Make, getParentComponent, iterParents
+from peak.binding.components import Component, Make, getParentComponent
+from peak.binding.components import iterParents, Configurable
 from peak.binding.interfaces import IAttachable, IRecipe
 from peak.util.EigenData import EigenCell,AlreadyRead
 from peak.util.FileParsing import AbstractConfigParser
@@ -35,7 +36,6 @@ _emptyRuleCell.exists()
 def fileNearModule(moduleName,filename):
     filebase = importString(moduleName+':__file__')
     import os; return os.path.join(os.path.dirname(filebase), filename)
-
 
 
 
@@ -127,7 +127,7 @@ def iterKeys(component, configKey):
 
     yielded = {}
 
-    for ob in parentsProviding(component,IConfigMap):
+    for ob in parentsProviding(component,IConfigSource):
         for key in ob._configKeysMatching(configKey):
             if key in yielded:
                 continue
@@ -208,7 +208,7 @@ class ConfigMap(Component):
     rules = depth = keyIndex = lockedNamespaces = Make(dict)
 
     protocols.advise(
-        instancesProvide=[IConfigMap]
+        instancesProvide=[IConfigurable]
     )
 
     def registerProvider(self, configKey, provider):
@@ -289,13 +289,9 @@ class ConfigMap(Component):
 
         """Look up the requested value"""
 
-        rules      = self._getBinding('rules')
-        value      = NOT_FOUND
-
-        if not rules:
-            return value
-
-        xRules     = []
+        rules  = self.rules
+        value  = NOT_FOUND
+        xRules = []
 
         for name in configKey.lookupKeys():
 
@@ -319,6 +315,10 @@ class ConfigMap(Component):
             rules.setdefault(name,_emptyRuleCell)
 
         return value
+
+
+
+
 
 
 
@@ -408,7 +408,7 @@ class NamingStateAsSmartProperty(protocols.Adapter):
 
 
 
-class ServiceArea(Component):
+class ServiceArea(Configurable):
 
     """Component that acts as a home for "global"-ish services"""
 
@@ -465,7 +465,7 @@ class ConfigurationRoot(ServiceArea):
         return pm
 
     __instance_offers__ = Make(__instance_offers__,
-        offerAs=[IConfigMap], uponAssembly = True
+        offerAs=[IConfigurable], uponAssembly = True
     )
 
     iniFiles = ( ('peak','peak.ini'), )

@@ -1,5 +1,28 @@
 Fixes and Enhancements since Version 0.5 alpha 3
 
+ - Added 'config.registeredProtocol()' API, that supports defining named and
+   local protocols.  This allows easy emulation of Zope 3's "named" and "local"
+   adapters and views.
+   
+ - 'binding.Component' objects no longer support instance configuration at
+   runtime (i.e., they no longer implement 'config.IConfigurable').  If you
+   need a component to be configurable at runtime, you must now derive from
+   (or mix in) 'binding.Configurable' instead.  If you get errors about
+   a missing 'registerProvider' attribute, or about being unable to adapt to
+   'IConfigurable', try changing your base class from 'binding.Component'
+   to 'binding.Configurable', or add it as a mixin if you're deriving from
+   a class that uses 'binding.Component' as its base.
+
+ - 'binding.IComponent' no longer derives from 'config.IConfigurable' or
+   'config.IConfigMap', only 'config.IConfigSource'.  This means that
+   'IComponent' no longer guarantees or requires the presence of the
+   'registerProvider()' method: now only 'config.IConfigurable' does that.
+
+ - The 'config.IConfigMap' interface is now DEPRECATED.  Use
+   'config.IConfigurable' instead.  The '_configKeysMatching()' method
+   of 'IConfigMap' was moved to 'config.IConfigSource', so if you've
+   implemented a custom 'IConfigSource', be sure to add this method.
+
  - 'web.ISkinService' and 'web.ILayerService' were consolidated into
    'web.IInteractionPolicy', because the need to have configurable
    implementations of these services is negligible.  That is, the

@@ -9,14 +9,14 @@ from types import ModuleType
 from peak.naming.names import toName, AbstractName, COMPOUND_KIND, IName
 from peak.naming.syntax import PathSyntax
 from peak.util.EigenData import AlreadyRead
-from peak.config.interfaces import IConfigKey, IConfigMap, \
-    IConfigurationRoot, NullConfigRoot
+from peak.config.interfaces import IConfigKey, IConfigurationRoot, \
+    NullConfigRoot, IConfigurable
 from peak.config.registries import ImmutableConfig
 from peak.util.imports import importString
 
 
 __all__ = [
-    'Component', 'Obtain', 'Require', 'Delegate',
+    'Component', 'Obtain', 'Require', 'Delegate', 'Configurable',
     'getRootComponent', 'getParentComponent', 'lookupComponent',
     'acquireComponent', 'notifyUponAssembly', 'PluginsFor', 'PluginKeys',
     'getComponentName', 'getComponentPath', 'ComponentName', 'iterParents'
@@ -883,9 +883,9 @@ class Component(_Base):
     def getComponentName(self):
         return self.__componentName
 
-    __instance_offers__ = Make(
-        'peak.config.config_components:ConfigMap', offerAs=[IConfigMap]
-    )
+
+
+
 
 
 
@@ -911,15 +911,9 @@ class Component(_Base):
         returned; for instance, load-on-demand rules will only show up as
         wildcard keys."""
 
-        maps = [self.__class__.__class_offers__]
-        attr = self._getBinding('__instance_offers__')
-
-        if attr:
-            maps.append(attr)
-
         yielded = {}
 
-        for cMap in maps:
+        for cMap in self._config_maps():
             for key in cMap._configKeysMatching(configKey):
                 if key in yielded:
                     continue
@@ -927,29 +921,11 @@ class Component(_Base):
                 yielded[key] = 1
 
 
-
-
-
-
-
-
-
-
-
-
-
-
+    def _config_maps(self):
+        return [self.__class__.__class_offers__]
 
 
     def _getConfigData(self, forObj, configKey):
-
-        attr = self._getBinding('__instance_offers__')
-
-        if attr:
-            value = attr._getConfigData(forObj, configKey)
-
-            if value is not NOT_FOUND:
-                return value
 
         attr = self.__class__.__class_offers__.lookup(configKey)
 
@@ -959,8 +935,24 @@ class Component(_Base):
         return NOT_FOUND
 
 
-    def registerProvider(self, configKey, provider):
-        self.__instance_offers__.registerProvider(configKey, provider)
+
+
+
+
+
+
+    def __class_offers__(klass,d,a):
+
+        return ImmutableConfig(
+            baseMaps = getInheritedRegistries(klass, '__class_offers__'),
+            items = [(adapt(key,IConfigKey), attrName)
+                for attrName, descr in klass.__class_descriptors__.items()
+                    for key in getattr(descr,'offerAs',())
+            ]
+        )
+
+
+    __class_offers__ = classAttr(Make(__class_offers__))
 
 
     def notifyUponAssembly(self,child):
@@ -978,6 +970,14 @@ class Component(_Base):
                 # Make sure our parent calls us, since we need to call a
                 # child now, but would not have been registered ourselves.
                 notifyUponAssembly(self.getParentComponent(),self)
+
+
+
+
+
+
+
+
 
 
 
@@ -1023,34 +1023,34 @@ class Component(_Base):
     __attrsToBeAssembled__ = classAttr(Make(__attrsToBeAssembled__))
 
 
-    def __class_offers__(klass,d,a):
+class Configurable(Component):
 
-        return ImmutableConfig(
-            baseMaps = getInheritedRegistries(klass, '__class_offers__'),
-            items = [(adapt(key,IConfigKey), attrName)
-                for attrName, descr in klass.__class_descriptors__.items()
-                    for key in getattr(descr,'offerAs',())
-            ]
-        )
+    protocols.advise(
+        instancesProvide = [IConfigurable]
+    )
 
+    __instance_offers__ = Make(
+        'peak.config.config_components:ConfigMap', offerAs=[IConfigurable]
+    )
 
-    __class_offers__ = classAttr(Make(__class_offers__))
+    def _getConfigData(self, forObj, configKey):
 
+        value = self.__instance_offers__._getConfigData(forObj, configKey)
 
+        if value is not NOT_FOUND:
+            return value
 
+        attr = self.__class__.__class_offers__.lookup(configKey)
 
+        if attr:
+            return getattr(self, attr, NOT_FOUND)
 
+        return NOT_FOUND
 
+    registerProvider = Delegate('__instance_offers__')
 
-
-
-
-
-
-
-
-
-
+    def _config_maps(self):
+        return [self.__class__.__class_offers__, self.__instance_offers__]
 
 
 

@@ -1,9 +1,12 @@
 """Configuration Management API"""
 
-from config_components import ConfigurationRoot
+from config_components import ConfigurationRoot, Value, lookup
+from peak.util.EigenData import AlreadyRead
+from interfaces import *
+from peak.api import *
 
 __all__ = [
-    'makeRoot',
+    'makeRoot', 'registeredProtocol'
 ]
 
 
@@ -30,5 +33,91 @@ def makeRoot(**options):
     (in which case an 'AlreadyRead' error occurs)."""
 
     return ConfigurationRoot(None, **options)
+
+
+
+
+
+
+def registeredProtocol(ob, configKey, baseProtocol=None):
+
+    """Obtain a local protocol object suitable for registering local adapters
+
+    Usage::
+
+        # Register a local adapter from type 'xyz' to the 'foo.bar' named
+        # protocol:
+        localProto = config.registeredProtocol(ctx,'foo.bar')
+        protocols.declareAdapter(someFunc, [localProto], forTypes=[xyz])
+
+        # ...later, obtain a localized adaptation in 'someContext'
+        adapt(someObject, config.lookup(ctx,'foo.bar'))
+
+    This function is used to define named and/or contextual protocols,
+    which provide functionality similar to Zope 3's named adapters and
+    local adapters.  If no local protocol has been created under the specified
+    'configKey' for 'ob', this function creates a 'protocols.Variation' of
+    the protocol found under 'configKey' in any of the parent components of
+    'ob'.  If no parent has a protocol registered under 'configKey', the
+    supplied 'baseProtocol' is used as the base for the 'Variation'.  (If
+    'None', a new 'protocols.Protocol' is registered instead of a 'Variation'.)
+
+    You only need to use 'registeredProtocol()' when declaring adapters, not
+    when looking them up.  Use 'config.lookup()' with the same arguments
+    instead, since 'config.lookup()' doesn't attempt to register new protocols,
+    and will thus be faster.
+
+    Note that you cannot register a local protocol for a given 'configKey'
+    once it has been looked up on 'ob'.  Doing so will result in an
+    'AlreadyRead' error.  Also note that this function doesn't check that
+    a value already registered for 'configKey' is actually a protocol; if
+    there is some other value already registered, it will be returned as long
+    as it is not the same value found for 'configKey' on the parent component
+    of 'ob' (i.e., so long as it is "local" to 'ob'.)
+    """
+
+
+
+
+
+    key = IConfigKey(configKey)
+    oldProtocol = lookup(binding.getParentComponent(ob), key, baseProtocol)
+
+    if oldProtocol is None:
+        newProtocol = protocols.Protocol()
+    else:
+        newProtocol = protocols.Variation(oldProtocol)
+
+    try:
+        IConfigurable(ob).registerProvider(key, Value(newProtocol))
+    except AlreadyRead:
+        pass
+
+    newProtocol = lookup(ob,key,baseProtocol)
+
+    if newProtocol is oldProtocol:
+        raise AlreadyRead("Too late to register protocol", configKey, ob)
+
+    return newProtocol
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
