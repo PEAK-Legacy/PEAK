@@ -3,12 +3,9 @@ from shlex import shlex
 from cStringIO import StringIO
 from peak.storage.files import EditableFile
 from peak.util.FileParsing import AbstractConfigParser
-from peak.running.commands import AbstractCommand
 from peak.util.imports import importObject
-import os.path
 safe_globals = {'__builtins__':{}}
 
-# TODO: partdefs, formats, app, txns
 
 class IPartDef(protocols.Interface):
 
@@ -26,14 +23,17 @@ class IPartDef(protocols.Interface):
     def reset(value):
         """Return the reset of value"""
 
+    def asNumeral(value):
+        """Return the value as a numeral (used for optional/remap formats)"""
+
     def validate(value):
         """Return the internal form of the string 'value', or raise error"""
+
 
 class IFormat(protocols.Interface):
 
     def compute(version):
         """Return the formatted value of 'version' for this format"""
-
 
 
 
@@ -57,6 +57,293 @@ FORMAT_FACTORIES = PropertyName('version-tool.formatKinds')
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class Digit(binding.Component):
+
+    protocols.advise(
+        instancesProvide = [IPartDef]
+    )
+
+    name = binding.requireBinding("Name of the part")
+
+    def independent(self,d,a):
+        for arg in self.args:
+            if unquote(arg).lower()=='independent':
+                return True
+            else:
+                raise ValueError(
+                    "Unrecognized option %r in %r" % (arg,self.cmd)
+                )
+        return False
+
+    independent = binding.Once(independent, suggestParent=False)
+
+    start = 0
+    args = ()
+    cmd = ""
+
+    def incr(self, value):
+        return value+1
+
+    def reset(self, value):
+        return self.start
+
+    def validate(self, value):
+        return int(value)
+
+    def asNumeral(self,value):
+        return self.validate(value)
+
+
+class Count(Digit):
+    start = 1
+
+
+class Choice(Digit):
+
+    choices = binding.Once(
+        lambda self,d,a: [unquote(arg) for arg in self.args]
+    )
+
+    choiceMap = binding.Once(
+        lambda self,d,a: dict(
+            zip([c.strip().lower() for c in self.choices],
+                range(len(self.choices))
+            )
+        )
+    )
+
+    independent = False
+
+
+    def incr(self, value):
+        pos = self.choices.index(self.validate(value)) + 1
+        if pos>=len(self.choices):
+            raise ValueError("Can't increment %s past %r" % (self.name,value))
+        return self.choices[pos]
+
+
+    def reset(self, value):
+        return self.choices[self.start]
+
+
+    def asNumeral(self, value):
+        value = value.lower().strip()
+        try:
+            return self.choiceMap[value]
+        except KeyError:
+            raise ValueError(
+                "Invalid %s %r: must be one of %r" %
+                (self.name, value, self.choices)
+            )
+
+    def validate(self, value):
+        return self.choices[self.asNumeral(value)]
+
+class Timestamp(Digit):
+
+    independent = True
+
+    def incr(self, value):
+        from time import time
+        return time()
+
+    def reset(self, value):
+        raise ValueError("Timestamp values don't reset") # XXX
+
+    def asNumeral(self, value):
+        return float(value)
+
+    def validate(self, value):
+        raise ValueError("Can't set timestamp values directly yet") # XXX
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class StringFormat(binding.Component):
+
+    protocols.advise(
+        instancesProvide = [IFormat]
+    )
+
+    args = ()
+    cmd = ""
+    name = binding.requireBinding("Name of the format")
+
+    def format(self,d,a):
+        try:
+            fmt, = self.args
+        except ValueError:
+            raise ValueError(
+                "%s: missing or multiple format strings in %r" %
+                (self.name, self.cmd)
+            )
+        else:
+            return unquote(fmt)
+
+    format = binding.Once(format)
+
+    def compute(self, version):
+        return self.format % version
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class Remap(StringFormat):
+
+    scheme = binding.bindTo('..')
+
+    def splitArgs(self,d,a):
+        args = [unquote(arg) for arg in self.args]
+        if not args:
+            raise ValueError(
+                "%s: remap without field name or values" % self.name
+            )
+        return args[0], args[1:]
+
+    splitArgs = binding.Once(splitArgs)
+
+    what = binding.Once(lambda self,d,a: self.splitArgs[0])
+    fmts = binding.Once(lambda self,d,a: self.splitArgs[1])
+
+    def compute(self, version):
+        value = version[self.what]
+        if self.what in self.scheme.partMap:
+            value = self.scheme.partMap[self.what].asNumeral(value)
+        return self.getFormat(value) % version
+
+    def getFormat(self, value):
+        try:
+            return self.fmts[value]
+        except IndexError:
+            return ""
+
+
+
+
+
+
+
+
+
+
+
+
+
+class Optional(Remap):
+
+    def splitFormats(self,d,a):
+
+        fmts = self.fmts
+
+        if fmts:
+            return (fmts+[''])[:1]
+
+        # Default formats are the value or an empty string
+        return ('%%(%s)s' % self.what), ''
+
+    splitFormats = binding.Once(splitFormats)
+
+    trueFormat = binding.Once(lambda self,d,a: self.splitFormats[0])
+    falseFormat = binding.Once(lambda self,d,a: self.splitFormats[1])
+
+    def getFormat(self, value):
+        if value:
+            return self.trueFormat
+        return self.falseFormat
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class DateFormat(Remap):
+
+    def format(self,d,a):
+
+        try:
+            fmt, = self.fmts
+        except ValueError:
+            raise ValueError(
+                "%s: too many formats in %r" % (self.name, self.cmd)
+            )
+        return fmt
+
+    format = binding.Once(format)
+
+    def compute(self,version):
+        from datetime import datetime
+        value = datetime.fromtimestamp(version[self.what])
+        return value.strftime(self.format)
 
 
 
@@ -123,15 +410,18 @@ class VersionStore(EditableFile, AbstractConfigParser):
 
 class Scheme(binding.Component):
 
+    name = binding.bindTo('_name')
+    _name = None
+
     parts = binding.Once(
-        lambda s,d,a: [s.makePart(txt) for part in self.partDefs],
+        lambda self,d,a: [self.makePart(txt) for txt in self.partDefs],
         doc = "IPartDefs of the versioning scheme"
     )
 
     formats = binding.Once(
-        lambda s,d,a: dict(
+        lambda self,d,a: dict(
             [(name,self.makeFormat(name,txt))
-                for (name,txt) in self.formatDefs
+                for (name,txt) in self.formatDefs.items()
             ]
         ),
         doc = "dictionary of IFormat objects"
@@ -143,7 +433,7 @@ class Scheme(binding.Component):
     defaultFormat = None
 
     partMap = binding.Once(
-        lambda s,d,a: dict([(part.name,part) for part in self.parts])
+        lambda self,d,a: dict([(part.name,part) for part in self.parts])
     )
 
     def __getitem__(self,key):
@@ -151,9 +441,6 @@ class Scheme(binding.Component):
             return self.partMap[key]
         except KeyError:
             return self.formats[key]
-
-
-
 
 
 
@@ -187,8 +474,8 @@ class Scheme(binding.Component):
         args = tokenize(directive)
         partName = args.pop(0)
 
-        if directive:
-            typeName = PropertyName.fromString(args.pop(0))
+        if args:
+            typeName = PropertyName.fromString(args.pop(0).lower())
         else:
             typeName = 'digit'
 
@@ -198,7 +485,7 @@ class Scheme(binding.Component):
             raise ValueError(
                 "Unrecognized part kind %r in %r" % (typeName,directive)
             )
-        return factory(self, name=partName, args = args)
+        return factory(self, name=partName, args = args, cmd=directive)
 
 
 
@@ -207,10 +494,11 @@ class Scheme(binding.Component):
 
         args = tokenize(directive)
         format = args[0]
-        if format.startswith('"') or format.startswith("'"):
+        if format != unquote(format):
             format = 'string'
         else:
             args.pop(0)
+            format = PropertyName.fromString(format.lower())
 
         factory = importObject(FORMAT_FACTORIES.of(self).get(format,None))
 
@@ -219,8 +507,7 @@ class Scheme(binding.Component):
                 "Unrecognized format kind %r in %r for format %r" %
                 (format,directive,name)
             )
-        return factory(self, name=name, args = args)
-
+        return factory(self, name=name, args = args, cmd=directive)
 
 
 
@@ -265,8 +552,8 @@ class Version(binding.Component):
         cache[key] = NOT_FOUND
         try:
             scheme = self.scheme
-            if key in scheme:
-                value = cache[key] = scheme[key].compute(self)
+            if key in scheme.formats:
+                value = cache[key] = scheme.formats[key].compute(self)
             return value
         except:
             del cache[key]
@@ -291,7 +578,7 @@ class Version(binding.Component):
         data = self.data.copy()
 
         for k,v in partItems:
-            if k in scheme:
+            if k in scheme.partDefs:
                 data[k] = scheme[k].validate(v)
             else:
                 raise KeyError("Version has no part %r" % k)
@@ -315,49 +602,8 @@ class Version(binding.Component):
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-class VersionConfig(AbstractCommand):
-
-    """A version configuration, comprising version schemes and modules"""
-
-    modules = binding.requireBinding('modules for versioning')
-    schemes = binding.requireBinding('list of version schemes used by modules')
-
-    schemeMap = binding.Once(
-        lambda s,d,a: dict(
-            [(scheme.name.lower(), scheme) for scheme in s.schemes]
-        )
-    )
-
-    datafile = binding.Once(
-        lambda s,d,a: os.path.join(os.path.dirname(s.argv[0]),'version.dat')
-    )
-
-    versionStore = binding.Once(
-        lambda self,d,a: VersionStore(self, filename = self.datafile)
-    )
-
-
-
 def getFormats(section):
     return section.formats
-
-
-
-
-
-
-
 
 
 
@@ -380,7 +626,7 @@ class Module(binding.Component):
 
     def versionScheme(self,d,a):
         try:
-            return s.schemeMap[self.schemeName.lower()]
+            return self.schemeMap[self.schemeName.lower()]
         except KeyError:
             raise ValueError(
                 "Unrecognized version scheme '%r'" % self.schemeName
@@ -463,7 +709,7 @@ class Match(binding.Component):
         foundNew = text.find(new,posn)
         if foundOld==-1:
             if foundNew==-1:
-                if isOptional:
+                if self.isOptional:
                     return posn
                 else:
                     raise ValueError(
@@ -505,12 +751,12 @@ class Match(binding.Component):
 
         text, = args
 
-        if text.startswith("'") or text.startswith('"'):
-            text = text[1:-1]
-
-        return klass(matchString=text, isOptional=isOptional)
+        return klass(matchString=unquote(text), isOptional=isOptional)
 
     fromString = classmethod(fromString)
+
+
+
 
 
 

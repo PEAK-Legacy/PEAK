@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-
 """Distutils setup file"""
 
 execfile('src/setup/prologue.py')
@@ -24,6 +23,7 @@ packages = [
     'peak.naming', 'peak.naming.factories', 'peak.net', 'peak.running',
     'peak.running.tools', 'peak.running.tools.n2', 'peak.security',
     'peak.storage', 'peak.util', 'peak.web', 'protocols',
+    'peak.running.tools.version'
 ]
 
 extensions = [

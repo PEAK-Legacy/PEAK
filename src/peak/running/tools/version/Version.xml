@@ -2,7 +2,7 @@
 <!DOCTYPE schema SYSTEM '../../../../ZConfig/doc/schema.dtd' >
 
 <schema
-    datatype=".config.VersionConfig.fromZConfig"
+    datatype=".app.VersionConfig.fromZConfig"
     prefix="peak.running.tools.version"
 >
 

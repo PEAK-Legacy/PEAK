@@ -85,6 +85,10 @@
     <description>
         A versionable entity within a software project; projects must have at
         least one "module".
+
+        XXX A current limitation of the system is that no file may be used in
+        more than one Module, or even more than one Edit within the same
+        module!
     </description>
 
     <key name="Name" attribute="name" datatype="string" required="yes">
@@ -108,10 +112,6 @@
     </multisection>
 
   </sectiontype>
-
-
-
-
 
 
 
@@ -162,13 +162,13 @@
     </description>
 
 
-    <multikey name="+" attribute="formats" datatype="string" required="yes">
+    <key name="+" attribute="formats" datatype="string" required="yes">
         <description>
             Each line in a Formats section consists of a format name, followed
             by a definition.  See the description for the Formats section for
             more information.
         </description>
-    </multikey>
+    </key>
 
   </sectiontype>
 

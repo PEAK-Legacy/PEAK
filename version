@@ -1,11 +1,12 @@
 #!invoke peak version-config
 
 <Scheme default>
+    DefaultFormat full
     part major
     part minor
-    part status Choice alpha beta "release candidate" final
+    part status choice alpha beta "release candidate" final
     part build
-    part date   Timestamp
+    part date   timestamp
 
     <Formats>
     trailer   remap status "a%(build)s" "b%(build)s" "c%(build)s" "%(dot-maint)s"

@@ -41,7 +41,7 @@ PEAK Release 0.5 alpha 3
 
  Package Features
 
-    As of version 0.5a2, PEAK features include:
+    As of version 0.5a3, PEAK features include:
 
     * A component binding framework that makes it easy to parameterize
       components and thus more easily combine and "wire" them together.

@@ -163,9 +163,12 @@ class EditableFile(TxnFile):
     __text = binding.Once(__text)
 
     def __setText(self, text):
+        text = str(text)
+        if self.__text == text:
+            return
         if self.outStream is None:
             self.outStream = self.create(self.fileType) # joins txn
-        self.__text = str(text)
+        self.__text = text
 
     def delete(self, autocommit=False):
         self.__close(False)
@@ -196,9 +199,6 @@ class EditableFile(TxnFile):
         # Ensure text is reloaded for next transaction
         self._delBinding('_EditableFile__text')
         super(EditableFile,self).finishTransaction(txnService, committed)
-
-
-
 
 
 
