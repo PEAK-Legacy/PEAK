@@ -61,7 +61,7 @@ class WSGIRequestHandler(BaseHTTPRequestHandler):
 
         # XXX env['PATH_TRANSLATED'] = self.translate_path(uqrest)
 
-        env['SCRIPT_NAME'] = '/'
+        env['SCRIPT_NAME'] = ''
         host = self.address_string()
         if host != self.client_address[0]:
             env['REMOTE_HOST'] = host
