@@ -13,7 +13,6 @@
     so many levels of indirection here that it can make your head spin!
 """
 
-from peak.binding.imports import importObject, importSequence
 from peak.binding.components import findUtilities, findUtility, Provider
 from peak.api import config
 
@@ -37,6 +36,7 @@ __all__ = [
 __implements__ = (
     IObjectFactory, IStateFactory, IURLContextFactory, IInitialContextFactory
 )
+
 
 
 def getInitialContext(parentComponent=None, **options):

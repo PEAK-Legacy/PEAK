@@ -13,17 +13,6 @@ __all__ = [
 ]
 
 
-def _enumWildcards(name):
-
-    yield name
-
-    while '.' in name:
-        name = name[:name.rindex('.')]
-        yield name+'.*'
-
-    yield '*'
-
-
 def _setCellInDict(d,key,value):
 
     cell = d.get(key)
@@ -37,6 +26,17 @@ def _setCellInDict(d,key,value):
 _emptyRuleCell = EigenCell()
 _emptyRuleCell.set(lambda *args: NOT_FOUND)
 _emptyRuleCell.exists()
+
+
+
+
+
+
+
+
+
+
+
 
 
 class PropertyMap(AutoCreated):
@@ -83,7 +83,6 @@ class PropertyMap(AutoCreated):
     def getPropertyFor(self, obj, propName):
 
         # First we try values
-        
         cell = self.values.get(propName)
 
         if cell is not None:
@@ -96,10 +95,9 @@ class PropertyMap(AutoCreated):
         rulesUsed  = False
         value      = NOT_FOUND
 
-
         # Check regular & wildcard rules
         
-        for name in _enumWildcards(propName):
+        for name in propName.matchPatterns():
 
             rule = rules.get(name)
 
@@ -118,6 +116,8 @@ class PropertyMap(AutoCreated):
 
                 if value is not NOT_FOUND:
                     break
+
+
 
 
 
@@ -217,16 +217,16 @@ class GlobalConfig(Component):
         # around forObj's local config, so that it has access to the local
         # configuration, and will be specific to that configuration root.
 
-        provider = self.__instance_provides__.get(iface)
+        provider = self.__instance_provides__.get(iface, NOT_FOUND)
 
-        if provider is not None:
+        if provider is not NOT_FOUND:
 
             if forObj is self:
                 raise TypeError(
                     "Global config can't provide utilities for itself"
                 )
 
-            from api import getLocal
+            from api_impl import getLocal
             localCfg = getLocal(getRootComponent(forObj))
             return provider(localCfg, forObj)
 

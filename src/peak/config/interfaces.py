@@ -1,22 +1,22 @@
+from __future__ import generators
 from Interface import Interface
 from Interface.Attribute import Attribute
+from peak.api import exceptions
 
 __all__ = [
-    'IRuleFactory', 'IRule', 'IDefault', 'IPropertyMap',
-    'PropertyNotFound', 'NoPropertyMap', 'ObjectOutOfScope',
+    'IRuleFactory', 'IRule', 'IDefault', 'IPropertyMap', 'IConfigKey',
+    'Property',
 ]
 
 
-class PropertyNotFound(Exception):
-    """A required configuration property could not be found/computed"""
 
 
-class NoPropertyMap(Exception):
-    """No property map was found to do a 'setRule()' or 'setProperty()' on"""
 
 
-class ObjectOutOfScope(Exception):
-    """Property map doesn't support managing properties for other objects"""
+
+
+
+
 
 
 
@@ -160,3 +160,109 @@ class IPropertyMap(Interface):
 
     def getPropertyFor(obj, propName):
         """Return value of property for 'obj' or return 'NOT_FOUND'"""
+
+
+class IConfigKey(Interface):
+
+    """This is a marker interface used to indicate that XXX"""
+
+    def getBases():
+        """Return a sequence of the base interfaces, or empty sequence
+           for a 
+        """
+
+    def extends(other, strict=1):
+        """Test whether the interface extends another interface"""
+
+
+from Interface.Implements import implements
+implements(Interface, IConfigKey)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+import re
+
+validChars = re.compile( r"([-+*._a-z0-9]+)", re.I ).match
+
+class Property(str):
+
+    __implements__ = IConfigKey
+
+    def __new__(klass, *args):
+
+        self = super(Property,klass).__new__(klass,*args)
+
+        valid = validChars(self)
+
+        if valid.end()<len(self):
+            raise exceptions.InvalidName(
+                "Invalid characters in property name", self
+            )
+
+        parts = self.split('.')
+
+        if '' in parts or not parts:
+            raise exceptions.InvalidName(
+                "Empty part in property name", self
+            )
+
+        if '*' in self:
+            if '*' not in parts or parts.index('*') < (len(parts)-1):
+                raise exceptions.InvalidName(
+                    "'*' must be last part of wildcard property name", self
+                )
+            
+        return self
+
+
+
+
+
+
+
+
+    def isWildcard(self):
+        return self.endswith('*')
+
+
+    def matchPatterns(self):
+    
+        yield self
+
+        while '.' in self:
+            self = self[:self.rindex('.')]
+            yield self+'.*'
+
+        yield '*'
+
+
+    def getBases(self):
+        return ()
+
+
+    def extends(self, other, strict=1):
+        return not strict and self==other
+        

@@ -1,6 +1,6 @@
 from peak.naming.api import *
 from peak.util.uuid import UUID
-
+from peak.api import exceptions
 
 class uuidURL(ParsedURL):
     """
@@ -27,7 +27,7 @@ class uuidURL(ParsedURL):
         try:
             uuid = UUID(l[0])
         except:
-            raise InvalidNameException(url)
+            raise exceptions.InvalidName(url)
 
         quals = tuple( [tuple(x.split('=', 1)) for x in l[1:]] )
 

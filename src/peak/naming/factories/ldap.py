@@ -1,5 +1,6 @@
 from peak.naming.api import *
 from urllib import quote, unquote
+from peak.api import exceptions
 
 try:
     import ldap
@@ -63,7 +64,7 @@ class ldapURL(ParsedURL):
         if hostport[:2] == '//':
             hostport = hostport[2:]
 	else:
-            raise InvalidNameException(url)
+            raise exceptions.InvalidName(url)
 
         if '/' in hostport:
             hostport, rest = hostport.split('/', 1)
@@ -79,7 +80,7 @@ class ldapURL(ParsedURL):
                 try:
                     port = int(port)
                 except:
-                    raise InvalidNameException(url)
+                    raise exceptions.InvalidName(url)
             else:
                 host = unquote(hostport)
 

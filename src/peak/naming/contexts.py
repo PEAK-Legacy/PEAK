@@ -5,13 +5,13 @@ from names import *
 from references import *
 from peak.binding.imports import importObject
 from peak.binding.components import Component, bindTo, getRootComponent, Once
+from peak import exceptions
 
 import spi
 
 _marker = object()
 
 __all__ = ['AbstractContext', 'BasicInitialContext', 'GenericURLContext']
-
 
 
 
@@ -106,7 +106,7 @@ class AbstractContext(Component):
             ctx = spi.getURLContext(name.scheme, self, iface)
 
             if ctx is None:
-                raise InvalidNameException(
+                raise exceptions.InvalidName(
                     "Unknown scheme %s in %r" % (name.scheme,name)
                 )
 
@@ -179,7 +179,7 @@ class AbstractContext(Component):
         info = self._get(name,_marker)
         
         if info is _marker:
-            raise NameNotFoundException(name)
+            raise exceptions.NameNotFound(name)
 
         state, attrs = info
 
@@ -198,7 +198,7 @@ class AbstractContext(Component):
         
         obj = self._getOb(name,_marker)
         if obj is _marker:
-            raise NameNotFoundException(name)
+            raise exceptions.NameNotFound(name)
 
         return obj
 
@@ -393,13 +393,13 @@ class GenericURLContext(AbstractContext):
             ctx = spi.getURLContext(name.scheme, self, iface)
 
             if ctx is None:
-                raise InvalidNameException(
+                raise exceptions.InvalidName(
                     "Unknown scheme %s in %r" % (name.scheme,name)
                 )
 
             return ctx, name
 
-        raise InvalidNameException("Not a URL:", name)
+        raise exceptions.InvalidName("Not a URL:", name)
 
 
     def _get(self, name, default=None, retrieve=1):

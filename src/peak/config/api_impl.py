@@ -1,6 +1,6 @@
 """Configuration Management API"""
 
-from peak.api import binding, NOT_FOUND, NOT_GIVEN
+from peak.api import binding, exceptions, NOT_FOUND, NOT_GIVEN
 from interfaces import *
 from peak.util.EigenData import *
 from config_components import *
@@ -92,34 +92,34 @@ def getProperty(obj, propName, default=NOT_GIVEN):
         and global configuration objects, if applicable.
     """
 
-    for pm in binding.findUtilities(obj, IPropertyMap):
+    if not isinstance(propName,Property):
+        propName = Property(propName)
 
-        prop = pm.getPropertyFor(obj,propName)
+    if propName.isWildcard():
+        raise exceptions.InvalidName(
+            "getProperty() can't use wildcard properties", propName
+        )
+
+    for c in binding.iterParents(obj):
+
+        prop = c._getUtility(propName, obj)
 
         if prop is not NOT_FOUND:
             return prop
 
-    else:
+        pm = c._getUtility(IPropertyMap, obj)
 
+        if pm is not NOT_FOUND:
+
+            prop = pm.getPropertyFor(obj,propName)
+
+            if prop is not NOT_FOUND:        
+                return prop
+    else:
         if default is NOT_GIVEN:
-            raise PropertyNotFound(propName, obj)
+            raise exceptions.PropertyNotFound(propName, obj)
 
         return default
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 def registerGlobalProvider(ifaces, provider):
     getGlobal().registerProvider(ifaces, provider)
@@ -128,37 +128,37 @@ def registerGlobalProvider(ifaces, provider):
 def setGlobalProperty(propName, value):
 
     pm = binding.findUtility(getGlobal(), IPropertyMap)
-
-    if pm is None:
-        raise NoPropertyMap(
-            "No global property map for setGlobalProperty:", propName, value
-        )
-
     pm.setPropertyFor(getGlobal(), propName, value)
 
 
 def setGlobalRule(propName, ruleFactory):
 
     pm = binding.findUtility(getGlobal(), IPropertyMap)
-
-    if pm is None:
-        raise NoPropertyMap(
-            "No global property map for setGlobalRule:", propName, ruleFactory
-        )
-
     pm.setRule(propName, ruleFactory)
 
 
 def setGlobalDefault(propName, defaultObj):
 
     pm = binding.findUtility(getGlobal(), IPropertyMap)
-
-    if pm is None:
-        raise NoPropertyMap(
-            "No global property map for setGlobalDefault:", propName, ruleObj
-        )
-
     pm.setDefault(propName, ruleObj)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -169,36 +169,18 @@ def registerLocalProvider(forRoot, ifaces, provider):
 def setPropertyFor(obj, propName, value):
 
     pm = binding.findUtility(obj, IPropertyMap)
-
-    if pm is None:
-        raise NoPropertyMap(
-            "No property map found for setPropertyFor:", obj, propName, value
-        )
-
     pm.setPropertyFor(obj, propName, value)
 
 
 def setRuleFor(obj, propName, ruleFactory):
 
     pm = binding.findUtility(obj, IPropertyMap)
-
-    if pm is None:
-        raise NoPropertyMap(
-            "No property map found for setRuleFor:", obj, propName, ruleFactory
-        )
-
     pm.setRule(propName, ruleFactory)
 
 
 def setDefaultFor(obj, propName, defaultObj):
 
     pm = binding.findUtility(obj, IPropertyMap)
-
-    if pm is None:
-        raise NoPropertyMap(
-            "No property map found for setDefaultFor:", obj, propName, defaultObj
-        )
-
     pm.setDefault(propName, defaultObj)
 
 

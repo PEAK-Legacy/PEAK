@@ -1,4 +1,4 @@
-from peak.api import binding
+from peak.api import binding, exceptions
 from interfaces import *
 from time import time
 import sys
@@ -64,10 +64,10 @@ class TransactionService(binding.AutoCreated):
     def join(self, participant):
 
         if self.state.cantCommit:
-            raise BrokenTransaction
+            raise exceptions.BrokenTransaction
 
         elif not self.isActive():
-            raise OutsideTransaction
+            raise exceptions.OutsideTransaction
 
         elif self.state.safeToJoin:
 
@@ -75,7 +75,7 @@ class TransactionService(binding.AutoCreated):
                 self.state.participants.append(participant)
 
         else:
-            raise TransactionInProgress
+            raise exceptions.TransactionInProgress
 
 
 
@@ -102,7 +102,7 @@ class TransactionService(binding.AutoCreated):
             tries += 1
 
         if unready:
-            raise NotReadyError(unready)
+            raise exceptions.NotReadyError(unready)
 
 
         self.state.safeToJoin = False
@@ -124,7 +124,7 @@ class TransactionService(binding.AutoCreated):
     def begin(self, **info):
 
         if self.isActive():
-            raise TransactionInProgress
+            raise exceptions.TransactionInProgress
             
         self.state.timestamp = time()
         self.addInfo(**info)
@@ -133,10 +133,10 @@ class TransactionService(binding.AutoCreated):
     def commit(self):
 
         if not self.isActive():
-            raise OutsideTransaction
+            raise exceptions.OutsideTransaction
 
         if self.state.cantCommit:
-            raise BrokenTransaction
+            raise exceptions.BrokenTransaction
 
         self._prepare()
 
@@ -152,7 +152,7 @@ class TransactionService(binding.AutoCreated):
     def fail(self):
 
         if not self.isActive():
-            raise OutsideTransaction
+            raise exceptions.OutsideTransaction
 
         self.state.cantCommit = True
         self.state.safeToJoin = False
@@ -165,7 +165,7 @@ class TransactionService(binding.AutoCreated):
     def abort(self):
 
         if not self.isActive():
-            raise OutsideTransaction
+            raise exceptions.OutsideTransaction
 
         self.fail()
         
@@ -189,13 +189,13 @@ class TransactionService(binding.AutoCreated):
     def addInfo(self, **info):
     
         if self.state.cantCommit:
-            raise BrokenTransaction
+            raise exceptions.BrokenTransaction
 
         elif self.state.safeToJoin:
             self.state.info.update(info)
 
         else:
-            raise TransactionInProgress
+            raise exceptions.TransactionInProgress
     
 
 
@@ -299,7 +299,7 @@ class TransactionComponent(binding.AutoCreated, AbstractParticipant):
 
         """Our TransactionService (auto-joined when attribute is accessed)"""
 
-        ts = binding.findUtility(ITransactionService)
+        ts = binding.findUtility(self, ITransactionService)
         ts.join(self)
         self.inTransaction = True
 

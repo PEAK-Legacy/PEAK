@@ -4,6 +4,7 @@ import re
 from interfaces import *
 from types import StringTypes
 from peak.util.Struct import struct
+from peak import exceptions
 
 __all__ = [
     'Name', 'toName', 'CompositeName', 'CompoundName', 'OpaqueURL',
@@ -20,7 +21,6 @@ class UnspecifiedSyntax(object):
 
     def format(self,name):
         return "%s(%r)" % (name.__class__.__name__, list(name))
-
 
 
 
@@ -142,7 +142,7 @@ class OpaqueURL(struct):
             scheme, body = m.group(1), name[m.end():]            
             return tuple.__new__(klass,(scheme, body))
             
-        raise InvalidNameException(name)
+        raise exceptions.InvalidName(name)
         
 
     fromString = classmethod(fromString)
@@ -177,7 +177,7 @@ class ParsedURL(OpaqueURL):
 
         m = URLMatch(name)
         if m: return klass.fromURL(OpaqueURL(name))
-        raise InvalidNameException(name)
+        raise exceptions.InvalidName(name)
 
     fromString = classmethod(fromString)
 
@@ -186,7 +186,7 @@ class ParsedURL(OpaqueURL):
         if IName.isImplementedBy(url) and url.isURL:
             return klass.fromURL(url)
             
-        raise InvalidNameException(name)
+        raise exceptions.InvalidName(name)
 
     fromOther = classmethod(fromOther)
 
@@ -218,7 +218,7 @@ class ParsedURL(OpaqueURL):
                 
                 return klass(**d)
                 
-        raise InvalidNameException(url)
+        raise exceptions.InvalidName(url)
         
     fromURL = classmethod(fromURL)
 
@@ -472,7 +472,7 @@ class Syntax(object):
                 aStr = aStr[m.end():]
 
             else:
-                raise InvalidNameException(startStr)
+                raise exceptions.InvalidName(startStr)
 
         if self.direction<0:
             n.reverse()
@@ -540,8 +540,8 @@ def toName(aName, nameClass=CompoundName, acceptURL=1):
         'acceptURL' is set and the string is a URL (per RFC 1738).  Otherwise,
         use 'nameClass' to construct a Name object from the string.
 
-        If 'aName' is neither a Name nor a string/Unicode object, raises
-        an InvalidNameException.
+        If 'aName' is neither a Name nor a string/Unicode object, an
+        'exceptions.InvalidName' is raised.
     """
     
     if isinstance(aName,StringTypes):
@@ -555,7 +555,7 @@ def toName(aName, nameClass=CompoundName, acceptURL=1):
         return aName
 
     else:
-        raise InvalidNameException(aName)
+        raise exceptions.InvalidName(aName)
 
 
 NNS_NAME = CompositeName('/')

@@ -124,9 +124,10 @@ class DescriptorTest(TestCase):
     def checkAcquireInst(self):
 
         data = self.data
-        ob1 = binding.findUtility(data,ISampleUtility1)
-        ob2 = binding.findUtility(data.aService,ISampleUtility1)
-        ob3 = binding.findUtility(data.aService.nestedService,ISampleUtility1)
+        ob1 = binding.findUtility(data,ISampleUtility1,None)
+        ob2 = binding.findUtility(data.aService,ISampleUtility1,None)
+        ob3 = binding.findUtility(data.aService.nestedService,ISampleUtility1,
+        None)
         assert ob1 is None
         assert ob2 is not None
         assert ob3 is not None
@@ -134,14 +135,15 @@ class DescriptorTest(TestCase):
         assert ob2.getParentComponent() is data.aService
         assert ob3.getParentComponent() is data.aService.nestedService
 
-
     def checkAcquireSingleton(self):
 
         data = self.data
-        ob1 = binding.findUtility(data,ISampleUtility2)
-        ob2 = binding.findUtility(data.aService,ISampleUtility2)
-        ob3 = binding.findUtility(data.aService.nestedService,ISampleUtility2)
-        ob4 = binding.findUtility(data.aService.nestedService,ISampleUtility2)
+        ob1 = binding.findUtility(data,ISampleUtility2,None)
+        ob2 = binding.findUtility(data.aService,ISampleUtility2,None)
+        ob3 = binding.findUtility(data.aService.nestedService,ISampleUtility2,
+        None)
+        ob4 = binding.findUtility(data.aService.nestedService,ISampleUtility2,
+        None)
 
         assert ob1 is None
         assert ob2 is not None
@@ -153,12 +155,10 @@ class DescriptorTest(TestCase):
         assert ob3.getParentComponent() is data.aService
         assert ob4.getParentComponent() is data.aService
 
-
     def checkBinding(self):
         thing2 = self.data.thing2 
         assert (thing2 is self.data.thing1), thing2
         assert self.data.__dict__['thing2'] is thing2
-
 
 
 

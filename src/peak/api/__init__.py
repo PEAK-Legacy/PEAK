@@ -26,7 +26,7 @@
 
 __all__ = [
     'NOT_GIVEN', 'NOT_FOUND', 'Items',
-    'binding', 'naming', 'model', 'config', 'running', 'storage'
+    'binding', 'naming', 'model', 'config', 'running', 'storage', 'exceptions'
 ]
 
 from peak.binding.imports import lazyImport
@@ -37,7 +37,7 @@ model   = lazyImport('peak.model.api')
 config  = lazyImport('peak.config.api')
 running = lazyImport('peak.running.api')
 storage = lazyImport('peak.storage.api')
-
+exceptions = lazyImport('peak.exceptions')
 
 # Convenience features
 

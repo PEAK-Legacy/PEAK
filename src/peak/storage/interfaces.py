@@ -5,8 +5,7 @@ from Interface.Attribute import Attribute
 
 __all__ = [
     'ITransactionService', 'ITransactionParticipant', 'ICache',
-    'ITransactionErrorHandler', 'BrokenTransaction', 'ICursor', 'IRow',
-    'NotReadyError', 'TransactionInProgress', 'OutsideTransaction',
+    'ITransactionErrorHandler', 'ICursor', 'IRow',
     'IRack', 'IRackImplementation', 'IManagedConnection', 'IManagedConnImpl',
 ]
 
@@ -37,6 +36,7 @@ class ITransactionService(Interface):
     def abort():
         """Abort the transaction, or raise OutsideTransaction if not in
         progress."""
+
 
 
     def fail():
@@ -188,18 +188,18 @@ class ITransactionErrorHandler(Interface):
         """'participant' raised exception during 'commitTransaction()'"""
         
 
-class NotReadyError(Exception):
-    """One or more transaction participants were unready too many times"""
 
-class TransactionInProgress(Exception):
-    """Action not permitted while transaction is in progress"""
 
-class OutsideTransaction(Exception):
-    """Action not permitted while transaction is not in progress"""
 
-class BrokenTransaction(Exception):
-    """Transaction can't commit, due to participants breaking contracts
-       (E.g. by throwing an exception during the commit phase)"""
+
+
+
+
+
+
+
+
+
 
 
 

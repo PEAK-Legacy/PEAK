@@ -8,19 +8,19 @@ import meta
 from weakref import WeakValueDictionary
 
 from peak.naming.names import toName, Syntax, CompoundName
-from peak.naming.interfaces import NameNotFoundException
 from peak.util.EigenData import EigenRegistry, EigenCell
 
 from Interface import Interface
-from peak.api import config, NOT_FOUND, NOT_GIVEN
+from peak.api import config, NOT_FOUND, NOT_GIVEN, exceptions
 
+from peak.config.interfaces import IConfigKey
 
 __all__ = [
     'Base', 'Component','AutoCreated','Provider','CachingProvider',
     'bindTo', 'requireBinding', 'bindSequence', 'bindToParent', 'bindToSelf',
     'getRootComponent', 'getParentComponent', 'lookupComponent',
     'acquireComponent', 'globalLookup', 'findUtility', 'findUtilities',
-    'bindToUtilities', 'bindProperty',
+    'bindToUtilities', 'bindToProperty', 'iterParents',
 ]
 
 
@@ -162,43 +162,43 @@ def acquireComponent(component, name):
 
 
 
-def findUtilities(component, iface, forObj=None):
+def iterParents(component):
 
-    if forObj is None:
-        forObj = component
-        
     last = component
-    
-    while component is not None:
+        
+    for part in "..":
+
+        while component is not None:
+
+            yield component
+
+            last      = component
+            component = component.getParentComponent()
+
+        component = config.getLocal(last)
+
+
+def findUtilities(component, iface):
+
+    forObj = component
+
+    for component in iterParents(component):
 
         utility = component._getUtility(iface, forObj)
 
-        if utility is not None:
+        if utility is not NOT_FOUND:
             yield utility
 
-        last      = component
-        component = component.getParentComponent()
-
-
-    cfg = config.getLocal(last)
-
-    if cfg is not None:
-        for u in findUtilities(cfg, iface, forObj):
-            yield u
-
     
-def findUtility(component, iface, forObj=None):
+def findUtility(component, iface, default=NOT_GIVEN):
 
-    for u in findUtilities(component, iface, forObj):
+    for u in findUtilities(component, iface):
         return u
 
+    if default is NOT_GIVEN:
+        raise exceptions.NameNotFound(iface, resolvedObj = component)
 
-
-
-
-
-
-
+    return default
 
 
 
@@ -256,8 +256,8 @@ def lookupComponent(component, name):
     strings and 'CompositeName' instances, will be looked up using
     'binding.globalLookup()'.
     
-    Regardless of how the lookup is processed, a 'naming.NameNotFoundException'
-    will be raised if the name cannot be found.
+    Regardless of how the lookup is processed, an 'exceptions.NameNotFound'
+    error will be raised if the name cannot be found.
 
     Component Path Syntax
 
@@ -278,12 +278,12 @@ def lookupComponent(component, name):
         path segment.  '.' and '..' are interpreted the same as for the first
         path segment."""
 
-    if isinstance(name, InterfaceClass):
-        utility = findUtility(component, name)
-        if utility is None:
-            raise NameNotFoundException(name, resolvedObj = component)
+    if IConfigKey.isImplementedBy(name):
+        return findUtility(component, name)
         
     parsedName = toName(name, ComponentName, 1)
+
+
 
     # URL's and composite names must be handled globally
 
@@ -318,7 +318,7 @@ def lookupComponent(component, name):
 
     except AttributeError:
 
-        raise NameNotFoundException(
+        raise exceptions.NameNotFound(
             resolvedName = ComponentName(resolved),
             remainingName = ComponentName([attr] + [a for a in parts]),
             resolvedObj = ob
@@ -359,7 +359,7 @@ class bindTo(Once):
             if newOb is NOT_FOUND:
             
                 del instanceDict[attrName]
-                raise NameNotFoundError(attrName, resolvedName = name)
+                raise exceptions.NameNotFound(attrName, resolvedName = name)
 
             if self.singleValue:            
                 return newOb
@@ -469,12 +469,12 @@ def bindToUtilities(iface, provides=None, doc=None):
 
     """Binding to a list of all 'iface' utilities above the component"""
 
-    return Once(lambda s,d,a: [u for u in findUtilities(s,iface,s)],
+    return Once(lambda s,d,a: [u for u in findUtilities(s,iface)],
         provides=provides, doc=doc
     )
 
 
-def bindProperty(propName, default=NOT_GIVEN, provides=None, doc=None):
+def bindToProperty(propName, default=NOT_GIVEN, provides=None, doc=None):
 
     """Binding to property 'propName', defaulting to 'default' if not found
 
@@ -513,7 +513,7 @@ class Base(object):
 
 
     def _getUtility(self, iface, forObj):
-        pass
+        return NOT_FOUND
 
 
     def __parentCell(s,d,a):
@@ -547,23 +547,23 @@ class Component(Base):
 
     def _getUtility(self, iface, forObj):
     
-        provider = self.__instance_provides__.get(iface)
+        provider = self.__instance_provides__.get(iface,NOT_FOUND)
             
-        if provider is not None:
+        if provider is not NOT_FOUND:
             return provider(self,forObj)
 
-        attr = self.__class_provides__.get(iface)
+        attr = self.__class_provides__.get(iface,NOT_FOUND)
 
-        if attr is not None:
+        if attr is not NOT_FOUND:
+            return getattr(self, attr, NOT_FOUND)
 
-            utility = getattr(self,attr)
+        return NOT_FOUND
 
-            if utility is not NOT_FOUND:
-                return utility
-            
 
     def registerProvider(self, ifaces, provider):
         self.__instance_provides__.register(ifaces, provider)
+
+
 
 
 
