@@ -15,7 +15,7 @@ from Interface import Interface
 
 __all__ = [
     'GlobalConfig', 'LocalConfig', 'PropertyMap', 'LazyLoader', 'ConfigReader',
-    'loadConfigFile', 'loadMapping', 'PropSet',
+    'loadConfigFile', 'loadMapping', 'PropSet', 'fileNearModule',
 ]
 
 
@@ -34,9 +34,9 @@ _emptyRuleCell.set(lambda *args: NOT_FOUND)
 _emptyRuleCell.exists()
 
 
-
-
-
+def fileNearModule(moduleName,filename):
+    filebase = importString(moduleName+':__file__')
+    import os; return os.path.join(os.path.dirname(filebase), filename)
 
 
 class PropertyMap(Base):
@@ -224,19 +224,30 @@ class BasicConfig(Component):
         pass
         
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 class GlobalConfig(BasicConfig):
 
-    def config_filenames(self,d,a):
-        import os; from peak import __file__ as filebase
-        return [os.path.join(os.path.dirname(filebase), 'peak.ini')]
-
-    config_filenames = Once(config_filenames)
-
-
     def setup(self, propertyMap):
-
-        for file in self.config_filenames:
-            loadConfigFile(propertyMap, file)
+        loadConfigFile(propertyMap, fileNearModule('peak','peak.ini'))
             
 
     def setParentComponent(self,parent):
@@ -252,6 +263,7 @@ class LocalConfig(BasicConfig):
             "LocalConfig parent must be GlobalConfig"
 
         super(LocalConfig,self).setParentComponent(parent)
+
 
 
 class PropSet(object):
