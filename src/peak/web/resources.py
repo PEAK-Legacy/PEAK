@@ -270,7 +270,7 @@ class ResourceProxy(object):
         self.resourcePath = resourcePath
 
     def getObject(self, interaction):
-        return interaction.skin.getResource(self.path)
+        return interaction.getResource(self.path)
 
     def preTraverse(self, ctx):
         interaction = ctx.interaction

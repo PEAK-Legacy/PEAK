@@ -6,9 +6,10 @@ from peak.binding.interfaces import IComponent
 
 __all__ = [
     'IWebInteraction', 'IWebTraversable', 'IWebPage', 'IInteractionPolicy',
-    'PATH_PROTOCOL', 'PAGE_PROTOCOL', 'INTERACTION_CLASS', 'RESOURCE_PREFIX',
-    'DEFAULT_METHOD', 'APPLICATION_LOG', 'AUTHENTICATION_SERVICE',
-    'ERROR_PROTOCOL', 'SKIN_SERVICE', 'IWebException', 'IDOMletState',
+    'ISkinService', 'ILayerService', 'IAuthService', 'IWebException',
+    'PATH_PROTOCOL', 'PAGE_PROTOCOL', 'RESOURCE_PREFIX',
+    'DEFAULT_METHOD', 'APPLICATION_LOG', 'ERROR_PROTOCOL',
+    'IDOMletState',
     'IDOMletNode',    'IDOMletNodeFactory', 'ITraversalContext', 'IResource',
     'IDOMletElement', 'IDOMletElementFactory', 'ISkin', 'IPolicyInfo'
 ]
@@ -17,42 +18,110 @@ PATH_PROTOCOL  = PropertyName('peak.web.pathProtocol')
 PAGE_PROTOCOL  = PropertyName('peak.web.pageProtocol')
 ERROR_PROTOCOL = PropertyName('peak.web.errorProtocol')
 
-INTERACTION_CLASS = PropertyName('peak.web.interactionClass')
 DEFAULT_METHOD    = PropertyName('peak.web.defaultMethod')
 RESOURCE_PREFIX   = PropertyName('peak.web.resourcePrefix')
 APPLICATION_LOG   = PropertyName('peak.web.appLog')
 
-AUTHENTICATION_SERVICE = PropertyName('peak.web.authenticationService')
-SKIN_SERVICE           = PropertyName('peak.web.skinService')
 
 try:
     from zope.publisher.interfaces import IPublication
     from zope.publisher.interfaces.browser import IBrowserPublication
     from zope.publisher.interfaces.xmlrpc import IXMLRPCPublication
-
 except ImportError:
     zopePublicationInterfaces = ()
-
 else:
     import protocols.zope_support
     zopePublicationInterfaces = (
         IPublication, IBrowserPublication, IXMLRPCPublication
     )
 
+
+
+
+
 class IPolicyInfo(Interface):
 
-    """Standard attributes for interaction policy info"""
+    """Standard informational attributes for interaction and policy"""
 
     app = Attribute("""The underlying application object""")
     log = Attribute("""Default 'logs.ILogger' for interactions""")
+    root = Attribute("""Start point for non-resource traversals""")
 
     resourcePrefix = Attribute("""Name that starts path to resources""")
     errorProtocol  = Attribute("""Protocol for exception handling""")
     pathProtocol   = Attribute("""Protocol for traversing""")
     pageProtocol   = Attribute("""Protocol for rendering pages""")
+    defaultMethod  = Attribute("""Default method name (e.g. 'index_html')""")
 
 
-class IWebInteraction(IInteraction, IPolicyInfo):
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class IResourceService(Interface):
+
+    resources = Attribute("""ITraversable for resource root""")
+
+    def getResource(path):
+        """Return the named resource"""
+
+    def getResourceURL(path, interaction):
+        """Return the URL for the named resource"""
+
+
+class ISkinService(Interface):
+
+    def getSkin(name):
+        """Return the named skin"""
+
+
+class ILayerService(Interface):
+
+    def getLayer(name):
+        """Return the named layer"""
+
+
+class IAuthService(Interface):
+
+    def getUser(interaction):
+        """Return a user object for the interaction"""
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class IWebInteraction(IInteraction, IResourceService, IPolicyInfo):
 
     """Component representing a web hit"""
 
@@ -74,40 +143,12 @@ class IWebInteraction(IInteraction, IPolicyInfo):
 
 
 
+class IInteractionPolicy(ISkinService, ILayerService, IAuthService, IPolicyInfo):
 
+    """Component holding cross-hit configuration and consolidated services"""
 
-
-
-
-
-class IInteractionPolicy(IPolicyInfo):
-
-    """Component holding cross-hit configuration"""
-
-    authSvc = Attribute("""Authentication service component""")
-    skinSvc = Attribute("""Skin service component""")
-
-    defaultMethod = Attribute("""Default method name (e.g. 'index_html')""")
-    interactionClass = Attribute("Factory for interaction instances")
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    def newInteraction(request):
+        """Create a new IInteraction for 'request'"""
 
 
 
@@ -219,13 +260,13 @@ class IWebException(Interface):
         """Perform necessary recovery actions"""
 
 
-class ISkin(IResource):
 
-    def getResource(path):
-        """Return the named resource"""
+class ISkin(IResource, IResourceService):
+    """A resource container, and the root resource for its contents"""
 
-    def getResourceURL(path, interaction):
-        """Return the URL for the named resource"""
+
+
+
 
 
 

@@ -230,12 +230,12 @@ class CreateViaFactory(object):
             if factory is NOT_FOUND:
                 self.instance = factory
             else:
-                self.instance = factory(
-                    binding.getParentComponent(propertyMap)
+                self.instance = factory()
+                binding.suggestParentComponent(
+                    binding.getParentComponent(propertyMap),None,self.instance
                 )
 
             return self.instance
-
 
 
 

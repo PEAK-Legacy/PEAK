@@ -7,7 +7,7 @@ from errors import NotFound, NotAllowed
 
 __all__ = [
     'Interaction', 'NullAuthenticationService', 'InteractionPolicy',
-    'CGIPublisher', 'DefaultExceptionHandler', 'NullSkinService',
+    'CGIPublisher', 'DefaultExceptionHandler',
     'TraversalPath', 'TestInteraction',
 ]
 
@@ -67,55 +67,14 @@ class TraversalPath(naming.CompoundName):
 
 
 
+class NullAuthenticationService:
 
-
-
-
-
-
-
-
-
-
-
-
-
-class NullSkinService(binding.Component):
-
-    app = binding.Obtain('policy/app')
-
-    policy = binding.Obtain('..')
-
-    root = binding.Make(
-        lambda self: adapt(self.app, self.policy.pathProtocol)
+    protocols.advise(
+        instancesProvide=[IAuthService]
     )
-
-    defaultSkin = binding.Make(
-        lambda self:
-            web.Skin(
-                self.app, root=self.root, policy=self.policy,
-                layers=[web.DefaultLayer()]
-            )
-            # XXX needs to create a default layer
-    )
-
-    def getSkin(self, interaction):
-        return self.defaultSkin
-
-
-class NullAuthenticationService(binding.Singleton):
 
     def getUser(self, interaction):
         return None
-
-
-
-
-
-
-
-
-
 
 
 
@@ -136,29 +95,29 @@ class InteractionPolicy(binding.Component, protocols.StickyAdapter):
 
     fromComponent = classmethod(fromComponent)
 
-    app           = binding.Obtain('./subject')
-    log           = binding.Obtain(APPLICATION_LOG)
-    errorProtocol = binding.Obtain(ERROR_PROTOCOL)
-    pathProtocol  = binding.Obtain(PATH_PROTOCOL)
-    pageProtocol  = binding.Obtain(PAGE_PROTOCOL)
-    authSvc       = binding.Obtain(AUTHENTICATION_SERVICE)
-    skinSvc       = binding.Obtain(SKIN_SERVICE)
-    defaultMethod = binding.Obtain(DEFAULT_METHOD)
+    app            = binding.Obtain('./subject')
+    log            = binding.Obtain(APPLICATION_LOG)
+    errorProtocol  = binding.Obtain(ERROR_PROTOCOL)
+    pathProtocol   = binding.Obtain(PATH_PROTOCOL)
+    pageProtocol   = binding.Obtain(PAGE_PROTOCOL)
+    defaultMethod  = binding.Obtain(DEFAULT_METHOD)
+    resourcePrefix = binding.Obtain(RESOURCE_PREFIX)
 
-    resourcePrefix   = binding.Obtain(RESOURCE_PREFIX)
-    interactionClass = binding.Obtain(INTERACTION_CLASS)
+    _authSvc       = binding.Make(IAuthService, adaptTo=IAuthService)
+    _skinSvc       = binding.Make(ISkinService, adaptTo=ISkinService)
+    _layerSvc      = binding.Make(ILayerService, adaptTo=ILayerService)
+    _mkInteraction = binding.Obtain(config.FactoryFor(IWebInteraction))
 
+    root = binding.Make(
+        lambda self: adapt(self.app, self.pathProtocol)
+    )
 
+    getSkin = binding.Delegate('_skinSvc')
+    getLayer = binding.Delegate('_layerSvc')
+    getUser  = binding.Delegate('_authSvc')
 
-
-
-
-
-
-
-
-
-
+    def newInteraction(self,request):
+        return self._mkInteraction(self,None,policy=self,request=request)
 
 
 
@@ -166,28 +125,24 @@ class Interaction(security.Interaction):
 
     """Base publication policy/interaction implementation"""
 
-    policy   = binding.Require(
-        "IInteractionPolicy for application", adaptTo=IInteractionPolicy
-    )
+    policy   = binding.Obtain('..', adaptTo=IInteractionPolicy)
     request  = binding.Require("Request object")
+    response = binding.Delegate("request")
 
-    response = binding.Obtain("request/response")
+    app = log = root = \
+    defaultMethod = resourcePrefix = \
+    errorProtocol = pathProtocol = pageProtocol = \
+        binding.Delegate("policy")
 
-    app      = binding.Obtain('policy/app')
-    log      = binding.Obtain('policy/log')
 
-    errorProtocol  = binding.Obtain('policy/errorProtocol')
-    pathProtocol   = binding.Obtain('policy/pathProtocol')
-    pageProtocol   = binding.Obtain('policy/pageProtocol')
-    resourcePrefix = binding.Obtain('policy/resourcePrefix')
+    skinName = "default"
 
-    user = binding.Make(
-        lambda self: self.policy.authSvc.getUser(self)
-    )
+    user = binding.Make(lambda self: self.policy.getUser(self) )
+    skin = binding.Make(lambda self: self.policy.getSkin(self.skinName))
 
-    skin = binding.Make(
-        lambda self: self.policy.skinSvc.getSkin(self)
-    )
+    getResource = getResourceURL = resources = \
+        binding.Delegate("skin")
+
 
     def beforeTraversal(self, request):
         """Begin transaction before traversal"""
@@ -202,7 +157,6 @@ class Interaction(security.Interaction):
     def traverseName(self, request, ob, name, check_auth=1):
         return ob.contextFor(name)
 
-
     def afterTraversal(self, request, ob):
         # Let the found object know it's being traversed
         ob.checkPreconditions()
@@ -212,7 +166,7 @@ class Interaction(security.Interaction):
 
         """Find default method if object isn't renderable"""
 
-        default = self.policy.defaultMethod
+        default = self.defaultMethod
 
         if default and ob.renderable is None:
 
@@ -237,12 +191,6 @@ class Interaction(security.Interaction):
 
     def callObject(self, request, ob):
         return ob.render()
-
-
-
-
-
-
 
     def afterCall(self, request):
         """Commit transaction after successful hit"""
@@ -285,11 +233,20 @@ class Interaction(security.Interaction):
         return False    # XXX
 
 
+
+
+
+
+
+
+
+
+
+
+
 class TestInteraction(Interaction):
 
     """Convenient interaction to use for tests, experiments, etc."""
-
-    policy = binding.Obtain('..', adaptTo=IInteractionPolicy)
 
     request = binding.Make('peak.web.requests:TestRequest')
 
@@ -307,6 +264,8 @@ class TestInteraction(Interaction):
             return self.callObject(None, ob)
 
         return ob
+
+
 
 
 
@@ -386,7 +345,6 @@ class CGIPublisher(binding.Component):
 
     app              = binding.Require("Application root to publish")
     policy           = binding.Obtain('app', adaptTo = IInteractionPolicy)
-    interactionClass = binding.Obtain('policy/interactionClass')
 
 
     # items to (potentially) replace in subclasses
@@ -398,6 +356,7 @@ class CGIPublisher(binding.Component):
     mkHTTP    = binding.Obtain(PropertyName('peak.web.HTTPRequest'))
 
     _browser_methods = binding.Make(lambda: {'GET':1, 'POST':1, 'HEAD':1} )
+
 
 
 
@@ -425,11 +384,11 @@ class CGIPublisher(binding.Component):
             request = self.mkHTTP(input, output, env)
 
         request.setPublication(
-            self.interactionClass(
-                self, None, policy = self.policy, request = request
-            )
+            self.policy.newInteraction(request)
         )
         return self.publish(request) or 0
+
+
 
 
 

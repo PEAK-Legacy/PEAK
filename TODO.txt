@@ -63,15 +63,15 @@ Open Issues/To-Do Items
 
        - default error templates, w/useful info
 
-       - Refactor skin/layer/resource machinery so that layers can be shared
-         between skins (because i18n will probably want skins and that's going
-         to greatly multiply memory requirements)
-
        - A set of simple, basic form controls that handle value rendering only
          (form metadata, validation, etc. will be handled by peak.web.forms in
          a later release)
 
        - try/catch DOMlet (and related error rendering interface/framework)
+
+
+
+
 
 
 

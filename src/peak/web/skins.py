@@ -2,22 +2,63 @@ from peak.api import *
 from interfaces import *
 from places import Traversable, MultiTraverser, Traversal
 from publish import TraversalPath
+from resources import Resource
 
-__all__ = ['Skin',]
+__all__ = [
+    'Skin', 'LayerService', 'SkinService',
+]
 
 
-class SkinTraverser(MultiTraverser):
+class LayerService(Resource):
+
+    """Service for accessing layers (w/caching and sharing between skins)"""
 
     protocols.advise(
-        instancesProvide = [IResource]
+        instancesProvide=[ILayerService]
     )
 
-    # Our local path is effectively '/++resources++'
+    # Our path is /++resources++ or equivalent
     resourcePath = binding.Obtain(RESOURCE_PREFIX)
 
-    items = binding.Obtain('../layers')
+    layerMap = binding.Make( config.Namespace('peak.web.layers') )
 
-    _subTraverser = MultiTraverser
+    permissionNeeded = security.Anybody
+
+    def getLayer(self,layerName):
+        ob = getattr(self.layerMap,layerName)
+        binding.suggestParentComponent(self,layerName,ob)
+        return ob
+
+    def traverseTo(self, name, ctx):
+        return ctx.interaction.resources.traverseTo(name,ctx)
+
+    def getObject(self,interaction):
+        return interaction.resources.getObject(interaction)
+
+
+
+
+
+class SkinService(binding.Component):
+
+    protocols.advise(
+        instancesProvide=[ISkinService]
+    )
+
+    app = root = binding.Delegate('policy')
+
+    policy = binding.Obtain('..')
+
+    skinMap = binding.Make( config.Namespace('peak.web.skins') )
+
+    def getSkin(self, name):
+        ob = getattr(self.skinMap,name)
+        binding.suggestParentComponent(self.policy,name,ob)
+        return ob
+
+
+
+
 
 
 
@@ -41,43 +82,43 @@ class SkinTraverser(MultiTraverser):
 
 class Skin(Traversable):
 
+    """Skins provide a branch-point between the app root and resources"""
+
     protocols.advise(
         instancesProvide = [ISkin]
     )
 
-    traverser = binding.Make(SkinTraverser)
-    cache     = binding.Make(dict)
+    resources  = binding.Make(lambda self: MultiTraverser(items=self.layers))
+    cache      = binding.Make(dict)
+    policy     = binding.Obtain('..')
+    root       = binding.Delegate("policy")
 
-    root   = binding.Require("Underlying traversal root")
-    policy = binding.Require("Interaction Policy")
-    layers = binding.Require(
-        "Sequence of resource managers", suggestParent=False
-        # We don't suggest the parent, so that the layers will bind to our
-        # traverser, instead of to us!
+    layerNames = binding.Require("Sequence of layer names")
+    layers     = binding.Make(
+        lambda self: map(self.policy.getLayer, self.layerNames)
     )
 
     def dummyInteraction(self):
-        policy = self.policy
-        return policy.interactionClass(
-            policy, None, policy=policy, request=None, skin=self, user=None
-        )
+        interaction = self.policy.newInteraction(None)
+        interaction.user = None
+        interaction.skin = self
+        return interaction
 
     dummyInteraction = binding.Make(dummyInteraction)
+
 
     def traverseTo(self, name, ctx):
 
         if name == ctx.interaction.resourcePrefix:
-            return self.traverser
+            return self.resources
 
         return self.root.traverseTo(name, ctx)
 
     resourcePath = ''  # skin is at root
 
+
     def getObject(self,interaction):
         return self.root.getObject(interaction)
-
-
-
 
 
     def getResource(self, path):
