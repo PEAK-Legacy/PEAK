@@ -4,7 +4,7 @@ from protocols import Interface, Attribute
 __all__ = [
     'IAuthorizedPrincipal', 'IInteraction', 'IAccessAttempt',
     'IAbstractPermission', 'IAbstractPermission', 'IPermissionChecker',
-    'IGuardedObject', 'INamePermissions',
+    'IGuardedObject',
 ]
 
 class IAccessAttempt(Interface):
@@ -17,18 +17,18 @@ class IAccessAttempt(Interface):
 
     interaction = Attribute("""IInteraction for the attempt""")
 
-    permissionsNeeded = Attribute(
-        """Sequence of concrete permission types; if any one is allowed,
-        the access is allowed."""
+    permission = Attribute(
+        """Concrete permission type to be checked"""
     )
 
     subject = Attribute("""The object to which access is desired""")
 
-    def isAllowed():
-        """Return true if access should be allowed"""
+    def allows(subject=NOT_GIVEN, name=NOT_GIVEN, permissionsNeeded=NOT_GIVEN,
+        user=NOT_GIVEN
+    ):
+        """Return true if 'user' has 'permisisonsNeeded' for 'subject'"""
 
-    def new(**kw):
-        """Return a new attempt with 'kw' replacements for current values"""
+
 
 
 
@@ -41,8 +41,8 @@ class IAccessAttempt(Interface):
 
 class IAuthorizedPrincipal(Interface):
 
-    def checkGlobalPermission(permType, attempt):
-        """Does principal have a global grant or deny of 'permType'?
+    def checkGlobalPermission(attempt):
+        """Does principal have a global grant or deny of 'attempt.permission'?
 
         Return NOT_FOUND if there is no knowledge of a global grant or denial
         of 'permType'.  Otherwise return truth to grant permission, or
@@ -59,14 +59,14 @@ class IInteraction(Interface):
 
     user = Attribute("""The IPrincipal responsible for the interaction""")
 
-    def checkAccess(attempt):
+    def checkPermission(attempt):
         """Return true if 'IAccessAttempt' 'attempt' should be allowed"""
 
     permissionProtocol = Attribute(
         """The protocol to which permissions should be adapted for checking"""
     )
 
-    def allows(subject, permissionsNeeded=NOT_GIVEN, user=NOT_GIVEN):
+    def allows(subject,name=None,permissionsNeeded=NOT_GIVEN,user=NOT_GIVEN):
         """Return true if 'user' has 'permisisonsNeeded' for 'subject'
 
         If 'user' is not supplied, the interaction's user should be used.  If
@@ -84,7 +84,7 @@ class IPermissionChecker(Interface):
 
     """An object that can verify the presence of a permission"""
 
-    def checkPermission(permType, attempt):
+    def checkPermission(attempt):
         """Does the principal for 'attempt' have permission 'permType'?"""
 
 
@@ -108,16 +108,16 @@ class IAbstractPermission(IConcretePermission):
 
 class IGuardedObject(Interface):
 
-    """An object that knows what permissions are needed for access"""
-
-    def getRequiredPermissions(attempt):
-        """Return (abstract) permission types needed for 'attempt'"""
-
-
-class INamePermissions(Interface):
     """Object that knows permissions needed to access subobjects by name"""
 
     def getPermissionsForName(name):
         """Return (abstract) permission types needed to access 'name'"""
+
+
+
+
+
+
+
 
 

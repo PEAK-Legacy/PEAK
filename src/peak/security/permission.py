@@ -43,7 +43,7 @@ class NamePermissionsAdapter(object):
     __slots__ = 'perms'
 
     protocols.advise(
-        instancesProvide = [INamePermissions]
+        instancesProvide = [IGuardedObject]
     )
 
     def __init__(self,ob,proto):
@@ -53,12 +53,11 @@ class NamePermissionsAdapter(object):
         return self.perms.get(name,())
 
 
-def allow(**namesToPermLists):
+def allow(basePerms=None, **namesToPermLists):
 
     """Use in the body of a class to declare permissions for attributes"""
 
     def callback(klass):
-
         if '_peak_nameToPermissions_map' not in klass.__dict__:
             m = klass._peak_nameToPermissions_map = {}
             map(m.update,
@@ -71,9 +70,10 @@ def allow(**namesToPermLists):
             m = klass._peak_nameToPermissions_map
 
         m.update(namesToPermLists)
-
+        if basePerms is not None:
+            m[None] = basePerms
         protocols.declareAdapter(
-            NamePermissionsAdapter, provides = [INamePermissions],
+            NamePermissionsAdapter, provides = [IGuardedObject],
             forTypes = [klass],
         )
         return klass
@@ -85,16 +85,20 @@ class AccessAttempt(object):
     """An attempt to access a protected object"""
 
     __slots__ = [
-        'interaction', 'user', 'subject', 'permissionsNeeded',
-        'originalPermissions', 'principal', 'name',
+        'interaction', 'user', 'subject', 'permission', 'principal', 'name',
     ]
 
     def __init__(self,
-        subject, interaction=NOT_GIVEN, user=NOT_GIVEN,
-        permissionsNeeded=NOT_GIVEN, name=None,
+        permission, subject, name=None, user=NOT_GIVEN, interaction=NOT_GIVEN
     ):
 
+        try:
+            klass = subject.__class__
+        except AttributeError:
+            klass = type(subject)
+
         self.subject = subject
+        self.permission = permission.of(klass)
         interaction = adapt(interaction,IInteraction,None)
 
         if interaction is None:
@@ -117,76 +121,31 @@ class AccessAttempt(object):
 
 
 
-
-
-
-
-        if permissionsNeeded is NOT_GIVEN:
-
-            if name is None:
-
-                subject = adapt(subject,IGuardedObject,None)
-
-                if subject is not None:
-                    permissionsNeeded = subject.getRequiredPermissions(self)
-                else:
-                    permissionsNeeded = ()
-
-            else:
-                subject = adapt(subject,INamePermissions,None)
-
-                if subject is not None:
-                    permissionsNeeded = subject.getPermissionsForName(name)
-                else:
-                    permissionsNeeded = ()
-
-        # Set up permissions to be of the right subtype for their subject
-
-        self.originalPermissions = permissionsNeeded
-
-        try:
-            klass = self.subject.__class__
-        except AttributeError:
-            klass = type(self.subject)
-
-        self.permissionsNeeded = [p.of(klass) for p in permissionsNeeded]
-
-
-    def isAllowed(self):
-        """Return true if access permitted"""
-        return self.interaction.checkAccess(self)
-
-
-
-
-
-
-
-    def new(self, subject=NOT_GIVEN, interaction=NOT_GIVEN, user=NOT_GIVEN,
-        permissionsNeeded=NOT_GIVEN, name=NOT_GIVEN
+    def allows(self,
+        subject=NOT_GIVEN, name=NOT_GIVEN, permissionsNeeded=NOT_GIVEN,
+        user=NOT_GIVEN, interaction=NOT_GIVEN
     ):
         if subject is NOT_GIVEN:
+
             subject=self.subject
+
+            if name is NOT_GIVEN:
+                name = self.name
+
+        elif name is NOT_GIVEN:
+            # Different subject, don't copy our name!  Assume it's None.
+            name = None
+
         if interaction is NOT_GIVEN:
             interaction=self.interaction
+
         if user is NOT_GIVEN:
             user=self.user
-        if name is NOT_GIVEN:
-            name=self.name
+
         if permissionsNeeded is NOT_GIVEN:
-            permissionsNeeded=self.originalPermissions
+            permissionsNeeded=[self.permission.getAbstract()]
 
-        return self.__class__(subject,interaction,user,permissionsNeeded,name)
-
-
-
-
-
-
-
-
-
-
+        return interaction.allows(subject,name,permissionsNeeded,user)
 
 
 
@@ -219,29 +178,29 @@ class Interaction(binding.Component):
     permissionProtocol = IPermissionChecker     # XXX
 
 
-    def checkAccess(self, attempt):
+    def checkPermission(self, attempt):
+        checker = adapt(attempt.permission, self.permissionProtocol)
+        return checker.checkPermission(attempt)
 
-        protocol = self.permissionProtocol
 
-        for permType in attempt.permissionsNeeded:
-            ok = adapt(permType, protocol).checkPermission(permType, attempt)
+    def allows(self, subject,
+        name=None, permissionsNeeded=NOT_GIVEN, user=NOT_GIVEN
+    ):
+
+        if permissionsNeeded is NOT_GIVEN:
+            guard = adapt(subject,IGuardedObject,None)
+            if guard is not None:
+                permissionsNeeded = guard.getPermissionsForName(name)
+            else:
+                permissionsNeeded = ()
+
+        for permType in permissionsNeeded:
+            attempt = self.accessType(permType, subject, name, user, self)
+            ok = self.checkPermission(attempt)
             if ok:
                 return ok
 
         return False
-
-    def allows(self, subject,
-        name=NOT_GIVEN, permissionsNeeded=NOT_GIVEN, user=NOT_GIVEN
-    ):
-        return self.checkAccess(
-            self.accessType(subject, self, user, permissionsNeeded, name)
-        )
-
-
-
-
-
-
 
 
 class PermissionType(binding.ActiveClass):
@@ -328,13 +287,11 @@ class Permission:
 
 class RuleSet(binding.Singleton):
 
-    def checkPermission(klass, permissionType, attempt):
+    def checkPermission(klass, attempt):
 
         if attempt.principal is not None:
 
-            check = attempt.principal.checkGlobalPermission(
-                permissionType, attempt
-            )
+            check = attempt.principal.checkGlobalPermission(attempt)
 
             if check is not NOT_FOUND:
                 return check
@@ -343,9 +300,9 @@ class RuleSet(binding.Singleton):
 
         reg = klass.__methodNames
 
-        for key in permissionType.__mro__:
+        for key in attempt.permission.__mro__:
             if key in reg:
-                return getattr(klass,reg[key])(permissionType, attempt)
+                return getattr(klass,reg[key])(attempt)
 
         raise NotImplementedError(
             "No rule method found", permissionType
@@ -360,6 +317,8 @@ class RuleSet(binding.Singleton):
         factory = klass.asAdapter
         for permType in klass.__methodNames:
             permType.addRule(factory, protocol)
+
+
 
 
 
@@ -425,10 +384,10 @@ class Universals(RuleSet):
         denyEverybody = [Nobody],
     )
 
-    def allowAnybody(klass, permType, attempt):
+    def allowAnybody(klass, attempt):
         return True
 
-    def denyEverybody(klass, permType, attempt):
+    def denyEverybody(klass, attempt):
         return False
 
 Universals.declareRulesFor(IPermissionChecker)

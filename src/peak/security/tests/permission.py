@@ -132,31 +132,31 @@ class EquipmentRules(security.RuleSet):
         checkPermissionsInPlace = [Worker, Manager],
     )
 
-    def checkWorkerForShipment(klass, permType, attempt):
-        return attempt.new(attempt.subject.fromFacility,
+    def checkWorkerForShipment(klass, attempt):
+        return attempt.allows(attempt.subject.fromFacility,
             permissionsNeeded=[Worker]
-        ).isAllowed() or attempt.new(attempt.subject.toFacility,
+        ) or   attempt.allows(attempt.subject.toFacility,
             permissionsNeeded=[Worker]
-        ).isAllowed()
+        )
 
-    def checkSupervisor(klass, permType, attempt):
+    def checkSupervisor(klass, attempt):
         return attempt.user is attempt.subject.supervisor
 
-    def checkSelf(klass, permtype, attempt):
+    def checkSelf(klass, attempt):
         return attempt.user is attempt.subject
 
-    def checkManageAsset(klass, permType, attempt):
-        return attempt.new(permissionsNeeded=[Worker,Manager]).isAllowed()
+    def checkManageAsset(klass, attempt):
+        return attempt.allows(permissionsNeeded=[Worker,Manager])
 
-    def checkManageBatch(klass, permType, attempt):
-        return attempt.new(
+    def checkManageBatch(klass, attempt):
+        return attempt.allows(
             permissionsNeeded=[Owner,Worker,Manager]
-        ).isAllowed()
+        )
 
-    def checkPermissionsInPlace(klass, permType, attempt):
-        return attempt.new(
-            attempt.subject.location, permissionsNeeded=[permType]
-        ).isAllowed()
+    def checkPermissionsInPlace(klass, attempt):
+        return attempt.allows(
+            attempt.subject.location    # check same permission for location
+        )
 
 
 
@@ -171,26 +171,26 @@ class EquipmentRules(security.RuleSet):
         checkOtherOwner = [Owner],
     )
 
-    def checkShipper(klass, permType, attempt):
-        return attempt.new(attempt.subject.fromFacility,
+    def checkShipper(klass, attempt):
+        return attempt.allows(attempt.subject.fromFacility,
             permissionsNeeded=[Worker]
-        ).isAllowed()
+        )
 
-    def checkReceiver(klass, permType, attempt):
-        return attempt.new(attempt.subject.toFacility,
+    def checkReceiver(klass, attempt):
+        return attempt.allows(attempt.subject.toFacility,
             permissionsNeeded=[Worker]
-        ).isAllowed()
+        )
 
-    def checkWorkerForFacility(klass, permType, attempt):
+    def checkWorkerForFacility(klass, attempt):
         return attempt.user.facility is attempt.subject
 
-    def checkManagerForFacility(klass, permType, attempt):
+    def checkManagerForFacility(klass, attempt):
         return attempt.user in attempt.subject.managers
 
-    def checkBatchOwner(klass,permType,attempt):
+    def checkBatchOwner(klass, attempt):
         return attempt.user is attempt.subject.owner
 
-    def checkOtherOwner(klass,permType,attempt):
+    def checkOtherOwner(klass, attempt):
         # Only batches have owners
         return False
 
