@@ -3,7 +3,7 @@
 from __future__ import generators
 from once import Once, New, OnceClass
 import meta
-from peak.config.modules import setupModule
+
 
 from weakref import WeakValueDictionary
 
@@ -490,14 +490,15 @@ def bindProperty(propName, default=NOT_GIVEN, provides=None, doc=None):
 
 
 
+class Meta(meta.AssertInterfaces, meta.ActiveDescriptors):
+    pass
+
+
 class Base(object):
 
     """Thing that can be composed into a component tree, w/binding & lookups"""
 
-    __metaclasses__  = (
-        meta.AssertInterfaces, meta.ActiveDescriptors
-    )
-
+    __metaclass__  = Meta
 
     # use the global lookupComponent + getParentComponent functions as methods
     
@@ -526,7 +527,6 @@ class Base(object):
 
     def hasBinding(self,attr):
         return self.__dict__.has_key(attr)
-
 
 
 
@@ -572,7 +572,7 @@ class Component(Base):
 
 
 
-class AutoCreatable(OnceClass):
+class AutoCreatable(OnceClass, Meta):
 
     """Metaclass for components which auto-create when used"""
 
@@ -586,7 +586,7 @@ class AutoCreated(Component):
     """Component that auto-creates itself in instances of its containing class
     """
 
-    __metaclasses__ = AutoCreatable,
+    __metaclass__ = AutoCreatable
 
     def __init__(self, parent=None):
 
@@ -594,32 +594,5 @@ class AutoCreated(Component):
 
         if parent is not None:
             self.setParentComponent(parent)
-
-
-
-
-
-setupModule()
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
