@@ -174,9 +174,9 @@ PEAK Release 0.5 alpha 1
      please see the 'src/kjbuckets/COPYRIGHT.txt' file for details of its
      license.
 
-     The 'zope.interface', 'persistence', and 'ZConfig' packages are
-     Copyright Zope Corporation and contributors; please see the 'LICENSE.txt'
-     files in their directories for details of their licenses.
+     The 'persistence' and 'ZConfig' packages are Copyright Zope Corporation
+     and contributors; please see the 'LICENSE.txt' files in their directories
+     for details of their licenses.
 
      The 'fcgiapp' module is Copyright Digital Creations, LC (now Zope Corp.);
      see the 'fcgiappmodule.c' for details of its license.  In the same

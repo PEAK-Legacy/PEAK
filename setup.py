@@ -94,7 +94,6 @@ except ImportError:
 if not zope_installed:
 
     packages += [
-        'zope', 'zope.interface', 'zope.interface.common',
         'persistence', 'ZConfig',
     ]
 
@@ -104,11 +103,12 @@ if not zope_installed:
 
     if include_tests:
         packages += [
-            'zope.interface.tests', 'persistence.tests', 'ZConfig.tests',
-            'zope.interface.common.tests',
+            'persistence.tests', 'ZConfig.tests',
         ]
 
         data_files += findDataFiles('src/ZConfig/tests', 1, '*.xml', '*.txt', '*.conf')
+
+
 
 
 

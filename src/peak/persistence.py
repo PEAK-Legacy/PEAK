@@ -13,11 +13,22 @@ md = __main__.__dict__
 Persistent             = importString('persistence:Persistent', md)
 PersistentMetaClass    = importString('persistence:PersistentMetaClass', md)
 GHOST                  = importString('persistence._persistence:GHOST', md)
-IPersistentDataManager = importString('persistence.interfaces:IPersistentDataManager', md)
+IPersistent            = importString('persistence.interfaces:IPersistent', md)
+IPersistentDataManager = importString(
+    'persistence.interfaces:IPersistentDataManager', md
+)
 
 def isGhost(obj):
     return obj._p_state == GHOST
 
+try:
+    import zope.interface
+except ImportError:
+    # For safety's sake, declare that Persistent implements IPersistent,
+    # since the '__implements__' attribute it's using is useless if
+    # 'zope.interface' isn't around.
+    from peak.interface import instancesProvide
+    instancesProvide(Persistent, IPersistent)
 
 # XX It's not clear that we should be using GHOST
 # XXX do we need simple_new()?  What is it for, anyway?

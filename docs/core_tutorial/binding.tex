@@ -133,10 +133,10 @@ actually a ``real" disk file.
 A specific set of services that a component provides is called an
 \strong{interface}.  Interfaces can denote a component's requirements, as well
 as the guarantees that it provides when those requirements are met.  In PEAK,
-interfaces are defined and declared using the \module{zope.interface} package
-(bundled with PEAK for your convenience).   This means that components you
-create with PEAK's component architecture should also work in Zope X3's
-component architecture.  (Which is important if you plan to build Zope
+interfaces are defined and declared using the \module{peak.interface} package,
+which also supports the use of Zope X3 interfaces.  This means that components
+you create with PEAK's component architecture can also work in Zope X3's
+component architecture.  (Which may be useful if you plan to build Zope
 X3-based applications and web services with PEAK.)
 
 Interfaces in PEAK are used primarily as documentation and as a way of finding

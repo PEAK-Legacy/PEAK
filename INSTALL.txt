@@ -92,13 +92,12 @@ Installing PEAK
    'kjbuckets' is copyright Aaron Watters and contributors; please see
    the 'src/kjbuckets/COPYRIGHT.txt' file for details of its license.
 
-  The Zope 3 'interface', 'persistence', and 'ZConfig' Packages
+
+  The Zope 3 'persistence', and 'ZConfig' Packages
 
    PEAK includes a copy of the following packages from the Zope X3 Milestone 2
    release, and will install them unless Zope X3 is available on 'sys.path'
    at the time 'setup.py' is run:
-
-   - 'zope.interface'
 
    - 'persistence'
 
@@ -117,9 +116,10 @@ Installing PEAK
    will not install any of the Zope packages listed above, in order to avoid
    overwriting newer versions from your Zope installation.
 
-   The 'zope.interface', 'persistence', and 'ZConfig' packages are
-   Copyright Zope Corporation and contributors; please see the 'LICENSE.txt'
-   files in their directories for details of their licenses.
+   The 'persistence', and 'ZConfig' packages are Copyright Zope Corporation
+   and contributors; please see the 'LICENSE.txt' files in their directories
+   for details of their licenses.
+
 
   The 'fcgiapp' Module
 
