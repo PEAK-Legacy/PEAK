@@ -97,14 +97,13 @@ class ProcessSupervisor(EventDriven):
     plugins   = binding.Make(list)
 
     reactor = binding.Make(
+        # Can't use Make(IBasicReactor), because 'getReactor()' is a singleton
         'peak.running.scheduler:UntwistedReactor', offerAs=[IBasicReactor]
     )
-    mainLoop = binding.Make(
-        'peak.running.scheduler.MainLoop', offerAs=[IMainLoop]
-    )
-    taskQueue = binding.Make(
-        'peak.running.daemons.TaskQueue', offerAs=[ITaskQueue]
-    )
+
+    mainLoop = binding.Make(IMainLoop, offerAs=[IMainLoop])
+
+    taskQueue = binding.Make(ITaskQueue, offerAs=[ITaskQueue])
 
     _no_twisted = binding.Require(
         "ProcessSupervisor subcomponents may not depend on Twisted",
@@ -120,6 +119,7 @@ class ProcessSupervisor(EventDriven):
         template = adapt(self.template, ISupervisorPluginProvider, None)
         if template is not None:
             self.plugins.extend(template.getSupervisorPlugins(self))
+
 
     def _run(self):
 
