@@ -3,9 +3,9 @@ TransWarp Preview Release 0.1
  Copyright (C) 2001 Phillip J. Eby, All rights reserved.
  This software may be used under the same terms as Zope or Python.
 
- Please see http://www.zope.org/Members/pje/Wikis/TransWarp for tutorials,
- FAQs, package layout, etc.  Selected pages from the Wiki are included
- in the docs/ directory for your convenience.
+ Please see "The TransWarp Wiki":http://www.zope.org/Members/pje/Wikis/TransWarp
+ for tutorials, FAQs, package layout, etc.  Selected pages from the Wiki are
+ included in the 'docs/' directory for your convenience.
 
  At this time, the 'Features', 'Aspects', 'SOX', and 'tests' modules
  and packages are usable, if not necessarily full-featured.  All other
@@ -32,7 +32,7 @@ TransWarp Preview Release 0.1
 
     You can download the C source code for kjbuckets at:
 
-     http://www.chordate.com/kjbuckets/
+     "http://www.chordate.com/kjbuckets/":http://www.chordate.com/kjbuckets/
 
     And build as you would any other Python module.
 
@@ -40,7 +40,7 @@ TransWarp Preview Release 0.1
 
     If you're using Python 1.5, you can download a pre-built kjbuckets.pyd at:
 
-     http://www.chordate.com/kwParsing/kjbuckets.pyd
+     "http://www.chordate.com/kwParsing/kjbuckets.pyd":http://www.chordate.com/kwParsing/kjbuckets.pyd
 
     And then place it in your Python path.  If you're using Python 2.0,
     or can't get this to work, see "If You Can't Compile kjbuckets" below.
@@ -50,7 +50,7 @@ TransWarp Preview Release 0.1
     If for whatever reason you can't get the C version of kjbuckets to work
     on your system, download this file:
 
-     http://www.chordate.com/kwParsing/kjbuckets0.py
+     "http://www.chordate.com/kwParsing/kjbuckets0.py":http://www.chordate.com/kwParsing/kjbuckets0.py
 
     Rename it to "kjbuckets.py", and place it in your Python path.  This runs
     slower than the C version, but it'll do in a pinch.
@@ -63,7 +63,7 @@ TransWarp Preview Release 0.1
 
    Failing that, you can look at this URL for downloads:
 
-    http://www.zope.org/Members/michel/Products/Interfaces/
+    "http://www.zope.org/Members/michel/Products/Interfaces/":http://www.zope.org/Members/michel/Products/Interfaces/
 
    This may not be the best place for an up-to-date copy, but the current
    TransWarp code doesn't do much with interfaces yet, so it probably doesn't
