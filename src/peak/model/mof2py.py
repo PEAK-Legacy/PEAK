@@ -11,15 +11,9 @@
 
     Other issues:
 
-    - Python built-ins and 'peak.*' object names
-
-    - package prefixes
-
-    - Need to import 'peak.model' and include 'config.setupModule()' epilogue
+    - Name conflicts w/Python built-ins?
 
     Cosmetics
-
-    - Should generate all imports at top
 
     - Docstring formatting is a bit "off"; notably, we're not wrapping
       paragraphs, and something seems wrong with linespacing, at least
@@ -33,6 +27,12 @@ from peak.model.datatypes import TCKind, UNBOUNDED
 from peak.util.IndentedStream import IndentedStream
 from cStringIO import StringIO
 from peak.util.advice import advice
+
+from os.path import dirname,exists
+from os import makedirs
+
+
+
 
 
 
@@ -95,20 +95,20 @@ class MOFGenerator(binding.Component):
     NameNotResolved = binding.bindTo("MOFModel/NameNotResolved")
     StructuralFeature = binding.bindTo("MOFModel/StructuralFeature")
 
-    def stream(self,d,a):
-        return IndentedStream(StringIO())
+    fileObject = binding.New(StringIO)
 
-    stream = binding.Once(stream)
+    stream = binding.Once(lambda self,d,a: IndentedStream(self.fileObject))
     write  = binding.bindTo('stream/write')
     push   = binding.bindTo('stream/push')
     pop    = binding.bindTo('stream/pop')
 
     objectsWritten = binding.New(dict)
 
-    pkgPrefix = ''
+    pkgPrefix  = ''
+    srcDir     = ''
+    writeFiles = False
 
-
-
+    sepLine = '# ' + '-'*78 + '\n'
 
 
 
@@ -162,7 +162,7 @@ class MOFGenerator(binding.Component):
 
 
 
-    def beginObject(self, element, metatype='model.Element'):
+    def beginObject(self, element, metatype='__model.Element'):
 
         ns = element.container
         relName = self.getRelativeName
@@ -313,22 +313,22 @@ class MOFGenerator(binding.Component):
 
         if element.container is not package:
             self.write(
-                'from %s import %s' % (
-                    self.getImportName(element.container),
-                    str(element.name)
+                '%-20s = __lazy(%r)\n' % (
+                    str(element.name),
+                    self.getImportName(element)
                 )
             )
-            if element.name <> name:
-                self.write('as '+name)
-            self.write('\n')
 
         pim[package,element] = name
         return name
 
-                
+
+
+
+
     def writeFileHeader(self, package):
-        self.write('# --------------------------------------------------\n')
-        self.write('# Package: %s\n' % str('.'.join(package.qualifiedName)))
+        self.write(self.sepLine)
+        self.write('# Package: %s\n' % self.getImportName(package))
         self.write('# File:    %s\n' % self.pkgFileName(package))
         if package.supertypes:
             self.write('# Bases:   %s\n'
@@ -337,32 +337,32 @@ class MOFGenerator(binding.Component):
                         for p in package.supertypes]
                 )
             )
-        self.write('# --------------------------------------------------\n\n')
+        self.write(self.sepLine)
+        self.write("""
+from peak.api          import model as __model
+from peak.api          import config as __config
+from peak.util.imports import lazyModule as __lazy
+
+""")
 
 
     def writeFileFooter(self, package):
-        self.write('\n# --------------------------------------------------\n')
+        self.write('\n\n__config.setupModule()\n\n')
+        self.write(self.sepLine)
         self.write('\n\n\n')
 
 
+    def exposeImportDeps(self, package, target=None):
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+        if target is None: target = package
+        nip = self.nameInPackage
+        eid = self.exposeImportDeps
+        
+        for klass in target.findElementsByType(self.Class):
+            for k in klass.supertypes:
+                if k.container is not package:
+                    nip(k.container, package)
+            eid(klass)
 
 
 
@@ -374,13 +374,19 @@ class MOFGenerator(binding.Component):
 
         self.writeFileHeader(package)
 
+        self.write(self.sepLine+'\n')
         for imp in package.findElementsByType(self.Import):
             self.writeImport(imp)
+
+        self.exposeImportDeps(package)
+        self.write('\n%s\n' % self.sepLine)
 
         self.writeNSContents(package,{})
 
         for subPkg in package.findElementsByType(self.Package):
-            self.write('import %s\n' % subPkg.name)
+            self.write('%-20s = __lazy(__name__ + %r)\n'
+                % (subPkg.name, '.'+str(subPkg.name))
+            )
             
         self.writeFileFooter(package)
 
@@ -388,36 +394,20 @@ class MOFGenerator(binding.Component):
     writePackage = oncePerObject(writePackage)
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     def pkgFileName(self,package):
 
-        name = str('/'.join(package.qualifiedName))
+        from os.path import join
+        path = self.srcDir
+
+        for p in self.getImportName(package).split('.'):
+            path = join(path,p)
         
         for ob in package.findElementsByType(self.Package):
-            return '%s/__init__.py' % name
+            return join(path,'__init__.py')
         else:
-            return '%s.py' % name
-       
-            
+            return '%s.py' % path
+
+
     def writeNSContents(self, ns, contentMap):
     
         for imp in self.findAndUpdate(ns, self.Import, contentMap):
@@ -449,12 +439,14 @@ class MOFGenerator(binding.Component):
             contentMap[ob.name] = ob
             yield ob
 
+
     def writeImport(self, imp):
 
         pkgName = self.getImportName(imp.importedNamespace)
-        self.write('import %s as %s\n\n' % (pkgName, imp.name) )
+        self.write('%-20s = __lazy(%r)\n' % (imp.name, pkgName))
 
     writeImport = oncePerObject(writeImport)
+
 
 
     def writeClass(self, klass):
@@ -465,7 +457,7 @@ class MOFGenerator(binding.Component):
             if c.container is myPkg:
                 self.writeClass(c)
 
-        self.beginObject(klass, 'model.Element')
+        self.beginObject(klass, '__model.Element')
 
         if klass.isAbstract:
             self.write('mdl_isAbstract = True\n\n')
@@ -490,6 +482,14 @@ class MOFGenerator(binding.Component):
 
 
 
+
+
+
+
+
+
+
+
     def writeDataType(self,dtype):
 
         tc = dtype.typeCode
@@ -501,7 +501,7 @@ class MOFGenerator(binding.Component):
             self.writeStruct(dtype, zip(tc.member_names,tc.member_types))
             
         else:
-            self.beginObject(dtype,'model.PrimitiveType')
+            self.beginObject(dtype,'__model.PrimitiveType')
             self.write("pass   # XXX Don't know how to handle %s!!!\n\n"
                 % tc.kind
             )
@@ -513,7 +513,7 @@ class MOFGenerator(binding.Component):
 
     def writeStruct(self,dtype,memberInfo):
 
-        self.beginObject(dtype,'model.DataType')
+        self.beginObject(dtype,'__model.DataType')
 
         posn = 0
         for mname, mtype in memberInfo:
@@ -533,7 +533,7 @@ class MOFGenerator(binding.Component):
 
     def writeStructMember(self,mname,mtype,posn):
 
-        self.write('class %s(model.structField):\n\n' % mname)
+        self.write('class %s(__model.structField):\n\n' % mname)
         self.push(1)
 
         self.write('referencedType = %r # XXX \n' % repr(mtype))
@@ -544,10 +544,10 @@ class MOFGenerator(binding.Component):
 
     def writeEnum(self,dtype,members):
     
-        self.beginObject(dtype,'model.Enumeration')
+        self.beginObject(dtype,'__model.Enumeration')
 
         for m in members:
-            self.write('%s = model.enum()\n' % m)
+            self.write('%s = __model.enum()\n' % m)
 
         if members:
             self.write('\n')
@@ -574,7 +574,7 @@ class MOFGenerator(binding.Component):
 
     def writeFeature(self,feature,posn):
 
-        self.beginObject(feature,'model.StructuralFeature')
+        self.beginObject(feature,'__model.StructuralFeature')
 
         if not feature.isChangeable:
             self.write('isChangeable = False\n')
@@ -658,40 +658,40 @@ class MOFFileSet(MOFGenerator):
 
     def externalize(klass, metamodel, package, format, **options):
 
-        outfiles = []
+        def doExt(package, parent):
         
-        for pkg in package.findElementsByType(metamodel.Package):
-            outfiles.extend(klass.externalize(metamodel, pkg, format))
+            g = klass(
+                package, MOFModel=metamodel, **options
+            )
             
-        s = StringIO()
-        g = klass(
-            package, MOFModel=metamodel, stream=IndentedStream(s), **options
-        )
-        g.writePackage(package)
+            filename = g.pkgFileName(package)
 
-        outfiles.append(
-            (g.pkgFileName(package), s.getvalue())
-        )
+            if g.writeFiles:
 
-        return outfiles
+                d = dirname(filename)
+                if not exists(d):
+                    makedirs(d)
+
+                g.fileObject = open(filename,'w')               
+                g.writePackage(package)
+                contents = None
+
+            else:
+                g.writePackage(package)
+                contents = g.fileObject.getvalue()
+                
+            outfiles = [ (filename, contents) ]
+
+            for pkg in package.findElementsByType(metamodel.Package):
+                outfiles.extend(doExt(pkg, g))
+            
+
+            return outfiles
+
+        return doExt(package,package)
 
 
     externalize = classmethod(externalize)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
