@@ -24,8 +24,8 @@
 \release{0.2pre2}   % release version; this is used to define the
                     % \version macro
 
-\makeindex          % tell \index to actually write the .idx file
-\makemodindex       % If this contains a lot of module sections.
+%\makeindex          % tell \index to actually write the .idx file
+%\makemodindex       % If this contains a lot of module sections.
 
 
 \begin{document}
@@ -85,11 +85,11 @@ to assemble them into large-scale applications.
 %begin{latexonly}
 \renewcommand{\indexname}{Module Index}
 %end{latexonly}
-\input{mod\jobname.ind}     % Module Index
+%\input{mod\jobname.ind}     % Module Index
 
 %begin{latexonly}
 \renewcommand{\indexname}{Index}
 %end{latexonly}
-\input{\jobname.ind}        % Index
+%\input{\jobname.ind}        % Index
 
 \end{document}
