@@ -434,14 +434,14 @@ class PGSQLConnection(ValueBasedTypeConn):
     )
 
 
+class PsycopgConnection(PGSQLConnection):
 
+    DRIVER = "psycopg"
 
-
-
-
-
-
-
+    supportedTypes = (
+        'BINARY', 'BOOLEAN', 'DATE', 'DATETIME', 'FLOAT', 'INTEGER',
+        'INTERVAL', 'LONGINTEGER', 'NUMBER', 'ROWID', 'STRING', 'TIME'
+    )
 
 
 
@@ -541,8 +541,9 @@ class SqliteURL(FileURL):
 class GenericSQL_URL(naming.URL.Base):
 
     supportedSchemes = {
-        'sybase': 'peak.storage.SQL.SybaseConnection',
-        'pgsql':  'peak.storage.SQL.PGSQLConnection',
+        'sybase':  'peak.storage.SQL.SybaseConnection',
+        'pgsql':   'peak.storage.SQL.PGSQLConnection',
+        'psycopg': 'peak.storage.SQL.PsycopgConnection',
     }
 
     defaultFactory = property(
