@@ -2,7 +2,7 @@
 
 __all__ = [
     'NamingException', 'InvalidNameException', 'NameNotFoundException',
-    'CannotProceedException', 'NotContextException',
+    'NotContextException',
 ]
 
 
