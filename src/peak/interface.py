@@ -4,7 +4,7 @@ from zope.interface import Interface, Attribute
 from zope.interface.implements import implements as addDeclarationToType
 
 __all__ = [
-    'Interface', 'Attribute', 'adapt',
+    'Interface', 'Attribute', 'adapt', 'implements', 'classProvides'
 ]
 
 # We don't want to export 'addDeclarationToType' by default; we only use it
@@ -28,7 +28,7 @@ from sys import _getframe, exc_info
 from types import ClassType
 ClassTypes = ClassType, type
 
-
+from peak.util.advice import addClassAdvisor
 
 
 
@@ -80,4 +80,19 @@ def adapt(obj, protocol, default=_marker):
 
     return default
 
+def implements(*interfaces):
 
+    def callback(klass):
+        klass.__implements__ = interfaces
+        return klass
+
+    addClassAdvisor(callback)
+
+
+def classProvides(*interfaces):
+
+    def callback(klass):
+        klass.__class_implements__ = interfaces
+        return klass
+
+    addClassAdvisor(callback)
