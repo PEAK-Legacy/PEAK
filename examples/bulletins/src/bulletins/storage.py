@@ -123,7 +123,7 @@ class BulletinDM(storage.EntityDM):
 
 class CategoryDM(storage.EntityDM):
 
-    db = binding.bindTo(DATABASE)
+    db = binding.Obtain(DATABASE)
     BulletinDM = binding.Obtain(storage.DMFor(Bulletin))
     bulletinsForCategory = binding.Obtain('BulletinDM/forCategory')
 

@@ -12,5 +12,5 @@ databaseDDL = config.fileNearModule('bulletins', 'sqlite-ddl.sql')
 
 [peak.logs]
 # Set default logging to stderr, DEBUG level
-* = logs.LogStream(stream=importString('sys.stderr'), level=logs.DEBUG)
+* = logs.LogStream(stream=importString('sys.stderr'), levelName="DEBUG")
 
