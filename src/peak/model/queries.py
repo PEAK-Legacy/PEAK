@@ -39,7 +39,6 @@ class reiter(object):
 
 
 
-
 def geniter(gen,filt):
     for ob in gen:
         if filt(ob):
@@ -61,7 +60,7 @@ def traverse(obs, name, recurse=0):
 
             if values is NOT_FOUND:
                 continue
-                
+
             elif isMany is NOT_FOUND:
                 if isinstance(values,(str,unicode)):
                     values = [values]
@@ -77,7 +76,7 @@ def traverse(obs, name, recurse=0):
             if recurse:
                 values = list(values)
                 iters.append(values)
-                    
+
             for v in values: yield v
 
 
@@ -186,7 +185,7 @@ def IS(value):
 
 def IS_NOT(value):
     return lambda x: x is not value
-    
+
 def IN(value):
     return lambda x: x in value
 
@@ -201,3 +200,6 @@ def IS_SUBCLASS(value):
 
 def BETWEEN(lo,hi):
     return lambda x: lo <= x <= hi
+
+
+

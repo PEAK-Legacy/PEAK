@@ -45,7 +45,7 @@ class IType(Interface):
 
     def mdl_fromString(aString):
         """Return an instance of type created based on 'aString'"""
-    
+
     def mdl_fromFields(fieldSequence):
         """Return an instance of type created based on 'fieldSequence'
 
@@ -63,7 +63,7 @@ class IType(Interface):
     mdl_defaultValue = Attribute(
         """Default value for attributes of this type, or NOT_GIVEN"""
     )
-    
+
     mdl_featuresDefined = Attribute(
         """Sorted tuple of feature objects defined/overridden by this class"""
     )
@@ -95,7 +95,7 @@ class IType(Interface):
 
             class A(model.Type):
                 class foo(model.Attribute): pass
-                
+
             class B(A):
                 class foo(model.Attribute): pass
                 class bar(model.Attribute): pass
@@ -127,10 +127,10 @@ class IEnumType(IType):
 
     def __getitem__(nameOrValue):
         """Return the enumeration value for the name or value 'nameOrValue'
-        
+
             Raises 'exceptions.EnumerationError' if not found
         """
-        
+
     def get(nameOrValue, default=None):
         """Return the enumeration value for the name or value 'nameOrValue'
 
@@ -209,7 +209,7 @@ class IFeature(Interface):
 
     def fromString(aString):
         """See 'IType.mdl_fromString()'"""
-        
+
     def fromFields(fieldSequence):
         """See 'IType.mdl_fromFields()'"""
 
@@ -267,16 +267,21 @@ class IFeatureSPI(Interface):
 
     def _notifyLink(element,posn=None):
         """Link to element, inserting it at 'posn' in our value"""
-        
+
     def _notifyUnlink(element,posn=None):
         """Unlink from element, removing it from 'posn' in our value"""
 
     def _link(element,posn=None):
         """Link to element without notifying the inverse feature"""
-        
+
     def _unlink(element,posn=None):
         """Unlink from element without notifying the inverse feature"""
 
 
-    
+
+
+
+
+
+
 

@@ -188,7 +188,7 @@ class checkMetaData(TestCase):
     def checkIntroduced(self):
         assert aBase.mdl_featuresDefined == (aBase.f1, aBase.f2)
         assert aSub.mdl_featuresDefined  == (aSub.a, aSub.f1, aSub.f3)
-        
+
     def checkChangeableBad(self):
         try:
             class anImmutable(model.Immutable):
@@ -286,7 +286,7 @@ class exerciseFeatures(TestCase):
         assert self.e.simpleRef == 99
 
     def checkFwdColl(self):
-    
+
         e = self.e
         e1 = anElement2(); e.addFwdColl(e1)
         e2 = anElement2(); e.addFwdColl(e2)
@@ -319,4 +319,10 @@ def test_suite():
     for t in TestClasses:
         s.append(makeSuite(t,'check'))
     return TestSuite(s)
+
+
+
+
+
+
 

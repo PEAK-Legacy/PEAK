@@ -14,7 +14,7 @@ def composite_plus_composite(n1,n2):
 
     l = list(n1)
     last = l.pop()
-    
+
     if not last:
         l.extend(list(n2))
     else:
@@ -54,7 +54,7 @@ def compound_plus_composite(n1,n2):
 
     if first:   l[0] = n1+first
     else:       l[0] = n1
-        
+
     if len(l)==1 and l[0]:
         return l[0]
 
@@ -172,6 +172,30 @@ def name_rsub(self, other):
     if self:
         return name_subtraction[other.nameKind,self.nameKind](other,self)
     return other
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

@@ -10,7 +10,7 @@
 
         __bases__ = BaseModule1, BaseModule2
 
-       
+
         class MyClass:
             ...
 
@@ -87,7 +87,7 @@
         and 'def' statements, constant assignments, 'import', etc.  It also
         works reasonably well for many other kinds of static initialization
         of immutable objects
-        
+
         Mutable values, however, may require special considerations.  For
         example, if a module sets up some kind of registry as a module-level
         variable, and an inheriting module overrides the definition, things
@@ -118,7 +118,7 @@
         '__init__()' function, as this ensures that it will not be run
         repeatedly if you do not wish it to be.  It will also allow other
         modules to inherit that code and wrap around it, if they so desire.
-        
+
 
     Package Inheritance
 
@@ -152,7 +152,7 @@
 
             import foo.bar
             __bases__ = foo.bar,
-        
+
             # ...
 
             from peak.api import config
@@ -359,7 +359,7 @@ def getLegacyCode(module):
                 f = open(file, mode)
                 code = f.read()
                 f.close()
-                
+
                 if code and not code.endswith('\n'):
                     code += '\n'
 
@@ -484,7 +484,7 @@ def declareModule(name, relativePath=None, bases=(), patches=()):
     will be the inherited 'square.fill' module.
 
     Another usage of 'declareModule()' is to patch a third-party module::
-    
+
         import my_additions
         config.declareModule('third.party.module', patches=(my_additions,))
     """
@@ -520,7 +520,7 @@ def declareModule(name, relativePath=None, bases=(), patches=()):
 
 
     # ensure that we are run before any other 'whenImported' hooks
-    getModuleHooks(name).insert(0, load) 
+    getModuleHooks(name).insert(0, load)
 
     return lazyModule(name)
 
@@ -592,7 +592,7 @@ def buildModule(module, code=None):
 
         map(sim.execute, codelist)
         sim.finish()
-    
+
     if '__init__' in d:
         d['__init__']()
 
@@ -639,7 +639,7 @@ def patchModule(moduleName):
     Patch modules may patch other patch modules, but there is little point
     to doing this, since both patch modules will still have to be explicitly
     imported before their mutual target for the patches to take effect.
-    """    
+    """
 
     frame = sys._getframe(1)
     dict = frame.f_globals
@@ -709,9 +709,9 @@ class Simulator:
         self.dict      = dict
 
     def execute(self, code):
-        
+
         d = self.dict
-        
+
         try:
             d['__PEAK_Simulator__'] = self
             exec code in d
@@ -791,7 +791,7 @@ class Simulator:
 
         if lastFunc.has_key(qname):
             bind_func(lastFunc[qname],__proceed__=value); del lastFunc[qname]
-            
+
         if '__proceed__' in value.func_code.co_names:
             lastFunc[qname] = value
 
@@ -835,7 +835,7 @@ class Simulator:
             setKind[qname]=IMPORT_STAR
 
         all = getattr(module,'__all__',None)
-        
+
         if all is None:
 
             for k,v in module.__dict__.items():
@@ -901,16 +901,16 @@ class Simulator:
 
 
         if classes.has_key(qname):
-            
+
             oldClass, oldBases, oldPaths, oldItems, oldDPaths = classes[qname]
             addBases = []; addBase = addBases.append
             addPaths = []; addPath = addPaths.append
-            
+
             for b,p in zip(oldBases, oldPaths):
                 if p is None or p not in basePaths:
                     addBase(classes.get(p,(b,))[0])
                     addPath(p)
-            
+
             bases = tuple(addBases) + bases
             basePaths = tuple(addPaths) + basePaths
 
@@ -949,7 +949,7 @@ class Simulator:
         self.dict[qname] = newClass
 
         return newClass
-        
+
 
 
 
@@ -1000,7 +1000,7 @@ def prepForSimulation(code, path='', depth=0):
     names   = code.co_names
     consts  = code.co_consts
     co_code = code.co_code
-    
+
     emit = code.append
     patcher = iter(code); patch = patcher.write; go = patcher.go
     spc = '    ' * depth
@@ -1028,7 +1028,7 @@ def prepForSimulation(code, path='', depth=0):
     for i in idx.opcodeLocations(IMPORT_STAR):
 
         backpatch = offset(i)
-        
+
         if opcode(i-1) != IMPORT_NAME:
             line = idx.byteLine(backpatch)
             raise AssertionError(
@@ -1038,7 +1038,7 @@ def prepForSimulation(code, path='', depth=0):
         patchTarget = len(co_code)
         go(offset(i-1))
         patch(JUMP_ABSOLUTE, patchTarget, 0)
-        
+
         # rewrite the IMPORT_NAME
         emit(IMPORT_NAME, operand(i-1))
 
@@ -1082,7 +1082,7 @@ def prepForSimulation(code, path='', depth=0):
             qname = path+name
 
         namArg = const_index(qname)
-        
+
         # common prefix - get the simulator object
         emit(LOAD_GLOBAL, Simulator)
 
@@ -1106,15 +1106,15 @@ def prepForSimulation(code, path='', depth=0):
 
 
         ### Handle class operations
-        
+
         if prevOp == BUILD_CLASS:
 
             bind = "class"
-            
+
             if opcode(i-2)!=CALL_FUNCTION or \
                opcode(i-3) not in (MAKE_CLOSURE, MAKE_FUNCTION) or \
                opcode(i-4)!=LOAD_CONST:
-               
+
                 line = idx.byteLine(backpatch)
                 raise AssertionError(
                     "Unrecognized class %(qname)s at line %(line)d" % locals()
@@ -1126,16 +1126,16 @@ def prepForSimulation(code, path='', depth=0):
 
             backpatch -= 1  # back up to the BUILD_CLASS instruction...
             nextI = offset(i+1)
-            
+
             # and fill up the space to the next instruction with POP_TOP, so
             # that if you disassemble the code it looks reasonable...
-            
+
             for j in range(backpatch,nextI):
                 co_code[j] = POP_TOP
-                
+
             # get the DEFINE_CLAS method
             emit(LOAD_ATTR, DefClass)
-            
+
             # Move it before the (name,bases,dict) args
             append(ROT_FOUR)
 
@@ -1157,22 +1157,22 @@ def prepForSimulation(code, path='', depth=0):
                 bind = "assign"
                 # get the ASSIGN_VAR method
                 emit(LOAD_ATTR, Assign)
-            
+
             # Move it before the value, get the absolute name, and call method
             append(ROT_TWO)
             emit(LOAD_CONST, namArg)
             emit(CALL_FUNCTION, 2)
-            
+
 
 
         # Common patch epilog
-        
+
         go(backpatch)
         patch(JUMP_ABSOLUTE, patchTarget, 0)
-        
+
         emit(op, arg)
         emit(JUMP_ABSOLUTE, offset(i+1))
-        
+
         #print "%(line)04d %(spc)s%(bind)s %(qname)s" % locals()
 
     code.co_stacksize += 5  # add a little margin for error
@@ -1201,3 +1201,30 @@ if __name__=='__main__':
             print
         code = prepForSimulation(code)
     print
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

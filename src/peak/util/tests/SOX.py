@@ -10,7 +10,7 @@ def stream(str):
     inpsrc.setByteStream(StringIO(str))
     return inpsrc
 
-    
+
 class SOXTest(TestCase):
 
     text = "<nothing/>"
@@ -42,7 +42,7 @@ class SOXTest(TestCase):
 class Simple(SOXTest):
 
     text = """<top foo="bar" baz="spam">TE<middle/>XT</top>"""
-    
+
     def checkTop(self):
         assert self.de._name == 'top'
 
@@ -90,4 +90,34 @@ def test_suite():
         s.append(makeSuite(t,'check'))
 
     return TestSuite(s)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 

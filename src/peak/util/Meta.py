@@ -49,8 +49,8 @@ def derivedMeta(metaclasses):
     if derived is None:
         normalized = normalizeBases(metaclasses)
         derived = metaReg.get(normalized)
-        
-        if derived is None:        
+
+        if derived is None:
             if len(normalized)==1:
                 derived = normalized[0]
             else:
@@ -63,7 +63,7 @@ def derivedMeta(metaclasses):
 
         try: metaReg[metaclasses] = derived
         except TypeError: pass
-            
+
     return derived
 
 def normalizeBases(allBases):
@@ -81,6 +81,7 @@ def metaFromBases(bases):
 
 
 def makeClass(name,bases,dict):
+
     """makeClass(name, bases, dict) - enhanced class creation
 
     Automatically generates a metaclass that satisfies metaclass constraints
@@ -121,11 +122,11 @@ def makeClass(name,bases,dict):
     Metaclasses to Work", by Ira R. Forman and Scott H. Danforth.  It, and
     Guido's metaclass tutorial for Python 2.2, are highly recommended reading
     for making the best use of this capability.  But a brief word to the wise:
-    
+
         * Write your metaclasses co-operatively!  Don't assume that your
           metaclass will be the first or last one to handle a particular
           method call.
-          
+
         * In general, when programming with new-style classes, don't assume
           you know what the inheritance order is.  Always use 'super()';
           'super()' is your friend.  :)  Remember that your immediate base
@@ -148,22 +149,58 @@ def makeClass(name,bases,dict):
         metaclasses[0:0] = list(dict['__metaclasses__'])
 
     metaclasses = normalizeBases(metaclasses)
-    
+
     if metaclasses:
-    
+
         # If we have metaclasses, it's not a classic class, so derive a
         # single metaclass, and ask it to create the class.
 
         if len(metaclasses)==1:
-            metaclass = metaclasses[0]        
+            metaclass = metaclasses[0]
         else:
             metaclass = derivedMeta(metaclasses)
 
         return metaclass(name,bases,dict)
 
     # No metaclasses, it's a classic class, so use 'new.classobj'
-    
+
     from new import classobj; return classobj(name,bases,dict)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 if __name__=='__main__':
@@ -196,7 +233,7 @@ if __name__=='__main__':
 
     class X:
         __metaclass__ = makeClass
-        
+
     class Foo(Base):
         __metaclass__ = makeClass
 

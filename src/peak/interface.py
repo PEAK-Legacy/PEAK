@@ -48,7 +48,7 @@ def adapt(obj, protocol, default=_marker):
 
     if isinstance(protocol,ClassTypes) and isinstance(obj,protocol):
         return obj
-        
+
     try:
         _conform = obj.__conform__
     except AttributeError:
@@ -70,11 +70,11 @@ def adapt(obj, protocol, default=_marker):
         try:
             result = _adapt(obj)
             if result is not None:
-                return result   
+                return result
         except TypeError:
             if exc_info()[2].tb_frame is not _getframe():
                 raise
-            
+
     if default is _marker:
         raise NotImplementedError("Can't adapt", obj, protocol)
 
@@ -96,3 +96,28 @@ def classProvides(*interfaces):
         return klass
 
     addClassAdvisor(callback)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -43,7 +43,7 @@ lasthash = seedhash = ''
 
 def prng_some():
     global lasthash
-    
+
     try:
         import socket
         hn = socket.gethostname()
@@ -85,7 +85,7 @@ def prng(nbytes):
     A PRNG that hopefully is better than just using whrandom.
     Don't trust this for crypto, though!
     """
-    
+
     b = prng_some()
     while len(b) < nbytes:
         b += prng_some()
@@ -165,23 +165,41 @@ if sys.platform != 'win32' and posix is not None:
 def randbytes(nbytes, prng=1, wait=0):
     """
     Get nbytes number of bytes of randomness if possible.
-    
+
     If prng is true, pseudo-randomly generated data of unknown quality
     is OK.  If false, only crypto-quality entropy is acceptable.
-    
+
     If wait is true, caller is willing to wait an unspecified period of time
     in exchange for better quality randomness. If false, return the best
     randomness presently available.
-    
+
     If the constraints cannot be met, return None.
     """
-    
+
     return funcs[prng, wait](nbytes)
 
 
 
 def rand16(prng=1, wait=0):
     """16 bit unsigned random number"""
-    
+
     s = randbytes(2, prng, wait)
     return (ord(s[0]) << 8) | ord(s[1])
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

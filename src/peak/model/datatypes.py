@@ -32,13 +32,13 @@ class PrimitiveTC(Enumeration):
 class SimpleTC(PrimitiveTC):
 
     """Simple (i.e. atomic/unparameterized) CORBA typecode kinds"""
-    
+
     tk_any   = enum()
     tk_TypeCode = enum()
     tk_Principal = enum()
     tk_null = enum()
     tk_void = enum()
-    
+
 class TCKind(SimpleTC):
 
     """The full set of CORBA TypeCode kinds"""
@@ -127,7 +127,7 @@ class WString(String):
 class Char(String):
     mdl_typeKind = TCKind.tk_char
     length = 1
-    
+
 class WChar(WString):
     mdl_typeKind = TCKind.tk_wchar
     length = 1
@@ -192,7 +192,7 @@ class _tcField(structField):
                 (feature.attrName, element.kind)
             )
 
-    
+
 
 
 
@@ -345,3 +345,25 @@ for kind, klass in basicTypes.items():
 
 Integer.mdl_typeCode       = TypeCode(kind=TCKind.tk_long)
 PrimitiveType.mdl_typeCode = TypeCode(kind=TCKind.tk_any)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

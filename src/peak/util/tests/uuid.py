@@ -56,13 +56,13 @@ class UUIDTests(TestCase):
 
             all = {}
             this = {}
-            
+
             for ns in URL_NS, DNS_NS, OID_NS, X500_NS, NIL_UUID, ns1, ns2:
 
                 for k in keys:
 
                     u = UUID(name=k, ns=URL_NS)
-                    
+
                     # check collisions against any namespace
                     assert u not in all
 
@@ -86,4 +86,38 @@ TestClasses = (
 
 def test_suite():
     return TestSuite([makeSuite(t,'check') for t in TestClasses])
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 

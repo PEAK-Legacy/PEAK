@@ -42,7 +42,7 @@ cdef int isOurs(void *obj):
 cdef class OnceDescriptor:
 
     """Data descriptor base class for 'Once' bindings"""
-    
+
     cdef object attrName
 
     def __set__(self, obj, value):
@@ -59,14 +59,14 @@ cdef class OnceDescriptor:
 
 
     def __get__(self, ob, typ):
-    
+
         # Compute the attribute value and cache it
 
         # Note: fails if attribute name not supplied or doesn't reference
         # this descriptor!
 
         cdef void *obj
-        
+
         if ob is Py_None:
             return self
 
@@ -132,7 +132,7 @@ cdef class __attrName_Descriptor:
             return self
 
         return (<OnceDescriptor>obj).attrName
-            
+
 
     def __set__(self, OnceDescriptor obj, value):
         obj.attrName = value
@@ -144,5 +144,21 @@ cdef class __attrName_Descriptor:
 OnceDescriptor_attrName = __attrName_Descriptor()
 
 __all__ = ['OnceDescriptor_attrName', 'OnceDescriptor']
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 

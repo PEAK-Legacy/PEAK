@@ -155,7 +155,7 @@ class EigenDict(object):
 
     def values(self):
         self.lock(); return [v.get() for v in self.data.values()]
-        
+
     def copy(self):
         return dict(self.items())
 
@@ -188,7 +188,7 @@ class EigenDict(object):
     def __cmp__(self, dict):
         return cmp(self.copy(), dict.copy())
 
-    def __iter__(self):       
+    def __iter__(self):
         return self.iterkeys()
 
 
@@ -213,7 +213,7 @@ class EigenDict(object):
             empty cells, for the convenience of routines that operate on
             the dictionary as a whole, like 'keys()' and 'values()'.
         """
-        
+
         if self.locked:
             return
 
@@ -239,20 +239,20 @@ class EigenDict(object):
 
             if self.locked:
                 return CollapsedCell
-              
+
             cell = self.data[key] = EigenCell()
 
         return cell
 
     def __getitem__(self, key):
-    
+
         cell = self._setCell(key)
 
         if cell.exists():
             return cell.get()
 
         raise KeyError, key
-            
+
 
     def get(self, key, failobj=None):
 
@@ -278,7 +278,7 @@ class EigenDict(object):
 
     def __setitem__(self, key, item):
         self._setCell(key).set(item)
-        
+
     def __delitem__(self, key):
         self._setCell(key).unset()
 
@@ -315,7 +315,7 @@ class EigenRegistry(EigenDict):
 
         # We want to keep more-general registrants
         if old is None or old.extends(primary_iface):
-        
+
             self._setCell(iface).set(item)
             self.provided[iface]=primary_iface
 
@@ -336,7 +336,7 @@ class EigenRegistry(EigenDict):
         iProvide = self.provided
         get = iProvide.get
         sc = self._setCell
-        
+
         for iface, newP in other.provided.items():
             old = get(iface)
             if old is None or old.extends(newP):
@@ -360,4 +360,10 @@ class EigenRegistry(EigenDict):
 
 CollapsedCell = EigenCell()
 CollapsedCell.exists()  # force locking
-            
+
+
+
+
+
+
+

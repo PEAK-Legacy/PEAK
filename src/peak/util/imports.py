@@ -124,7 +124,7 @@ def lazyModule(modname, relativePath=None):
     class LazyModule(ModuleType):
 
         __slots__=()
-        
+
         def __init__(self, name):
             self.__name__ = name    # Fixes 2.2 not setting __name__ on create
 
@@ -134,7 +134,7 @@ def lazyModule(modname, relativePath=None):
                 splitpos = modname.rindex('.')
                 mod = importString(modname[:splitpos])
                 setattr(mod,modname[splitpos+1:],self)
-                
+
             oldGA = LazyModule.__getattribute__
             modGA = ModuleType.__getattribute__
             LazyModule.__getattribute__ = modGA
@@ -177,8 +177,8 @@ def _loadAndRunHooks(module):
 
     # if this fails, we haven't called the hooks, so leave them in place
     # for possible retry of import
-    
-    reload(module)  
+
+    reload(module)
 
     try:
         for hook in getModuleHooks(module.__name__):
@@ -220,7 +220,7 @@ def whenImported(moduleName, hook):
 
     if name in sys.modules and not name in postLoadHooks:
         raise AlreadyRead("Module already imported", name)
-        
+
     getModuleHooks(moduleName).append(hook)
     return lazyModule(moduleName, reloader=_runHooks)
 
@@ -251,7 +251,7 @@ def importObject(spec, globalDict=defaultGlobalDict):
     If 'spec' is a string or unicode object, import it using 'importString()',
     otherwise return it as-is.
     """
-    
+
     if isinstance(spec,StringTypes):
         return importString(spec, globalDict)
 
@@ -270,8 +270,18 @@ def importSequence(specs, globalDict=defaultGlobalDict):
     with any string/unicode items replaced with their corresponding
     imports.
     """
-    
+
     if isinstance(specs,StringTypes):
         return [importString(x.strip(),globalDict) for x in specs.split(',')]
     else:
         return [importObject(s,globalDict) for s in specs]
+
+
+
+
+
+
+
+
+
+

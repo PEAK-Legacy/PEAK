@@ -16,10 +16,10 @@ class TxnStateTest(TestCase):
     def checkOutside(self):
 
         ts = self.ts
-        
+
         for op in ts.commit, ts.abort, ts.fail:
             self.assertRaises(exceptions.OutsideTransaction, op)
-            
+
         self.assertRaises(exceptions.OutsideTransaction, ts.join, self.p)
         assert self.log == []
 
@@ -45,7 +45,7 @@ class TxnStateTest(TestCase):
 
         assert not ts.isActive()
         assert ts.getTimestamp() is None
-        
+
         for fini in ts.commit, ts.abort:
 
             ts.begin()
@@ -155,7 +155,7 @@ class VotingTest(TestCase):
         ts.join(self.p_u)
         ts.join(self.p_p)
         ts.join(self.p_n)
-        
+
         self.assertRaises(exceptions.NotReadyError, ts.commit)
 
         # just a lot of ready-to-vote attempts
@@ -169,7 +169,7 @@ class VotingTest(TestCase):
         ts.begin()
         ts.join(self.p_p)
         ts.join(self.p_n)
-        
+
         ts.commit()
 
 
@@ -218,7 +218,7 @@ class TxnTable(storage.TransactionComponent):
         return [row.dump(colNames) for row in self.table]
 
     def commitTransaction(self, txnService):
-        self.stableState = self.dump()            
+        self.stableState = self.dump()
 
     def abortTransaction(self, txnService):
         self._delBinding('table')
@@ -248,14 +248,14 @@ class Harness(binding.Component):
 
     class sampleTable(TxnTable):
         colNames = 'a', 'b'
-        
+
     sampleTable = binding.New(sampleTable)
 
 
     class testDM(storage.EntityDM):
 
         table = binding.bindTo('sampleTable')
-        
+
         class defaultClass(Persistent):
             pass
 
@@ -294,7 +294,7 @@ class TableTest(TestCase):
     def tearDown(self):
         if storage.getTransaction(self.harness).isActive():
             storage.abort(self.harness)
-    
+
     def checkNoChangeOutsideTxn(self):
         self.assertRaises(exceptions.OutsideTransaction,
             self.table.INSERT, Items(a=1,b=2)
@@ -340,7 +340,7 @@ class DMTest(TestCase):
     def _addData(self):
         storage.begin(self.harness)
         self.table.INSERT(Items(a=1,b=2))
-    
+
     def checkExistence(self):
 
         self._addData()
@@ -357,7 +357,7 @@ class DMTest(TestCase):
         self._addData()
         assert self.table.dump()==[(1,2)]
         storage.commit(self.harness)
-        
+
         storage.begin(self.harness)
         ob = self.dm[1]
         ob.b = 4
@@ -447,5 +447,5 @@ def test_suite():
 
 
 
-    
-    
+
+

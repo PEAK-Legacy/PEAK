@@ -18,7 +18,7 @@
 
  In addition to the lazily-imported modules, 'peak.api' also exports
  the following objects for convenience in interacting with PEAK's APIs:
- 
+
     'NOT_GIVEN' and 'NOT_FOUND' -- Singleton values used for convenience
         in dealing with non-existent parameters or dictionary/cache entries
 
@@ -192,7 +192,7 @@ class PropertyName(str):
                 raise exceptions.InvalidName(
                     "'*' must be last part of wildcard property name", self
                 )
-            
+
         if '?' in self:
             if '?' in parts or self.index('?') < (len(self)-1):
                     raise exceptions.InvalidName(
@@ -226,7 +226,7 @@ class PropertyName(str):
             return
 
         name = self
-        
+
         while '.' in name:
             name = name[:name.rindex('.')]
             yield name+'.*'
@@ -265,7 +265,6 @@ class PropertyName(str):
     def of(self, forObj):
         from peak.config.config_components import PropertySet
         return PropertySet(forObj, self)
-
 
 
 

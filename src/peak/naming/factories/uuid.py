@@ -5,7 +5,7 @@ from peak.api import exceptions
 class uuidURL(ParsedURL):
     """
     draft-kindel-uuid-uri-00 UUID urls
-    
+
     Attributes provided:
 
     uuid            a peak.util.uuid object
@@ -24,7 +24,7 @@ class uuidURL(ParsedURL):
     def parse(self, scheme, body):
 
         _l = body.split(';')
-        
+
         uuid = UUID(_l[0])
 
         quals = tuple( [tuple(_x.split('=', 1)) for _x in _l[1:]] )

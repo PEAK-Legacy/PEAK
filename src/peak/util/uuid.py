@@ -47,19 +47,19 @@ class UUID(str):
         from_string=None,
         name=None, ns=None, version=None, nodeid=None
         ):
-        
+
         other_all_none = (name is None) and (ns is None) \
             and (version is None) and (nodeid is None)
-        
+
         global lasttime, offset
 
         if CreateGuid and other_all_none and not from_string:
             # just want any new id and can use win32
             from_string = str(CreateGuid())[1:-1]    # strip off {}'s
-            
+
         if from_string:
             # Validate
-            
+
             if not other_all_none:
                 raise ValueError, "If string is specified, nothing else may be"
 
@@ -74,7 +74,7 @@ class UUID(str):
                         ok = 1
                     except:
                         pass
-               
+
             if not ok:
                 raise ValueError, "Illegal syntax for UUID: " + from_string
 
@@ -133,7 +133,7 @@ class UUID(str):
 
                 if not isinstance(ns,UUID):
                     ns = UUID(ns)
-                    
+
                 h = md5(ns.bytes() + name).digest()
 
             elif version == 4:
@@ -153,11 +153,11 @@ class UUID(str):
 
                 # insert reserved bits
                 h[8] = (h[8] & 0x3f) | 0x40
-                
+
                 h = ''.join(['%02x' % c for c in h])
                 from_string = "%s-%s-%s-%s-%s" % (
                     h[:8], h[8:12], h[12:16], h[16:20], h[20:])
-             
+
         return super(UUID, klass).__new__(klass, from_string)
 
 
@@ -165,7 +165,7 @@ class UUID(str):
     def bytes(self):
         """Return a 16 byte binary string representing the 128 bit ID in
         network order"""
-        
+
         x = ''.join(self.split('-'))
         return ''.join([chr(int(x[i:i+2], 16)) for i in range(0, len(x), 2)])
 
@@ -173,10 +173,10 @@ class UUID(str):
     def base64(self):
         """Return a 24 byte string that is more compact than the
         36-byte hex form, but still not binary"""
-        
+
         # slice is to remove the trailing newline
         return self.bytes().encode('base64')[:-1]
-        
+
 
     def fromBytes(klass, s):
         if len(s) != 16:
@@ -184,20 +184,22 @@ class UUID(str):
 
         s = tuple(["%02x" % ord(c) for c in s])
         s = "%s%s%s%s-%s%s-%s%s-%s%s-%s%s%s%s%s%s" % s
-        
+
         return klass(s)
-        
+
     fromBytes = classmethod(fromBytes)
-    
+
 
     def fromBase64(klass, s):
         return klass.fromBytes(s.decode('base64'))
 
     fromBase64 = classmethod(fromBase64)
 
-    
+
     def __repr__(self):
         return "UUID('%s')" % str(self)
+
+
 
 
 
@@ -209,3 +211,36 @@ OID_NS = UUID('6ba7b812-9dad-11d1-80b4-00c04fd430c8')
 X500_NS = UUID('6ba7b814-9dad-11d1-80b4-00c04fd430c8')
 
 NIL_UUID = UUID('00000000-0000-0000-0000-000000000000')
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

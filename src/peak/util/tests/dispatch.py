@@ -45,7 +45,7 @@ class animal(object):
         return "They're both animals."
 
     same = staticmethod(same)
-    
+
 
 class vertebrate(animal):
 
@@ -54,7 +54,7 @@ class vertebrate(animal):
         return s + "  One of them has a backbone."
 
     different = staticmethod(different)
-    
+
     def same(next, self, other):
         s = animal.same(next, self, other)
         return s + "  They both have backbones."
@@ -69,7 +69,7 @@ class invertebrate(animal):
         return s + "  One of them does not have a backbone."
 
     different = staticmethod(different)
-    
+
     def same(next, self, other):
         s = animal.same(next, self, other)
         return s + "  Neither of them have backbones."
@@ -123,11 +123,11 @@ class GenericTest(TestCase):
 
     def checkSimple(self):
         """Basic overriding of second argument."""
-        
+
         join = GenericFunction() # String join in the old order
         join[Signature(object, str)] =  string.join
         join[Signature(object, bracket)] = bracket.join
-        
+
         assert join(['a', 'b'], ',') == 'a,b'
         assert join(['a', 'b'], '<>') == 'a<>b'
         assert join(['a', 'b'], bracket('<>')) == '<a><b>'
@@ -173,7 +173,7 @@ class GenericTest(TestCase):
         compare = MultiMethod()  # Compare and contrast two animals.
 
         compare[Signature(animal, animal)] = animal.same
-        compare[Signature(vertebrate, vertebrate)] = vertebrate.same 
+        compare[Signature(vertebrate, vertebrate)] = vertebrate.same
         compare[Signature(invertebrate, invertebrate)] = invertebrate.same
 
         compare[Signature(vertebrate, animal)] = vertebrate.different
@@ -184,7 +184,7 @@ class GenericTest(TestCase):
 
         compare[Signature(invertebrate, vertebrate)] = invertebrate.different
         compare[Signature(vertebrate, invertebrate)] = vertebrate.different
-        
+
         mammal = vertebrate()
         insect = invertebrate()
 
@@ -192,7 +192,7 @@ class GenericTest(TestCase):
             "They're both animals.  They both have backbones."
         assert compare(insect, insect) == \
             "They're both animals.  Neither of them have backbones."
-            
+
         #assert compare(mammal, insect) == \
 #            "They're both animals.  \
 #One of them does not have a backbone.  One of them has a backbone."
@@ -229,4 +229,18 @@ def test_suite():
         s.append(makeSuite(t,'check'))
 
     return TestSuite(s)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 

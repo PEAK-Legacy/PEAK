@@ -55,10 +55,10 @@ class ModelElement:
 
             if not name:
                 return []
-            
+
             names = list(query([element])['namespace*']['name'])
             names.reverse(); names.append(name)
-        
+
             return '.'.join(names)
 
 
@@ -68,7 +68,7 @@ class GeneralizableElement:
 
         def get(feature,element):
             return list(query([element])['generalization']['parent'])
-    
+
 
     class subclasses(model.DerivedFeature):
 
@@ -91,7 +91,7 @@ class Namespace:
 
     class ownedElement:
 
-        def _onLink(feature, element, item, posn=None):                
+        def _onLink(feature, element, item, posn=None):
             element._contentsIndex[item.name]=item
 
         def _onUnlink(feature, element, item, posn=None):
@@ -114,6 +114,9 @@ class Namespace:
         for c in criteria:
             q = q[c]
         return q
+
+
+
 
 
 

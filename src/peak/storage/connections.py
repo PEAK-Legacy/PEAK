@@ -42,7 +42,7 @@ __all__ = [
 class AbstractCursor(binding.Component):
 
     __implements__ = ICursor
-    
+
     _conn = binding.bindTo('../connection')
 
 
@@ -231,7 +231,6 @@ class ManagedConnection(TransactionComponent):
     address = binding.requireBinding(
         "Address used to create the actual connection"
     )
-
 
 
 

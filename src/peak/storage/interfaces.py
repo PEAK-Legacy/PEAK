@@ -34,7 +34,7 @@ class ITransactionService(Interface):
     def commit():
         """Commit the transaction, or raise OutsideTransaction if not in
         progress."""
-        
+
     def abort():
         """Abort the transaction, or raise OutsideTransaction if not in
         progress."""
@@ -54,7 +54,7 @@ class ITransactionService(Interface):
         participants.  However, if the commit or savepoint has already
         progressed too far for the new participant to join in, a
         TransactionInProgress error will be raised."""
-        
+
     def __contains__(participant):
         """Has 'participant' joined?"""
 
@@ -65,7 +65,7 @@ class ITransactionService(Interface):
 
     def isActive():
         """Return True if transaction is in progress."""
-        
+
     def getTimestamp():
         """Return the time that the transaction began, in time.time()
         format, or None if no transaction in progress."""
@@ -82,7 +82,7 @@ class ITransactionService(Interface):
 
     def getInfo():
         """Return a copy of the transaction's metadata dictionary"""
-        
+
 
 class ITransactionParticipant(Interface):
 
@@ -136,7 +136,7 @@ class ITransactionParticipant(Interface):
     'readyToVote()' loop, guaranteeing that the disk file participant
     would know about all the updates by the time 'voteForCommit()' was
     issued, regardless of the order in which the participants received
-    the messages."""       
+    the messages."""
 
     def readyToVote(txnService):
         """Transaction commit is beginning; flush dirty objects and
@@ -174,19 +174,19 @@ class ITransactionParticipant(Interface):
 class ITransactionErrorHandler(Interface):
 
     """Policy object to handle exceptions issued by participants"""
-    
+
     def voteFailed(txnService, participant):
         """'participant' raised exception during 'voteForCommit()'"""
 
     def abortFailed(txnService, participant):
         """'participant' raised exception during 'abortTransaction'"""
-        
+
     def finishFailed(txnService, participant):
         """'participant' raised exception during 'finishTransaction()'"""
-        
+
     def commitFailed(txnService, participant):
         """'participant' raised exception during 'commitTransaction()'"""
-        
+
 
 
 
@@ -217,7 +217,7 @@ class IDataManager(IComponent,ITransactionParticipant,IPersistentDataManager):
 
     def __getitem__(oid):
         """Retrieve the persistent object designated by 'oid'"""
-        
+
     def preloadState(oid, state):
         """Pre-load 'state' for object designated by 'oid' and return it"""
 
@@ -247,7 +247,7 @@ class IWritableDM(IKeyableDM):
 class IDataManager_SPI(Interface):
 
     """Methods/attrs that must/may be redefined in a QueryDM subclass"""
-    
+
     cache = Attribute("a cache for ghosts and loaded objects")
 
     defaultClass = Attribute("Default class used for 'newItem()' method")
@@ -319,7 +319,7 @@ class IManagedConnection(IComponent,ITransactionParticipant):
 
     def closeASAP():
         """Close the connection as soon as it's not in a transaction"""
-        
+
     def close():
         """Close the connection immediately"""
 
@@ -414,7 +414,7 @@ class ICache(Interface):
 
     def get(key, default=None):
         """Retrieve object denoted by 'key', or 'default' if not found
-        
+
             Note that cache implementations do not have to guarantee that
             'get()' will return items placed in the cache, or indeed
             ever return anything other than 'default'.  For example, the
@@ -487,3 +487,6 @@ class ICursor(Interface):
 
 class IRow(Interface):
     """Row that smells like a tuple, dict, or instance attr"""
+
+
+

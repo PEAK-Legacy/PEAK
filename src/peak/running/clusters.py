@@ -15,7 +15,7 @@
  In the abscence of a cluster definition file, PEAK will behave as if
  the local hostname was listed in the cluster file, without being part
  of a group.  In other words, in the abscence of other information, the
- cluster consists of just the local machine. 
+ cluster consists of just the local machine.
 
  Then environment variable 'CLUSTER' (or, in PEAK's case, the property
  'peak.running.cluster._filename', if it exists, else
@@ -50,10 +50,10 @@
  memberships of the first four groups, 'odd', 'even', 'prime', and 'qux',
  should be clear.  A "lump" is a group defined in terms of other groups or
  lumps.  In this case the group 'weird' contains the union of the groups
- 'qux' and 'prime'.  Note that one.baz.com is a member of both qux and prime. 
+ 'qux' and 'prime'.  Note that one.baz.com is a member of both qux and prime.
  The group 'weird' will contain it only once, however -- duplicates are
  removed automatically.  Another group, '__orphans__', contains any hosts
- that were listed at the beginning of the file before any 'GROUP:' lines. 
+ that were listed at the beginning of the file before any 'GROUP:' lines.
  Lastly the group '__all__' contains all hosts listed in the file.
 
  Each group is exported as a property 'peak.running.cluster.groups.<groupname>'
@@ -62,20 +62,20 @@
 
  The property 'peak.running.cluster.groups' will contain a tuple of strings
  naming each group except the '__orphans__' and '__all__' groups (that
- is, it names all the explicitly-created groups). 
+ is, it names all the explicitly-created groups).
 
  The property 'peak.running.cluster.hosts.<hostname>' will be a tuple of
  strings of the names of all groups the host belongs to (except the
  __all__ group).  For example, in the example above,
- 'peak.running.cluster.hosts.one.baz.com'is '("odd", "prime", "qux", "wierd")'. 
+ 'peak.running.cluster.hosts.one.baz.com'is '("odd", "prime", "qux", "wierd")'.
 
  The property 'peak.running.cluster.hosts' is a shortcut for
  'peak.running.cluster.groups.__all__', listing all hosts in the cluster.
- 
+
  Finally, the property 'peak.running.cluster.hostname' is a string with
  the local machine's network hostname (per 'socket.gethostname()'), and
  'peak.running.cluster.shortname' is the the same, truncated after the
- first '"."', if any. 
+ first '"."', if any.
 """
 
 
@@ -108,7 +108,7 @@ def parseCluster(prefix, fn):
     gname  = '__orphans__'
     inLump = False
     lineno = 0
-    
+
     for l in file:
 
         lineno += 1; l = l.strip()
@@ -124,7 +124,7 @@ def parseCluster(prefix, fn):
         if lumpline or l.startswith('GROUP:'):
 
             inLump  = lumpline
-            gname = l.split(':', 1)[1] 
+            gname = l.split(':', 1)[1]
             groups.add(gname)
 
             if not order.has_key(gname):
@@ -192,3 +192,14 @@ def loadCluster(propertyMap, filename=None, prefix='peak.running.cluster.*',
     return NOT_FOUND
 
 loadCluster.__implements__ = config.ISettingLoader
+
+
+
+
+
+
+
+
+
+
+

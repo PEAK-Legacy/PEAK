@@ -74,7 +74,7 @@ class LDAPCursor(AbstractCursor):
         self.close()
         self.getParentComponent().close()
         raise
-    
+
     def nextset(self):
         """LDAP doesn't do multi-sets"""
         return False
@@ -131,7 +131,7 @@ class LDAPCursor(AbstractCursor):
             except self.disconnects:
                 self.errorDisconnect()
 
-            if restype is None:               
+            if restype is None:
                 yield None  # for timeout errors
 
             for dn,m in data:
@@ -146,7 +146,7 @@ class LDAPCursor(AbstractCursor):
                         if k not in fieldMap:
                             ldapEntry.addField(k)
                             conv.append( (getConverter(k),k) )
-                
+
                 yield mkTuple(ldapEntry,
                     [ c(f,m.get(f)) for (c,f) in conv ]
                 )
@@ -206,7 +206,7 @@ class LDAPConnection(ManagedConnection):
 class distinguishedName(naming.CompoundName):
 
     syntax = naming.PathSyntax(
-    
+
         direction    = -1,      # DN's go right-to-left
         separator    = ',',     # are comma-separated
         trimblanks   = True,    # and blanks are ignored
@@ -216,7 +216,7 @@ class distinguishedName(naming.CompoundName):
 
         escape       = '\\',    # Escape character is backslash, but
         decode_parts = False,   #   don't try to unquote/unescape RDNs!
-        
+
     )
 
 
@@ -247,17 +247,17 @@ class distinguishedName(naming.CompoundName):
 class ldapURL(naming.ParsedURL):
 
     """RFC2255 LDAP URLs, with the following changes:
-    
+
     1) Additionally supports ldaps and ldapi (TLS and Unix Domain variants).
 
     2) Supports familiar (http, ftp-like) [user[:pass]@] syntax before
     the hostport part of the URL. These are translated into critical bindname
     and x-bindpw extensions. That is:
-    
+
         ldap://foo:bar@localhost
-    
+
     is treated as:
-    
+
         ldap://localhost/????!bindname=foo,!x-bindpw=bar
 
     We do this for backwards compatability with some applications which
@@ -278,15 +278,15 @@ class ldapURL(naming.ParsedURL):
                     value is a string.
     critical        a list of extension names that are critical, so
                     code may easily check for unsupported extenstions
-                    and throw an error.        
+                    and throw an error.
     """
-    
+
     supportedSchemes = ('ldap', 'ldaps', 'ldapi')
     nameAttr = 'basedn'
 
 
     def __init__(self, scheme=None, body=None,
-                 host='', port=389, basedn='', attrs=None, 
+                 host='', port=389, basedn='', attrs=None,
                  scope=SCOPE_BASE, filter=None, extensions=None,
     ):
         extensions = extensions or {}
@@ -297,7 +297,7 @@ class ldapURL(naming.ParsedURL):
 
         _bindinfo = None
         extensions = self.extensions
-        
+
         _hostport = body
 
         if _hostport[:2] == '//':
@@ -336,7 +336,7 @@ class ldapURL(naming.ParsedURL):
                 _bindinfo = unquote(_bindinfo)
 
             extensions['bindname'] = (1, _bindinfo)
-        
+
         if _rest:
             if '?' in _rest:
                 basedn, _rest = rest.split('?', 1)
@@ -353,7 +353,7 @@ class ldapURL(naming.ParsedURL):
 
         if _rest[0]:
             attrs = tuple(map(unquote, _rest[0].split(',')))
-            
+
         scope = scope_map.get(unquote(_rest[1]).lower())
 
         if scope is None:
@@ -383,7 +383,7 @@ class ldapURL(naming.ParsedURL):
 
         critical = [_k for (_k, (_crit, _v)) in extensions.items() if _crit]
         critical = tuple(critical)
-        
+
         return locals()
 
 
@@ -393,5 +393,18 @@ class ldapURL(naming.ParsedURL):
             context.creationParent, context.creationName,
             address = self
         )
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 

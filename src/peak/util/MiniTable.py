@@ -19,7 +19,7 @@ class Table(UserList):
     """
 
     def __init__(self, colNames=(), rowList=(), rawData=None):
-    
+
         UserList.__init__(self,rawData)
 
         if rowList and colNames:
@@ -29,7 +29,7 @@ class Table(UserList):
     def INSERT(self, items):
 
         """table.INSERT(Items(field1=value1, field2=value2...))
-        
+
             Insert a row with the supplied field values.  Affects only the
             specific table it is called upon.
         """
@@ -107,7 +107,7 @@ class Table(UserList):
     def DELETE(self, whereItems):
 
         """table.DELETE(Items(field1=value1, field2=value2...))
-        
+
             Delete rows which match the field values asserted in the keyword
             arguments.  Affects only the specific table it is called upon.
         """
@@ -138,4 +138,27 @@ class Table(UserList):
                 map(d.add, setItems)
                 break
         else:
-            self.INSERT(whereItems+setItems)            
+            self.INSERT(whereItems+setItems)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -28,6 +28,6 @@ class smtpURL(ParsedURL):
 
     def retrieve(self, refInfo, name, context, attrs=None):
         return smtplib.SMTP(self.host, self.port)
-   
+
 
 

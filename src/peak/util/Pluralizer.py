@@ -12,11 +12,11 @@ class Pluralizer:
     to '"__harmonies__"', and '"PARENTHESIS_27"' would become
     '"PARENTHESES_27"'.
     """
-    
+
     def __init__(self,pluralsFile=None,customMapping=None,**kw):
-        
+
         plurals = self.plurals = {}
-        
+
         if pluralsFile:
             for l in open(pluralsFile).readlines():
                 if '=' in l:
@@ -64,16 +64,16 @@ class Pluralizer:
     def upperize(self,s,new):
 
         """Try to capitalize 'new' to match capitalization of 's'"""
-        
+
         if new != new.lower():
             return new
-        
+
         if s==s.upper():
             return new.upper()
-            
+
         elif s[:1]==s[:1].upper():
             return new.capitalize()
-            
+
         return new
 
 
@@ -81,41 +81,40 @@ class Pluralizer:
 
 
     def lookup(self,s):
-    
+
         """Look up identifier in mapping object, trying alternative forms"""
 
         get = self.plurals.get
-        
+
         new = get(s)
         if new: return new
 
         new = get(s.lower())
         if new: return self.upperize(s,new)
-        
+
         match = self.other(s)
         key = match.group(2)
-        
+
         new = get(key)
         if new: return match.group(1)+new+match.group(3)
 
         new = get(key.lower())
         if new: return match.group(1)+self.upperize(key,new)+match.group(3)
-            
+
 
     def __call__(self,s):
-    
+
         """Pluralize by looking up in mapping or applying regex rules"""
-        
+
         new = self.lookup(s)
         if new: return new
-        
+
         for pat,repl in self.pluralPatterns:
             new, ct = pat(repl,s)
             if ct: break
-            
+
         if s==s.upper(): new = new.upper()
         return new
-
 
 
 

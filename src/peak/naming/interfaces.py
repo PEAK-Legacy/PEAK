@@ -55,7 +55,7 @@ class IName(Interface):
 
     def __radd__(other):
         """Add name to 'other', using this name as a relative name to it"""
-        
+
 
 isName = IName.isImplementedBy
 
@@ -86,7 +86,7 @@ class IResolver(Interface):
 
     def resolveToInterface(name,iface):
         """Find nearest context to 'name' that supports 'iface'
-        
+
         Return a tuple of the form '(context, remainingName)', where 'context'
         is the context nearest to 'name' that supports interface 'iface', and
         'remainingName' is the portion of 'name' that is relative to
@@ -212,7 +212,7 @@ class IWriteContext(IBasicContext):
 
     def __setitem__(name,object,attrs=None):
         """Bind 'object' under 'name'"""
-        
+
     def __delitem__(name):
         """Remove any binding associated with 'name'"""
 
@@ -224,10 +224,10 @@ class IWriteContext(IBasicContext):
 
     def mksub(name, attrs=None):
         """Create a subcontext of the same kind under 'name', with 'attrs'"""
-        
+
     def rmsub(name):
         """Remove sub-context 'name'"""
-        
+
     # XXX modifyAttributes
 
 
@@ -326,17 +326,6 @@ class IStreamFactory(Interface):
 
 
 
-
-
-
-
-
-
-
-
-
-
-
 # Framework interfaces
 
 class IInitialContextFactory(Interface):
@@ -381,7 +370,7 @@ class IStateFactory(Interface):
 class IURLContextFactory(Interface):
 
     """Obtain a context implementation for a URL scheme"""
-    
+
     def getURLContext(scheme,iface,parent=None,componentName=None,**options):
 
         """Return a context that can provide 'iface' for 'scheme' URLs
@@ -420,7 +409,7 @@ class IURLContextFactory(Interface):
             def getURLContext(scheme,iface,parente,componentName,**options):
                 # code to pick between 'foo.bar', 'foo.baz', etc. and
                 # return a context implementation
-                
+
         Of course, the only reason to do this is if the contexts are created
         dynamically in some fashion, otherwise it would suffice to register
         'foo.bar', etc. directly in your application's configuration.
@@ -429,6 +418,19 @@ class IURLContextFactory(Interface):
         'peak.naming.schemes.*', in which case it would be used as a default
         for any schemes not specifically defined or registered.
         """
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

@@ -11,7 +11,7 @@ class LoggingParser(AbstractConfigParser):
 
     def add_setting(self, section, name, value, lineInfo):
         self.log.append( (section, name, value) )
-        
+
 
 
 
@@ -86,7 +86,7 @@ class FormatTest(TestCase):
         p = LoggingParser()
         p.readString(TEST_ONE)
         assert p.log == RESULT_ONE
-        
+
 
 TestClasses = (
     FormatTest,
@@ -99,4 +99,25 @@ def test_suite():
         s.append(makeSuite(t,'check'))
 
     return TestSuite(s)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 

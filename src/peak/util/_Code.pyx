@@ -21,26 +21,26 @@ cdef class opIter:
     def __init__(self, codeIndex cidx, int pos):
         self.cidx = cidx
         self.pos  = pos
-        
+
     def __iter__(self):
         return self
 
     def __next__(self):
         cdef int pos
         cdef codeIndex c
-        
+
         pos = self.pos
-        
+
         if self.pos == -1:
             raise StopIteration
 
-        c = self.cidx   # XXX Pyrex croaks on self.cidx.opcodeChain[] 
+        c = self.cidx   # XXX Pyrex croaks on self.cidx.opcodeChain[]
         self.pos = c.opcodeChain[pos]
         return pos
 
 
 cdef class codeIndex:
-    
+
     """Useful indexes over a code object
 
         opcodeLocations[op] -- list of instruction numbers with 'op' as opcode
@@ -76,7 +76,7 @@ cdef class codeIndex:
         if self.offsets:     PyMem_Free(self.offsets)
         if self.byteLines:   PyMem_Free(self.byteLines)
         if self.opcodes:     PyMem_Free(self.opcodes)
-    
+
 
 
 
@@ -100,7 +100,7 @@ cdef class codeIndex:
         end = 0
         start = end
 
-        while end < l:            
+        while end < l:
             op = ca[start]
             if HAS_ARG(op):
                 arg = ca[start+1] | ca[start+2]<<8
@@ -120,7 +120,7 @@ cdef class codeIndex:
             self.offsets[p] = start
             p = p+1
             start = end
-            
+
         self.length = p
         self.codelen = l
 
@@ -134,7 +134,7 @@ cdef class codeIndex:
 
             for s from 0 <= s < ca[p]:
                 self.byteLines[start+s] = arg
-                
+
             start = start + ca[p]
             arg = arg + ca[p+1]
             p = p + 2
@@ -200,3 +200,6 @@ cdef class codeIndex:
             raise IndexError, p
 
         return self.byteLines[p]
+
+
+

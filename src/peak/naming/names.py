@@ -42,7 +42,7 @@ def crossesBoundaries(name):
 class AbstractName(tuple):
 
     __implements__ = IName
-    
+
     nameKind    = None
 
     def __new__(klass, *args):
@@ -56,7 +56,7 @@ class AbstractName(tuple):
 
             elif isinstance(s,StringTypes):
                 return klass.parse(s)
-                
+
         return super(AbstractName,klass).__new__(klass,*args)
 
     def __str__(self):
@@ -228,10 +228,10 @@ class ParsedURL(object):
             raise TypeError(
                 "Addition not supported for pure address types", self, other
             )
-            
+
         d = dict(self.__state)
         d[na] = getattr(self,na,CompoundName(())) + other
-        
+
         res = self.__new__(self.__class__)
         res.__dict__.update(d)
 
@@ -262,7 +262,7 @@ class ParsedURL(object):
 
             else:
                 raise exceptions.InvalidName(str(self))
-            
+
         return locals()
 
     def retrieve(self, refInfo, name, context, attrs=None):
@@ -278,7 +278,7 @@ class ParsedURL(object):
 
     def supportsScheme(klass, scheme):
         return scheme in klass.supportedSchemes or not klass.supportedSchemes
-        
+
     supportsScheme = classmethod(supportsScheme)
 
 
@@ -311,7 +311,7 @@ class ParsedURL(object):
 
         if body is not None:
             update(self.parse(scheme, body))
-            
+
     def __setattr__(self, n, v):
         raise AttributeError, "Immutable object"
 
@@ -327,7 +327,7 @@ class ParsedURL(object):
     __state = Once(__state)
 
     __hash  = Once( lambda s,d,a: hash(s.__state) )
-    
+
     def __hash__(self):
         return self.__hash
 
@@ -344,7 +344,7 @@ class ParsedURL(object):
                 nic = d[na]; del d[na]
             else:
                 nic = getattr(self,na)
-        else:            
+        else:
             nic = CompoundName(())
 
         auth = self.__new__(self.__class__)
@@ -428,9 +428,9 @@ def toName(aName, nameClass=CompoundName, acceptURL=1):
         If 'aName' is neither a Name nor a string/Unicode object, an
         'exceptions.InvalidName' is raised.
     """
-    
+
     if isinstance(aName,StringTypes):
-    
+
         if acceptURL and URLMatch(aName):
             m = URLMatch(aName)
             scheme, body = m.group(1), aName[m.end():]
@@ -454,7 +454,7 @@ class LinkRef(object):
     """Symbolic link"""
 
     __slots__ = 'linkName'
-    
+
     def __init__(self, linkName):
         self.linkName = linkName
 
@@ -467,10 +467,26 @@ class NNS_Reference(object):
     """Next Naming System reference"""
 
     __slots__ = 'relativeTo'
-    
+
     def __init__(self, relativeTo):
         self.relativeTo = relativeTo
 
     def __repr__(self):
         return "NNS_Reference(%s)" % `self.relativeTo`
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 

@@ -1,4 +1,4 @@
-from peak.api import * 
+from peak.api import *
 
 # This is a regression test for a certain weird simulator behavior...
 # Leave the next two lines in!
@@ -7,7 +7,6 @@ from types import StringType, FunctionType
 StringType
 
 # End special test
-
 
 from peak.config.interfaces import *
 from peak.interface import implements
@@ -31,7 +30,7 @@ class RebindSub(object):
 
 class BaseClass:
     foo = 1
-    
+
 class Subclass(BaseClass):
 
     class Nested:
@@ -47,4 +46,37 @@ def aFunc1():
 
 def aFunc2(aParam):
     return 'M1(%s)' % aParam
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 

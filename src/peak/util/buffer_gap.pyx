@@ -55,7 +55,7 @@ cdef void _setGap(Buffer self, int pos):
         else:
             move = pos - self.gap
             memmove(&self.buffer[self.gap], &self.buffer[after], move)
-            
+
         self.gap = pos
 
 
@@ -68,9 +68,9 @@ cdef int _setGapSize(Buffer self,int size) except -1:
         _setGap(self, self.length)
 
         count = min(size, self.alloc)
-        
+
         self.buffer  = <char *>PyMem_Realloc(self.buffer, self.size + count)
-        
+
         self.gapsize = self.gapsize + count
         self.size    = self.size + count
 
@@ -137,10 +137,10 @@ cdef class Buffer:
         self.gap     = self.gap     + 1
         self.length  = self.length  + 1
 
-        
+
     def append(self, int x):
         self.insert(self.length, x)
-        
+
 
     def extend(self, aStr):
         self.__setslice__(self.length, self.length, aStr)
@@ -178,7 +178,7 @@ cdef class Buffer:
         if change>0:
             _setGapSize(self, change)
 
-        _setGap(self, i)       
+        _setGap(self, i)
 
         if datalen:
             memmove(&self.buffer[i], data, datalen)

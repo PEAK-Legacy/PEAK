@@ -9,7 +9,7 @@ def utf8orlatin1(aStr):
     Convert string 'aStr' to a unicode string. First, hope that it is utf8,
     but if it doesn't seem to be, assume it was latin1.
     """
-    
+
     if isinstance(aStr,unicode):
         return astr
 
@@ -17,7 +17,7 @@ def utf8orlatin1(aStr):
         return aStr.decode('utf8')
     except:
         return aStr.decode('latin1')
-    
+
 
 def utrunc(s, l):
     """
@@ -45,7 +45,7 @@ def uopen(fn, mode='rb', encoding='utf8', errors='strict', buffering=1):
     encoded using encoding (default utf8), where we will be
     reading and writing data as unicode strings
     """
-    
+
     return codecs.open(fn, mode, encoding, errors, buffering)
 
 
@@ -67,3 +67,16 @@ class UnicodeO:
 
     def getvalue(self):
         return u''.join(self.l)
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -6,12 +6,13 @@ lowercase hexadecimal string.
 
 We use the algorithms from draft-leach-uuids-guids-01.  We return an
 ethernet address of the host if possible, but there is no guarantee that
-we can do so.  Do *NOT* assume that you will get the ethernet address. 
+we can do so.  Do *NOT* assume that you will get the ethernet address.
 The host may not have one, or may have more than one.  In fact, if the
 host has more than one, there is no guarantee that you will get the same
 one every time. """
 
 import sys, os, time, re
+
 try:
     import posix
 except:
@@ -24,6 +25,19 @@ _hid48 = None
 
 r = ':'.join(["([0-9a-f]{2})"]*6)
 r = re.compile(r, re.IGNORECASE)
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 def from_ifconfig():
     try:
@@ -39,7 +53,7 @@ def from_ifconfig():
             return m.lower()
     except:
         pass
-    
+
     return None
 
 def from_random():
@@ -85,7 +99,7 @@ if sys.platform == 'win32':
 
 def getnodeid48():
     global _hid48, methods
-    
+
     if _hid48 is None:
         for method in methods:
             _hid48 = method()
@@ -93,3 +107,17 @@ def getnodeid48():
                 break
 
     return _hid48
+
+
+
+
+
+
+
+
+
+
+
+
+
+

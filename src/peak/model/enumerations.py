@@ -131,7 +131,7 @@ class enumDict(enum):
     name is a Python keyword or an illegal value for an identifier, e.g.::
 
         from keyword import kwlist
-        
+
         class PythonKeyword(model.Enumeration):
 
             __whatever = model.enumDict(
@@ -222,11 +222,11 @@ class EnumerationClass(PrimitiveTypeClass):
         for k,v in cDict.items():
             if isinstance(v,enum):
                 values.update(v(k))
-            
+
         klass.__enumeration_values = values
 
         sorted = []
-        
+
         for k in values.iterkeys():
             inst = klass(k)
             setattr(klass,k,inst)
@@ -286,7 +286,7 @@ class EnumerationClass(PrimitiveTypeClass):
 
 
     def _setupInst(klass, inst, name):
-    
+
         value = klass.__enumeration_values.get(
             name, NOT_GIVEN
         )
@@ -357,7 +357,7 @@ class Enumeration(PrimitiveType, HashAndCompare):
 
         >>> [e for e in ThreeWay]
         [ThreeWay.Maybe, ThreeWay.No, ThreeWay.Yes]
-    
+
     The above class will have attributes 'Yes', 'No', and 'Maybe', each
     of which is 'ThreeWay' instance that hashes and compares equal to
     the specified literal (1,0, or -1).  The 'str()' and 'repr()' of these
@@ -366,9 +366,9 @@ class Enumeration(PrimitiveType, HashAndCompare):
     Note: Enumeration values may be of any type.  See the docs on
     'model.enum()', 'model.enums()' and 'model.enumDict()' for various ways to
     specify the literals of an enumeration.
-    
+
     Enumeration Class Methods
-    
+
         Notice that the example 'ThreeWay' class itself offers some useful
         methods, such as '__getitem__', 'get', '__contains__', and '__iter__'.
         The first three methods work as if the class were a dictionary whose
@@ -407,7 +407,7 @@ class Enumeration(PrimitiveType, HashAndCompare):
         names, even though they will hash and compare the same."""
 
     __metaclass__ = EnumerationClass
-    
+
     __class_implements__ = IEnumType
     __implements__       = IEnumValue
 
@@ -438,5 +438,14 @@ class Enumeration(PrimitiveType, HashAndCompare):
 
     def __reduce__(self):
         return self.__class__, (self._hashAndCompare,)
+
+
+
+
+
+
+
+
+
 
 

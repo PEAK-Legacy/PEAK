@@ -45,7 +45,7 @@ def fromStream(stream, source=None):
 
     Calling 'fromStream(stream,source)' returns an iterator which yields
     '(source,lineNo,line)' tuples for each line in 'stream'.
-    
+
     'stream' must be a sequence, iterator, or iterable file-like object
     that yields text lines.  (Line ending characters are stripped
     from line ends.)
@@ -87,7 +87,7 @@ def fromFile(filename, mode='r'):
     This is the equivalent of 'fromStream(open(filename,mode), filename)'.
     That is, it returns a line-info iterator with a source of 'filename'
     and the lines from 'open(filename,mode).readlines()'."""
-    
+
     return fromStream(open(filename,mode), filename)
 
 
@@ -248,7 +248,7 @@ def iterConfigSettings(lineSource):
     value = None
 
     for source, lineNo, line in lineSource:
-            
+
         if name and (not line.strip() or line[0] in ' \t'):
             value = "%s\n%s" % (value, line.strip())
             lineInfo = lineInfo[0], lineInfo[1], lineInfo[2]+'\n'+line
@@ -358,7 +358,7 @@ class AbstractConfigParser(object):
 
         elif name is None:
             pass    # unrecognized format
-            
+
         print "%s: %s = %r %r" % (section, name, value, lineInfo)
 
 

@@ -7,7 +7,7 @@ from peak.util.EigenData import *
 class CheckEmpty(TestCase):
 
     emptyCell = CollapsedCell
-    
+
     def checkExistence(self):
 
         cell = self.emptyCell
@@ -153,7 +153,7 @@ pE = PE()
 class RegistryBase(TestCase):
 
     obs = pA, pB, pC, pD, pE
-    
+
     def setUp(self):
 
         reg = self.reg = EigenRegistry()
@@ -210,4 +210,37 @@ TestClasses = (
 
 def test_suite():
     return TestSuite([makeSuite(t,'check') for t in TestClasses])
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 

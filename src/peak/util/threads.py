@@ -53,7 +53,7 @@ def disableThreading():
 
     Note that this must be called *before* any locks have been allocated, as it
     only affects subsequent allocations."""
-    
+
     global USE_THREADS
     USE_THREADS = False
 
@@ -84,11 +84,11 @@ class DummyLock(object):
 
     """Dummy lock type used when threads are inactive or unavailable"""
 
-    __slots__ = ['_lockCount']   
+    __slots__ = ['_lockCount']
 
     def __init__(self):
         self._lockCount = 0
-        
+
 
     def acquire(self, *waitflag):
 
@@ -101,10 +101,10 @@ class DummyLock(object):
             else:
                 # no argument, just return None
                 return None
-                
+
         else:
             self._lockCount -= 1
-            
+
             if waitflag and not waitflag[0]:
                 # no-wait; unlock/return failure
                 return 0
@@ -113,7 +113,7 @@ class DummyLock(object):
                 "Attempt to double-lock a lock in a single-threaded program"
             )
 
-            
+
     def release(self):
         self._lockCount -= 1
 
@@ -126,7 +126,7 @@ class RLock(object):
     """Re-entrant lock; can be locked multiple times by same thread"""
 
     __slots__ = 'lock','owner','count'
-    
+
     def __init__(self):
         self.lock  = allocate_lock()
         self.owner = 0
@@ -174,7 +174,7 @@ class RLock(object):
             self.lock.acquire(); rc = True
         else:
             rc = self.lock.acquire(blocking)
-            
+
         if rc:
             self.owner = me
             self.count = 1
@@ -229,7 +229,7 @@ class ResourceManager(object):
         """Is this key owned by the current thread?"""
         return self[key].locked()
 
-    def __getitem__(self, key):   
+    def __getitem__(self, key):
         self.lock.acquire()
         try:
             try:
@@ -244,4 +244,3 @@ class ResourceManager(object):
 globalRM = ResourceManager()
 
 
-    

@@ -11,7 +11,7 @@ class IndentedStream:
                 f.write('}\n');
 
         Outputs::
-        
+
             {
                 foo;
             }
@@ -19,18 +19,18 @@ class IndentedStream:
         IndentedStreams have a indent level stack which keeps track of
         each new margin size; push sets a new margin (relative or absolute
         by spaces or tabs), and pop restores the last set margin.  Text written
-        is split on line breaks and indented as needed.        
+        is split on line breaks and indented as needed.
     """
 
     tabwidth = 4
     maxdepth = 80
     needSpaces = 1
     spaces = ''
-    
+
     def __init__(self,stream=None,tabwidth=4):
-    
+
         """Create an indented stream from an existing stream"""
-        
+
         if stream is None:
             from sys import stdout
             stream = stdout
@@ -45,7 +45,7 @@ class IndentedStream:
 
 
     def setMargin(self,tabs=0,indent=0,outdent=0,absolute=None,absTabs=None):
-   
+
         """Set current margin using relative or absolute spaces or tabs
 
             Examples::
@@ -62,10 +62,10 @@ class IndentedStream:
             need it to be saved, use 'push()' instead, which will take the same
             arguments.
         """
-        
+
         if absTabs is not None:
             absolute = absTabs * self.tabwidth
-            
+
         if absolute is None:
             margin = self.stack[-1] + indent - outdent + tabs*self.tabwidth
         else:
@@ -122,30 +122,28 @@ class IndentedStream:
 
 
     def write(self,data):
-    
+
         """Write 'data' to stream, indenting as needed"""
-        
+
         if '\n' in data:
 
             lines = data.split('\n')
             write = self.stream.write
             indent = self._indent
-        
+
             for l in lines[:-1]:
                 if l:
                     indent()
                     write(l)
                 write('\n')
                 self.needSpaces = 1
-            
+
             if lines[-1]:
                 indent()
                 write(lines[-1])
         else:
             self._indent()
             self.stream.write(data)
-
-
 
 
 

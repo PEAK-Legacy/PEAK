@@ -6,7 +6,7 @@ from peak.api import exceptions
 
 __all__ = [
     'UnspecifiedSyntax', 'PathSyntax', 'FlatSyntax',
-]    
+]
 
 
 class UnspecifiedSyntax(object):
@@ -51,7 +51,7 @@ class PathSyntax(object):
 
          ignorecase=None,
          trimblanks=None,
-         
+
          beginquote='',
          endquote='',
          beginquote2='',
@@ -86,14 +86,14 @@ class PathSyntax(object):
         if beginquote2 and not beginquote:
             raise ValueError, "Begin quote 2 supplied without begin quote 1"
 
-        endquote = endquote or beginquote    
+        endquote = endquote or beginquote
         endquote2 = endquote2 or beginquote2
 
         quotes = beginquote,endquote,beginquote2,endquote2
         quotes = dict(zip(quotes,quotes)).keys()    # unique strings only
 
         self.metachars = filter(None,[escape] + quotes)
-        
+
         if escape and quotes:
             self.escapeFunc = re.compile(
                 "(" + '|'.join(
@@ -107,7 +107,7 @@ class PathSyntax(object):
         self.escape = escape
         self.trimblanks = trimblanks
         self.ignorecase = ignorecase
-        
+
         if beginquote2:
             self.quotes = (beginquote,endquote), (beginquote2,endquote2)
         elif beginquote:
@@ -123,7 +123,7 @@ class PathSyntax(object):
 
         quotedStrs = ''
         bqchars = ''
-        
+
         for bq,eq in self.quotes:
             bq_ = re.escape(bq[:1])
             eq_ = re.escape(eq[:1])
@@ -150,7 +150,7 @@ class PathSyntax(object):
         else:
             content = "( %(quotedStrs)s (?:%(escapedChar)s%(charpat)s)*    )"
 
-        content = content % locals()        
+        content = content % locals()
         PS = """
             %(optionalSep)s
             %(content)s         # Contents in the middle
@@ -163,9 +163,9 @@ class PathSyntax(object):
             self.unescape = re.compile(re.escape(escape)+'(.)').sub
 
     def format(self, seq):
-    
+
         """Format a sequence as a string in this syntax"""
-        
+
         if self.escape and self.decode_parts:
             n = [self.escapeFunc(self.escapeTo,part) for part in seq]
         else:
@@ -204,16 +204,16 @@ class PathSyntax(object):
 
 
     def parse(self, aStr):
-    
+
         """Parse a string according to defined syntax"""
 
         startStr = aStr
-        
+
         sep = self.separator
 
         for m in self.metachars:
             if aStr.find(m)>=0: break
-            
+
         else:
 
             if sep:
@@ -263,7 +263,7 @@ class PathSyntax(object):
 
                 if tb:
                     s = s.strip()
-                    
+
                 n.append(s)
                 aStr = aStr[m.end():]
 
@@ -277,9 +277,6 @@ class PathSyntax(object):
 
 
 FlatSyntax = PathSyntax()
-
-
-
 
 
 

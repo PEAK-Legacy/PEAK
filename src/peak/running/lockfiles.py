@@ -1,7 +1,7 @@
 """Lockfiles for inter-process communication
 
     These are used for synchronization between processes, unlike
-    thread.LockType locks.  The common use is non-blocking lock attempts. 
+    thread.LockType locks.  The common use is non-blocking lock attempts.
     For convenience and in order to reduce confusion with the (somewhat odd)
     thread lock interface, these locks have a different interface.
 
@@ -31,7 +31,7 @@
     prefer this locking interface over the standard Python one.
 """
 
-__all__ = ['LockFile', 'NullLockFile'] 
+__all__ = ['LockFile', 'NullLockFile']
 
 import os, errno, time
 from peak.util.threads import allocate_lock
@@ -43,18 +43,18 @@ class ILock(Interface):
 
     def attempt():
         """try to obtain the lock, return boolean success"""
-        
+
     def obtain():
         """wait to obtain the lock, returns None"""
-        
+
     def release():
         """release an obtained lock, returns None"""
-        
+
     def locked():
         """returns True if any thread IN THIS PROCESS
         has obtained the lock, else False"""
 
-    
+
 
 
 
@@ -82,9 +82,9 @@ class ILock(Interface):
 
 class LockFileBase:
     """Common base for lockfiles"""
-    
+
     __implements__ = ILock
-    
+
     def __init__(self, fn):
         self.fn = os.path.abspath(fn)
         self._lock = allocate_lock()
@@ -101,7 +101,7 @@ class LockFileBase:
             return r
         else:
             return False
-    
+
     def obtain(self):
         self._lock.acquire()
         r = False
@@ -112,7 +112,7 @@ class LockFileBase:
                 self._lock.release()
         if not r:
             raise RuntimeError, "lock obtain shouldn't fail!"
-    
+
     def release(self):
         self.do_release()
         self._locked = False
@@ -144,7 +144,7 @@ def pid_exists(pid):
     """Is there a process with PID pid?"""
     if pid < 0:
         return False
-    
+
     exist = False
     try:
         os.kill(pid, 0)
@@ -152,7 +152,7 @@ def pid_exists(pid):
     except OSError, x:
         if x.errno != errno.ESRCH:
             raise
-   
+
     return exist
 
 
@@ -185,7 +185,7 @@ def make_tempfile(fn, pid):
 
     errcount = 1000
     while 1:
-        try: 
+        try:
             fd = posix.open(tfn, O_EXCL | O_CREAT | O_RDWR, 0600)
             posix.write(fd, '%d\n' % pid)
             posix.close(fd)
@@ -212,11 +212,11 @@ class SHLockFile(LockFileBase):
         application by any appreciable period of time.
 
       o No clean up to do if the system or application crashes.
-   
+
     Loses:
 
       o In the off chance that another process comes along with
-        the same pid, we can get a false positive for lock validity. 
+        the same pid, we can get a false positive for lock validity.
 
       o Not compatible with NFS or any shared filesystem
         (due to disjoint PID spaces)
@@ -256,7 +256,7 @@ class SHLockFile(LockFileBase):
                     else:
                         os.unlink(tfn)
                         raise
-            
+
 
     def do_release(self):
         os.unlink(self.fn)
@@ -307,7 +307,7 @@ class FLockFile(LockFileBase):
 
       o Leaves lockfiles around, since unlink would cause a race.
     """
-    
+
     def do_acquire(self, waitflag=False):
         locked = False
 
@@ -334,9 +334,9 @@ class FLockFile(LockFileBase):
                 del self.fd
             else:
                 raise
- 
+
         self._locked = locked
-         
+
         return locked
 
     def do_release(self):
@@ -370,7 +370,7 @@ class FLockFile(LockFileBase):
 class WinFLockFile(LockFileBase):
 
     """Like FLockFile, but for Windows"""
-    
+
     def do_acquire(self, waitflag=False):
 
         if waitflag:
@@ -391,19 +391,19 @@ class WinFLockFile(LockFileBase):
             try:
                 self.f.write(`os.getpid()` + '\n')  # informational only
                 self.f.seek(0)  # lock is at offset 0, so go back there
-                locked = True                
+                locked = True
             except:
                 self.do_release()
                 raise
-                
+
         except IOError, x:
             if x.errno == errno.EACCES:
                 self.f.close()
                 del self.f
             else:
                 raise
- 
-        self._locked = locked         
+
+        self._locked = locked
         return locked
 
 
@@ -455,7 +455,7 @@ if posix:
     __all__.extend(['SHLockFile','FLockFile'])
     LockFile = SHLockFile
     del WinFLockFile
-    
+
 else:
 
     # don't need them and they won't work...
@@ -500,7 +500,7 @@ class lockfileURL(ParsedURL):
     )
 
     def retrieve(self, refInfo, name, context, attrs=None):
-        
+
         if self.scheme == 'lockfile':
             return LockFile(self.body)
 
@@ -515,6 +515,19 @@ class lockfileURL(ParsedURL):
 
         elif self.scheme == 'winflockfile':
             return WinFLockFile(self.body)
-    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 

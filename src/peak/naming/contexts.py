@@ -85,7 +85,7 @@ class NameContext(Component):
         # You should override this method if you want dynamic weak NNS
         # support; that is, if you want to mix composite names and compound
         # names and figure out dynamically when you've crossed over into
-        # another naming system.  
+        # another naming system.
 
         if not name:
             # convert to compound (local) empty name
@@ -96,7 +96,7 @@ class NameContext(Component):
             if isBoundary(name):    # /, x/
                 self._checkSupported(name, iface)
                 return self, name
-                
+
             local = toName(name[0], self.compoundParser, self.parseURLs)
 
             if len(name)==1:    # 'x'
@@ -167,7 +167,7 @@ class NameContext(Component):
         if len(name)<2:
             self._checkSupported(name, iface)
             return self, name
-            
+
         try:
             ctx = self[name[:1]]
 
@@ -261,7 +261,7 @@ class NameContext(Component):
         state, attrs = ob
 
         ob = self._deref(state, name, attrs)
-        
+
         if isinstance(ob, self.__class__):
             # Same or subclass, must not be a junction;
             # so delegate the NNS lookup to it
@@ -295,7 +295,7 @@ class NameContext(Component):
             result = factory.getObjectInstance(state, name, self, attrs)
 
             if result is not None:
-                return result                      
+                return result
 
         return state
 
@@ -351,10 +351,10 @@ class NameContext(Component):
     def __getitem__(self, name):
 
         """Lookup 'name' and return an object"""
-        
+
         ctx, name = self.resolveToInterface(name)
         if ctx is not self: return ctx[name]
-        
+
         obj = self._getOb(name)
         if obj is NOT_FOUND:
             raise exceptions.NameNotFound(name)
@@ -370,7 +370,7 @@ class NameContext(Component):
     def get(self, name, default=None):
 
         """Lookup 'name' and return an object, or 'default' if not found"""
-        
+
         ctx, name = self.resolveToInterface(name)
         if ctx is not self: return ctx.get(name,default)
 
@@ -381,7 +381,7 @@ class NameContext(Component):
         """Return a true value if 'name' has a binding in context"""
 
         ctx, name = self.resolveToInterface(name)
-        
+
         if ctx is not self:
             return name in ctx
 
@@ -403,7 +403,7 @@ class NameContext(Component):
     def keys(self):
         """Return a sequence of the names present in the context"""
         return [name for name in self]
-        
+
     def items(self):
         """Return a sequence of (name,boundItem) pairs"""
         return [ (name,self._getOb(name, None)) for name in self ]
@@ -485,7 +485,7 @@ class NameContext(Component):
                 ctx.rename(base+n1,base+n2)
                 return
 
-        else:    
+        else:
             base = common - self.nameInContext
 
         self._rename(base+n1, base+n2)
@@ -495,7 +495,7 @@ class NameContext(Component):
         """Bind 'object' under 'name'"""
 
         ctx, name = self.resolveToInterface(name,IWriteContext)
-        
+
         if ctx is not self:
             ctx[name]=object
 
@@ -513,7 +513,7 @@ class NameContext(Component):
         """Remove any binding associated with 'name'"""
 
         ctx, name = self.resolveToInterface(name,IWriteContext)
-        
+
         if ctx is not self:
             del ctx[name]
         elif isBoundary(name):
@@ -536,7 +536,7 @@ class NameContext(Component):
     def _get(self, name, retrieve=True):
 
         """Lookup 'name', returning 'NOT_FOUND' if not found
-        
+
         If 'name' doesn't exist, always return 'NOT_FOUND'.  Otherwise,
         if 'retrieve' is true, return a '(state,attrs)' tuple of binding info.
 
@@ -554,7 +554,7 @@ class NameContext(Component):
         Note: must return names which are directly usable by _get()!  That is,
         ones which have already been passed through 'toName()' and/or
         'self.schemeParser()'.
-        """        
+        """
         raise NotImplementedError
 
     def _bind(self, name, state, attrs=None):
@@ -597,6 +597,15 @@ class AddressContext(NameContext):
         return self.resolveToInterface(
             self.namingAuthority + name, iface
         )
+
+
+
+
+
+
+
+
+
 
 
 

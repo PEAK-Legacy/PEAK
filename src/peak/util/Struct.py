@@ -47,7 +47,7 @@ class structType(type):
         'fromArgs', 'fromOther', 'fromString',
         'fromMapping', 'extractFromMapping',
     )
-    
+
     def __new__(meta, name, bases, cdict):
 
         cdict = cdict.copy()
@@ -77,7 +77,7 @@ class structType(type):
                 # don't override any explicitly supplied properties
                 # or inherited ones based on the same field number
                 continue
-                
+
             setattr(klass, fieldName, makeFieldProperty(fieldName, fieldNum))
 
     def addField(klass, fieldName):
@@ -132,7 +132,7 @@ class struct(tuple):
 
         # the following will now all produce identical objects
         # and they'll all compare equal to the tuple (1,2,3):
-        
+
         r = myRecord([1,2,3])
         r = myRecord(first=1, second=2, third=3)
         r = myRecord({'first':1, 'second':2, 'third':3})
@@ -141,9 +141,9 @@ class struct(tuple):
             {'first':1, 'second':2, 'third':3, 'blue':'lagoon'}
         )
         r = myRecord.fromMapping( myRecord([1,2,3]) )
-        
+
         # the following will all print the same thing for any 'r' above:
-        
+
         print r
         print (r.first, r.second, r.third)
         print (r[0], r[1], r[2])
@@ -204,12 +204,12 @@ class struct(tuple):
 
 
     def fromArgs(klass, *__args, **__kw):
-    
+
         """Create from arguments
-        
+
             By default, this classmethod is where all the other creation
             methods "call down" to, so that you can do any validation or
-            conversions.  The default implementation just calls 
+            conversions.  The default implementation just calls
             'tuple.__new__' on the '*__args' tuple.  You should override
             this with a classmethod that takes the arguments you want, in
             the same order as your '__fields__' definition, supplying
@@ -221,10 +221,10 @@ class struct(tuple):
             If you want different behavior, such as truncating the sequence
             or raising an exception, you'll need to override this method.
         """
-        
+
         if __kw:
             raise TypeError("Invalid keyword arguments for " + klass.__name__)
-            
+
         return tuple.__new__(klass, __args)
 
 
@@ -237,7 +237,7 @@ class struct(tuple):
 
 
 
-    
+
 
 
 
@@ -245,13 +245,13 @@ class struct(tuple):
 
 
     def fromOther(klass, arg):
-    
+
         """Create from a single argument
-        
+
             You can define a classmethod here, to be used in place of
             'tuple.__new__' when the struct is being created from a single
             argument that is not a dictionary, keywords, or a string.
-            
+
             The default simply hands the argument through to the
             'fromArgs()' method, where it will be treated as being the
             first field of the struct.
@@ -260,9 +260,9 @@ class struct(tuple):
 
 
     def fromMapping(klass, arg):
-    
+
         """Create a struct from a mapping
-        
+
             This method checks that the mapping doesn't contain any field names
             the struct won't accept.  This prevents silent unintentional loss
             of information during conversions.  If you want extra data in the
@@ -286,14 +286,14 @@ class struct(tuple):
 
 
     def extractFromMapping(klass, arg):
-        """Fast extraction from a mapping; ignores undefined fields"""    
+        """Fast extraction from a mapping; ignores undefined fields"""
         return klass.fromArgs(*tuple(map(arg.get, klass.__fields__)))
 
 
     def __getitem__(self, key):
 
         if isinstance(key,StringTypes):
-            
+
             # will raise KeyError for us if it's not found
             i = self.__fieldmap__[key]
 
@@ -333,7 +333,7 @@ class struct(tuple):
     def __contains__(self, key):
         myLen = len(self)
         return self.__fieldmap__.get(key,myLen) < myLen
-    
+
     has_key = __contains__
 
 
@@ -352,6 +352,18 @@ def makeFieldProperty(fieldName, fieldNum):
 def makeStructType(name, fields, baseType=struct, **kw):
     kw['__fields__'] = fields
     return structType(name or 'anonymous_struct', (baseType,), kw)
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

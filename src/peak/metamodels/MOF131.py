@@ -77,7 +77,7 @@ class DirectionKind(model.Enumeration):
     out_dir = model.enum()
     inout_dir = model.enum()
     return_dir = model.enum()
-    
+
 
 
 class ScopeKind(model.Enumeration):
@@ -254,7 +254,7 @@ class ModelElement(model.Element):
         visitedObjects = kjSet([id(self)])
         haveVisited = visitedObjects.member
         visit = visitedObjects.add
-        
+
         def visitor(kind,items):
 
             for item in items:
@@ -302,7 +302,7 @@ class ModelElement(model.Element):
         visitedObjects = kjSet([id(self)])
         haveVisited = visitedObjects.member
         visit = visitedObjects.add
-        
+
         def visitor(kind,items):
 
             if include(kind):
@@ -316,7 +316,7 @@ class ModelElement(model.Element):
 
                         if recursive:
                             item._visitDependencies(visitor)
-        
+
         self._visitDependencies(visitor)
         return output
 
@@ -338,7 +338,7 @@ class Namespace(ModelElement):
 
 
     class contents(model.Sequence):
-    
+
         referencedType = 'ModelElement'
         referencedEnd  = 'container'
         isComposite    = True
@@ -350,7 +350,7 @@ class Namespace(ModelElement):
 
             if not isinstance(item, element.__class__._allowedContents):
                 raise TypeError("Invalid content for container",item)
-                
+
             element._contentsIndex[item.name]=item
 
 
@@ -381,7 +381,7 @@ class Namespace(ModelElement):
                 ns = ns.lookupElement(name)
             except NameNotFound:
                 raise NameNotResolved('MissingName',qualifiedName[i:])
-            i+=1                    
+            i+=1
 
         return ns
 
@@ -450,7 +450,7 @@ class GeneralizableElement(Namespace):
 
 
     class supertypes(model.Sequence):
-    
+
         referencedType = 'GeneralizableElement'
 
         def _onLink(feature, element, item, posn=None):
@@ -466,7 +466,7 @@ class GeneralizableElement(Namespace):
 
             if element in item.allSupertypes():
                 raise ValueError("Circular inheritance",item)
-                
+
             element._delBinding('_MRO')
 
             # XXX Diamond rule, visibility, name collisions
@@ -474,7 +474,7 @@ class GeneralizableElement(Namespace):
 
         def _onUnlink(feature, element, item, posn=None):
             element._delBinding('_MRO')
-        
+
 
     def allSuperTypes(self):
         return self._MRO[1:]
@@ -493,7 +493,7 @@ class GeneralizableElement(Namespace):
     def _extMRO(self):
 
         seen = {}   # ensure each namespace is returned only once
-        
+
         for ns in self._MRO:
 
             if ns in seen: continue
@@ -517,7 +517,7 @@ class GeneralizableElement(Namespace):
 
         output = []
         names = {}
-        
+
         for ns in self._extMRO():
             for item in ns.findElementsByType(ofType,includeSubtypes):
                 if item.name in names: continue
@@ -537,7 +537,7 @@ class Import(ModelElement):
         if self.importedNamespace is not None:
             visitor(IMPORT_DEP,[self.importedNamespace])
         super(Import,self)._visitDependencies(visitor)
-        
+
     class visibility(model.Attribute):
         referencedType = VisibilityKind
         defaultValue = VisibilityKind.public_vis
@@ -880,7 +880,7 @@ class AssociationEnd(TypedElement):
         for e in self.container.contents:
             if isinstance(e,AssociationEnd) and e is not self:
                 return e
-                
+
 
 
 
@@ -954,7 +954,7 @@ class Reference(StructuralFeature):
     def _visitDependencies(self,visitor):
 
         ends = []
-        
+
         if self.referencedEnd is not None:
             ends.append(self.referencedEnd)
 
@@ -965,6 +965,20 @@ class Reference(StructuralFeature):
             visitor(REFERENCED_ENDS_DEP,ends)
 
         super(Reference,self)._visitDependencies(visitor)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

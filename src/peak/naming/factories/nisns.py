@@ -31,7 +31,7 @@ class nisURLContext(naming.NameContext):
                 namingAuthority = self.namingAuthority,
                 nameInContext   = self.nameInContext + name,
             ), None
-            
+
         else:
             return NOT_FOUND
 
@@ -58,3 +58,25 @@ class nisMapContext(naming.NameContext):
 
         except nis.error:
             return NOT_FOUND
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

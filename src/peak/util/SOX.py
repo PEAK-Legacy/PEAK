@@ -368,9 +368,9 @@ def load(filename_or_stream, documentObject=None, namespaces=False):
 
 
 class IndentedXML(XMLGenerator):
-    
+
     """SAX handler that writes its output to an IndentedStream"""
-    
+
     def __init__(self, out=None, encoding="iso-8859-1"):
         if out is None:
             from IndentedStream import IndentedStream

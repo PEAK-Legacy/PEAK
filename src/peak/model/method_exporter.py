@@ -74,7 +74,7 @@ class MethodExporter(ActiveClass):
                     pass
 
             joe = Person('Joe')
-            
+
             # Prints: "Joe: Watch out for my glasses! (Thanks, I needed that!)"
             joe.slapFace("Thanks, I needed that!")
 
@@ -89,13 +89,13 @@ class MethodExporter(ActiveClass):
         you may also use template variants, which are chosen by metadata in
         subclasses.  For example, suppose we wanted 'slappableFeatures' to
         implement the 'slap' verb differently depending on skin thickness::
-      
+
             class slappableFeature(object):
 
                 __metaclass__ = MethodExporter
 
                 thickness = 5
-                
+
                 newVerbs = [ ('slap', "slap%(initCap)s") ]
 
                 def slap_thick(feature, self):
@@ -173,7 +173,7 @@ class MethodExporter(ActiveClass):
             listing verbs introduced in the MethodExporter being defined.
             The keys are verb (inner method) names, and the values are format
             strings that are used to generate the outer method names.
-            
+
             The format strings are applied to a 'nameMapping' object supplied
             by MethodExporter's 'subjectNames()' method.  The format strings
             are normal Python '%' formatting strings as applied to a mapping.
@@ -272,7 +272,7 @@ class MethodExporter(ActiveClass):
             being used in.  Any further parameters beyond this point belong
             to the signature of your method template and are not defined or
             used by the infrastructure.
-            
+
             This approach allows method templates to do double duty.  They
             can be used as class methods and passed an instance of the outer
             class, or they can be used directly as instance methods of the
@@ -290,7 +290,7 @@ class MethodExporter(ActiveClass):
                     __metaclass__ = MethodExporter
 
                     thickness = 5
-                
+
                     newVerbs = [ ('slap', "slap%(initCap)s") ]
 
                     def slap(feature):
@@ -299,16 +299,16 @@ class MethodExporter(ActiveClass):
 
                             def slap(feature, self):
                                 print "THUD!", feature.thickness
-            
+
                         else:
                             def slap(feature, self):
-                                print "SMACK!", feature.thickness                       
+                                print "SMACK!", feature.thickness
 
                         return slap
 
                     slap.isTemplate = True
 
-        
+
             As you can see, this can often be a more readable approach, if you
             don't need to redefine the variants in subclasses.  The outer
             'slap' function shown above is passed the feature object (or one
@@ -383,7 +383,7 @@ class MethodExporter(ActiveClass):
             'peak.model.api.FeatureClass' class for more details.
 
         Implementation Notes
-        
+
             It's amazing that it takes so much documentation to describe so
             little code.  The combined docstrings for this metaclass are over
             *three times the size of the actual code*.  So if you've already
@@ -411,7 +411,7 @@ class MethodExporter(ActiveClass):
     def getMethod(self, ob, verb):
 
         """Look up a method dynamically
-        
+
         Sometimes, one wishes to access a possibly-overridden method of a
         feature, knowing the verb and subject, but not the method name.
         That is, one knows about 'slap', and 'face', but not 'slapFace'.
@@ -471,7 +471,7 @@ class MethodExporter(ActiveClass):
 
         self.verbTemplates = vt
         verbs.update(dict(classDict.get('newVerbs',[])))
-        
+
 
         for methodName, func in classDict.items():
 
@@ -496,7 +496,7 @@ class MethodExporter(ActiveClass):
         for verb in vt.keys():
 
             candidates = []
-            
+
             for implName in vt.neighbors(verb):
                 try:
                     func = mt[implName]
@@ -527,7 +527,7 @@ class MethodExporter(ActiveClass):
                     mn[verb] = verbs[verb] % names
 
                 setattr(self,verb,classmethod(func))
-                
+
             else:
                 setattr(self,verb,nullProperty(verb))
 
@@ -560,11 +560,11 @@ class nameMapping(object):
     def lower(self, name):
         """lower - equivalent to previousName.lower()"""
         return name.lower()
-        
+
     def capitalize(self, name):
         """capitalize - equivalent to previousName.capitalize()"""
         return name.capitalize()
-        
+
     def initCap(self, name):
         """initCap - previous name with first character capitalized"""
         return name[:1].upper()+name[1:]
@@ -590,7 +590,7 @@ class MethodWrapper(object):
 
     def __init__(self, im_func):
         self.im_func = im_func
-        
+
     def __get__(self, ob, typ=None):
         if typ is None: typ = ob.__class__
         return instancemethod(self.im_func, ob, typ)
@@ -602,9 +602,14 @@ class nullProperty(object):
 
     def __init__(self,attrName):
         self.attrName = attrName
-        
+
     def __get__(self, ob, typ=None):
         raise AttributeError, self.attrName
 
     __set__ = __delete__ = __get__
-        
+
+
+
+
+
+

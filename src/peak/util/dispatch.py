@@ -40,9 +40,9 @@ class IRule(Interface):
 
 
 def compareMatches((r1,res1),(r2,res2)):
-    
+
     """Compare a pair of (rule,result) tuples in "most-specific first" order
-    
+
     Designed primarily for use as a list.sort() "compare function", this
     function returns 1, 0, or -1, according to the order that the
     '(rule,result)' pairs should be ordered in.  Zero indicates that the
@@ -62,7 +62,7 @@ def compareMatches((r1,res1),(r2,res2)):
 
     # A lot of doc for such a simple function!
     return cmp(r1.includesRule(r2), r2.includesRule(r1))
-    
+
     # Truth table:
     #
     # r1 includes r2  r2 includes r1    Result
@@ -136,7 +136,7 @@ class Dispatch(object):
 
     Note that 'Dispatch' objects are "write until read", so once you use
     a dispatch table to process an object, you can no longer change its rules.
-    
+
     Usage::
 
         # Dispatcher that doesn't hold references to looked-up objects
@@ -146,7 +146,7 @@ class Dispatch(object):
         # Retrieve action for closest match -- error if none found or ambiguous
         actionToTake = dispatcher[aBusinessObject].next()
 
-    Performance        
+    Performance
 
         The principal drawback of this class is speed.  Although lookups are
         cached, each new uncached lookup requires a loop over all the rules in
@@ -163,11 +163,11 @@ class Dispatch(object):
         your system figured out first."""
 
     newCache = dict
-    
+
     def __init__(self, items=(), cache=None):
 
         """Create dispatcher from 'items', optionally supplying a lookup cache
-        
+
         The default cache type for 'Dispatch' objects is a dictionary, so
         all values looked up are cached permanently - not a good idea for
         many applications.  You can change this by supplying a cache object
@@ -176,13 +176,13 @@ class Dispatch(object):
 
         The 'items' parameter, if supplied, should be a sequence of
         '(rule,result)' tuples to initially populate the dispatcher."""
-        
+
         if cache is None:
             cache = self.newCache()
 
         self.cache = cache
         self.rules = rules = EigenDict()
-        
+
         for rule,result in items:
             rules[rule] = result
 
@@ -204,25 +204,25 @@ class Dispatch(object):
 
 
     def __getitem__(self, key):
-        
+
         """Return an iterator over the results for rules matching 'key'
 
         Raises 'NoMatchError' if no rules match 'key'.  The iterator will
         raise 'AmbiguousRulesError' if it is advanced to a point where match
         precedence is ambiguous.  This may be as early as the very first match,
         if there is no match which is unambiguously "closest" to 'key'."""
-        
+
         try:
             matches = self.cache[key]
-            
+
         except KeyError:
-            
+
             matches = [
                 (rule, result)
                 for rule, result in self.rules.items()
                     if key in rule
             ]
-            
+
             matches.sort(compareMatches)   # force sort by signatures
             self.cache[key] = matches
 
@@ -237,7 +237,7 @@ class Dispatch(object):
 
 
 
-    
+
 
 
 
@@ -267,7 +267,7 @@ class Signature(tuple):
     """
 
     __implements__ = IRule
-    
+
     def __new__(klass, *typesOrClasses):
 
         """Signature(*typesOrClasses) -- create a new signature"""
@@ -278,7 +278,7 @@ class Signature(tuple):
                     "Signatures must be made of types or classes", t
                 )
 
-        # Create a tuple-subclass instance from 'typesOrClasses'            
+        # Create a tuple-subclass instance from 'typesOrClasses'
         return super(Signature,klass).__new__(klass, typesOrClasses)
 
 
@@ -327,16 +327,16 @@ class Signature(tuple):
 
 
 class MultiMethod(Dispatch):
-    
+
     """Callable dispatcher with support for chaining to "next closest" matches
 
     Usage::
         from peak.util.dispatch import MultiMethod, Signature
-        
+
         class Foo: pass
         class Bar(Foo): pass
         class Baz(Foo): pass
-        
+
         spam = MultiMethod()
         spam[Signature(Foo,Bar)] = lambda next,x,y: "foobar, "+next()(next,x,y)
         spam[Signature(Foo,Foo)] = lambda next,x,y: "foofoo"
@@ -368,17 +368,17 @@ class MultiMethod(Dispatch):
 
 
 class GenericFunction(Dispatch):
-    
+
     """Callable dispatcher that dispatches based on argument types
 
     Usage::
 
         from peak.util.dispatch import GenericFunction, Signature
-        
+
         class Foo: pass
         class Bar(Foo): pass
         class Baz(Foo): pass
-        
+
         floob = GenericFunction()
         floob[Signature(Foo,Bar)] = lambda x,y: "foo, bar"
         floob[Signature(Foo,Foo)] = lambda x,y: "foo, foo"
@@ -392,11 +392,11 @@ class GenericFunction(Dispatch):
     arguments are passed through to the function, they cannot be
     used for dispatching.)
     """
-    
+
     def __call__(self, *args, **kw):
         types = tuple([arg.__class__ for arg in args])
         return self[types].next()(*args, **kw)
-        
+
 
 
 
@@ -447,4 +447,5 @@ if __name__ == '__main__':
 
     print spam(Foo(),Bar())    # prints "foobar, foofoo"
     print spam(Baz(),Baz())    # prints "foofoo"
+
 

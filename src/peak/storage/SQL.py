@@ -170,7 +170,7 @@ class SQLCursor(AbstractCursor):
         if rows:
 
             descr = self._cursor.description
-            
+
             rowStruct = makeStructType('rowStruct',
                 [d[0] for d in descr],
                 __implements__ = IRow, __module__ = __name__,
@@ -206,7 +206,7 @@ class SQLCursor(AbstractCursor):
 class SQLConnection(ManagedConnection):
 
     __implements__ = ISQLConnection
-    
+
     def commitTransaction(self, txnService):
         self.connection.commit()
 
@@ -275,9 +275,9 @@ class SybaseConnection(SQLConnection):
 
         if self.textsize is not None:
             db.execute('set textsize %d' % int(self.textsize))
-                              
+
         return db
-            
+
 
     def onJoinTxn(self, txnService):
         # Sybase doesn't auto-chain transactions...
@@ -337,7 +337,7 @@ class PGSQLConnection(SQLConnection):
         return self.API.connect(
             host=a.server, database=a.db, user=a.user, password=a.passwd
         )
-            
+
 
     def txnTime(self,d,a):
         self.joinedTxn              # Ensure that we're in a transaction,
@@ -457,7 +457,7 @@ class GadflyURL(naming.ParsedURL):
 
     def __init__(self, scheme=None, body=None, db=None, dir=None):
         self.setup(locals())
-    
+
     def retrieve(self, refInfo, name, context, attrs=None):
 
         return GadflyConnection(
@@ -496,11 +496,11 @@ class GenericSQL_URL(naming.ParsedURL):
 
     pattern = """(?x)
     (//)?
-    (   # optional user:pass@    
+    (   # optional user:pass@
         (?P<user>[^:]+)
         (:(?P<passwd>[^@]+))?
         @
-    )?  
+    )?
 
     (?P<server>[^/]+)
     (/(?P<db>.+))?
@@ -525,3 +525,9 @@ drivers = {
     'sybase': SybaseConnection,
     'pgsql':  PGSQLConnection,
 }
+
+
+
+
+
+

@@ -10,7 +10,7 @@ class ListProxy(object):
     def __gt__(self, other): return self.data >  self._cast(other)
     def __ge__(self, other): return self.data >= self._cast(other)
     def __cmp__(self, other): return cmp(self.data, self._cast(other))
-    
+
     def _cast(self, other):
         if isinstance(other, ListProxy):
             return other.data
@@ -31,13 +31,11 @@ class ListProxy(object):
 
     def __add__(self, other):   return self.data + self._cast(other)
     def __radd__(self, other):  return self._cast(other) + self.data
-           
+
     def __mul__(self, n):
         return self.data*n
 
     __rmul__ = __mul__
-
-
 
 
 

@@ -14,7 +14,7 @@ class UML_DM(storage.xmi.DM):
     metamodel = UML13
 
     UML13 = UML13
-    
+
     Data_Types        = binding.bindTo('UML13/Foundation/Data_Types')
     Multiplicity      = binding.bindTo('Data_Types/Multiplicity')
     MultiplicityRange = binding.bindTo('Data_Types/MultiplicityRange')
@@ -49,7 +49,7 @@ class UMLTest(TestCase):
         pkg=self.pkg
         pkg.name = 'SomePackage'
         assert pkg.name=='SomePackage'
-        
+
     def checkAdd(self):
         pkg = self.pkg
         Class = self.m.Class()
@@ -89,8 +89,8 @@ class QueryTests(TestCase):
         self.klass = klass = self.m.Class()
         klass.name = 'FooClass'
         pkg.addOwnedElement(klass)
-        
-        
+
+
     def checkNameGet(self):
         for obj in self.pkg, self.klass:
             names = list(query([obj])['name'])
@@ -117,7 +117,7 @@ class QueryTests(TestCase):
         assert len(oe)==1, oe
         ns = list(query([klass])['namespace'][ANY('name',EQ('SomePackage'))])
         assert len(ns)==1
-        
+
 
 
 
@@ -131,7 +131,7 @@ class XMILoad(TestCase):
         m.roots = storage.xmi.fromFile(
             config.fileNearModule(__name__,'MetaMeta.xml'), testRoot()
         )
-        
+
 class XMITests(TestCase):
 
     def setUp(self):
@@ -144,7 +144,7 @@ class XMITests(TestCase):
 
     def checkModel(self):
         assert self.root.name=='Data'
-        
+
     def checkSubModel(self):
         assert list(self.mm) or list(self.mm); l = list(self.mm['namespace']['name'])
         assert l==['Data'], l
@@ -172,4 +172,34 @@ def test_suite():
     for t in TestClasses:
         s.append(makeSuite(t,'check'))
     return TestSuite(s)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
