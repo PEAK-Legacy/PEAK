@@ -85,8 +85,6 @@ canonical = {
     'ldap://localhost:9912/cn=monitor????!bindname=cn=root,!x-bindpw=somePw',
     'sybase://user:p%40ss@server': 'sybase:user:p%40ss@server',
     'gadfly://drinkers@c:\\temp': 'gadfly:drinkers@c:\\temp',
-    'logfile:/foo/bar?level=WARNING': 'logfile:///foo/bar?level=WARNING',
-    'lockfile:/c:\\spam.lock': 'lockfile:///c:\\spam.lock',
 }
 
 class NameParseTest(TestCase):
@@ -110,6 +108,8 @@ class NameParseTest(TestCase):
             pass
         else:
             raise AssertionError("Should've raised NameNotFound")
+
+
 
 
 

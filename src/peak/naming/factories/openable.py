@@ -10,10 +10,10 @@ class GenericPathURL(URL.Base):
     class password(URL.Field): pass
 
     class hostname(URL.Field):
-        defaultValue = ''
+        defaultValue = None
         syntax = URL.Conversion(
             URL.ExtractQuoted(URL.MatchString(pattern='[^/:]*')),
-            canBeEmpty = True
+            defaultValue = None
         )
 
     class port(URL.IntField): pass
