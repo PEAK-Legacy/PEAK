@@ -87,9 +87,8 @@
             IComponentInstance
 
         IBuilder
-            IPostProcessor
-
-
+            IParentBuilder
+            
         Instance (IComponentInstance)
         
         Ingredient
@@ -97,23 +96,24 @@
             Template (ISpecification)
                 Catalyst (ICatalyst)
                     ClassRef
-                        Ref
+
                 Configure
                 
             AbstractBuilder (IBuilder)
         
-                ComponentBuilder
+                ComponentBuilder (IParentBuilder)
                 
                 DefaultBuilder
                     OverwritingBuilder
 
                 SimplePostProcessor
                     RegistryBuilder            
-                Ref
+
                 Eval
             
             Recipe
 """
+
 
 
 
