@@ -1,5 +1,9 @@
 Fixes and Enhancements since Version 0.5 alpha 3
 
+ - The 'peak.util.WSGIServer' module has been moved to the
+   'wsgiref.simple_server' module.  The 'wsgiref' reference library for WSGI
+   (aka PEP 333) is now distributed with PEAK.
+
  - Added a 'WSGI' command to the 'peak' script, to allow you to run "foreign"
    (i.e. non-PEAK) PEP 333 applications in PEAK's various servers and
    launchers.  Basically, by prefixing 'WSGI' before the import specifier, you

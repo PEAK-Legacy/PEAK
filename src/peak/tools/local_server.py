@@ -7,7 +7,7 @@ from peak.api import *
 from peak.net.interfaces import IListeningSocket
 import socket
 
-from peak.util.WSGIServer import WSGIServer, WSGIRequestHandler
+from wsgiref.simple_server import WSGIServer, WSGIRequestHandler
 
 class Handler(WSGIRequestHandler):
 
