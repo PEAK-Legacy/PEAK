@@ -267,10 +267,10 @@ class fdURL(naming.URL.Base):
 
     supportedSchemes = 'fd',
 
-    class fileno(naming.URL.IntField):
+    class fileno(naming.URL.Field):
         referencedType = FileDescriptor
 
-    class af(naming.URL.IntField):
+    class af(naming.URL.Field):
         referencedType = SocketFamily
         defaultValue   = SocketFamily.inet
         canBeEmpty     = True
@@ -280,7 +280,7 @@ class fdURL(naming.URL.Base):
         defaultValue   = SocketType.stream
         canBeEmpty     = True
 
-    class proto(naming.URL.IntField):
+    class proto(naming.URL.Field):
         referencedType = SocketProtocol
         defaultValue   = SocketProtocol.ip
         canBeEmpty     = True
