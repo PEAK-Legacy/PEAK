@@ -330,6 +330,12 @@ class MOFModel(model.Model):
 
         mdl_isAbstract = True
 
+        _contentsIndex = binding.Once(
+            lambda s,d,a: dict([
+                (ob.name, ob) for ob in s.contents
+            ])
+        )
+
 
         class contents(model.Sequence):
         
@@ -337,73 +343,67 @@ class MOFModel(model.Model):
             referencedEnd  = 'container'
             isComposite    = True
 
-            def validateAdd(feature, element, item):    # XXX
+            def _onLink(feature, element, item, posn=None):
 
                 if not element.nameIsValid(item):
                     raise KeyError("Item already exists with name",item.name)
 
                 if not isinstance(item, element.__class__._allowedContents):
                     raise TypeError("Invalid content for container",item)
+                    
+                element._contentsIndex[item.name]=item
+
+
+            def _onUnlink(feature, element, item, posn=None):
+                del element._contentsIndex[item.name]
 
 
         def lookupElement(self, name):
-            for ob in self.contents:
-                if ob.name==name:
-                    return ob
-            raise NameNotFound(name)
+            try:
+                return self._contentsIndex[name]
+            except KeyError:
+                raise NameNotFound(name)
+
+
 
 
         def resolvedQualifiedName(self, qualifiedName):
+
             i=0
             ns=self
+
             for name in qualifiedName:
+
                 if not isinstance(s, MOFModel.Namespace):
                     raise NameNotResolved('NotNameSpace',qualifiedName[i:])
+
                 try:
                     ns = ns.lookupElement(name)
                 except NameNotFound:
                     raise NameNotResolved('MissingName',qualifiedName[i:])
                 i+=1                    
+
             return ns
 
 
         def nameIsValid(self,proposedName):
-            for ob in self.contents:
-                if ob.name==proposedName:
-                    return False
-            else:
-                return True
+            return name not in self._contentsIndex
 
 
         def findElementsByType(self, ofType, includeSubtypes=True):
+            # XXX should package treat imports specially?
             if includeSubtypes:
                 return [ob for ob in self.contents if isinstance(ob,ofType)]
+
             return [ob for ob in self.contents if type(ob) is ofType]
 
 
         def _visitDependencies(self,visitor):
+
             if self.contents:
                 visitor(CONTENTS_DEP,self.contents)
+
             super(MOFModel.Namespace,self)._visitDependencies(visitor)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -428,12 +428,32 @@ class MOFModel(model.Model):
             referencedType = Boolean
             defaultValue = False
 
+
+        def _MRO(self, d, a):
+
+            output=[self]
+
+            for base in self.supertypes:
+
+                output.append(base)
+
+                for base in base.allSupertypes():
+
+                    if base in output:
+                        output.remove(base)
+
+                    output.append(base)
+
+            return output
+
+        _MRO = binding.Once(_MRO)
+
+
         class supertypes(model.Sequence):
         
             referencedType = 'GeneralizableElement'
-            # XXX referencedEnd  = 'subtypes'
 
-            def validateAdd(feature, element, item):    # XXX
+            def _onLink(feature, element, item, posn=None):
 
                 if not isinstance(item,element.__class__):
                     raise TypeError("Can't inherit from different type",item)
@@ -447,23 +467,68 @@ class MOFModel(model.Model):
                 if element in item.allSupertypes():
                     raise ValueError("Circular inheritance",item)
                     
+                element._delBinding('_MRO')
+
                 # XXX Diamond rule, visibility, name collisions
 
-        def allSupertypes(self):
-            output=[]
-            for base in self.supertypes:
-                output.append(base)
-                for base in base.allSupertypes():
-                    if base in output:
-                        output.remove(base)
-                    output.append(base)
-            return output
 
+            def _onUnlink(feature, element, item, posn=None):
+                element._delBinding('_MRO')
+            
+
+        def allSuperTypes(self):
+            return self._MRO[1:]
+
+
+        def lookupElementExtended(self,name):
+            for ns in self._MRO:
+                try:
+                    return ns.lookupElement(name)
+                except NameNotFound:
+                    pass
+            else:
+                raise NameNotFound(name)
+
+
+        def findElementsByTypeExtended(self, ofType, includeSubtypes=True):
+
+            output = []
+
+            for ns in self._MRO:
+                output.extend(ns.findElementsByType(ofType,includeSubtypes))
+
+            return output
+                
 
         def _visitDependencies(self,visitor):
             if self.supertypes:
                 visitor(SPECIALIZATION_DEP,self.supertypes)
             super(MOFModel.GeneralizableElement,self)._visitDependencies(visitor)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
     class Import(ModelElement):
@@ -501,6 +566,12 @@ class MOFModel(model.Model):
 
         )
 
+
+
+
+
+
+
     class Classifier(GeneralizableElement):
 
         mdl_isAbstract = True
@@ -508,9 +579,38 @@ class MOFModel(model.Model):
 
     class Association(Classifier):
 
+        class isDerived(model.Field):
+            referencedType = Boolean
+            defaultValue = False
+
+
         _allowedContents = binding.classAttr(
             binding.bindSequence('AssociationEnd','Constraint','Tag')
         )
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
     class DataType(Classifier):
@@ -518,6 +618,24 @@ class MOFModel(model.Model):
         _allowedContents = binding.classAttr(
             binding.bindSequence('Constraint','TypeAlias','Tag')
         )
+
+
+        class typeCode(model.Field):
+            referencedType = 'TypeDescriptor' # XXX
+
+        class supertypes(model.Sequence):
+            upperBound = 0  # no supertypes allowed
+
+
+        class isRoot(model.structField):
+            defaultValue = True
+
+        class isLeaf(model.structField):
+            defaultValue = True
+
+        class isAbstract(model.structField):
+            defaultValue = False
+
 
 
     class Class(Classifier):
@@ -529,11 +647,52 @@ class MOFModel(model.Model):
             )
         )
 
+        class isSingleton(model.Field):
+            referencedType = Boolean
+            defaultValue = False
+
+
 
 
     class Feature(ModelElement):
 
         mdl_isAbstract = True
+
+        class visibility(model.Field):
+            referencedType = VisibilityKind
+
+        class scope(model.Field):
+            referencedType = ScopeKind
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
     class BehavioralFeature(Namespace, Feature):
@@ -542,6 +701,15 @@ class MOFModel(model.Model):
 
 
     class Operation(BehavioralFeature):
+
+        class isQuery(model.Field):
+            referencedType = Boolean
+            defaultValue = False
+
+
+        class exceptions(model.Sequence):
+            referencedType = 'Exception'
+
 
         _allowedContents = binding.classAttr(
             binding.bindSequence('Parameter','Constraint','Tag')
@@ -568,13 +736,14 @@ class MOFModel(model.Model):
 
 
 
-
-
-
-
     class TypedElement(ModelElement):
 
         mdl_isAbstract = True
+
+        class type(model.Reference):    # XXX ugh
+            referencedType = 'Classifier'
+            lowerBound = 1  # XXX what are semantics of 'required' attrs?
+
 
         def _visitDependencies(self,visitor):
 
@@ -608,21 +777,54 @@ class MOFModel(model.Model):
 
 
 
-
-
-
-
-
     class StructuralFeature(Feature,TypedElement):
 
         mdl_isAbstract = True
 
+        class multiplicity(model.Field):
+            referencedType = MultiplicityType
+
+        class isChangeable(model.Field):
+            referencedType = Boolean
+            defaultValue = True
+
 
     class Attribute(StructuralFeature):
-        pass
+
+        class isDerived(model.Field):
+            referencedType = Boolean
+            defaultValue = False
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
     class Reference(StructuralFeature):
+
+        class referencedEnd(model.Field):
+            referencedType = 'AssociationEnd'
+
+        class exposedEnd(model.Field):
+            referencedType = 'AssociationEnd'
 
         def _visitDependencies(self,visitor):
 
