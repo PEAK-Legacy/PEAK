@@ -3,7 +3,7 @@ from protocols import Interface, Attribute
 
 __all__ = [
     'IConfigKey', 'IConfigurable', 'IConfigSource', 'IConfigurationRoot',
-    'ISmartProperty', 'IRule', 'IPropertyMap', 'ISettingLoader',
+    'ISmartProperty', 'IRule', 'ISettingLoader',
     'IIniParser', 'ISettingParser', 'NullConfigRoot', 'IConfigMap',
     'IServiceArea',
 ]
@@ -93,9 +93,6 @@ class IConfigurationRoot(IServiceArea):
     def noMoreValues(root,configKey,forObj):
         """A value search has completed"""
 
-    def noMoreUtilities(root,configKey,forObj):
-        """DEPRECATED: Use 'noMoreValues()' method instead"""
-
     def nameNotFound(root,name,forObj,bindName):
         """A (non-URL) component name was not found"""
 
@@ -114,11 +111,14 @@ class _NullConfigRoot(object):
             remainingName = name, resolvedObj = root
         )
 
-    def noMoreUtilities(self,root,configKey,forObj):
-        """DEPRECATED: Use 'noMoreValues()' method instead"""
-        return self.noMoreValues(root,configKey,forObj)
 
 NullConfigRoot = _NullConfigRoot()
+
+
+
+
+
+
 
 
 class IIniParser(Interface):
@@ -303,21 +303,21 @@ class IConfigMap(IConfigurable):
         same key more than once."""
 
 
-class IPropertyMap(IConfigMap):
 
-    """DEPRECATED: Use 'IConfigMap' instead"""
 
-    def setDefault(propName, ruleObj):
-        """DEPRECATED"""
 
-    def setRule(propName, ruleObj):
-        """DEPRECATED"""
 
-    def setValue(configKey, value):
-        """DEPRECATED"""
 
-    def getValueFor(forObj, propName):
-        """DEPRECATED"""
+
+
+
+
+
+
+
+
+
+
 
 
 

@@ -9,19 +9,17 @@ from types import ModuleType
 from peak.naming.names import toName, AbstractName, COMPOUND_KIND, IName
 from peak.naming.syntax import PathSyntax
 from peak.util.EigenData import AlreadyRead
-from peak.config.interfaces import IConfigKey, IPropertyMap, \
+from peak.config.interfaces import IConfigKey, IConfigMap, \
     IConfigurationRoot, NullConfigRoot
 from peak.config.registries import ImmutableConfig
 from peak.util.imports import importString
 
 
 __all__ = [
-    'Base', 'Component', 'whenAssembled', 'Obtain', 'Require', 'Delegate',
-    'bindTo', 'requireBinding', 'bindSequence', 'bindToParent', 'bindToSelf',
+    'Component', 'Obtain', 'Require', 'Delegate',
     'getRootComponent', 'getParentComponent', 'lookupComponent',
     'acquireComponent', 'notifyUponAssembly', 'PluginsFor', 'PluginKeys',
-    'bindToUtilities', 'bindToProperty', 'Constant', 'delegateTo',
-    'getComponentName', 'getComponentPath', 'Acquire', 'ComponentName',
+    'getComponentName', 'getComponentPath', 'ComponentName',
 ]
 
 from _once import BaseDescriptor
@@ -35,6 +33,8 @@ class _proxy(BaseDescriptor):
         raise AttributeError, self.attrName
 
     def computeValue(self,ob,d,a): raise AttributeError, a
+
+
 
 
 
@@ -80,11 +80,6 @@ def getComponentPath(component, relativeTo=None):
 
 
 
-def Constant(value, **kw):
-    """DEPRECATED: Use 'Make(lambda: value)' instead"""
-    return Make(lambda: value, **kw)
-
-
 class ModuleAsNode(object):
 
     protocols.advise(
@@ -112,6 +107,11 @@ class ModuleAsNode(object):
 
     def notifyUponAssembly(self,child):
         child.uponAssembly()
+
+
+
+
+
 
 
 
@@ -529,11 +529,6 @@ class Obtain(Attribute):
         else:
             return "binding.Obtain(%r)" % (self.targetName,)
 
-bindTo = Obtain     # XXX DEPRECATED
-
-def bindSequence(*targetNames, **kw):
-    """DEPRECATED: use binding.Obtain([key1,key2,...])"""
-    return Obtain(targetNames, **kw)
 
 
 class SequenceFinder(object):
@@ -554,10 +549,15 @@ class SequenceFinder(object):
         return tuple([ob.findComponent(component, default) for ob in self.ob])
 
 
-def whenAssembled(func, **kw):
-    """DEPRECATED: use 'Make(func, uponAssembly=True)'"""
-    kw['uponAssembly'] = True
-    return Make(func, **kw)
+
+
+
+
+
+
+
+
+
 
 
 
@@ -609,47 +609,6 @@ class Delegate(Make):
             return "binding.Delegate(%r)" % (self.delegateAttr,)
 
 
-delegateTo = Delegate   # XXX DEPRECATED; backward compat.
-
-
-
-def Acquire(key, **kw):
-    """DEPRECATED: use Obtain(key, offerAs=[key])"""
-    key = adapt(key,IConfigKey)
-    kw['offerAs'] = [key]   # XXX should check that kwarg wasn't supplied
-    return Obtain(key,**kw)
-
-def bindToParent(level=1, **kw):
-    """DEPRECATED: use binding.Obtain('..')"""
-    return Obtain('/'.join(['..']*level), **kw)
-
-def bindToSelf(**kw):
-    """DEPRECATED: use binding.Obtain('.')"""
-    return Obtain('.', **kw)
-
-def bindToProperty(propName, default=NOT_GIVEN, **kw):
-    """DEPRECATED: use binding.Obtain(PropertyName(propName))"""
-    kw['default'] = default
-    return binding.Obtain(PropertyName(propName), **kw)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -678,14 +637,14 @@ class Require(Attribute):
         else:
             return "binding.Require(%r)" % (self.description,)
 
-requireBinding = Require    # XXX DEPRECATED
 
 
 
-def bindToUtilities(iface, **kw):
-    """DEPRECATED: bind list of all 'iface' utilities above the component"""
 
-    return Make(lambda self: list(config.iterValues(self,iface)), **kw)
+
+
+
+
 
 
 
@@ -884,7 +843,7 @@ class Component(_Base):
         return self.__componentName
 
     __instance_offers__ = Make(
-        'peak.config.config_components:PropertyMap', offerAs=[IPropertyMap]
+        'peak.config.config_components:ConfigMap', offerAs=[IConfigMap]
     )
 
 
@@ -946,7 +905,7 @@ class Component(_Base):
         attr = self._getBinding('__instance_offers__')
 
         if attr:
-            value = attr.getValueFor(forObj, configKey)
+            value = attr._getConfigData(forObj, configKey)
 
             if value is not NOT_FOUND:
                 return value
@@ -1040,7 +999,7 @@ class Component(_Base):
 
 
 
-Base = Component    # XXX backward compatibility; deprecated
+
 
 
 

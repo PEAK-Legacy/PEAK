@@ -301,10 +301,10 @@ whenImported('logging',
 )
 
 
-# DEPRECATED LEVEL CONSTANTS -- do not use, they vanish in a4!
-nms  = 'TRACE ALL DEBUG INFO NOTICE WARNING ERROR CRITICAL ALERT EMERG'.split()
-lvls =      0,  0,   10,  20,    25,     30,   40,      50,   60,   70
-globals().update(dict(zip(nms,lvls)))
+
+
+
+
 
 
 

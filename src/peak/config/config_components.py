@@ -11,9 +11,8 @@ from interfaces import *
 from protocols.advice import getMRO, determineMetaclass
 
 __all__ = [
-    'ConfigMap', 'PropertyMap', 'LazyRule', 'PropertySet', 'fileNearModule',
-    'iterParents','findUtilities','findUtility', 'Value', 'iterKeys',
-    'provideInstance', 'instancePerComponent', 'Namespace', 'iterValues',
+    'ConfigMap', 'LazyRule', 'fileNearModule',
+    'iterParents', 'Value', 'iterKeys', 'Namespace', 'iterValues',
     'CreateViaFactory', 'parentsProviding', 'parentProviding', 'lookup',
     'ServiceArea',
 ]
@@ -36,6 +35,7 @@ _emptyRuleCell.exists()
 def fileNearModule(moduleName,filename):
     filebase = importString(moduleName+':__file__')
     import os; return os.path.join(os.path.dirname(filebase), filename)
+
 
 
 
@@ -72,12 +72,12 @@ def iterValues(component, configKey):
 
     adapt(
         component,IConfigurationRoot,NullConfigRoot
-    ).noMoreUtilities(component, configKey, forObj)
+    ).noMoreValues(component, configKey, forObj)
 
 
-def findUtilities(component, iface):
-    """DEPRECATED: Use 'config.iterValues()' instead"""
-    return iterValues(component,iface)
+
+
+
 
 
 def lookup(component, configKey, default=NOT_GIVEN):
@@ -91,11 +91,6 @@ def lookup(component, configKey, default=NOT_GIVEN):
         raise exceptions.NameNotFound(configKey, resolvedObj = component)
 
     return default
-
-
-def findUtility(component, configKey, default=NOT_GIVEN):
-    """DEPRECATED: use 'config.lookup()' instead"""
-    return lookup(component, configKey, default)
 
 
 def parentsProviding(component, protocol):
@@ -118,6 +113,11 @@ def parentProviding(component, protocol, default=NOT_GIVEN):
         raise exceptions.NameNotFound(protocol, resolvedObj = component)
 
     return default
+
+
+
+
+
 
 
 
@@ -208,21 +208,8 @@ class ConfigMap(Component):
     rules = depth = keyIndex = lockedNamespaces = Make(dict)
 
     protocols.advise(
-        instancesProvide=[IPropertyMap]     # XXX make just IConfigMap later
+        instancesProvide=[IConfigMap]
     )
-
-    def setRule(self, propName, ruleObj):
-        """DEPRECATED - use registerProvider(propName,ruleObj)"""
-        self.registerProvider(propName, ruleObj)
-
-    def setDefault(self, propName, defaultRule):
-        """DEPRECATED - use registerProvider(propName+'?',defaultRule)"""
-        self.registerProvider(propName+'?', defaultRule)
-
-    def setValue(self, propName, value):
-        """DEPRECATED - use registerProvider(propName,config.Value(value))"""
-        self.registerProvider(propName, Value(value))
-
 
     def registerProvider(self, configKey, provider):
         """Register 'provider' under 'configKey'"""
@@ -243,6 +230,19 @@ class ConfigMap(Component):
                     self.keyIndex.setdefault(k,{})[ckey] = True
                 _setCellInDict(self.rules, key, provider)
                 self.depth[key]=depth
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     def _configKeysMatching(self, configKey):
 
@@ -320,10 +320,10 @@ class ConfigMap(Component):
 
         return value
 
-    getValueFor = _getConfigData    # DEPRECATED
 
 
-PropertyMap = ConfigMap             # DEPRECATED
+
+
 
 
 def Value(v):
@@ -460,12 +460,12 @@ class ConfigurationRoot(ServiceArea):
     protocols.advise(instancesProvide=[IConfigurationRoot])
 
     def __instance_offers__(self,d,a):
-        pm = d[a] = PropertyMap(self)
+        pm = d[a] = ConfigMap(self)
         self.setupDefaults(pm)
         return pm
 
     __instance_offers__ = Make(__instance_offers__,
-        offerAs=[IPropertyMap], uponAssembly = True
+        offerAs=[IConfigMap], uponAssembly = True
     )
 
     iniFiles = ( ('peak','peak.ini'), )
@@ -481,12 +481,12 @@ class ConfigurationRoot(ServiceArea):
 
     def noMoreValues(self,root,configKey,forObj): pass
 
-    def noMoreUtilities(self,root,configKey,forObj):
-        """DEPRECATED: Use 'noMoreValues()' method instead"""
-        return self.noMoreValues(root,configKey,forObj)
-
     def nameNotFound(self,root,name,forObj):
         return naming.lookup(forObj, name, creationParent=forObj)
+
+
+
+
 
 
 
@@ -647,88 +647,6 @@ class __NamespaceExtensions(protocols.Adapter):
     def __call__(self,client,instDict,attrName):
         subject = self.subject
         return subject.__class__(subject._prefix[:-1], client, subject._cache)
-
-
-
-
-
-
-
-class PropertySet(object):
-
-    """DEPRECATED"""
-
-    def __init__(self, targetObj, prefix):
-        self.prefix = PropertyName(prefix).asPrefix()
-        self.target = targetObj
-
-    def __getitem__(self, key, default=NOT_GIVEN):
-        return config.lookup(self.target,self.prefix+key,default)
-
-    def get(self, key, default=None):
-        return config.lookup(self.target,self.prefix+key,default)
-
-    def __getattr__(self,attr):
-        return self.__class__(self.target, self.prefix+attr)
-
-    def of(self, target):
-        return self.__class__(target, self.prefix[:-1])
-
-    def __call__(self, default=None, forObj=NOT_GIVEN):
-
-        if forObj is NOT_GIVEN:
-            forObj = self.target
-
-        return config.lookup(forObj, self.prefix[:-1], default)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-def instancePerComponent(factorySpec):
-    """DEPRECATED: use factory mechanisms instead"""
-    return lambda foundIn, configKey, forObj: importObject(factorySpec)(forObj)
-
-
-def provideInstance(factorySpec):
-    """DEPRECATED, use 'CreateViaFactory(key)' instead"""
-    _ob = []
-    def rule(foundIn, configKey, forObj):
-        if not _ob:
-            _ob.append(importObject(factorySpec)(
-                binding.getParentComponent(foundIn))
-            )
-        return _ob[0]
-    return rule
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

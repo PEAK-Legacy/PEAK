@@ -13,7 +13,7 @@ from warnings import warn
 from types import ClassType
 
 __all__ = [
-    'Make', 'Once', 'New', 'Copy', 'Activator', 'ActiveClass',
+    'Make', 'Activator', 'ActiveClass',
     'getInheritedRegistries', 'classAttr', 'Singleton', 'metamethod',
     'Attribute', 'ComponentSetupWarning', 'suggestParentComponent'
 ]
@@ -244,16 +244,6 @@ class _SequenceAsAttachable(protocols.Adapter):
 
 
 
-def Copy(obj, **kw):
-
-    """DEPRECATED: Use 'Make(lambda: copy(obj))' or 'Make(lambda: expr)'"""
-
-    from copy import copy
-    return Make(
-        lambda s,d,a: copy(obj), **kw
-    )
-
-
 class AttributeClass(type):
 
     """Help attribute classes keep class docs separate from instance docs"""
@@ -266,6 +256,16 @@ class AttributeClass(type):
             ofClass = lambda a,k: classDoc
         )
         return supertype(AttributeClass,meta).__new__(meta,name,bases,cdict)
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -578,7 +578,7 @@ class Make(Attribute):
         else:
             return "binding.Make(%r)" % self.computeValue
 
-Once = New = Make   # XXX DEPRECATED, backward compatibility
+
 
 
 

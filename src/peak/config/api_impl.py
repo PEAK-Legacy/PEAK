@@ -1,42 +1,10 @@
 """Configuration Management API"""
 
-from peak.api import exceptions, NOT_FOUND, NOT_GIVEN, PropertyName, adapt
-from interfaces import *
-from config_components import lookup, ConfigurationRoot, Value, parentProviding
-
+from config_components import ConfigurationRoot
 
 __all__ = [
-    'getProperty', 'setPropertyFor', 'setRuleFor', 'setDefaultFor', #DEPRECATED
     'makeRoot',
 ]
-
-
-def setPropertyFor(obj, propName, value):
-    """DEPRECATED"""
-    parentProviding(obj, IConfigurable).registerProvider(
-        propName, Value(value)
-    )
-
-
-def setRuleFor(obj, propName, ruleObj):
-    """DEPRECATED"""
-    parentProviding(obj, IConfigurable).registerProvider(propName, ruleObj)
-
-
-def setDefaultFor(obj, propName, defaultObj):
-    """DEPRECATED"""
-    parentProviding(obj, IConfigurable).registerProvider(
-        PropertyName(propName+'?'), defaultObj
-    )
-
-
-
-
-
-
-
-
-
 
 
 def makeRoot(**options):
@@ -62,21 +30,5 @@ def makeRoot(**options):
     (in which case an 'AlreadyRead' error occurs)."""
 
     return ConfigurationRoot(None, **options)
-
-
-def getProperty(obj, propName, default=NOT_GIVEN):
-
-    """DEPRECATED: use 'config.lookup()' instead"""
-    return lookup(obj, propName, default)
-
-
-
-
-
-
-
-
-
-
 
 

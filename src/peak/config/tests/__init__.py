@@ -8,8 +8,10 @@ from peak.tests import testRoot
 from peak.config.registries import ImmutableConfig
 
 
-def makeAUtility(context):
-    u=binding.Component(); u.setParentComponent(context)
+def makeAUtility(context=None):
+    u=binding.Component()
+    if context is not None:
+        u.setParentComponent(context)
     return u
 
 
@@ -21,8 +23,6 @@ class TestRule(object):
 
     def computeProperty(self, propertyMap, name, prefix, suffix, targetObject):
         return propertyMap, name, prefix, suffix, targetObject
-
-
 
 
 
@@ -124,17 +124,18 @@ class ISampleUtility2(Interface):
 class UtilityTest(TestCase):
 
     def setUp(self):
-
-        self.data = UtilityData(testRoot(), 'data')
+        svcArea = config.ServiceArea(testRoot())
+        self.data = UtilityData(svcArea, 'data')
 
         self.data.aService.registerProvider(
             ISampleUtility1,
-            config.instancePerComponent(makeAUtility)
+            lambda foundIn,configKey,forObj: makeAUtility(forObj)
         )
-
+        svcArea.registerProvider(
+            config.FactoryFor(ISampleUtility2), config.Value(makeAUtility)
+        )
         self.data.aService.registerProvider(
-            ISampleUtility2,
-            config.provideInstance(makeAUtility)
+            ISampleUtility2, config.CreateViaFactory(ISampleUtility2)
         )
 
 
@@ -157,9 +158,8 @@ class UtilityTest(TestCase):
         assert ob2 is not None
         assert ob3 is not None
         assert ob3 is not ob2
-        assert ob2.getParentComponent() is data.aService
+        assert (ob2.getParentComponent() is data.aService), `ob2.getParentComponent()`
         assert ob3.getParentComponent() is data.aService.nestedService
-
 
 
     def checkAcquireSingleton(self):
@@ -179,9 +179,7 @@ class UtilityTest(TestCase):
         assert ob4 is not None
         assert ob3 is ob2
         assert ob4 is ob2
-        assert ob2.getParentComponent() is data.aService
-        assert ob3.getParentComponent() is data.aService
-        assert ob4.getParentComponent() is data.aService
+        assert ob2.getParentComponent() is data.getParentComponent()
 
     def checkFindProvider(self):
         data = self.data
@@ -193,6 +191,8 @@ class UtilityTest(TestCase):
         data = self.data
         assert isinstance(data.thing,UtilityData)
         assert data.thing is not data
+
+
 
 
 

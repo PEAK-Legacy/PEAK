@@ -2,83 +2,42 @@ from __future__ import generators
 from peak.api import *
 from interfaces import *
 from weakref import WeakValueDictionary, ref
-
-
-try:
-    import signal
-
-except ImportError:
-    SIG_DFL = None
-    signals = {}
-    signal_names = {}
-    signal = lambda *args: None
-    original_signal_handlers = {}
-
-else:
-    SIG_DFL = signal.SIG_DFL
-
-    signals = dict(
-        [(name,number)
-            for (name,number) in signal.__dict__.items()
-                if name.startswith('SIG') and not name.startswith('SIG_')
-        ]
-    )
-
-    signal_names = {}
-    for signame,signum in signals.items():
-        signal_names.setdefault(signum,[]).append(signame)
-
-    original_signal_handlers = dict(
-        [(signum,signal.getsignal(signum)) for signum in signal_names.keys()]
-    )
-
-    signal = signal.signal
+from peak.events.io_events import signals, signal_names     # XXX
 
 
 
 
 
 
-class SignalManager(binding.Singleton):
 
-    """Global signal manager"""
 
-    protocols.advise( classProvides = [ISignalManager] )
 
-    signal_handlers = dict(
-        [(num,WeakValueDictionary()) for (name,num) in signals.items()]
-    )
 
-    all_handlers = {}
 
-    def addHandler(self, handler):
-        hid = id(handler)
-        for signame, signum in signals.items():
-            if hasattr(handler,signame):
-                self.signal_handlers[signum][hid] = handler
-                signal(signum, self._handle)
-        self.all_handlers[hid] = ref(handler, lambda ref: self._purge(hid))
 
-    def removeHandler(self, handler):
-        self._purge(id(handler))
 
-    def _purge(self, hid):
-        if hid in self.all_handlers:
-            del self.all_handlers[hid]
-        for signum, handlers in self.signal_handlers.items():
-            if hid in handlers:
-                del handlers[hid]
-                if not handlers:
-                    signal(signum, original_signal_handlers[signum])
 
-    def _handle(self, signum, frame):
-        for hid, handler in self.signal_handlers[signum].items():
-            for signame in signal_names[signum]:
-                if hasattr(handler,signame):
-                    getattr(handler,signame)(signum, frame)
-                    break
 
-    def __call__(self,*args): return self
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 class ChildProcess(binding.Component):
 

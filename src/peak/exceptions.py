@@ -80,12 +80,6 @@ class InvalidRoot(TypeError):
     """Root component doesn't support 'config.IConfigurationRoot'"""
 
 
-# Config
-
-class PropertyNotFound(NameNotFound):
-    """DEPRECATED: Use 'NameNotFound' instead!"""
-
-
 # Storage
 
 class NotReadyError(Exception):
@@ -116,6 +110,12 @@ class TooFewResults(Exception):
 
 class StopRunning(Exception):
     """Task doesn't want to be rescheduled"""
+
+
+
+
+
+
 
 
 
