@@ -2,6 +2,14 @@ Fixes and Enhancements since Version 0.5 alpha 2
 
  Changed, Enhanced, or Newly Deprecated Features
 
+ - Added 'peak.running.supervisor', a mini-framework for pre-forking,
+   multiprocess servers, such as for FastCGI.  The framework includes a ZConfig
+   schema for process supervisors, and support for automatically forking new
+   children (up to a predefined maximum, with a minimum interval between
+   launches) when a socket has pending connections and all of its child
+   processes are busy.  With this setup, you can take more advantage of
+   multiprocessor machines for CPU-intensive services.
+
  - Standardized these characteristics of name and address syntax:
 
    * '//' at the beginning of URL bodies is *mandatory* when the URL begins

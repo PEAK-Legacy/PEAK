@@ -138,8 +138,8 @@ PEAK Release 0.5 alpha 3
 
       - an event-driven "reactor" framework that seamlessly integrates with
         Twisted, but can also be used without Twisted for applications that are
-	mostly scheduling-oriented, or which use only third-party protocol
-	implementations such as FAM, FastCGI, ReadyExec, etc.
+        mostly scheduling-oriented, or which use only third-party protocol
+        implementations such as FAM, FastCGI, ReadyExec, etc.
 
       - a robust and flexible logging framework that can integrate with the
         PEP 282 logging module, or stand alone.  It's simpler than the PEP 282
@@ -147,6 +147,10 @@ PEAK Release 0.5 alpha 3
         rather than "up front", and is thus more manageably configurable for
         large or complex applications consisting of components from diverse
         providers.
+
+      - a "process supervisor" framework for multiprocess servers using
+        long-running child processes (created via 'fork()') to take maximum
+        advantage of multiprocessor machines for CPU-intensive services.
 
     * AOP and SOP: PEAK allows you to separate concerns as modules, then
       combine the modules via a "module inheritance" technique.  This
@@ -156,10 +160,6 @@ PEAK Release 0.5 alpha 3
       what you want to add, and then telling PEAK that your new module
       "inherits" from the generated module.  This is similar to (but
       designed independently from) the "MixJuice" tool for AOP in Java.
-
-
-
-
 
 
  Known Issues and Risks of this Version

@@ -7,6 +7,9 @@
     <description>
     This schema describes the configuration of a ProcessSupervisor: a PEAK
     command that forks copies of itself as subprocesses, and monitors them.
+    For the original vision document and background, see:
+
+    http://www.eby-sarna.com/pipermail/peak/2003-August/000697.html
 
     (Note...  there are probably other things we might want to configure later,
     such as the signals sent to stop subprocesses, signals monitored by the
@@ -32,9 +35,6 @@
         </description>
 
     </key>
-
-
-
 
 
 

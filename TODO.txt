@@ -64,14 +64,14 @@ Open Issues/To-Do Items
 
        - the return of the Specialist
 
-    * "Pre-forking event driven services":http://www.eby-sarna.com/pipermail/transwarp/2003-August/000697.html
-
     * Have a way to easily in-line custom component usage (e.g. automatically
       create a subclass component with specified 'Obtain' or 'Make' bindings to
       get its configuration).
 
     * Implement "contextual protocols" (c.f. "object teams") and "parameterized
       protocols" (E.g. 'ListOf(IFoo)', 'MappingOf(keys=IBar,values=IBaz)')
+
+
 
 
 
