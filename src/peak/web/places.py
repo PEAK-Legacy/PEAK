@@ -1,5 +1,6 @@
 from peak.api import *
 from interfaces import *
+from types import FunctionType, MethodType
 
 __all__ = ['SimpleLocation', 'ComponentAsLocation', 'ContainerAsLocation']
 
@@ -31,7 +32,6 @@ class SimpleLocation(binding.Component):
 
     def preTraverse(self, interaction):
         pass    # Should do any traversal requirements checks
-
 
 
 
@@ -109,6 +109,47 @@ class ContainerAsLocation(ComponentAsLocation):
             return adapt(ob, interaction.locationProtocol)
 
         return NOT_ALLOWED
+
+
+
+
+
+
+
+
+
+
+
+
+class CallableAsWebMethod(protocols.Adapter):
+
+    """Make functions/methods callable"""
+
+    protocols.advise(
+        instancesProvide = [IWebMethod],
+        asAdapterForTypes = [FunctionType, MethodType]
+    )
+
+    def render(self, interaction):
+        request = interaction.request
+        from zope.publisher.publish import mapply
+        return mapply(self.subject, request.getPositionalArguments(), request)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

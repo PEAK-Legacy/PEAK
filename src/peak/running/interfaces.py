@@ -136,7 +136,7 @@ class IRerunnableCGI(Interface):
 
     """Like an IRerunnable, but specifically for CGI"""
 
-    def runCGI(stdin,stdout,stderr,environ,argv=[]):
+    def runCGI(stdin,stdout,stderr,environ,argv=()):
         """Perform function and return exit code"""
 
 

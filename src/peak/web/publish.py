@@ -227,6 +227,7 @@ class CGIPublisher(binding.Component):
     def fromApp(klass, app, protocol):
         return klass(app=app)
 
+    fromApp = classmethod(fromApp)
 
 
 
@@ -243,8 +244,7 @@ class CGIPublisher(binding.Component):
 
 
 
-
-    def runCGI(self, input, output, errors, env, argv=[]):
+    def runCGI(self, input, output, errors, env, argv=()):
 
         """Process one request"""
 
