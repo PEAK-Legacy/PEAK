@@ -910,12 +910,13 @@ default for src is '!.', the current input buffer"""
 
 
     class cmd_htmldump(ShellCommand):
-        """\\htmldump [-f] -- dump entire database as HTML document
+        """\\htmldump [-f] [-x table[,table,...]] -- dump entire database as HTML document
 
--f\t\tsuppress footer (rowcount)
+-f\t\t\tsuppress footer (rowcount)
+-x table[,table,...]\texclude tables from result
         """
 
-        args = ('f', 0, 0)
+        args = ('fx:', 0, 0)
 
         def cmd(self, cmd, opts, args, stdout, stderr, **kw):
             con = self.interactor.con
@@ -924,8 +925,12 @@ default for src is '!.', the current input buffer"""
                 print >>stderr, "%s: database doesn't support object listing" % cmd
                 return
 
+            exclude = dict([
+                (k.strip(), 1) for k in opts.get('-x', '').split(',')
+            ]).has_key
+            
             tl = si.listObjects(obtypes=['table'])
-            tl = [r.obname for r in tl]
+            tl = [r.obname for r in tl if not exclude(r.obname)]
             tl.sort()
 
             print >>stdout, "<html><body>"
@@ -937,7 +942,7 @@ default for src is '!.', the current input buffer"""
                     title="Contents of table %s" % t
                 )
 
-                print >>stdout
+                print >>stdout, "<br>"
 
             print >>stdout, "</body></html>"
                             
