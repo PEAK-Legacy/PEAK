@@ -20,19 +20,19 @@ __all__ = [
     'Immutable', 'Namespace', 'Package', 'Model', 'FeatureMC',
     'StructuralFeature', 'Field', 'Collection', 'Reference', 'Sequence',
     'Classifier','PrimitiveType','Enumeration','DataType',
-    'DerivedAssociation',
+    'DerivedAssociation', 'HashAndCompare'
 ]
 
 
+class HashAndCompare(object):
 
+    """Mixin that allows 'hash' and 'cmp' operations on a delegate value"""
 
+    def __hash__(self):
+        return hash(self._hashAndCompare)
 
-
-
-
-
-
-
+    def __cmp__(self,other):
+        return cmp(self._hashAndCompare,other)
 
 
 
@@ -80,7 +80,7 @@ class Model(Package):
 
 
 
-class FeatureMC(MethodExporter):
+class FeatureMC(HashAndCompare,MethodExporter):
 
     """Method-exporting Property
     
@@ -104,6 +104,7 @@ class FeatureMC(MethodExporter):
 
     __metaclass__ = binding.Activator   # metaclasses can't be components
 
+
     def __get__(self, ob, typ=None):
 
         """Get the feature's value by delegating to 'ob.getX()'"""
@@ -117,7 +118,6 @@ class FeatureMC(MethodExporter):
         """Set the feature's value by delegating to 'ob.setX()'"""
 
         return self.getMethod(ob,'set')(val)
-
 
 
 
@@ -140,18 +140,18 @@ class FeatureMC(MethodExporter):
     fromString = binding.bindTo('typeObject/fromString')
     fromFields = binding.bindTo('typeObject/fromFields')
 
+    sortPosn   = None
+
+    def _hashAndCompare(self,d,a):
+        return self.sortPosn, self.__name__, id(self)
+        
+    _hashAndCompare = binding.Once(_hashAndCompare)
 
 
+    def featureName(self,d,a):
+        return self.__name__.split('.')[-1]
 
-
-
-
-
-
-
-
-
-
+    featureName = binding.Once(featureName)
 
 
 
@@ -165,6 +165,7 @@ class FeatureMC(MethodExporter):
 class StructuralFeature(object):
 
     __metaclass__ = FeatureMC
+    __class_implements__ = IFeature
 
     isDerived     = False
     isRequired    = False
@@ -197,7 +198,6 @@ class StructuralFeature(object):
 
     def unset(feature, element):
         element._delBinding(feature.attrName)
-
 
 
 
@@ -453,8 +453,133 @@ class Classifier(Namespace):
 
     """Basis for all flavors"""
 
+    def mdl_featuresDefined(self,d,a):
 
-class Immutable(Classifier):
+        """Sorted tuple of feature objects defined/overridden by this class"""
+
+        isFeature = IFeature.isImplementedBy
+        mine = [v for (k,v) in d.items() if isFeature(v)]
+        mine.sort()
+        return tuple(mine)
+
+    mdl_featuresDefined = binding.classAttr(
+        binding.Once(mdl_featuresDefined)
+    )
+
+
+    def mdl_featureNames(self,d,a):
+        """Names of all features, in monotonic order (see 'mdl_features')"""
+        return tuple([f.featureName for f in self.mdl_features])
+
+    mdl_featureNames = binding.classAttr(binding.Once(mdl_featureNames))
+
+
+    def mdl_sortedFeatures(self,d,a):
+
+        """All feature objects of this classifier, in sorted order"""
+
+        fl = list(self.mdl_features)
+        fl.sort
+        return tuple(fl)
+
+    mdl_sortedFeatures = binding.classAttr(binding.Once(mdl_sortedFeatures))
+
+
+
+
+
+
+
+    def mdl_features(self,d,a):
+        """All feature objects of this classifier, in monotonic order
+
+        The monotonic order of features is equivalent to the concatenation of
+        'mdl_featuresDefined' for all classes in the classifier's MRO, in
+        reverse MRO order, with duplicates (i.e. overridden features)
+        eliminated.  That is, if a feature named 'x' exists in more than one
+        class in the MRO, the most specific definition of 'x' will be used
+        (i.e. the first definition in MRO order), but it will be placed in the
+        *position* reserved by the *less specific* definition.  The idea is
+        that, once a position has been defined for a feature name, it will
+        continue to be used by all subclasses, if possible.  For example::
+
+            class A(model.Classifier):
+                class foo(model.Field): pass
+                
+            class B(A):
+                class foo(model.Field): pass
+                class bar(model.Field): pass
+
+        would result in 'B' having a 'mdl_features' order of '(foo,bar)',
+        even though its 'mdl_featuresDefined' would be '(bar,foo)' (because
+        features without a sort priority define are ordered by name).
+
+        The purpose of using a monotonic ordering like this is that it allows
+        subtypes to use a serialized format that is a linear extension of
+        their supertype, at least in the case of single inheritance.  It may
+        also be useful for GUI layouts, where it's also desirable to have a
+        subtype's display look "the same" as a base type's display, except for
+        those features that it adds to the supertype."""
+        
+        out  = []
+        posn = {}
+        add  = out.append
+        get  = posn.get
+
+        all  = list(
+            binding.getInheritedRegistries(self,'mdl_features')
+        )
+        all.append(self.mdl_featuresDefined)
+      
+        for nf in all:
+            for f in nf:
+                n = f.featureName
+                p = get(n)
+                if p is None:
+                    posn[n] = len(out)
+                    add(f)
+                else:
+                    out[p] = f
+                    
+        return tuple(out)
+
+    mdl_features = binding.classAttr( binding.Once(mdl_features) )
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class Immutable(Classifier, HashAndCompare):
+
+    def _hashAndCompare(s,d,a):
+        return tuple([
+            getattr(s,n,None) for n in s.__class__.mdl_featureNames
+        ])
+
+    _hashAndCompare = binding.Once(_hashAndCompare)
 
     def setParentComponent(self, parentComponent, componentName=None):
         if parentComponent is not None or componentName is not None:
@@ -472,6 +597,21 @@ class Immutable(Classifier):
     def __setattr__(self,attr,value):
         raise TypeError("Immutable object", self)
 
+    def __init__(klass,name,bases,dict):
+        for f in klass.mdl_features:
+            if f.isChangeable:
+                raise TypeError(
+                    "Immutable class with changeable feature",
+                    klass, f
+                )
+
+    __init__ = binding.classAttr(__init__)
+
+
+
+
+
+
 
 class PrimitiveType(Immutable):
 
@@ -481,13 +621,6 @@ class PrimitiveType(Immutable):
         return value
 
     fromString = classmethod(fromString)
-
-
-
-
-
-
-
 
 
 class Enumeration(Immutable):
@@ -519,16 +652,6 @@ class Enumeration(Immutable):
         raise ValueError, value
 
     fromString = classmethod(fromString)
-
-
-
-
-
-
-
-
-
-
 
 
 class DataType(Immutable):

@@ -47,7 +47,6 @@ class MailModel(model.Model, storage.xmi.Loader):
             referencedType = 'Envelope'
             referencedEnd  = 'letter'
 
-
     class Envelope(model.Element):
 
         class toAddress(model.Field):   referencedType = 'Address'
@@ -64,21 +63,22 @@ class MailModel(model.Model, storage.xmi.Loader):
 
 
     class Address(model.DataType):
-        class name(model.Field):    referencedType = 'String'
-        class streetNumber(model.Field): referencedType = 'String'
-        class street(model.Field):  referencedType = 'String'
-        class city(model.Field):    referencedType = 'String'
-        class state(model.Field):   referencedType = 'String'
-        class zip(model.Field):     referencedType = 'String'
+    
+        class name(model.Field):
+            referencedType = 'String'
+            isChangeable   = False
+
+        class streetNumber(name):   pass
+        class street(name):         pass
+        class city(name):           pass
+        class state(name):          pass
+        class zip(name):            pass
 
         def __str__(self):
             return ", ".join(
                 [self.name, '%s %s' % (self.streetNumber,self.street),
                     self.city, '%s %s' % (self.state, self.zip) ]
             )
-
-
-
 
 MailText="""<?xml version="1.0"?>
 

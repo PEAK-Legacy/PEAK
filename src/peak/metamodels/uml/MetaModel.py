@@ -153,6 +153,7 @@ class UMLClass(model.Model, storage.xmi.Loader):
             _XMINames = ('Foundation.Data_Types.Multiplicity.range',)
             referencedType = 'MultiplicityRange'
             referencedEnd = 'multiplicity'
+            isChangeable = False
 
         _XMINames = ('Foundation.Data_Types.Multiplicity',)
 
@@ -163,10 +164,12 @@ class UMLClass(model.Model, storage.xmi.Loader):
         class upper(model.Field):
             _XMINames = ('Foundation.Data_Types.MultiplicityRange.upper',)
             referencedType = 'UnlimitedInteger'
+            isChangeable = False
 
         class lower(model.Field):
             _XMINames = ('Foundation.Data_Types.MultiplicityRange.lower',)
             referencedType = 'Integer'
+            isChangeable = False
 
         _XMINames = ('Foundation.Data_Types.MultiplicityRange',)
 
@@ -174,6 +177,7 @@ class UMLClass(model.Model, storage.xmi.Loader):
             _XMINames = ('Foundation.Data_Types.MultiplicityRange.multiplicity',)
             referencedType = 'Multiplicity'
             referencedEnd = 'ranges'
+            isChangeable = False
 
 
 
@@ -194,12 +198,14 @@ class UMLClass(model.Model, storage.xmi.Loader):
         class body(model.Field):
             _XMINames = ('Foundation.Data_Types.Expression.body',)
             referencedType = 'String'
+            isChangeable = False
 
         _XMINames = ('Foundation.Data_Types.Expression',)
 
         class language(model.Field):
             _XMINames = ('Foundation.Data_Types.Expression.language',)
             referencedType = 'Name'
+            isChangeable = False
 
     class TimeExpression(Expression):
         _XMINames = ('Foundation.Data_Types.TimeExpression',)

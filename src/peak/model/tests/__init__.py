@@ -121,6 +121,47 @@ class checkExport(TestCase):
 
 
 
+class aBase(model.Element):
+    class f1(model.Field): pass
+    class f2(model.Field): pass
+
+class aSub(aBase):
+    class f3(model.Field): pass
+    class f1(model.Field): pass
+    class a(model.Field): pass
+
+class ordered(model.Element):
+    class a(model.Field): sortPosn = 3
+    class b(model.Field): sortPosn = 2
+    class c(model.Field): sortPosn = 1
+
+
+class checkMetaData(TestCase):
+
+    def checkNames(self):
+        assert aBase.mdl_featureNames   == ('f1','f2')
+        assert aSub.mdl_featureNames    == ('f1','f2','a','f3')
+        assert ordered.mdl_featureNames == ('c','b','a')
+
+    def checkIntroduced(self):
+        assert aBase.mdl_featuresDefined == (aBase.f1, aBase.f2)
+        assert aSub.mdl_featuresDefined  == (aSub.a, aSub.f1, aSub.f3)
+        
+    def checkChangeableBad(self):
+        try:
+            class anImmutable(model.Immutable):
+                class aFeature(model.Field):
+                    pass
+        except TypeError:
+            pass
+        else:
+            raise AssertionError,"Immutable allowed changeable features"
+
+
+
+
+
+
 class anElement1(model.Element):
 
     class field1(model.Field):
@@ -228,7 +269,7 @@ class exerciseFeatures(TestCase):
 
 
 TestClasses = (
-    checkExport, exerciseFeatures,
+    checkExport, checkMetaData, exerciseFeatures, 
 )
 
 
