@@ -91,7 +91,8 @@ def _setupCriterion(strategy):
         return table[None]
 
     class HasParentCriterion(strategy.IdentityCriterion):
-
+        __slots__ = ()
+        ptr = strategy.IdentityCriterion.subject    # alias
         dispatch_function = staticmethod(dispatch_by_hierarchy)
         matches = strategy.AbstractCriterion.matches.im_func
 
@@ -119,7 +120,6 @@ def _setupParse(predicates):
 
 whenImported('dispatch.strategy',_setupCriterion)
 whenImported('dispatch.predicates',_setupParse)
-
 
 def getComponentPath(component, relativeTo=None):
 
