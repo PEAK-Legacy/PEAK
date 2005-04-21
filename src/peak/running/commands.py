@@ -379,11 +379,16 @@ class IniInterpreter(AbstractInterpreter):
 
         """Interpret file as an '.ini' and run the command it specifies"""
 
-        if not isfile(filename):
-            raise InvocationError("Not a file:", filename)
+        try:
+            factory = config.getStreamFactory(self,filename)
+        except protocols.AdaptationFailure:
+            raise InvocationError("Not a valid file/stream source: "+filename)
+        else:
+            if not factory.exists():
+                raise InvocationError("File/stream does not exist: "+filename)
 
         cfg = config.ServiceArea(self.getCommandParent())
-        config.loadConfigFile(cfg, filename)
+        config.loadConfigFile(cfg, factory)
 
         # Set up a command factory based on the configuration setting
 
@@ -398,11 +403,6 @@ class IniInterpreter(AbstractInterpreter):
 
         # Now create and return the subcommand
         return self.getSubcommand(executable,parentComponent=cfg)
-
-
-
-
-
 
 
 
