@@ -53,7 +53,7 @@ class socketURL(naming.URL.Base):
                     try:
                         os.unlink(sa)   # remove the existing unix socket
                     except OSError,v:
-                        if v<>errno.ENOENT: # ignore if socket doesn't exist
+                        if v.errno<>errno.ENOENT: # ignore if socket doesn't exist
                             raise
                 s.bind(sa)
                 s.listen(5) # should will be made configurable
