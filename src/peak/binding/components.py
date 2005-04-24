@@ -95,10 +95,10 @@ def _setupCriterion(strategy):
         ptr = strategy.IdentityCriterion.subject    # alias
         dispatch_function = staticmethod(dispatch_by_hierarchy)
         matches = strategy.AbstractCriterion.matches.im_func
-
         def __init__(self,component):
             super(HasParentCriterion,self).__init__(strategy.Pointer(component))
-
+        def parent_criteria(self):
+            return [HasParentCriterion(p) for p in iterParents(self.ptr.ref())]
         def __contains__(self,ob):
             if ob is not None:
                 for comp in iterParents(ob.ref()):
