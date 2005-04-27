@@ -111,7 +111,7 @@ class BulletinDM(storage.EntityDM):
                  editedOn, hidden) VALUES (%d, %s, %s, %s, %s, %s, %s, %d)""",
             (ob._p_oid, self.CategoryDM.oidFor(ob.category), ob.fullText,
              ob.postedBy.loginId, str(ob.postedOn), ob.editedBy.loginId,
-             str(ob.editedOn), ob.hidden)
+             str(ob.editedOn), int(ob.hidden))
         )
 
     def _new(self,ob):
