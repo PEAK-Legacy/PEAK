@@ -6,7 +6,7 @@ from peak.tests import testRoot
 from cStringIO import StringIO
 from peak.ddt.api import *
 from peak.ddt.html_doc import GREEN,RED,YELLOW,GREY,HTMLDocument
-import sys,whrandom
+import sys,random
 
 sample_input = """
     <body>
@@ -110,10 +110,10 @@ sorted = InterestingNumbers[:]; sorted.sort(); sorted = map(makeSeven,sorted)
 revsorted = sorted[:]; revsorted.reverse()
 seed = forwards[:]
 
-random = []
+_random = []
 while seed:
-     random.append(whrandom.choice(seed))
-     seed.remove(random[-1])
+     _random.append(random.choice(seed))
+     seed.remove(_random[-1])
 
 
 
@@ -297,7 +297,7 @@ class BasicTests(TestCase):
 
         output = app.lookupComponent(resultURL).open('t').read()
 
-        for records in forwards,backwards,sorted,revsorted,random:
+        for records in forwards,backwards,sorted,revsorted,_random:
             app.records = records
             runner = HTMLRunner(
                 app, argv=['ddt',testURL],

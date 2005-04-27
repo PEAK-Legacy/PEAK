@@ -5,7 +5,7 @@ __all__ = ['randbytes', 'rand16']
 
 
 import sys, os, time
-from whrandom import random
+random = __import__('random',{}).random   # from _.random import random
 seeded = 0
 
 try:
@@ -82,7 +82,7 @@ prng_some()
 
 def prng(nbytes):
     """
-    A PRNG that hopefully is better than just using whrandom.
+    A PRNG that hopefully is better than just using random.
     Don't trust this for crypto, though!
     """
 
