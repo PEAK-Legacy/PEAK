@@ -4,7 +4,7 @@ from unittest import TestCase, makeSuite, TestSuite
 from peak.api import *
 from peak.tests import testRoot
 
-from peak.storage.LDAP import LDAPCursor, LDAPConnection
+from peak.storage.LDAP import LDAPCursor, LDAPConnection, RES_SEARCH_RESULT
 
 
 def fooCvt(name,values):
@@ -29,7 +29,7 @@ class TestCursor(LDAPCursor):
     class _conn(object):
 
         def result(msgid, getall, timeout):
-            return 'RES_SEARCH_RESULT', [
+            return RES_SEARCH_RESULT, [
                 ('uid=thing1', {'foo':[], 'baz':['a','b']}),
                 ('uid=thing2', {'foo':['spam'], 'bar':['999']}),
             ]
@@ -56,14 +56,6 @@ TestClasses = (
 
 def test_suite():
     return TestSuite([makeSuite(t,'check') for t in TestClasses])
-
-
-
-
-
-
-
-
 
 
 
