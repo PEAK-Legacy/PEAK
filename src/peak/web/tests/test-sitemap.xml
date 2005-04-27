@@ -1,5 +1,7 @@
 <location id="root" config="configure-test.ini">
 
+    <view name="index_html" object="1"/>
+
     <container object="{'123':123, 'abc':'abc', 'both':[123,'abc']}"/>
 
     <content type="object">
@@ -20,5 +22,6 @@
     <content type="list">
         <view name="index_html" resource="peak.web.tests/showlist"/>
     </content>
+
 
 </location>

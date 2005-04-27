@@ -207,23 +207,23 @@ class Location(Place,binding.Configurable):
     def registerView(self,target,name,handler):
         """See IViewService.registerView()"""
 
-    [registerView.when((type,ClassType,Pointer,type(None)))]   
+    [registerView.when((type,ClassType,Pointer,type(None)))]
     def registerView(self,target,_name,handler):
         if target is None:
+            m = "ob in self.__class__ and " + _match
             target = Pointer(self)
-        traverseView.when.im_self[_match] = handler       
+        else:
+            m = _match
+        traverseView.when.im_self[m] = handler
 
     [registerView.when(protocols.IOpenProtocol)]
-    def registerView(self, target, _name, handler):       
+    def registerView(self, target, _name, handler):
         [traverseView.when(_match)]
         def traverseAdapter(ctx, ob, ns, name, qname, default):
             return handler(ctx, adapt(ob,target), ns, name, qname, default)
 
 _match = \
 "name==_name and ob in target and binding.hasParent(ctx.viewService, self)"
-
-
-
 
 
 

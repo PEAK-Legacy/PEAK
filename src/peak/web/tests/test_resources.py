@@ -238,8 +238,8 @@ class IntegrationTests(TestCase):
             "</body></html>\n"
         )
 
-
-
+    def testViewDef(self):
+        self.assertEqual(self.traverse('/@@index_html', False).current, 1)
 
 
 
