@@ -203,47 +203,6 @@ def declare_Sequence(classobj,attrname,metadata):
 
 
 
-def activateClass(klass):
-    """Activate any 'IActiveDescriptor' or 'classAttr' objects in 'klass'
-
-    Any 'IActiveDescriptor' objects found in the class dictionary will have
-    their 'activateInClass()' method called with the target class and attribute
-    name.  The return value is then placed in a '__class_descriptors__' mapping
-    that maps from attribute names to return values.
-
-    If the class dictionary contains any 'binding.classAttr' instances, these
-    are attached to a new metaclass for the class, and the class is rebuilt
-    as an instance of the new metaclass.
-
-    'activateClass()' does nothing if the class already possesses a
-    '__class_descriptors__' mapping, so it is safe to call it more than once on
-    the same class.
-    """
-
-    d = klass.__dict__
-    if '__class_descriptors__' in d:
-        return klass
-
-    meta, stdAttrs = _boostedMeta(type(klass),klass.__name__,d)
-    if meta is not type(klass):
-        klass = meta(klass.__name__,klass.__bases__,stdAttrs)
-        d = stdAttrs
-
-    klass.__class_descriptors__ = cd = {}
-    for k,v in d.items():
-        v = IActiveDescriptor(v,None)
-        if v is not None:
-            cd[k] = v.activateInClass(klass,k)
-    return klass
-
-
-
-
-
-
-
-
-
 class classAttr(object):
 
     """Class attribute binding
@@ -375,6 +334,10 @@ def activateClass(klass):
     name.  The return value is then placed in a '__class_descriptors__' mapping
     that maps from attribute names to return values.
 
+    If the class dictionary contains any 'binding.classAttr' instances, these
+    are attached to a new metaclass for the class, and the class is rebuilt
+    as an instance of the new metaclass.
+
     'activateClass()' does nothing if the class already possesses a
     '__class_descriptors__' mapping, so it is safe to call it more than once on
     the same class.
@@ -385,20 +348,16 @@ def activateClass(klass):
         return klass
 
     meta, stdAttrs = _boostedMeta(type(klass),klass.__name__,d)
-
     if meta is not type(klass):
         klass = meta(klass.__name__,klass.__bases__,stdAttrs)
         d = stdAttrs
 
     klass.__class_descriptors__ = cd = {}
-
     for k,v in sorted(d.items()):
         v = IActiveDescriptor(v,None)
         if v is not None:
             cd[k] = v.activateInClass(klass,k)
     return klass
-
-
 
 
 
