@@ -86,7 +86,7 @@ class ShowUsers(BulletinsApp, AbstractCommand):
         print "User          Name"
         print "------------  -----------------------------------"
         storage.beginTransaction(self)
-        for user in self.Users.getAll():
+        for user in self.Users:
             print "%-12s  %s" % (user.loginId, user.fullName)
         storage.commitTransaction(self)
 
