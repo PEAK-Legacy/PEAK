@@ -9,9 +9,9 @@ __all__ = [
     'ITransactionService', 'ITransactionParticipant', 'ICache',
     'ITransactionErrorHandler', 'ICursor', 'IRow',
     'IDataManager', 'IDataManager_SPI', 'IWritableDM', 'IWritableDM_SPI',
-    'IManagedConnection', 'IManagedConn_SPI', 'IKeyableDM',
+    'IManagedConnection', 'IManagedConn_SPI', 'IKeyableDM', 'IIterableDM',
     'ISQLConnection', 'ILDAPConnection', 'IDDEConnection',
-    'ISQLObjectLister', 'ISQLDDLExtractor'
+    'ISQLObjectLister', 'ISQLDDLExtractor', 'InvalidKeyError'
 ]
 
 
@@ -19,8 +19,8 @@ class UndoError(Exception):
     """Invalid undo/redo operation"""
 
 
-
-
+class InvalidKeyError(Exception):
+    """A foreign key reference was invalid"""
 
 
 
@@ -61,9 +61,9 @@ class IDelta(Interface):
 
     def merge(delta):
         """Incorporate 'delta' into this delta
-        
+
        Raise an error if delta is already checkpointed or undone, or 'delta' is
-       not of a compatible type.       
+       not of a compatible type.
        """
 
     def finish():
@@ -83,7 +83,7 @@ class IDelta(Interface):
 class IHistory(IDelta):
 
     """A sequence of changes that will be undone/redone as a group
-    
+
     Note that passing an 'IHistory' to the 'merge()' method of an 'IHistory'
     should be implemented by merging their contained deltas by key, except
     for deltas with keys of 'None', which are simply aggregated in the resulting
@@ -126,9 +126,9 @@ class IUndoManager(Interface):
     """Perform undo/redo of recorded actions"""
 
     def record(delta):
-        """Record delta as part of the current history (see 'IDelta.merge()')       
+        """Record delta as part of the current history (see 'IDelta.merge()')
         (Should clear redo history)"""
-        
+
     def has_delta_for(key):
         """True if a delta with key 'key' is in current history"""
 
@@ -137,11 +137,11 @@ class IUndoManager(Interface):
         """Finish current history and add to undo stack
         (also, clear redo stack, and if current history isn't undoable, clear
         the undo stack too.)"""
-               
+
     def revert():
         """Roll back current history to last checkpoint or undo/redo
 
-        Undo and discard all deltas recorded since the last checkpoint, revert, 
+        Undo and discard all deltas recorded since the last checkpoint, revert,
         or undo/redo operation.  Undo/redo histories do not change."""
 
 
@@ -378,11 +378,34 @@ class IDataManager(IComponent,ITransactionParticipant):
         """Set to false to disable auto-deactivation of objects from cache"""
     )
 
+    def get(oid, default=None):
+        """Retrieve the persistent object designated by 'oid', or 'default'
+
+        This immediately retrieves the object and is the method that clients
+        should normally use to retrieve items from the data manager."""
+
     def __getitem__(oid):
-        """Retrieve the persistent object designated by 'oid'"""
+        """Lazily retrieve the persistent object designated by 'oid'
+
+        This method is intended for use by other DMs that wish to lazily load
+        references to other objects; it should not normally be used by clients,
+        since it does not let you know immediately whether the desired item
+        exists in underlying storage database."""
+
+    def __contains__(ob):
+        """Is 'ob' an object stored by this DM (or such an object's oid)?
+
+        Note that this method may causes a database access if the object isn't
+        already in cache.
+        """
 
     def preloadState(oid, state):
         """Pre-load 'state' for object designated by 'oid' and return it"""
+
+
+
+
+
 
 
 class IKeyableDM(IDataManager):
@@ -391,6 +414,39 @@ class IKeyableDM(IDataManager):
 
     def oidFor(ob):
         """Return an 'oid' suitable for retrieving 'ob' from this DM"""
+
+
+class IIterableDM(IDataManager):
+
+    def __iter__():
+        """Yield all of the items in the data manager"""
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 class IWritableDM(IKeyableDM):
@@ -402,34 +458,58 @@ class IWritableDM(IKeyableDM):
         protocolExtends = [IPersistentDataManager]
     )
 
+    def add(ob):
+        """Add 'ob' to the database
+
+        Note that the object's oid must be unique or None, and that the object
+        must be un-owned, or already owned by this DM.  If the oid is a
+        duplicate, raise InvalidKeyError.  If the object is already owned by
+        this DM, this method is a no-op.
+        """
+
+    def remove(ob):
+        """Remove 'ob' from the database
+
+        The object must belong to this DM; after this method is called it will
+        no longer belong to the DM.  (The actual removal from the database is
+        deferred until transaction commit.)
+        """
+
     def newItem(klass=None):
-        """Create and return a new persistent object of class 'klass'"""
+        """DEPRECATED: Create+return a new persistent object of class 'klass'
+
+        This method is deprecated; please use 'add()' instead.
+        """
 
     def flush(ob=None):
         """Sync stored state to in-memory state of 'ob' or all objects"""
 
-class IDataManager_SPI(Interface):
 
+
+
+
+
+
+class IDataManager_SPI(Interface):
     """Methods/attrs that must/may be redefined in a QueryDM subclass"""
 
     cache = Attribute("a cache for ghosts and loaded objects")
-
-    defaultClass = Attribute("Default class used for 'newItem()' method")
+    defaultClass = Attribute("Default class used for '_ghost' method")
 
     def _ghost(oid, state=None):
         """Return a ghost of appropriate class, based on 'oid' and 'state'
 
-        Note that 'state' will be loaded into the returned object via its
+        Note that 'state' should be loaded into the returned object via its
         '__setstate__()' method.  If 'state' is 'None', the returned object's
-        '_p_deactivate()' method will be called instead."""
-
+        '_p_deactivate()' method will be called instead (by __getitem__)."""
 
     def _load(oid, ob):
-        """Load & return the state for 'oid', suitable for '__setstate__()'"""
+        """Load & return the state for 'oid', suitable for '__setstate__()'
+
+        Raise 'storage.InvalidKeyError' if 'oid' is not found in the db."""
 
 
 class IWritableDM_SPI(IDataManager_SPI):
-
     """Additional methods needed for writing objects in an EntityDM"""
 
     def _save(ob):
@@ -438,15 +518,17 @@ class IWritableDM_SPI(IDataManager_SPI):
     def _new(ob):
         """Create 'ob' in underlying storage and return its new 'oid'"""
 
+    def _delete_oids(self,oidList):
+        """Delete items listed in 'oidList' from underlying storage"""
+
     def _defaultState(ob):
         """Return a default '__setstate__()' state for a new 'ob'"""
 
     def _thunk(ob):
         """Hook for implementing cross-database "thunk" references"""
 
-
-
-
+    def _check(ob):
+        """Raise TypeError if 'ob' is unsuitable for storing in this DM"""
 
 
 # Connection interfaces
@@ -699,7 +781,6 @@ class IRow(Interface):
     """Row that smells like a tuple, dict, or instance attr"""
 
 
-
 class ISQLObjectLister(Interface):
     """Adapt a managed connection to this to obtain information on
        objects in the database"""
@@ -727,3 +808,13 @@ class ISQLDDLExtractor(Interface):
     def getDDLForObject(name):
         """Return a tuple of (object type, DDL) strings,
         or None if the DDL for the object can't be extracted"""
+
+
+
+
+
+
+
+
+
+

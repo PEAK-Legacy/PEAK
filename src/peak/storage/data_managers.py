@@ -252,11 +252,16 @@ class QueryDM(TransactionComponent):
         instancesProvide=[IDataManager]
     )
 
+    to_delete = ()
+
     def __getitem__(self, oid, state=None):
 
         if self.resetStatesAfterTxn:
             # must always be used in a txn
             self.joinedTxn
+
+        if oid in self.to_delete:
+            raise InvalidKeyError("Reference to deleted key", oid)
 
         ob = self.cache.get(oid,self)
 
@@ -279,11 +284,6 @@ class QueryDM(TransactionComponent):
         return ob
 
     preloadState = __getitem__
-
-
-
-
-
 
     # Private abstract methods/attrs
 
@@ -338,33 +338,33 @@ class QueryDM(TransactionComponent):
 
         super(QueryDM,self).finishTransaction(txnService,committed)
 
+    # Misc.
+
+    def __iter__(self):
+        raise NotImplementedError
 
 
+    def __contains__(self, ob):
+        if isinstance(ob,Persistent):
+            return ob._p_jar is self
+        return self.get(ob) is not None
 
 
+    def get(self,oid,default=None):
+        if self.resetStatesAfterTxn:
+            # must always be used in a txn
+            self.joinedTxn
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+        if oid in self.cache:
+            return self.cache[oid]
+        elif oid in self.to_delete:
+            return default
+        try:
+            state = self._load(oid,None)
+        except InvalidKeyError:
+            return default
+        else:
+            return self.preloadState(oid,state)
 
 
 class EntityDM(QueryDM):
@@ -402,22 +402,23 @@ class EntityDM(QueryDM):
 
         ob=klass()
         ob.__setstate__(self._defaultState(ob))
-        ob._p_jar = self
 
-        self.register(ob)
+        self.add(ob)
         return ob
+
 
 
     # Set/state management
 
     dirty = binding.Make(dict)
     saved = binding.Make(dict)
-
+    to_delete = binding.Make(list)
 
     def flush(self, ob=None):
 
         markSaved = self.saved.setdefault
         dirty = self.dirty
+        orig_ob = ob
 
         if ob is None:
             obs = dirty.values()
@@ -438,15 +439,14 @@ class EntityDM(QueryDM):
 
             # Update status flags and object sets
             key = id(ob)
-
             markSaved(key,ob)
-
             if key in dirty:
                 del dirty[key]
-
             ob._p_changed = False
 
-
+        if orig_ob is None and self.to_delete:
+            self._delete_oids(self.to_delete)
+            del self.to_delete
 
 
     # Private abstract methods/attrs
@@ -465,24 +465,24 @@ class EntityDM(QueryDM):
     def _thunk(self, ob):
         raise NotImplementedError
 
+    def _delete_oids(self,oidList):
+        raise NotImplementedError
 
+    def _check(self,ob):
+        """Override this to raise an error if 'ob' is unsuitable for storing"""
 
     # Persistence.IPersistentDataManager methods
 
     def register(self, ob):
-
         # Ensure that we have a transaction service and we've joined
         # the transaction in progress...
-
         self.joinedTxn
 
         # precondition:
         #   object has been changed since last save
-
         # postcondition:
         #   ob is in 'dirty' set
         #   DM is registered w/transaction if not previously registered
-
         key = id(ob)
 
         # Ensure it's in the 'dirty' set
@@ -493,7 +493,7 @@ class EntityDM(QueryDM):
     # ITransactionParticipant methods
 
     def readyToVote(self, txnService):
-        if self.dirty:
+        if self.dirty or self.to_delete:
             self.flush()
             return False
         else:
@@ -504,11 +504,12 @@ class EntityDM(QueryDM):
         # Everything should have been written by now...  If not, it's VERY BAD
         # because the DB we're storing to might've already gotten a tpc_vote(),
         # and won't accept writes any more.  So raise holy hell if we're dirty!
-        assert not self.dirty
+        assert not self.dirty and not self.to_delete
 
 
     def commitTransaction(self, txnService):
         self.saved.clear()
+        self._delBinding('to_delete')
 
 
     def abortTransaction(self, txnService):
@@ -520,11 +521,51 @@ class EntityDM(QueryDM):
         self.dirty.clear()
 
         for ob in self.saved.values():
-            ob._p_deactivate()
+            if ob._p_jar is self:   # don't deactivate formerly-owned objects               
+                ob._p_deactivate()
 
         self.saved.clear()
+        self._delBinding('to_delete')
 
 
+
+
+
+    def add(self,ob):
+        if not isinstance(ob,Persistent):
+            raise TypeError("Not a persistent object", ob)
+
+        if ob._p_jar is self:
+            return  # Nothing needed here
+        elif ob._p_jar is not None:
+            raise ValueError("Already in another DM", ob, ob._p_jar)
+
+        self._check(ob)
+        if ob._p_oid is not None:
+            if self.get(ob._p_oid) is not None:
+                raise InvalidKeyError("Duplicate key", ob._p_oid)
+            self.cache[ob._p_oid] = ob
+
+        ob._p_jar = self
+        self.register(ob)
+
+
+    def remove(self,ob):
+        if ob._p_jar is not self:
+            raise ValueError("Doesn't belong to this DM", ob, ob._p_jar)
+
+        key = id(ob)
+        if key in self.dirty:
+            del self.dirty[key]
+
+        # note: don't delete from 'saved', because we might still need to roll
+        # back the object's state if it gets re-added, but the txn aborts, and
+        # we don't have 'resetStatesAfterTxn' set.
+
+        del self.cache[ob._p_oid]
+        ob._p_jar = None
+
+        self.to_delete.append(ob._p_oid)
 
 
 

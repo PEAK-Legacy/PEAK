@@ -239,51 +239,51 @@ class TxnTable(storage.TransactionComponent):
         self.joinedTxn
         self.table.SET(whereItems, setItems)
 
-
-
+    def __iter__(self):
+        return iter(self.table)
 
 
 
 class Harness(binding.Component):
-
     class sampleTable(TxnTable):
         colNames = 'a', 'b'
 
     sampleTable = binding.Make(sampleTable)
 
-
     class testDM(storage.EntityDM):
-
         table = binding.Obtain('sampleTable')
-
-        class defaultClass(Persistent):
-            pass
+        class defaultClass(model.Element):
+            class a(model.Attribute): pass
+            class b(model.Attribute): pass
 
         def _load(self, oid, ob):
-
             rows = self.table.SELECT(Items(a=oid))
-
             if rows:
                 return dict(rows[0].items())
             else:
-                raise KeyError, oid
-
+                raise storage.InvalidKeyError, oid
 
         def _save(self, ob):
             self.table.SET(Items(a=ob._p_oid),Items(b=ob.b))
-
 
         def _new(self,ob):
             self.table.INSERT(Items(a=ob.a,b=ob.b))
             return ob.a
 
+        def _delete_oids(self, oidList):
+            for oid in oidList:
+                self.table.DELETE(Items(a=oid))
+
+        def _check(self,ob):
+            assert isinstance(ob, self.defaultClass)
+
         def _defaultState(self,ob):
             return {}
 
+        def __iter__(self):
+            for row in self.table:
+                yield self.preloadState(row['a'],row.items())
     testDM = binding.Make(testDM)
-
-
-
 
 class TableTest(TestCase):
 
@@ -350,7 +350,7 @@ class DMTest(TestCase):
         storage.abort(self.harness)
 
         storage.begin(self.harness)
-        self.assertRaises(KeyError, lambda: ob.b)
+        self.assertRaises(storage.InvalidKeyError, lambda: ob.b)
 
     def checkFlush(self):
 
@@ -385,11 +385,38 @@ class DMTest(TestCase):
         storage.commit(self.harness)
         assert self.table.dump()==[(1,2)]
 
+    def checkAddRemoveGet(self):
+        storage.begin(self.harness)
+        ob = self.dm.defaultClass(a=1,b=2)
+        self.dm.add(ob)
+        assert self.table.dump()==[]
+        assert ob in self.dm
+        assert 1 not in self.dm
+        assert self.dm.get(1) is None
+        self.dm.flush()
+        assert 1 in self.dm
+        assert self.dm.get(1) is ob
+        assert self.table.dump()==[(1,2)]
+        assert list(self.dm)==[ob]
+        self.dm.remove(ob)
+        assert 1 not in self.dm
+        assert ob not in self.dm
+        self.dm.flush()
+        assert self.table.dump()==[]
+        storage.abort(self.harness)
 
 
 
 
-
+    def checkKeyDupe(self):
+        storage.begin(self.harness)
+        ob1 = self.dm.defaultClass(a=1,b=2)
+        ob1._p_oid = 1
+        ob2 = self.dm.defaultClass(a=1,b=2)
+        ob2._p_oid = 1
+        self.dm.add(ob1)
+        self.assertRaises(storage.InvalidKeyError, self.dm.add, ob2)
+        storage.abort(self.harness)
 
 
 

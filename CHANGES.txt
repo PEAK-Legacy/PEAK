@@ -1,5 +1,9 @@
 Fixes and Enhancements since Version 0.5 alpha 3
 
+ - Added a series of new QueryDM and EntityDM convenience features.  See
+   "Making Data Managers easier to use":http://www.eby-sarna.com/pipermail/peak/2005-May/002296.html
+   for a complete list and explanatory documentation.
+ 
  - Changed 'running.lookupCommand()' to use the command's 'getCommandParent()'
    method, so that commands using the '--config' option will utilize the
    specified configuration(s) to lookup subcommands.
