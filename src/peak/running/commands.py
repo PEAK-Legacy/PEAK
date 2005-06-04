@@ -229,7 +229,7 @@ define a usage message for their subclass.
             return self._run() or 0
 
         except SystemExit, v:
-            return v.args[0]
+            return v.args and v.args[0] or 0
 
         except InvocationError, msg:
             return self._invocationError(msg)
