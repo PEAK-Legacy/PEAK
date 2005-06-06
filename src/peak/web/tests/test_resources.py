@@ -209,8 +209,7 @@ class IntegrationTests(TestCase):
             testRoot().lookupComponent(
                 'ref:sitemap@pkgfile:peak.web.tests/test-sitemap.xml'
             )
-        )
-        self.traverse = self.policy.simpleTraverse
+        ); self.traverse = self.policy.simpleTraverse
 
     def testIntView(self):
         self.assertEqual(self.traverse('123/index_html'),
@@ -241,8 +240,9 @@ class IntegrationTests(TestCase):
     def testViewDef(self):
         self.assertEqual(self.traverse('/@@index_html', False).current, 1)
 
-
-
+    def testLayout(self):
+        self.assertEqual(self.traverse('123/layout-test'),
+            "<html><div>123</div></html>\n")
 
 TestClasses = (
     LocationTests, MethodTest1, MethodTest2, ResourceTests, IntegrationTests
