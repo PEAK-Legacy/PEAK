@@ -1,7 +1,9 @@
 #!/usr/bin/env python
 """Distutils setup file"""
 
-import sys, os
+import sys, os, ez_setup
+ez_setup.use_setuptools()
+
 from setuptools import setup, Extension, Feature, find_packages
 
 # Metadata
@@ -11,7 +13,6 @@ HAPPYDOC_IGNORE = [
     '-i','old', '-i','tests', '-i','setup', '-i','examples',
     '-i', 'kjbuckets', '-i', 'ZConfig',
 ]
-
 
 scripts = ['scripts/peak']
 packages = find_packages('src')
@@ -37,8 +38,6 @@ extensions = [
         "peak.persistence._persistence", ["src/peak/persistence/persistence.c"]
     ),
 ]
-
-
 
 try:
     # Check if Zope X3 is installed; we use zope.component
