@@ -11,7 +11,6 @@ PACKAGE_NAME = "PEAK"
 PACKAGE_VERSION = "0.5a4"
 HAPPYDOC_IGNORE = [
     '-i','old', '-i','tests', '-i','setup', '-i','examples',
-    '-i', 'kjbuckets', '-i', 'ZConfig',
 ]
 
 scripts = ['scripts/peak']
@@ -32,22 +31,12 @@ extensions = [
     ),
     Extension("peak.util.buffer_gap", ["src/peak/util/buffer_gap.pyx"]),
     Extension("peak.util._Code", ["src/peak/util/_Code.pyx"]),
-    Extension("protocols._speedups", ["src/protocols/_speedups.pyx"]),
-    Extension("dispatch._speedups", ["src/dispatch/_speedups.pyx"]),
     Extension(
         "peak.persistence._persistence", ["src/peak/persistence/persistence.c"]
     ),
 ]
 
-try:
-    # Check if Zope X3 is installed; we use zope.component
-    # because we don't install it ourselves; if we used something we
-    # install, we'd get a false positive if PEAK was previously installed.
-    import zope.component
-    zope_installed = True
 
-except ImportError:
-    zope_installed = False
 
 
 have_uuidgen = False
@@ -80,7 +69,19 @@ if os.name=='posix' and hasattr(os, 'uname'):
 
 
 
+
+
+
+
+
+
+
+
+
+
+
 execfile('src/setup/common.py')
+
 features = {
     'tests': Feature(
         "test modules", standard = True,
@@ -88,23 +89,6 @@ features = {
     ),
     'metamodels': Feature(
         "MOF/UML metamodels", standard = True, remove=['peak.metamodels']
-    ),
-    'kjbuckets': Feature(
-        "Aaron Watters' kjbuckets module (DEPRECATED!)", standard = False,
-        ext_modules = [
-            Extension("kjbuckets", ["src/kjbuckets/kjbucketsmodule.c"]),
-        ]
-    ),    
-    'fcgiapp': Feature(
-        "FastCGI support", standard = (os.name=='posix'),
-        ext_modules = [
-            Extension("fcgiapp", [
-                "src/fcgiapp/fcgiappmodule.c", "src/fcgiapp/fcgiapp.c"
-            ])
-        ]
-    ),
-    'ZConfig': Feature(
-        "ZConfig 2.0", standard = not zope_installed, remove = ['ZConfig']
     ),
     'uuidgen': Feature(
         "UUID generation via BSD system libraries",
@@ -125,6 +109,18 @@ ALL_EXTS = [
     '*.ini', '*.html', '*.conf', '*.xml', '*.pwt', '*.dtd', '*.txt',
 ]
 
+
+
+
+
+
+
+
+
+
+
+
+
 setup(
     name=PACKAGE_NAME,
     version=PACKAGE_VERSION,
@@ -140,11 +136,18 @@ setup(
     packages    = packages,
     cmdclass = SETUP_COMMANDS,
 
+    install_requires = [
+        'PyProtocols >= 1.0a0dev-r2070',
+        'wsgiref     >= 0.0.1dev',
+        'ZConfig     >  2.0',
+    ],
+
+    extras_require = {
+        'FastCGI': ['fcgiapp >= 1.4'],
+    },
+
     package_data = {
         '': ALL_EXTS,
-        'ZConfig': ['doc/schema.dtd'],
-        'ZConfig.tests': ['input/*.xml', 'input/*.conf'],
-        'ZConfig.tests.library.thing': ['extras/extras.xml'],
         'peak.metamodels': ['*.asdl']
     },
 
@@ -153,9 +156,6 @@ setup(
     ext_modules = extensions,
     scripts = scripts,
 )
-
-
-
 
 
 

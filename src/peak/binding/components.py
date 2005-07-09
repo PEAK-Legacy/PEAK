@@ -850,13 +850,13 @@ class Component(_Base):
         data = dict([(str(k),v) for k,v in section.__dict__.items()
             if v is not None])
 
-        if not hasattr(klass,'_name') and '_name' in data:
-            del data['_name']
-
-        if not hasattr(klass,'_matcher') and '_matcher' in data:
-            del data['_matcher']
+        for skip in '_name','_matcher','_attributes':
+            if skip in data and not hasattr(klass,skip):
+                del data[skip]
 
         return klass(**data)
+
+
 
 
     def setParentComponent(self, parentComponent, componentName=None,

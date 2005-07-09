@@ -121,64 +121,6 @@ Installing PEAK
 
 
 
- THIRD PARTY SOFTWARE INCLUDED WITH PEAK
-
-  Aaron Watters' 'kjbuckets' Module
-
-   Use of this module is deprecated; if your software depends on it, you must
-   supply a '--with-kjbuckets' argument to 'setup.py' in order to build and
-   install it.  Please use an alternate distribution of kjbuckets or port your
-   software to use the Python 2.3 'Set' type and the 'peak.util.Graph' module,
-   as appropriate.
-
-   'kjbuckets' is copyright Aaron Watters and contributors; please see
-   the 'src/kjbuckets/COPYRIGHT.txt' file for details of its license.
-
-  The Zope 3 'persistence' and 'ZConfig' Packages
-
-   PEAK includes a copy of the following packages from the Zope X3 Milestone 2
-   release, and will install them unless Zope X3 is available on 'sys.path'
-   at the time 'setup.py' is run:
-
-   - 'persistence'
-
-   - 'ZConfig'
-
-   These packages are automatically installed alongside PEAK in your
-   'site-packages' directory, unless you specify an alternate installation
-   location to 'setup.py'.  Note that this will overwrite any existing
-   installation of these packages.
-
-   To prevent overwriting versions of these packages that were installed
-   separately, 'setup.py' attempts to detect the presence of Zope X3 by
-   importing 'zope.component' (which is not distributed with PEAK).  If you
-   have a 'zope.component' package on your 'sys.path' when 'setup.py' runs,
-   'setup.py' will assume you have a complete Zope X3 installation, and it
-   will not install any of the Zope packages listed above, in order to avoid
-   overwriting newer versions from your Zope installation.
-
-   The 'persistence' and 'ZConfig' packages are Copyright Zope Corporation and
-   contributors; please see the 'LICENSE.txt' files in their directories for
-   details of their licenses.
-
-
-  The 'fcgiapp' Module
-
-   On platforms where 'os.name=="posix"' (most Unixes and Cygwin), PEAK also
-   installs the 'fcgiapp' module, which provides support for the FastCGI
-   protocol.  You may experience problems building this module on some
-   platforms; check the 'fcgiconfig.h' to see if you need to change anything
-   for your system.  Or, you can simply disable it, by editing 'setup.py'
-   and changing the 'include_fcgiapp' flag to 'False'.
-
-   The 'fcgiapp' module is Copyright Digital Creations, LC (now Zope Corp.);
-   see the 'fcgiappmodule.c' file for details of its license.  In the same
-   directory are distributed portions of the FastCGI Development Kit, which
-   is Copyright Open Market, Inc.  See the 'LICENSE.TERMS' file in that
-   directory for details of its license.
-
-
-
  EMBEDDING PEAK IN AN APPLICATION
 
   If you are embedding PEAK in an application that you are distributing,
@@ -191,6 +133,23 @@ Installing PEAK
   either set of modules by editing 'setup.py', and changing the
   'include_tests' and 'include_metamodels' flags, located near the top of
   the script.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

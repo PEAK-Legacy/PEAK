@@ -88,10 +88,6 @@ PEAK Release 0.5 alpha 4
      those licenses may impose upon you.  For your reference, here are the
      third-party packages and where to find their license terms:
 
-     The 'kjbuckets' module is Copyright Aaron Watters and contributors;
-     please see the 'src/kjbuckets/COPYRIGHT.txt' file for details of its
-     license.
-
      The included 'pyexpat', 'doctest', 'optparse', and 'textwrap' modules in
      'peak.util' are from Python 2.4, and are included for backward
      compatibility in Python 2.2 and 2.3.  See the Python license for license
@@ -102,19 +98,23 @@ PEAK Release 0.5 alpha 4
      Expat maintainers.  See the 'COPYING' file in 'src/expat' for details of
      its license.
 
-     The 'persistence' and 'ZConfig' packages are Copyright Zope
-     Corporation and contributors; please see the 'LICENSE.txt' files in their
-     directories for details of their licenses.
-
-     The 'fcgiapp' module is Copyright Digital Creations, LC (now Zope Corp.);
-     see the 'fcgiappmodule.c' for details of its license.  In the same
-     directory are distributed portions of the FastCGI Development Kit, which
-     is Copyright Open Market, Inc.  See the 'LICENSE.TERMS' file in that
-     directory for details of its license.
-
  Installation Instructions
 
     Please see the INSTALL.txt file.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
