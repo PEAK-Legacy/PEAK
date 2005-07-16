@@ -137,9 +137,10 @@ setup(
     cmdclass = SETUP_COMMANDS,
 
     install_requires = [
-        'PyProtocols >= 1.0a0dev-r2070',
-        'wsgiref     >= 0.0.1dev',
-        'ZConfig     >  2.0',
+        'RuleDispatch >= 0.5a0dev',
+        'PyProtocols  >= 1.0a0dev-r2070',
+        'wsgiref      >= 0.0.1dev',
+        'ZConfig      >  2.0',
     ],
 
     extras_require = {
@@ -156,7 +157,6 @@ setup(
     ext_modules = extensions,
     scripts = scripts,
 )
-
 
 
 
