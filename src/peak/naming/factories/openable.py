@@ -1,5 +1,5 @@
 from peak.api import *
-import sys, os, os.path, posixpath
+import sys, os, os.path, posixpath, pkg_resources
 URL = naming.URL    # XXX can't import an un-loaded lazy module from its parent
 
 
@@ -329,26 +329,26 @@ class ConstantStream(object):
 class ImportLoaderFactory(ConstantStream):
     """Stream factory for data loaded by a PEP 302 import loader"""
 
-    def __init__(self,loader,moduleName,path,fullpath):
+    def __init__(self, moduleName, path):
         self.address = str(PkgFileURL("pkgfile","%s/%s" % (moduleName,path)))
-        self.loader = loader
-        self.path = fullpath
+        self.moduleName = moduleName
+        self.path = path
     
     def open(self,mode,seek=False,writable=False,autocommit=False):
-
         if writable:
             raise TypeError("Importer data not writable", self.address)
-
-        from cStringIO import StringIO
-        return StringIO(self.loader.get_data(self.path))
+        return pkg_resources.resource_stream(self.moduleName, self.path)
 
     def exists(self):
-        try:
-            self.loader.get_data(self.path)
-            return True
-        except (IOError,OSError,ImportError):
-            return False
+        return pkg_resources.resource_exists(self.moduleName, self.path)
       
+
+
+
+
+
+
+
 
 
 
