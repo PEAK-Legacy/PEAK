@@ -16,6 +16,7 @@ __all__ = [
     'ErrorSubcommand',
 ]
 
+__main__ = lambda: runMain(Bootstrap)
 
 class InvocationError(Exception):
     """Problem with command arguments or environment"""
@@ -37,7 +38,6 @@ def lookupCommand(command,name,default,acceptURLs=False):
     return adapt(name, binding.IComponentKey).findComponent(
         command.getCommandParent(), default
     )
-
 
 def runMain(factory):
     """Use 'factory' to create and run a "main" program

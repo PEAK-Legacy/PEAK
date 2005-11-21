@@ -1,5 +1,8 @@
 Fixes and Enhancements since Version 0.5 alpha 3
 
+ - The 'peak' script is now an .exe on Windows, using setuptools' "entry point"
+   system.
+
  - PEAK no longer bundles any software that can be obtained automatically from
    PyPI.  Running PEAK's setup script will attempt to download and install
    the needed packages.  (Note that development snapshots of PEAK may require

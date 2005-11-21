@@ -13,7 +13,7 @@ HAPPYDOC_IGNORE = [
     '-i','old', '-i','tests', '-i','setup', '-i','examples',
 ]
 
-scripts = ['scripts/peak']
+
 packages = find_packages('src')
 
 extensions = [
@@ -127,8 +127,9 @@ setup(
 
     description="The Python Enterprise Application Kit",
     author="Phillip J. Eby",
-    author_email="transwarp@eby-sarna.com",
+    author_email="peak@eby-sarna.com",
     url="http://peak.telecommunity.com/",
+    download_url="http://peak.telecommunity.com/snapshots/",
     license="PSF or ZPL",
     platforms=['UNIX','Windows'],
 
@@ -155,10 +156,50 @@ setup(
     features = features,
     test_suite = 'peak.tests.test_suite',
     ext_modules = extensions,
-    scripts = scripts,
+
+    entry_points = {
+        "console_scripts":["peak = peak.running.commands:__main__"]
+    },
+    zip_safe=True,
+
+    long_description = """\
+PEAK is an application kit, and applications are made from components.
+PEAK provides you with a component architecture, component infrastructure,
+and various general-purpose components and component frameworks for
+building applications.  As with J2EE, the idea is to let you stop
+reinventing architectural and infrastructure wheels, so you can put more
+time into your actual application.
+
+Development version: svn://svn.eby-sarna.com/svnroot/PEAK#egg=PEAK-dev
+""",
+
+    keywords = "Enterprise,SQL,LDAP,UML,XMI,JNDI,persistence,AOP,FastCGI,MOF,event-driven,twisted,web",
+
+    classifiers = """
+    Development Status :: 3 - Alpha
+    Development Status :: 4 - Beta
+    Environment :: Console
+    Environment :: No Input/Output (Daemon)
+    Environment :: Web Environment
+    Environment :: Win32 (MS Windows)
+    Intended Audience :: Developers
+    License :: OSI Approved :: BSD License
+    License :: OSI Approved :: Python Software Foundation License
+    License :: OSI Approved :: Zope Public License
+    Natural Language :: English
+    Operating System :: Microsoft :: Windows
+    Operating System :: POSIX
+    Programming Language :: C
+    Programming Language :: Python
+    Topic :: Database :: Front-Ends
+    Topic :: Internet :: WWW/HTTP :: Dynamic Content :: CGI Tools/Libraries
+    Topic :: Office/Business
+    Topic :: Software Development :: Code Generators
+    Topic :: Software Development :: Libraries :: Application Frameworks
+    Topic :: Software Development :: Libraries :: Python Modules
+    Topic :: System :: Systems Administration :: Authentication/Directory :: LDAP
+    Topic :: Text Processing :: Markup :: XML""".strip().splitlines()
 )
-
-
 
 
 

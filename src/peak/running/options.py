@@ -367,17 +367,6 @@ def make_parser(ob,**kw):
 
 
 
-
-
-
-
-
-
-
-
-
-
-
 def option_handler(*option_names, **kw):
     """Decorate a method to be called when option is encountered
 
