@@ -567,9 +567,9 @@ class EntityDM(QueryDM):
 
         self.to_delete.append(ob._p_oid)
 
-
-
-
+        # Ensure that we have a transaction service and we've joined
+        # the transaction in progress...
+        self.joinedTxn
 
 
 class StorableDMClass(EntityDM.__class__, Persistent.__class__):
