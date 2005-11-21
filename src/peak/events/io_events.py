@@ -1,7 +1,6 @@
 from __future__ import generators
 from peak.core import protocols, adapt, binding, NOT_GIVEN, PropertyName
 from interfaces import *
-from peak.util.EigenData import AlreadyRead
 from weakref import WeakValueDictionary, ref
 import sources
 from event_threads import resume, taskFactory
@@ -37,6 +36,7 @@ else:
     )
 
     signal = signal.signal
+
 
 
 class AbstractIOEvent(sources.Broadcaster):

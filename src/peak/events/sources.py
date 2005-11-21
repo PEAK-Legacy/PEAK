@@ -1,6 +1,5 @@
 from peak.core import protocols, adapt, NOT_GIVEN
 from interfaces import *
-from peak.util.EigenData import AlreadyRead
 from weakref import ref
 from types import MethodType
 __all__ = [
@@ -8,6 +7,7 @@ __all__ = [
     'DerivedValue', 'DerivedCondition', 'Observable', 'Readable', 'Writable',
     'AbstractConditional', 'Broadcaster', 'subscribe', 'Null',
 ]
+
 
 
 
