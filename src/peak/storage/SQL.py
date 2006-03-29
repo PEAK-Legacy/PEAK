@@ -309,12 +309,13 @@ class ValueBasedTypeConn(SQLConnection):
         for k in self.supportedTypes:
 
             c = importObject(ps.get(k,NullConverter))
-
-            for v in getattr(api,k).values:
+            tob = getattr(api,k)
+            for v in getattr(tob,'values',[tob]):
                 try:
                     v+''
                 except:
-                    tm[v] = c
+                    if v not in tm or tm[v] is NullConverter:
+                        tm[v] = c
                 else:
                     # We support either '.int4' or '.INTEGER' style properties
                     tm[v] = importObject(
@@ -324,6 +325,46 @@ class ValueBasedTypeConn(SQLConnection):
         return tm
 
     typeMap = binding.Make(typeMap)
+
+class mxODBC_Url(naming.URL.Base):
+    supportedSchemes = 'mxodbc',
+    defaultFactory = 'peak.storage.SQL.mxODBCConnection'
+
+    class dsn(naming.URL.Field):
+        pass
+
+    syntax = naming.URL.Sequence(dsn)
+
+
+class mxODBCConnection(ValueBasedTypeConn):
+    DRIVER = "mx.ODBC.Windows"  # XXX should support Unix too
+
+    supportedTypes = (
+        'BIGINT', 'BINARY', 'BIT', 'CHAR', 'DATE', 'DATETIME', 'DECIMAL',
+        'DOUBLE', 'FLOAT', 'INTEGER', 'LONGVARBINARY', 'LONGVARCHAR', 'NUMBER',
+        'NUMERIC', 'RAW', 'REAL', 'ROWID', 'SMALLINT', 'STRING', 'TIME',
+        'TIMESTAMP', 'TINYINT', 'UNICODE', 'UNICODE_LONGVARCHAR',
+        'UNICODE_VARCHAR', 'VARBINARY', 'VARCHAR', 'WCHAR',
+        'WCHAR_LONGVARCHAR', 'WCHAR_VARCHAR',
+    )        
+
+    def _open(self):
+        return self.API.DriverConnect(self.address.dsn)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 class SybaseConnection(ValueBasedTypeConn):
@@ -399,7 +440,6 @@ class SybaseConnection(ValueBasedTypeConn):
         return self('''select name as obname,
             obtype = rtrim(CASE %s ELSE type END), crdate%s
             from sysobjects%s ORDER BY name''' % (typecase, addsel, addwhere), outsideTxn=None)
-
 
 
 
