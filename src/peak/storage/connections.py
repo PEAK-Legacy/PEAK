@@ -276,9 +276,12 @@ class ManagedConnection(TransactionComponent):
 
     def getObjectInstance(klass, context, refInfo, name, attrs=None):
         addr, = refInfo.addresses   # only 1 address supported for now
+        if isinstance(addr,str):
+            addr = naming.parseURL(context, addr)
         return klass(address = addr)
 
     getObjectInstance = classmethod(getObjectInstance)
+
 
 
 
