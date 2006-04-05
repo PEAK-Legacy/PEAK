@@ -63,6 +63,7 @@ class cursorToHoriz(AbstractCursorFormatter):
             if not w or w <= 0: w = r[3]
             if not w or w <= 0: w = 20 # XXX
             if w<len(r[0]): w = len(r[0])
+            if w>255: w = 255
 
             t.append(self.toStr(r[0], w)); d.append('-' * w); l.append(w)
 
