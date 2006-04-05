@@ -301,16 +301,18 @@ class MockSQLConnection(SQLConnection):
 class ValueBasedTypeConn(SQLConnection):
 
     def typeMap(self):
-
         tm = {}
         ps = self.TYPES_NS
         api = self.API
-
         for k in self.supportedTypes:
-
             c = importObject(ps.get(k,NullConverter))
             tob = getattr(api,k)
-            for v in getattr(tob,'values',[tob]):
+            tob = getattr(tob,'values',tob)
+            try:
+                iter(tob)
+            except TypeError:
+                tob = [tob]
+            for v in tob:
                 try:
                     v+''
                 except:
@@ -321,19 +323,47 @@ class ValueBasedTypeConn(SQLConnection):
                     tm[v] = importObject(
                         ps.get(PropertyName.fromString(v),c)
                     )
-
         return tm
-
     typeMap = binding.Make(typeMap)
 
-class mxODBC_Url(naming.URL.Base):
-    supportedSchemes = 'mxodbc',
-    defaultFactory = 'peak.storage.SQL.mxODBCConnection'
+class DSN_URL(naming.URL.Base):
+    supportedSchemes = 'dsn',
 
     class dsn(naming.URL.Field):
         pass
 
     syntax = naming.URL.Sequence(dsn)
+
+
+class ADOConnection(ValueBasedTypeConn):
+    DRIVER = "adodbapi"
+
+    supportedTypes = (
+        'BINARY', 'DATETIME', 'NUMBER', 'ROWID', 'STRING',
+        'adArray', 'adBSTR', 'adBigInt', 'adBinary',
+        'adBoolean', 'adChapter', 'adChar', 'adCmdStoredProc', 'adCurrency',
+        'adDBDate', 'adDBTime', 'adDBTimeStamp', 'adDate', 'adDecimal',
+        'adDouble', 'adEmpty', 'adGUID', 'adIDispatch', 'adIUnknown',
+        'adInteger', 'adLongVarBinary', 'adLongVarChar', 'adLongVarWChar',
+        'adNumeric', 'adSingle', 'adSmallInt', 'adTinyInt', 'adUnsignedBigInt',
+        'adUnsignedInt', 'adUnsignedSmallInt', 'adUnsignedTinyInt',
+        'adUserDefined', 'adVarBinary', 'adVarChar', 'adVarNumeric',
+        'adVarWChar', 'adVariant', 'adWChar',
+        'adoApproximateNumericTypes', 'adoBinaryTypes', 'adoDateTimeTypes',
+        'adoExactNumericTypes', 'adoIntegerTypes', 'adoLongTypes',
+        'adoRemainingTypes', 'adoRowIdTypes', 'adoStringTypes'
+    )        
+
+    def _open(self):
+        return self.API.connect(self.address.dsn)
+
+
+
+
+
+
+
+
 
 
 class mxODBCConnection(ValueBasedTypeConn):
@@ -350,6 +380,16 @@ class mxODBCConnection(ValueBasedTypeConn):
 
     def _open(self):
         return self.API.DriverConnect(self.address.dsn)
+
+
+
+
+
+
+
+
+
+
 
 
 
