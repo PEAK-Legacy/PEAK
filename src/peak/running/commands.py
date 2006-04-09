@@ -244,6 +244,47 @@ define a usage message for their subclass.
 
 
 
+    def runMain(cls):
+        """Allow this command to be used as a console_scripts entry point
+
+        If you want to make a command class into a command that's installable
+        via setuptools, just add something like this to your setup()::
+
+            entry_points = {
+                'console_scripts': [
+                    'some_cmd = some.module:MyCmdClass.runMain'
+                ]
+            }
+
+        This will create a 'some_cmd' command line app that invokes your
+        command class, when you run "setup.py develop", or someone installs
+        your package.
+        """
+        try:
+            cmd = cls(config.makeRoot())
+            while True:
+                result = cmd.run()
+                factory = IMainCmdFactory(result,None)   
+                if factory is None:
+                    # Not an app, so don't tail-recurse
+                    return result
+                else:
+                    cmd = factory()
+                    result = None   # allow result to be GC'd   
+        finally:
+            # Ensure that commands don't leak
+            result = cmd = factory = None
+        
+    runMain = classmethod(runMain)
+
+
+
+
+
+
+
+
+
 class ErrorSubcommand(AbstractCommand):
     """Subcommand that displays an error/usage message"""
 
