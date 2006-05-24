@@ -233,17 +233,17 @@ class XMLParser(Component):
             if ns is None:
                 nm=nm.split(':',1)[-1]
             return lookup(self,XMLKey('element',ns or '*',nm),None)
-    
+
         def lookupAttribute(ns,nm):
             if ns is None:
                 nm = nm.split(':',1)[-1]
             return lookup(self,XMLKey('attribute',ns or '*',nm),None)
-    
+
         p.setLookups(lookupElement,lookupAttribute)
         return p
 
 
-        
+
     def parseFunctions(self):
         """Return top-level parse function map based on kwargs and props"""
         kw = self.kwargs.copy()
@@ -264,7 +264,7 @@ class XMLParser(Component):
         property, passed in via a keyword argument to the constructor, or it
         can be set by a 'start' function.
         """
-        
+
         factory = getStreamFactory(self,source)
         stream = factory.open('t')
         try:
@@ -273,7 +273,7 @@ class XMLParser(Component):
             )
         finally:
             stream.close()
-        
+
 
 
 
@@ -759,7 +759,7 @@ class ConfigurationRoot(IniLoader, ServiceArea):
 
     protocols.advise(instancesProvide=[IConfigurationRoot])
 
-    iniFiles = ( packageFile('peak','peak.ini'), )
+    iniFiles = ( packageFile('peak.core','peak.ini'), )
 
     def noMoreValues(self,root,configKey,forObj):
         pass

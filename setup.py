@@ -132,7 +132,6 @@ setup(
     download_url="http://peak.telecommunity.com/snapshots/",
     license="PSF or ZPL",
     platforms=['UNIX','Windows'],
-
     package_dir = {'':'src'},
     packages    = packages,
     cmdclass = SETUP_COMMANDS,
@@ -142,6 +141,7 @@ setup(
         'PyProtocols  >= 1.0a0dev-r2070',
         'wsgiref      >= 0.0.1dev',
         'ZConfig      >  2.0',
+        'Importing    >= 1.9',
     ],
 
     extras_require = {

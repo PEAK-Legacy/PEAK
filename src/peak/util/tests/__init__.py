@@ -21,14 +21,15 @@ allSuites = [
 def test_unittrace():
     from peak.util import doctest
     return doctest.DocFileSuite(
-        'unittrace.txt', optionflags=doctest.ELLIPSIS, package='peak.util',
+        'unittrace.txt', optionflags=doctest.ELLIPSIS,
+        package='peak.util.unittrace',
     )
 
 
 def test_Graph():
     from peak.util import doctest
     return doctest.DocFileSuite(
-        'Graph.txt', optionflags=doctest.ELLIPSIS, package='peak.util',
+        'Graph.txt', optionflags=doctest.ELLIPSIS, package='peak.util.Graph',
     )
 
 
