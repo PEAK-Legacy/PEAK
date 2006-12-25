@@ -21,16 +21,16 @@ def _nothing():
 def NullConverter(descr,value):
     return value
 
-
-
-
-
-
-
-
-
-
-
+def named_param_adder(format):
+    def adder(params, value, name=None):
+        if name is None:
+            n = len(params)+1
+            while 'p'+str(n) in params:
+                n+=1
+            name = 'p'+str(n)
+        params[name] = value
+        return format % name
+    return adder
 
 
 
@@ -222,7 +222,6 @@ class SQLConnection(ManagedConnection):
         if self.twoPhase:
             self._prepare()
 
-
     def typeMap(self):
         tm = {}
         ps = self.TYPES_NS
@@ -235,14 +234,15 @@ class SQLConnection(ManagedConnection):
 
     typeMap = binding.Make(typeMap)
 
-
     def _prepare(self):
         raise NotImplementedError("Two-phase commit not implemented", self)
 
-
-
-
-
+    newParams = binding.Make(
+        lambda s: s.TYPES_NS['paramstyles.'+s.API.paramstyle]
+    )
+    addParam =  binding.Make(
+        lambda s: s.TYPES_NS['paramadders.'+s.API.paramstyle]
+    )
 
     def getRowConverter(self,description,post=None):
         """See ISQLConnection.getRowConverter()"""
@@ -352,10 +352,11 @@ class ADOConnection(ValueBasedTypeConn):
         'adoApproximateNumericTypes', 'adoBinaryTypes', 'adoDateTimeTypes',
         'adoExactNumericTypes', 'adoIntegerTypes', 'adoLongTypes',
         'adoRemainingTypes', 'adoRowIdTypes', 'adoStringTypes'
-    )        
+    )
 
     def _open(self):
         return self.API.connect(self.address.dsn)
+
 
 
 
@@ -376,7 +377,7 @@ class mxODBCConnection(ValueBasedTypeConn):
         'TIMESTAMP', 'TINYINT', 'UNICODE', 'UNICODE_LONGVARCHAR',
         'UNICODE_VARCHAR', 'VARBINARY', 'VARCHAR', 'WCHAR',
         'WCHAR_LONGVARCHAR', 'WCHAR_VARCHAR',
-    )        
+    )
 
     def _open(self):
         return self.API.DriverConnect(self.address.dsn)

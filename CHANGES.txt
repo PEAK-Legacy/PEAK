@@ -1,5 +1,19 @@
 Fixes and Enhancements since Version 0.5 alpha 3
 
+ - Added "paramstyle" support for SQL connections, which now have a
+   'newParams()' method to create a parameter object, and an
+   'addParam(params,value,name=None)' method to add parameters to the 'params'
+   object (created via 'newParams()') and return the string that should be used
+   to reference the parameter.
+
+   This lets you write SQL generation code with embedded parameters using "bind
+   variables".  For example, you could do something like this, if 'db' is a SQL
+   connection object::
+
+        params = db.newParams()
+        sql = 'SELECT * FROM foobar WHERE baz='+db.addParam(params, 42)
+        rows = db(sql, params)
+
  - The 'peak' script is now an .exe on Windows, using setuptools' "entry point"
    system.
 
@@ -7,20 +21,20 @@ Fixes and Enhancements since Version 0.5 alpha 3
    PyPI.  Running PEAK's setup script will attempt to download and install
    the needed packages.  (Note that development snapshots of PEAK may require
    development snapshots of related packages.)
-   
+
  - Added a series of new QueryDM and EntityDM convenience features.  See
    "Making Data Managers easier to use":http://www.eby-sarna.com/pipermail/peak/2005-May/002296.html
    for a complete list and explanatory documentation.
- 
+
  - Changed 'running.lookupCommand()' to use the command's 'getCommandParent()'
    method, so that commands using the '--config' option will utilize the
    specified configuration(s) to lookup subcommands.
-   
+
  - Added a '-c/--config' option to PEAK bootstrap commands to load an .ini
    configuration file in a new service area before executing any subcommands.
-   
+
    This allows you to do things like::
-   
+
         peak launch -c bulletins ref:sitemap@sitemap.xml
 
    which loads the 'bulletins' configuration file before launching the sitemap.
@@ -39,7 +53,7 @@ Fixes and Enhancements since Version 0.5 alpha 3
    specially optimized for use with generic functions, so that you can
    define generic function methods that apply only within some part of a
    component hierarchy.
-   
+
  - PEAK no longer supports Python 2.2; Python 2.3.4 or better is required.
 
  - The kjbuckets extension module is no longer built and installed by default;
@@ -82,7 +96,7 @@ Fixes and Enhancements since Version 0.5 alpha 3
    and to trigger setting of their attributes (or calling of methods) based on
    their raw arguments from 'self.argv'.  See 'options.txt' in the
    'peak.running' package directory for a complete tutorial.
-   
+
  - There is now a 'binding.initAttrs()' function that can be used to initialize
    an object's attributes from e.g. constructor keyword arguments, similar to
    how 'binding.Component' and 'binding.Attribute' constructors work.
@@ -97,12 +111,12 @@ Fixes and Enhancements since Version 0.5 alpha 3
         class AnElement(model.Element):
             class someFeature(model.Attribute):
                 permissionNeeded = SomePerm
-                
+
    you can (and should) now do them like this::
 
         class Foo:
             bar = binding.Require("Something", [SomePerm])
- 
+
         class AnElement(model.Element):
             class someFeature(model.Attribute):
                 metadata = [SomePerm]
@@ -115,7 +129,7 @@ Fixes and Enhancements since Version 0.5 alpha 3
         class AnElement(model.Element):
 
             binding.metadata(someFeature = [SomePerm])
-            
+
             class someFeature(model.Attribute):
                 # ...
 
@@ -128,7 +142,7 @@ Fixes and Enhancements since Version 0.5 alpha 3
    switch to using metadata as soon as practical.  In addition the
    'security.IGuardedDescriptor' interface has been removed, because it was
    only used in connection with the 'permissionNeeded' attribute mechanism.
-   
+
  - Added a new "attribute metadata" mini-framework to 'peak.binding'.  This
    framework makes it possible to declare arbitrary metadata about attributes,
    using either a class advisor ('binding.metadata()', similar in form and
@@ -140,14 +154,14 @@ Fixes and Enhancements since Version 0.5 alpha 3
    the 'permissionNeeded' attribute).  For more information on how the new
    metadata hooks work, including doctest examples, see the 'attributes.txt'
    file in the 'peak.binding' package, under the heading "Attribute Metadata".
-   
+
  - Added a new function, 'binding.activateClass()', that can be used to
    activate any bindings in the class.  This can now be used in place of
    subclassing a PEAK base class or using a PEAK metaclass.  In future, this
    will be integrated into PEAK attribute descriptors such that defining a
    descriptor within a class' body is sufficient to cause this function to be
    invoked.
-   
+
  - 'binding.IBindingNode' was REMOVED, consolidated into 'binding.IComponent',
    as its various individual methods have been replaced with generic functions
    in the existing 'binding' API.  For example, 'binding.getParentComponent(x)'
@@ -161,7 +175,7 @@ Fixes and Enhancements since Version 0.5 alpha 3
 
    In addition, 'binding.suggestParentComponent()' is now also a generic
    function, dispatching on the target (i.e. child) object.
-   
+
  - 'naming.IReferenceable' was REMOVED, as it is not in use anywhere in PEAK.
    This will be replaced with a generic function when we do actually need this
    functionality.
@@ -205,18 +219,18 @@ Fixes and Enhancements since Version 0.5 alpha 3
    simple front-end lets you supply as little as a configuration context and
    a stream source, to do XML processing of arbitrary complexity, controlled by
    the configuration of the context.
-   
+
  - Added 'config.XMLKey()', an 'IConfigKey' type that can be used to register
    configuration values for XML attribute and element names under specified
    XML namespace URI's.  Also, there are now '[XML Attributes for nsuri]' and
    '[XML Elements for nsuri]' section types available for use in .ini files.
    (Replace 'nsuri' with the appropriate XML namespace URI, or use '*' for a
    wildcard.)
-   
+
  - 'web.IResource' is gone, replaced by 'web.IPlace'.  The notion of a place is
    broader than the notion of a resource, and we will soon need to have
    other "location" objects that implement 'IPlace'.
-   
+
  - In order to support obtaining the line and column locations of problems in
    XML files, we are now using Python 2.4's version of the 'pyexpat' module,
    built as 'peak.util.pyexpat'.
@@ -240,7 +254,7 @@ Fixes and Enhancements since Version 0.5 alpha 3
      another.example = naming.LinkRef(
          'ref:ini@pkgfile:peak/peak.ini||/etc/something.ini'
       )
-         
+
    The two examples above will each load the same pair of specified .ini files.
    You can also directly instantiate an 'IniLoader', as in::
 
@@ -248,14 +262,14 @@ Fixes and Enhancements since Version 0.5 alpha 3
 
    Attempting to look up any configuration properties via the 'cfg' object
    will cause it to load the specified .ini file.
-     
+
  - 'config.fileNearModule()' is DEPRECATED, in favor of 'config.packageFile()'.
    The latter returns a 'naming.IStreamFactory', which is more suitable for
    working with e.g. module data files compressed in a zipfile.  Uses of
    'fileNearModule()' that were being passed to 'config.loadConfigFile()' can
    be safely changed to 'config.packageFile()' without needing any other code
    changes, but if you were directly using 'fileNearModule()' as a filename,
-   you will need to rewrite appropriately.  
+   you will need to rewrite appropriately.
 
  - 'config.loadConfigFile()' and 'config.loadConfigFiles()' now accept URLs,
    'naming.IStreamFactory' objects, and other 'config.getStreamFactory()'
@@ -286,11 +300,11 @@ Fixes and Enhancements since Version 0.5 alpha 3
    will run 'some_app.application' in the local web browser, and::
 
        peak CGI WSGI import:some_app.application
-   
+
    will run it under the CGI/FastCGI runner.  Similarly, you can use this in
    the "Command" spec for the "peak supervise" pre-forking FastCGI supervisor
    subsystem.
-   
+
  - There is a new 'running.IWSGIApplication' interface, for PEP 333-compliant
    "application" objects, and all of PEAK's provided applications now implement
    it instead of 'running.IRerunnableCGI'.  If you write your apps to the newer
@@ -317,7 +331,7 @@ Fixes and Enhancements since Version 0.5 alpha 3
  - 'web.ContainerAsTraversable' has been removed.  It was redundant, since the
    new default traversal mechanism used by 'Traversable' and 'Decorator' now
    handles getitem, getattr, and views.
-   
+
  - Added Zope 3-like "namespaces" to 'peak.web'.  Path segments in a URL
    may be prefixed with '"++some_id++"' in order to invoke a corresponding
    namespace handler registered under '"peak.web.namespaces.some_id"'.
@@ -359,7 +373,7 @@ Fixes and Enhancements since Version 0.5 alpha 3
  - Added 'config.registeredProtocol()' API, that supports defining named and
    local protocols.  This allows easy emulation of Zope 3's "named" and "local"
    adapters and views.
-   
+
  - 'binding.Component' objects no longer support instance configuration at
    runtime (i.e., they no longer implement 'config.IConfigurable').  If you
    need a component to be configurable at runtime, you must now derive from
@@ -384,7 +398,7 @@ Fixes and Enhancements since Version 0.5 alpha 3
    implementations of these services is negligible.  That is, the
    corresponding property namespaces ('peak.web.skins' and 'peak.web.layers')
    are more than adequate as registries.
-   
+
  - Removed 'peak.running.timers' and 'peak.util.dispatch'.  Neither was in
    active use, and both are being replaced by the new generic functions
    package in PyProtocols.
@@ -398,7 +412,7 @@ Fixes and Enhancements since Version 0.5 alpha 3
    conflicts with ZODB3 and the latest version of Zope 3.  It will eventually
    be phased out, but for now this move is the simplest way to get it out of
    the way.
-   
+
  - The 'peak.util.SOX' module now uses only one parser, based directly on
    'expat', instead of using SAX.  The new parser expects a new node interface,
    'IXMLBuilder', but adapters from the previous interfaces ('ISOXNode' and
@@ -416,7 +430,7 @@ Fixes and Enhancements since Version 0.5 alpha 3
    As a consequence, "various features have been removed":http://www.eby-sarna.com/pipermail/peak/2004-June/001500.html
    from 'peak.web', for possible return at a future date.  Here is a rough
    outline of the changes made so far:
-   
+
     * The 'pageProtocol', 'pathProtocol', and 'errorProtocol' machinery are
       gone.  They will be replaced in the future with an explicit "controller"
       wrapping mechanism to allow application-specific renderings of the same
