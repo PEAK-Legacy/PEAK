@@ -158,7 +158,7 @@ setup(
     entry_points = {
         "console_scripts":["peak = peak.running.commands:__main__"]
     },
-    zip_safe=True,
+    zip_safe=sys.version>='2.3.5',
 
 
 
