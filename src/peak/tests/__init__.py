@@ -5,8 +5,6 @@ in an individual module to get just those tests."""
 
 
 allSuites = [
-    'protocols.tests:test_suite',
-    'dispatch.tests:test_suite',
     'peak.api.tests:test_suite',
     'peak.metamodels.tests:test_suite',
     'peak.util.tests:test_suite',
