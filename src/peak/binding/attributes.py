@@ -1,5 +1,6 @@
 from interfaces import IActiveDescriptor
-from protocols import adapt, advice
+from protocols import adapt
+from peak.util import decorators
 from types import ClassType
 import dispatch,protocols
 
@@ -30,8 +31,7 @@ def metadata(*args, **kw):
         declareMetadata(klass,*args,**kw)
         return klass
 
-    advice.addClassAdvisor(callback)
-
+    decorators.decorate_class(callback)
 
 
 

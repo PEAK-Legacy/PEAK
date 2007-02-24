@@ -1,6 +1,6 @@
 from peak.api import binding, NOT_GIVEN
 from dispatch import combiners, NoApplicableMethods
-from protocols.advice import addClassAdvisor, add_assignment_advisor
+from peak.util.decorators import decorate_class, decorate_assignment
 
 __all__ = [
     'parse', 'make_parser', 'get_help', 'Group',
@@ -60,7 +60,7 @@ def reject_inheritance(*names):
         OptionRegistry[(klass,)] = method
         return klass
 
-    addClassAdvisor(callback)
+    decorate_class(callback)
 
 
 
@@ -395,10 +395,10 @@ def option_handler(*option_names, **kw):
 
     def decorator(frame,name,func,old_locals):
         option.function = func
-        addClassAdvisor(class_callback,frame=frame)
+        decorate_class(class_callback,frame=frame)
         return func
 
-    return add_assignment_advisor(decorator)
+    return decorate_assignment(decorator)
 
 
 [binding.declareAttribute.when(AbstractOption)]

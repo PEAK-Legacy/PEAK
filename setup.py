@@ -137,9 +137,10 @@ setup(
     cmdclass = SETUP_COMMANDS,
 
     install_requires = [
-        'RuleDispatch >= 0.5a0dev', 'PyProtocols  >= 1.0a0dev-r2070',
-        'Importing    >= 1.9',      'SymbolType   >= 1.0',
-        'wsgiref      >= 0.0.1dev', 'ZConfig      >  2.0',
+        'RuleDispatch >= 0.5a0dev-r2287', 'PyProtocols  >= 1.0a0dev-r2287',
+        'Importing    >= 1.9',            'SymbolType   >= 1.0',
+        'wsgiref      >= 0.0.1dev',       'ZConfig      >  2.0',
+        'DecoratorTools>=1.3',
     ],
 
     extras_require = {
@@ -159,7 +160,6 @@ setup(
         "console_scripts":["peak = peak.running.commands:__main__"]
     },
     zip_safe=sys.version>='2.3.5',
-
 
 
     long_description = """\

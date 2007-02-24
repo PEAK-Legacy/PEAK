@@ -13,22 +13,22 @@
 
 from weakref import WeakValueDictionary
 from types import ClassType
-from protocols.advice import minimalBases
 
 __all__ = ['makeClass']
 
-
-
-
-
-
-
-
-
-
-
-
-
+def normalizeBases(allBases):
+    classes = [c for c in allBases if c is not ClassType and c is not makeClass]
+    candidates = []
+    for m in classes:
+        for n in classes:
+            if issubclass(n,m) and m is not n:
+                break
+        else:
+            # m has no subclasses in 'classes'
+            if m in candidates:
+                candidates.remove(m)    # ensure that we're later in the list
+            candidates.append(m)
+    return candidates
 
 
 
@@ -63,18 +63,18 @@ def derivedMeta(metaclasses):
 
         try: metaReg[metaclasses] = derived
         except TypeError: pass
-
     return derived
-
-
-def normalizeBases(allBases):
-    return minimalBases([b for b in allBases if b is not makeClass])
 
 
 def metaFromBases(bases):
     meta = tuple([getattr(b,'__class__',type(b)) for b in bases])
     if meta==bases: raise TypeError("Incompatible root metatypes",bases)
     return derivedMeta(meta)
+
+
+
+
+
 
 
 
