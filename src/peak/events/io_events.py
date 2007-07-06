@@ -69,10 +69,10 @@ class AbstractIOEvent(sources.Broadcaster):
 
     def addCallback(self,func):
         try:
-            return super(AbstractIOEvent,self).addCallback(func)
+            canceller = super(AbstractIOEvent,self).addCallback(func)
+            return lambda: (canceller(), self._register())
         finally:
             self._register()
-
 
 
 
