@@ -567,7 +567,7 @@ class TestTasks(TestCase):
             sem2.put(); self.tick()
             self.failUnless(tasks[i].isFinished(), i)
 
-        self.assertEqual(log, part1+part2)
+        self.assertEqual(dict(log), dict(part1+part2))
         self.assertEqual(sem1(), 5)
         self.assertEqual(sem2(), 0)
 
