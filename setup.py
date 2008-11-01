@@ -140,7 +140,7 @@ setup(
         'RuleDispatch >= 0.5a0dev-r2287', 'PyProtocols  >= 1.0a0dev-r2287',
         'Importing    >= 1.9',            'SymbolType   >= 1.0',
         'wsgiref      >= 0.0.1dev',       'ZConfig      >  2.0',
-        'DecoratorTools>=1.3',
+        'DecoratorTools>=1.6',            'CLI-Tools    >= 0.5dev',
     ],
 
     extras_require = {
@@ -198,8 +198,8 @@ Development version: svn://svn.eby-sarna.com/svnroot/PEAK#egg=PEAK-dev
     Topic :: Software Development :: Libraries :: Application Frameworks
     Topic :: Software Development :: Libraries :: Python Modules
     Topic :: System :: Systems Administration :: Authentication/Directory :: LDAP
-    Topic :: Text Processing :: Markup :: XML""".strip().splitlines()
+    Topic :: Text Processing :: Markup :: XML""".strip().splitlines(),
+
+    dependency_links = ['http://peak.telecommunity.com/snapshots/']
 )
-
-
 

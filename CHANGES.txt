@@ -1,5 +1,8 @@
 Fixes and Enhancements since Version 0.5 alpha 3
 
+ - 'peak.running.options' is now a thin wrapper over 'peak.cli.options', from
+   the separately-distributed 'CLI-Tools' package
+
  - Added "paramstyle" support for SQL connections, which now have a
    'newParams()' method to create a parameter object, and an
    'addParam(params,value,name=None)' method to add parameters to the 'params'

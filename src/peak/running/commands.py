@@ -18,9 +18,7 @@ __all__ = [
 
 __main__ = lambda: runMain(Bootstrap)
 
-class InvocationError(Exception):
-    """Problem with command arguments or environment"""
-
+from peak.cli.options import InvocationError
 
 def lookupCommand(command,name,default,acceptURLs=False):
     """Lookup 'name' as a command shortcut or URL; may raise InvalidName
@@ -38,6 +36,8 @@ def lookupCommand(command,name,default,acceptURLs=False):
     return adapt(name, binding.IComponentKey).findComponent(
         command.getCommandParent(), default
     )
+
+
 
 def runMain(factory):
     """Use 'factory' to create and run a "main" program
