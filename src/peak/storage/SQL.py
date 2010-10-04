@@ -306,7 +306,7 @@ class ValueBasedTypeConn(SQLConnection):
         api = self.API
         for k in self.supportedTypes:
             c = importObject(ps.get(k,NullConverter))
-            tob = getattr(api,k)
+            tob = getattr(api,k,getattr(self,k,None))
             tob = getattr(tob,'values',tob)
             try:
                 iter(tob)
@@ -736,6 +736,47 @@ class SqliteConnection(ValueBasedTypeConn):
 
 
 
+class PyMySQLConnection(ValueBasedTypeConn):
+    DRIVER = "pymysql"
+    _extendedTypes = (
+        'NEWDATE', 'ENUM', 'BLOB', 'LONG_BLOB', 'MEDIUM_BLOB', 'TINY_BLOB',
+        'DECIMAL', 'FLOAT', 'DOUBLE', 'INT24', 'LONG', 'LONGLONG', 'TINY', 'YEAR'
+    )      
+    locals().update(
+        dict.fromkeys(_extendedTypes, binding.Delegate('API/FIELD_TYPE'))
+    )
+    supportedTypes = (
+        'BINARY', 'DATE', 'DATETIME', 'INT', 'NUMBER', 'ROWID', 'STRING',
+        'TIME', 'TIMESTAMP',
+    ) + _extendedTypes
+
+    protocols.advise(instancesProvide=[ISQLObjectLister])
+
+    def listObjects(self, full=False, obtypes=NOT_GIVEN):
+        addsel = addwhere = ''
+        #if full:
+        #    addsel = ', rootpage, sql '
+        #if obtypes is not NOT_GIVEN:
+        #    addwhere = ' where type in (%s)' % \
+        #    ', '.join(["'%s'" % sqlsafestr(self.descrMap[s]) for s in obtypes])
+        return self("""select TABLE_NAME as obname, TABLE_TYPE as obtype%s
+            from information_schema.tables where table_schema='%s'""" % (addsel, sqlsafestr(self.address.db)))
+
+    def _open(self):
+        a = self.address
+        if ':' in a.server:
+            host, port = a.server.split(':',1)
+            port = int(port)
+        else:
+            host, port = a.server, 3306
+        return self.API.connect(
+            host=host, port=port, db=a.db or '',
+            user=a.user or '', passwd=a.passwd or '',
+        )
+
+class MySQLDBConnection(PyMySQLConnection):
+    DRIVER = "MySQLdb"
+
 class GadflyConnection(SQLConnection):
 
     DRIVER = "gadfly"
@@ -791,6 +832,8 @@ class GenericSQL_URL(naming.URL.Base):
         'pgsql':   'peak.storage.SQL.PGSQLConnection',
         'psycopg': 'peak.storage.SQL.PsycopgConnection',
         'mockdb':  'peak.storage.SQL.MockSQLConnection',
+        'pymysql': 'peak.storage.SQL.PyMySQLConnection',
+        'mysqldb': 'peak.storage.SQL.MySQLDBConnection',
     }
 
     defaultFactory = property(
@@ -812,8 +855,6 @@ class GenericSQL_URL(naming.URL.Base):
     syntax = naming.URL.Sequence(
         ('//',), (user, (':', passwd), '@'), server, ('/', db)
     )
-
-
 
 
 
