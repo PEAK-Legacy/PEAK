@@ -49,10 +49,13 @@ class SQLInteractor(storage.TransactionComponent):
 
         si = adapt(self.con, storage.ISQLObjectLister, None)
         if si is not None:
-            return [x.obname
-                for x in si.listObjects(False,
-		('table','view','proc','synonym'))]
-
+            try:
+                return [x.obname
+                    for x in si.listObjects(False,
+                        ('table','view','proc','synonym'))
+                ]
+            except self.con.Error:
+                pass
         return []
 
     obnames = binding.Make(obnames, suggestParent=False)
