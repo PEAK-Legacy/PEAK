@@ -6,6 +6,7 @@ apilevel = '2.0'
 threadsafety = 0
 paramstyle = 'qmark'
 
+from peak.util.symbols import NOT_GIVEN
 
 class _cursor:
 
@@ -29,7 +30,6 @@ class _cursor:
 
     # EXTENSIONS: rownumber, connection, scroll, messages, next, __iter__,
     #             lastrowid, errorhandler
-
 
 
 
@@ -81,10 +81,12 @@ class _cursor:
 
 
 class connect:
+    verbose = False
 
     def __init__(self):
         self._expected = []
         self._provide = []
+        self._when = {}
 
     def close(self):
         self._verifyFinished()
@@ -119,47 +121,45 @@ class connect:
 
 
 
-
+    def when(self,
+        operation, parameters=NOT_GIVEN, data=None, description=(),
+        callback=NOT_GIVEN
+    ):
+        if parameters is not None and parameters is not NOT_GIVEN:
+            parameters = tuple(parameters)
+        if data is None: data = []
+        self._when[(operation,parameters)] = (data, description), callback
 
     def _verifyFinished(self):
         if self._expected:
             raise AssertionError("Un-executed queries", self._expected)
 
     def _execute(self,cursor,operation,parameters):
-        if not self._expected:
+        if self.verbose:
+            print operation, parameters
+        provide, cb, key = ([], None), NOT_GIVEN, parameters
+        if parameters is not None:
+            key = tuple(parameters)
+        if (operation, key) in self._when:
+            provide, cb = self._when[operation, key]
+        elif (operation, NOT_GIVEN) in self._when:
+            provide, cb = self._when[operation, NOT_GIVEN]        
+        elif self._expected:
+            expected_op, expected_params = self._expected.pop(0)
+            if operation!=expected_op or (
+                parameters!=expected_params and expected_params is not NOT_GIVEN
+            ):
+                raise AssertionError(
+                    "Expected: %s; Got: %s" %
+                        ((operation,parameters), (expected_op, expected_params))
+                )
+            if self._provide:
+                provide = self._provide.pop(0)
+        else:            
             raise AssertionError("Unexpected query", operation, parameters)
-        expected = self._expected.pop(0)
-        if self._provide:
-            provide = self._provide.pop(0)
-        else:
-            provide = ([],None)
-        if (operation,parameters) <> expected:
-            raise AssertionError((operation,parameters),expected)
+        if cb is not NOT_GIVEN:
+            return cb(self, operation, parameters, provide)
         return provide
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 # DBAPI Exceptions

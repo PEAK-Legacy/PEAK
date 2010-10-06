@@ -244,6 +244,47 @@ class MockTests(DBAPITest):
 
 
 
+    def testWhen(self):
+        log = []
+        def log_call(conn, operation, parameters, provide):
+            self.failUnless(conn is self.conn)
+            log.append((operation, parameters, provide))
+            return provide
+        def check_modify(conn, operation, parameters, provide):
+            return [(42,)], (('Bar,'),)
+
+        self.conn.when('foo', data=[(1,)], description=(('Foo,'),))
+        self.conn.when('bar ?', ['x'], data=[(47,),(52,)], callback=log_call)
+        self.conn.when('baz ?', callback=log_call)
+        self.conn.when('fetch', callback=check_modify)
+
+        self.cursor.execute('fetch')
+        self.assertEqual(self.cursor.description, (('Bar,'),))
+        self.assertEqual(self.cursor.fetchall(), [(42,)])       
+        self.cursor.execute('foo')
+        self.assertEqual(self.cursor.description, (('Foo,'),))
+        self.assertEqual(self.cursor.fetchall(), [(1,)])
+
+        self.assertRaises(AssertionError, self.cursor.execute, 'bar ?', [42])
+
+        self.conn.expect('ping!')
+        self.conn.provide([('nee',)], (('say',),))
+        self.conn.alsoExpect('pong', [42])
+
+        self.cursor.execute('baz ?')
+        self.cursor.execute('baz ?', [99])
+
+        self.cursor.execute('ping!')
+        self.assertEqual(self.cursor.description, (('say',),))
+        self.assertEqual(self.cursor.fetchall(), [('nee',)])
+        
+        self.cursor.execute('bar ?', ['x'])
+        self.cursor.execute('pong', [42])
+        self.assertEqual(log, [
+            ('baz ?', None, ([], ())), ('baz ?', [99], ([], ())),
+            ('bar ?', ['x'], ([(47,),(52,)], ()))
+        ])        
+
     def testCommitAndRollback(self):
 
         self.assertRaises(AssertionError, self.conn.commit)

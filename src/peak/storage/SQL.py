@@ -292,7 +292,7 @@ class MockSQLConnection(SQLConnection):
     def _open(self):
         return self.API.connect()
 
-    expect = alsoExpect = provide = binding.Delegate('connection')
+    when = expect = alsoExpect = provide = binding.Delegate('connection')
 
     def getRowConverter(self,description,post=None):
         return post     # provide() should be given pre-converted values
