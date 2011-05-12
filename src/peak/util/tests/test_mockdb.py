@@ -285,6 +285,21 @@ class MockTests(DBAPITest):
             ('bar ?', ['x'], ([(47,),(52,)], ()))
         ])        
 
+    def testExpectPrecedence(self):
+        # expect->provide should match even if a when matches also
+        log = []
+        def log_call(conn, operation, parameters, provide):
+            self.failUnless(conn is self.conn)
+            log.append((operation, parameters, provide))
+            return provide
+
+        self.conn.when('bar ?', ['x'], data=[(47,),(52,)], callback=log_call)
+        self.conn.expect('bar ?', ['x'])
+        self.conn.provide([])
+        self.cursor.execute('bar ?', ['x'])
+        self.assertEqual(log, [('bar ?', ['x'], ([], ()))])        
+
+
     def testCommitAndRollback(self):
 
         self.assertRaises(AssertionError, self.conn.commit)
@@ -295,21 +310,6 @@ class MockTests(DBAPITest):
 
         self.conn.expect('*ROLLBACK')
         self.conn.rollback()
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

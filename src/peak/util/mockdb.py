@@ -137,25 +137,30 @@ class connect:
     def _execute(self,cursor,operation,parameters):
         if self.verbose:
             print operation, parameters
-        provide, cb, key = ([], None), NOT_GIVEN, parameters
+        provide, cb, key, found = ([], None), NOT_GIVEN, parameters, True
         if parameters is not None:
             key = tuple(parameters)
         if (operation, key) in self._when:
             provide, cb = self._when[operation, key]
         elif (operation, NOT_GIVEN) in self._when:
-            provide, cb = self._when[operation, NOT_GIVEN]        
-        elif self._expected:
-            expected_op, expected_params = self._expected.pop(0)
-            if operation!=expected_op or (
-                parameters!=expected_params and expected_params is not NOT_GIVEN
+            provide, cb = self._when[operation, NOT_GIVEN]
+        else:
+            found = False
+        if self._expected:
+            expected_op, expected_params = self._expected[0]
+            if operation==expected_op and (
+                parameters!=expected_params or expected_params is not NOT_GIVEN
             ):
+                self._expected.pop(0)
+                if self._provide:
+                    provide = self._provide.pop(0)
+            elif not found:                
+                self._expected.pop(0)
                 raise AssertionError(
                     "Expected: %s; Got: %s" %
                         ((operation,parameters), (expected_op, expected_params))
                 )
-            if self._provide:
-                provide = self._provide.pop(0)
-        else:            
+        elif not found:
             raise AssertionError("Unexpected query", operation, parameters)
         if cb is not NOT_GIVEN:
             return cb(self, operation, parameters, provide)
@@ -193,11 +198,6 @@ class ProgrammingError(DatabaseError):
 
 class NotSupportedError(DatabaseError):
     pass
-
-
-
-
-
 
 
 
