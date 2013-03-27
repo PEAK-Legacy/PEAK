@@ -15,7 +15,7 @@ from peak.config.interfaces import IConfigKey, IConfigurationRoot, \
     NullConfigRoot, IConfigurable
 from peak.config.registries import ImmutableConfig
 from peak.util.imports import importString, whenImported
-
+from peak.util.decorators import decorate
 
 __all__ = [
     'Component', 'Obtain', 'Require', 'Delegate', 'Configurable',
@@ -841,7 +841,7 @@ class Component(_Base):
     lookupComponent = lookupComponent
 
 
-    [dispatch.as(classmethod)]
+    decorate(classmethod)
     def fromZConfig(klass, section):
 
         """Classmethod: Create an instance from a ZConfig 'section'"""

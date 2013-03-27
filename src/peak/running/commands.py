@@ -6,6 +6,7 @@ from peak.util.imports import importObject
 from os.path import isfile
 import sys, os, options
 from types import ClassType, FunctionType
+from peak.util.decorators import decorate
 
 __all__ = [
     'AbstractCommand', 'AbstractInterpreter', 'IniInterpreter', 'EventDriven',
@@ -36,7 +37,6 @@ def lookupCommand(command,name,default,acceptURLs=False):
     return adapt(name, binding.IComponentKey).findComponent(
         command.getCommandParent(), default
     )
-
 
 
 def runMain(factory):
@@ -721,7 +721,7 @@ class Bootstrap(AbstractInterpreter):
         )]
     )
 
-    [dispatch.as(binding.Make)]
+    decorate(binding.Make)
     def cmdParent(self):
         if self.cmdConfig:
             parent = config.ServiceArea(self)

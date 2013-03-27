@@ -1,7 +1,6 @@
 import dispatch
 from sets import Set
-
-
+from peak.util.decorators import decorate
 
 class Graph:
     def __init__(self,iterable=()):
@@ -10,7 +9,7 @@ class Graph:
         for k,v in iterable:
             self[k] = v
         
-    [dispatch.as(classmethod)]
+    decorate(classmethod)
     def fromkeys(cls,keys):
         return cls([(k,k) for k in keys])
 
