@@ -764,8 +764,8 @@ class ConfigurationRoot(IniLoader, ServiceArea):
     def noMoreValues(self,root,configKey,forObj):
         pass
 
-    def nameNotFound(self,root,name,forObj):
-        return naming.lookup(forObj, name, creationParent=forObj)
+    def nameNotFound(self,root,name,forObj,default=NOT_GIVEN):
+        return naming.lookup(forObj, name, creationParent=forObj, default=default)
 
 
 

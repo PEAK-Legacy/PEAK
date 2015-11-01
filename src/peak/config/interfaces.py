@@ -134,7 +134,7 @@ class IConfigurationRoot(IServiceArea):
     def noMoreValues(root,configKey,forObj):
         """A value search has completed"""
 
-    def nameNotFound(root,name,forObj,bindName):
+    def nameNotFound(root,name,forObj,bindName,default=NOT_GIVEN):
         """A (non-URL) component name was not found"""
 
 
