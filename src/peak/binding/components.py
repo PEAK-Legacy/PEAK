@@ -285,7 +285,7 @@ def notifyUponAssembly(parent,child):
 
 
 
-def acquireComponent(component, name):
+def acquireComponent(component, name, default=NOT_GIVEN):
 
     """Acquire 'name' relative to 'component', w/fallback to naming.lookup()
 
@@ -312,7 +312,7 @@ def acquireComponent(component, name):
         return adapt(
             prev, IConfigurationRoot, NullConfigRoot
         ).nameNotFound(
-            prev, name, component
+            prev, name, component, default=default
         )
 
 
@@ -368,45 +368,45 @@ class ComponentName(AbstractName):
 
 
     def findComponent(self, component, default=NOT_GIVEN):
-
         if not self:  # empty name refers to self
             return component
 
         parts = iter(self)
         attr = parts.next()                 # first part
         pc = _getFirstPathComponent(attr)
-
-
-        if pc:  ob = pc(component)
-        else:   ob = acquireComponent(component, attr)
+        if pc:
+            ob = pc(component)
+        elif default is NOT_GIVEN:   
+            ob = acquireComponent(component, attr) # let the error happen
+        elif len(self)>1:
+            ob = acquireComponent(component, attr, NOT_FOUND)
+        else:
+            return acquireComponent(component, attr, default)
 
         resolved = []
         append = resolved.append
 
         try:
             for attr in parts:
+                if ob is NOT_FOUND: break
                 pc = _getNextPathComponent(attr)
                 if pc:  ob = pc(ob)
                 else:   ob = getattr(ob,attr)
                 append(attr)
+            else:
+                return ob
 
         except AttributeError:
+            pass
 
-            if default is not NOT_GIVEN:
-                return default
+        if default is not NOT_GIVEN:
+            return default
 
-            raise exceptions.NameNotFound(
-                resolvedName = ComponentName(resolved),
-                remainingName = ComponentName([attr] + [a for a in parts]),
-                resolvedObj = ob
-            )
-
-        return ob
-
-
-
-
-
+        raise exceptions.NameNotFound(
+            resolvedName = ComponentName(resolved),
+            remainingName = ComponentName([attr] + [a for a in parts]),
+            resolvedObj = ob
+        )
 
 _getFirstPathComponent = dict( (
     ('',   getRootComponent),

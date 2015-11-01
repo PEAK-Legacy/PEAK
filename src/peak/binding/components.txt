@@ -208,8 +208,119 @@ operations for, and will degrade gracefully for other types.
 
 Finding Components
 ==================
+
+``acquireComponent(component, name, default=NOT_GIVEN)``
+
+If `component` has an attribute of `name`, return its value.  Otherwise,
+walk the ``iterParents()`` of `component` looking for `name`.  If no parent
+has the named attribute, it adapts the last parent found to a
+``config.IConfigurationRoot`` and delegates the lookup via the
+``nameNotFound()`` method of that interface.  (The default implementation
+does a `naming.lookup()`, which in turn will raise a ``NameNotFound`` exception
+or return the provided `default`.)
+
+::
+
+    >>> c1 = binding.Component(root, 'c1')
+    >>> c2 = c1.c2 = binding.Component(c1, 'c2')
+
+    >>> binding.acquireComponent(c2, 'c2') is c2
+    True
+
+    >>> binding.acquireComponent(c2, 'c3')
+    Traceback (most recent call last):
+      ...
+    NameNotFound:  [remainingName=CompoundName(['c3']),resolvedObj=<...>]
+
+    >>> binding.acquireComponent(c2, 'c3', NOT_FOUND)
+    NOT_FOUND
+
+
+``lookupComponent(component, name, default=NOT_GIVEN, adaptTo=None, creationName=None, suggestParent=True)``
+
+Lookup `name` as a component key relative to `component`.  If the key cannot be
+found, an ``exceptions.NameNotFound`` error will be raised unless a `default`
+other than ``NOT_GIVEN`` is provided.
+
+`name` can be any object that implements or is adaptable to ``IComponentKey``.
+Such objects include ``peak.naming`` names, interface objects, property
+names, and any custom objects you may create that implement ``IComponentKey``.
+Strings will be converted to a URL, or to a ``ComponentName`` if they have
+no URL prefix.
+
+``ComponentName`` names are ``/``-separated attribute paths::
+
+    >>> binding.lookupComponent(c1, 'c2') is c2
+    True
+
+If the first attribute name isn't found, it's looked up in the hierarchy using
+``acquireComponent()``::
+
+    >>> binding.lookupComponent(c2, 'c2') is c2
+    True
+
+Which of course will fail if the name isn't found::
+
+    >>> binding.lookupComponent(c1, 'c3')
+    Traceback (most recent call last):
+      ...
+    NameNotFound:  [remainingName=CompoundName(['c3']),resolvedObj=<...>]
+
+Or fall back to the default if one is given::
+
+    >>> binding.lookupComponent(c1, 'c3', 99)
+    99
+
+This also works with multi-part names: the first part is acquired, but the
+other parts must be attributes of the component acquired by the first part::
+
+    >>> c3 = c2.c3 = binding.Component(c2, 'c3')
+    >>> c1.x = 1
+    >>> c2.x = 2
+    >>> c3.x = 3
+
+    >>> binding.lookupComponent(c2, 'c2/x')
+    2
+    >>> binding.lookupComponent(c3, 'c2/x')
+    2
+    >>> binding.lookupComponent(c2, 'c3/x')
+    3
+    >>> binding.lookupComponent(c3, 'c3/x')
+    3
+    >>> binding.lookupComponent(c3, 'c1/x')  # (c1 isn't an attribute of root)
+    Traceback (most recent call last):
+      ...
+    NameNotFound:  [remainingName=CompoundName(['c1']),resolvedObj=<...>]
+    
+    >>> binding.lookupComponent(c3, 'c1/x', 99)
+    99
+
+    >>> binding.lookupComponent(c3, 'c2/y')
+    Traceback (most recent call last):
+      ...
+    NameNotFound:  [resolvedName=ComponentName([]),remainingName=ComponentName(['y']),resolvedObj=<...>]
+    
+    >>> binding.lookupComponent(c3, 'c2/y', 99)
+    99
+
+
+Paths can be explicitly relative, using ``.`` and ``..`` to refer to the
+current component or its parent::
+
+
+    >>> binding.lookupComponent(c2, './x')
+    2
+    >>> binding.lookupComponent(c2, '../x')
+    1
+    
+They can also be root-relative, by starting with a ``/``::
+
+    >>> binding.lookupComponent(root, '/getParentComponent')
+    <bound method ConfigurationRoot.getParentComponent...>
+
    
-XXX lookupComponent, acquireComponent, IComponentKey, ComponentName
+    
+XXX IComponentKey
 
 Assembling Components
 =====================
