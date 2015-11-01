@@ -4,6 +4,7 @@ from unittest import TestCase, makeSuite, TestSuite
 from peak.api import *
 from peak.tests import testRoot
 from sets import Set
+import dispatch.predicates, peak.binding.components
 
 class baseWithClassAttr(binding.Component):
 
@@ -30,7 +31,6 @@ class ClassAttrTest(TestCase):
     def testMetaTypes(self):
         assert anotherSubclass.__class__ is baseWithClassAttr.__class__
         assert anotherSubclass.__class__.__name__ == 'baseWithClassAttrClass'
-
 
 
 
@@ -245,7 +245,6 @@ class DescriptorTest(TestCase):
 
 
     def testHasParentCriterion(self):
-        import dispatch.predicates
         from dispatch import strategy, predicates, functions
         from peak.binding.components import HasParentCriterion as HPC
         from peak.binding.components import dispatch_by_hierarchy
@@ -284,6 +283,7 @@ class DescriptorTest(TestCase):
         self.assertEqual(gf(self.data.thing8),"in service")
         self.assertEqual(gf(self.data.aService.thing5),"in data")
         self.assertEqual(gf(self.data.aService.nestedService),"in service")
+
 
     def testParents(self):
 
